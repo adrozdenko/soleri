@@ -81,4 +81,4 @@ npm test
 
 ## Questions?
 
-Open a [Discussion](https://github.com/adrozdenko/soleri/discussions) or file an [Issue](https://github.com/adrozdenko/soleri/issues).
+Visit [soleri.ai](https://soleri.ai), open a [Discussion](https://github.com/adrozdenko/soleri/discussions), or file an [Issue](https://github.com/adrozdenko/soleri/issues).

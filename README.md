@@ -126,5 +126,5 @@ See [GitHub Milestones](https://github.com/adrozdenko/soleri/milestones) for the
 ---
 
 <p align="center">
-  <a href="https://soleri.dev">soleri.dev</a> · <a href="https://www.npmjs.com/package/soleri">npm</a> · <a href="https://github.com/adrozdenko/soleri/issues">Issues</a> · <a href="https://github.com/adrozdenko/soleri/discussions">Discussions</a>
+  <a href="https://soleri.ai">soleri.ai</a> · <a href="https://www.npmjs.com/package/soleri">npm</a> · <a href="https://github.com/adrozdenko/soleri/issues">Issues</a> · <a href="https://github.com/adrozdenko/soleri/discussions">Discussions</a>
 </p>
