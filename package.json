@@ -21,7 +21,7 @@
     "url": "https://github.com/adrozdenko/soleri.git"
   },
   "author": "adrozdenko",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
