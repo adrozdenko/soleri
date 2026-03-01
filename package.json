@@ -1,0 +1,55 @@
+{
+  "name": "soleri",
+  "version": "0.0.1",
+  "description": "An open-source framework for building AI assistants that learn, remember, and grow with you.",
+  "keywords": [
+    "ai",
+    "assistant",
+    "framework",
+    "knowledge",
+    "vault",
+    "brain",
+    "memory",
+    "personas",
+    "mcp",
+    "claude",
+    "learning"
+  ],
+  "homepage": "https://soleri.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adrozdenko/soleri.git"
+  },
+  "author": "adrozdenko",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bin": {
+    "soleri": "./dist/forge/cli.js"
+  },
+  "main": "./dist/core/index.js",
+  "types": "./dist/core/index.d.ts",
+  "exports": {
+    ".": "./dist/core/index.js",
+    "./forge": "./dist/forge/cli.js",
+    "./transports/mcp": "./dist/transports/mcp.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:search": "vitest run tests/search-quality",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit"
+  }
+}
