@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teams &amp; Ops - Soleri</title>
+    <meta name="description" content="Share knowledge across your team with connected vaults, knowledge packs, and a Telegram bot for infrastructure management." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="soleri-base.css" />
+    <style>
+      /* Aurora — teal + green, collaborative */
+      .page {
+        --glow-color-1: var(--color-secondary-400);
+        --glow-color-2: var(--color-tertiary-400);
+        --glow-color-3: var(--color-primary-300);
+      }
+
+      .team-section {
+        margin-top: 72px;
+      }
+
+      .team-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: start;
+      }
+
+      .team-content h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--foreground-strong);
+        margin-bottom: 8px;
+      }
+
+      .team-content p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+
+      .team-content .key-point {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-teal);
+      }
+
+      .flow-diagram {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 16px;
+      }
+
+      .flow-step {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        font-size: 13px;
+        color: var(--foreground);
+      }
+
+      .flow-step-num {
+        font-weight: 700;
+        font-size: 11px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .flow-step-num.amber { background: rgba(232, 168, 71, 0.15); color: var(--color-primary-400); }
+      .flow-step-num.teal { background: rgba(35, 157, 195, 0.15); color: var(--color-secondary-400); }
+      .flow-step-num.green { background: rgba(145, 201, 110, 0.15); color: var(--color-tertiary-400); }
+
+      .flow-arrow {
+        text-align: center;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .packs-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 16px;
+      }
+
+      .packs-table th {
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .packs-table td {
+        padding: 10px 12px;
+        color: var(--foreground);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .packs-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .packs-table .tier-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: var(--radius-sm);
+      }
+
+      .tier-badge.free {
+        background: rgba(145, 201, 110, 0.1);
+        color: var(--color-tertiary-500);
+      }
+
+      .tier-badge.paid {
+        background: rgba(232, 168, 71, 0.1);
+        color: var(--color-primary-500);
+      }
+
+      .update-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 16px;
+      }
+
+      .update-table th {
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .update-table td {
+        padding: 10px 12px;
+        color: var(--foreground);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .update-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .update-table code {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(35, 157, 195, 0.08);
+        color: var(--foreground-strong);
+      }
+
+      .chat-mockup {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+      }
+
+      .chat-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--foreground-strong);
+      }
+
+      .chat-header-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-400));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 14px;
+      }
+
+      .chat-messages {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .chat-msg {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .chat-msg.user {
+        align-self: flex-end;
+        background: rgba(35, 157, 195, 0.1);
+        color: var(--foreground);
+        border: 1px solid rgba(35, 157, 195, 0.2);
+      }
+
+      .chat-msg.bot {
+        align-self: flex-start;
+        background: var(--surface-elevated);
+        color: var(--foreground);
+        border: 1px solid var(--border);
+      }
+
+      .chat-msg code {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 11px;
+        padding: 1px 4px;
+        border-radius: 3px;
+        background: rgba(35, 157, 195, 0.08);
+        color: var(--foreground-strong);
+      }
+
+      @media (max-width: 820px) {
+        .team-grid {
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body data-theme="light">
+    <div class="page">
+      <div class="glow glow-amber"></div>
+      <div class="glow glow-green"></div>
+      <div class="glow glow-teal"></div>
+      <div class="grid-bg"></div>
+      <div class="grid-rays">
+        <div class="ray ray-h" style="top:66px;  --dur:5s;  --del:0s;"></div>
+        <div class="ray ray-h" style="top:154px; --dur:7s;  --del:4s;"></div>
+        <div class="ray ray-h ray-teal" style="top:198px; --dur:9s;  --del:5s;"></div>
+        <div class="ray ray-h" style="top:286px; --dur:4.5s;--del:9s;"></div>
+        <div class="ray ray-h ray-teal" style="top:330px; --dur:6.5s;--del:10s;"></div>
+        <div class="ray ray-h" style="top:418px; --dur:6s;  --del:2s;"></div>
+        <div class="ray ray-h" style="top:550px; --dur:8s;  --del:13s;"></div>
+        <div class="ray ray-h ray-teal" style="top:660px; --dur:5.5s;--del:1s;"></div>
+        <div class="ray ray-h" style="top:770px; --dur:7s;  --del:8s;"></div>
+        <div class="ray ray-h ray-teal" style="top:880px; --dur:6s;  --del:16s;"></div>
+        <div class="ray ray-h" style="top:990px; --dur:5s;  --del:3s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1100px;--dur:8.5s;--del:6s;"></div>
+        <div class="ray ray-h" style="top:1210px;--dur:6s;  --del:11s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1342px;--dur:7s;  --del:0s;"></div>
+        <div class="ray ray-h" style="top:1474px;--dur:5.5s;--del:14s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1606px;--dur:9s;  --del:4s;"></div>
+        <div class="ray ray-h" style="top:1738px;--dur:6.5s;--del:9s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1870px;--dur:5s;  --del:17s;"></div>
+        <div class="ray ray-h" style="top:2002px;--dur:7.5s;--del:7s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2200px;--dur:6s;  --del:12s;"></div>
+        <div class="ray ray-h" style="top:2420px;--dur:8s;  --del:2s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2640px;--dur:5.5s;--del:15s;"></div>
+        <div class="ray ray-h" style="top:2860px;--dur:7s;  --del:5s;"></div>
+        <div class="ray ray-h ray-teal" style="top:3080px;--dur:6.5s;--del:10s;"></div>
+        <div class="ray ray-h" style="top:3300px;--dur:9s;  --del:3s;"></div>
+        <div class="ray ray-h ray-teal" style="top:3500px;--dur:7s;  --del:8s;"></div>
+        <div class="ray ray-h" style="top:3700px;--dur:6s;  --del:14s;"></div>
+        <div class="ray ray-h ray-teal" style="top:3900px;--dur:8s;  --del:6s;"></div>
+      </div>
+
+      <main class="container">
+        <header class="nav">
+          <div class="brand">
+            <a href="index-solarpunk.html">
+              <div class="brand-top">
+                <p class="brand-name">Soleri</p>
+              </div>
+            </a>
+          </div>
+          <nav class="nav-links" aria-label="Main navigation">
+            <a href="how-it-works.html">How it works</a>
+            <a href="personas.html">Your Agent</a>
+            <a href="teams.html" aria-current="page">Teams</a>
+            <a href="getting-started.html">Get started</a>
+          </nav>
+          <div class="nav-actions">
+            <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+                <svg class="toggle-icon toggle-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg class="toggle-icon toggle-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </span>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE HERO -->
+        <section class="page-hero">
+          <div class="soleri-mark mark-hero"></div>
+          <p class="eyebrow">Teams &amp; Ops</p>
+          <h1>Your team shares knowledge. The system manages the rest.</h1>
+          <p class="hero-subtitle">Connected vaults, knowledge packs, and infrastructure management.</p>
+        </section>
+
+        <!-- TEAM VAULTS -->
+        <section class="team-section" style="margin-top:0;">
+          <div class="section-header">
+            <h2 class="section-title">Connect once, share everything</h2>
+          </div>
+          <div class="team-grid">
+            <div class="team-content">
+              <h3>Three-tier vault model</h3>
+              <p>Your agent keeps domain-organized knowledge in its vault. A shared project vault holds cross-cutting conventions. Connect a team vault to share across projects.</p>
+              <p class="key-point">Search priority: agent vault → project vault → team vault.</p>
+              <div class="flow-diagram">
+                <div class="flow-step">
+                  <span class="flow-step-num amber">1</span>
+                  Agent vault — frontend, backend, cross-cutting domains
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                  <span class="flow-step-num teal">2</span>
+                  Project vault — team conventions, decisions
+                </div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step">
+                  <span class="flow-step-num green">3</span>
+                  Team vault — shared across all projects
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="feature-code"><span class="cmt"># Connect a team vault</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/design-vault.git</span>
+
+<span class="ok">✓</span> Connected team vault      <span class="val">142 entries</span>
+<span class="ok">✓</span> Merged search index
+<span class="ok">✓</span> Priority: agent → project → team</div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Promote a pattern to the team vault</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">promote pattern-semantic-tokens \
+  --target team</span>
+
+<span class="ok">✓</span> Promoted to team vault
+<span class="ok">✓</span> Available to all team members</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CROSS-PROJECT KNOWLEDGE -->
+        <section class="team-section">
+          <div class="section-header">
+            <h2 class="section-title">Patterns compound across projects</h2>
+          </div>
+          <div class="team-grid">
+            <div>
+              <div class="feature-code"><span class="cmt"># Link related projects</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">link /project-a /project-b \
+  --type related</span>
+
+<span class="ok">✓</span> Projects linked (bidirectional)
+<span class="ok">✓</span> Cross-project search enabled</div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># agent.yaml — vault config</span>
+<span class="key">vault:</span>
+  <span class="key">backends:</span>
+    - <span class="key">type:</span> <span class="val">local</span>
+      <span class="key">path:</span> <span class="val">~/.soleri/vaults/my-agent</span>
+    - <span class="key">type:</span> <span class="val">git</span>
+      <span class="key">uri:</span>  <span class="val">git@github.com:team/vault.git</span>
+      <span class="key">sync:</span> <span class="val">on-start</span>
+      <span class="key">push:</span> <span class="val">on-promote</span></div>
+            </div>
+            <div class="team-content">
+              <h3>Link projects, share patterns</h3>
+              <p>Link projects as related, parent/child, or fork. When you search your vault, linked projects are included automatically with weighted relevance.</p>
+              <p class="key-point">Patterns learned in project A are available in project B.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- KNOWLEDGE PACKS -->
+        <section class="team-section">
+          <div class="section-header">
+            <h2 class="section-title">Install expertise in one command</h2>
+          </div>
+          <div class="team-grid">
+            <div class="team-content">
+              <h3>Three tiers of knowledge packs</h3>
+              <p>Packs are npm packages you snap into any agent. They add patterns, anti-patterns, and domain rules to your vault instantly.</p>
+              <table class="packs-table">
+                <thead>
+                  <tr>
+                    <th>Tier</th>
+                    <th>Source</th>
+                    <th>Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="tier-badge free">Starter</span></td>
+                    <td>Ships with each agent</td>
+                    <td>Free</td>
+                  </tr>
+                  <tr>
+                    <td><span class="tier-badge free">Community</span></td>
+                    <td>npm registry</td>
+                    <td>Free</td>
+                  </tr>
+                  <tr>
+                    <td><span class="tier-badge paid">Premium</span></td>
+                    <td>Subscription</td>
+                    <td>Paid</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div class="feature-code"><span class="cmt"># Install a community pack</span>
+<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
+
+<span class="ok">✓</span> Installed react-patterns  <span class="val">v0.3.0</span>
+<span class="ok">✓</span> Added 28 patterns to vault
+<span class="ok">✓</span> Added 6 anti-patterns</div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Sync premium packs</span>
+<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">sync</span>
+
+<span class="ok">✓</span> enterprise/compliance    <span class="val">v2.3.1</span>  <span class="cmt">updated</span>
+<span class="ok">✓</span> enterprise/perf-audit    <span class="val">v1.8.0</span>  <span class="cmt">up to date</span>
+  enterprise/security-pro  <span class="val">v3.0.0</span>  <span class="warn">major update</span></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- PLAYBOOKS -->
+        <section class="team-section">
+          <div class="section-header">
+            <h2 class="section-title">Codify your team's workflows</h2>
+          </div>
+          <div class="team-grid">
+            <div class="team-content">
+              <h3>Patterns tell you what. Playbooks tell you how.</h3>
+              <p>Playbooks are validated multi-step procedures stored in your vault. They capture the full workflow — not just a rule, but the sequence, the expected outcomes, and the validation criteria.</p>
+              <p>Examples: migrating tokens across a codebase, setting up a new component from scratch, debugging a contrast failure. Each step includes what to check and when you're done.</p>
+              <p class="key-point">Repeatable workflows, not tribal knowledge.</p>
+            </div>
+            <div>
+              <div class="feature-code"><span class="cmt"># List available playbooks</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">list-playbooks --category design</span>
+
+<span class="ok">Found 4 playbooks:</span>
+  <span class="val">design:component-setup</span>     <span class="cmt">7 steps</span>
+  <span class="val">design:token-migration</span>     <span class="cmt">5 steps</span>
+  <span class="val">design:contrast-audit</span>      <span class="cmt">4 steps</span>
+  <span class="val">design:theme-scaffolding</span>   <span class="cmt">6 steps</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Playbook structure</span>
+<span class="key">id:</span> <span class="val">design:component-setup</span>
+<span class="key">type:</span> <span class="val">playbook</span>
+<span class="key">steps:</span>
+  - <span class="key">name:</span> <span class="val">Scaffold component files</span>
+    <span class="key">run:</span>  <span class="val">soleri create component $name</span>
+    <span class="key">validate:</span> <span class="val">files exist, exports present</span>
+  - <span class="key">name:</span> <span class="val">Apply token system</span>
+    <span class="key">run:</span>  <span class="val">soleri validate --fix</span>
+    <span class="key">validate:</span> <span class="val">token score >= 95</span>
+  - <span class="key">name:</span> <span class="val">Check accessibility</span>
+    <span class="key">run:</span>  <span class="val">soleri check-contrast</span>
+    <span class="key">validate:</span> <span class="val">all PASS</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Run a playbook</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">run-playbook design:component-setup \
+  --name UserCard</span>
+
+<span class="ok">Step 1/7:</span> Scaffold component files    <span class="ok">✓</span>
+<span class="ok">Step 2/7:</span> Apply token system          <span class="ok">✓</span>
+<span class="ok">Step 3/7:</span> Check accessibility         <span class="ok">✓</span>
+  <span class="cmt">... 4 more steps</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- UPDATES & VERSIONING -->
+        <section class="team-section">
+          <div class="section-header">
+            <h2 class="section-title">Four channels, zero breakage</h2>
+          </div>
+          <div class="team-grid">
+            <div>
+              <table class="update-table">
+                <thead>
+                  <tr>
+                    <th>Layer</th>
+                    <th>Update command</th>
+                    <th>Scope</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Engine</td>
+                    <td><code>npm update soleri</code></td>
+                    <td>All agents</td>
+                  </tr>
+                  <tr>
+                    <td>Domains</td>
+                    <td><code>npm update @soleri/*</code></td>
+                    <td>Per domain</td>
+                  </tr>
+                  <tr>
+                    <td>Agent</td>
+                    <td><code>soleri update</code></td>
+                    <td>Config merge</td>
+                  </tr>
+                  <tr>
+                    <td>Packs</td>
+                    <td><code>soleri packs sync</code></td>
+                    <td>Per pack</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p style="font-size:13px; color:var(--accent-teal); font-weight:600; margin-top:12px;">Vault knowledge is never auto-updated — you own it.</p>
+            </div>
+            <div>
+              <div class="feature-code"><span class="cmt"># Health check</span>
+<span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
+
+<span class="ok">✓</span> Engine          <span class="val">v1.2.0</span>  <span class="cmt">up to date</span>
+<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>  <span class="cmt">up to date</span>
+<span class="ok">✓</span> domain-security <span class="val">v0.6.0</span>  <span class="cmt">up to date</span>
+<span class="warn">!</span> domain-arch     <span class="val">v0.4.0</span>  <span class="warn">update available</span>
+<span class="ok">✓</span> my-agent        <span class="val">config ok</span>
+<span class="ok">✓</span> Vault           <span class="val">284 entries, healthy</span>
+<span class="ok">✓</span> Brain           <span class="val">12 patterns tracked</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TELEGRAM BOT -->
+        <section class="team-section">
+          <div class="section-header">
+            <h2 class="section-title">Manage your infrastructure from a chat</h2>
+          </div>
+          <div class="team-grid">
+            <div class="team-content">
+              <h3>Telegram bot for ops</h3>
+              <p>Monitor vault health, query the knowledge graph, check event logs, and manage infrastructure — all from Telegram. Works with any LLM provider.</p>
+              <p class="key-point">Works with OpenAI, Anthropic, Ollama, or no LLM at all.</p>
+            </div>
+            <div>
+              <div class="chat-mockup">
+                <div class="chat-header">
+                  <span class="chat-header-icon">S</span>
+                  Soleri Bot
+                </div>
+                <div class="chat-messages">
+                  <div class="chat-msg user">how's the vault doing?</div>
+                  <div class="chat-msg bot">Looking good — <code>284</code> entries, synced 2 min ago. Everything's healthy.</div>
+                  <div class="chat-msg user">what patterns are working best this week?</div>
+                  <div class="chat-msg bot">Your top 3 right now:<br>1. semantic-tokens — <code>94</code> strength<br>2. component-structure — <code>87</code><br>3. error-boundaries — <code>82</code><br>Tokens are really clicking for the team.</div>
+                  <div class="chat-msg bot">Hey — you still have 3 ideas from yesterday's brainstorm that haven't been processed. Want to go through them?</div>
+                  <div class="chat-msg user">sure, what's the first one?</div>
+                  <div class="chat-msg bot">Auto-detect stale vault entries older than 90 days. I think this one's solid — could become a roadmap item for the cleanup pipeline. Want me to write it up?</div>
+                </div>
+              </div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Structured event queries (JSONL)</span>
+<span class="prompt">$</span> grep <span class="val">'"tool_call"'</span> events-*.jsonl \
+  | jq <span class="arg">-r .tool</span> | sort | uniq -c | sort -rn
+
+  42 soleri_validate_component_code
+  28 soleri_vault_search
+  15 soleri_check_contrast</div>
+            </div>
+          </div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- CTA -->
+        <section class="cta">
+          <h2>Connect your team.</h2>
+          <p>Open source. Apache 2.0.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="getting-started.html">Get started</a>
+            <a class="btn btn-secondary" href="personas.html">Your Agent</a>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <p>Soleri — Executable standards for agentic systems</p>
+          <nav class="footer-links" aria-label="Footer links">
+            <a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
+            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a>
+          </nav>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var body = document.body;
+        var btn = document.getElementById("theme-toggle");
+        function setTheme(t) {
+          body.setAttribute("data-theme", t);
+          btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+          localStorage.setItem("soleri-theme", t);
+        }
+        var saved = localStorage.getItem("soleri-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setTheme(saved || (prefersDark ? "dark" : "light"));
+        btn.addEventListener("click", function () {
+          var next = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+          if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setTheme(next);
+            return;
+          }
+          var transition = document.startViewTransition(function () { setTheme(next); });
+          transition.ready.then(function () {
+            var rect = btn.getBoundingClientRect();
+            var x = rect.left + rect.width / 2;
+            var y = rect.top + rect.height / 2;
+            var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+            document.documentElement.animate(
+              { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + radius + "px at " + x + "px " + y + "px)"] },
+              { duration: 600, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
+            );
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
