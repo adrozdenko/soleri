@@ -1538,6 +1538,24 @@ body {
 }
 
 /* ============================================
+ * NAMED-AFTER (landing page only)
+ * ============================================ */
+.named-after {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 48px;
+}
+.named-after a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.named-after a:hover {
+  color: var(--accent-teal);
+}
+
+/* ============================================
  * FOOTER
  * ============================================ */
 .footer {
