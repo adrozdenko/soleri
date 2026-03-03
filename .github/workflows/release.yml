@@ -21,16 +21,16 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
-        run: npm run build
+        run: npm run build --workspace=@soleri/forge
 
       - name: Test
-        run: npm test
+        run: npm run test --workspace=@soleri/forge
 
-      - name: Publish to npm
-        run: npm publish --access public
+      - name: Publish @soleri/forge
+        run: npm publish --workspace=@soleri/forge --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
