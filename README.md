@@ -85,7 +85,6 @@ Install expertise in one command:
 |------|--------|------|
 | **Starter** | Ships with agent | Free |
 | **Community** | npm registry | Free |
-| **Premium** | Subscription | Paid |
 
 ```bash
 soleri packs install community/react-patterns
