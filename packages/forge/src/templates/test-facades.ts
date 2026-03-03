@@ -12,7 +12,9 @@ export function generateFacadesTest(config: AgentConfig): string {
     })
     .join('\n');
 
-  const domainDescribes = config.domains.map((d) => generateDomainDescribe(config.id, d)).join('\n\n');
+  const domainDescribes = config.domains
+    .map((d) => generateDomainDescribe(config.id, d))
+    .join('\n\n');
 
   return `import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Vault } from '../vault/vault.js';

@@ -73,24 +73,26 @@ my-agent/
 
 ### Core Capabilities
 
-| Capability | What It Does |
-|---|---|
-| **Knowledge Vault** | SQLite-backed storage with FTS5 full-text search and BM25 ranking |
-| **Intelligence Layer (Brain)** | TF-IDF hybrid scoring across 5 dimensions, auto-tagging, duplicate detection, adaptive weight tuning |
-| **LLM Client** | Unified OpenAI/Anthropic caller with multi-key rotation, per-key circuit breakers, model routing (optional — works without API keys) |
-| **Domain Facades** | Each knowledge domain becomes its own MCP tool with search, capture, and pattern ops |
-| **Memory System** | Persists session summaries, lessons learned, and preferences across sessions |
-| **Planning Engine** | State machine for multi-step tasks: draft, approve, execute, complete |
-| **Activation** | Persona-based activation with `Hello!` / `Goodbye!` — injects CLAUDE.md automatically |
+| Capability                     | What It Does                                                                                                                         |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Knowledge Vault**            | SQLite-backed storage with FTS5 full-text search and BM25 ranking                                                                    |
+| **Intelligence Layer (Brain)** | TF-IDF hybrid scoring across 5 dimensions, auto-tagging, duplicate detection, adaptive weight tuning                                 |
+| **LLM Client**                 | Unified OpenAI/Anthropic caller with multi-key rotation, per-key circuit breakers, model routing (optional — works without API keys) |
+| **Domain Facades**             | Each knowledge domain becomes its own MCP tool with search, capture, and pattern ops                                                 |
+| **Memory System**              | Persists session summaries, lessons learned, and preferences across sessions                                                         |
+| **Planning Engine**            | State machine for multi-step tasks: draft, approve, execute, complete                                                                |
+| **Activation**                 | Persona-based activation with `Hello!` / `Goodbye!` — injects CLAUDE.md automatically                                                |
 
 ### Generated Operations
 
 Each agent exposes two types of MCP tools:
 
 **Domain tools** (`{agent}_{domain}`) — one per knowledge domain:
+
 - `get_patterns` `search` `get_entry` `capture` `remove`
 
 **Core tool** (`{agent}_core`) — shared infrastructure:
+
 - `search` `vault_stats` `list_all` `health` `identity`
 - `activate` `inject_claude_md` `setup` `register`
 - `memory_search` `memory_capture` `memory_list`
@@ -105,13 +107,13 @@ Total: `(domains x 5) + 24` operations per agent.
 
 Soleri Forge exposes one MCP tool (`forge`) with 5 ops:
 
-| Op | Purpose |
-|---|---|
-| `guide` | Step-by-step creation flow for the AI to follow |
-| `preview` | See what files and facades will be created |
-| `create` | Scaffold the complete agent project |
-| `list_agents` | Scan a directory for existing agents |
-| `install_knowledge` | Install knowledge packs into an existing agent |
+| Op                  | Purpose                                         |
+| ------------------- | ----------------------------------------------- |
+| `guide`             | Step-by-step creation flow for the AI to follow |
+| `preview`           | See what files and facades will be created      |
+| `create`            | Scaffold the complete agent project             |
+| `list_agents`       | Scan a directory for existing agents            |
+| `install_knowledge` | Install knowledge packs into an existing agent  |
 
 ## Installing Knowledge Packs
 

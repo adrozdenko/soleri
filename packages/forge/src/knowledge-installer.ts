@@ -205,7 +205,9 @@ export async function installKnowledge(
         bundles.push({ file, bundle: parsed });
       }
     } catch (err) {
-      issues.push(`${basename(file)}: invalid JSON — ${err instanceof Error ? err.message : String(err)}`);
+      issues.push(
+        `${basename(file)}: invalid JSON — ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -272,16 +274,14 @@ export async function installKnowledge(
 
     const indexPath = join(agentPath, 'src', 'index.ts');
     if (existsSync(indexPath)) {
-      const patched = patchIndexTs(
-        readFileSync(indexPath, 'utf-8'),
-        domainsAdded,
-        hasBrain,
-      );
+      const patched = patchIndexTs(readFileSync(indexPath, 'utf-8'), domainsAdded, hasBrain);
       if (patched !== null) {
         writeFileSync(indexPath, patched, 'utf-8');
         sourceFilesPatched.push('src/index.ts');
       } else {
-        warnings.push('Could not patch src/index.ts — anchor patterns not found. Manual patching needed.');
+        warnings.push(
+          'Could not patch src/index.ts — anchor patterns not found. Manual patching needed.',
+        );
       }
     }
 
@@ -298,7 +298,9 @@ export async function installKnowledge(
         writeFileSync(claudeMdPath, patched, 'utf-8');
         sourceFilesPatched.push('src/activation/claude-md-content.ts');
       } else {
-        warnings.push('Could not patch claude-md-content.ts — anchor not found. Manual patching needed.');
+        warnings.push(
+          'Could not patch claude-md-content.ts — anchor not found. Manual patching needed.',
+        );
       }
     }
   }
@@ -329,7 +331,8 @@ export async function installKnowledge(
   ];
   if (domainsAdded.length > 0) summaryParts.push(`New domains: ${domainsAdded.join(', ')}`);
   if (domainsUpdated.length > 0) summaryParts.push(`Updated domains: ${domainsUpdated.join(', ')}`);
-  if (facadesGenerated.length > 0) summaryParts.push(`Generated ${facadesGenerated.length} facade(s)`);
+  if (facadesGenerated.length > 0)
+    summaryParts.push(`Generated ${facadesGenerated.length} facade(s)`);
   if (sourceFilesPatched.length > 0) summaryParts.push(`Patched: ${sourceFilesPatched.join(', ')}`);
   if (warnings.length > 0) summaryParts.push(`${warnings.length} warning(s)`);
 
@@ -401,7 +404,8 @@ function validateBundle(bundle: Bundle, file: string): string[] {
     if (!VALID_TYPES.has(entry.type)) issues.push(`${prefix}: invalid type "${entry.type}"`);
     if (!entry.domain) issues.push(`${prefix}: missing "domain"`);
     if (!entry.title) issues.push(`${prefix}: missing "title"`);
-    if (!VALID_SEVERITIES.has(entry.severity)) issues.push(`${prefix}: invalid severity "${entry.severity}"`);
+    if (!VALID_SEVERITIES.has(entry.severity))
+      issues.push(`${prefix}: invalid severity "${entry.severity}"`);
     if (!entry.description) issues.push(`${prefix}: missing "description"`);
     if (!Array.isArray(entry.tags)) issues.push(`${prefix}: "tags" must be an array`);
   }
@@ -524,10 +528,5 @@ export function patchClaudeMdContent(
     ];
   });
 
-  return (
-    source.slice(0, anchorIdx) +
-    newRows.join('\n') +
-    '\n' +
-    source.slice(anchorIdx)
-  );
+  return source.slice(0, anchorIdx) + newRows.join('\n') + '\n' + source.slice(anchorIdx);
 }

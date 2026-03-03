@@ -2,10 +2,32 @@
   "name": "@soleri/forge",
   "version": "3.0.0",
   "description": "Scaffold AI agents that learn, remember, and grow with you.",
-  "type": "module",
-  "main": "dist/index.js",
+  "keywords": [
+    "agent",
+    "ai",
+    "forge",
+    "generator",
+    "knowledge",
+    "mcp",
+    "scaffold",
+    "soleri",
+    "vault"
+  ],
+  "homepage": "https://soleri.dev",
+  "license": "Apache-2.0",
+  "author": "adrozdenko",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adrozdenko/soleri.git",
+    "directory": "packages/forge"
+  },
   "bin": {
     "soleri-forge": "dist/index.js"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
@@ -16,33 +38,11 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
-  "keywords": [
-    "soleri",
-    "mcp",
-    "agent",
-    "scaffold",
-    "forge",
-    "generator",
-    "ai",
-    "knowledge",
-    "vault"
-  ],
-  "author": "adrozdenko",
-  "license": "Apache-2.0",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^3.24.2"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/adrozdenko/soleri.git",
-    "directory": "packages/forge"
-  },
-  "homepage": "https://soleri.dev",
-  "publishConfig": {
-    "access": "public"
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

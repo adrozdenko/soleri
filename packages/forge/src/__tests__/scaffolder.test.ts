@@ -12,7 +12,8 @@ describe('Scaffolder', () => {
     id: 'atlas',
     name: 'Atlas',
     role: 'Data Engineering Advisor',
-    description: 'Atlas provides guidance on data pipelines, ETL patterns, and data quality practices.',
+    description:
+      'Atlas provides guidance on data pipelines, ETL patterns, and data quality practices.',
     domains: ['data-pipelines', 'data-quality', 'etl'],
     principles: [
       'Data quality is non-negotiable',
@@ -100,7 +101,10 @@ describe('Scaffolder', () => {
 
     it('should create persona with correct config', () => {
       scaffold(testConfig);
-      const persona = readFileSync(join(tempDir, 'atlas', 'src', 'identity', 'persona.ts'), 'utf-8');
+      const persona = readFileSync(
+        join(tempDir, 'atlas', 'src', 'identity', 'persona.ts'),
+        'utf-8',
+      );
 
       expect(persona).toContain("name: 'Atlas'");
       expect(persona).toContain("role: 'Data Engineering Advisor'");
@@ -275,7 +279,10 @@ describe('Scaffolder', () => {
 
     it('should generate facade tests referencing all domains', () => {
       scaffold(testConfig);
-      const facadesTest = readFileSync(join(tempDir, 'atlas', 'src', '__tests__', 'facades.test.ts'), 'utf-8');
+      const facadesTest = readFileSync(
+        join(tempDir, 'atlas', 'src', '__tests__', 'facades.test.ts'),
+        'utf-8',
+      );
 
       expect(facadesTest).toContain('atlas_data_pipelines');
       expect(facadesTest).toContain('atlas_data_quality');
@@ -325,5 +332,4 @@ describe('Scaffolder', () => {
       expect(agents).toEqual([]);
     });
   });
-
 });

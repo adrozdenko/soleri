@@ -1,9 +1,7 @@
 import type { AgentConfig } from '../types.js';
 
 export function generatePersona(config: AgentConfig): string {
-  const principleLines = config.principles
-    .map((p) => `    '${escapeQuotes(p)}',`)
-    .join('\n');
+  const principleLines = config.principles.map((p) => `    '${escapeQuotes(p)}',`).join('\n');
 
   return `export interface AgentPersona {
   name: string;

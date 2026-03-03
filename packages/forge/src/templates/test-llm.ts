@@ -5,7 +5,7 @@ import type { AgentConfig } from '../types.js';
  * Tests: SecretString, CircuitBreaker, retry, rate-limit parsing,
  * KeyPool rotation, ModelRouter resolution, LLMClient availability.
  */
-export function generateLLMTest(config: AgentConfig): string {
+export function generateLLMTest(_config: AgentConfig): string {
   return `import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   SecretString,

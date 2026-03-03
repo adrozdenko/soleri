@@ -25,13 +25,19 @@ async function main(): Promise<void> {
       const opDef = forgeOps.find((o) => o.name === op);
       if (!opDef) {
         return {
-          content: [{
-            type: 'text' as const,
-            text: JSON.stringify({
-              success: false,
-              error: `Unknown operation "${op}". Available: ${opNames.join(', ')}`,
-            }, null, 2),
-          }],
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: `Unknown operation "${op}". Available: ${opNames.join(', ')}`,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
         };
       }
 
@@ -41,10 +47,12 @@ async function main(): Promise<void> {
           const result = opDef.schema.safeParse(params);
           if (!result.success) {
             return {
-              content: [{
-                type: 'text' as const,
-                text: JSON.stringify({ success: false, error: result.error.message }, null, 2),
-              }],
+              content: [
+                {
+                  type: 'text' as const,
+                  text: JSON.stringify({ success: false, error: result.error.message }, null, 2),
+                },
+              ],
             };
           }
           validatedParams = result.data as Record<string, unknown>;
@@ -52,20 +60,28 @@ async function main(): Promise<void> {
 
         const data = await opDef.handler(validatedParams);
         return {
-          content: [{
-            type: 'text' as const,
-            text: JSON.stringify({ success: true, data }, null, 2),
-          }],
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({ success: true, data }, null, 2),
+            },
+          ],
         };
       } catch (err) {
         return {
-          content: [{
-            type: 'text' as const,
-            text: JSON.stringify({
-              success: false,
-              error: err instanceof Error ? err.message : String(err),
-            }, null, 2),
-          }],
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: err instanceof Error ? err.message : String(err),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
         };
       }
     },

@@ -1,12 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  mkdirSync,
-  rmSync,
-  writeFileSync,
-  readFileSync,
-  existsSync,
-  readdirSync,
-} from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -134,10 +127,7 @@ main();
     });
 
     it('should fail if package name does not end with -mcp', async () => {
-      writeFileSync(
-        join(agentDir, 'package.json'),
-        JSON.stringify({ name: 'not-an-agent' }),
-      );
+      writeFileSync(join(agentDir, 'package.json'), JSON.stringify({ name: 'not-an-agent' }));
 
       const result = await installKnowledge({
         agentPath: agentDir,
@@ -149,10 +139,7 @@ main();
     });
 
     it('should fail if intelligence data directory is missing', async () => {
-      writeFileSync(
-        join(agentDir, 'package.json'),
-        JSON.stringify({ name: 'test-agent-mcp' }),
-      );
+      writeFileSync(join(agentDir, 'package.json'), JSON.stringify({ name: 'test-agent-mcp' }));
 
       const result = await installKnowledge({
         agentPath: agentDir,
@@ -434,7 +421,9 @@ import { Vault } from './vault/vault.js';
       expect(result).not.toBeNull();
 
       const lines = result!.split('\n');
-      const newFacadeIdx = lines.findIndex((l) => l.includes('createApiDesignFacade(vault, brain)'));
+      const newFacadeIdx = lines.findIndex((l) =>
+        l.includes('createApiDesignFacade(vault, brain)'),
+      );
       const coreFacadeIdx = lines.findIndex((l) => l.includes('createCoreFacade(vault'));
 
       expect(newFacadeIdx).toBeLessThan(coreFacadeIdx);
@@ -704,10 +693,7 @@ import { createCoreFacade } from './facades/core.facade.js';
       createMockBundle('new-domain');
 
       // Pre-create the facade file
-      writeFileSync(
-        join(agentDir, 'src', 'facades', 'new-domain.facade.ts'),
-        '// existing facade',
-      );
+      writeFileSync(join(agentDir, 'src', 'facades', 'new-domain.facade.ts'), '// existing facade');
 
       const result = await installKnowledge({
         agentPath: agentDir,
@@ -715,9 +701,7 @@ import { createCoreFacade } from './facades/core.facade.js';
       });
 
       expect(result.facadesGenerated).toEqual([]);
-      expect(result.warnings).toContainEqual(
-        expect.stringContaining('already exists'),
-      );
+      expect(result.warnings).toContainEqual(expect.stringContaining('already exists'));
 
       // Should not overwrite
       const content = readFileSync(

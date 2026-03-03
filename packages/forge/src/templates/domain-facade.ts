@@ -1,5 +1,3 @@
-import type { AgentConfig } from '../types.js';
-
 /**
  * Generate a domain-specific facade for the agent.
  * Each domain gets a facade with search, get_patterns, and list ops.

@@ -8,9 +8,7 @@ export function generateReadme(config: AgentConfig): string {
     .map((d) => `| ${d} | *Ready for knowledge capture* |`)
     .join('\n');
 
-  const principleLines = config.principles
-    .map((p) => `- ${p}`)
-    .join('\n');
+  const principleLines = config.principles.map((p) => `- ${p}`).join('\n');
 
   return `# ${config.name} — ${config.role}
 

@@ -60,31 +60,47 @@ export const forgeOps: OpDef[] = [
     handler: async () => {
       return {
         title: 'Agent Creation Guide',
-        instructions: 'Follow these steps to help the user create a new MCP agent. Ask questions conversationally — do not dump all questions at once.',
+        instructions:
+          'Follow these steps to help the user create a new MCP agent. Ask questions conversationally — do not dump all questions at once.',
         steps: [
           {
             step: 1,
             action: 'Understand the need',
             ask: 'What role should this agent fill? Who will use it? What kind of guidance should it provide?',
-            examples: ['backend architecture advisor', 'QA testing patterns', 'data engineering best practices'],
+            examples: [
+              'backend architecture advisor',
+              'QA testing patterns',
+              'data engineering best practices',
+            ],
           },
           {
             step: 2,
             action: 'Choose name and identity',
             ask: 'What should we name this agent? A good name is memorable and reflects its domain.',
-            tips: ['Single word works best (Gaudi, Atlas, Nova)', 'The name becomes the persona — it will introduce itself with this name'],
+            tips: [
+              'Single word works best (Gaudi, Atlas, Nova)',
+              'The name becomes the persona — it will introduce itself with this name',
+            ],
           },
           {
             step: 3,
             action: 'Select domains',
             ask: 'What knowledge domains should this agent cover? Domain names should be kebab-case (e.g., api-design, database, security).',
-            tips: ['3-6 domains is ideal', 'Each domain becomes a facade (MCP tool) and an intelligence data file', 'User can always add more later'],
+            tips: [
+              '3-6 domains is ideal',
+              'Each domain becomes a facade (MCP tool) and an intelligence data file',
+              'User can always add more later',
+            ],
           },
           {
             step: 4,
             action: 'Define principles',
             ask: 'What are 3-5 core principles this agent should follow? These shape its personality and advice style.',
-            examples: ['Security first — always validate inputs', 'Simplicity over cleverness', 'Test everything that can break'],
+            examples: [
+              'Security first — always validate inputs',
+              'Simplicity over cleverness',
+              'Test everything that can break',
+            ],
           },
           {
             step: 5,
@@ -126,6 +142,9 @@ export const forgeOps: OpDef[] = [
         .default(true)
         .describe('Generate domain facades for new domains (default true)'),
     }),
-    handler: async (params) => installKnowledge(params as { agentPath: string; bundlePath: string; generateFacades?: boolean }),
+    handler: async (params) =>
+      installKnowledge(
+        params as { agentPath: string; bundlePath: string; generateFacades?: boolean },
+      ),
   },
 ];

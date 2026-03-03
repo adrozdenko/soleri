@@ -1,4 +1,11 @@
-import { mkdirSync, writeFileSync, chmodSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  writeFileSync,
+  chmodSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import type { AgentConfig, ScaffoldResult, ScaffoldPreview, AgentInfo } from './types.js';
@@ -44,41 +51,124 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     { path: 'tsconfig.json', description: 'TypeScript config (ES2022, NodeNext, strict)' },
     { path: 'vitest.config.ts', description: 'Test config (vitest, forks pool, coverage)' },
     { path: '.gitignore', description: 'Git ignore (node_modules, dist, coverage)' },
-    { path: 'scripts/copy-assets.js', description: 'Build script to copy intelligence data to dist' },
-    { path: 'src/index.ts', description: 'Entry point — initializes vault, planner, brain, registers facades, starts stdio' },
-    { path: 'src/planning/planner.ts', description: 'Plan state machine — draft → approved → executing → completed' },
-    { path: 'src/brain/brain.ts', description: 'Intelligence layer — TF-IDF scoring, auto-tagging, duplicate detection, adaptive weights' },
-    { path: 'src/llm/types.ts', description: 'LLM types — SecretString, LLMError, call options/result, circuit breaker, key pool, routing' },
-    { path: 'src/llm/utils.ts', description: 'LLM utilities — CircuitBreaker, retry with backoff+jitter, rate limit header parser' },
-    { path: 'src/llm/key-pool.ts', description: 'Key pool — multi-key rotation with per-key circuit breakers, preemptive quota rotation' },
-    { path: 'src/llm/llm-client.ts', description: 'LLM client — unified OpenAI/Anthropic caller with model routing (optional, needs API keys)' },
+    {
+      path: 'scripts/copy-assets.js',
+      description: 'Build script to copy intelligence data to dist',
+    },
+    {
+      path: 'src/index.ts',
+      description:
+        'Entry point — initializes vault, planner, brain, registers facades, starts stdio',
+    },
+    {
+      path: 'src/planning/planner.ts',
+      description: 'Plan state machine — draft → approved → executing → completed',
+    },
+    {
+      path: 'src/brain/brain.ts',
+      description:
+        'Intelligence layer — TF-IDF scoring, auto-tagging, duplicate detection, adaptive weights',
+    },
+    {
+      path: 'src/llm/types.ts',
+      description:
+        'LLM types — SecretString, LLMError, call options/result, circuit breaker, key pool, routing',
+    },
+    {
+      path: 'src/llm/utils.ts',
+      description:
+        'LLM utilities — CircuitBreaker, retry with backoff+jitter, rate limit header parser',
+    },
+    {
+      path: 'src/llm/key-pool.ts',
+      description:
+        'Key pool — multi-key rotation with per-key circuit breakers, preemptive quota rotation',
+    },
+    {
+      path: 'src/llm/llm-client.ts',
+      description:
+        'LLM client — unified OpenAI/Anthropic caller with model routing (optional, needs API keys)',
+    },
     { path: 'src/facades/types.ts', description: 'Facade type system (OpHandler, FacadeConfig)' },
-    { path: 'src/facades/facade-factory.ts', description: 'Registers facades as MCP tools with op dispatch' },
-    { path: 'src/facades/core.facade.ts', description: 'Core facade — search, vault stats, health, identity' },
+    {
+      path: 'src/facades/facade-factory.ts',
+      description: 'Registers facades as MCP tools with op dispatch',
+    },
+    {
+      path: 'src/facades/core.facade.ts',
+      description: 'Core facade — search, vault stats, health, identity',
+    },
     ...config.domains.map((d) => ({
       path: `src/facades/${d}.facade.ts`,
       description: `${d} facade — search, get_patterns, capture, remove`,
     })),
-    { path: 'src/vault/vault.ts', description: 'SQLite vault with FTS5 full-text search (BM25 ranking)' },
-    { path: 'src/intelligence/types.ts', description: 'IntelligenceEntry and IntelligenceBundle types' },
-    { path: 'src/intelligence/loader.ts', description: 'Loads and validates JSON intelligence data files' },
+    {
+      path: 'src/vault/vault.ts',
+      description: 'SQLite vault with FTS5 full-text search (BM25 ranking)',
+    },
+    {
+      path: 'src/intelligence/types.ts',
+      description: 'IntelligenceEntry and IntelligenceBundle types',
+    },
+    {
+      path: 'src/intelligence/loader.ts',
+      description: 'Loads and validates JSON intelligence data files',
+    },
     ...config.domains.map((d) => ({
       path: `src/intelligence/data/${d}.json`,
       description: `Empty ${d} intelligence bundle — ready for knowledge capture`,
     })),
-    { path: 'src/identity/persona.ts', description: `${config.name} persona — name, role, principles, greeting` },
-    { path: 'src/activation/claude-md-content.ts', description: `${config.name} CLAUDE.md content with activation triggers and facades table` },
-    { path: 'src/activation/inject-claude-md.ts', description: 'Idempotent CLAUDE.md injection — project-level or global (~/.claude/CLAUDE.md)' },
-    { path: 'src/activation/activate.ts', description: `${config.name} activation system — persona adoption, setup status, tool recommendations` },
-    { path: 'src/__tests__/vault.test.ts', description: 'Vault tests — CRUD, FTS5 search, stats, project registration (32 tests)' },
-    { path: 'src/__tests__/loader.test.ts', description: 'Intelligence loader tests — valid/invalid JSON, edge cases (9 tests)' },
-    { path: 'src/__tests__/facades.test.ts', description: `Facade integration tests — all ${config.domains.length + 1} facades` },
-    { path: 'src/__tests__/planner.test.ts', description: 'Planner tests — state machine, task lifecycle, persistence (~20 tests)' },
-    { path: 'src/__tests__/brain.test.ts', description: 'Brain tests — TF-IDF scoring, auto-tagging, duplicate detection, adaptive weights (~38 tests)' },
-    { path: 'src/__tests__/llm.test.ts', description: 'LLM tests — SecretString, CircuitBreaker, retry, rate limits, KeyPool, ModelRouter (~30 tests)' },
+    {
+      path: 'src/identity/persona.ts',
+      description: `${config.name} persona — name, role, principles, greeting`,
+    },
+    {
+      path: 'src/activation/claude-md-content.ts',
+      description: `${config.name} CLAUDE.md content with activation triggers and facades table`,
+    },
+    {
+      path: 'src/activation/inject-claude-md.ts',
+      description: 'Idempotent CLAUDE.md injection — project-level or global (~/.claude/CLAUDE.md)',
+    },
+    {
+      path: 'src/activation/activate.ts',
+      description: `${config.name} activation system — persona adoption, setup status, tool recommendations`,
+    },
+    {
+      path: 'src/__tests__/vault.test.ts',
+      description: 'Vault tests — CRUD, FTS5 search, stats, project registration (32 tests)',
+    },
+    {
+      path: 'src/__tests__/loader.test.ts',
+      description: 'Intelligence loader tests — valid/invalid JSON, edge cases (9 tests)',
+    },
+    {
+      path: 'src/__tests__/facades.test.ts',
+      description: `Facade integration tests — all ${config.domains.length + 1} facades`,
+    },
+    {
+      path: 'src/__tests__/planner.test.ts',
+      description: 'Planner tests — state machine, task lifecycle, persistence (~20 tests)',
+    },
+    {
+      path: 'src/__tests__/brain.test.ts',
+      description:
+        'Brain tests — TF-IDF scoring, auto-tagging, duplicate detection, adaptive weights (~38 tests)',
+    },
+    {
+      path: 'src/__tests__/llm.test.ts',
+      description:
+        'LLM tests — SecretString, CircuitBreaker, retry, rate limits, KeyPool, ModelRouter (~30 tests)',
+    },
     { path: '.mcp.json', description: 'MCP client config for connecting to this agent' },
-    { path: 'README.md', description: `${config.name} documentation — quick start, domains, principles, commands` },
-    { path: 'scripts/setup.sh', description: 'Automated setup — Node.js check, build, Claude Code MCP registration' },
+    {
+      path: 'README.md',
+      description: `${config.name} documentation — quick start, domains, principles, commands`,
+    },
+    {
+      path: 'scripts/setup.sh',
+      description: 'Automated setup — Node.js check, build, Claude Code MCP registration',
+    },
   ];
 
   const facades = [
@@ -89,10 +179,29 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     {
       name: `${config.id}_core`,
       ops: [
-        'search', 'vault_stats', 'list_all', 'health', 'identity', 'activate', 'inject_claude_md', 'setup', 'register',
-        'memory_search', 'memory_capture', 'memory_list', 'session_capture', 'export',
-        'create_plan', 'get_plan', 'approve_plan', 'update_task', 'complete_plan',
-        'record_feedback', 'rebuild_vocabulary', 'brain_stats', 'llm_status',
+        'search',
+        'vault_stats',
+        'list_all',
+        'health',
+        'identity',
+        'activate',
+        'inject_claude_md',
+        'setup',
+        'register',
+        'memory_search',
+        'memory_capture',
+        'memory_list',
+        'session_capture',
+        'export',
+        'create_plan',
+        'get_plan',
+        'approve_plan',
+        'update_task',
+        'complete_plan',
+        'record_feedback',
+        'rebuild_vocabulary',
+        'brain_stats',
+        'llm_status',
       ],
     },
   ];
@@ -150,7 +259,14 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     ['tsconfig.json', generateTsconfig()],
     ['vitest.config.ts', generateVitestConfig()],
     ['.gitignore', 'node_modules/\ndist/\ncoverage/\n*.tsbuildinfo\n.env\n.DS_Store\n*.log\n'],
-    ['.mcp.json', JSON.stringify({ mcpServers: { [config.id]: { command: 'node', args: ['dist/index.js'], cwd: '.' } } }, null, 2)],
+    [
+      '.mcp.json',
+      JSON.stringify(
+        { mcpServers: { [config.id]: { command: 'node', args: ['dist/index.js'], cwd: '.' } } },
+        null,
+        2,
+      ),
+    ],
     ['scripts/copy-assets.js', generateCopyAssetsScript()],
     ['README.md', generateReadme(config)],
     ['scripts/setup.sh', generateSetupScript(config)],
@@ -193,14 +309,8 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
 
   // Domain facades and empty data files
   for (const domain of config.domains) {
-    sourceFiles.push([
-      `src/facades/${domain}.facade.ts`,
-      generateDomainFacade(config.id, domain),
-    ]);
-    sourceFiles.push([
-      `src/intelligence/data/${domain}.json`,
-      generateEmptyBundle(domain),
-    ]);
+    sourceFiles.push([`src/facades/${domain}.facade.ts`, generateDomainFacade(config.id, domain)]);
+    sourceFiles.push([`src/intelligence/data/${domain}.json`, generateEmptyBundle(domain)]);
   }
 
   for (const [path, content] of sourceFiles) {
@@ -269,9 +379,7 @@ export function listAgents(parentDir: string): AgentInfo[] {
     if (!existsSync(pkgPath)) continue;
 
     try {
-      const pkg = JSON.parse(
-        readFileSync(pkgPath, 'utf-8'),
-      );
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
       if (!pkg.name?.endsWith('-mcp')) continue;
 
       const dataDir = join(dir, 'src', 'intelligence', 'data');
@@ -280,7 +388,9 @@ export function listAgents(parentDir: string): AgentInfo[] {
         domains = readdirSync(dataDir)
           .filter((f) => f.endsWith('.json'))
           .map((f) => f.replace('.json', ''));
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
 
       agents.push({
         id: name,
@@ -291,7 +401,9 @@ export function listAgents(parentDir: string): AgentInfo[] {
         hasNodeModules: existsSync(join(dir, 'node_modules')),
         hasDistDir: existsSync(join(dir, 'dist')),
       });
-    } catch { /* skip non-agent directories */ }
+    } catch {
+      /* skip non-agent directories */
+    }
   }
 
   return agents;
@@ -301,7 +413,10 @@ export function listAgents(parentDir: string): AgentInfo[] {
  * Register the agent as an MCP server in ~/.claude.json (User MCPs).
  * Idempotent — updates existing entry if present.
  */
-function registerMcpServer(agentId: string, agentDir: string): { registered: boolean; path: string; error?: string } {
+function registerMcpServer(
+  agentId: string,
+  agentDir: string,
+): { registered: boolean; path: string; error?: string } {
   const claudeJsonPath = join(homedir(), '.claude.json');
 
   try {
@@ -351,17 +466,17 @@ function generateCopyAssetsScript(): string {
     "import { cpSync, existsSync, mkdirSync } from 'node:fs';",
     "import { join, dirname } from 'node:path';",
     "import { fileURLToPath } from 'node:url';",
-    "",
-    "const __dirname = dirname(fileURLToPath(import.meta.url));",
+    '',
+    'const __dirname = dirname(fileURLToPath(import.meta.url));',
     "const root = join(__dirname, '..');",
     "const dist = join(root, 'dist');",
     "const dataSource = join(root, 'src', 'intelligence', 'data');",
     "const dataDest = join(dist, 'intelligence', 'data');",
-    "",
-    "if (existsSync(dataSource)) {",
-    "  mkdirSync(dataDest, { recursive: true });",
-    "  cpSync(dataSource, dataDest, { recursive: true });",
+    '',
+    'if (existsSync(dataSource)) {',
+    '  mkdirSync(dataDest, { recursive: true });',
+    '  cpSync(dataSource, dataDest, { recursive: true });',
     "  console.log('Copied intelligence data to dist/');",
-    "}",
+    '}',
   ].join('\n');
 }
