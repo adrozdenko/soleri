@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "forge": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "cwd": "."
-    }
-  }
-}
