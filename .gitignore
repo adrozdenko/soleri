@@ -7,4 +7,6 @@ dist/
 *.log
 coverage/
 .wrangler/
+.salvador/
 docs/vault/sessions/
+docs/vault/.rejected/
