@@ -73,6 +73,8 @@
         font-weight: 500;
         border: 1px solid rgba(55, 66, 83, 0.6);
         margin-bottom: 12px;
+        max-width: 100%;
+        overflow-x: auto;
       }
 
       .install-cmd .prompt {
@@ -126,8 +128,15 @@
 
       @media (max-width: 700px) {
         .step {
-          grid-template-columns: 1fr;
-          gap: 12px;
+          grid-template-columns: 32px 1fr;
+          gap: 10px;
+        }
+
+        .step-number {
+          width: 28px;
+          height: 28px;
+          font-size: 13px;
+          border-radius: 6px;
         }
 
         .next-links {

@@ -349,7 +349,7 @@
           </div>
           <div class="arch-layer">
             <p class="arch-layer-name"><span class="arch-bar"></span> Domini</p>
-            <p class="arch-layer-desc">Domini di conoscenza integrabili. Il motore carica i domini pertinenti in base alla struttura di archiviazione del tuo agente.</p>
+            <p class="arch-layer-desc">Domini di conoscenza integrabili. Il motore carica i domini pertinenti in base alla struttura del Vault del tuo agente.</p>
           </div>
           <div class="arch-layer">
             <p class="arch-layer-name"><span class="arch-bar"></span> Motore</p>
@@ -368,11 +368,11 @@
           <div class="deep-grid">
             <div class="deep-content">
               <h3>Conoscenza che si accumula</h3>
-              <p>Senza un vault, ogni sessione riparte da zero. Ogni pattern, antipattern e decisione che prendi va in un archivio ricercabile. Fai una domanda — ottieni la risposta del tuo team, non una generica.</p>
+              <p>Senza un vault, ogni sessione riparte da zero. Ogni pattern, antipattern e decisione che prendi va nel Vault, un archivio ricercabile. Fai una domanda — ottieni la risposta del tuo team, non una generica.</p>
               <p class="key-point">Pattern, antipattern e memorie delle sessioni — tutti ricercabili.</p>
             </div>
             <div>
-              <div class="feature-code"><span class="cmt"># Struttura dell'entrata dell'archivio</span>
+              <div class="feature-code"><span class="cmt"># Struttura di una voce del Vault</span>
 <span class="key">id:</span> <span class="val">pattern-semantic-tokens</span>
 <span class="key">type:</span> <span class="val">pattern</span>
 <span class="key">content:</span> <span class="val">Usa sempre token semantici</span>
@@ -381,7 +381,7 @@
   <span class="key">confidence:</span> <span class="val">0.94</span>
   <span class="key">sessions:</span> <span class="val">12</span>
 <span class="key">tags:</span> <span class="val">[tokens, css, tailwind]</span></div>
-              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Cerca nel tuo archivio</span>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Cerca nel tuo Vault</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault search</span> <span class="arg">"stile del pulsante"</span>
 
 <span class="ok">Trovati 3 corrispondenze:</span>
@@ -434,7 +434,7 @@
               </div>
             </div>
             <div class="deep-content">
-              <h3>Diventa più acuto ad ogni sessione</h3>
+              <h3>Diventa più preciso a ogni sessione</h3>
               <p>La curazione manuale della conoscenza non scala. Il cervello traccia quali pattern applichi, con quale frequenza e con quanta efficacia. La fiducia cresce automaticamente — nessun tag manuale necessario.</p>
               <p class="key-point">Cattura automatica, nessun tag manuale.</p>
             </div>
@@ -445,7 +445,7 @@
         <section class="deep-section">
           <div class="deep-grid">
             <div class="deep-content">
-              <h3>Conoscenza che cresce — e rimane affilata</h3>
+              <h3>Conoscenza che cresce — e rimane precisa</h3>
               <p>I pattern fluiscono attraverso un ciclo di vita in quattro fasi. Il motore osserva il tuo lavoro, cattura ciò che rimane e lo accumula nel tempo.</p>
               <div class="lifecycle-flow">
                 <div class="lifecycle-step">
@@ -457,7 +457,7 @@
                 <div class="lifecycle-step">
                   <span class="lifecycle-step-num teal">2</span>
                   <div class="lifecycle-step-text"><strong>Conserva</strong>
-                    <span class="lifecycle-step-desc">Pattern, antipattern e memorie delle sessioni entrano nell'archivio</span></div>
+                    <span class="lifecycle-step-desc">Pattern, antipattern e memorie delle sessioni entrano nel Vault</span></div>
                 </div>
                 <div class="lifecycle-arrow">↓</div>
                 <div class="lifecycle-step">
@@ -472,7 +472,7 @@
                     <span class="lifecycle-step-desc">I pattern ad alta fiducia emergono per primi, quelli deboli sono segnalati</span></div>
                 </div>
               </div>
-              <p class="key-point">Il tuo archivio non decade — si affina. Il cervello traccia ciò che funziona.</p>
+              <p class="key-point">Il tuo Vault non decade — si perfeziona. Il cervello traccia ciò che funziona.</p>
             </div>
             <div>
               <div class="feature-code"><span class="cmt"># Sessione 3 — il motore nota un pattern</span>
@@ -483,7 +483,7 @@
 
 <span class="ok">✓</span> Catturato: <span class="val">enforcement dei token semantici</span>
 <span class="ok">✓</span> Fiducia: <span class="val">0.85</span> <span class="cmt">(aumenterà con l'uso)</span></div>
-              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Entrata dell'archivio con metadati del ciclo di vita</span>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Voce del Vault con metadati del ciclo di vita</span>
 <span class="key">id:</span> <span class="val">pattern-enforcement-dei-token-semantici</span>
 <span class="key">type:</span> <span class="val">pattern</span>
 <span class="key">content:</span> <span class="val">Sostituisci i colori raw di Tailwind con i token semantici</span>
@@ -501,7 +501,7 @@
         <section class="deep-section">
           <div class="deep-grid">
             <div class="deep-content">
-              <h3>Non bloccato a nessun editor</h3>
+              <h3>Non sei vincolato a nessun editor</h3>
               <p>La tua conoscenza non dovrebbe essere intrappolata in un solo strumento. Il motore centrale non ha dipendenze di protocollo. Gli adattatori di trasporto sono file separati — cambiali o aggiungili senza toccare il motore.</p>
               <p class="key-point">Il nucleo ha zero dipendenze di protocollo.</p>
             </div>
@@ -537,7 +537,7 @@
             </div>
             <div class="deep-content">
               <h3>Funziona senza chiavi API</h3>
-              <p>L'infrastruttura della conoscenza non dovrebbe richiedere un abbonamento. La ricerca nell'archivio, la corrispondenza dei pattern e il tracciamento del cervello funzionano localmente. Il provider LLM è opzionale — aggiungine uno quando desideri suggerimenti AI.</p>
+              <p>L'infrastruttura della conoscenza non dovrebbe richiedere un abbonamento. La ricerca nel Vault, il matching dei pattern e il tracciamento del cervello funzionano localmente. Il provider LLM è opzionale — aggiungine uno quando desideri suggerimenti AI.</p>
               <p class="key-point">Funzionalità di base garantita senza chiavi.</p>
             </div>
           </div>

@@ -73,6 +73,8 @@
         font-weight: 500;
         border: 1px solid rgba(55, 66, 83, 0.6);
         margin-bottom: 12px;
+        max-width: 100%;
+        overflow-x: auto;
       }
 
       .install-cmd .prompt {
@@ -126,8 +128,15 @@
 
       @media (max-width: 700px) {
         .step {
-          grid-template-columns: 1fr;
-          gap: 12px;
+          grid-template-columns: 32px 1fr;
+          gap: 10px;
+        }
+
+        .step-number {
+          width: 28px;
+          height: 28px;
+          font-size: 13px;
+          border-radius: 6px;
         }
 
         .next-links {
@@ -174,7 +183,7 @@
               </div>
             </a></div>
           <nav class="nav-links" aria-label="Main navigation"><a href="how-it-works.html">Come funziona</a>
-            <a href="personas.html">Il Tuo Agente</a>
+            <a href="personas.html">Il tuo agente</a>
             <a href="teams.html">Team</a>
             <a href="getting-started.html" aria-current="page">Inizia</a></nav>
           <div class="nav-actions"><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><div class="lang-switcher"><a href="/en/getting-started.html">EN</a><a href="/uk/getting-started.html">UK</a><a href="/it/getting-started.html" class="active">IT</a></div>
@@ -215,14 +224,14 @@
             <div class="step-number">2</div>
             <div class="step-content">
               <h3>Crea il tuo agente</h3>
-              <p>Dagli un nome e connetti una cassaforte. Soleri configura i domini, installa conoscenze iniziali e scansiona il tuo progetto.</p>
+              <p>Dagli un nome e collega un Vault. Soleri configura i domini, installa conoscenze iniziali e scansiona il tuo progetto.</p>
               <div class="feature-code"><span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
 <span class="ok">✓</span> Configurazione agente creata       <span class="cmt">~/.soleri/agents/my-agent/</span>
-<span class="ok">✓</span> Cassaforte connessa            <span class="val">conoscenze iniziali: 34 schemi</span>
+<span class="ok">✓</span> Vault collegato                 <span class="val">conoscenze iniziali: 34 pattern</span>
 <span class="ok">✓</span> Progetto scansionato            <span class="val">React + TypeScript rilevato</span>
-<span class="ok">✓</span> Acquisizione automatica              <span class="val">12 schemi di base di codice</span>
-<span class="ok">✓</span> Cassaforte pronta                <span class="val">46 voci, vettorizzate</span>
+<span class="ok">✓</span> Acquisizione automatica              <span class="val">12 pattern dal codice</span>
+<span class="ok">✓</span> Vault pronto                    <span class="val">46 voci, vettorializzate</span>
 
 <span class="cmt">Agente "my-agent" è pronto.</span></div>
             </div>
@@ -233,19 +242,19 @@
             <div class="step-number">3</div>
             <div class="step-content">
               <h3>Alimenta con conoscenze</h3>
-              <p>Aggiungi conoscenze alla cassaforte del tuo agente. Installa pacchetti della comunità, connetti una cassaforte del team o lascia che il cervello catturi schemi dal tuo lavoro.</p>
+              <p>Aggiungi conoscenza al Vault del tuo agente. Installa pacchetti della comunità, collega un Vault di team o lascia che il cervello catturi pattern dal tuo lavoro.</p>
               <div class="feature-code"><span class="cmt"># Aggiungi un pacchetto di conoscenze della comunità</span>
 <span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
 
 <span class="ok">✓</span> react-patterns installato    <span class="val">v0.3.0</span>
-<span class="ok">✓</span> 28 schemi aggiunti alla cassaforte
-<span class="ok">✓</span> Vettorizzato e collegato al grafico
+<span class="ok">✓</span> 28 pattern aggiunti al Vault
+<span class="ok">✓</span> Vettorializzato e collegato al grafo
 
-<span class="cmt"># Il cervello cattura schemi dal tuo lavoro</span>
+<span class="cmt"># Il cervello cattura pattern dal tuo lavoro</span>
 <span class="warn">!</span> Hai sostituito <span class="val">bg-blue-500</span> con <span class="ok">bg-primary</span> 3 volte.
-  Catturare come schema? <span class="key">[y/n]</span>
+  Catturare come pattern? <span class="key">[y/n]</span>
 
-<span class="ok">✓</span> Catturato: <span class="val">enforcement-token-semantico</span></div>
+<span class="ok">✓</span> Catturato: <span class="val">semantic-token-enforcement</span></div>
             </div>
           </div>
 
@@ -254,17 +263,17 @@
             <div class="step-number">4</div>
             <div class="step-content">
               <h3>Estendi</h3>
-              <p>Connetti la cassaforte condivisa del tuo team o aggiungi più pacchetti di conoscenze. Le conoscenze si accumulano.</p>
-              <div class="feature-code"><span class="cmt"># Connetti la cassaforte condivisa del tuo team</span>
+              <p>Collega il Vault condiviso del tuo team o aggiungi altri pacchetti di conoscenza. La conoscenza si accumula.</p>
+              <div class="feature-code"><span class="cmt"># Collega il Vault condiviso del tuo team</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>
 
-<span class="ok">✓</span> Cassaforte del team connessa      <span class="val">142 voci</span>
+<span class="ok">✓</span> Vault di team collegato         <span class="val">142 voci</span>
 <span class="ok">✓</span> Priorità di ricerca: agente → progetto → team
 
-<span class="cmt"># Controlla lo stato della cassaforte</span>
+<span class="cmt"># Controlla lo stato del Vault</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">status</span>
 
-<span class="ok">Voci:</span>     <span class="val">216</span>     <span class="cmt">vettorizzate, collegate al grafico</span>
+<span class="ok">Voci:</span>     <span class="val">216</span>     <span class="cmt">vettorializzate, collegate al grafo</span>
 <span class="ok">Domini:</span>     <span class="val">3</span>       <span class="cmt">frontend, backend, trasversali</span>
 <span class="ok">Grafico:</span>       <span class="val">412 archi</span></div>
             </div>
@@ -282,9 +291,9 @@
 <span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>   <span class="cmt">aggiornato</span>
 <span class="ok">✓</span> domain-review   <span class="val">v0.5.0</span>   <span class="cmt">aggiornato</span>
 <span class="ok">✓</span> my-agent        <span class="val">configurazione ok</span>
-<span class="ok">✓</span> Cassaforte           <span class="val">216 voci, sana</span>
+<span class="ok">✓</span> Vault               <span class="val">216 voci, sano</span>
 <span class="ok">✓</span> Cervello           <span class="val">tracciamento abilitato</span>
-<span class="ok">✓</span> Cassaforte del team      <span class="val">connessa, sincronizzata</span></div>
+<span class="ok">✓</span> Vault di team       <span class="val">collegato, sincronizzato</span></div>
             </div>
           </div>
         </div>
@@ -298,15 +307,15 @@
           </div>
           <div class="next-links"><a class="next-link" href="how-it-works.html">
               <span class="next-link-title">Come funziona</span>
-              <span class="next-link-desc">Cassaforte, cervello e architettura di trasporto spiegati.</span>
+              <span class="next-link-desc">Vault, cervello e architettura di trasporto.</span>
             </a>
             <a class="next-link" href="personas.html">
-              <span class="next-link-title">Il Tuo Agente</span>
+              <span class="next-link-title">Il tuo agente</span>
               <span class="next-link-desc">Crea, configura e sviluppa le conoscenze del tuo agente.</span>
             </a>
             <a class="next-link" href="teams.html">
               <span class="next-link-title">Team e Ops</span>
-              <span class="next-link-desc">Cassaforti condivise, pacchetti di conoscenze e bot Telegram.</span>
+              <span class="next-link-desc">Vault condivisi, pacchetti di conoscenza e bot Telegram.</span>
             </a></div>
         </section>
 
@@ -319,7 +328,7 @@
           <div class="hero-actions">
             <a class="btn btn-primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">
               <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-              Explore on GitHub
+              Esplora su GitHub
             </a>
             <a class="btn btn-secondary" href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">Visualizza su npm</a>
           </div>

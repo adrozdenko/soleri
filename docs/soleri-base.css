@@ -379,6 +379,7 @@ body {
   max-width: 1120px;
   margin: 0 auto;
   padding: 24px 24px 100px;
+  overflow-x: hidden;
 }
 
 /* ============================================
@@ -481,23 +482,34 @@ body {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   cursor: pointer;
   color: var(--muted);
   padding: 0;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 200;
+  box-shadow: var(--shadow-md);
 }
 
 .menu-toggle:hover {
   color: var(--foreground-strong);
+  border-color: var(--foreground);
 }
 
 .menu-toggle svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: block;
 }
 
 .chip {
@@ -915,6 +927,9 @@ body {
   -webkit-backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .terminal-header {
@@ -1227,6 +1242,7 @@ body {
 .feature-item {
   padding: 20px 0;
   border-bottom: 1px solid var(--border-subtle);
+  min-width: 0;
 }
 
 .feature-item:first-child {
@@ -1434,6 +1450,7 @@ body {
   border: 1px solid var(--code-border);
   overflow-x: auto;
   white-space: pre;
+  max-width: 100%;
 }
 
 .feature-code .key {
@@ -1562,6 +1579,24 @@ body {
 }
 
 /* ============================================
+ * OVERFLOW SAFETY — prevent pre/code from pushing pages wider
+ * ============================================ */
+/* Grid/flex children must shrink below content width */
+.section,
+.card,
+.feature-item,
+.container > *,
+[class*="grid"] > *,
+[class*="content"] {
+  min-width: 0;
+}
+
+/* Grid children need overflow constraint to prevent pre-formatted code from pushing layout wider */
+[class*="grid"] > * {
+  overflow: hidden;
+}
+
+/* ============================================
  * RESPONSIVE
  * ============================================ */
 @media (max-width: 980px) {
@@ -1587,9 +1622,9 @@ body {
 
   .nav-links {
     display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
+    position: fixed;
+    bottom: 82px;
+    right: 24px;
     flex-direction: column;
     background: var(--surface-glass);
     backdrop-filter: blur(20px);
@@ -1599,7 +1634,7 @@ body {
     padding: 8px;
     min-width: 180px;
     box-shadow: var(--shadow-md);
-    z-index: 100;
+    z-index: 200;
   }
 
   .nav-links.open {
@@ -1609,10 +1644,6 @@ body {
   .nav-links a {
     padding: 10px 14px;
     font-size: 14px;
-  }
-
-  .nav {
-    position: relative;
   }
 
   .menu-toggle {
@@ -1683,6 +1714,18 @@ body {
 
   .how-grid {
     gap: 24px;
+  }
+
+  /* Allow code blocks to wrap on mobile instead of overflowing */
+  .feature-code {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Tables scroll horizontally when they overflow */
+  table {
+    display: block;
+    overflow-x: auto;
   }
 
   /* Constrain aurora glows on mobile to prevent horizontal overflow */

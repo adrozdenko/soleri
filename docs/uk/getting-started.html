@@ -73,6 +73,8 @@
         font-weight: 500;
         border: 1px solid rgba(55, 66, 83, 0.6);
         margin-bottom: 12px;
+        max-width: 100%;
+        overflow-x: auto;
       }
 
       .install-cmd .prompt {
@@ -126,8 +128,15 @@
 
       @media (max-width: 700px) {
         .step {
-          grid-template-columns: 1fr;
-          gap: 12px;
+          grid-template-columns: 32px 1fr;
+          gap: 10px;
+        }
+
+        .step-number {
+          width: 28px;
+          height: 28px;
+          font-size: 13px;
+          border-radius: 6px;
         }
 
         .next-links {
@@ -202,7 +211,7 @@
           <div class="step">
             <div class="step-number">1</div>
             <div class="step-content">
-              <h3>Встановити</h3>
+              <h3>Встановіть</h3>
               <p>Один глобальний пакет npm. І все.</p>
               <div class="install-cmd"><span class="prompt">$</span>
                 <span class="cmd">npm install</span>
@@ -215,12 +224,12 @@
             <div class="step-number">2</div>
             <div class="step-content">
               <h3>Створіть вашого агента</h3>
-              <p>Вкажіть назву та підключіть сховище. Soleri налаштує домени, встановить початкові знання та просканує проект.</p>
+              <p>Вкажіть назву та підключіть сховище. Soleri налаштує домени, встановить початкові знання та просканує проєкт.</p>
               <div class="feature-code"><span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
 <span class="ok">✓</span> Створено конфігурацію агента       <span class="cmt">~/.soleri/agents/my-agent/</span>
 <span class="ok">✓</span> Підключене сховище            <span class="val">початкові знання: 34 патерни</span>
-<span class="ok">✓</span> Сканування проекту            <span class="val">React + TypeScript виявлено</span>
+<span class="ok">✓</span> Сканування проєкту            <span class="val">React + TypeScript виявлено</span>
 <span class="ok">✓</span> Автоматично захоплено        <span class="val">12 патернів з кодової бази</span>
 <span class="ok">✓</span> Сховище готове                <span class="val">46 записів, векторизовано</span>
 
@@ -253,19 +262,19 @@
           <div class="step">
             <div class="step-number">4</div>
             <div class="step-content">
-              <h3>Розширення</h3>
+              <h3>Розширте</h3>
               <p>Підключіть спільне сховище вашої команди або додайте більше пакетів знань. Знання накопичуються.</p>
               <div class="feature-code"><span class="cmt"># Підключіть спільне сховище вашої команди</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>
 
 <span class="ok">✓</span> Підключено сховище команди      <span class="val">142 записів</span>
-<span class="ok">✓</span> Пріоритет пошуку: агент → проект → команда
+<span class="ok">✓</span> Пріоритет пошуку: агент → проєкт → команда
 
 <span class="cmt"># Перевірте стан сховища</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">status</span>
 
 <span class="ok">Записи:</span>     <span class="val">216</span>     <span class="cmt">векторизовано, зв'язано графами</span>
-<span class="ok">Домени:</span>     <span class="val">3</span>       <span class="cmt">фронтенд, бекенд, кросс-перетин</span>
+<span class="ok">Домени:</span>     <span class="val">3</span>       <span class="cmt">фронтенд, бекенд, наскрізні</span>
 <span class="ok">Граф:</span>       <span class="val">412 зв'язків</span></div>
             </div>
           </div>
@@ -274,14 +283,14 @@
           <div class="step">
             <div class="step-number">5</div>
             <div class="step-content">
-              <h3>Перевірка здоров'я</h3>
+              <h3>Перевірте стан</h3>
               <p>Запустіть діагностику, щоб перевірити, чи все підключено та оновлено.</p>
               <div class="feature-code"><span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
 
 <span class="ok">✓</span> Движок          <span class="val">v1.2.0</span>   <span class="cmt">оновлено</span>
-<span class="ok">✓</span> проектування домену   <span class="val">v0.8.0</span>   <span class="cmt">оновлено</span>
-<span class="ok">✓</span> огляд домену   <span class="val">v0.5.0</span>   <span class="cmt">оновлено</span>
-<span class="ok">✓</span> мій агент        <span class="val">конфігурація ок</span>
+<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>   <span class="cmt">оновлено</span>
+<span class="ok">✓</span> domain-review   <span class="val">v0.5.0</span>   <span class="cmt">оновлено</span>
+<span class="ok">✓</span> my-agent        <span class="val">конфігурація ок</span>
 <span class="ok">✓</span> Сховище           <span class="val">216 записів, в порядку</span>
 <span class="ok">✓</span> Мозок           <span class="val">відстеження увімкнено</span>
 <span class="ok">✓</span> Сховище команди      <span class="val">підключено, синхронізовано</span></div>
@@ -315,11 +324,11 @@
         <!-- CTA -->
         <section class="cta">
           <h2>Готові створити помічника, що зростає з вами.</h2>
-          <p>Відкрите програмне забезпечення. Apache 2.0.</p>
+          <p>Відкритий код. Apache 2.0.</p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">
               <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-              Explore on GitHub
+              Дивитись на GitHub
             </a>
             <a class="btn btn-secondary" href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">Переглянути на npm</a>
           </div>
