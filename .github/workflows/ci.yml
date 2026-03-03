@@ -16,17 +16,17 @@ jobs:
         run: |
           for lang in en uk it; do
             for page in index.html how-it-works.html getting-started.html personas.html teams.html; do
-              test -f "docs/$lang/$page" || { echo "Missing docs/$lang/$page"; exit 1; }
+              test -f "website/$lang/$page" || { echo "Missing website/$lang/$page"; exit 1; }
             done
           done
-          test -f docs/index.html || { echo "Missing docs/index.html"; exit 1; }
-          test -f docs/soleri-base.css || { echo "Missing docs/soleri-base.css"; exit 1; }
+          test -f website/index.html || { echo "Missing website/index.html"; exit 1; }
+          test -f website/soleri-base.css || { echo "Missing website/soleri-base.css"; exit 1; }
           echo "All expected files present."
 
       - name: Check for broken internal links
         run: |
           errors=0
-          for file in docs/en/*.html docs/uk/*.html docs/it/*.html; do
+          for file in website/en/*.html website/uk/*.html website/it/*.html; do
             dir=$(dirname "$file")
             # Extract href values pointing to local .html files
             grep -oP 'href="\K[^"]+\.html' "$file" 2>/dev/null | while read -r link; do
