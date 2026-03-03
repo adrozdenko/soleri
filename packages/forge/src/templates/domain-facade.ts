@@ -6,9 +6,7 @@ export function generateDomainFacade(agentId: string, domain: string): string {
   const facadeName = `${agentId}_${domain.replace(/-/g, '_')}`;
 
   return `import { z } from 'zod';
-import type { FacadeConfig } from './types.js';
-import type { Vault } from '../vault/vault.js';
-import type { Brain } from '../brain/brain.js';
+import type { FacadeConfig, Vault, Brain } from '@soleri/core';
 
 export function create${pascalCase(domain)}Facade(vault: Vault, brain: Brain): FacadeConfig {
   return {

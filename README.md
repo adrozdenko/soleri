@@ -65,17 +65,27 @@ Give it a name, a domain, a voice. It ships with starter knowledge and learns fr
 ├─────────────────────────────────────────────────────────┤
 │  Domains        design · security · architecture · ...  │
 ├─────────────────────────────────────────────────────────┤
-│  Engine         vault · brain · planning · memory       │
+│  Engine         @soleri/core (vault · brain · planner)  │
+├─────────────────────────────────────────────────────────┤
+│  Scaffold       @soleri/forge (config-driven templates) │
 ├─────────────────────────────────────────────────────────┤
 │  Transports     MCP (Claude Code) · REST · LSP          │
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Engine** — Pure logic, zero protocol dependencies. Single process, no config bloat.
+- **Engine (`@soleri/core`)** — Shared infrastructure for all agents. Vault (SQLite + FTS5), Brain (TF-IDF scoring), Planner (state machine), LLM utilities (circuit breaker, key pool, retry), and facade system. Pure logic, zero protocol dependencies.
+- **Scaffold (`@soleri/forge`)** — Generates config-driven agent projects that import from `@soleri/core`. Creates persona, activation, LLM client, and domain facades — the agent-specific parts.
 - **Transports** — MCP for Claude Code and Cursor today, REST and LSP designed into the architecture.
 - **Domains** — Pluggable expertise modules (frontend, backend, cross-cutting, and custom).
 - **Vault Backends** — Three-tier model: agent vault (personal), project vault (team conventions), team vault (shared across all projects). Local filesystem, git sync, or remote API.
 - **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys for local vault search, pattern matching, and brain tracking.
+
+### Packages
+
+| Package | Version | Description |
+|---------|---------|-------------|
+| [`@soleri/core`](packages/core) | 1.0.0 | Shared engine — Vault, Brain, Planner, LLM utilities, facade infrastructure |
+| [`@soleri/forge`](packages/forge) | 4.0.0 | Agent scaffolder — generates config-driven MCP agents |
 
 ### Knowledge Packs
 

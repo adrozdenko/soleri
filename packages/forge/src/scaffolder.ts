@@ -13,32 +13,17 @@ import type { AgentConfig, ScaffoldResult, ScaffoldPreview, AgentInfo } from './
 import { generatePackageJson } from './templates/package-json.js';
 import { generateTsconfig } from './templates/tsconfig.js';
 import { generateVitestConfig } from './templates/vitest-config.js';
-import { generateFacadeTypes } from './templates/facade-types.js';
-import { generateFacadeFactory } from './templates/facade-factory.js';
-import { generateVault } from './templates/vault.js';
-import { generateIntelligenceTypes } from './templates/intelligence-types.js';
-import { generateIntelligenceLoader } from './templates/intelligence-loader.js';
 import { generatePersona } from './templates/persona.js';
 import { generateDomainFacade } from './templates/domain-facade.js';
 import { generateCoreFacade } from './templates/core-facade.js';
 import { generateEntryPoint } from './templates/entry-point.js';
-import { generateVaultTest } from './templates/test-vault.js';
-import { generateLoaderTest } from './templates/test-loader.js';
 import { generateFacadesTest } from './templates/test-facades.js';
 import { generateClaudeMdTemplate } from './templates/claude-md-template.js';
 import { generateInjectClaudeMd } from './templates/inject-claude-md.js';
 import { generateActivate } from './templates/activate.js';
 import { generateReadme } from './templates/readme.js';
 import { generateSetupScript } from './templates/setup-script.js';
-import { generatePlanner } from './templates/planner.js';
-import { generatePlannerTest } from './templates/test-planner.js';
-import { generateBrain } from './templates/brain.js';
-import { generateBrainTest } from './templates/test-brain.js';
-import { generateLLMTypes } from './templates/llm-types.js';
-import { generateLLMUtils } from './templates/llm-utils.js';
-import { generateLLMKeyPool } from './templates/llm-key-pool.js';
 import { generateLLMClient } from './templates/llm-client.js';
-import { generateLLMTest } from './templates/test-llm.js';
 
 /**
  * Preview what scaffold will create without writing anything.
@@ -61,38 +46,9 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'Entry point — initializes vault, planner, brain, registers facades, starts stdio',
     },
     {
-      path: 'src/planning/planner.ts',
-      description: 'Plan state machine — draft → approved → executing → completed',
-    },
-    {
-      path: 'src/brain/brain.ts',
-      description:
-        'Intelligence layer — TF-IDF scoring, auto-tagging, duplicate detection, adaptive weights',
-    },
-    {
-      path: 'src/llm/types.ts',
-      description:
-        'LLM types — SecretString, LLMError, call options/result, circuit breaker, key pool, routing',
-    },
-    {
-      path: 'src/llm/utils.ts',
-      description:
-        'LLM utilities — CircuitBreaker, retry with backoff+jitter, rate limit header parser',
-    },
-    {
-      path: 'src/llm/key-pool.ts',
-      description:
-        'Key pool — multi-key rotation with per-key circuit breakers, preemptive quota rotation',
-    },
-    {
       path: 'src/llm/llm-client.ts',
       description:
         'LLM client — unified OpenAI/Anthropic caller with model routing (optional, needs API keys)',
-    },
-    { path: 'src/facades/types.ts', description: 'Facade type system (OpHandler, FacadeConfig)' },
-    {
-      path: 'src/facades/facade-factory.ts',
-      description: 'Registers facades as MCP tools with op dispatch',
     },
     {
       path: 'src/facades/core.facade.ts',
@@ -102,18 +58,6 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
       path: `src/facades/${d}.facade.ts`,
       description: `${d} facade — search, get_patterns, capture, remove`,
     })),
-    {
-      path: 'src/vault/vault.ts',
-      description: 'SQLite vault with FTS5 full-text search (BM25 ranking)',
-    },
-    {
-      path: 'src/intelligence/types.ts',
-      description: 'IntelligenceEntry and IntelligenceBundle types',
-    },
-    {
-      path: 'src/intelligence/loader.ts',
-      description: 'Loads and validates JSON intelligence data files',
-    },
     ...config.domains.map((d) => ({
       path: `src/intelligence/data/${d}.json`,
       description: `Empty ${d} intelligence bundle — ready for knowledge capture`,
@@ -135,30 +79,8 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
       description: `${config.name} activation system — persona adoption, setup status, tool recommendations`,
     },
     {
-      path: 'src/__tests__/vault.test.ts',
-      description: 'Vault tests — CRUD, FTS5 search, stats, project registration (32 tests)',
-    },
-    {
-      path: 'src/__tests__/loader.test.ts',
-      description: 'Intelligence loader tests — valid/invalid JSON, edge cases (9 tests)',
-    },
-    {
       path: 'src/__tests__/facades.test.ts',
       description: `Facade integration tests — all ${config.domains.length + 1} facades`,
-    },
-    {
-      path: 'src/__tests__/planner.test.ts',
-      description: 'Planner tests — state machine, task lifecycle, persistence (~20 tests)',
-    },
-    {
-      path: 'src/__tests__/brain.test.ts',
-      description:
-        'Brain tests — TF-IDF scoring, auto-tagging, duplicate detection, adaptive weights (~38 tests)',
-    },
-    {
-      path: 'src/__tests__/llm.test.ts',
-      description:
-        'LLM tests — SecretString, CircuitBreaker, retry, rate limits, KeyPool, ModelRouter (~30 tests)',
     },
     { path: '.mcp.json', description: 'MCP client config for connecting to this agent' },
     {
@@ -238,13 +160,10 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     'scripts',
     'src',
     'src/facades',
-    'src/vault',
     'src/intelligence',
     'src/intelligence/data',
     'src/identity',
     'src/activation',
-    'src/planning',
-    'src/brain',
     'src/llm',
     'src/__tests__',
   ];
@@ -282,29 +201,14 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
 
   // Write source files
   const sourceFiles: Array<[string, string]> = [
-    ['src/facades/types.ts', generateFacadeTypes()],
-    ['src/facades/facade-factory.ts', generateFacadeFactory()],
     ['src/facades/core.facade.ts', generateCoreFacade(config)],
-    ['src/vault/vault.ts', generateVault()],
-    ['src/intelligence/types.ts', generateIntelligenceTypes()],
-    ['src/intelligence/loader.ts', generateIntelligenceLoader()],
     ['src/identity/persona.ts', generatePersona(config)],
     ['src/activation/claude-md-content.ts', generateClaudeMdTemplate(config)],
     ['src/activation/inject-claude-md.ts', generateInjectClaudeMd(config)],
     ['src/activation/activate.ts', generateActivate(config)],
     ['src/index.ts', generateEntryPoint(config)],
-    ['src/planning/planner.ts', generatePlanner()],
-    ['src/brain/brain.ts', generateBrain()],
-    ['src/llm/types.ts', generateLLMTypes()],
-    ['src/llm/utils.ts', generateLLMUtils()],
-    ['src/llm/key-pool.ts', generateLLMKeyPool(config)],
     ['src/llm/llm-client.ts', generateLLMClient(config)],
-    ['src/__tests__/vault.test.ts', generateVaultTest()],
-    ['src/__tests__/loader.test.ts', generateLoaderTest()],
     ['src/__tests__/facades.test.ts', generateFacadesTest(config)],
-    ['src/__tests__/planner.test.ts', generatePlannerTest()],
-    ['src/__tests__/brain.test.ts', generateBrainTest()],
-    ['src/__tests__/llm.test.ts', generateLLMTest(config)],
   ];
 
   // Domain facades and empty data files
@@ -329,7 +233,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     `${config.domains.length} empty knowledge domains ready for capture`,
     `Intelligence layer (Brain) — TF-IDF scoring, auto-tagging, duplicate detection`,
     `Activation system included — say "Hello, ${config.name}!" to activate`,
-    `6 test suites — vault, loader, facades, planner, brain, llm`,
+    `1 test suite — facades (vault, brain, planner, llm tests provided by @soleri/core)`,
   ];
 
   if (mcpReg.registered) {

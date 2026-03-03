@@ -12,15 +12,14 @@ export function generateLLMClient(config: AgentConfig): string {
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { SecretString, LLMError } from './types.js';
+import { SecretString, LLMError, CircuitBreaker, retry, parseRateLimitHeaders } from '@soleri/core';
 import type {
   LLMCallOptions,
   LLMCallResult,
   RouteEntry,
   RoutingConfig,
-} from './types.js';
-import { CircuitBreaker, retry, parseRateLimitHeaders } from './utils.js';
-import type { KeyPool } from './key-pool.js';
+  KeyPool,
+} from '@soleri/core';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { homedir } from 'node:os';
