@@ -1,0 +1,36 @@
+{
+  "name": "agent-forge",
+  "version": "2.0.1",
+  "description": "MCP tool that scaffolds new MCP agents from Salvador's architecture. Operated by AI agents to guide users through agent creation.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "agent-forge": "dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": ["mcp", "agent", "scaffold", "forge", "generator"],
+  "author": "adrozdenko",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@vitest/coverage-v8": "^3.0.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
