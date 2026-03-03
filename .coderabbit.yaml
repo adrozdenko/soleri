@@ -1,0 +1,46 @@
+language: en-US
+tone_instructions: >
+  Be direct and technical. Focus on correctness, security, and performance.
+  Flag real issues, skip cosmetic nitpicks.
+
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary: true
+  high_level_summary_placeholder: '@coderabbitai summary'
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: 'packages/core/**'
+      instructions: >
+        This is @soleri/core — shared engine for all agents. Review for:
+        correctness of SQLite/FTS5 queries, TF-IDF math in brain,
+        state machine transitions in planner, circuit breaker logic,
+        and proper error handling. No protocol dependencies allowed here.
+    - path: 'packages/forge/**'
+      instructions: >
+        This is @soleri/forge — agent scaffolder. Templates generate
+        TypeScript code as string literals. Verify generated code imports
+        from @soleri/core correctly, config substitution is safe,
+        and no static modules are inlined that belong in core.
+    - path: 'docs/vault/**'
+      instructions: >
+        Project knowledge vault. Check frontmatter schema compliance
+        (id, title, category, severity, tags). No business-sensitive
+        content should be in tracked files.
+  path_filters:
+    - '!dist/**'
+    - '!node_modules/**'
+    - '!package-lock.json'
+    - '!coverage/**'
+    - '!*.tsbuildinfo'
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: auto
+  web_search:
+    enabled: true
