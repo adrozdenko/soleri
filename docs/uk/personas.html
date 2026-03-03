@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ваш агент — Soleri</title>
+    <meta name="description" content="Пласкі файли та пошук за ключовими словами не масштабуються. Soleri дає вашому агенту доменно-розділене, графом з’єднане сховище, що накопичує інтелект з часом.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../soleri-base.css">
+    <style>
+      /* Aurora — warm amber, personal identity */
+      .page {
+        --glow-color-1: var(--color-primary-400);
+        --glow-color-2: var(--color-primary-300);
+        --glow-color-3: var(--color-secondary-400);
+      }
+
+      .agent-section {
+        margin-top: 72px;
+      }
+
+      .agent-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: start;
+      }
+
+      .agent-content h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--foreground-strong);
+        margin-bottom: 8px;
+      }
+
+      .agent-content p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
+
+      .agent-content .key-point {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-teal);
+      }
+
+      .vault-tree {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .vault-node {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        font-size: 13px;
+        color: var(--foreground);
+      }
+
+      .vault-node-label {
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        min-width: 100px;
+      }
+
+      .vault-node.frontend .vault-node-label { color: var(--color-primary-400); }
+      .vault-node.backend .vault-node-label { color: var(--color-secondary-400); }
+      .vault-node.crosscut .vault-node-label { color: var(--color-tertiary-400); }
+
+      .vault-node-arrow {
+        text-align: center;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .graph-stat {
+        display: flex;
+        align-items: start;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        font-size: 13px;
+        color: var(--foreground);
+      }
+
+      .graph-stat-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding-top: 2px;
+      }
+
+      .graph-stat-text strong {
+        white-space: nowrap;
+      }
+
+      .graph-stat-desc {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .graph-stat-num {
+        font-weight: 700;
+        font-size: 11px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .graph-stat-num.amber { background: rgba(232, 168, 71, 0.15); color: var(--color-primary-400); }
+      .graph-stat-num.teal { background: rgba(35, 157, 195, 0.15); color: var(--color-secondary-400); }
+      .graph-stat-num.green { background: rgba(145, 201, 110, 0.15); color: var(--color-tertiary-400); }
+
+      .graph-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 16px;
+      }
+
+      .graph-arrow {
+        text-align: center;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      @media (max-width: 820px) {
+        .agent-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body data-theme="light">
+    <div class="page">
+      <div class="glow glow-amber"></div>
+      <div class="glow glow-green"></div>
+      <div class="glow glow-teal"></div>
+      <div class="grid-bg"></div>
+      <div class="grid-rays">
+        <div class="ray ray-h" style="top:66px;  --dur:5s;  --del:0s;"></div>
+        <div class="ray ray-h" style="top:154px; --dur:7s;  --del:4s;"></div>
+        <div class="ray ray-h ray-teal" style="top:198px; --dur:9s;  --del:5s;"></div>
+        <div class="ray ray-h" style="top:286px; --dur:4.5s;--del:9s;"></div>
+        <div class="ray ray-h ray-teal" style="top:330px; --dur:6.5s;--del:10s;"></div>
+        <div class="ray ray-h" style="top:418px; --dur:6s;  --del:2s;"></div>
+        <div class="ray ray-h" style="top:550px; --dur:8s;  --del:13s;"></div>
+        <div class="ray ray-h ray-teal" style="top:660px; --dur:5.5s;--del:1s;"></div>
+        <div class="ray ray-h" style="top:770px; --dur:7s;  --del:8s;"></div>
+        <div class="ray ray-h ray-teal" style="top:880px; --dur:6s;  --del:16s;"></div>
+        <div class="ray ray-h" style="top:990px; --dur:5s;  --del:3s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1100px;--dur:8.5s;--del:6s;"></div>
+        <div class="ray ray-h" style="top:1210px;--dur:6s;  --del:11s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1342px;--dur:7s;  --del:0s;"></div>
+        <div class="ray ray-h" style="top:1474px;--dur:5.5s;--del:14s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1606px;--dur:9s;  --del:4s;"></div>
+        <div class="ray ray-h" style="top:1738px;--dur:6.5s;--del:9s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1870px;--dur:5s;  --del:17s;"></div>
+        <div class="ray ray-h" style="top:2002px;--dur:7.5s;--del:7s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2200px;--dur:6s;  --del:12s;"></div>
+        <div class="ray ray-h" style="top:2420px;--dur:8s;  --del:2s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2640px;--dur:5.5s;--del:15s;"></div>
+        <div class="ray ray-h" style="top:2860px;--dur:7s;  --del:5s;"></div>
+        <div class="ray ray-h ray-teal" style="top:3080px;--dur:6.5s;--del:10s;"></div>
+        <div class="ray ray-h" style="top:3300px;--dur:9s;  --del:3s;"></div>
+        <div class="ray ray-h ray-teal" style="top:3500px;--dur:7s;  --del:8s;"></div>
+      </div>
+
+      <main class="container">
+        <header class="nav">
+          <div class="brand"><a href="index-solarpunk.html">
+              <div class="brand-top">
+                <p class="brand-name">Soleri</p>
+              </div>
+            </a></div>
+          <nav class="nav-links" aria-label="Main navigation"><a href="how-it-works.html">Як це працює</a>
+            <a href="personas.html" aria-current="page">Ваш агент</a>
+            <a href="teams.html">Команди</a>
+            <a href="getting-started.html">Почати</a></nav>
+          <div class="nav-actions"><div class="lang-switcher"><a href="/en/personas.html">EN</a><a href="/uk/personas.html" class="active">UK</a><a href="/it/personas.html">IT</a></div>
+            <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+                <svg class="toggle-icon toggle-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg class="toggle-icon toggle-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </span>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE HERO -->
+        <section class="page-hero">
+          <div class="soleri-mark mark-hero"></div>
+          <p class="eyebrow">Пласкі файли та пошук за ключовими словами не масштабуються</p>
+          <h1>Інтелект вашого агента має накопичуватися. Каша зі знань — ні.</h1>
+          <p class="hero-subtitle">Єдине сховище, розділене за доменами, векторизоване та з’єднане графом. Знання, які самоорганізовуються й залишаються гострими.</p>
+        </section>
+
+        <!-- SECTION 1: CREATE IN SECONDS -->
+        <section class="agent-section" style="margin-top:0;">
+          <div class="section-header">
+            <h2 class="section-title">Створіть і налаштуйте</h2>
+          </div>
+          <div class="agent-grid">
+            <div>
+              <div class="feature-code"><span class="cmt"># Створіть свого агента</span>
+<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
+
+<span class="ok">?</span> Підключити наявне сховище чи почати з нуля?
+  <span class="val">› Почати з нуля</span>
+
+<span class="ok">✓</span> Створено конфігурацію агента
+<span class="ok">✓</span> Ініціалізовано сховище           <span class="val">початкові знання: 34 патерни</span>
+<span class="ok">✓</span> Проскановано проєкт              <span class="val">виявлено React + TypeScript</span>
+<span class="ok">✓</span> Автоматично зібрано              <span class="val">12 патернів кодової бази</span>
+<span class="ok">✓</span> Сховище готове                   <span class="val">46 записів, векторизовано</span>
+
+<span class="cmt">Агент "my-agent" готовий.</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Згенеровано agent.yaml</span>
+<span class="key">name:</span> <span class="val">my-agent</span>
+<span class="key">voice:</span> <span class="val">direct, technical, thorough</span>
+<span class="key">domains:</span> <span class="val">[frontend, backend, infrastructure]</span>
+<span class="key">vault:</span>
+  <span class="key">backends:</span>
+    - <span class="key">type:</span> <span class="val">local</span>          <span class="cmt"># ~/.soleri/vaults/my-agent</span>
+    - <span class="key">type:</span> <span class="val">git</span>            <span class="cmt"># optional team vault</span>
+      <span class="key">uri:</span>  <span class="val">git@github.com:team/vault.git</span>
+  <span class="key">vectorize:</span> <span class="val">true</span>
+  <span class="key">graph:</span> <span class="val">cognee</span>
+<span class="key">brain:</span>
+  <span class="key">auto_capture:</span> <span class="val">true</span>
+  <span class="key">min_confidence:</span> <span class="val">0.7</span></div>
+            </div>
+            <div class="agent-content">
+              <h3>Конфігурація як код</h3>
+              <p>Команда <code style="font-family:'JetBrains Mono',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> генерує <code style="font-family:'JetBrains Mono',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code> із розумними значеннями за замовчуванням. Вона ініціалізує сховище з початковими знаннями, сканує ваш проєкт на наявність патернів і векторизує все.</p>
+              <p>Голос, домени, бекенди сховища та налаштування мозку — усе декларативне, усе під контролем версій.</p>
+              <p class="key-point">Єдине сховище. Усі ваші знання. Жодних накладних витрат на координацію.</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- SECTION 2: STRUCTURED VAULT -->
+        <section class="agent-section">
+          <div class="section-header">
+            <h2 class="section-title">Структуроване сховище, а не каша зі знань</h2>
+          </div>
+          <div class="agent-grid">
+            <div class="agent-content">
+              <h3>Знання, розділені за доменами</h3>
+              <p>Коли все лежить в одній пласкій теці, пошук «кнопка» повертає нотатки про міграції баз даних поруч з CSS-патернами. Сховище автоматично впорядковує знання за доменами. Запитайте про кнопки — спершу воно шукає у frontend. Запитайте про бази даних — воно дістає з backend.</p>
+              <p>Структура краща за розділення.</p>
+              <p class="key-point">Кнопки → frontend/. Бази даних → backend/. Маршрутизація автоматична.</p>
+              <div class="vault-tree">
+                <div class="vault-node frontend"><span class="vault-node-label">Frontend</span>
+                  Патерни React, дизайн-токени, рев’ю компонентів, доступність</div>
+                <div class="vault-node backend"><span class="vault-node-label">Backend</span>
+                  Конвенції API, схеми баз даних, патерни автентифікації, продуктивність</div>
+                <div class="vault-node crosscut"><span class="vault-node-label">Cross-cutting</span>
+                  Git-воркфлоу, рев’ю коду, стратегії тестування, документація</div>
+              </div>
+            </div>
+            <div>
+              <div class="feature-code"><span class="cmt"># Пошук у сховищі з урахуванням домену</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault search</span> <span class="arg">"button styling"</span>
+
+<span class="ok">Пошук у домені: frontend/</span>
+
+<span class="ok">Знайдено 3 збіги:</span>
+  <span class="val">pattern-semantic-tokens</span>      <span class="cmt">94% впевненості</span>
+  <span class="val">pattern-button-sizes</span>         <span class="cmt">87% впевненості</span>
+  <span class="val">anti-pattern-inline-styles</span>   <span class="cmt">91% впевненості</span>
+
+<span class="cmt">Також знайдено у cross-cutting/:</span>
+  <span class="val">pattern-a11y-focus-rings</span>     <span class="cmt">78% впевненості</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Структура сховища</span>
+<span class="key">~/.soleri/vaults/my-agent/</span>
+├── <span class="val">frontend/</span>
+│   ├── patterns/          <span class="cmt">42 записи</span>
+│   ├── anti-patterns/     <span class="cmt">12 записів</span>
+│   └── decisions/         <span class="cmt">8 записів</span>
+├── <span class="val">backend/</span>
+│   ├── patterns/          <span class="cmt">28 записів</span>
+│   ├── anti-patterns/     <span class="cmt">6 записів</span>
+│   └── decisions/         <span class="cmt">15 записів</span>
+├── <span class="val">cross-cutting/</span>
+│   ├── patterns/          <span class="cmt">18 записів</span>
+│   └── workflows/         <span class="cmt">5 записів</span>
+└── <span class="key">index.vec</span>              <span class="cmt">векторизований пошуковий індекс</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: KNOWLEDGE GRAPH -->
+        <section class="agent-section">
+          <div class="section-header">
+            <h2 class="section-title">Граф знань, а не пласкі файли</h2>
+          </div>
+          <div class="agent-grid">
+            <div>
+              <div class="feature-code"><span class="cmt"># Статус сховища — векторизовано + з’єднано графом</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">status</span>
+
+<span class="ok">Сховище:</span> my-agent
+<span class="ok">Записи:</span>         <span class="val">134</span>
+<span class="ok">Векторизовано:</span>      <span class="val">134/134 (100%)</span>
+<span class="ok">Вузли графа:</span>     <span class="val">134</span>
+<span class="ok">Ребра графа:</span>     <span class="val">287</span>  <span class="cmt">(Cognee)</span>
+<span class="ok">Домени:</span>         <span class="val">3</span>   <span class="cmt">frontend, backend, cross-cutting</span>
+<span class="ok">Остання індексація:</span>    <span class="val">2 хвилини тому</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Граф знаходить зв’язки між доменами</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">related "pattern-semantic-tokens"</span>
+
+<span class="ok">Пов’язані патерни (відстань графа ≤ 2):</span>
+  <span class="val">pattern-button-sizes</span>         <span class="cmt">frontend/  — спільні токени</span>
+  <span class="val">pattern-theme-switching</span>      <span class="cmt">frontend/  — споживач токенів</span>
+  <span class="val">anti-pattern-hardcoded-hex</span>   <span class="cmt">frontend/  — обернене правило</span>
+  <span class="val">pattern-api-error-colors</span>     <span class="cmt">backend/   — кросдоменне посилання</span>
+
+<span class="cmt">4 зв’язки знайдено через граф знань Cognee</span></div>
+            </div>
+            <div class="agent-content">
+              <h3>Векторизоване, з’єднане графом, придатне до пошуку</h3>
+              <p>Пошук за ключовими словами пропускає зв'язки між ідеями. Кожен запис у сховищі векторизується для семантичного пошуку та з’єднується через граф знань Cognee. Система розуміє, як патерни пов’язані між собою — не лише що це таке.</p>
+              <p>Запитайте про семантичні токени — і граф підсвітить пов’язані патерни кнопок, правила перемикання тем і бекенд-конвенції кольорів помилок. Кросдоменні зв’язки з’являються автоматично.</p>
+              <p class="key-point">Зв’язки між патернами — не лише самі патерни.</p>
+              <div class="graph-stats">
+                <div class="graph-stat">
+                  <span class="graph-stat-num amber">1</span>
+                  <div class="graph-stat-text"><strong>Векторизація</strong>
+                    <span class="graph-stat-desc">Кожен запис отримує вбудовування для семантичного пошуку</span></div>
+                </div>
+                <div class="graph-arrow">↓</div>
+                <div class="graph-stat">
+                  <span class="graph-stat-num teal">2</span>
+                  <div class="graph-stat-text"><strong>З’єднання</strong>
+                    <span class="graph-stat-desc">Cognee будує граф знань між записами</span></div>
+                </div>
+                <div class="graph-arrow">↓</div>
+                <div class="graph-stat">
+                  <span class="graph-stat-num green">3</span>
+                  <div class="graph-stat-text"><strong>Підсвічування</strong>
+                    <span class="graph-stat-desc">Пошук повертає патерни та їхні зв’язки</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- SECTION 4: VAULT SELF-MAINTENANCE -->
+        <section class="agent-section">
+          <div class="section-header">
+            <h2 class="section-title">Сховище підтримує чистоту само</h2>
+          </div>
+          <div class="agent-grid">
+            <div class="agent-content">
+              <h3>Знання з автоматичним супроводом</h3>
+              <p>Бази знань гниють, коли їх ніхто не підтримує. Сховище не просто зберігає знання — воно їх курує. Дедуплікація виявляє повтори. Виявлення деградації позначає застарілі патерни. Відстеження впевненості підсвічує те, що працює, і приховує те, що ні.</p>
+              <p>Жодного ручного прибирання. Жодного гниття знань. Сховище залишається гострим у міру розвитку вашого проєкту.</p>
+              <p class="key-point">Сховище не просто зберігає знання — воно їх курує.</p>
+            </div>
+            <div>
+              <div class="feature-code"><span class="cmt"># Звіт з обслуговування сховища</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">maintain</span>
+
+<span class="ok">Обслуговування завершено:</span>
+  <span class="ok">✓</span> Дедупліковано      <span class="val">3 зайві записи об’єднано</span>
+  <span class="ok">✓</span> Перевірка деградації        <span class="val">2 патерни позначено як застарілі</span>
+  <span class="ok">✓</span> Оновлення впевненості  <span class="val">8 патернів посилено</span>
+  <span class="ok">✓</span> Перевекторизовано      <span class="val">5 змінених записів</span>
+  <span class="ok">✓</span> Граф перебудовано       <span class="val">291 ребро (було 287)</span>
+
+<span class="warn">Застарілі патерни (не використовувалися 30+ днів):</span>
+  <span class="val">pattern-legacy-class-names</span>   <span class="cmt">востаннє використано: 45 днів тому</span>
+  <span class="val">pattern-jquery-selectors</span>     <span class="cmt">востаннє використано: 62 дні тому</span>
+
+<span class="cmt">Архівувати застаріле? soleri vault archive --stale</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Відстеження впевненості в дії</span>
+<span class="key">id:</span> <span class="val">pattern-semantic-tokens</span>
+<span class="key">confidence:</span> <span class="val">0.94</span>        <span class="cmt"># посилено за 12 сесій</span>
+<span class="key">sessions:</span> <span class="val">12</span>
+<span class="key">last_applied:</span> <span class="val">2 години тому</span>
+<span class="key">status:</span> <span class="ok">compounding</span>   <span class="cmt"># з’являється першим у пошуку</span>
+<span class="key">graph_edges:</span> <span class="val">7</span>          <span class="cmt"># з’єднано з 7 іншими патернами</span></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- CTA -->
+        <section class="cta">
+          <h2>Створіть агента, що стає розумнішим з кожним проектом.</h2>
+          <p>Відкритий код. Apache 2.0.</p>
+          <div class="hero-actions"><a class="btn btn-primary" href="getting-started.html">Почати</a>
+            <a class="btn btn-secondary" href="how-it-works.html">Як це працює</a></div>
+        </section>
+
+        <footer class="footer">
+          <p>Soleri — виконувані стандарти для агентних систем</p>
+          <p class="copyright">© 2026 Drozd&Co</p>
+          <nav class="footer-links" aria-label="Footer links"><a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
+            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a></nav>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var body = document.body;
+        var btn = document.getElementById("theme-toggle");
+        function setTheme(t) {
+          body.setAttribute("data-theme", t);
+          btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+          localStorage.setItem("soleri-theme", t);
+        }
+        var saved = localStorage.getItem("soleri-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setTheme(saved || (prefersDark ? "dark" : "light"));
+        btn.addEventListener("click", function () {
+          var next = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+          if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setTheme(next);
+            return;
+          }
+          var transition = document.startViewTransition(function () { setTheme(next); });
+          transition.ready.then(function () {
+            var rect = btn.getBoundingClientRect();
+            var x = rect.left + rect.width / 2;
+            var y = rect.top + rect.height / 2;
+            var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+            document.documentElement.animate(
+              { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + radius + "px at " + x + "px " + y + "px)"] },
+              { duration: 600, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
+            );
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Getting Started - Soleri</title>
-    <meta name="description" content="Install Soleri, create an agent, feed it knowledge, and start compounding." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="soleri-base.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Початок роботи - Soleri</title>
+    <meta name="description" content="Від нуля до навчальної системи за п'ять хвилин. Встановіть Soleri, створіть першого агента та починайте накопичувати знання.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../soleri-base.css">
     <style>
       /* Aurora — fresh green, new beginnings */
       .page {
@@ -40,15 +40,11 @@
         justify-content: center;
         font-size: 20px;
         font-weight: 800;
-        color: var(--color-white);
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--border);
         flex-shrink: 0;
       }
-
-      .step-number.s1 { background: linear-gradient(135deg, var(--color-secondary-500), var(--color-secondary-400)); }
-      .step-number.s2 { background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-400)); }
-      .step-number.s3 { background: linear-gradient(135deg, var(--color-tertiary-600), var(--color-tertiary-500)); }
-      .step-number.s4 { background: linear-gradient(135deg, var(--color-secondary-600), var(--color-secondary-500)); }
-      .step-number.s5 { background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-500)); }
 
       .step-content h3 {
         font-size: 20px;
@@ -172,20 +168,16 @@
 
       <main class="container">
         <header class="nav">
-          <div class="brand">
-            <a href="index-solarpunk.html">
+          <div class="brand"><a href="index-solarpunk.html">
               <div class="brand-top">
                 <p class="brand-name">Soleri</p>
               </div>
-            </a>
-          </div>
-          <nav class="nav-links" aria-label="Main navigation">
-            <a href="how-it-works.html">How it works</a>
-            <a href="personas.html">Your Agent</a>
-            <a href="teams.html">Teams</a>
-            <a href="getting-started.html" aria-current="page">Get started</a>
-          </nav>
-          <div class="nav-actions">
+            </a></div>
+          <nav class="nav-links" aria-label="Main navigation"><a href="how-it-works.html">Як це працює</a>
+            <a href="personas.html">Ваш Агент</a>
+            <a href="teams.html">Команди</a>
+            <a href="getting-started.html" aria-current="page">Почати</a></nav>
+          <div class="nav-actions"><div class="lang-switcher"><a href="/en/getting-started.html">EN</a><a href="/uk/getting-started.html" class="active">UK</a><a href="/it/getting-started.html">IT</a></div>
             <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
               <span class="toggle-track">
                 <span class="toggle-thumb"></span>
@@ -199,102 +191,100 @@
         <!-- PAGE HERO -->
         <section class="page-hero">
           <div class="soleri-mark mark-hero"></div>
-          <p class="eyebrow">Quickstart</p>
-          <h1>Install. Create. Compound.</h1>
-          <p class="hero-subtitle">Five steps. No configuration files to write. No API keys required.</p>
+          <p class="eyebrow">Від нуля до навчальної системи за п'ять хвилин</p>
+          <h1>Ваш перший агент починає розумним. Далі стає лише розумнішим.</h1>
+          <p class="hero-subtitle">П'ять кроків. Жодних файлів конфігурації. Жодних API-ключів.</p>
         </section>
 
         <!-- STEPS -->
         <div class="steps">
           <!-- STEP 1: INSTALL -->
           <div class="step">
-            <div class="step-number s1">1</div>
+            <div class="step-number">1</div>
             <div class="step-content">
-              <h3>Install</h3>
-              <p>One global npm package. That's it.</p>
-              <div class="install-cmd">
-                <span class="prompt">$</span>
+              <h3>Встановити</h3>
+              <p>Один глобальний пакет npm. І все.</p>
+              <div class="install-cmd"><span class="prompt">$</span>
                 <span class="cmd">npm install</span>
-                <span class="arg">-g soleri</span>
-              </div>
+                <span class="arg">-g soleri</span></div>
             </div>
           </div>
 
           <!-- STEP 2: CREATE -->
           <div class="step">
-            <div class="step-number s2">2</div>
+            <div class="step-number">2</div>
             <div class="step-content">
-              <h3>Create your agent</h3>
-              <p>Give it a name and connect a vault. Soleri sets up domains, installs starter knowledge, and scans your project.</p>
+              <h3>Створіть вашого агента</h3>
+              <p>Вкажіть назву та підключіть сховище. Soleri налаштує домени, встановить початкові знання та просканує проект.</p>
               <div class="feature-code"><span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="ok">✓</span> Created agent config       <span class="cmt">~/.soleri/agents/my-agent/</span>
-<span class="ok">✓</span> Connected vault            <span class="val">starter knowledge: 34 patterns</span>
-<span class="ok">✓</span> Scanned project            <span class="val">React + TypeScript detected</span>
-<span class="ok">✓</span> Auto-captured              <span class="val">12 codebase patterns</span>
-<span class="ok">✓</span> Vault ready                <span class="val">46 entries, vectorized</span>
+<span class="ok">✓</span> Створено конфігурацію агента       <span class="cmt">~/.soleri/agents/my-agent/</span>
+<span class="ok">✓</span> Підключене сховище            <span class="val">початкові знання: 34 патерни</span>
+<span class="ok">✓</span> Сканування проекту            <span class="val">React + TypeScript виявлено</span>
+<span class="ok">✓</span> Автоматично захоплено        <span class="val">12 патернів з кодової бази</span>
+<span class="ok">✓</span> Сховище готове                <span class="val">46 записів, векторизовано</span>
 
-<span class="cmt">Agent "my-agent" is ready.</span></div>
+<span class="cmt">Агент "my-agent" готовий.</span></div>
             </div>
           </div>
 
           <!-- STEP 3: FEED KNOWLEDGE -->
           <div class="step">
-            <div class="step-number s3">3</div>
+            <div class="step-number">3</div>
             <div class="step-content">
-              <h3>Feed it knowledge</h3>
-              <p>Add knowledge to your agent's vault. Install community packs, connect a team vault, or let the brain capture patterns from your work.</p>
-              <div class="feature-code"><span class="cmt"># Add a community knowledge pack</span>
+              <h3>Наповніть знаннями</h3>
+              <p>Додайте знання до сховища вашого агента. Встановіть пакети знань спільноти, підключіть сховище команди або дозвольте мозку захоплювати патерни з вашої роботи.</p>
+              <div class="feature-code"><span class="cmt"># Додайте пакет знань спільноти</span>
 <span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
 
-<span class="ok">✓</span> Installed react-patterns    <span class="val">v0.3.0</span>
-<span class="ok">✓</span> Added 28 patterns to vault
-<span class="ok">✓</span> Vectorized and graph-connected
+<span class="ok">✓</span> Встановлено react-patterns    <span class="val">v0.3.0</span>
+<span class="ok">✓</span> Додано 28 патернів до сховища
+<span class="ok">✓</span> Векторизовано та зв'язано графами
 
-<span class="cmt"># The brain captures patterns from your work</span>
-<span class="warn">!</span> You've replaced <span class="val">bg-blue-500</span> with <span class="ok">bg-primary</span> 3 times.
-  Capture as pattern? <span class="key">[y/n]</span>
+<span class="cmt"># Мозок захоплює патерни з вашої роботи</span>
+<span class="warn">!</span> Ви замінили <span class="val">bg-blue-500</span> на <span class="ok">bg-primary</span> 3 рази.
+  Захопити як патерн? <span class="key">[y/n]</span>
 
-<span class="ok">✓</span> Captured: <span class="val">semantic-token-enforcement</span></div>
+<span class="ok">✓</span> Захоплено: <span class="val">semantic-token-enforcement</span></div>
             </div>
           </div>
 
           <!-- STEP 4: EXTEND -->
           <div class="step">
-            <div class="step-number s4">4</div>
+            <div class="step-number">4</div>
             <div class="step-content">
-              <h3>Extend</h3>
-              <p>Connect your team's shared vault or add more knowledge packs. Knowledge stacks.</p>
-              <div class="feature-code"><span class="cmt"># Connect your team's shared vault</span>
+              <h3>Розширення</h3>
+              <p>Підключіть спільне сховище вашої команди або додайте більше пакетів знань. Знання накопичуються.</p>
+              <div class="feature-code"><span class="cmt"># Підключіть спільне сховище вашої команди</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>
 
-<span class="ok">✓</span> Connected team vault      <span class="val">142 entries</span>
-<span class="ok">✓</span> Search priority: agent → project → team
+<span class="ok">✓</span> Підключено сховище команди      <span class="val">142 записів</span>
+<span class="ok">✓</span> Пріоритет пошуку: агент → проект → команда
 
-<span class="cmt"># Check vault status</span>
+<span class="cmt"># Перевірте стан сховища</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">status</span>
 
-<span class="ok">Entries:</span>     <span class="val">216</span>     <span class="cmt">vectorized, graph-connected</span>
-<span class="ok">Domains:</span>     <span class="val">3</span>       <span class="cmt">frontend, backend, cross-cutting</span>
-<span class="ok">Graph:</span>       <span class="val">412 edges</span></div>
+<span class="ok">Записи:</span>     <span class="val">216</span>     <span class="cmt">векторизовано, зв'язано графами</span>
+<span class="ok">Домени:</span>     <span class="val">3</span>       <span class="cmt">фронтенд, бекенд, кросс-перетин</span>
+<span class="ok">Граф:</span>       <span class="val">412 зв'язків</span></div>
             </div>
           </div>
 
           <!-- STEP 5: HEALTH CHECK -->
           <div class="step">
-            <div class="step-number s5">5</div>
+            <div class="step-number">5</div>
             <div class="step-content">
-              <h3>Health check</h3>
-              <p>Run doctor to verify everything is connected and up to date.</p>
+              <h3>Перевірка здоров'я</h3>
+              <p>Запустіть діагностику, щоб перевірити, чи все підключено та оновлено.</p>
               <div class="feature-code"><span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
 
-<span class="ok">✓</span> Engine          <span class="val">v1.2.0</span>   <span class="cmt">up to date</span>
-<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>   <span class="cmt">up to date</span>
-<span class="ok">✓</span> domain-review   <span class="val">v0.5.0</span>   <span class="cmt">up to date</span>
-<span class="ok">✓</span> my-agent        <span class="val">config ok</span>
-<span class="ok">✓</span> Vault           <span class="val">216 entries, healthy</span>
-<span class="ok">✓</span> Brain           <span class="val">tracking enabled</span>
-<span class="ok">✓</span> Team vault      <span class="val">connected, synced</span></div>
+<span class="ok">✓</span> Движок          <span class="val">v1.2.0</span>   <span class="cmt">оновлено</span>
+<span class="ok">✓</span> проектування домену   <span class="val">v0.8.0</span>   <span class="cmt">оновлено</span>
+<span class="ok">✓</span> огляд домену   <span class="val">v0.5.0</span>   <span class="cmt">оновлено</span>
+<span class="ok">✓</span> мій агент        <span class="val">конфігурація ок</span>
+<span class="ok">✓</span> Сховище           <span class="val">216 записів, в порядку</span>
+<span class="ok">✓</span> Мозок           <span class="val">відстеження увімкнено</span>
+<span class="ok">✓</span> Сховище команди      <span class="val">підключено, синхронізовано</span></div>
             </div>
           </div>
         </div>
@@ -304,48 +294,43 @@
         <!-- NEXT STEPS -->
         <section class="section spacious">
           <div class="section-header">
-            <h2 class="section-title">Keep going</h2>
+            <h2 class="section-title">Продовжуйте</h2>
           </div>
-          <div class="next-links">
-            <a class="next-link" href="how-it-works.html">
-              <span class="next-link-title">How it works</span>
-              <span class="next-link-desc">Vault, brain, and transport architecture explained.</span>
+          <div class="next-links"><a class="next-link" href="how-it-works.html">
+              <span class="next-link-title">Як це працює</span>
+              <span class="next-link-desc">Пояснення архітектури сховища, мозку та транспорту.</span>
             </a>
             <a class="next-link" href="personas.html">
-              <span class="next-link-title">Your Agent</span>
-              <span class="next-link-desc">Create, configure, and grow your agent's knowledge.</span>
+              <span class="next-link-title">Ваш Агент</span>
+              <span class="next-link-desc">Створюйте, налаштовуйте та розширюйте знання вашого агента.</span>
             </a>
             <a class="next-link" href="teams.html">
-              <span class="next-link-title">Teams &amp; Ops</span>
-              <span class="next-link-desc">Shared vaults, knowledge packs, and Telegram bot.</span>
-            </a>
-          </div>
+              <span class="next-link-title">Команди та Опс</span>
+              <span class="next-link-desc">Спільні сховища, пакети знань та бот у Telegram.</span>
+            </a></div>
         </section>
 
         <div class="soleri-mark mark-section"></div>
 
         <!-- CTA -->
         <section class="cta">
-          <h2>Ready to build.</h2>
-          <p>Open source. Apache 2.0.</p>
+          <h2>Готові створити помічника, що зростає з вами.</h2>
+          <p>Відкрите програмне забезпечення. Apache 2.0.</p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">
               <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
               Explore on GitHub
             </a>
-            <a class="btn btn-secondary" href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">
-              View on npm
-            </a>
+            <a class="btn btn-secondary" href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">Переглянути на npm</a>
           </div>
         </section>
 
         <footer class="footer">
-          <p>Soleri — Executable standards for agentic systems</p>
-          <nav class="footer-links" aria-label="Footer links">
-            <a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
+          <p>Soleri — Виконувані стандарти для агентних систем</p>
+          <p class="copyright">© 2026 Drozd&Co</p>
+          <nav class="footer-links" aria-label="Footer links"><a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
             <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
-            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a>
-          </nav>
+            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a></nav>
         </footer>
       </main>
     </div>

@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inizia - Soleri</title>
+    <meta name="description" content="Da zero a un sistema di apprendimento in cinque minuti. Installa Soleri, crea il tuo primo agente e inizia ad accumulare conoscenza.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../soleri-base.css">
+    <style>
+      /* Aurora — fresh green, new beginnings */
+      .page {
+        --glow-color-1: var(--color-tertiary-400);
+        --glow-color-2: var(--color-secondary-400);
+        --glow-color-3: var(--color-tertiary-300);
+      }
+
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 48px;
+        margin-top: 16px;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 60px 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      .step-number {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .step-content h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--foreground-strong);
+        margin-bottom: 6px;
+      }
+
+      .step-content p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
+
+      .step-content .install-cmd {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 20px;
+        border-radius: var(--radius-md);
+        background: var(--code-bg);
+        color: var(--code-fg);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 14px;
+        font-weight: 500;
+        border: 1px solid rgba(55, 66, 83, 0.6);
+        margin-bottom: 12px;
+      }
+
+      .install-cmd .prompt {
+        color: var(--color-tertiary-400);
+      }
+
+      .install-cmd .cmd {
+        color: var(--color-secondary-300);
+      }
+
+      .install-cmd .arg {
+        color: var(--color-primary-300);
+      }
+
+      .next-links {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .next-link {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 16px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.15s ease;
+      }
+
+      .next-link:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-teal);
+      }
+
+      .next-link-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--foreground-strong);
+      }
+
+      .next-link-desc {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      @media (max-width: 700px) {
+        .step {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+
+        .next-links {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body data-theme="light">
+    <div class="page">
+      <div class="glow glow-amber"></div>
+      <div class="glow glow-green"></div>
+      <div class="glow glow-teal"></div>
+      <div class="grid-bg"></div>
+      <div class="grid-rays">
+        <div class="ray ray-h" style="top:66px;  --dur:5s;  --del:0s;"></div>
+        <div class="ray ray-h" style="top:154px; --dur:7s;  --del:4s;"></div>
+        <div class="ray ray-h ray-teal" style="top:198px; --dur:9s;  --del:5s;"></div>
+        <div class="ray ray-h" style="top:286px; --dur:4.5s;--del:9s;"></div>
+        <div class="ray ray-h ray-teal" style="top:330px; --dur:6.5s;--del:10s;"></div>
+        <div class="ray ray-h" style="top:418px; --dur:6s;  --del:2s;"></div>
+        <div class="ray ray-h" style="top:550px; --dur:8s;  --del:13s;"></div>
+        <div class="ray ray-h ray-teal" style="top:660px; --dur:5.5s;--del:1s;"></div>
+        <div class="ray ray-h" style="top:770px; --dur:7s;  --del:8s;"></div>
+        <div class="ray ray-h ray-teal" style="top:880px; --dur:6s;  --del:16s;"></div>
+        <div class="ray ray-h" style="top:990px; --dur:5s;  --del:3s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1100px;--dur:8.5s;--del:6s;"></div>
+        <div class="ray ray-h" style="top:1210px;--dur:6s;  --del:11s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1342px;--dur:7s;  --del:0s;"></div>
+        <div class="ray ray-h" style="top:1474px;--dur:5.5s;--del:14s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1606px;--dur:9s;  --del:4s;"></div>
+        <div class="ray ray-h" style="top:1738px;--dur:6.5s;--del:9s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1870px;--dur:5s;  --del:17s;"></div>
+        <div class="ray ray-h" style="top:2002px;--dur:7.5s;--del:7s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2200px;--dur:6s;  --del:12s;"></div>
+        <div class="ray ray-h" style="top:2420px;--dur:8s;  --del:2s;"></div>
+      </div>
+
+      <main class="container">
+        <header class="nav">
+          <div class="brand"><a href="index-solarpunk.html">
+              <div class="brand-top">
+                <p class="brand-name">Soleri</p>
+              </div>
+            </a></div>
+          <nav class="nav-links" aria-label="Main navigation"><a href="how-it-works.html">Come funziona</a>
+            <a href="personas.html">Il Tuo Agente</a>
+            <a href="teams.html">Team</a>
+            <a href="getting-started.html" aria-current="page">Inizia</a></nav>
+          <div class="nav-actions"><div class="lang-switcher"><a href="/en/getting-started.html">EN</a><a href="/uk/getting-started.html">UK</a><a href="/it/getting-started.html" class="active">IT</a></div>
+            <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+                <svg class="toggle-icon toggle-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg class="toggle-icon toggle-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </span>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE HERO -->
+        <section class="page-hero">
+          <div class="soleri-mark mark-hero"></div>
+          <p class="eyebrow">Da zero a un sistema di apprendimento in cinque minuti</p>
+          <h1>Il tuo primo agente parte intelligente. Diventa solo più intelligente.</h1>
+          <p class="hero-subtitle">Cinque passaggi. Nessun file di configurazione da scrivere. Nessuna chiave API richiesta.</p>
+        </section>
+
+        <!-- STEPS -->
+        <div class="steps">
+          <!-- STEP 1: INSTALL -->
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h3>Installa</h3>
+              <p>Un solo pacchetto global npm. Tutto qui.</p>
+              <div class="install-cmd"><span class="prompt">$</span>
+                <span class="cmd">npm install</span>
+                <span class="arg">-g soleri</span></div>
+            </div>
+          </div>
+
+          <!-- STEP 2: CREATE -->
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h3>Crea il tuo agente</h3>
+              <p>Dagli un nome e connetti una cassaforte. Soleri configura i domini, installa conoscenze iniziali e scansiona il tuo progetto.</p>
+              <div class="feature-code"><span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
+
+<span class="ok">✓</span> Configurazione agente creata       <span class="cmt">~/.soleri/agents/my-agent/</span>
+<span class="ok">✓</span> Cassaforte connessa            <span class="val">conoscenze iniziali: 34 schemi</span>
+<span class="ok">✓</span> Progetto scansionato            <span class="val">React + TypeScript rilevato</span>
+<span class="ok">✓</span> Acquisizione automatica              <span class="val">12 schemi di base di codice</span>
+<span class="ok">✓</span> Cassaforte pronta                <span class="val">46 voci, vettorizzate</span>
+
+<span class="cmt">Agente "my-agent" è pronto.</span></div>
+            </div>
+          </div>
+
+          <!-- STEP 3: FEED KNOWLEDGE -->
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h3>Alimenta con conoscenze</h3>
+              <p>Aggiungi conoscenze alla cassaforte del tuo agente. Installa pacchetti della comunità, connetti una cassaforte del team o lascia che il cervello catturi schemi dal tuo lavoro.</p>
+              <div class="feature-code"><span class="cmt"># Aggiungi un pacchetto di conoscenze della comunità</span>
+<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
+
+<span class="ok">✓</span> react-patterns installato    <span class="val">v0.3.0</span>
+<span class="ok">✓</span> 28 schemi aggiunti alla cassaforte
+<span class="ok">✓</span> Vettorizzato e collegato al grafico
+
+<span class="cmt"># Il cervello cattura schemi dal tuo lavoro</span>
+<span class="warn">!</span> Hai sostituito <span class="val">bg-blue-500</span> con <span class="ok">bg-primary</span> 3 volte.
+  Catturare come schema? <span class="key">[y/n]</span>
+
+<span class="ok">✓</span> Catturato: <span class="val">enforcement-token-semantico</span></div>
+            </div>
+          </div>
+
+          <!-- STEP 4: EXTEND -->
+          <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <h3>Estendi</h3>
+              <p>Connetti la cassaforte condivisa del tuo team o aggiungi più pacchetti di conoscenze. Le conoscenze si accumulano.</p>
+              <div class="feature-code"><span class="cmt"># Connetti la cassaforte condivisa del tuo team</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>
+
+<span class="ok">✓</span> Cassaforte del team connessa      <span class="val">142 voci</span>
+<span class="ok">✓</span> Priorità di ricerca: agente → progetto → team
+
+<span class="cmt"># Controlla lo stato della cassaforte</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">status</span>
+
+<span class="ok">Voci:</span>     <span class="val">216</span>     <span class="cmt">vettorizzate, collegate al grafico</span>
+<span class="ok">Domini:</span>     <span class="val">3</span>       <span class="cmt">frontend, backend, trasversali</span>
+<span class="ok">Grafico:</span>       <span class="val">412 archi</span></div>
+            </div>
+          </div>
+
+          <!-- STEP 5: HEALTH CHECK -->
+          <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <h3>Controllo di integrità</h3>
+              <p>Esegui doctor per verificare che tutto sia connesso e aggiornato.</p>
+              <div class="feature-code"><span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
+
+<span class="ok">✓</span> Motore          <span class="val">v1.2.0</span>   <span class="cmt">aggiornato</span>
+<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>   <span class="cmt">aggiornato</span>
+<span class="ok">✓</span> domain-review   <span class="val">v0.5.0</span>   <span class="cmt">aggiornato</span>
+<span class="ok">✓</span> my-agent        <span class="val">configurazione ok</span>
+<span class="ok">✓</span> Cassaforte           <span class="val">216 voci, sana</span>
+<span class="ok">✓</span> Cervello           <span class="val">tracciamento abilitato</span>
+<span class="ok">✓</span> Cassaforte del team      <span class="val">connessa, sincronizzata</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- NEXT STEPS -->
+        <section class="section spacious">
+          <div class="section-header">
+            <h2 class="section-title">Continua</h2>
+          </div>
+          <div class="next-links"><a class="next-link" href="how-it-works.html">
+              <span class="next-link-title">Come funziona</span>
+              <span class="next-link-desc">Cassaforte, cervello e architettura di trasporto spiegati.</span>
+            </a>
+            <a class="next-link" href="personas.html">
+              <span class="next-link-title">Il Tuo Agente</span>
+              <span class="next-link-desc">Crea, configura e sviluppa le conoscenze del tuo agente.</span>
+            </a>
+            <a class="next-link" href="teams.html">
+              <span class="next-link-title">Team e Ops</span>
+              <span class="next-link-desc">Cassaforti condivise, pacchetti di conoscenze e bot Telegram.</span>
+            </a></div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- CTA -->
+        <section class="cta">
+          <h2>Pronto a costruire un assistente che cresce con te.</h2>
+          <p>Open source. Apache 2.0.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              Explore on GitHub
+            </a>
+            <a class="btn btn-secondary" href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">Visualizza su npm</a>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <p>Soleri — Standard eseguibili per sistemi agentici</p>
+          <p class="copyright">© 2026 Drozd&Co</p>
+          <nav class="footer-links" aria-label="Footer links"><a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
+            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a></nav>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var body = document.body;
+        var btn = document.getElementById("theme-toggle");
+        function setTheme(t) {
+          body.setAttribute("data-theme", t);
+          btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+          localStorage.setItem("soleri-theme", t);
+        }
+        var saved = localStorage.getItem("soleri-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setTheme(saved || (prefersDark ? "dark" : "light"));
+        btn.addEventListener("click", function () {
+          var next = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+          if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setTheme(next);
+            return;
+          }
+          var transition = document.startViewTransition(function () { setTheme(next); });
+          transition.ready.then(function () {
+            var rect = btn.getBoundingClientRect();
+            var x = rect.left + rect.width / 2;
+            var y = rect.top + rect.height / 2;
+            var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+            document.documentElement.animate(
+              { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + radius + "px at " + x + "px " + y + "px)"] },
+              { duration: 600, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
+            );
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

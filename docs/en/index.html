@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="soleri-base.css" />
+    <link rel="stylesheet" href="../soleri-base.css" />
   </head>
   <body data-theme="light">
     <div class="page">
@@ -24,36 +24,15 @@
       <div class="glow glow-teal"></div>
       <div class="grid-bg"></div>
       <div class="grid-rays">
-        <!-- Positions are multiples of 22px (grid cell size) -->
-        <!-- Top zone -->
-        <div class="ray ray-h" style="top:66px;  --dur:5s;  --del:0s;"></div>
-        <div class="ray ray-h" style="top:154px; --dur:7s;  --del:4s;"></div>
-        <div class="ray ray-h ray-teal" style="top:198px; --dur:9s;  --del:5s;"></div>
-        <div class="ray ray-h" style="top:286px; --dur:4.5s;--del:9s;"></div>
-        <div class="ray ray-h ray-teal" style="top:330px; --dur:6.5s;--del:10s;"></div>
-        <div class="ray ray-h" style="top:418px; --dur:6s;  --del:2s;"></div>
-        <!-- Mid zone -->
-        <div class="ray ray-h" style="top:550px; --dur:8s;  --del:13s;"></div>
-        <div class="ray ray-h ray-teal" style="top:660px; --dur:5.5s;--del:1s;"></div>
-        <div class="ray ray-h" style="top:770px; --dur:7s;  --del:8s;"></div>
-        <div class="ray ray-h ray-teal" style="top:880px; --dur:6s;  --del:16s;"></div>
-        <div class="ray ray-h" style="top:990px; --dur:5s;  --del:3s;"></div>
-        <!-- Lower zone -->
-        <div class="ray ray-h ray-teal" style="top:1100px;--dur:8.5s;--del:6s;"></div>
-        <div class="ray ray-h" style="top:1210px;--dur:6s;  --del:11s;"></div>
-        <div class="ray ray-h ray-teal" style="top:1342px;--dur:7s;  --del:0s;"></div>
-        <div class="ray ray-h" style="top:1474px;--dur:5.5s;--del:14s;"></div>
-        <!-- Deep zone -->
-        <div class="ray ray-h ray-teal" style="top:1606px;--dur:9s;  --del:4s;"></div>
-        <div class="ray ray-h" style="top:1738px;--dur:6.5s;--del:9s;"></div>
-        <div class="ray ray-h ray-teal" style="top:1870px;--dur:5s;  --del:17s;"></div>
-        <div class="ray ray-h" style="top:2002px;--dur:7.5s;--del:7s;"></div>
-        <div class="ray ray-h ray-teal" style="top:2200px;--dur:6s;  --del:12s;"></div>
-        <div class="ray ray-h" style="top:2420px;--dur:8s;  --del:2s;"></div>
-        <div class="ray ray-h ray-teal" style="top:2640px;--dur:5.5s;--del:15s;"></div>
-        <div class="ray ray-h" style="top:2860px;--dur:7s;  --del:5s;"></div>
-        <div class="ray ray-h ray-teal" style="top:3080px;--dur:6.5s;--del:10s;"></div>
-        <div class="ray ray-h" style="top:3300px;--dur:9s;  --del:3s;"></div>
+        <div class="ray ray-h"          style="top:154px; --anim:chase-h-a; --dur:40s; --del:0s;"></div>
+        <div class="ray ray-h ray-teal" style="top:440px; --anim:chase-h-b; --dur:35s; --del:3s;"></div>
+        <div class="ray ray-h"          style="top:770px; --anim:chase-h-c; --dur:45s; --del:8s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1100px;--anim:chase-h-a; --dur:38s; --del:12s;"></div>
+        <div class="ray ray-h"          style="top:1474px;--anim:chase-h-b; --dur:42s; --del:5s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1870px;--anim:chase-h-c; --dur:36s; --del:18s;"></div>
+        <div class="ray ray-h"          style="top:2200px;--anim:chase-h-a; --dur:44s; --del:10s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2640px;--anim:chase-h-b; --dur:40s; --del:22s;"></div>
+        <div class="ray ray-h"          style="top:3080px;--anim:chase-h-c; --dur:38s; --del:15s;"></div>
       </div>
 
       <main class="container">
@@ -72,7 +51,7 @@
             <a href="teams.html">Teams</a>
             <a href="getting-started.html">Get started</a>
           </nav>
-          <div class="nav-actions">
+          <div class="nav-actions"><div class="lang-switcher"><a href="/en/" class="active">EN</a><a href="/uk/">UK</a><a href="/it/">IT</a></div>
             <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
               <span class="toggle-track">
                 <span class="toggle-thumb"></span>
@@ -88,7 +67,7 @@
         <section class="hero">
           <div class="hero-image" id="hero-image">
             <img
-              src="solar_punk.png"
+              src="../solar_punk.png"
               alt="Solarpunk cityscape with organic architecture, lush green vegetation, solar panels, and golden sunlight streaming through glass domes"
               loading="eager"
               fetchpriority="high"
@@ -340,6 +319,7 @@
         <!-- ======== FOOTER ======== -->
         <footer class="footer">
           <p>Soleri — Executable standards for agentic systems</p>
+          <p class="copyright">&copy; 2026 Drozd&amp;Co</p>
           <nav class="footer-links" aria-label="Footer links">
             <a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
             <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>

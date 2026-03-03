@@ -1,0 +1,18 @@
+{
+  "$schema": "https://lingo.dev/schema/i18n.json",
+  "version": "1.10",
+  "locale": {
+    "source": "en",
+    "targets": ["uk", "it"]
+  },
+  "buckets": {
+    "html": {
+      "include": ["docs/[locale]/*.html"]
+    }
+  },
+  "provider": {
+    "id": "openai",
+    "model": "gpt-5.2",
+    "prompt": "Translate from {source} to {target}. Keep all HTML tags, attributes, class names, and code snippets exactly as-is. Only translate human-readable text. Preserve professional, concise tone."
+  }
+}

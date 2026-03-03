@@ -3,629 +3,324 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Soleri - AI assistants that remember, learn, and grow with you</title>
+    <title>Soleri - Persistent memory and structured knowledge for agentic systems</title>
     <meta
       name="description"
-      content="Soleri is an open-source framework for building AI assistants with persistent memory, persona-driven workflows, and context that compounds over time."
+      content="Soleri is an open-source framework for persistent memory, structured knowledge, and context that compounds over time."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <style>
-      :root {
-        --color-primary-400: #e8a847;
-        --color-primary-500: #c88f37;
-        --color-primary-700: #5e3d03;
-        --color-secondary-300: #78c4e1;
-        --color-secondary-400: #50b1d3;
-        --color-secondary-500: #239dc3;
-        --color-tertiary-400: #91c96e;
-        --color-neutral-50: #d9dcdf;
-        --color-neutral-100: #ced4db;
-        --color-neutral-200: #bfc7d3;
-        --color-neutral-500: #7a899f;
-        --color-neutral-700: #374253;
-        --color-neutral-800: #2e3744;
-        --color-neutral-900: #252c36;
-        --color-white: #ffffff;
-        --color-black: #000000;
-        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.08);
-        --shadow-md: 0 8px 24px -8px rgb(0 0 0 / 0.14);
-      }
-
-      [data-theme="light"] {
-        --background: var(--color-white);
-        --surface: color-mix(in srgb, var(--color-white) 92%, var(--color-secondary-300) 8%);
-        --surface-strong: var(--color-white);
-        --foreground: var(--color-primary-500);
-        --muted: var(--color-neutral-500);
-        --border: var(--color-neutral-200);
-        --ring: var(--color-secondary-500);
-        --hero-ring: color-mix(in srgb, var(--color-secondary-400) 35%, transparent);
-      }
-
-      [data-theme="dark"] {
-        --background: var(--color-neutral-900);
-        --surface: var(--color-neutral-800);
-        --surface-strong: color-mix(in srgb, var(--color-neutral-800) 86%, var(--color-neutral-700) 14%);
-        --foreground: var(--color-neutral-100);
-        --muted: var(--color-neutral-500);
-        --border: var(--color-neutral-700);
-        --ring: var(--color-secondary-400);
-        --hero-ring: color-mix(in srgb, var(--color-secondary-400) 28%, transparent);
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family: "Sora", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-        background: var(--background);
-        color: var(--foreground);
-      }
-
-      .page {
-        min-height: 100vh;
-        position: relative;
-        overflow-x: clip;
-      }
-
-      .glow {
-        pointer-events: none;
-        position: absolute;
-        filter: blur(60px);
-        z-index: 0;
-      }
-
-      .glow.one {
-        width: 420px;
-        height: 420px;
-        top: -130px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: radial-gradient(circle at center, var(--hero-ring) 0%, transparent 70%);
-      }
-
-      .glow.two {
-        width: 320px;
-        height: 320px;
-        top: 420px;
-        right: -120px;
-        background: radial-gradient(
-          circle at center,
-          color-mix(in srgb, var(--color-primary-400) 24%, transparent) 0%,
-          transparent 72%
-        );
-      }
-
-      .grid-bg {
-        pointer-events: none;
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        opacity: 0.35;
-        background-image: linear-gradient(
-            to right,
-            color-mix(in srgb, var(--border) 72%, transparent) 1px,
-            transparent 1px
-          ),
-          linear-gradient(
-            to bottom,
-            color-mix(in srgb, var(--border) 72%, transparent) 1px,
-            transparent 1px
-          );
-        background-size: 44px 44px;
-        mask-image: radial-gradient(circle at 50% 24%, black 20%, transparent 72%);
-      }
-
-      .container {
-        position: relative;
-        z-index: 1;
-        max-width: 1140px;
-        margin: 0 auto;
-        padding: 26px 20px 84px;
-      }
-
-      .nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 52px;
-      }
-
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .brand-mark {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        color: var(--color-white);
-        border: 1px solid color-mix(in srgb, var(--color-secondary-400) 50%, transparent);
-        background: linear-gradient(145deg, var(--color-secondary-500), var(--color-primary-400));
-        box-shadow: var(--shadow-sm);
-      }
-
-      .brand-name {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 700;
-      }
-
-      .brand-meta {
-        margin: 1px 0 0;
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .nav-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .chip {
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 6px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--muted);
-        background: color-mix(in srgb, var(--surface) 84%, transparent);
-      }
-
-      .theme-toggle {
-        border: 1px solid var(--border);
-        background: var(--surface-strong);
-        color: var(--foreground);
-        border-radius: 10px;
-        height: 36px;
-        padding: 0 12px;
-        font: inherit;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-
-      .hero {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 24px;
-        align-items: stretch;
-        margin-bottom: 52px;
-      }
-
-      .hero-main {
-        background: color-mix(in srgb, var(--surface) 94%, transparent);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 34px;
-        box-shadow: var(--shadow-md);
-      }
-
-      .eyebrow {
-        margin: 0 0 14px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--color-secondary-500);
-      }
-
-      .hero-title {
-        margin: 0 0 14px;
-        font-size: clamp(34px, 6vw, 62px);
-        line-height: 1.05;
-        letter-spacing: -0.03em;
-      }
-
-      .hero-title .accent {
-        color: var(--color-secondary-500);
-      }
-
-      .hero-text {
-        margin: 0 0 22px;
-        max-width: 60ch;
-        color: var(--muted);
-        line-height: 1.64;
-        font-size: 16px;
-      }
-
-      .hero-actions {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 700;
-        padding: 12px 16px;
-        transition: transform 0.15s ease, filter 0.15s ease;
-      }
-
-      .btn:hover {
-        transform: translateY(-1px);
-        filter: brightness(1.03);
-      }
-
-      .btn.primary {
-        background: var(--color-secondary-500);
-        color: var(--color-white);
-      }
-
-      .btn.secondary {
-        background: var(--surface-strong);
-        color: var(--foreground);
-        border: 1px solid var(--border);
-      }
-
-      .terminal {
-        background: var(--surface-strong);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 20px;
-        box-shadow: var(--shadow-sm);
-      }
-
-      .terminal-title {
-        margin: 0 0 12px;
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      .terminal-code {
-        margin: 0;
-        border-radius: 12px;
-        border: 1px solid color-mix(in srgb, var(--color-neutral-700) 75%, transparent);
-        background: color-mix(in srgb, var(--color-black) 82%, var(--color-neutral-900) 18%);
-        color: var(--color-neutral-50);
-        padding: 14px;
-        font-family: "JetBrains Mono", ui-monospace, monospace;
-        font-size: 13px;
-        line-height: 1.8;
-        overflow-x: auto;
-      }
-
-      .terminal-code .prompt {
-        color: var(--color-secondary-300);
-      }
-
-      .section {
-        margin-top: 54px;
-      }
-
-      .section-title {
-        margin: 0 0 14px;
-        font-size: clamp(24px, 3vw, 34px);
-        letter-spacing: -0.02em;
-      }
-
-      .section-subtitle {
-        margin: 0 0 22px;
-        max-width: 68ch;
-        color: var(--muted);
-        line-height: 1.65;
-        font-size: 15px;
-      }
-
-      .cards {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .card {
-        background: color-mix(in srgb, var(--surface) 95%, transparent);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 16px;
-      }
-
-      .card h3 {
-        margin: 0 0 8px;
-        font-size: 16px;
-      }
-
-      .card p {
-        margin: 0;
-        font-size: 14px;
-        line-height: 1.6;
-        color: var(--muted);
-      }
-
-      .architecture {
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        overflow: hidden;
-      }
-
-      .layer {
-        display: grid;
-        grid-template-columns: 130px 1fr;
-        gap: 14px;
-        padding: 14px 16px;
-        border-top: 1px solid var(--border);
-      }
-
-      .layer:first-child {
-        border-top: none;
-      }
-
-      .layer-label {
-        margin: 0;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--color-secondary-500);
-        font-weight: 700;
-      }
-
-      .layer-value {
-        margin: 0;
-        font-size: 14px;
-        color: var(--foreground);
-      }
-
-      .cta {
-        margin-top: 60px;
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 26px;
-        background: linear-gradient(
-          160deg,
-          color-mix(in srgb, var(--surface) 92%, transparent) 0%,
-          color-mix(in srgb, var(--surface) 78%, var(--color-secondary-500) 22%) 100%
-        );
-      }
-
-      .cta h2 {
-        margin: 0 0 8px;
-        font-size: clamp(26px, 4vw, 38px);
-        letter-spacing: -0.02em;
-      }
-
-      .cta p {
-        margin: 0 0 16px;
-        max-width: 64ch;
-        color: var(--muted);
-        line-height: 1.62;
-        font-size: 15px;
-      }
-
-      .footer {
-        margin-top: 44px;
-        padding-top: 20px;
-        border-top: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        flex-wrap: wrap;
-      }
-
-      .footer p {
-        margin: 0;
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .footer-links {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-      }
-
-      .footer-links a {
-        color: var(--muted);
-        font-size: 12px;
-        text-decoration: none;
-      }
-
-      .footer-links a:hover {
-        color: var(--color-secondary-500);
-      }
-
-      @media (max-width: 980px) {
-        .hero {
-          grid-template-columns: 1fr;
-        }
-
-        .cards {
-          grid-template-columns: 1fr 1fr;
-        }
-      }
-
-      @media (max-width: 700px) {
-        .cards {
-          grid-template-columns: 1fr;
-        }
-
-        .hero-main,
-        .terminal,
-        .cta {
-          padding: 18px;
-        }
-
-        .layer {
-          grid-template-columns: 1fr;
-          gap: 6px;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="soleri-base.css" />
   </head>
   <body data-theme="light">
     <div class="page">
-      <div class="glow one"></div>
-      <div class="glow two"></div>
+      <!-- Ambient solarpunk glow orbs -->
+      <div class="glow glow-amber"></div>
+      <div class="glow glow-green"></div>
+      <div class="glow glow-teal"></div>
       <div class="grid-bg"></div>
+      <div class="grid-rays">
+        <div class="ray ray-h"          style="top:154px; --anim:chase-h-a; --dur:40s; --del:0s;"></div>
+        <div class="ray ray-h ray-teal" style="top:440px; --anim:chase-h-b; --dur:35s; --del:3s;"></div>
+        <div class="ray ray-h"          style="top:770px; --anim:chase-h-c; --dur:45s; --del:8s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1100px;--anim:chase-h-a; --dur:38s; --del:12s;"></div>
+        <div class="ray ray-h"          style="top:1474px;--anim:chase-h-b; --dur:42s; --del:5s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1870px;--anim:chase-h-c; --dur:36s; --del:18s;"></div>
+        <div class="ray ray-h"          style="top:2200px;--anim:chase-h-a; --dur:44s; --del:10s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2640px;--anim:chase-h-b; --dur:40s; --del:22s;"></div>
+        <div class="ray ray-h"          style="top:3080px;--anim:chase-h-c; --dur:38s; --del:15s;"></div>
+      </div>
 
       <main class="container">
+        <!-- ======== NAV ======== -->
         <header class="nav">
           <div class="brand">
-            <div class="brand-mark">S</div>
-            <div>
-              <p class="brand-name">Soleri</p>
-              <p class="brand-meta">Living infrastructure for AI assistants</p>
-            </div>
+            <a href="en/">
+              <div class="brand-top">
+                <p class="brand-name">Soleri</p>
+              </div>
+            </a>
           </div>
+          <nav class="nav-links" aria-label="Main navigation">
+            <a href="en/how-it-works.html">How it works</a>
+            <a href="en/personas.html">Your Agent</a>
+            <a href="en/teams.html">Teams</a>
+            <a href="en/getting-started.html">Get started</a>
+          </nav>
           <div class="nav-actions">
-            <span class="chip">Open Source</span>
-            <span class="chip">Apache-2.0</span>
-            <button class="theme-toggle" id="theme-toggle" type="button">Switch to dark</button>
+            <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+                <svg class="toggle-icon toggle-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg class="toggle-icon toggle-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </span>
+            </button>
           </div>
         </header>
+        <p class="brand-meta">Executable standards for agentic systems</p>
 
+        <!-- ======== 1. HERO — Emotional hook ======== -->
         <section class="hero">
-          <div class="hero-main">
-            <p class="eyebrow">Framework for assistants that compound context over time</p>
-            <h1 class="hero-title">
-              Build AI assistants that <span class="accent">remember, learn, and grow</span> with
-              you.
-            </h1>
-            <p class="hero-text">
-              Soleri gives your assistants persistent memory, evolving skills, and persona-driven
-              behavior across projects. One engine, unlimited personas, no session reset amnesia.
-            </p>
-            <div class="hero-actions">
-              <a class="btn primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer"
-                >Explore on GitHub</a
-              >
-              <a class="btn secondary" href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer"
-                >View npm package</a
-              >
+          <div class="hero-image" id="hero-image">
+            <img
+              src="solar_punk.png"
+              alt="Solarpunk cityscape with organic architecture, lush green vegetation, solar panels, and golden sunlight streaming through glass domes"
+              loading="eager"
+              fetchpriority="high"
+            />
+            <div class="hero-overlay">
+              <p class="eyebrow">Open source</p>
+              <h1 class="hero-title">
+                What you
+                <span class="accent-amber">teach</span>
+                it
+                <span class="accent-teal">stays</span>.
+                What it
+                <span class="accent-green">learns</span>
+                compounds.
+              </h1>
+              <p class="hero-text">
+                Persistent memory. Structured knowledge. Context that carries across every session.
+              </p>
+              <div class="hero-actions">
+                <a class="btn btn-primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                  Explore on GitHub
+                </a>
+                <a class="btn btn-secondary" href="#how-section">See how it works</a>
+              </div>
             </div>
           </div>
+        </section>
 
+        <!-- PRINCIPLE LINE -->
+        <section class="section">
+          <h2 class="section-title" style="margin-bottom: 20px;">Knowledge should compound — not evaporate.</h2>
+          <div class="compare">
+            <div class="compare-panel">
+              <div class="compare-label before">Without memory</div>
+              <div class="compare-content"><span class="dim">// Session 1</span>
+<span class="warn">You:</span> We use Tailwind with semantic tokens,
+      never raw hex. Spacing is 4px base.
+<span class="warn">AI:</span>  Got it! I'll follow that.
+
+<span class="dim">// Session 2 — next day</span>
+<span class="warn">You:</span> Why did you use #3B82F6 again?
+<span class="warn">AI:</span>  Sorry, can you remind me of your
+      color conventions?
+
+<span class="dim">// Session 47 — same question, again</span></div>
+            </div>
+            <div class="compare-panel">
+              <div class="compare-label after">With Soleri</div>
+              <div class="compare-content"><span class="dim">// Session 1</span>
+<span class="hl">You:</span> We use Tailwind with semantic tokens.
+<span class="hl">AI:</span>  Captured to vault. I'll enforce this.
+
+<span class="dim">// Session 47</span>
+<span class="hl">You:</span> Review this component.
+<span class="hl">AI:</span>  Found 2 raw hex values. Your vault says
+      semantic tokens only. Fixing now.
+      <span class="ok">✓ Pattern applied from vault</span>
+      <span class="ok">✓ Brain confidence: 94%</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- HOW — The approach -->
+        <section class="how-section" id="how-section">
+          <div class="how-grid">
+            <div class="how-left">
+              <h2 class="how-title">
+                One engine.<br/>
+                One vault.<br/>
+                No coordination overhead.
+              </h2>
+              <p class="how-text">
+                A <strong>Vault</strong> for knowledge,
+                a <strong>Brain</strong> that learns, <strong>Memory</strong> that persists.
+                Single process. Feed it knowledge — it organizes, vectorizes, and learns.
+              </p>
+              <div class="engine-row">
+                <span class="engine-tag">Vault</span>
+                <span class="engine-tag">Brain</span>
+                <span class="engine-tag">Memory</span>
+              </div>
+            </div>
+            <div class="how-right">
+              <div class="feature-item">
+                <h3>Configuration as code</h3>
+                <p>One command generates the config. Voice, domains, vault backends — all declarative, all version-controlled.</p>
+                <div class="feature-code"><span class="cmt"># agent.yaml (generated by create)</span>
+<span class="key">name:</span> <span class="val">my-agent</span>
+<span class="key">voice:</span> <span class="val">direct, technical, thorough</span>
+<span class="key">domains:</span> <span class="val">[frontend, backend, infrastructure]</span>
+<span class="key">vault:</span>
+  <span class="key">backends:</span>
+    - <span class="key">type:</span> <span class="val">local</span>
+    - <span class="key">type:</span> <span class="val">git</span>
+      <span class="key">uri:</span>  <span class="val">git@github.com:team/vault.git</span></div>
+              </div>
+              <div class="feature-item">
+                <h3>Pluggable knowledge packs</h3>
+                <p>npm packages you snap into any agent. Starter, community, and premium tiers.</p>
+                <div class="feature-code"><span class="cmt">$ soleri packs list</span>
+<span class="ok">✓</span> starter/code-review    <span class="val">v1.0.0</span>  <span class="cmt">built-in</span>
+<span class="ok">✓</span> community/react        <span class="val">v0.3.0</span>  <span class="cmt">installed</span>
+<span class="ok">✓</span> community/typescript   <span class="val">v0.4.0</span>  <span class="cmt">installed</span>
+  team/design-standards  <span class="val">v2.1.0</span>  <span class="cmt">shared vault</span></div>
+              </div>
+              <div class="feature-item">
+                <h3>Transport &amp; LLM agnostic</h3>
+                <p>Pure TypeScript core. Protocol adapters are separate files. Works without API keys.</p>
+                <div class="feature-code"><span class="key">engine/core/</span>        <span class="cmt"># zero protocol deps</span>
+├── vault.ts
+├── brain.ts
+└── memory.ts
+<span class="key">engine/transports/</span>  <span class="cmt"># swap without touching core</span>
+├── <span class="ok">mcp.ts</span>         <span class="cmt"># ships now</span>
+├── rest.ts        <span class="cmt"># dashboards, APIs</span>
+└── lsp.ts         <span class="cmt"># VS Code, Cursor, Zed</span></div>
+              </div>
+              <div class="feature-item">
+                <h3>Cold start, not blank slate</h3>
+                <p>Starter knowledge on create. Project scan on first run. Guided capture after.</p>
+                <div class="feature-code"><span class="cmt">$ soleri create my-agent</span>
+<span class="ok">✓</span> Installed starter knowledge  <span class="val">34 patterns</span>
+<span class="ok">✓</span> Scanned project              <span class="val">React + TS</span>
+<span class="ok">✓</span> Auto-captured                <span class="val">12 patterns</span>
+<span class="ok">✓</span> Vault ready                  <span class="val">46 entries</span>
+
+<span class="cmt"># After 3 sessions:</span>
+<span class="warn">Brain:</span> You've fixed this import style 3×.
+       <span class="val">Capture as pattern? [y/n]</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- WHAT — Concrete results -->
+        <section class="section spacious">
+          <div class="section-header">
+            <h2 class="section-title">Structure beats splitting.</h2>
+          </div>
+          <div class="persona-cards">
+            <article class="persona-card salvador">
+              <h3>Frontend</h3>
+              <p class="persona-domain">Domain</p>
+              <ul class="persona-capabilities">
+                <li>React patterns</li>
+                <li>Design tokens</li>
+                <li>Component review</li>
+                <li>Accessibility</li>
+              </ul>
+              <p class="persona-ships">Ask about buttons — the vault searches here first.</p>
+            </article>
+            <article class="persona-card gaudi">
+              <h3>Backend</h3>
+              <p class="persona-domain">Domain</p>
+              <ul class="persona-capabilities">
+                <li>API conventions</li>
+                <li>Database schemas</li>
+                <li>Auth patterns</li>
+                <li>Performance</li>
+              </ul>
+              <p class="persona-ships">Ask about queries or API design — the vault pulls from here.</p>
+            </article>
+            <article class="persona-card sentinel">
+              <h3>Cross-cutting</h3>
+              <p class="persona-domain">Domain</p>
+              <ul class="persona-capabilities">
+                <li>Git workflows</li>
+                <li>Code review</li>
+                <li>Testing strategies</li>
+                <li>Documentation</li>
+              </ul>
+              <p class="persona-ships">Patterns that span domains. The graph finds connections automatically.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section tight">
           <aside class="terminal">
-            <p class="terminal-title">Quick start</p>
-            <pre class="terminal-code"><span class="prompt">$</span> npm install -g soleri
-<span class="prompt">$</span> soleri forge my-assistant
-<span class="prompt">$</span> soleri list
-<span class="prompt">$</span> soleri update
-<span class="prompt">$</span> soleri doctor</pre>
+            <div class="terminal-header">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+              <span class="terminal-title">Terminal</span>
+            </div>
+            <pre class="terminal-code"><span class="comment"># Install and create</span>
+<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g soleri</span>
+<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
+
+<span class="comment">  ✓ Created agent config</span>
+<span class="comment">  ✓ Connected vault (starter knowledge: 34 patterns)</span>
+<span class="comment">  ✓ Scanned project: React + TypeScript</span>
+<span class="comment">  ✓ Auto-captured 12 codebase patterns</span>
+<span class="comment">  ✓ Vault ready — 46 entries, vectorized, graph-connected</span>
+
+<span class="comment"># Feed it more knowledge</span>
+<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span></pre>
           </aside>
         </section>
 
         <section class="section">
-          <h2 class="section-title">Core concepts</h2>
-          <p class="section-subtitle">
-            Soleri replaces stateless chat loops with durable assistant infrastructure. Knowledge
-            and behavior persist and improve with use.
-          </p>
-          <div class="cards">
-            <article class="card">
-              <h3>Vault</h3>
-              <p>Persistent knowledge store for patterns, workflows, and architecture decisions.</p>
-            </article>
-            <article class="card">
-              <h3>Brain</h3>
-              <p>Learning loop that captures intelligence from real sessions and compounds it.</p>
-            </article>
-            <article class="card">
-              <h3>Memory</h3>
-              <p>Cross-session and cross-project continuity without repeated setup or re-teaching.</p>
-            </article>
-            <article class="card">
-              <h3>Personas</h3>
-              <p>Specialized identities with distinct expertise on top of a shared core engine.</p>
-            </article>
-            <article class="card">
-              <h3>Forge</h3>
-              <p>CLI lifecycle for creating, updating, and managing personas in production.</p>
-            </article>
-            <article class="card">
-              <h3>Transports</h3>
-              <p>MCP today, with REST and LSP paths designed into the architecture.</p>
-            </article>
+          <div class="section-header">
+            <h2 class="section-title">Layered like living systems</h2>
+            <p class="section-subtitle">
+              Each layer grows independently. Swap transports, plug in knowledge, customize
+              your agent — the engine stays the same.
+            </p>
           </div>
-        </section>
-
-        <section class="section">
-          <h2 class="section-title">Architecture</h2>
-          <p class="section-subtitle">
-            Soleri is structured as layered infrastructure: persona-level specialization above a
-            reusable engine and pluggable transports.
-          </p>
           <div class="architecture">
             <div class="layer">
-              <p class="layer-label">Personas</p>
-              <p class="layer-value">Salvador, Gaudi, Sentinel, and your own custom personas</p>
+              <p class="layer-label"><span class="layer-bar"></span> Agents</p>
+              <p class="layer-value">Your agent's config (<code>agent.yaml</code>): identity, voice, domain wiring. Create in one command, customize anytime.</p>
             </div>
             <div class="layer">
-              <p class="layer-label">Domains</p>
-              <p class="layer-value">Design, security, architecture, and additional pluggable expertise</p>
+              <p class="layer-label"><span class="layer-bar"></span> Domains</p>
+              <p class="layer-value">Pluggable knowledge domains. The engine loads relevant domains based on your agent's vault structure.</p>
             </div>
             <div class="layer">
-              <p class="layer-label">Engine</p>
-              <p class="layer-value">Vault, brain, planning, and memory as the shared core</p>
+              <p class="layer-label"><span class="layer-bar"></span> Engine</p>
+              <p class="layer-value">Single MCP server process. Vault (knowledge), Brain (learning), Memory (context), Planning (workflows). Your agent runs on it. Updates via <code>npm update</code>.</p>
             </div>
             <div class="layer">
-              <p class="layer-label">Transports</p>
-              <p class="layer-value">MCP for Claude Code today, REST and LSP ready tomorrow</p>
+              <p class="layer-label"><span class="layer-bar"></span> Transports</p>
+              <p class="layer-value">Protocol adapters isolated from core: <code>mcp.ts</code> ships now, <code>rest.ts</code> and <code>lsp.ts</code> ready for VS Code, Cursor, Zed, and custom dashboards. Adding a transport = one adapter file.</p>
             </div>
           </div>
         </section>
 
-        <section class="section">
-          <h2 class="section-title">Official personas</h2>
-          <div class="cards">
-            <article class="card">
-              <h3>Salvador</h3>
-              <p>Design systems: tokens, components, accessibility, and visual validation.</p>
-            </article>
-            <article class="card">
-              <h3>Gaudi</h3>
-              <p>Architecture: system design, API patterns, persistence, and performance.</p>
-            </article>
-            <article class="card">
-              <h3>Sentinel</h3>
-              <p>Security: vulnerability analysis, API hardening, and threat modeling.</p>
-            </article>
-          </div>
-        </section>
+        <div class="soleri-mark mark-section"></div>
 
+        <!-- CTA — Take action -->
         <section class="cta">
-          <h2>Start with one persona. Grow into a full assistant system.</h2>
+          <h2>Start building.</h2>
           <p>
-            Soleri is named after Paolo Soleri and his idea that systems should be living and
-            adaptive. Your assistants should evolve the same way.
+            Open source. Apache 2.0.
           </p>
           <div class="hero-actions">
-            <a class="btn primary" href="https://github.com/adrozdenko/soleri#quick-start" target="_blank" rel="noreferrer"
-              >Read quick start</a
-            >
-            <a class="btn secondary" href="https://github.com/adrozdenko/soleri/discussions" target="_blank" rel="noreferrer"
-              >Join discussions</a
-            >
+            <a class="btn btn-primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              Explore on GitHub
+            </a>
+            <a class="btn btn-secondary" href="en/getting-started.html">
+              Get started
+            </a>
           </div>
         </section>
 
+        <!-- ======== FOOTER ======== -->
         <footer class="footer">
-          <p>Soleri - open-source framework for assistants that remember.</p>
-          <nav class="footer-links">
+          <p>Soleri — Executable standards for agentic systems</p>
+          <p class="copyright">&copy; 2026 Drozd&amp;Co</p>
+          <nav class="footer-links" aria-label="Footer links">
             <a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
             <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
             <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a>
@@ -636,23 +331,58 @@
 
     <script>
       (function () {
-        const body = document.body
-        const button = document.getElementById("theme-toggle")
+        var body = document.body;
+        var btn = document.getElementById("theme-toggle");
 
-        function setTheme(theme) {
-          body.setAttribute("data-theme", theme)
-          button.textContent = theme === "dark" ? "Switch to light" : "Switch to dark"
-          localStorage.setItem("soleri-theme", theme)
+        function setTheme(t) {
+          body.setAttribute("data-theme", t);
+          btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+          localStorage.setItem("soleri-theme", t);
         }
 
-        const saved = localStorage.getItem("soleri-theme")
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-        setTheme(saved || (prefersDark ? "dark" : "light"))
+        // Initial theme — no transition
+        var saved = localStorage.getItem("soleri-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setTheme(saved || (prefersDark ? "dark" : "light"));
 
-        button.addEventListener("click", function () {
-          setTheme(body.getAttribute("data-theme") === "dark" ? "light" : "dark")
-        })
-      })()
+        btn.addEventListener("click", function () {
+          var next = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+
+          // Fallback for browsers without View Transitions API
+          if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setTheme(next);
+            return;
+          }
+
+          var transition = document.startViewTransition(function () {
+            setTheme(next);
+          });
+
+          transition.ready.then(function () {
+            var rect = btn.getBoundingClientRect();
+            var x = rect.left + rect.width / 2;
+            var y = rect.top + rect.height / 2;
+            var radius = Math.hypot(
+              Math.max(x, window.innerWidth - x),
+              Math.max(y, window.innerHeight - y)
+            );
+
+            document.documentElement.animate(
+              {
+                clipPath: [
+                  "circle(0px at " + x + "px " + y + "px)",
+                  "circle(" + radius + "px at " + x + "px " + y + "px)"
+                ]
+              },
+              {
+                duration: 600,
+                easing: "ease-in-out",
+                pseudoElement: "::view-transition-new(root)"
+              }
+            );
+          });
+        });
+      })();
     </script>
   </body>
 </html>

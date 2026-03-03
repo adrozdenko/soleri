@@ -12,55 +12,56 @@
 
 ---
 
-An open-source framework for building AI assistants that **remember what you taught them**, **learn from real work sessions**, and **carry context across every project and conversation**. One engine, unlimited personas — each with its own identity, expertise, and growing knowledge base.
+Every AI session starts from zero. You explain your conventions, your architecture, your preferences — and then the session ends and it's all gone. You do it again tomorrow. And the day after that. The assistant never gets better, never remembers, never grows.
 
-## Quick Start
+**We believe AI assistants should compound knowledge, not lose it.**
+
+Soleri is the open-source engine that makes that real.
+
+## How It Works
+
+Soleri gives agents persistent infrastructure — a **vault** that remembers, a **brain** that learns, and **memory** that carries across every project and conversation. Knowledge flows through a lifecycle: **capture** from real sessions → **store** with domain classification → **strengthen** through confidence scoring → **compound** by surfacing what works first.
+
+Instead of one generic assistant, you build specialized **agents** — each with its own voice, expertise, and growing knowledge base — all running on a shared engine. The more you use them, the sharper they get.
+
+## What You Get
 
 ```bash
 npm install -g soleri
 
-soleri forge my-assistant    # Create a persona
-soleri list                  # Show registered personas
+soleri create my-agent       # Create an agent with starter knowledge
+soleri list                  # Show registered agents
 soleri update                # Update to latest templates
 soleri doctor                # Check system health
 ```
 
-## Why Soleri
+Your agent ships with starter knowledge and auto-captures patterns from your codebase on first run.
 
-AI assistants today are stateless — you explain your conventions, your architecture, your preferences, and then the session ends and it's all gone. Soleri gives assistants persistent infrastructure so knowledge compounds instead of evaporating.
+### The Engine
 
-You build assistants called **personas**. Each persona has its own voice, domains, and growing knowledge — but they all run on a shared engine and can switch instantly.
+**Vault** — Domain-separated knowledge store. Patterns, anti-patterns, workflows, and architecture decisions organized by domain (frontend, backend, cross-cutting), vectorized with [Cognee](https://github.com/topoteretes/cognee) for semantic search and graph-connected for cross-domain discovery. Self-maintaining: deduplication, decay detection, and confidence tracking happen automatically.
 
-## Core Concepts
+**Brain** — Learning loop that captures intelligence from real sessions. Tracks pattern strength with confidence scores, surfaces high-confidence patterns first, and operates on a rolling window. No manual tagging — capture is automatic.
 
-**Vault** — Persistent knowledge storage. Patterns, anti-patterns, workflows, decisions — structured, searchable, always there. Your assistant's long-term memory.
+**Memory** — Cross-session, cross-project continuity. Switch conversations, switch projects — nothing is lost. Link projects as related, parent/child, or fork and search across all of them with weighted relevance.
 
-**Brain** — A learning loop that captures intelligence from real work. The more you use it, the sharper it gets.
+**Playbooks** — Multi-step validated procedures stored in the vault. Token migrations, component setup, contrast audits — each step includes validation criteria so the agent can execute and verify autonomously.
 
-**Memory** — Cross-session, cross-project context. Switch conversations, switch projects — nothing is lost.
+### Official Agents
 
-**Personas** — Thin identity layers on a shared engine. Each has its own expertise and knowledge, but they share context and switch without losing state.
-
-**Forge** — CLI for the full persona lifecycle. Create, update, inspect, and manage personas with template versioning and three-way merge updates.
-
-## Official Personas
-
-| Persona | Domain | What it does |
-|---------|--------|--------------|
+| Agent | Domain | What it does |
+|-------|--------|--------------|
 | **Salvador** | Design Systems | Tokens, components, accessibility, visual validation |
 | **Gaudi** | Architecture | System design, API patterns, databases, performance |
 | **Sentinel** | Security | Vulnerability analysis, API hardening, threat modeling |
 
-> Salvador sees design. Gaudi sees architecture. Sentinel sees security.
-> **Soleri is the living foundation they all grow from.**
+Each ships with starter knowledge. Community agents welcome via `personas/community/`.
 
-Each ships with starter knowledge. Community personas welcome via `personas/community/`.
-
-## Architecture
+### Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Personas       Salvador · Gaudi · Sentinel · yours     │
+│  Agents         Salvador · Gaudi · Sentinel · yours     │
 ├─────────────────────────────────────────────────────────┤
 │  Domains        design · security · architecture · ...  │
 ├─────────────────────────────────────────────────────────┤
@@ -70,11 +71,33 @@ Each ships with starter knowledge. Community personas welcome via `personas/comm
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Core** — Pure logic, zero protocol dependencies
-- **Transports** — MCP for Claude Code today, REST and LSP tomorrow
-- **Domains** — Pluggable expertise modules
-- **Vault Backends** — Local filesystem, git for teams, remote API for hosted teams
-- **Single process** — One engine, unlimited personas, no config bloat
+- **Engine** — Pure logic, zero protocol dependencies. Single process, no config bloat.
+- **Transports** — MCP for Claude Code and Cursor today, REST and LSP designed into the architecture.
+- **Domains** — Pluggable expertise modules (frontend, backend, cross-cutting, and custom).
+- **Vault Backends** — Three-tier model: agent vault (personal), project vault (team conventions), team vault (shared across all projects). Local filesystem, git sync, or remote API.
+- **LLM Providers** — Anthropic, OpenAI, Ollama, or none. Works without API keys for local vault search, pattern matching, and brain tracking.
+
+### Knowledge Packs
+
+Install expertise in one command:
+
+| Tier | Source | Cost |
+|------|--------|------|
+| **Starter** | Ships with agent | Free |
+| **Community** | npm registry | Free |
+| **Premium** | Subscription | Paid |
+
+```bash
+soleri packs install community/react-patterns
+soleri packs sync
+```
+
+### Teams & Ops
+
+- **Connected vaults** — Link agent, project, and team vaults with automatic search priority.
+- **Cross-project knowledge** — Link projects and search across them with weighted relevance.
+- **Telegram bot** — Monitor vault health, query the knowledge graph, check event logs, and manage infrastructure from mobile.
+- **Health checks** — `soleri doctor` reports engine version, domain status, vault health, brain tracking, and team sync state.
 
 ## Contributing
 
@@ -95,5 +118,5 @@ From fixing typos to building domain modules — see [CONTRIBUTING.md](CONTRIBUT
 </p>
 
 <p align="center">
-  <a href="https://soleri.ai">soleri.ai</a> · <a href="https://www.npmjs.com/package/soleri">npm</a> · <a href="https://github.com/adrozdenko/soleri/issues">Issues</a> · <a href="https://github.com/adrozdenko/soleri/discussions">Discussions</a>
+  <a href="https://soleri.dev">soleri.dev</a> · <a href="https://www.npmjs.com/package/soleri">npm</a> · <a href="https://github.com/adrozdenko/soleri/issues">Issues</a> · <a href="https://github.com/adrozdenko/soleri/discussions">Discussions</a>
 </p>

@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soleri — Постійна пам’ять і структуровані знання для агентних систем</title>
+    <meta name="description" content="Soleri — це фреймворк з відкритим кодом для постійної пам’яті, структурованих знань і контексту, що накопичуються з часом.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../soleri-base.css">
+  </head>
+  <body data-theme="light">
+    <div class="page">
+      <!-- Ambient solarpunk glow orbs -->
+      <div class="glow glow-amber"></div>
+      <div class="glow glow-green"></div>
+      <div class="glow glow-teal"></div>
+      <div class="grid-bg"></div>
+      <div class="grid-rays">
+        <div class="ray ray-h"          style="top:154px; --anim:chase-h-a; --dur:40s; --del:0s;"></div>
+        <div class="ray ray-h ray-teal" style="top:440px; --anim:chase-h-b; --dur:35s; --del:3s;"></div>
+        <div class="ray ray-h"          style="top:770px; --anim:chase-h-c; --dur:45s; --del:8s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1100px;--anim:chase-h-a; --dur:38s; --del:12s;"></div>
+        <div class="ray ray-h"          style="top:1474px;--anim:chase-h-b; --dur:42s; --del:5s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1870px;--anim:chase-h-c; --dur:36s; --del:18s;"></div>
+        <div class="ray ray-h"          style="top:2200px;--anim:chase-h-a; --dur:44s; --del:10s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2640px;--anim:chase-h-b; --dur:40s; --del:22s;"></div>
+        <div class="ray ray-h"          style="top:3080px;--anim:chase-h-c; --dur:38s; --del:15s;"></div>
+      </div>
+
+      <main class="container">
+        <!-- ======== NAV ======== -->
+        <header class="nav">
+          <div class="brand"><a href="index-solarpunk.html">
+              <div class="brand-top">
+                <p class="brand-name">Soleri</p>
+              </div>
+            </a></div>
+          <nav class="nav-links" aria-label="Main navigation"><a href="how-it-works.html">Як це працює</a>
+            <a href="personas.html">Ваш агент</a>
+            <a href="teams.html">Команди</a>
+            <a href="getting-started.html">Почати</a></nav>
+          <div class="nav-actions"><div class="lang-switcher"><a href="/en/">EN</a><a href="/uk/" class="active">UK</a><a href="/it/">IT</a></div>
+            <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+                <svg class="toggle-icon toggle-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg class="toggle-icon toggle-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </span>
+            </button>
+          </div>
+        </header>
+        <p class="brand-meta">Виконувані стандарти для агентних систем</p>
+
+        <!-- ======== 1. HERO — Emotional hook ======== -->
+        <section class="hero">
+          <div class="hero-image" id="hero-image">
+            <img src="../solar_punk.png" alt="Соларпанк-міський пейзаж з органічною архітектурою, пишною зеленою рослинністю, сонячними панелями та золотим сонячним світлом, що пробивається крізь скляні куполи" loading="eager" fetchpriority="high">
+            <div class="hero-overlay">
+              <p class="eyebrow">Відкритий код</p>
+              <h1 class="hero-title">Те, чому
+                <span class="accent-amber">навчиш</span>
+                —
+                <span class="accent-teal">залишається</span>.
+                Те, що
+                <span class="accent-green">засвоюється</span>,
+                накопичується.</h1>
+              <p class="hero-text">Постійна пам’ять. Структуровані знання. Контекст, що зберігається між усіма сесіями.</p>
+              <div class="hero-actions">
+                <a class="btn btn-primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                  Explore on GitHub
+                </a>
+                <a class="btn btn-secondary" href="#how-section">Дивіться, як це працює</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PRINCIPLE LINE -->
+        <section class="section">
+          <h2 class="section-title" style="margin-bottom: 20px;">Знання мають накопичуватися — а не випаровуватися.</h2>
+          <div class="compare">
+            <div class="compare-panel">
+              <div class="compare-label before">Без пам’яті</div>
+              <div class="compare-content"><span class="dim">// Сесія 1</span>
+<span class="warn">Ти:</span> Ми використовуємо Tailwind із семантичними токенами,
+      ніколи — сирі hex. Базовий крок відступів — 4px.
+<span class="warn">AI:</span>  Зрозуміло! Я цього дотримуватимуся.
+
+<span class="dim">// Сесія 2 — наступного дня</span>
+<span class="warn">Ти:</span> Чому ти знову використав #3B82F6?
+<span class="warn">AI:</span>  Вибач, можеш нагадати мені
+      твої домовленості щодо кольорів?
+
+<span class="dim">// Сесія 47 — те саме питання, знову</span></div>
+            </div>
+            <div class="compare-panel">
+              <div class="compare-label after">Із Soleri</div>
+              <div class="compare-content"><span class="dim">// Сесія 1</span>
+<span class="hl">Ти:</span> Ми використовуємо Tailwind із семантичними токенами.
+<span class="hl">AI:</span>  Збережено у Сховищі. Я це забезпечуватиму.
+
+<span class="dim">// Сесія 47</span>
+<span class="hl">Ти:</span> Переглянь цей компонент.
+<span class="hl">AI:</span>  Знайдено 2 сирі hex-значення. У твоєму Сховищі сказано:
+      лише семантичні токени. Виправляю зараз.
+      <span class="ok">✓ Шаблон застосовано зі Сховища</span>
+      <span class="ok">✓ Впевненість Brain: 94%</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- HOW — The approach -->
+        <section class="how-section" id="how-section">
+          <div class="how-grid">
+            <div class="how-left">
+              <h2 class="how-title">Один движок.<br>
+                Одне Сховище.<br>
+                Жодних накладних витрат на координацію.</h2>
+              <p class="how-text"><strong>Сховище</strong> для знань,
+                <strong>Brain</strong>, що навчається, <strong>Memory</strong>, що зберігається.
+                Один процес. Знання організуються, векторизуються та накопичуються автоматично.</p>
+              <div class="engine-row"><span class="engine-tag">Сховище</span>
+                <span class="engine-tag">Brain</span>
+                <span class="engine-tag">Memory</span></div>
+            </div>
+            <div class="how-right">
+              <div class="feature-item">
+                <h3>Конфігурація як код</h3>
+                <p>Одна команда генерує конфіг. Голос, домени, бекенди Сховища — усе декларативно, усе під контролем версій.</p>
+                <div class="feature-code"><span class="cmt"># agent.yaml (generated by create)</span>
+<span class="key">name:</span> <span class="val">my-agent</span>
+<span class="key">voice:</span> <span class="val">direct, technical, thorough</span>
+<span class="key">domains:</span> <span class="val">[frontend, backend, infrastructure]</span>
+<span class="key">vault:</span>
+  <span class="key">backends:</span>
+    - <span class="key">type:</span> <span class="val">local</span>
+    - <span class="key">type:</span> <span class="val">git</span>
+      <span class="key">uri:</span>  <span class="val">git@github.com:team/vault.git</span></div>
+              </div>
+              <div class="feature-item">
+                <h3>Підключувані пакети знань</h3>
+                <p>npm-пакети, які можна під’єднати до будь-якого агента. Рівні: стартовий, спільнотний і преміум.</p>
+                <div class="feature-code"><span class="cmt">$ soleri packs list</span>
+<span class="ok">✓</span> starter/code-review    <span class="val">v1.0.0</span>  <span class="cmt">вбудовано</span>
+<span class="ok">✓</span> community/react        <span class="val">v0.3.0</span>  <span class="cmt">встановлено</span>
+<span class="ok">✓</span> community/typescript   <span class="val">v0.4.0</span>  <span class="cmt">встановлено</span>
+  team/design-standards  <span class="val">v2.1.0</span>  <span class="cmt">спільне сховище</span></div>
+              </div>
+              <div class="feature-item">
+                <h3>Агностичний до транспорту та LLM</h3>
+                <p>Чисте ядро TypeScript. Адаптери протоколів — окремі файли. Працює без API-ключів.</p>
+                <div class="feature-code"><span class="key">engine/core/</span>        <span class="cmt"># zero protocol deps</span>
+├── vault.ts
+├── brain.ts
+└── memory.ts
+<span class="key">engine/transports/</span>  <span class="cmt"># swap without touching core</span>
+├── <span class="ok">mcp.ts</span>         <span class="cmt"># ships now</span>
+├── rest.ts        <span class="cmt"># dashboards, APIs</span>
+└── lsp.ts         <span class="cmt"># VS Code, Cursor, Zed</span></div>
+              </div>
+              <div class="feature-item">
+                <h3>Холодний старт, а не чистий аркуш</h3>
+                <p>Стартові знання під час create. Сканування проєкту при першому запуску. Далі — кероване фіксування.</p>
+                <div class="feature-code"><span class="cmt">$ soleri create my-agent</span>
+<span class="ok">✓</span> Installed starter knowledge  <span class="val">34 patterns</span>
+<span class="ok">✓</span> Scanned project              <span class="val">React + TS</span>
+<span class="ok">✓</span> Auto-captured                <span class="val">12 patterns</span>
+<span class="ok">✓</span> Vault ready                  <span class="val">46 entries</span>
+
+<span class="cmt"># After 3 sessions:</span>
+<span class="warn">Brain:</span> You've fixed this import style 3×.
+       <span class="val">Capture as pattern? [y/n]</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- WHAT — Concrete results -->
+        <section class="section spacious">
+          <div class="section-header">
+            <h2 class="section-title">Структура краща за розділення.</h2>
+          </div>
+          <div class="persona-cards">
+            <article class="persona-card salvador">
+              <h3>Фронтенд</h3>
+              <p class="persona-domain">Домен</p>
+              <ul class="persona-capabilities">
+                <li>Патерни React</li>
+                <li>Токени дизайну</li>
+                <li>Рев’ю компонентів</li>
+                <li>Доступність</li>
+              </ul>
+              <p class="persona-ships">Запитайте про кнопки — Сховище шукає тут спочатку.</p>
+            </article>
+            <article class="persona-card gaudi">
+              <h3>Бекенд</h3>
+              <p class="persona-domain">Домен</p>
+              <ul class="persona-capabilities">
+                <li>Конвенції API</li>
+                <li>Схеми бази даних</li>
+                <li>Патерни автентифікації</li>
+                <li>Продуктивність</li>
+              </ul>
+              <p class="persona-ships">Запитайте про запити або дизайн API — Сховище підтягує звідси.</p>
+            </article>
+            <article class="persona-card sentinel">
+              <h3>Наскрізні</h3>
+              <p class="persona-domain">Домен</p>
+              <ul class="persona-capabilities">
+                <li>Робочі процеси Git</li>
+                <li>Код-рев’ю</li>
+                <li>Стратегії тестування</li>
+                <li>Документація</li>
+              </ul>
+              <p class="persona-ships">Патерни, що охоплюють домени. Граф автоматично знаходить зв’язки.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section tight">
+          <aside class="terminal">
+            <div class="terminal-header"><span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+              <span class="terminal-title">Термінал</span></div>
+            <pre class="terminal-code"><span class="comment"># Встановлення та створення</span>
+<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g soleri</span>
+<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
+
+<span class="comment">  ✓ Створено конфіг агента</span>
+<span class="comment">  ✓ Під’єднано Сховище (стартові знання: 34 патерни)</span>
+<span class="comment">  ✓ Проскановано проєкт: React + TypeScript</span>
+<span class="comment">  ✓ Автоматично зафіксовано 12 патернів кодової бази</span>
+<span class="comment">  ✓ Сховище готове — 46 записів, векторизовано, з’єднано графом</span>
+
+<span class="comment"># Додайте ще знань</span>
+<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span></pre>
+          </aside>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title">Багатошаровий, як живі системи</h2>
+            <p class="section-subtitle">Кожен шар зростає незалежно. Заміни транспорти, підключай знання, налаштовуй
+              свого агента — движок залишається тим самим.</p>
+          </div>
+          <div class="architecture">
+            <div class="layer">
+              <p class="layer-label"><span class="layer-bar"></span> Агенти</p>
+              <p class="layer-value">Конфіг вашого агента (<code>agent.yaml</code>): ідентичність, голос, прив’язка доменів. Створіть однією командою, налаштовуйте будь-коли.</p>
+            </div>
+            <div class="layer">
+              <p class="layer-label"><span class="layer-bar"></span> Домени</p>
+              <p class="layer-value">Підключувані домени знань. Движок завантажує релевантні домени на основі структури Сховища вашого агента.</p>
+            </div>
+            <div class="layer">
+              <p class="layer-label"><span class="layer-bar"></span> Движок</p>
+              <p class="layer-value">Один процес MCP-сервера. Сховище (знання), Brain (навчання), Memory (контекст), Planning (воркфлоу). На ньому працює ваш агент. Оновлення через <code>npm update</code>.</p>
+            </div>
+            <div class="layer">
+              <p class="layer-label"><span class="layer-bar"></span> Транспорти</p>
+              <p class="layer-value">Адаптери протоколів ізольовані від ядра: <code>mcp.ts</code> постачається вже зараз, <code>rest.ts</code> і <code>lsp.ts</code> готові для VS Code, Cursor, Zed і кастомних дашбордів. Додати транспорт = один файл адаптера.</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- CTA — Take action -->
+        <section class="cta">
+          <h2>Починайте будувати.</h2>
+          <p>Відкритий код. Apache 2.0.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              Explore on GitHub
+            </a>
+            <a class="btn btn-secondary" href="getting-started.html">Почати</a>
+          </div>
+        </section>
+
+        <!-- ======== FOOTER ======== -->
+        <footer class="footer">
+          <p>Soleri — Виконувані стандарти для агентних систем</p>
+          <p class="copyright">© 2026 Drozd&Co</p>
+          <nav class="footer-links" aria-label="Footer links"><a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
+            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a></nav>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var body = document.body;
+        var btn = document.getElementById("theme-toggle");
+
+        function setTheme(t) {
+          body.setAttribute("data-theme", t);
+          btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+          localStorage.setItem("soleri-theme", t);
+        }
+
+        // Initial theme — no transition
+        var saved = localStorage.getItem("soleri-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setTheme(saved || (prefersDark ? "dark" : "light"));
+
+        btn.addEventListener("click", function () {
+          var next = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+
+          // Fallback for browsers without View Transitions API
+          if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setTheme(next);
+            return;
+          }
+
+          var transition = document.startViewTransition(function () {
+            setTheme(next);
+          });
+
+          transition.ready.then(function () {
+            var rect = btn.getBoundingClientRect();
+            var x = rect.left + rect.width / 2;
+            var y = rect.top + rect.height / 2;
+            var radius = Math.hypot(
+              Math.max(x, window.innerWidth - x),
+              Math.max(y, window.innerHeight - y)
+            );
+
+            document.documentElement.animate(
+              {
+                clipPath: [
+                  "circle(0px at " + x + "px " + y + "px)",
+                  "circle(" + radius + "px at " + x + "px " + y + "px)"
+                ]
+              },
+              {
+                duration: 600,
+                easing: "ease-in-out",
+                pseudoElement: "::view-transition-new(root)"
+              }
+            );
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Як це працює - Soleri</title>
+    <meta name="description" content="Більшість помічників забувають все між сесіями. Архітектура сховища, мозку та транспорту Soleri робить знання накопичувальними.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../soleri-base.css">
+    <style>
+      /* Aurora — cool teal, technical architecture */
+      .page {
+        --glow-color-1: var(--color-secondary-400);
+        --glow-color-2: var(--color-secondary-300);
+        --glow-color-3: var(--color-tertiary-400);
+      }
+
+      .arch-diagram {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+        background: var(--surface);
+        margin-bottom: 48px;
+      }
+
+      .arch-layer {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 20px;
+        padding: 20px 24px;
+        border-top: 1px solid var(--border-subtle);
+        align-items: start;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .arch-layer:first-child {
+        border-top: none;
+      }
+
+      .arch-layer:hover {
+        background: rgba(35, 157, 195, 0.03);
+      }
+
+      .arch-layer-name {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 2px;
+      }
+
+      .arch-layer:nth-child(1) .arch-layer-name { color: var(--color-primary-400); }
+      .arch-layer:nth-child(2) .arch-layer-name { color: var(--color-secondary-400); }
+      .arch-layer:nth-child(3) .arch-layer-name { color: var(--color-tertiary-400); }
+      .arch-layer:nth-child(4) .arch-layer-name { color: var(--accent-teal); }
+
+      .arch-bar {
+        width: 3px;
+        height: 18px;
+        border-radius: 2px;
+      }
+
+      .arch-layer:nth-child(1) .arch-bar { background: var(--color-primary-400); }
+      .arch-layer:nth-child(2) .arch-bar { background: var(--color-secondary-400); }
+      .arch-layer:nth-child(3) .arch-bar { background: var(--color-tertiary-400); }
+      .arch-layer:nth-child(4) .arch-bar { background: var(--accent-teal); }
+
+      .arch-layer-desc {
+        font-size: 14px;
+        color: var(--foreground);
+        line-height: 1.6;
+      }
+
+      .arch-layer-desc code {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(35, 157, 195, 0.08);
+        color: var(--foreground-strong);
+      }
+
+      .deep-section {
+        margin-top: 72px;
+      }
+
+      .deep-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: start;
+      }
+
+      .deep-content h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--foreground-strong);
+        margin-bottom: 8px;
+      }
+
+      .deep-content p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--muted);
+        margin-bottom: 16px;
+      }
+
+      .deep-content .key-point {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-teal);
+        margin-top: 12px;
+      }
+
+      .bar-chart {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .bar-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        min-width: 100px;
+        text-align: right;
+      }
+
+      .bar-track {
+        flex: 1;
+        height: 24px;
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        border: 1px solid var(--border-subtle);
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: var(--radius-sm);
+        transition: width 0.6s ease;
+      }
+
+      .bar-fill.amber { background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary-400)); }
+      .bar-fill.teal { background: linear-gradient(90deg, var(--color-secondary-500), var(--color-secondary-400)); }
+      .bar-fill.green { background: linear-gradient(90deg, var(--color-tertiary-600), var(--color-tertiary-400)); }
+
+      .bar-value {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--foreground-strong);
+        min-width: 36px;
+      }
+
+      .provider-list {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .provider-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        transition: border-color 0.15s ease;
+      }
+      .provider-tag svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+      a.provider-tag {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      a.provider-tag:hover {
+        border-color: var(--accent-teal);
+      }
+      .provider-tag.none {
+        border: none;
+        padding: 6px 0;
+        cursor: default;
+      }
+
+      .provider-tag.active {
+        border-color: var(--accent-teal);
+        color: var(--foreground-strong);
+        background: rgba(35, 157, 195, 0.06);
+      }
+
+      .lifecycle-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .lifecycle-step {
+        display: flex;
+        align-items: start;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        font-size: 13px;
+        color: var(--foreground);
+      }
+
+      .lifecycle-step-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding-top: 2px;
+      }
+
+      .lifecycle-step-text strong {
+        white-space: nowrap;
+      }
+
+      .lifecycle-step-desc {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .lifecycle-step-num {
+        font-weight: 700;
+        font-size: 11px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .lifecycle-step-num.amber { background: rgba(232, 168, 71, 0.15); color: var(--color-primary-400); }
+      .lifecycle-step-num.teal { background: rgba(35, 157, 195, 0.15); color: var(--color-secondary-400); }
+      .lifecycle-step-num.green { background: rgba(145, 201, 110, 0.15); color: var(--color-tertiary-400); }
+
+      .lifecycle-arrow {
+        text-align: center;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      @media (max-width: 820px) {
+        .deep-grid {
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        .arch-layer {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body data-theme="light">
+    <div class="page">
+      <div class="glow glow-amber"></div>
+      <div class="glow glow-green"></div>
+      <div class="glow glow-teal"></div>
+      <div class="grid-bg"></div>
+      <div class="grid-rays">
+        <div class="ray ray-h" style="top:66px;  --dur:5s;  --del:0s;"></div>
+        <div class="ray ray-h" style="top:154px; --dur:7s;  --del:4s;"></div>
+        <div class="ray ray-h ray-teal" style="top:198px; --dur:9s;  --del:5s;"></div>
+        <div class="ray ray-h" style="top:286px; --dur:4.5s;--del:9s;"></div>
+        <div class="ray ray-h ray-teal" style="top:330px; --dur:6.5s;--del:10s;"></div>
+        <div class="ray ray-h" style="top:418px; --dur:6s;  --del:2s;"></div>
+        <div class="ray ray-h" style="top:550px; --dur:8s;  --del:13s;"></div>
+        <div class="ray ray-h ray-teal" style="top:660px; --dur:5.5s;--del:1s;"></div>
+        <div class="ray ray-h" style="top:770px; --dur:7s;  --del:8s;"></div>
+        <div class="ray ray-h ray-teal" style="top:880px; --dur:6s;  --del:16s;"></div>
+        <div class="ray ray-h" style="top:990px; --dur:5s;  --del:3s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1100px;--dur:8.5s;--del:6s;"></div>
+        <div class="ray ray-h" style="top:1210px;--dur:6s;  --del:11s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1342px;--dur:7s;  --del:0s;"></div>
+        <div class="ray ray-h" style="top:1474px;--dur:5.5s;--del:14s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1606px;--dur:9s;  --del:4s;"></div>
+        <div class="ray ray-h" style="top:1738px;--dur:6.5s;--del:9s;"></div>
+        <div class="ray ray-h ray-teal" style="top:1870px;--dur:5s;  --del:17s;"></div>
+        <div class="ray ray-h" style="top:2002px;--dur:7.5s;--del:7s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2200px;--dur:6s;  --del:12s;"></div>
+        <div class="ray ray-h" style="top:2420px;--dur:8s;  --del:2s;"></div>
+        <div class="ray ray-h ray-teal" style="top:2640px;--dur:5.5s;--del:15s;"></div>
+        <div class="ray ray-h" style="top:2860px;--dur:7s;  --del:5s;"></div>
+        <div class="ray ray-h ray-teal" style="top:3080px;--dur:6.5s;--del:10s;"></div>
+      </div>
+
+      <main class="container">
+        <header class="nav">
+          <div class="brand"><a href="index-solarpunk.html">
+              <div class="brand-top">
+                <p class="brand-name">Soleri</p>
+              </div>
+            </a></div>
+          <nav class="nav-links" aria-label="Main navigation"><a href="how-it-works.html" aria-current="page">Як це працює</a>
+            <a href="personas.html">Ваш агент</a>
+            <a href="teams.html">Команди</a>
+            <a href="getting-started.html">Початок роботи</a></nav>
+          <div class="nav-actions"><div class="lang-switcher"><a href="/en/how-it-works.html">EN</a><a href="/uk/how-it-works.html" class="active">UK</a><a href="/it/how-it-works.html">IT</a></div>
+            <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+                <svg class="toggle-icon toggle-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg class="toggle-icon toggle-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </span>
+            </button>
+          </div>
+        </header>
+
+        <!-- PAGE HERO -->
+        <section class="page-hero">
+          <div class="soleri-mark mark-hero"></div>
+          <p class="eyebrow">Більшість помічників забувають все між сесіями</p>
+          <h1>Знання мають накопичуватися. Ось як.</h1>
+          <p class="hero-subtitle">Шари сховища, мозку та транспорту працюють на одному движку. Один процес, нульова залежність — замінюйте транспорти, підключайте знання, змінюйте провайдерів.</p>
+        </section>
+
+        <!-- ARCHITECTURE DIAGRAM -->
+        <div class="arch-diagram">
+          <div class="arch-layer">
+            <p class="arch-layer-name"><span class="arch-bar"></span> Агент</p>
+            <p class="arch-layer-desc">Конфігурація вашого агента — <code>agent.yaml</code> визначає ідентичність, голос, домени. Створіть однією командою, налаштовуйте в будь-який час.</p>
+          </div>
+          <div class="arch-layer">
+            <p class="arch-layer-name"><span class="arch-bar"></span> Домени</p>
+            <p class="arch-layer-desc">Підключаючі домени знань. Движок завантажує відповідні домени на основі структури сховища вашого агента.</p>
+          </div>
+          <div class="arch-layer">
+            <p class="arch-layer-name"><span class="arch-bar"></span> Движок</p>
+            <p class="arch-layer-desc">Одиночний процес сервера MCP. Сховище (знання), мозок (навчання), пам'ять (контекст), планування (робочі процеси). Ваш агент працює на ньому. Оновлення через <code>npm update</code>.</p>
+          </div>
+          <div class="arch-layer">
+            <p class="arch-layer-name"><span class="arch-bar"></span> Транспорти</p>
+            <p class="arch-layer-desc">Адаптери протоколів ізольовані від ядра: <code>mcp.ts</code> доступний зараз, <code>rest.ts</code> і <code>lsp.ts</code> підключаються для VS Code, Cursor, Zed і користувацьких панелей. Додавання транспорту = один файл адаптера.</p>
+          </div>
+        </div>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- VAULT SECTION -->
+        <section class="deep-section">
+          <div class="deep-grid">
+            <div class="deep-content">
+              <h3>Знання, що накопичуються</h3>
+              <p>Без сховища кожна сесія починається з нуля. Soleri зберігає кожен патерн, антипатерн і рішення у пошуковому сховищі. Задайте питання — отримайте відповідь від своєї команди, не загальну.</p>
+              <p class="key-point">Патерни, антипатерни та сесійні спогади — все це в пошуку.</p>
+            </div>
+            <div>
+              <div class="feature-code"><span class="cmt"># Структура запису в сховище</span>
+<span class="key">id:</span> <span class="val">pattern-semantic-tokens</span>
+<span class="key">type:</span> <span class="val">pattern</span>
+<span class="key">content:</span> <span class="val">Завжди використовуйте семантичні токени</span>
+<span class="key">context:</span>
+  <span class="key">domain:</span> <span class="val">design-systems</span>
+  <span class="key">confidence:</span> <span class="val">0.94</span>
+  <span class="key">sessions:</span> <span class="val">12</span>
+<span class="key">tags:</span> <span class="val">[tokens, css, tailwind]</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Пошук у вашому сховищі</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault search</span> <span class="arg">"button styling"</span>
+
+<span class="ok">Знайдено 3 збіги:</span>
+  <span class="val">pattern-semantic-tokens</span>  <span class="cmt">94% впевненість</span>
+  <span class="val">pattern-button-sizes</span>    <span class="cmt">87% впевненість</span>
+  <span class="val">anti-pattern-inline</span>     <span class="cmt">91% впевненість</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- BRAIN SECTION -->
+        <section class="deep-section">
+          <div class="deep-grid">
+            <div>
+              <div class="feature-code"><span class="cmt"># Виведення сильних сторін мозку</span>
+<span class="prompt">$</span> <span class="cmd">soleri brain</span> <span class="arg">strengths</span>
+
+<span class="ok">Топ патерни (останні 7 днів):</span>
+  semantic-tokens    <span class="val">сила: 94</span>  <span class="cmt">12 сесій</span>
+  component-structure <span class="val">сила: 87</span>  <span class="cmt">8 сесій</span>
+  error-boundaries   <span class="val">сила: 82</span>  <span class="cmt">6 сесій</span>
+  a11y-focus-rings   <span class="val">сила: 78</span>  <span class="cmt">5 сесій</span>
+  zustand-patterns   <span class="val">сила: 71</span>  <span class="cmt">4 сесії</span></div>
+              <div class="bar-chart">
+                <div class="bar-row">
+                  <span class="bar-label">semantic-tokens</span>
+                  <div class="bar-track"><div class="bar-fill amber" style="width:94%"></div></div>
+                  <span class="bar-value">94</span>
+                </div>
+                <div class="bar-row">
+                  <span class="bar-label">components</span>
+                  <div class="bar-track"><div class="bar-fill teal" style="width:87%"></div></div>
+                  <span class="bar-value">87</span>
+                </div>
+                <div class="bar-row">
+                  <span class="bar-label">error-boundaries</span>
+                  <div class="bar-track"><div class="bar-fill green" style="width:82%"></div></div>
+                  <span class="bar-value">82</span>
+                </div>
+                <div class="bar-row">
+                  <span class="bar-label">a11y-focus</span>
+                  <div class="bar-track"><div class="bar-fill teal" style="width:78%"></div></div>
+                  <span class="bar-value">78</span>
+                </div>
+                <div class="bar-row">
+                  <span class="bar-label">zustand</span>
+                  <div class="bar-track"><div class="bar-fill amber" style="width:71%"></div></div>
+                  <span class="bar-value">71</span>
+                </div>
+              </div>
+            </div>
+            <div class="deep-content">
+              <h3>З кожною сесією стає гострішою</h3>
+              <p>Ручна курація знань не масштабується. Мозок відстежує, які патерни ви застосовуєте, як часто і наскільки успішно. Впевненість зростає автоматично — ручне тегування не потрібне.</p>
+              <p class="key-point">Автоматичний запис, без ручного тегування.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- KNOWLEDGE LIFECYCLE SECTION -->
+        <section class="deep-section">
+          <div class="deep-grid">
+            <div class="deep-content">
+              <h3>Знання, що зростають — і залишаються гострими</h3>
+              <p>Патерни проходять крізь чотириступінчастий життєвий цикл. Движок стежить за вашою роботою, фіксує, що спрацьовує, і накопичує це з часом.</p>
+              <div class="lifecycle-flow">
+                <div class="lifecycle-step">
+                  <span class="lifecycle-step-num amber">1</span>
+                  <div class="lifecycle-step-text"><strong>Фіксація</strong>
+                    <span class="lifecycle-step-desc">Движок помічає повторювані виправлення, пропонує патерни</span></div>
+                </div>
+                <div class="lifecycle-arrow">↓</div>
+                <div class="lifecycle-step">
+                  <span class="lifecycle-step-num teal">2</span>
+                  <div class="lifecycle-step-text"><strong>Зберігання</strong>
+                    <span class="lifecycle-step-desc">Патерни, антипатерни, сесійні спогади потрапляють у сховище</span></div>
+                </div>
+                <div class="lifecycle-arrow">↓</div>
+                <div class="lifecycle-step">
+                  <span class="lifecycle-step-num green">3</span>
+                  <div class="lifecycle-step-text"><strong>Усилення</strong>
+                    <span class="lifecycle-step-desc">Оцінки впевненості відслідковують, як часто патерни вдаються</span></div>
+                </div>
+                <div class="lifecycle-arrow">↓</div>
+                <div class="lifecycle-step">
+                  <span class="lifecycle-step-num amber">4</span>
+                  <div class="lifecycle-step-text"><strong>Накопичення</strong>
+                    <span class="lifecycle-step-desc">Патерни з високою впевненістю з'являються першими, слабкі позначені</span></div>
+                </div>
+              </div>
+              <p class="key-point">Ваше сховище не розпадається — воно загострюється. Мозок стежить за тим, що працює.</p>
+            </div>
+            <div>
+              <div class="feature-code"><span class="cmt"># Сесія 3 — движок помічає патерн</span>
+<span class="warn">!</span> Ви виправили <span class="val">bg-blue-500</span> → <span class="ok">bg-primary</span> 3 рази.
+  Записати як патерн? <span class="key">[y/n]</span>
+
+<span class="prompt">$</span> <span class="cmd">y</span>
+
+<span class="ok">✓</span> Записано: <span class="val">semantic-token-enforcement</span>
+<span class="ok">✓</span> Впевненість: <span class="val">0.85</span> <span class="cmt">(зростатиме з використанням)</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Запис у сховищі з метаданими життєвого циклу</span>
+<span class="key">id:</span> <span class="val">pattern-semantic-token-enforcement</span>
+<span class="key">type:</span> <span class="val">pattern</span>
+<span class="key">content:</span> <span class="val">Замініть сирі кольори Tailwind на семантичні токени</span>
+<span class="key">confidence:</span> <span class="val">0.91</span>           <span class="cmt"># зміцнений протягом 8 сесій</span>
+<span class="key">sessions:</span> <span class="val">8</span>
+<span class="key">last_applied:</span> <span class="val">2 години тому</span>
+<span class="key">status:</span> <span class="ok">накопичується</span>      <span class="cmt"># з'являється першим у пошуку</span></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- TRANSPORT SECTION -->
+        <section class="deep-section">
+          <div class="deep-grid">
+            <div class="deep-content">
+              <h3>Не прив'язано до жодного редактора</h3>
+              <p>Ваші знання не повинні бути замкнені в одному інструменті. Ядро движка не має залежностей від протоколів. Адаптери транспорту — це окремі файли — змінюйте або додавайте їх, не торкаючись ядра.</p>
+              <p class="key-point">Ядро не має залежностей від протоколів.</p>
+            </div>
+            <div>
+              <div class="feature-code"><span class="key">engine/transports/</span>  <span class="cmt"># один файл на протокол</span>
+├── <span class="ok">mcp.ts</span>         <span class="cmt"># Claude Code, Cursor — доступні зараз</span>
+├── rest.ts        <span class="cmt"># панелі, користувацькі API</span>
+└── lsp.ts         <span class="cmt"># розширення для VS Code, Cursor, Zed</span>
+
+<span class="key">engine/core/</span>        <span class="cmt"># жодних імпортів транспорту</span>
+├── vault.ts
+├── brain.ts
+└── memory.ts</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LLM SECTION -->
+        <section class="deep-section">
+          <div class="deep-grid">
+            <div>
+              <div class="feature-code"><span class="cmt"># agent.yaml — конфігурація LLM</span>
+<span class="key">llm:</span>
+  <span class="key">provider:</span> <span class="val">anthropic</span>    <span class="cmt"># або: openai, ollama, жодного</span>
+  <span class="key">model:</span>    <span class="val">claude-sonnet-4-6</span>
+  <span class="key">fallback:</span> <span class="val">жодного</span>        <span class="cmt"># працює без API ключів</span></div>
+              <div class="provider-list">
+                <a class="provider-tag active" href="https://www.anthropic.com" target="_blank" rel="noreferrer"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M9.218 2h2.402L16 12.987h-2.402zM4.379 2h2.512l4.38 10.987H8.82l-.895-2.308h-4.58l-.896 2.307H0L4.38 2.001zm2.755 6.64L5.635 4.777 4.137 8.64z"/></svg> Anthropic</a>
+                <a class="provider-tag" href="https://openai.com" target="_blank" rel="noreferrer"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14.949 6.547a3.94 3.94 0 0 0-.348-3.273 4.11 4.11 0 0 0-4.4-1.934A4.1 4.1 0 0 0 8.423.2 4.15 4.15 0 0 0 6.305.086a4.1 4.1 0 0 0-1.891.948 4.04 4.04 0 0 0-1.158 1.753 4.1 4.1 0 0 0-1.563.679A4 4 0 0 0 .554 4.72a3.99 3.99 0 0 0 .502 4.731 3.94 3.94 0 0 0 .346 3.274 4.11 4.11 0 0 0 4.402 1.933c.382.425.852.764 1.377.995.526.231 1.095.35 1.67.346 1.78.002 3.358-1.132 3.901-2.804a4.1 4.1 0 0 0 1.563-.68 4 4 0 0 0 1.14-1.253 3.99 3.99 0 0 0-.506-4.716m-6.097 8.406a3.05 3.05 0 0 1-1.945-.694l.096-.054 3.23-1.838a.53.53 0 0 0 .265-.455v-4.49l1.366.778q.02.011.025.035v3.722c-.003 1.653-1.361 2.992-3.037 2.996m-6.53-2.75a2.95 2.95 0 0 1-.36-2.01l.095.057L5.29 12.09a.53.53 0 0 0 .527 0l3.949-2.246v1.555a.05.05 0 0 1-.022.041L6.473 13.3c-1.454.826-3.311.335-4.15-1.098m-.85-6.94A3.02 3.02 0 0 1 3.07 3.949v3.785a.51.51 0 0 0 .262.451l3.93 2.237-1.366.779a.05.05 0 0 1-.048 0L2.585 9.342a2.98 2.98 0 0 1-1.113-4.094zm11.216 2.571L8.747 5.576l1.362-.776a.05.05 0 0 1 .048 0l3.265 1.86a3 3 0 0 1 1.173 1.207 2.96 2.96 0 0 1-.27 3.2 3.05 3.05 0 0 1-1.36.997V8.279a.52.52 0 0 0-.276-.445m1.36-2.015-.097-.057-3.226-1.855a.53.53 0 0 0-.53 0L6.249 6.153V4.598a.04.04 0 0 1 .019-.04L9.533 2.7a3.07 3.07 0 0 1 3.257.139c.474.325.843.778 1.066 1.303.223.526.289 1.103.191 1.664zM5.503 8.575 4.139 7.8a.05.05 0 0 1-.026-.037V4.049c0-.57.166-1.127.476-1.607s.752-.864 1.275-1.105a3.08 3.08 0 0 1 3.234.41l-.096.054-3.23 1.838a.53.53 0 0 0-.265.455zm.742-1.577 1.758-1 1.762 1v2l-1.755 1-1.762-1z"/></svg> OpenAI</a>
+                <a class="provider-tag" href="https://ollama.com" target="_blank" rel="noreferrer"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M16.361 10.26a.894.894 0 0 0-.558.47l-.072.148.001.207c0 .193.004.217.059.353.076.193.152.312.291.448.24.238.51.3.872.205a.86.86 0 0 0 .517-.436.752.752 0 0 0 .08-.498c-.064-.453-.33-.782-.724-.897a1.06 1.06 0 0 0-.466 0zm-9.203.005c-.305.096-.533.32-.65.639a1.187 1.187 0 0 0-.06.52c.057.309.31.59.598.667.362.095.632.033.872-.205.14-.136.215-.255.291-.448.055-.136.059-.16.059-.353l.001-.207-.072-.148a.894.894 0 0 0-.565-.472 1.02 1.02 0 0 0-.474.007Zm4.184 2c-.131.071-.223.25-.195.383.031.143.157.288.353.407.105.063.112.072.117.136.004.038-.01.146-.029.243-.02.094-.036.194-.036.222.002.074.07.195.143.253.064.052.076.054.255.059.164.005.198.001.264-.03.169-.082.212-.234.15-.525-.052-.243-.042-.28.087-.355.137-.08.281-.219.324-.314a.365.365 0 0 0-.175-.48.394.394 0 0 0-.181-.033c-.126 0-.207.03-.355.124l-.085.053-.053-.032c-.219-.13-.259-.145-.391-.143a.396.396 0 0 0-.193.032zm.39-2.195c-.373.036-.475.05-.654.086-.291.06-.68.195-.951.328-.94.46-1.589 1.226-1.787 2.114-.04.176-.045.234-.045.53 0 .294.005.357.043.524.264 1.16 1.332 2.017 2.714 2.173.3.033 1.596.033 1.896 0 1.11-.125 2.064-.727 2.493-1.571.114-.226.169-.372.22-.602.039-.167.044-.23.044-.523 0-.297-.005-.355-.045-.531-.288-1.29-1.539-2.304-3.072-2.497a6.873 6.873 0 0 0-.855-.031zm.645.937a3.283 3.283 0 0 1 1.44.514c.223.148.537.458.671.662.166.251.26.508.303.82.02.143.01.251-.043.482-.08.345-.332.705-.672.957a3.115 3.115 0 0 1-.689.348c-.382.122-.632.144-1.525.138-.582-.006-.686-.01-.853-.042-.57-.107-1.022-.334-1.35-.68-.264-.28-.385-.535-.45-.946-.03-.192.025-.509.137-.776.136-.326.488-.73.836-.963.403-.269.934-.46 1.422-.512.187-.02.586-.02.773-.002zm-5.503-11a1.653 1.653 0 0 0-.683.298C5.617.74 5.173 1.666 4.985 2.819c-.07.436-.119 1.04-.119 1.503 0 .544.064 1.24.155 1.721.02.107.031.202.023.208a8.12 8.12 0 0 1-.187.152 5.324 5.324 0 0 0-.949 1.02 5.49 5.49 0 0 0-.94 2.339 6.625 6.625 0 0 0-.023 1.357c.091.78.325 1.438.727 2.04l.13.195-.037.064c-.269.452-.498 1.105-.605 1.732-.084.496-.095.629-.095 1.294 0 .67.009.803.088 1.266.095.555.288 1.143.503 1.534.071.128.243.393.264.407.007.003-.014.067-.046.141a7.405 7.405 0 0 0-.548 1.873c-.062.417-.071.552-.071.991 0 .56.031.832.148 1.279L3.42 24h1.478l-.05-.091c-.297-.552-.325-1.575-.068-2.597.117-.472.25-.819.498-1.296l.148-.29v-.177c0-.165-.003-.184-.057-.293a.915.915 0 0 0-.194-.25 1.74 1.74 0 0 1-.385-.543c-.424-.92-.506-2.286-.208-3.451.124-.486.329-.918.544-1.154a.787.787 0 0 0 .223-.531c0-.195-.07-.355-.224-.522a3.136 3.136 0 0 1-.817-1.729c-.14-.96.114-2.005.69-2.834.563-.814 1.353-1.336 2.237-1.475.199-.033.57-.028.776.01.226.04.367.028.512-.041.179-.085.268-.19.374-.431.093-.215.165-.333.36-.576.234-.29.46-.489.822-.729.413-.27.884-.467 1.352-.561.17-.035.25-.04.569-.04.319 0 .398.005.569.04a4.07 4.07 0 0 1 1.914.997c.117.109.398.457.488.602.034.057.095.177.132.267.105.241.195.346.374.43.14.068.286.082.503.045.343-.058.607-.053.943.016 1.144.23 2.14 1.173 2.581 2.437.385 1.108.276 2.267-.296 3.153-.097.15-.193.27-.333.419-.301.322-.301.722-.001 1.053.493.539.801 1.866.708 3.036-.062.772-.26 1.463-.533 1.854a2.096 2.096 0 0 1-.224.258.916.916 0 0 0-.194.25c-.054.109-.057.128-.057.293v.178l.148.29c.248.476.38.823.498 1.295.253 1.008.231 2.01-.059 2.581a.845.845 0 0 0-.044.098c0 .006.329.009.732.009h.73l.02-.074.036-.134c.019-.076.057-.3.088-.516.029-.217.029-1.016 0-1.258-.11-.875-.295-1.57-.597-2.226-.032-.074-.053-.138-.046-.141.008-.005.057-.074.108-.152.376-.569.607-1.284.724-2.228.031-.26.031-1.378 0-1.628-.083-.645-.182-1.082-.348-1.525a6.083 6.083 0 0 0-.329-.7l-.038-.064.131-.194c.402-.604.636-1.262.727-2.04a6.625 6.625 0 0 0-.024-1.358 5.512 5.512 0 0 0-.939-2.339 5.325 5.325 0 0 0-.95-1.02 8.097 8.097 0 0 1-.186-.152.692.692 0 0 1 .023-.208c.208-1.087.201-2.443-.017-3.503-.19-.924-.535-1.658-.98-2.082-.354-.338-.716-.482-1.15-.455-.996.059-1.8 1.205-2.116 3.01a6.805 6.805 0 0 0-.097.726c0 .036-.007.066-.015.066a.96.96 0 0 1-.149-.078A4.857 4.857 0 0 0 12 3.03c-.832 0-1.687.243-2.456.698a.958.958 0 0 1-.148.078c-.008 0-.015-.03-.015-.066a6.71 6.71 0 0 0-.097-.725C8.997 1.392 8.337.319 7.46.048a2.096 2.096 0 0 0-.585-.041Zm.293 1.402c.248.197.523.759.682 1.388.03.113.06.244.069.292.007.047.026.152.041.233.067.365.098.76.102 1.24l.002.475-.12.175-.118.178h-.278c-.324 0-.646.041-.954.124l-.238.06c-.033.007-.038-.003-.057-.144a8.438 8.438 0 0 1 .016-2.323c.124-.788.413-1.501.696-1.711.067-.05.079-.049.157.013zm9.825-.012c.17.126.358.46.498.888.28.854.36 2.028.212 3.145-.019.14-.024.151-.057.144l-.238-.06a3.693 3.693 0 0 0-.954-.124h-.278l-.119-.178-.119-.175.002-.474c.004-.669.066-1.19.214-1.772.157-.623.434-1.185.68-1.382.078-.062.09-.063.159-.012z"/></svg> Ollama</a>
+                <span class="provider-tag none"><svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="4" y1="12" x2="12" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> None</span>
+              </div>
+            </div>
+            <div class="deep-content">
+              <h3>Працює без ключів API</h3>
+              <p>Інфраструктура знань не повинна вимагати підписки. Пошук у сховищі, відповідність патернам та відстеження працюють локально. Провайдер LLM не обов'язковий — підключіть, коли потрібні AI-підказки.</p>
+              <p class="key-point">Базова функціональність забезпечена без ключів.</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="soleri-mark mark-section"></div>
+
+        <!-- CTA -->
+        <section class="cta">
+          <h2>Подивіться, як виглядають накопичувальні знання.</h2>
+          <p>Встановіть Soleri та спостерігайте, як сховище зростає з кожною сесією.</p>
+          <div class="hero-actions"><a class="btn btn-primary" href="getting-started.html">Початок роботи</a>
+            <a class="btn btn-secondary" href="personas.html">Ваш агент</a></div>
+        </section>
+
+        <footer class="footer">
+          <p>Soleri — Виконувані стандарти для агентних систем</p>
+          <p class="copyright">© 2026 Drozd&Co</p>
+          <nav class="footer-links" aria-label="Footer links"><a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
+            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a></nav>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var body = document.body;
+        var btn = document.getElementById("theme-toggle");
+        function setTheme(t) {
+          body.setAttribute("data-theme", t);
+          btn.setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+          localStorage.setItem("soleri-theme", t);
+        }
+        var saved = localStorage.getItem("soleri-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setTheme(saved || (prefersDark ? "dark" : "light"));
+        btn.addEventListener("click", function () {
+          var next = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+          if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setTheme(next);
+            return;
+          }
+          var transition = document.startViewTransition(function () { setTheme(next); });
+          transition.ready.then(function () {
+            var rect = btn.getBoundingClientRect();
+            var x = rect.left + rect.width / 2;
+            var y = rect.top + rect.height / 2;
+            var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+            document.documentElement.animate(
+              { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + radius + "px at " + x + "px " + y + "px)"] },
+              { duration: 600, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }
+            );
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

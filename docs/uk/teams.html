@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Teams &amp; Ops - Soleri</title>
-    <meta name="description" content="Share knowledge across your team with connected vaults, knowledge packs, and a Telegram bot for infrastructure management." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="soleri-base.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Команди та операції — Soleri</title>
+    <meta name="description" content="Племінні знання не масштабуються. Soleri з'єднує командні сховища, пакети знань та плейбуки, щоб кодифіковані знання накопичувалися між проектами.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../soleri-base.css">
     <style>
       /* Aurora — teal + green, collaborative */
       .page {
@@ -286,20 +286,16 @@
 
       <main class="container">
         <header class="nav">
-          <div class="brand">
-            <a href="index-solarpunk.html">
+          <div class="brand"><a href="index-solarpunk.html">
               <div class="brand-top">
                 <p class="brand-name">Soleri</p>
               </div>
-            </a>
-          </div>
-          <nav class="nav-links" aria-label="Main navigation">
-            <a href="how-it-works.html">How it works</a>
-            <a href="personas.html">Your Agent</a>
-            <a href="teams.html" aria-current="page">Teams</a>
-            <a href="getting-started.html">Get started</a>
-          </nav>
-          <div class="nav-actions">
+            </a></div>
+          <nav class="nav-links" aria-label="Main navigation"><a href="how-it-works.html">Як це працює</a>
+            <a href="personas.html">Ваш агент</a>
+            <a href="teams.html" aria-current="page">Команди</a>
+            <a href="getting-started.html">Почати</a></nav>
+          <div class="nav-actions"><div class="lang-switcher"><a href="/en/teams.html">EN</a><a href="/uk/teams.html" class="active">UK</a><a href="/it/teams.html">IT</a></div>
             <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">
               <span class="toggle-track">
                 <span class="toggle-thumb"></span>
@@ -313,51 +309,45 @@
         <!-- PAGE HERO -->
         <section class="page-hero">
           <div class="soleri-mark mark-hero"></div>
-          <p class="eyebrow">Teams &amp; Ops</p>
-          <h1>Your team shares knowledge. The system manages the rest.</h1>
-          <p class="hero-subtitle">Connected vaults, knowledge packs, and infrastructure management.</p>
+          <p class="eyebrow">Племінні знання не масштабуються. Кодифіковані — масштабуються.</p>
+          <h1>Коли знання живуть у головах людей, вони йдуть разом із ними.</h1>
+          <p class="hero-subtitle">Підключені сховища, пакети знань та плейбуки перетворюють експертизу команди на накопичувальну інфраструктуру.</p>
         </section>
 
         <!-- TEAM VAULTS -->
         <section class="team-section" style="margin-top:0;">
           <div class="section-header">
-            <h2 class="section-title">Connect once, share everything</h2>
+            <h2 class="section-title">Підключіть один раз — діліться всім</h2>
           </div>
           <div class="team-grid">
             <div class="team-content">
-              <h3>Three-tier vault model</h3>
-              <p>Your agent keeps domain-organized knowledge in its vault. A shared project vault holds cross-cutting conventions. Connect a team vault to share across projects.</p>
-              <p class="key-point">Search priority: agent vault → project vault → team vault.</p>
+              <h3>Трирівнева модель сховища</h3>
+              <p>Коли проекти накопичують знання незалежно, команди переучують одні й ті ж уроки щоразу. Трирівнева модель це виправляє: Ваш агент зберігає знання, упорядковані за доменами, у своєму сховищі. Спільне сховище проєкту містить наскрізні домовленості. Підключіть командне сховище, щоб ділитися між проєктами.</p>
+              <p class="key-point">Пріоритет пошуку: сховище агента → сховище проєкту → командне сховище.</p>
               <div class="flow-diagram">
-                <div class="flow-step">
-                  <span class="flow-step-num amber">1</span>
-                  Agent vault — frontend, backend, cross-cutting domains
-                </div>
+                <div class="flow-step"><span class="flow-step-num amber">1</span>
+                  Сховище агента — фронтенд, бекенд, наскрізні домени</div>
                 <div class="flow-arrow">↓</div>
-                <div class="flow-step">
-                  <span class="flow-step-num teal">2</span>
-                  Project vault — team conventions, decisions
-                </div>
+                <div class="flow-step"><span class="flow-step-num teal">2</span>
+                  Сховище проєкту — командні домовленості, рішення</div>
                 <div class="flow-arrow">↓</div>
-                <div class="flow-step">
-                  <span class="flow-step-num green">3</span>
-                  Team vault — shared across all projects
-                </div>
+                <div class="flow-step"><span class="flow-step-num green">3</span>
+                  Командне сховище — спільне для всіх проєктів</div>
               </div>
             </div>
             <div>
-              <div class="feature-code"><span class="cmt"># Connect a team vault</span>
+              <div class="feature-code"><span class="cmt"># Підключити командне сховище</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/design-vault.git</span>
 
-<span class="ok">✓</span> Connected team vault      <span class="val">142 entries</span>
-<span class="ok">✓</span> Merged search index
-<span class="ok">✓</span> Priority: agent → project → team</div>
-              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Promote a pattern to the team vault</span>
+<span class="ok">✓</span> Підключено командне сховище      <span class="val">142 entries</span>
+<span class="ok">✓</span> Об’єднано індекс пошуку
+<span class="ok">✓</span> Пріоритет: агент → проєкт → команда</div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Підвищити патерн до командного сховища</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">promote pattern-semantic-tokens \
   --target team</span>
 
-<span class="ok">✓</span> Promoted to team vault
-<span class="ok">✓</span> Available to all team members</div>
+<span class="ok">✓</span> Підвищено до командного сховища
+<span class="ok">✓</span> Доступно всім учасникам команди</div>
             </div>
           </div>
         </section>
@@ -365,17 +355,17 @@
         <!-- CROSS-PROJECT KNOWLEDGE -->
         <section class="team-section">
           <div class="section-header">
-            <h2 class="section-title">Patterns compound across projects</h2>
+            <h2 class="section-title">Патерни накопичуються між проєктами</h2>
           </div>
           <div class="team-grid">
             <div>
-              <div class="feature-code"><span class="cmt"># Link related projects</span>
+              <div class="feature-code"><span class="cmt"># Пов’язати споріднені проєкти</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">link /project-a /project-b \
   --type related</span>
 
-<span class="ok">✓</span> Projects linked (bidirectional)
-<span class="ok">✓</span> Cross-project search enabled</div>
-              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># agent.yaml — vault config</span>
+<span class="ok">✓</span> Проєкти пов’язано (двонапрямно)
+<span class="ok">✓</span> Увімкнено міжпроєктний пошук</div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># agent.yaml — конфігурація сховища</span>
 <span class="key">vault:</span>
   <span class="key">backends:</span>
     - <span class="key">type:</span> <span class="val">local</span>
@@ -386,9 +376,9 @@
       <span class="key">push:</span> <span class="val">on-promote</span></div>
             </div>
             <div class="team-content">
-              <h3>Link projects, share patterns</h3>
-              <p>Link projects as related, parent/child, or fork. When you search your vault, linked projects are included automatically with weighted relevance.</p>
-              <p class="key-point">Patterns learned in project A are available in project B.</p>
+              <h3>Пов’язуйте проєкти, діліться патернами</h3>
+              <p>Пов’язуйте проєкти як споріднені, батьківський/дочірній або форк. Коли ви шукаєте у своєму сховищі, пов’язані проєкти включаються автоматично із зваженою релевантністю.</p>
+              <p class="key-point">Патерни, засвоєні у проєкті A, доступні у проєкті B.</p>
             </div>
           </div>
         </section>
@@ -396,52 +386,52 @@
         <!-- KNOWLEDGE PACKS -->
         <section class="team-section">
           <div class="section-header">
-            <h2 class="section-title">Install expertise in one command</h2>
+            <h2 class="section-title">Встановіть експертизу однією командою</h2>
           </div>
           <div class="team-grid">
             <div class="team-content">
-              <h3>Three tiers of knowledge packs</h3>
-              <p>Packs are npm packages you snap into any agent. They add patterns, anti-patterns, and domain rules to your vault instantly.</p>
+              <h3>Три рівні пакетів знань</h3>
+              <p>Пакети — це npm-пакунки, які ви під’єднуєте до будь-якого агента. Вони миттєво додають патерни, антипатерни та доменні правила до вашого сховища.</p>
               <table class="packs-table">
                 <thead>
                   <tr>
-                    <th>Tier</th>
-                    <th>Source</th>
-                    <th>Price</th>
+                    <th>Рівень</th>
+                    <th>Джерело</th>
+                    <th>Ціна</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td><span class="tier-badge free">Starter</span></td>
-                    <td>Ships with each agent</td>
-                    <td>Free</td>
+                    <td><span class="tier-badge free">Початковий</span></td>
+                    <td>Постачається з кожним агентом</td>
+                    <td>Безкоштовно</td>
                   </tr>
                   <tr>
-                    <td><span class="tier-badge free">Community</span></td>
-                    <td>npm registry</td>
-                    <td>Free</td>
+                    <td><span class="tier-badge free">Спільнота</span></td>
+                    <td>реєстр npm</td>
+                    <td>Безкоштовно</td>
                   </tr>
                   <tr>
-                    <td><span class="tier-badge paid">Premium</span></td>
-                    <td>Subscription</td>
-                    <td>Paid</td>
+                    <td><span class="tier-badge paid">Преміум</span></td>
+                    <td>Підписка</td>
+                    <td>Платно</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div>
-              <div class="feature-code"><span class="cmt"># Install a community pack</span>
+              <div class="feature-code"><span class="cmt"># Встановити пак із спільноти</span>
 <span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
 
-<span class="ok">✓</span> Installed react-patterns  <span class="val">v0.3.0</span>
-<span class="ok">✓</span> Added 28 patterns to vault
-<span class="ok">✓</span> Added 6 anti-patterns</div>
-              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Sync premium packs</span>
+<span class="ok">✓</span> Встановлено react-patterns  <span class="val">v0.3.0</span>
+<span class="ok">✓</span> Додано 28 патернів до сховища
+<span class="ok">✓</span> Додано 6 антипатернів</div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Синхронізувати преміум-паки</span>
 <span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">sync</span>
 
-<span class="ok">✓</span> enterprise/compliance    <span class="val">v2.3.1</span>  <span class="cmt">updated</span>
-<span class="ok">✓</span> enterprise/perf-audit    <span class="val">v1.8.0</span>  <span class="cmt">up to date</span>
-  enterprise/security-pro  <span class="val">v3.0.0</span>  <span class="warn">major update</span></div>
+<span class="ok">✓</span> enterprise/compliance    <span class="val">v2.3.1</span>  <span class="cmt">оновлено</span>
+<span class="ok">✓</span> enterprise/perf-audit    <span class="val">v1.8.0</span>  <span class="cmt">актуально</span>
+  enterprise/security-pro  <span class="val">v3.0.0</span>  <span class="warn">мажорне оновлення</span></div>
             </div>
           </div>
         </section>
@@ -451,45 +441,45 @@
         <!-- PLAYBOOKS -->
         <section class="team-section">
           <div class="section-header">
-            <h2 class="section-title">Codify your team's workflows</h2>
+            <h2 class="section-title">Кодифікуйте робочі процеси вашої команди</h2>
           </div>
           <div class="team-grid">
             <div class="team-content">
-              <h3>Patterns tell you what. Playbooks tell you how.</h3>
-              <p>Playbooks are validated multi-step procedures stored in your vault. They capture the full workflow — not just a rule, but the sequence, the expected outcomes, and the validation criteria.</p>
-              <p>Examples: migrating tokens across a codebase, setting up a new component from scratch, debugging a contrast failure. Each step includes what to check and when you're done.</p>
-              <p class="key-point">Repeatable workflows, not tribal knowledge.</p>
+              <h3>Патерни кажуть, що робити. Плейбуки кажуть, як.</h3>
+              <p>Плейбуки — це валідовані багатокрокові процедури, що зберігаються у вашому сховищі. Вони фіксують повний робочий процес — не лише правило, а й послідовність, очікувані результати та критерії валідації.</p>
+              <p>Приклади: міграція токенів у кодовій базі, налаштування нового компонента з нуля, налагодження збою контрастності. Кожен крок містить, що перевірити і коли ви завершили.</p>
+              <p class="key-point">Повторювані процеси, а не племінні знання.</p>
             </div>
             <div>
-              <div class="feature-code"><span class="cmt"># List available playbooks</span>
+              <div class="feature-code"><span class="cmt"># Перелік доступних плейбуків</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">list-playbooks --category design</span>
 
-<span class="ok">Found 4 playbooks:</span>
-  <span class="val">design:component-setup</span>     <span class="cmt">7 steps</span>
-  <span class="val">design:token-migration</span>     <span class="cmt">5 steps</span>
-  <span class="val">design:contrast-audit</span>      <span class="cmt">4 steps</span>
-  <span class="val">design:theme-scaffolding</span>   <span class="cmt">6 steps</span></div>
-              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Playbook structure</span>
+<span class="ok">Знайдено 4 плейбуки:</span>
+  <span class="val">design:component-setup</span>     <span class="cmt">7 кроків</span>
+  <span class="val">design:token-migration</span>     <span class="cmt">5 кроків</span>
+  <span class="val">design:contrast-audit</span>      <span class="cmt">4 кроки</span>
+  <span class="val">design:theme-scaffolding</span>   <span class="cmt">6 кроків</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Структура плейбука</span>
 <span class="key">id:</span> <span class="val">design:component-setup</span>
 <span class="key">type:</span> <span class="val">playbook</span>
 <span class="key">steps:</span>
-  - <span class="key">name:</span> <span class="val">Scaffold component files</span>
+  - <span class="key">name:</span> <span class="val">Створити каркас файлів компонента</span>
     <span class="key">run:</span>  <span class="val">soleri create component $name</span>
-    <span class="key">validate:</span> <span class="val">files exist, exports present</span>
-  - <span class="key">name:</span> <span class="val">Apply token system</span>
+    <span class="key">validate:</span> <span class="val">файли існують, експорти присутні</span>
+  - <span class="key">name:</span> <span class="val">Застосувати систему токенів</span>
     <span class="key">run:</span>  <span class="val">soleri validate --fix</span>
     <span class="key">validate:</span> <span class="val">token score >= 95</span>
-  - <span class="key">name:</span> <span class="val">Check accessibility</span>
+  - <span class="key">name:</span> <span class="val">Перевірити доступність</span>
     <span class="key">run:</span>  <span class="val">soleri check-contrast</span>
-    <span class="key">validate:</span> <span class="val">all PASS</span></div>
-              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Run a playbook</span>
+    <span class="key">validate:</span> <span class="val">усе PASS</span></div>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Запустити плейбук</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">run-playbook design:component-setup \
   --name UserCard</span>
 
-<span class="ok">Step 1/7:</span> Scaffold component files    <span class="ok">✓</span>
-<span class="ok">Step 2/7:</span> Apply token system          <span class="ok">✓</span>
-<span class="ok">Step 3/7:</span> Check accessibility         <span class="ok">✓</span>
-  <span class="cmt">... 4 more steps</span></div>
+<span class="ok">Крок 1/7:</span> Створити каркас файлів компонента    <span class="ok">✓</span>
+<span class="ok">Крок 2/7:</span> Застосувати систему токенів          <span class="ok">✓</span>
+<span class="ok">Крок 3/7:</span> Перевірити доступність               <span class="ok">✓</span>
+  <span class="cmt">... ще 4 кроки</span></div>
             </div>
           </div>
         </section>
@@ -497,52 +487,52 @@
         <!-- UPDATES & VERSIONING -->
         <section class="team-section">
           <div class="section-header">
-            <h2 class="section-title">Four channels, zero breakage</h2>
+            <h2 class="section-title">Чотири канали — нуль поломок</h2>
           </div>
           <div class="team-grid">
             <div>
               <table class="update-table">
                 <thead>
                   <tr>
-                    <th>Layer</th>
-                    <th>Update command</th>
-                    <th>Scope</th>
+                    <th>Рівень</th>
+                    <th>Команда оновлення</th>
+                    <th>Охоплення</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>Engine</td>
+                    <td>Движок</td>
                     <td><code>npm update soleri</code></td>
-                    <td>All agents</td>
+                    <td>Усі агенти</td>
                   </tr>
                   <tr>
-                    <td>Domains</td>
+                    <td>Домени</td>
                     <td><code>npm update @soleri/*</code></td>
-                    <td>Per domain</td>
+                    <td>За доменом</td>
                   </tr>
                   <tr>
-                    <td>Agent</td>
+                    <td>Агент</td>
                     <td><code>soleri update</code></td>
-                    <td>Config merge</td>
+                    <td>Злиття конфігурації</td>
                   </tr>
                   <tr>
-                    <td>Packs</td>
+                    <td>Паки</td>
                     <td><code>soleri packs sync</code></td>
-                    <td>Per pack</td>
+                    <td>За паком</td>
                   </tr>
                 </tbody>
               </table>
-              <p style="font-size:13px; color:var(--accent-teal); font-weight:600; margin-top:12px;">Vault knowledge is never auto-updated — you own it.</p>
+              <p style="font-size:13px; color:var(--accent-teal); font-weight:600; margin-top:12px;">Знання у сховищі ніколи не оновлюються автоматично — ви ними володієте.</p>
             </div>
             <div>
-              <div class="feature-code"><span class="cmt"># Health check</span>
+              <div class="feature-code"><span class="cmt"># Перевірка стану</span>
 <span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
 
-<span class="ok">✓</span> Engine          <span class="val">v1.2.0</span>  <span class="cmt">up to date</span>
-<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>  <span class="cmt">up to date</span>
-<span class="ok">✓</span> domain-security <span class="val">v0.6.0</span>  <span class="cmt">up to date</span>
-<span class="warn">!</span> domain-arch     <span class="val">v0.4.0</span>  <span class="warn">update available</span>
-<span class="ok">✓</span> my-agent        <span class="val">config ok</span>
+<span class="ok">✓</span> Engine          <span class="val">v1.2.0</span>  <span class="cmt">актуально</span>
+<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>  <span class="cmt">актуально</span>
+<span class="ok">✓</span> domain-security <span class="val">v0.6.0</span>  <span class="cmt">актуально</span>
+<span class="warn">!</span> domain-arch     <span class="val">v0.4.0</span>  <span class="warn">доступне оновлення</span>
+<span class="ok">✓</span> my-agent        <span class="val">конфігурація ok</span>
 <span class="ok">✓</span> Vault           <span class="val">284 entries, healthy</span>
 <span class="ok">✓</span> Brain           <span class="val">12 patterns tracked</span></div>
             </div>
@@ -552,31 +542,29 @@
         <!-- TELEGRAM BOT -->
         <section class="team-section">
           <div class="section-header">
-            <h2 class="section-title">Manage your infrastructure from a chat</h2>
+            <h2 class="section-title">Керуйте інфраструктурою з чату</h2>
           </div>
           <div class="team-grid">
             <div class="team-content">
-              <h3>Telegram bot for ops</h3>
-              <p>Monitor vault health, query the knowledge graph, check event logs, and manage infrastructure — all from Telegram. Works with any LLM provider.</p>
-              <p class="key-point">Works with OpenAI, Anthropic, Ollama, or no LLM at all.</p>
+              <h3>Telegram-бот для операцій</h3>
+              <p>Моніторте стан сховища, робіть запити до графа знань, перевіряйте журнали подій і керуйте інфраструктурою — усе з Telegram. Працює з будь-яким провайдером LLM.</p>
+              <p class="key-point">Працює з OpenAI, Anthropic, Ollama або взагалі без LLM.</p>
             </div>
             <div>
               <div class="chat-mockup">
-                <div class="chat-header">
-                  <span class="chat-header-icon">S</span>
-                  Soleri Bot
-                </div>
+                <div class="chat-header"><span class="chat-header-icon">S</span>
+                  Soleri Bot</div>
                 <div class="chat-messages">
-                  <div class="chat-msg user">how's the vault doing?</div>
-                  <div class="chat-msg bot">Looking good — <code>284</code> entries, synced 2 min ago. Everything's healthy.</div>
-                  <div class="chat-msg user">what patterns are working best this week?</div>
-                  <div class="chat-msg bot">Your top 3 right now:<br>1. semantic-tokens — <code>94</code> strength<br>2. component-structure — <code>87</code><br>3. error-boundaries — <code>82</code><br>Tokens are really clicking for the team.</div>
-                  <div class="chat-msg bot">Hey — you still have 3 ideas from yesterday's brainstorm that haven't been processed. Want to go through them?</div>
-                  <div class="chat-msg user">sure, what's the first one?</div>
-                  <div class="chat-msg bot">Auto-detect stale vault entries older than 90 days. I think this one's solid — could become a roadmap item for the cleanup pipeline. Want me to write it up?</div>
+                  <div class="chat-msg user">як там сховище?</div>
+                  <div class="chat-msg bot">Усе добре — <code>284</code> entries, синхронізовано 2 хв тому. Усе здорове.</div>
+                  <div class="chat-msg user">які патерни найкраще працюють цього тижня?</div>
+                  <div class="chat-msg bot">Ваші топ-3 зараз:<br>1. semantic-tokens — <code>94</code> strength<br>2. component-structure — <code>87</code><br>3. error-boundaries — <code>82</code><br>Токени справді добре заходять команді.</div>
+                  <div class="chat-msg bot">Гей — у тебе досі є 3 ідеї з учорашнього брейншторму, які ще не оброблено. Хочеш пройтися по них?</div>
+                  <div class="chat-msg user">так, яка перша?</div>
+                  <div class="chat-msg bot">Автовиявлення застарілих записів у сховищі старших за 90 днів. Думаю, це надійна ідея — може стати пунктом роадмапу для пайплайна очищення. Хочеш, щоб я оформив це письмово?</div>
                 </div>
               </div>
-              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Structured event queries (JSONL)</span>
+              <div class="feature-code" style="margin-top:12px;"><span class="cmt"># Структуровані запити подій (JSONL)</span>
 <span class="prompt">$</span> grep <span class="val">'"tool_call"'</span> events-*.jsonl \
   | jq <span class="arg">-r .tool</span> | sort | uniq -c | sort -rn
 
@@ -591,21 +579,18 @@
 
         <!-- CTA -->
         <section class="cta">
-          <h2>Connect your team.</h2>
-          <p>Open source. Apache 2.0.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="getting-started.html">Get started</a>
-            <a class="btn btn-secondary" href="personas.html">Your Agent</a>
-          </div>
+          <h2>Припиніть втрачати знання, коли люди переходять між проектами.</h2>
+          <p>Відкритий код. Apache 2.0.</p>
+          <div class="hero-actions"><a class="btn btn-primary" href="getting-started.html">Почати</a>
+            <a class="btn btn-secondary" href="personas.html">Ваш агент</a></div>
         </section>
 
         <footer class="footer">
-          <p>Soleri — Executable standards for agentic systems</p>
-          <nav class="footer-links" aria-label="Footer links">
-            <a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
+          <p>Soleri — Виконувані стандарти для агентних систем</p>
+          <p class="copyright">© 2026 Drozd&Co</p>
+          <nav class="footer-links" aria-label="Footer links"><a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
             <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
-            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a>
-          </nav>
+            <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a></nav>
         </footer>
       </main>
     </div>
