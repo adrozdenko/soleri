@@ -13,7 +13,10 @@
   ],
   "words": [
     "adrozdenko",
+    "alongs",
     "anthropic",
+    "clinerules",
+    "cursorrules",
     "cognee",
     "cspell",
     "deadcode",
@@ -30,11 +33,13 @@
     "noEmit",
     "npmjs",
     "ollama",
+    "opensource",
     "oxfmt",
     "oxfmtrc",
     "oxlint",
     "oxlintrc",
     "paolo",
+    "reloadable",
     "scaffolder",
     "secretlint",
     "soleri",
@@ -45,7 +50,8 @@
     "tsbuildinfo",
     "upsert",
     "vitest",
-    "wcag"
+    "wcag",
+    "windsurfrules"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [
