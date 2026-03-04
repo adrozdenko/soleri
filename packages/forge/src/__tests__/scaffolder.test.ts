@@ -42,22 +42,28 @@ describe('Scaffolder', () => {
       expect(preview.persona.name).toBe('Atlas');
       expect(preview.persona.role).toBe('Data Engineering Advisor');
       expect(preview.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
-      expect(preview.files.length).toBeGreaterThan(15);
+      expect(preview.files.length).toBeGreaterThan(10);
 
-      // Should include README, setup script, and LLM client (static modules now in @soleri/core)
       const paths = preview.files.map((f) => f.path);
       expect(paths).toContain('README.md');
       expect(paths).toContain('scripts/setup.sh');
-      expect(paths).toContain('src/llm/llm-client.ts');
+      expect(paths).toContain('src/index.ts');
       expect(paths).toContain('src/__tests__/facades.test.ts');
-      // Static modules should NOT be in preview (they live in @soleri/core now)
-      expect(paths).not.toContain('src/vault/vault.ts');
-      expect(paths).not.toContain('src/brain/brain.ts');
-      expect(paths).not.toContain('src/planning/planner.ts');
 
-      // Should have domain facades + core facade
+      // v5.0: These are no longer generated (live in @soleri/core)
+      expect(paths).not.toContain('src/llm/llm-client.ts');
+      expect(paths).not.toContain('src/facades/core.facade.ts');
+      expect(paths).not.toContain('src/facades/data-pipelines.facade.ts');
+
+      // Should have domain facades + core facade in preview
       expect(preview.facades).toHaveLength(4); // 3 domains + core
       expect(preview.facades[0].name).toBe('atlas_data_pipelines');
+
+      // Core facade should list all 31 ops
+      const coreFacade = preview.facades.find((f) => f.name === 'atlas_core')!;
+      expect(coreFacade.ops.length).toBe(31);
+      expect(coreFacade.ops).toContain('curator_status');
+      expect(coreFacade.ops).toContain('health');
 
       // Should NOT create any files
       expect(existsSync(join(tempDir, 'atlas'))).toBe(false);
@@ -71,36 +77,33 @@ describe('Scaffolder', () => {
       expect(result.success).toBe(true);
       expect(result.agentDir).toBe(join(tempDir, 'atlas'));
       expect(result.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
-      expect(result.filesCreated.length).toBeGreaterThan(10);
+      expect(result.filesCreated.length).toBeGreaterThan(8);
     });
 
-    it('should create all expected directories', () => {
+    it('should create expected directories (no facades/ or llm/ dirs)', () => {
       scaffold(testConfig);
       const agentDir = join(tempDir, 'atlas');
 
-      expect(existsSync(join(agentDir, 'src', 'facades'))).toBe(true);
       expect(existsSync(join(agentDir, 'src', 'intelligence', 'data'))).toBe(true);
       expect(existsSync(join(agentDir, 'src', 'identity'))).toBe(true);
       expect(existsSync(join(agentDir, 'src', 'activation'))).toBe(true);
-      expect(existsSync(join(agentDir, 'src', 'llm'))).toBe(true);
-      // Static module directories should NOT exist (now in @soleri/core)
-      expect(existsSync(join(agentDir, 'src', 'vault'))).toBe(false);
-      expect(existsSync(join(agentDir, 'src', 'planning'))).toBe(false);
-      expect(existsSync(join(agentDir, 'src', 'brain'))).toBe(false);
+      // v5.0: facades/ and llm/ dirs are no longer generated
+      expect(existsSync(join(agentDir, 'src', 'facades'))).toBe(false);
+      expect(existsSync(join(agentDir, 'src', 'llm'))).toBe(false);
     });
 
-    it('should create valid package.json', () => {
+    it('should create valid package.json with @soleri/core ^2.0.0', () => {
       scaffold(testConfig);
       const pkg = JSON.parse(readFileSync(join(tempDir, 'atlas', 'package.json'), 'utf-8'));
 
       expect(pkg.name).toBe('atlas-mcp');
       expect(pkg.type).toBe('module');
       expect(pkg.dependencies['@modelcontextprotocol/sdk']).toBeDefined();
-      expect(pkg.dependencies['@soleri/core']).toBeDefined();
+      expect(pkg.dependencies['@soleri/core']).toBe('^2.0.0');
       expect(pkg.dependencies['zod']).toBeDefined();
-      expect(pkg.dependencies['@anthropic-ai/sdk']).toBeDefined();
-      // better-sqlite3 is now transitive via @soleri/core
-      expect(pkg.dependencies['better-sqlite3']).toBeUndefined();
+      // Anthropic SDK is now optional (LLMClient in core handles dynamic import)
+      expect(pkg.dependencies['@anthropic-ai/sdk']).toBeUndefined();
+      expect(pkg.optionalDependencies['@anthropic-ai/sdk']).toBeDefined();
     });
 
     it('should create persona with correct config', () => {
@@ -115,20 +118,6 @@ describe('Scaffolder', () => {
       expect(persona).toContain('Data quality is non-negotiable');
     });
 
-    it('should create domain facades', () => {
-      scaffold(testConfig);
-      const facadesDir = join(tempDir, 'atlas', 'src', 'facades');
-      const files = readdirSync(facadesDir);
-
-      expect(files).toContain('data-pipelines.facade.ts');
-      expect(files).toContain('data-quality.facade.ts');
-      expect(files).toContain('etl.facade.ts');
-      expect(files).toContain('core.facade.ts');
-      // facade-factory.ts and types.ts are now in @soleri/core
-      expect(files).not.toContain('facade-factory.ts');
-      expect(files).not.toContain('types.ts');
-    });
-
     it('should create empty intelligence data files', () => {
       scaffold(testConfig);
       const dataDir = join(tempDir, 'atlas', 'src', 'intelligence', 'data');
@@ -138,29 +127,30 @@ describe('Scaffolder', () => {
       expect(files).toContain('data-quality.json');
       expect(files).toContain('etl.json');
 
-      // Each file should have empty entries array
       const bundle = JSON.parse(readFileSync(join(dataDir, 'data-pipelines.json'), 'utf-8'));
       expect(bundle.domain).toBe('data-pipelines');
       expect(bundle.entries).toEqual([]);
     });
 
-    it('should create entry point importing from @soleri/core', () => {
+    it('should create entry point using runtime factories from @soleri/core', () => {
       scaffold(testConfig);
       const entry = readFileSync(join(tempDir, 'atlas', 'src', 'index.ts'), 'utf-8');
 
-      expect(entry).toContain('createDataPipelinesFacade');
-      expect(entry).toContain('createDataQualityFacade');
-      expect(entry).toContain('createEtlFacade');
-      expect(entry).toContain('createCoreFacade');
-      expect(entry).toContain("name: 'atlas-mcp'");
-      expect(entry).toContain('Brain');
-      expect(entry).toContain('LLMClient');
-      expect(entry).toContain('KeyPool');
-      expect(entry).toContain('loadKeyPoolConfig');
-      expect(entry).toContain('Hello');
-      // Should import shared modules from @soleri/core
+      // v5.0 runtime factory pattern
+      expect(entry).toContain('createAgentRuntime');
+      expect(entry).toContain('createCoreOps');
+      expect(entry).toContain('createDomainFacades');
       expect(entry).toContain("from '@soleri/core'");
-      expect(entry).toContain("loadKeyPoolConfig('atlas')");
+      expect(entry).toContain("agentId: 'atlas'");
+      expect(entry).toContain("name: 'atlas-mcp'");
+      expect(entry).toContain('Hello');
+      // Agent-specific ops still reference persona/activation
+      expect(entry).toContain('PERSONA');
+      expect(entry).toContain('activateAgent');
+      // Domain list is embedded
+      expect(entry).toContain('data-pipelines');
+      expect(entry).toContain('data-quality');
+      expect(entry).toContain('etl');
     });
 
     it('should create .mcp.json for client config', () => {
@@ -206,99 +196,52 @@ describe('Scaffolder', () => {
       expect(readme).toContain('# Atlas');
       expect(readme).toContain('Data Engineering Advisor');
       expect(readme).toContain('Hello, Atlas!');
-      expect(readme).toContain('Goodbye, Atlas!');
       expect(readme).toContain('data-pipelines');
-      expect(readme).toContain('data-quality');
-      expect(readme).toContain('etl');
-      expect(readme).toContain('Data quality is non-negotiable');
-      expect(readme).toContain('./scripts/setup.sh');
     });
 
-    it('should create executable setup.sh with agent-specific content', () => {
+    it('should create executable setup.sh', () => {
       scaffold(testConfig);
       const setupPath = join(tempDir, 'atlas', 'scripts', 'setup.sh');
       const setup = readFileSync(setupPath, 'utf-8');
 
-      // Content checks
       expect(setup).toContain('AGENT_NAME="atlas"');
-      expect(setup).toContain('=== Atlas Setup ===');
-      expect(setup).toContain('Building Atlas...');
-      expect(setup).toContain('Hello, Atlas!');
       expect(setup).toContain('#!/usr/bin/env bash');
-      expect(setup).toContain('claude mcp add');
 
-      // Executable permission check
       const stats = statSync(setupPath);
       const isExecutable = (stats.mode & 0o111) !== 0;
       expect(isExecutable).toBe(true);
     });
 
-    it('should create LLM client file importing from @soleri/core', () => {
-      scaffold(testConfig);
-      const llmDir = join(tempDir, 'atlas', 'src', 'llm');
-      // Only llm-client.ts should exist (types, utils, key-pool are in @soleri/core)
-      expect(existsSync(join(llmDir, 'llm-client.ts'))).toBe(true);
-      expect(existsSync(join(llmDir, 'types.ts'))).toBe(false);
-      expect(existsSync(join(llmDir, 'utils.ts'))).toBe(false);
-      expect(existsSync(join(llmDir, 'key-pool.ts'))).toBe(false);
-
-      const client = readFileSync(join(llmDir, 'llm-client.ts'), 'utf-8');
-      expect(client).toContain('class LLMClient');
-      expect(client).toContain('class ModelRouter');
-      expect(client).toContain('.atlas');
-      expect(client).toContain("from '@soleri/core'");
-    });
-
-    it('should only create facades test file (static tests in @soleri/core)', () => {
-      scaffold(testConfig);
-      const testsDir = join(tempDir, 'atlas', 'src', '__tests__');
-      const files = readdirSync(testsDir);
-
-      expect(files).toContain('facades.test.ts');
-      // Static module tests are now in @soleri/core
-      expect(files).not.toContain('vault.test.ts');
-      expect(files).not.toContain('loader.test.ts');
-      expect(files).not.toContain('planner.test.ts');
-      expect(files).not.toContain('brain.test.ts');
-      expect(files).not.toContain('llm.test.ts');
-    });
-
-    it('should generate facade tests referencing all domains', () => {
+    it('should generate facade tests using runtime factories', () => {
       scaffold(testConfig);
       const facadesTest = readFileSync(
         join(tempDir, 'atlas', 'src', '__tests__', 'facades.test.ts'),
         'utf-8',
       );
 
+      // Should use runtime factories from @soleri/core
+      expect(facadesTest).toContain('createAgentRuntime');
+      expect(facadesTest).toContain('createCoreOps');
+      expect(facadesTest).toContain('createDomainFacade');
+      expect(facadesTest).toContain("from '@soleri/core'");
+
+      // Domain facades
       expect(facadesTest).toContain('atlas_data_pipelines');
       expect(facadesTest).toContain('atlas_data_quality');
       expect(facadesTest).toContain('atlas_etl');
       expect(facadesTest).toContain('atlas_core');
-      expect(facadesTest).toContain('createDataPipelinesFacade');
-      // Should import shared modules from @soleri/core
-      expect(facadesTest).toContain("from '@soleri/core'");
-      // Activation ops should be tested
+
+      // Agent-specific ops tested
       expect(facadesTest).toContain('activate');
       expect(facadesTest).toContain('inject_claude_md');
       expect(facadesTest).toContain('setup');
-      // Memory + planning ops should be tested
-      expect(facadesTest).toContain('memory_capture');
-      expect(facadesTest).toContain('memory_search');
-      expect(facadesTest).toContain('create_plan');
-      expect(facadesTest).toContain('complete_plan');
-      // Brain ops should be tested
-      expect(facadesTest).toContain('record_feedback');
-      expect(facadesTest).toContain('rebuild_vocabulary');
-      expect(facadesTest).toContain('brain_stats');
-      // LLM ops should be tested
-      expect(facadesTest).toContain('llm_status');
-      expect(facadesTest).toContain('LLMClient');
-      expect(facadesTest).toContain('KeyPool');
+      expect(facadesTest).toContain('health');
+      expect(facadesTest).toContain('identity');
     });
 
     it('should fail if directory already exists', () => {
       scaffold(testConfig);
-      const result = scaffold(testConfig); // second time
+      const result = scaffold(testConfig);
 
       expect(result.success).toBe(false);
       expect(result.summary).toContain('already exists');

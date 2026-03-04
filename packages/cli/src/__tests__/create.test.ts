@@ -57,15 +57,17 @@ describe('create command', () => {
     expect(result.summary).toContain('already exists');
   });
 
-  it('should create domain facades for each domain', () => {
+  it('should not create facade files (v5.0 uses runtime factories from @soleri/core)', () => {
     scaffold(testConfig);
 
-    expect(existsSync(join(tempDir, 'test-agent', 'src', 'facades', 'testing.facade.ts'))).toBe(
-      true,
-    );
-    expect(existsSync(join(tempDir, 'test-agent', 'src', 'facades', 'quality.facade.ts'))).toBe(
-      true,
-    );
+    // v5.0: facades are created at runtime by createDomainFacades() — no generated files
+    expect(existsSync(join(tempDir, 'test-agent', 'src', 'facades'))).toBe(false);
+
+    // Entry point should reference createDomainFacades
+    const entry = readFileSync(join(tempDir, 'test-agent', 'src', 'index.ts'), 'utf-8');
+    expect(entry).toContain('createDomainFacades');
+    expect(entry).toContain('"testing"');
+    expect(entry).toContain('"quality"');
   });
 
   it('should create intelligence data files for each domain', () => {

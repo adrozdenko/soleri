@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## @soleri/core@2.0.0 — 2026-03-05
+
+### Breaking Changes
+
+- **Runtime Factory** — `createAgentRuntime(config)` replaces manual module initialization. Single call wires Vault, Brain, Planner, Curator, KeyPool, and LLMClient
+- **LLMClient moved to core** — `LLMClient` and `ModelRouter` now live in `@soleri/core` (was a generated template in forge). Constructor: `LLMClient(openaiKeyPool, anthropicKeyPool, agentId?)`
+- `@anthropic-ai/sdk` added as optional peer dependency (dynamic import at runtime)
+
+### Added
+
+- **`createAgentRuntime(config)`** — Factory that initializes all agent modules with sensible defaults (`runtime/runtime.ts`)
+- **`createCoreOps(runtime)`** — Returns 26 generic `OpDefinition[]` covering search, vault, memory, export, planning, brain, and curator ops (`runtime/core-ops.ts`)
+- **`createDomainFacade(runtime, agentId, domain)`** — Creates a standard 5-op domain facade at runtime (get_patterns, search, get_entry, capture, remove) (`runtime/domain-ops.ts`)
+- **`createDomainFacades(runtime, agentId, domains)`** — Batch factory for multiple domain facades
+- **`AgentRuntimeConfig` / `AgentRuntime` types** — Interfaces for the factory pattern (`runtime/types.ts`)
+- **`LLMClient`** — Full LLM client with circuit breaker, retry, key rotation, model routing, dynamic Anthropic SDK import (`llm/llm-client.ts`)
+- 33 new tests (runtime, core-ops, domain-ops, llm-client), 0 regressions in existing 201 tests
+
+## @soleri/forge@5.0.0 — 2026-03-05
+
+### Breaking Changes
+
+- Generated agents now use `createAgentRuntime()`, `createCoreOps()`, `createDomainFacades()` from `@soleri/core` instead of inlined boilerplate
+- Generated `package.json` depends on `@soleri/core: ^2.0.0` (was `^1.0.0`)
+- `@anthropic-ai/sdk` moved to `optionalDependencies` (was `dependencies`)
+- No more `src/facades/` or `src/llm/` directories generated — facades created at runtime
+
+### Removed
+
+- **`core-facade.ts` template** — Replaced by `createCoreOps()` from core (26 generic ops + 5 agent-specific ops in entry point)
+- **`llm-client.ts` template** — `LLMClient` now lives in `@soleri/core`
+- Per-domain facade file generation — `createDomainFacades()` handles this at runtime
+
+### Changed
+
+- Entry point template shrunk from ~100 to ~60 lines (thin shell calling core factories)
+- Only 5 agent-specific ops remain in generated code: `health`, `identity`, `activate`, `inject_claude_md`, `setup`
+- `domain-manager.ts` detects v5.0 agents and skips facade file generation
+- `knowledge-installer.ts` detects v5.0 agents and skips facade file generation
+- `patching.ts` supports both v5.0 (array literal in `createDomainFacades()`) and v4.x (import anchors) formats
+- Test template uses runtime factories instead of manual module initialization
+- Scaffolded agents get new core features (e.g., Curator) via `npm update @soleri/core` — zero re-scaffolding
+
+## @soleri/core@1.1.0 — 2026-03-04
+
+### Added
+
+- **Curator** — Vault self-maintenance module: duplicate detection (TF-IDF cosine similarity), contradiction scanning (pattern vs anti-pattern), tag normalization with alias registry, entry grooming, consolidation (archive stale, remove duplicates), changelog audit trail, health audit (0-100 score with coverage/freshness/quality/tag metrics)
+- **Text utilities** — Extracted shared TF-IDF functions (`tokenize`, `calculateTf`, `calculateTfIdf`, `cosineSimilarity`) to `text/similarity.ts` for reuse across Brain and Curator
+- 39 new Curator tests, 0 regressions in existing 162 tests
+
+### Changed
+
+- Brain module now imports TF-IDF utilities from `text/similarity.ts` instead of inlining them
+
+## @soleri/forge@4.2.0 — 2026-03-04
+
+### Added
+
+- **8 curator ops** in generated core facade: `curator_status`, `curator_detect_duplicates`, `curator_contradictions`, `curator_resolve_contradiction`, `curator_groom`, `curator_groom_all`, `curator_consolidate`, `curator_health_audit`
+- 7 curator facade tests in generated test template
+- Curator initialization in generated entry point (after Brain, before LLM)
+
+### Changed
+
+- `createCoreFacade()` signature: added optional `curator` parameter (backwards compatible — all ops gracefully return error if curator not provided)
+
 ## create-soleri@1.0.0 — 2026-03-04
 
 ### Added

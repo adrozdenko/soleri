@@ -14,8 +14,6 @@ import { generatePackageJson } from './templates/package-json.js';
 import { generateTsconfig } from './templates/tsconfig.js';
 import { generateVitestConfig } from './templates/vitest-config.js';
 import { generatePersona } from './templates/persona.js';
-import { generateDomainFacade } from './templates/domain-facade.js';
-import { generateCoreFacade } from './templates/core-facade.js';
 import { generateEntryPoint } from './templates/entry-point.js';
 import { generateFacadesTest } from './templates/test-facades.js';
 import { generateClaudeMdTemplate } from './templates/claude-md-template.js';
@@ -23,7 +21,6 @@ import { generateInjectClaudeMd } from './templates/inject-claude-md.js';
 import { generateActivate } from './templates/activate.js';
 import { generateReadme } from './templates/readme.js';
 import { generateSetupScript } from './templates/setup-script.js';
-import { generateLLMClient } from './templates/llm-client.js';
 
 /**
  * Preview what scaffold will create without writing anything.
@@ -43,21 +40,8 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     {
       path: 'src/index.ts',
       description:
-        'Entry point — initializes vault, planner, brain, registers facades, starts stdio',
+        'Entry point — thin shell using createAgentRuntime() + createCoreOps() from @soleri/core',
     },
-    {
-      path: 'src/llm/llm-client.ts',
-      description:
-        'LLM client — unified OpenAI/Anthropic caller with model routing (optional, needs API keys)',
-    },
-    {
-      path: 'src/facades/core.facade.ts',
-      description: 'Core facade — search, vault stats, health, identity',
-    },
-    ...config.domains.map((d) => ({
-      path: `src/facades/${d}.facade.ts`,
-      description: `${d} facade — search, get_patterns, capture, remove`,
-    })),
     ...config.domains.map((d) => ({
       path: `src/intelligence/data/${d}.json`,
       description: `Empty ${d} intelligence bundle — ready for knowledge capture`,
@@ -101,14 +85,10 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     {
       name: `${config.id}_core`,
       ops: [
+        // From createCoreOps() — 26 generic ops
         'search',
         'vault_stats',
         'list_all',
-        'health',
-        'identity',
-        'activate',
-        'inject_claude_md',
-        'setup',
         'register',
         'memory_search',
         'memory_capture',
@@ -124,6 +104,20 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'rebuild_vocabulary',
         'brain_stats',
         'llm_status',
+        'curator_status',
+        'curator_detect_duplicates',
+        'curator_contradictions',
+        'curator_resolve_contradiction',
+        'curator_groom',
+        'curator_groom_all',
+        'curator_consolidate',
+        'curator_health_audit',
+        // Agent-specific ops — 5
+        'health',
+        'identity',
+        'activate',
+        'inject_claude_md',
+        'setup',
       ],
     },
   ];
@@ -159,12 +153,10 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     '',
     'scripts',
     'src',
-    'src/facades',
     'src/intelligence',
     'src/intelligence/data',
     'src/identity',
     'src/activation',
-    'src/llm',
     'src/__tests__',
   ];
 
@@ -201,19 +193,16 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
 
   // Write source files
   const sourceFiles: Array<[string, string]> = [
-    ['src/facades/core.facade.ts', generateCoreFacade(config)],
     ['src/identity/persona.ts', generatePersona(config)],
     ['src/activation/claude-md-content.ts', generateClaudeMdTemplate(config)],
     ['src/activation/inject-claude-md.ts', generateInjectClaudeMd(config)],
     ['src/activation/activate.ts', generateActivate(config)],
     ['src/index.ts', generateEntryPoint(config)],
-    ['src/llm/llm-client.ts', generateLLMClient(config)],
     ['src/__tests__/facades.test.ts', generateFacadesTest(config)],
   ];
 
-  // Domain facades and empty data files
+  // Empty intelligence data bundles (domain facades come from @soleri/core at runtime)
   for (const domain of config.domains) {
-    sourceFiles.push([`src/facades/${domain}.facade.ts`, generateDomainFacade(config.id, domain)]);
     sourceFiles.push([`src/intelligence/data/${domain}.json`, generateEmptyBundle(domain)]);
   }
 
@@ -222,7 +211,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     filesCreated.push(path);
   }
 
-  const totalOps = config.domains.length * 5 + 24; // 5 per domain + 24 core (activation, registration, memory, session, export, planning, brain, llm)
+  const totalOps = config.domains.length * 5 + 31; // 5 per domain + 26 core (from createCoreOps) + 5 agent-specific
 
   // Register the agent as an MCP server in ~/.claude.json
   const mcpReg = registerMcpServer(config.id, agentDir);

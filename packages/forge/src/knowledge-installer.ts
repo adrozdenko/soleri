@@ -185,6 +185,11 @@ export async function installKnowledge(
 
   const hasBrain = existsSync(join(agentPath, 'src', 'brain'));
 
+  // v5.0+ agents use createDomainFacades() from @soleri/core — no facade files needed
+  const indexPath5 = join(agentPath, 'src', 'index.ts');
+  const isV5 =
+    existsSync(indexPath5) && readFileSync(indexPath5, 'utf-8').includes('createDomainFacades');
+
   // ── Step 2: Read and validate bundles ────────────────────────────
 
   const bundleFiles = collectBundleFiles(bundlePath);
@@ -253,22 +258,25 @@ export async function installKnowledge(
   // ── Step 4: Generate facades for new domains ─────────────────────
 
   if (generateFacades && domainsAdded.length > 0) {
-    const facadesDir = join(agentPath, 'src', 'facades');
+    // v5.0+ agents: no facade files needed (createDomainFacades from @soleri/core)
+    // v4.x agents: generate facade files
+    if (!isV5) {
+      const facadesDir = join(agentPath, 'src', 'facades');
 
-    for (const domain of domainsAdded) {
-      const facadePath = join(facadesDir, `${domain}.facade.ts`);
-      // Skip if facade already exists (idempotent)
-      if (existsSync(facadePath)) {
-        warnings.push(`Facade ${domain}.facade.ts already exists — skipped`);
-        continue;
+      for (const domain of domainsAdded) {
+        const facadePath = join(facadesDir, `${domain}.facade.ts`);
+        if (existsSync(facadePath)) {
+          warnings.push(`Facade ${domain}.facade.ts already exists — skipped`);
+          continue;
+        }
+
+        const facadeCode = hasBrain
+          ? generateDomainFacade(agentId, domain)
+          : generateVaultOnlyDomainFacade(agentId, domain);
+
+        writeFileSync(facadePath, facadeCode, 'utf-8');
+        facadesGenerated.push(`${domain}.facade.ts`);
       }
-
-      const facadeCode = hasBrain
-        ? generateDomainFacade(agentId, domain)
-        : generateVaultOnlyDomainFacade(agentId, domain);
-
-      writeFileSync(facadePath, facadeCode, 'utf-8');
-      facadesGenerated.push(`${domain}.facade.ts`);
     }
 
     // ── Step 5: Patch src/index.ts ───────────────────────────────────
