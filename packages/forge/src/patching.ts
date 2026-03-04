@@ -3,42 +3,68 @@
  *
  * These functions modify an agent's src/index.ts and src/activation/claude-md-content.ts
  * to register new domain facades and their CLAUDE.md table rows.
+ *
+ * v5.0: Entry point uses createDomainFacades() from @soleri/core.
+ * New domain patching inserts domain names into the domains array literal.
  */
-import { pascalCase } from './templates/domain-facade.js';
 
 /**
- * Patch the agent's src/index.ts to add imports and facade registrations
- * for new domains.
+ * Patch the agent's src/index.ts to add new domains.
  *
- * Anchor patterns:
- * - Import: insert before `import { createCoreFacade }`
- * - Facade array: insert before `createCoreFacade(`
+ * v5.0 format: The entry point has a `createDomainFacades(runtime, 'agentId', [...domains])` call.
+ * We insert new domain strings into that array.
+ *
+ * Falls back to v4.x format (import + facade creation) for older agents.
  */
 export function patchIndexTs(
   source: string,
   newDomains: string[],
-  hasBrain: boolean,
+  _hasBrain?: boolean,
 ): string | null {
-  // Filter out domains whose imports already exist (idempotent)
+  // ── v5.0 format: createDomainFacades() with domains array literal ──
+  const v5Pattern = /createDomainFacades\(runtime,\s*'[^']+',\s*\[([\s\S]*?)\]\)/;
+  const v5Match = source.match(v5Pattern);
+
+  if (v5Match) {
+    const existingArrayContent = v5Match[1];
+    const domainsToAdd = newDomains.filter(
+      (d) => !existingArrayContent.includes(`'${d}'`) && !existingArrayContent.includes(`"${d}"`),
+    );
+    if (domainsToAdd.length === 0) return source;
+
+    const newEntries = domainsToAdd.map((d) => `'${d}'`).join(', ');
+    const currentContent = existingArrayContent.trim();
+    const updatedContent = currentContent ? `${currentContent}, ${newEntries}` : newEntries;
+
+    return source.replace(v5Pattern, (match) => {
+      return match.replace(v5Match[1], updatedContent);
+    });
+  }
+
+  // ── v4.x fallback: import + facade creation anchors ──
+  return patchIndexTsV4(source, newDomains, _hasBrain ?? true);
+}
+
+/**
+ * Legacy v4.x patching — import-based domain facade registration.
+ */
+function patchIndexTsV4(source: string, newDomains: string[], hasBrain: boolean): string | null {
   const domainsToImport = newDomains.filter((d) => {
     const fn = `create${pascalCase(d)}Facade`;
     return !source.includes(`import { ${fn} }`);
   });
 
-  // Filter out domains whose facade calls already exist
   const domainsToRegister = newDomains.filter((d) => {
     const fn = `create${pascalCase(d)}Facade(`;
     return !source.includes(fn);
   });
 
-  // Nothing to patch
   if (domainsToImport.length === 0 && domainsToRegister.length === 0) {
     return source;
   }
 
   let patched = source;
 
-  // ── Insert imports ──
   if (domainsToImport.length > 0) {
     const importAnchor = /^(import \{ createCoreFacade \}.*$)/m;
     if (!importAnchor.test(patched)) return null;
@@ -53,7 +79,6 @@ export function patchIndexTs(
     patched = patched.replace(importAnchor, `${newImports}\n$1`);
   }
 
-  // ── Insert facade creations ──
   if (domainsToRegister.length > 0) {
     const facadeAnchor = /^(\s+createCoreFacade\()/m;
     if (!facadeAnchor.test(patched)) return null;
@@ -120,4 +145,11 @@ export function patchClaudeMdContent(
   });
 
   return source.slice(0, anchorIdx) + newRows.join('\n') + '\n' + source.slice(anchorIdx);
+}
+
+function pascalCase(s: string): string {
+  return s
+    .split(/[-_\s]+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join('');
 }

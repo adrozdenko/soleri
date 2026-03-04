@@ -6,6 +6,37 @@ export { loadIntelligenceData } from './intelligence/loader.js';
 export { Vault } from './vault/vault.js';
 export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault/vault.js';
 
+// ─── Text Utilities ─────────────────────────────────────────────────
+export {
+  tokenize,
+  calculateTf,
+  calculateTfIdf,
+  cosineSimilarity,
+  jaccardSimilarity,
+} from './text/similarity.js';
+export type { SparseVector } from './text/similarity.js';
+
+// ─── Curator ────────────────────────────────────────────────────────
+export { Curator } from './curator/curator.js';
+export type {
+  EntryStatus,
+  EntrySource,
+  TagNormalizationResult,
+  CanonicalTag,
+  DuplicateCandidate,
+  DuplicateDetectionResult,
+  Contradiction,
+  ContradictionStatus,
+  GroomResult,
+  GroomAllResult,
+  ConsolidationOptions,
+  ConsolidationResult,
+  ChangelogEntry,
+  HealthMetrics,
+  HealthAuditResult,
+  CuratorStatus,
+} from './curator/types.js';
+
 // ─── Brain ───────────────────────────────────────────────────────────
 export { Brain } from './brain/brain.js';
 export type {
@@ -73,3 +104,12 @@ export type {
   FacadeResponse,
   FacadeInput,
 } from './facades/types.js';
+
+// ─── LLM Client ─────────────────────────────────────────────────────
+export { LLMClient } from './llm/llm-client.js';
+
+// ─── Runtime Factory ────────────────────────────────────────────────
+export { createAgentRuntime } from './runtime/runtime.js';
+export { createCoreOps } from './runtime/core-ops.js';
+export { createDomainFacade, createDomainFacades } from './runtime/domain-ops.js';
+export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';

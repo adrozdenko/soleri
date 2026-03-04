@@ -1,6 +1,6 @@
 {
   "name": "@soleri/core",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Shared engine for Soleri agents — vault, brain, planner, LLM utilities, and facade infrastructure.",
   "keywords": [
     "agent",
@@ -49,10 +49,14 @@
     "@vitest/coverage-v8": "^4.0.18"
   },
   "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@anthropic-ai/sdk": ">=0.30.0"
   },
   "peerDependenciesMeta": {
     "@modelcontextprotocol/sdk": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
       "optional": true
     }
   },

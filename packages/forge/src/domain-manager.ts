@@ -1,5 +1,9 @@
 /**
  * Domain manager — add new knowledge domains to existing agents.
+ *
+ * v5.0: Domain facades come from @soleri/core at runtime (createDomainFacades).
+ * Adding a domain just needs: empty data bundle + patch index.ts domains array.
+ * Falls back to generating facade files for v4.x agents.
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,13 +20,23 @@ interface AddDomainParams {
 }
 
 /**
+ * Detect if this is a v5.0+ agent (uses createAgentRuntime from @soleri/core).
+ */
+function isV5Agent(agentPath: string): boolean {
+  const indexPath = join(agentPath, 'src', 'index.ts');
+  if (!existsSync(indexPath)) return false;
+  const content = readFileSync(indexPath, 'utf-8');
+  return content.includes('createAgentRuntime') || content.includes('createDomainFacades');
+}
+
+/**
  * Add a new knowledge domain to an existing agent.
  *
  * Steps:
  * 1. Validate agent path and domain name
  * 2. Create empty intelligence bundle
- * 3. Generate domain facade
- * 4. Patch src/index.ts with import + registration
+ * 3. Generate domain facade (v4.x only — v5.0+ uses core factory)
+ * 4. Patch src/index.ts with domain registration
  * 5. Patch src/activation/claude-md-content.ts with facade table rows
  * 6. Rebuild (unless noBuild)
  */
@@ -68,7 +82,8 @@ export async function addDomain(params: AddDomainParams): Promise<AddDomainResul
     return fail(agentPath, domain, `Domain "${domain}" already exists`);
   }
 
-  const hasBrain = existsSync(join(agentPath, 'src', 'brain'));
+  const v5 = isV5Agent(agentPath);
+  const hasBrain = v5 || existsSync(join(agentPath, 'src', 'brain'));
 
   // ── Step 1: Create empty bundle ──
 
@@ -82,18 +97,22 @@ export async function addDomain(params: AddDomainParams): Promise<AddDomainResul
     writeFileSync(join(distDataDir, `${domain}.json`), emptyBundle, 'utf-8');
   }
 
-  // ── Step 2: Generate facade ──
+  // ── Step 2: Generate facade (v4.x only) ──
 
-  const facadesDir = join(agentPath, 'src', 'facades');
-  const facadePath = join(facadesDir, `${domain}.facade.ts`);
+  let facadeGenerated = false;
+  if (!v5) {
+    const facadesDir = join(agentPath, 'src', 'facades');
+    const facadePath = join(facadesDir, `${domain}.facade.ts`);
 
-  if (existsSync(facadePath)) {
-    warnings.push(`Facade ${domain}.facade.ts already exists — skipped`);
-  } else {
-    const facadeCode = hasBrain
-      ? generateDomainFacade(agentId, domain)
-      : generateVaultOnlyDomainFacade(agentId, domain);
-    writeFileSync(facadePath, facadeCode, 'utf-8');
+    if (existsSync(facadePath)) {
+      warnings.push(`Facade ${domain}.facade.ts already exists — skipped`);
+    } else {
+      const facadeCode = hasBrain
+        ? generateDomainFacade(agentId, domain)
+        : generateVaultOnlyDomainFacade(agentId, domain);
+      writeFileSync(facadePath, facadeCode, 'utf-8');
+      facadeGenerated = true;
+    }
   }
 
   // ── Step 3: Patch src/index.ts ──
@@ -147,10 +166,10 @@ export async function addDomain(params: AddDomainParams): Promise<AddDomainResul
     agentPath,
     domain,
     agentId,
-    facadeGenerated: !existsSync(facadePath) || !warnings.some((w) => w.includes('already exists')),
+    facadeGenerated,
     buildOutput,
     warnings,
-    summary: `Added domain "${domain}" to ${agentId}${warnings.length > 0 ? ` (${warnings.length} warning(s))` : ''}`,
+    summary: `Added domain "${domain}" to ${agentId}${v5 ? ' (v5.0 — no facade file needed)' : ''}${warnings.length > 0 ? ` (${warnings.length} warning(s))` : ''}`,
   };
 }
 

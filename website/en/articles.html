@@ -27,13 +27,27 @@
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius-xl);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: border-color 0.15s ease;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .article-image {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        display: block;
+      }
+
+      .article-body {
         padding: 28px;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        transition: border-color 0.15s ease;
-        text-decoration: none;
-        color: inherit;
+        flex: 1;
       }
 
       .article-card:hover {
@@ -326,26 +340,39 @@
               card.target = "_blank";
               card.rel = "noreferrer";
 
+              if (a.coverImage) {
+                var img = document.createElement("img");
+                img.className = "article-image";
+                img.src = a.coverImage;
+                img.alt = a.title;
+                img.loading = "lazy";
+                card.appendChild(img);
+              }
+
+              var body = document.createElement("div");
+              body.className = "article-body";
+
               var dateEl = document.createElement("span");
               dateEl.className = "article-date";
               dateEl.textContent = formatted;
-              card.appendChild(dateEl);
+              body.appendChild(dateEl);
 
               var titleEl = document.createElement("span");
               titleEl.className = "article-title";
               titleEl.textContent = a.title;
-              card.appendChild(titleEl);
+              body.appendChild(titleEl);
 
               var excerptEl = document.createElement("span");
               excerptEl.className = "article-excerpt";
               excerptEl.textContent = excerpt;
-              card.appendChild(excerptEl);
+              body.appendChild(excerptEl);
 
               var readEl = document.createElement("span");
               readEl.className = "article-read";
               readEl.textContent = "Read on Substack \u2192";
-              card.appendChild(readEl);
+              body.appendChild(readEl);
 
+              card.appendChild(body);
               grid.appendChild(card);
             });
 

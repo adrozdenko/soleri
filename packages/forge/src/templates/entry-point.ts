@@ -2,19 +2,13 @@ import type { AgentConfig } from '../types.js';
 
 /**
  * Generate the main index.ts entry point for the agent.
+ *
+ * v5.0: Thin shell — delegates to createAgentRuntime(), createCoreOps(),
+ * and createDomainFacades() from @soleri/core. Only agent-specific code
+ * (persona, activation) lives here.
  */
 export function generateEntryPoint(config: AgentConfig): string {
-  const facadeImports = config.domains
-    .map((d) => {
-      const fn = `create${pascalCase(d)}Facade`;
-      const file = `${d}.facade.js`;
-      return `import { ${fn} } from './facades/${file}';`;
-    })
-    .join('\n');
-
-  const facadeCreations = config.domains
-    .map((d) => `    create${pascalCase(d)}Facade(vault, brain),`)
-    .join('\n');
+  const domainsLiteral = JSON.stringify(config.domains);
 
   return `#!/usr/bin/env node
 
@@ -22,102 +16,170 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homedir } from 'node:os';
 
-import { Vault, Brain, Planner, KeyPool, CogneeClient, loadKeyPoolConfig, loadIntelligenceData, registerAllFacades } from '@soleri/core';
-${facadeImports}
-import { createCoreFacade } from './facades/core.facade.js';
-import { LLMClient } from './llm/llm-client.js';
+import {
+  createAgentRuntime,
+  createCoreOps,
+  createDomainFacades,
+  registerAllFacades,
+} from '@soleri/core';
+import type { OpDefinition } from '@soleri/core';
+import { z } from 'zod';
 import { PERSONA, getPersonaPrompt } from './identity/persona.js';
+import { activateAgent, deactivateAgent } from './activation/activate.js';
+import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker } from './activation/inject-claude-md.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main(): Promise<void> {
-  // Initialize persistent vault at ~/.${config.id}/vault.db
-  const vaultPath = join(homedir(), '.${config.id}', 'vault.db');
-  const vault = new Vault(vaultPath);
-  console.error(\`[\${PERSONA.name.toLowerCase()}] Vault: \${vaultPath}\`);
-
-  // Load and seed intelligence data
-  const dataDir = join(__dirname, 'intelligence', 'data');
-  const entries = loadIntelligenceData(dataDir);
-  if (entries.length > 0) {
-    const seeded = vault.seed(entries);
-    console.error(\`[\${PERSONA.name.toLowerCase()}] Seeded vault with \${seeded} intelligence entries\`);
-  } else {
-    console.error(\`[\${PERSONA.name.toLowerCase()}] Vault is empty — ready for knowledge capture\`);
-  }
-
-  // Initialize planner at ~/.${config.id}/plans.json
-  const plansPath = join(homedir(), '.${config.id}', 'plans.json');
-  const planner = new Planner(plansPath);
-  console.error(\`[\${PERSONA.name.toLowerCase()}] Planner: \${plansPath}\`);
-
-  // Initialize Cognee client (optional — vector search + knowledge graph)
-  // Auto-registers a service account on first use. Override with env vars.
-  const cognee = new CogneeClient({
-    baseUrl: process.env.COGNEE_URL ?? 'http://localhost:8000',
-    dataset: '${config.id}-vault',
-    ...(process.env.COGNEE_API_TOKEN ? { apiToken: process.env.COGNEE_API_TOKEN } : {}),
-    ...(process.env.COGNEE_EMAIL ? { serviceEmail: process.env.COGNEE_EMAIL } : {}),
-    ...(process.env.COGNEE_PASSWORD ? { servicePassword: process.env.COGNEE_PASSWORD } : {}),
+  // ─── Runtime — vault, brain, planner, curator, LLM, key pools ───
+  const runtime = createAgentRuntime({
+    agentId: '${config.id}',
+    dataDir: join(__dirname, 'intelligence', 'data'),
   });
-  await cognee.healthCheck();
-  console.error(\`[\${PERSONA.name.toLowerCase()}] Cognee: \${cognee.isAvailable ? 'available' : 'not running (FTS5 fallback)'}\`);
 
-  // Initialize brain — intelligence layer for ranked search, auto-tagging, dedup
-  const brain = new Brain(vault, cognee.isAvailable ? cognee : undefined);
-  console.error(\`[\${PERSONA.name.toLowerCase()}] Brain: vocabulary \${brain.getVocabularySize()} terms\`);
+  const tag = PERSONA.name.toLowerCase();
+  const stats = runtime.vault.stats();
+  console.error(\`[\${tag}] Vault: \${stats.totalEntries} entries, Brain: \${runtime.brain.getVocabularySize()} terms\`);
 
-  // Background sync vault to Cognee if available
-  if (cognee.isAvailable) {
-    brain.syncToCognee().catch((err) => {
-      console.error(\`[\${PERSONA.name.toLowerCase()}] Cognee sync failed:\`, err);
-    });
-  }
+  const llmAvail = runtime.llmClient.isAvailable();
+  console.error(\`[\${tag}] LLM: OpenAI \${llmAvail.openai ? 'available' : 'not configured'}, Anthropic \${llmAvail.anthropic ? 'available' : 'not configured'}\`);
 
-  // Initialize LLM client (optional — works without API keys)
-  const keyPoolFiles = loadKeyPoolConfig('${config.id}');
-  const openaiKeyPool = new KeyPool(keyPoolFiles.openai);
-  const anthropicKeyPool = new KeyPool(keyPoolFiles.anthropic);
-  const llmClient = new LLMClient(openaiKeyPool, anthropicKeyPool);
-  const llmAvail = llmClient.isAvailable();
-  console.error(\`[\${PERSONA.name.toLowerCase()}] LLM: OpenAI \${llmAvail.openai ? 'available' : 'not configured'}, Anthropic \${llmAvail.anthropic ? 'available' : 'not configured'}\`);
+  // ─── Agent-specific ops (reference persona + activation) ────────
+  const agentOps: OpDefinition[] = [
+    {
+      name: 'health',
+      description: 'Health check — vault status and agent info.',
+      auth: 'read',
+      handler: async () => {
+        const s = runtime.vault.stats();
+        return {
+          status: 'ok',
+          agent: { name: PERSONA.name, role: PERSONA.role },
+          vault: { entries: s.totalEntries, domains: Object.keys(s.byDomain) },
+        };
+      },
+    },
+    {
+      name: 'identity',
+      description: 'Get agent identity — name, role, principles.',
+      auth: 'read',
+      handler: async () => PERSONA,
+    },
+    {
+      name: 'activate',
+      description: 'Activate agent persona — returns full context for Claude to adopt. Say "Hello, ${config.name}!" to trigger.',
+      auth: 'read',
+      schema: z.object({
+        projectPath: z.string().optional().default('.'),
+        deactivate: z.boolean().optional(),
+      }),
+      handler: async (params) => {
+        if (params.deactivate) {
+          return deactivateAgent();
+        }
+        return activateAgent(runtime.vault, (params.projectPath as string) ?? '.', runtime.planner);
+      },
+    },
+    {
+      name: 'inject_claude_md',
+      description: 'Inject agent sections into CLAUDE.md — project-level or global (~/.claude/CLAUDE.md). Idempotent.',
+      auth: 'write',
+      schema: z.object({
+        projectPath: z.string().optional().default('.'),
+        global: z.boolean().optional().describe('If true, inject into ~/.claude/CLAUDE.md instead of project-level'),
+      }),
+      handler: async (params) => {
+        if (params.global) {
+          return injectClaudeMdGlobal();
+        }
+        return injectClaudeMd((params.projectPath as string) ?? '.');
+      },
+    },
+    {
+      name: 'setup',
+      description: 'Check setup status — CLAUDE.md configured? Vault has entries? What to do next?',
+      auth: 'read',
+      schema: z.object({
+        projectPath: z.string().optional().default('.'),
+      }),
+      handler: async (params) => {
+        const { existsSync } = await import('node:fs');
+        const { join: joinPath } = await import('node:path');
+        const { homedir } = await import('node:os');
+        const projectPath = (params.projectPath as string) ?? '.';
 
-  // Create MCP server
+        const projectClaudeMd = joinPath(projectPath, 'CLAUDE.md');
+        const globalClaudeMd = joinPath(homedir(), '.claude', 'CLAUDE.md');
+
+        const projectExists = existsSync(projectClaudeMd);
+        const projectHasAgent = hasAgentMarker(projectClaudeMd);
+        const globalExists = existsSync(globalClaudeMd);
+        const globalHasAgent = hasAgentMarker(globalClaudeMd);
+
+        const s = runtime.vault.stats();
+
+        const recommendations: string[] = [];
+        if (!globalHasAgent && !projectHasAgent) {
+          recommendations.push('No CLAUDE.md configured — run inject_claude_md with global: true for all projects, or without for this project');
+        } else if (!globalHasAgent) {
+          recommendations.push('Global ~/.claude/CLAUDE.md not configured — run inject_claude_md with global: true to enable in all projects');
+        }
+        if (s.totalEntries === 0) {
+          recommendations.push('Vault is empty — add intelligence data or capture knowledge via domain facades');
+        }
+        if (recommendations.length === 0) {
+          recommendations.push('${config.name} is fully set up and ready!');
+        }
+
+        return {
+          agent: { name: PERSONA.name, role: PERSONA.role },
+          claude_md: {
+            project: { exists: projectExists, has_agent_section: projectHasAgent },
+            global: { exists: globalExists, has_agent_section: globalHasAgent },
+          },
+          vault: { entries: s.totalEntries, domains: Object.keys(s.byDomain) },
+          recommendations,
+        };
+      },
+    },
+  ];
+
+  // ─── Assemble facades ──────────────────────────────────────────
+  const coreOps = createCoreOps(runtime);
+  const coreFacade = {
+    name: '${config.id}_core',
+    description: 'Core operations — vault stats, cross-domain search, health check, identity, and activation system.',
+    ops: [...coreOps, ...agentOps],
+  };
+
+  const domainFacades = createDomainFacades(runtime, '${config.id}', ${domainsLiteral});
+
+  // ─── MCP server ────────────────────────────────────────────────
   const server = new McpServer({
     name: '${config.id}-mcp',
     version: '1.0.0',
   });
 
-  // Register persona prompt
   server.prompt('persona', 'Get agent persona and principles', async () => ({
     messages: [{ role: 'assistant' as const, content: { type: 'text' as const, text: getPersonaPrompt() } }],
   }));
 
-  // Create and register facades
-  const facades = [
-${facadeCreations}
-    createCoreFacade(vault, planner, brain, cognee.isAvailable ? cognee : undefined, llmClient, openaiKeyPool, anthropicKeyPool),
-  ];
-
+  const facades = [coreFacade, ...domainFacades];
   registerAllFacades(server, facades);
 
-  const stats = vault.stats();
-  console.error(\`[\${PERSONA.name.toLowerCase()}] \${PERSONA.name} — \${PERSONA.role}\`);
-  console.error(\`[\${PERSONA.name.toLowerCase()}] Vault: \${stats.totalEntries} entries across \${Object.keys(stats.byDomain).length} domains\`);
-  console.error(\`[\${PERSONA.name.toLowerCase()}] Registered \${facades.length} facades with \${facades.reduce((sum, f) => sum + f.ops.length, 0)} operations\`);
+  console.error(\`[\${tag}] \${PERSONA.name} — \${PERSONA.role}\`);
+  console.error(\`[\${tag}] Registered \${facades.length} facades with \${facades.reduce((sum, f) => sum + f.ops.length, 0)} operations\`);
 
-  // Stdio transport
+  // ─── Transport + shutdown ──────────────────────────────────────
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error(\`[\${PERSONA.name.toLowerCase()}] Connected via stdio transport\`);
-  console.error(\`[\${PERSONA.name.toLowerCase()}] Say "Hello, \${PERSONA.name}!" to activate\`);
+  console.error(\`[\${tag}] Connected via stdio transport\`);
+  console.error(\`[\${tag}] Say "Hello, \${PERSONA.name}!" to activate\`);
 
-  // Graceful shutdown
   const shutdown = async (): Promise<void> => {
-    console.error(\`[\${PERSONA.name.toLowerCase()}] Shutting down...\`);
-    vault.close();
+    console.error(\`[\${tag}] Shutting down...\`);
+    runtime.close();
     process.exit(0);
   };
   process.on('SIGTERM', shutdown);
@@ -129,11 +191,4 @@ main().catch((err) => {
   process.exit(1);
 });
 `;
-}
-
-function pascalCase(s: string): string {
-  return s
-    .split(/[-_\s]+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join('');
 }

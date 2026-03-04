@@ -21,10 +21,12 @@ export function generatePackageJson(config: AgentConfig): string {
     license: 'MIT',
     engines: { node: '>=18.0.0' },
     dependencies: {
-      '@anthropic-ai/sdk': '^0.39.0',
       '@modelcontextprotocol/sdk': '^1.12.1',
       '@soleri/core': '^2.0.0',
       zod: '^3.24.2',
+    },
+    optionalDependencies: {
+      '@anthropic-ai/sdk': '^0.39.0',
     },
     devDependencies: {
       '@types/node': '^22.13.4',
