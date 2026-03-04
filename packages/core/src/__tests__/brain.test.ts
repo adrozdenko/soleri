@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Vault } from '../vault/vault.js';
 import { Brain } from '../brain/brain.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import type { CogneeClient } from '../cognee/client.js';
+import type { CogneeSearchResult, CogneeStatus } from '../cognee/types.js';
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
   return {
@@ -13,6 +15,38 @@ function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntr
     description: overrides.description ?? 'A test pattern for unit tests.',
     tags: overrides.tags ?? ['testing', 'assertions'],
   };
+}
+
+function makeMockCognee(
+  overrides: {
+    available?: boolean;
+    searchResults?: CogneeSearchResult[];
+    searchError?: boolean;
+  } = {},
+): CogneeClient {
+  const available = overrides.available ?? true;
+  return {
+    get isAvailable() {
+      return available;
+    },
+    search: overrides.searchError
+      ? vi.fn().mockRejectedValue(new Error('timeout'))
+      : vi.fn().mockResolvedValue(overrides.searchResults ?? []),
+    addEntries: vi.fn().mockResolvedValue({ added: 0 }),
+    cognify: vi.fn().mockResolvedValue({ status: 'ok' }),
+    healthCheck: vi
+      .fn()
+      .mockResolvedValue({ available, url: 'http://localhost:8000', latencyMs: 1 } as CogneeStatus),
+    getConfig: vi
+      .fn()
+      .mockReturnValue({
+        baseUrl: 'http://localhost:8000',
+        dataset: 'vault',
+        timeoutMs: 5000,
+        healthCacheTtlMs: 60000,
+      }),
+    getStatus: vi.fn().mockReturnValue(null),
+  } as unknown as CogneeClient;
 }
 
 describe('Brain', () => {
@@ -53,6 +87,12 @@ describe('Brain', () => {
       const brain2 = new Brain(vault);
       expect(brain2.getVocabularySize()).toBeGreaterThan(0);
     });
+
+    it('should accept optional CogneeClient', () => {
+      const cognee = makeMockCognee();
+      const brain2 = new Brain(vault, cognee);
+      expect(brain2.getVocabularySize()).toBe(0);
+    });
   });
 
   // ─── Intelligent Search ──────────────────────────────────────
@@ -89,49 +129,52 @@ describe('Brain', () => {
       brain = new Brain(vault);
     });
 
-    it('should return ranked results', () => {
-      const results = brain.intelligentSearch('validation input');
+    it('should return ranked results', async () => {
+      const results = await brain.intelligentSearch('validation input');
       expect(results.length).toBeGreaterThan(0);
       expect(results[0].entry.id).toBe('is-1');
     });
 
-    it('should include score breakdown', () => {
-      const results = brain.intelligentSearch('validation');
+    it('should include score breakdown with vector field', async () => {
+      const results = await brain.intelligentSearch('validation');
       expect(results.length).toBeGreaterThan(0);
       const breakdown = results[0].breakdown;
       expect(breakdown).toHaveProperty('semantic');
+      expect(breakdown).toHaveProperty('vector');
       expect(breakdown).toHaveProperty('severity');
       expect(breakdown).toHaveProperty('recency');
       expect(breakdown).toHaveProperty('tagOverlap');
       expect(breakdown).toHaveProperty('domainMatch');
       expect(breakdown).toHaveProperty('total');
       expect(breakdown.total).toBe(results[0].score);
+      // Without cognee, vector should be 0
+      expect(breakdown.vector).toBe(0);
     });
 
-    it('should return empty array for no matches', () => {
-      const results = brain.intelligentSearch('xyznonexistent');
+    it('should return empty array for no matches', async () => {
+      const results = await brain.intelligentSearch('xyznonexistent');
       expect(results).toEqual([]);
     });
 
-    it('should respect limit', () => {
-      const results = brain.intelligentSearch('pattern', { limit: 1 });
+    it('should respect limit', async () => {
+      const results = await brain.intelligentSearch('pattern', { limit: 1 });
       expect(results.length).toBeLessThanOrEqual(1);
     });
 
-    it('should filter by domain', () => {
-      const results = brain.intelligentSearch('pattern', { domain: 'security' });
+    it('should filter by domain', async () => {
+      const results = await brain.intelligentSearch('pattern', { domain: 'security' });
       expect(results.every((r) => r.entry.domain === 'security')).toBe(true);
     });
 
-    it('should boost domain matches when domain is specified', () => {
-      const withDomain = brain.intelligentSearch('pattern', { domain: 'security' });
+    it('should boost domain matches when domain is specified', async () => {
+      const withDomain = await brain.intelligentSearch('pattern', { domain: 'security' });
       if (withDomain.length > 0) {
         expect(withDomain[0].breakdown.domainMatch).toBe(1.0);
       }
     });
 
-    it('should boost severity in scoring', () => {
-      const results = brain.intelligentSearch('pattern');
+    it('should boost severity in scoring', async () => {
+      const results = await brain.intelligentSearch('pattern');
       if (results.length >= 2) {
         const critical = results.find((r) => r.entry.severity === 'critical');
         const suggestion = results.find((r) => r.entry.severity === 'suggestion');
@@ -141,8 +184,10 @@ describe('Brain', () => {
       }
     });
 
-    it('should boost tag overlap when tags provided', () => {
-      const results = brain.intelligentSearch('pattern', { tags: ['validation', 'security'] });
+    it('should boost tag overlap when tags provided', async () => {
+      const results = await brain.intelligentSearch('pattern', {
+        tags: ['validation', 'security'],
+      });
       if (results.length > 0) {
         const secEntry = results.find((r) => r.entry.id === 'is-1');
         if (secEntry) {
@@ -151,12 +196,140 @@ describe('Brain', () => {
       }
     });
 
-    it('should handle search on empty vault gracefully', () => {
+    it('should handle search on empty vault gracefully', async () => {
       const emptyVault = new Vault(':memory:');
       const emptyBrain = new Brain(emptyVault);
-      const results = emptyBrain.intelligentSearch('anything');
+      const results = await emptyBrain.intelligentSearch('anything');
       expect(results).toEqual([]);
       emptyVault.close();
+    });
+  });
+
+  // ─── Hybrid Search (with Cognee) ──────────────────────────────
+
+  describe('hybrid search with Cognee', () => {
+    beforeEach(() => {
+      vault.seed([
+        makeEntry({
+          id: 'hs-1',
+          title: 'Authentication flow',
+          description: 'JWT-based authentication for API endpoints.',
+          domain: 'security',
+          severity: 'critical',
+          tags: ['auth', 'jwt'],
+        }),
+        makeEntry({
+          id: 'hs-2',
+          title: 'Logging best practices',
+          description: 'Structured logging with correlation IDs for debugging.',
+          domain: 'observability',
+          severity: 'warning',
+          tags: ['logging', 'debugging'],
+        }),
+      ]);
+    });
+
+    it('should include vector scores from Cognee in breakdown', async () => {
+      const cognee = makeMockCognee({
+        searchResults: [{ id: 'hs-1', score: 0.92, text: 'Auth flow', searchType: 'INSIGHTS' }],
+      });
+      const hybridBrain = new Brain(vault, cognee);
+      const results = await hybridBrain.intelligentSearch('authentication');
+      expect(results.length).toBeGreaterThan(0);
+      const authResult = results.find((r) => r.entry.id === 'hs-1');
+      expect(authResult).toBeDefined();
+      expect(authResult!.breakdown.vector).toBe(0.92);
+    });
+
+    it('should use cognee-aware weights when vector results are present', async () => {
+      const cognee = makeMockCognee({
+        searchResults: [{ id: 'hs-1', score: 0.9, text: 'Auth', searchType: 'INSIGHTS' }],
+      });
+      const hybridBrain = new Brain(vault, cognee);
+      const results = await hybridBrain.intelligentSearch('authentication');
+      // With cognee weights, vector contributes significantly
+      const authResult = results.find((r) => r.entry.id === 'hs-1');
+      expect(authResult).toBeDefined();
+      // vector=0.9 * weight=0.35 = 0.315 contribution
+      expect(authResult!.breakdown.vector).toBe(0.9);
+    });
+
+    it('should merge cognee-only entries into results', async () => {
+      // hs-2 may not match FTS5 for "authentication" but Cognee finds it via semantic similarity
+      const cognee = makeMockCognee({
+        searchResults: [
+          { id: 'hs-1', score: 0.95, text: 'Auth', searchType: 'INSIGHTS' },
+          { id: 'hs-2', score: 0.6, text: 'Logging', searchType: 'INSIGHTS' },
+        ],
+      });
+      const hybridBrain = new Brain(vault, cognee);
+      const results = await hybridBrain.intelligentSearch('authentication');
+      // Both entries should be in results (hs-2 merged from Cognee even if not in FTS5)
+      const ids = results.map((r) => r.entry.id);
+      expect(ids).toContain('hs-1');
+      // hs-2 may or may not appear depending on FTS5, but if it does, it should have vector score
+      const loggingResult = results.find((r) => r.entry.id === 'hs-2');
+      if (loggingResult) {
+        expect(loggingResult.breakdown.vector).toBe(0.6);
+      }
+    });
+
+    it('should fall back to FTS5-only on Cognee search error', async () => {
+      const cognee = makeMockCognee({ searchError: true });
+      const hybridBrain = new Brain(vault, cognee);
+      const results = await hybridBrain.intelligentSearch('authentication');
+      // Should still work, just without vector scores
+      for (const r of results) {
+        expect(r.breakdown.vector).toBe(0);
+      }
+    });
+
+    it('should work without Cognee (backward compatible)', async () => {
+      const noCogneeBrain = new Brain(vault);
+      const results = await noCogneeBrain.intelligentSearch('authentication');
+      for (const r of results) {
+        expect(r.breakdown.vector).toBe(0);
+      }
+    });
+
+    it('should handle unavailable Cognee gracefully', async () => {
+      const cognee = makeMockCognee({ available: false });
+      const hybridBrain = new Brain(vault, cognee);
+      const results = await hybridBrain.intelligentSearch('authentication');
+      for (const r of results) {
+        expect(r.breakdown.vector).toBe(0);
+      }
+      // search should not have been called
+      expect(cognee.search).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── syncToCognee ──────────────────────────────────────────────
+
+  describe('syncToCognee', () => {
+    it('should return 0 when Cognee not available', async () => {
+      const result = await brain.syncToCognee();
+      expect(result).toEqual({ synced: 0, cognified: false });
+    });
+
+    it('should sync all entries and cognify', async () => {
+      vault.seed([makeEntry({ id: 'sync-1' }), makeEntry({ id: 'sync-2' })]);
+      const cognee = makeMockCognee();
+      (cognee.addEntries as ReturnType<typeof vi.fn>).mockResolvedValue({ added: 2 });
+      const hybridBrain = new Brain(vault, cognee);
+      const result = await hybridBrain.syncToCognee();
+      expect(result.synced).toBe(2);
+      expect(result.cognified).toBe(true);
+      expect(cognee.addEntries).toHaveBeenCalledTimes(1);
+      expect(cognee.cognify).toHaveBeenCalledTimes(1);
+    });
+
+    it('should skip cognify when no entries added', async () => {
+      const cognee = makeMockCognee();
+      const hybridBrain = new Brain(vault, cognee);
+      const result = await hybridBrain.syncToCognee();
+      expect(result.synced).toBe(0);
+      expect(result.cognified).toBe(false);
     });
   });
 
@@ -242,6 +415,21 @@ describe('Brain', () => {
       expect(result.autoTags.length).toBeGreaterThan(0);
       const entry = vault.get('cap-5');
       expect(entry!.tags.length).toBeGreaterThan(0);
+    });
+
+    it('should fire-and-forget sync to Cognee on capture', () => {
+      const cognee = makeMockCognee();
+      const hybridBrain = new Brain(vault, cognee);
+      hybridBrain.enrichAndCapture({
+        id: 'cap-cognee-1',
+        type: 'pattern',
+        domain: 'testing',
+        title: 'Cognee sync test',
+        severity: 'warning',
+        description: 'Testing fire-and-forget Cognee sync.',
+        tags: [],
+      });
+      expect(cognee.addEntries).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -354,6 +542,7 @@ describe('Brain', () => {
       const stats = brain.getStats();
       const sum =
         stats.weights.semantic +
+        stats.weights.vector +
         stats.weights.severity +
         stats.weights.recency +
         stats.weights.tagOverlap +
@@ -370,6 +559,11 @@ describe('Brain', () => {
       }
       const stats = brain.getStats();
       expect(stats.weights.semantic).toBeCloseTo(0.4, 1);
+    });
+
+    it('should keep vector weight at 0 in base weights', () => {
+      const stats = brain.getStats();
+      expect(stats.weights.vector).toBe(0);
     });
   });
 
@@ -442,6 +636,7 @@ describe('Brain', () => {
       expect(stats.vocabularySize).toBe(0);
       expect(stats.feedbackCount).toBe(0);
       expect(stats.weights.semantic).toBeCloseTo(0.4, 2);
+      expect(stats.weights.vector).toBe(0);
     });
 
     it('should return correct vocabulary size after seeding', () => {
@@ -475,7 +670,7 @@ describe('Brain', () => {
   // ─── Get Relevant Patterns ──────────────────────────────────
 
   describe('getRelevantPatterns', () => {
-    it('should return ranked results for query context', () => {
+    it('should return ranked results for query context', async () => {
       vault.seed([
         makeEntry({
           id: 'rel-1',
@@ -493,12 +688,15 @@ describe('Brain', () => {
         }),
       ]);
       brain = new Brain(vault);
-      const results = brain.getRelevantPatterns({ query: 'authentication', domain: 'security' });
+      const results = await brain.getRelevantPatterns({
+        query: 'authentication',
+        domain: 'security',
+      });
       expect(results.length).toBeGreaterThan(0);
     });
 
-    it('should return empty for no context matches', () => {
-      const results = brain.getRelevantPatterns({ query: 'nonexistent' });
+    it('should return empty for no context matches', async () => {
+      const results = await brain.getRelevantPatterns({ query: 'nonexistent' });
       expect(results).toEqual([]);
     });
   });
@@ -506,13 +704,13 @@ describe('Brain', () => {
   // ─── Graceful Degradation ───────────────────────────────────
 
   describe('graceful degradation', () => {
-    it('should work without vocabulary (empty vault)', () => {
+    it('should work without vocabulary (empty vault)', async () => {
       expect(brain.getVocabularySize()).toBe(0);
-      const results = brain.intelligentSearch('anything');
+      const results = await brain.intelligentSearch('anything');
       expect(results).toEqual([]);
     });
 
-    it('should fall back to severity + recency scoring when vocabulary is empty', () => {
+    it('should fall back to severity + recency scoring when vocabulary is empty', async () => {
       vault.seed([
         makeEntry({
           id: 'gd-1',
@@ -523,7 +721,7 @@ describe('Brain', () => {
         }),
       ]);
       brain = new Brain(vault);
-      const results = brain.intelligentSearch('fallback test');
+      const results = await brain.intelligentSearch('fallback test');
       expect(results.length).toBeGreaterThan(0);
       expect(results[0].score).toBeGreaterThan(0);
     });

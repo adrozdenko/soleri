@@ -6,20 +6,20 @@ import type { AgentConfig } from '../types.js';
  */
 export function generateCoreFacade(config: AgentConfig): string {
   return `import { z } from 'zod';
-import type { FacadeConfig, Vault, IntelligenceEntry, Planner, Brain, KeyPool } from '@soleri/core';
+import type { FacadeConfig, Vault, IntelligenceEntry, Planner, Brain, KeyPool, CogneeClient } from '@soleri/core';
 import { PERSONA } from '../identity/persona.js';
 import { activateAgent, deactivateAgent } from '../activation/activate.js';
 import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker } from '../activation/inject-claude-md.js';
 import type { LLMClient } from '../llm/llm-client.js';
 
-export function createCoreFacade(vault: Vault, planner: Planner, brain: Brain, llmClient?: LLMClient, openaiKeyPool?: KeyPool, anthropicKeyPool?: KeyPool): FacadeConfig {
+export function createCoreFacade(vault: Vault, planner: Planner, brain: Brain, cognee?: CogneeClient, llmClient?: LLMClient, openaiKeyPool?: KeyPool, anthropicKeyPool?: KeyPool): FacadeConfig {
   return {
     name: '${config.id}_core',
     description: 'Core operations — vault stats, cross-domain search, health check, identity, and activation system.',
     ops: [
       {
         name: 'search',
-        description: 'Search across all knowledge domains. Results ranked by TF-IDF + severity + recency + tag overlap + domain match.',
+        description: 'Search across all knowledge domains. Results ranked by TF-IDF + severity + recency + tag overlap + domain match. When Cognee is available, adds vector similarity for hybrid ranking.',
         auth: 'read',
         schema: z.object({
           query: z.string(),
@@ -30,7 +30,7 @@ export function createCoreFacade(vault: Vault, planner: Planner, brain: Brain, l
           limit: z.number().optional(),
         }),
         handler: async (params) => {
-          return brain.intelligentSearch(params.query as string, {
+          return await brain.intelligentSearch(params.query as string, {
             domain: params.domain as string | undefined,
             type: params.type as string | undefined,
             severity: params.severity as string | undefined,
@@ -448,6 +448,55 @@ export function createCoreFacade(vault: Vault, planner: Planner, brain: Brain, l
             },
             routes: llmClient?.getRoutes() ?? [],
           };
+        },
+      },
+      {
+        name: 'cognee_status',
+        description: 'Check Cognee vector search availability and connection status.',
+        auth: 'read',
+        handler: async () => {
+          if (!cognee) return { available: false, message: 'Cognee not configured' };
+          const status = cognee.getStatus();
+          return {
+            available: cognee.isAvailable,
+            config: cognee.getConfig(),
+            lastHealth: status,
+          };
+        },
+      },
+      {
+        name: 'cognee_sync',
+        description: 'Force sync all vault entries to Cognee and trigger knowledge graph build. Requires Cognee to be running.',
+        auth: 'write',
+        handler: async () => {
+          if (!cognee?.isAvailable) {
+            return { synced: false, message: 'Cognee not available. Start with: docker compose -f docker/docker-compose.cognee.yml up -d' };
+          }
+          const result = await brain.syncToCognee();
+          return { ok: true, entriesSynced: result.synced, cognified: result.cognified };
+        },
+      },
+      {
+        name: 'graph_search',
+        description: 'Search using Cognee knowledge graph completion. Returns semantically related entries that keyword search might miss.',
+        auth: 'read',
+        schema: z.object({
+          query: z.string(),
+          searchType: z.enum(['SUMMARIES', 'CHUNKS', 'RAG_COMPLETION', 'GRAPH_COMPLETION', 'GRAPH_SUMMARY_COMPLETION', 'NATURAL_LANGUAGE', 'FEELING_LUCKY', 'CHUNKS_LEXICAL']).optional().default('CHUNKS'),
+          limit: z.number().optional().default(10),
+        }),
+        handler: async (params) => {
+          if (!cognee?.isAvailable) {
+            return { results: [], message: 'Cognee not available — use search op for FTS5 results' };
+          }
+          const results = await cognee.search(
+            params.query as string,
+            {
+              searchType: params.searchType as 'SUMMARIES' | 'CHUNKS' | 'GRAPH_COMPLETION',
+              limit: params.limit as number,
+            },
+          );
+          return { results, count: results.length };
         },
       },
     ],

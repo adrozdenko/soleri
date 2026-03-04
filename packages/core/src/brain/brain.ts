@@ -1,11 +1,13 @@
 import type { Vault } from '../vault/vault.js';
 import type { SearchResult } from '../vault/vault.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import type { CogneeClient } from '../cognee/client.js';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
 export interface ScoringWeights {
   semantic: number;
+  vector: number;
   severity: number;
   recency: number;
   tagOverlap: number;
@@ -14,6 +16,7 @@ export interface ScoringWeights {
 
 export interface ScoreBreakdown {
   semantic: number;
+  vector: number;
   severity: number;
   recency: number;
   tagOverlap: number;
@@ -233,10 +236,20 @@ const SEVERITY_SCORES: Record<string, number> = {
 
 const DEFAULT_WEIGHTS: ScoringWeights = {
   semantic: 0.4,
+  vector: 0.0,
   severity: 0.15,
   recency: 0.15,
   tagOverlap: 0.15,
   domainMatch: 0.15,
+};
+
+const COGNEE_WEIGHTS: ScoringWeights = {
+  semantic: 0.25,
+  vector: 0.35,
+  severity: 0.1,
+  recency: 0.1,
+  tagOverlap: 0.1,
+  domainMatch: 0.1,
 };
 
 const WEIGHT_BOUND = 0.15;
@@ -247,16 +260,18 @@ const RECENCY_HALF_LIFE_DAYS = 365;
 
 export class Brain {
   private vault: Vault;
+  private cognee: CogneeClient | undefined;
   private vocabulary: Map<string, number> = new Map();
   private weights: ScoringWeights = { ...DEFAULT_WEIGHTS };
 
-  constructor(vault: Vault) {
+  constructor(vault: Vault, cognee?: CogneeClient) {
     this.vault = vault;
+    this.cognee = cognee;
     this.rebuildVocabulary();
     this.recomputeWeights();
   }
 
-  intelligentSearch(query: string, options?: SearchOptions): RankedResult[] {
+  async intelligentSearch(query: string, options?: SearchOptions): Promise<RankedResult[]> {
     const limit = options?.limit ?? 10;
     const rawResults = this.vault.search(query, {
       domain: options?.domain,
@@ -265,6 +280,30 @@ export class Brain {
       limit: Math.max(limit * 3, 30),
     });
 
+    // Cognee vector search (parallel, with timeout fallback)
+    let cogneeScoreMap: Map<string, number> = new Map();
+    const cogneeAvailable = this.cognee?.isAvailable ?? false;
+    if (cogneeAvailable && this.cognee) {
+      try {
+        const cogneeResults = await this.cognee.search(query, { limit: Math.max(limit * 2, 20) });
+        for (const cr of cogneeResults) {
+          if (cr.id) cogneeScoreMap.set(cr.id, cr.score);
+        }
+        // Merge cognee-only entries into candidate pool
+        for (const cr of cogneeResults) {
+          if (cr.id && !rawResults.some((r) => r.entry.id === cr.id)) {
+            const vaultEntry = this.vault.get(cr.id);
+            if (vaultEntry) {
+              rawResults.push({ entry: vaultEntry, score: cr.score });
+            }
+          }
+        }
+      } catch {
+        // Cognee failed — fall back to FTS5 only
+        cogneeScoreMap = new Map();
+      }
+    }
+
     if (rawResults.length === 0) return [];
 
     const queryTokens = tokenize(query);
@@ -272,9 +311,21 @@ export class Brain {
     const queryDomain = options?.domain;
     const now = Math.floor(Date.now() / 1000);
 
+    // Use cognee-aware weights if vector results are present
+    const activeWeights = cogneeScoreMap.size > 0 ? this.getCogneeWeights() : this.weights;
+
     const ranked = rawResults.map((result) => {
       const entry = result.entry;
-      const breakdown = this.scoreEntry(entry, queryTokens, queryTags, queryDomain, now);
+      const vectorScore = cogneeScoreMap.get(entry.id) ?? 0;
+      const breakdown = this.scoreEntry(
+        entry,
+        queryTokens,
+        queryTags,
+        queryDomain,
+        now,
+        vectorScore,
+        activeWeights,
+      );
       return { entry, score: breakdown.total, breakdown };
     });
 
@@ -325,6 +376,11 @@ export class Brain {
     this.vault.add(fullEntry);
     this.updateVocabularyIncremental(fullEntry);
 
+    // Fire-and-forget Cognee sync
+    if (this.cognee?.isAvailable) {
+      this.cognee.addEntries([fullEntry]).catch(() => {});
+    }
+
     const result: CaptureResult = {
       captured: true,
       id: entry.id,
@@ -348,11 +404,24 @@ export class Brain {
     this.recomputeWeights();
   }
 
-  getRelevantPatterns(context: QueryContext): RankedResult[] {
+  async getRelevantPatterns(context: QueryContext): Promise<RankedResult[]> {
     return this.intelligentSearch(context.query, {
       domain: context.domain,
       tags: context.tags,
     });
+  }
+
+  async syncToCognee(): Promise<{ synced: number; cognified: boolean }> {
+    if (!this.cognee?.isAvailable) return { synced: 0, cognified: false };
+    const entries = this.vault.list({ limit: 100000 });
+    if (entries.length === 0) return { synced: 0, cognified: false };
+    const result = await this.cognee.addEntries(entries);
+    let cognified = false;
+    if (result.added > 0) {
+      const cognifyResult = await this.cognee.cognify();
+      cognified = cognifyResult.status === 'ok';
+    }
+    return { synced: result.added, cognified };
   }
 
   rebuildVocabulary(): void {
@@ -408,7 +477,11 @@ export class Brain {
     queryTags: string[],
     queryDomain: string | undefined,
     now: number,
+    vectorScore: number = 0,
+    activeWeights?: ScoringWeights,
   ): ScoreBreakdown {
+    const w = activeWeights ?? this.weights;
+
     let semantic = 0;
     if (this.vocabulary.size > 0 && queryTokens.length > 0) {
       const entryText = [
@@ -433,14 +506,17 @@ export class Brain {
 
     const domainMatch = queryDomain && entry.domain === queryDomain ? 1.0 : 0;
 
-    const total =
-      this.weights.semantic * semantic +
-      this.weights.severity * severity +
-      this.weights.recency * recency +
-      this.weights.tagOverlap * tagOverlap +
-      this.weights.domainMatch * domainMatch;
+    const vector = vectorScore;
 
-    return { semantic, severity, recency, tagOverlap, domainMatch, total };
+    const total =
+      w.semantic * semantic +
+      w.vector * vector +
+      w.severity * severity +
+      w.recency * recency +
+      w.tagOverlap * tagOverlap +
+      w.domainMatch * domainMatch;
+
+    return { semantic, vector, severity, recency, tagOverlap, domainMatch, total };
   }
 
   private generateTags(title: string, description: string, context?: string): string[] {
@@ -534,6 +610,10 @@ export class Brain {
     tx();
   }
 
+  private getCogneeWeights(): ScoringWeights {
+    return { ...COGNEE_WEIGHTS };
+  }
+
   private recomputeWeights(): void {
     const db = this.vault.getDb();
     const feedbackCount = (
@@ -560,7 +640,10 @@ export class Brain {
       DEFAULT_WEIGHTS.semantic + WEIGHT_BOUND,
     );
 
-    const remaining = 1.0 - newWeights.semantic;
+    // vector stays 0 in base weights (only active during hybrid search)
+    newWeights.vector = 0;
+
+    const remaining = 1.0 - newWeights.semantic - newWeights.vector;
     const otherSum =
       DEFAULT_WEIGHTS.severity +
       DEFAULT_WEIGHTS.recency +

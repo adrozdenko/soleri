@@ -1,6 +1,6 @@
 {
   "name": "@soleri/core",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Shared engine for Soleri agents — vault, brain, planner, LLM utilities, and facade infrastructure.",
   "keywords": [
     "agent",

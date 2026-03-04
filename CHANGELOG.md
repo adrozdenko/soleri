@@ -13,6 +13,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Thin wrapper that delegates to `@soleri/cli` — no extra dependencies or configuration
 - Supports all `@soleri/cli create` flags via pass-through args
 
+## @soleri/core@2.0.0 — 2026-03-04
+
+### Breaking Changes
+
+- **`Brain.intelligentSearch()` is now async** — returns `Promise<RankedResult[]>` instead of `RankedResult[]`. All facade handlers already await results, so callers using the generated core facade are unaffected.
+- **`Brain.getRelevantPatterns()` is now async** — same change, same safe migration.
+- `ScoringWeights` and `ScoreBreakdown` now include a `vector` field (defaults to `0` without Cognee).
+
+### Added
+
+- **Cognee integration** — Optional hybrid search combining SQLite FTS5 with Cognee vector embeddings + knowledge graph
+  - `CogneeClient` — HTTP client with health caching, AbortController timeouts, and fail-silent pattern
+  - `CogneeConfig`, `CogneeSearchResult`, `CogneeStatus` types
+  - Zero new npm dependencies (uses built-in `fetch`)
+- **Hybrid scoring** — When Cognee is available, search uses 6-dimension scoring (semantic TF-IDF 0.25, vector 0.35, severity 0.1, recency 0.1, tag overlap 0.1, domain match 0.1). Without Cognee, original 5-dimension weights preserved.
+- **`Brain.syncToCognee()`** — Bulk sync all vault entries to Cognee and trigger knowledge graph build
+- **Fire-and-forget Cognee sync** on `enrichAndCapture()` — new entries automatically sent to Cognee when available
+- Docker Compose config for self-hosted Cognee stack (`docker/docker-compose.cognee.yml`)
+
+## @soleri/cli@1.0.1 — 2026-03-04
+
+### Added
+
+- **`checkCognee()`** in `soleri doctor` — Checks Cognee availability at localhost:8000, returns `warn` (not `fail`) if down
+
+## @soleri/forge@4.2.0 — 2026-03-04
+
+### Added
+
+- Cognee initialization in generated entry points (mirrors LLM client pattern)
+- Background vault-to-Cognee sync on agent startup when Cognee is available
+- 3 new core facade operations: `cognee_status`, `cognee_sync`, `graph_search`
+
+### Changed
+
+- `createCoreFacade()` signature now accepts optional `CogneeClient` parameter
+- `search` op handler now awaits `brain.intelligentSearch()` (async)
+
 ## @soleri/cli@1.0.0 — 2026-03-04
 
 Initial release of the developer CLI.

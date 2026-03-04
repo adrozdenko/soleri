@@ -18,6 +18,17 @@ export type {
   QueryContext,
 } from './brain/brain.js';
 
+// ─── Cognee ─────────────────────────────────────────────────────────
+export { CogneeClient } from './cognee/client.js';
+export type {
+  CogneeConfig,
+  CogneeSearchResult,
+  CogneeSearchType,
+  CogneeStatus,
+  CogneeAddResult,
+  CogneeCognifyResult,
+} from './cognee/types.js';
+
 // ─── Planning ────────────────────────────────────────────────────────
 export { Planner } from './planning/planner.js';
 export type { PlanStatus, TaskStatus, PlanTask, Plan, PlanStore } from './planning/planner.js';

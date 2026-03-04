@@ -114,6 +114,25 @@ function checkMcpRegistration(dir?: string): CheckResult {
   }
 }
 
+export function checkCognee(): CheckResult {
+  try {
+    const body = execFileSync('curl', ['-sf', 'http://localhost:8000/'], {
+      encoding: 'utf-8',
+      timeout: 5_000,
+    });
+    if (body.includes('alive')) {
+      return { status: 'pass', label: 'Cognee', detail: 'available at localhost:8000' };
+    }
+    return { status: 'warn', label: 'Cognee', detail: 'responded but unexpected body' };
+  } catch {
+    return {
+      status: 'warn',
+      label: 'Cognee',
+      detail: 'not running — vector search disabled (FTS5 still works)',
+    };
+  }
+}
+
 export function runAllChecks(dir?: string): CheckResult[] {
   return [
     checkNodeVersion(),
@@ -123,5 +142,6 @@ export function runAllChecks(dir?: string): CheckResult[] {
     checkNodeModules(dir),
     checkAgentBuild(dir),
     checkMcpRegistration(dir),
+    checkCognee(),
   ];
 }
