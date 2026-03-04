@@ -12,5 +12,5 @@ const child = spawn('node', [cliBin, 'create', ...process.argv.slice(2)], {
 });
 
 child.on('exit', (code, signal) => {
-  process.exit(signal ? 1 : code ?? 0);
+  process.exit(signal ? 1 : (code ?? 0));
 });

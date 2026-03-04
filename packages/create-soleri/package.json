@@ -2,7 +2,15 @@
   "name": "create-soleri",
   "version": "1.0.0",
   "description": "npm create soleri — scaffold AI agents that learn, remember, and grow with you.",
-  "keywords": ["agent", "ai", "create", "generator", "mcp", "scaffold", "soleri"],
+  "keywords": [
+    "agent",
+    "ai",
+    "create",
+    "generator",
+    "mcp",
+    "scaffold",
+    "soleri"
+  ],
   "homepage": "https://soleri.dev",
   "license": "Apache-2.0",
   "author": "adrozdenko",
