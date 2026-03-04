@@ -72,6 +72,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `createCoreFacade()` signature: added optional `curator` parameter (backwards compatible — all ops gracefully return error if curator not provided)
 
+## @soleri/forge@4.2.2 — 2026-03-04
+
+### Added
+
+- **Cognee operation tests in generated agents** — scaffolded test suites now cover `cognee_status`, `cognee_sync`, and `graph_search` ops, verifying graceful degradation when Cognee is unavailable
+
+## @soleri/core@2.0.1 — 2026-03-04
+
+### Fixed
+
+- **Cognee hybrid search cross-referencing** — Vector scores were always 0.000 because Cognee assigns its own UUIDs to chunks and strips embedded metadata during chunking. Replaced naive ID mapping with 4-tier matching: `[vault-id:]` prefix extraction, title first-line match, title substring match, and FTS5 fallback.
+- Strategy 4 (FTS5 fallback) now preserves caller filters (domain/type/severity) to avoid reintroducing excluded entries
+- Title-to-ID mapping handles duplicate titles correctly via `Map<string, string[]>`
+
+## @soleri/forge@4.2.1 — 2026-03-04
+
+### Fixed
+
+- **Generated test template parameter shift** — `createCoreFacade()` calls in scaffolded agent tests were missing the `cognee` parameter (4th position), causing `llmClient` to land in the wrong slot and `llm_status` tests to fail with `isAvailable is not a function`
+- Extracted `makeCoreFacade()` helper in generated tests to prevent future signature drift
+
 ## create-soleri@1.0.0 — 2026-03-04
 
 ### Added
@@ -79,6 +100,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`npm create soleri my-agent`** — Standard npm create shorthand for scaffolding agents
 - Thin wrapper that delegates to `@soleri/cli` — no extra dependencies or configuration
 - Supports all `@soleri/cli create` flags via pass-through args
+
+## @soleri/core@2.0.0 — 2026-03-04
+
+### Breaking Changes
+
+- **`Brain.intelligentSearch()` is now async** — returns `Promise<RankedResult[]>` instead of `RankedResult[]`. All facade handlers already await results, so callers using the generated core facade are unaffected.
+- **`Brain.getRelevantPatterns()` is now async** — same change, same safe migration.
+- `ScoringWeights` and `ScoreBreakdown` now include a `vector` field (defaults to `0` without Cognee).
+
+### Added
+
+- **Cognee integration** — Optional hybrid search combining SQLite FTS5 with Cognee vector embeddings + knowledge graph
+  - `CogneeClient` — HTTP client modeled after Salvador MCP's battle-tested Cognee integration
+  - Auto-register/login auth with service account (no manual token setup required)
+  - `CHUNKS` search type default (reliable with small local models unlike `GRAPH_COMPLETION`)
+  - 120s search timeout (handles Ollama cold start), 5s health check, 30s general
+  - Debounced cognify with 30s sliding window (coalesces rapid ingests)
+  - Position-based scoring fallback when Cognee omits numeric scores
+  - `CogneeConfig`, `CogneeSearchResult`, `CogneeStatus` types
+  - Zero new npm dependencies (uses built-in `fetch`)
+- **Hybrid scoring** — When Cognee is available, search uses 6-dimension scoring (semantic TF-IDF 0.25, vector 0.35, severity 0.1, recency 0.1, tag overlap 0.1, domain match 0.1). Without Cognee, original 5-dimension weights preserved.
+- **`Brain.syncToCognee()`** — Bulk sync all vault entries to Cognee and trigger knowledge graph build
+- **Fire-and-forget Cognee sync** on `enrichAndCapture()` — new entries automatically sent to Cognee when available
+- Docker Compose config for self-hosted Cognee stack (`docker/docker-compose.cognee.yml`)
+
+## @soleri/cli@1.0.1 — 2026-03-04
+
+### Added
+
+- **`checkCognee()`** in `soleri doctor` — Checks Cognee availability at localhost:8000, returns `warn` (not `fail`) if down
+
+## @soleri/forge@4.2.0 (Cognee) — 2026-03-04
+
+### Added
+
+- Cognee initialization in generated entry points (mirrors LLM client pattern) with env var overrides (`COGNEE_URL`, `COGNEE_API_TOKEN`, `COGNEE_EMAIL`, `COGNEE_PASSWORD`)
+- Background vault-to-Cognee sync on agent startup when Cognee is available
+- 3 new core facade operations: `cognee_status`, `cognee_sync`, `graph_search`
+- `graph_search` defaults to `CHUNKS` search type (configurable via `searchType` param)
+
+### Changed
+
+- `createCoreFacade()` signature now accepts optional `CogneeClient` parameter
+- `search` op handler now awaits `brain.intelligentSearch()` (async)
 
 ## @soleri/cli@1.0.0 — 2026-03-04
 

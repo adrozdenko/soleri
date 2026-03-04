@@ -8,11 +8,13 @@ import {
   cosineSimilarity,
   jaccardSimilarity,
 } from '../text/similarity.js';
+import type { CogneeClient } from '../cognee/client.js';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
 export interface ScoringWeights {
   semantic: number;
+  vector: number;
   severity: number;
   recency: number;
   tagOverlap: number;
@@ -21,6 +23,7 @@ export interface ScoringWeights {
 
 export interface ScoreBreakdown {
   semantic: number;
+  vector: number;
   severity: number;
   recency: number;
   tagOverlap: number;
@@ -74,10 +77,20 @@ const SEVERITY_SCORES: Record<string, number> = {
 
 const DEFAULT_WEIGHTS: ScoringWeights = {
   semantic: 0.4,
+  vector: 0.0,
   severity: 0.15,
   recency: 0.15,
   tagOverlap: 0.15,
   domainMatch: 0.15,
+};
+
+const COGNEE_WEIGHTS: ScoringWeights = {
+  semantic: 0.25,
+  vector: 0.35,
+  severity: 0.1,
+  recency: 0.1,
+  tagOverlap: 0.1,
+  domainMatch: 0.1,
 };
 
 const WEIGHT_BOUND = 0.15;
@@ -88,16 +101,18 @@ const RECENCY_HALF_LIFE_DAYS = 365;
 
 export class Brain {
   private vault: Vault;
+  private cognee: CogneeClient | undefined;
   private vocabulary: Map<string, number> = new Map();
   private weights: ScoringWeights = { ...DEFAULT_WEIGHTS };
 
-  constructor(vault: Vault) {
+  constructor(vault: Vault, cognee?: CogneeClient) {
     this.vault = vault;
+    this.cognee = cognee;
     this.rebuildVocabulary();
     this.recomputeWeights();
   }
 
-  intelligentSearch(query: string, options?: SearchOptions): RankedResult[] {
+  async intelligentSearch(query: string, options?: SearchOptions): Promise<RankedResult[]> {
     const limit = options?.limit ?? 10;
     const rawResults = this.vault.search(query, {
       domain: options?.domain,
@@ -106,6 +121,97 @@ export class Brain {
       limit: Math.max(limit * 3, 30),
     });
 
+    // Cognee vector search (parallel, with timeout fallback)
+    let cogneeScoreMap: Map<string, number> = new Map();
+    const cogneeAvailable = this.cognee?.isAvailable ?? false;
+    if (cogneeAvailable && this.cognee) {
+      try {
+        const cogneeResults = await this.cognee.search(query, { limit: Math.max(limit * 2, 20) });
+
+        // Build title → entryIds reverse index from FTS results for text-based matching.
+        // Cognee assigns its own UUIDs to chunks and may strip embedded metadata during
+        // chunking, so we need multiple strategies to cross-reference results.
+        // Multiple entries can share a title, so map to arrays of IDs.
+        const titleToIds = new Map<string, string[]>();
+        for (const r of rawResults) {
+          const key = r.entry.title.toLowerCase().trim();
+          const ids = titleToIds.get(key) ?? [];
+          ids.push(r.entry.id);
+          titleToIds.set(key, ids);
+        }
+
+        const vaultIdPattern = /\[vault-id:([^\]]+)\]/;
+        const unmatchedCogneeResults: Array<{ text: string; score: number }> = [];
+
+        for (const cr of cogneeResults) {
+          const text = cr.text ?? '';
+
+          // Strategy 1: Extract vault ID from [vault-id:XXX] prefix (if Cognee preserved it)
+          const vaultIdMatch = text.match(vaultIdPattern);
+          if (vaultIdMatch) {
+            const vaultId = vaultIdMatch[1];
+            cogneeScoreMap.set(vaultId, Math.max(cogneeScoreMap.get(vaultId) ?? 0, cr.score));
+            continue;
+          }
+
+          // Strategy 2: Match first line of chunk text against known entry titles.
+          // serializeEntry() puts the title on the first line after the [vault-id:] prefix,
+          // and Cognee's chunking typically preserves this as the chunk start.
+          const firstLine = text.split('\n')[0]?.trim().toLowerCase() ?? '';
+          const matchedIds = firstLine ? titleToIds.get(firstLine) : undefined;
+          if (matchedIds) {
+            for (const id of matchedIds) {
+              cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, cr.score));
+            }
+            continue;
+          }
+
+          // Strategy 3: Check if any known title appears as a substring in the chunk.
+          // Handles cases where the title isn't on the first line (mid-document chunks).
+          const textLower = text.toLowerCase();
+          let found = false;
+          for (const [title, ids] of titleToIds) {
+            if (title.length >= 8 && textLower.includes(title)) {
+              for (const id of ids) {
+                cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, cr.score));
+              }
+              found = true;
+              break;
+            }
+          }
+          if (!found && text.length > 0) {
+            unmatchedCogneeResults.push({ text, score: cr.score });
+          }
+        }
+
+        // Strategy 4: For Cognee-only semantic matches (not in FTS results),
+        // use the first line as a vault FTS query to find the source entry.
+        // Preserve caller filters (domain/type/severity) to avoid reintroducing
+        // entries the original query excluded.
+        for (const unmatched of unmatchedCogneeResults) {
+          const searchTerm = unmatched.text.split('\n')[0]?.trim();
+          if (!searchTerm || searchTerm.length < 3) continue;
+          const vaultHits = this.vault.search(searchTerm, {
+            domain: options?.domain,
+            type: options?.type,
+            severity: options?.severity,
+            limit: 1,
+          });
+          if (vaultHits.length > 0) {
+            const id = vaultHits[0].entry.id;
+            cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, unmatched.score));
+            // Also add to FTS results pool if not already present
+            if (!rawResults.some((r) => r.entry.id === id)) {
+              rawResults.push(vaultHits[0]);
+            }
+          }
+        }
+      } catch {
+        // Cognee failed — fall back to FTS5 only
+        cogneeScoreMap = new Map();
+      }
+    }
+
     if (rawResults.length === 0) return [];
 
     const queryTokens = tokenize(query);
@@ -113,9 +219,22 @@ export class Brain {
     const queryDomain = options?.domain;
     const now = Math.floor(Date.now() / 1000);
 
+    // Use cognee-aware weights only if at least one ranked candidate has a vector score
+    const hasVectorCandidate = rawResults.some((r) => cogneeScoreMap.has(r.entry.id));
+    const activeWeights = hasVectorCandidate ? this.getCogneeWeights() : this.weights;
+
     const ranked = rawResults.map((result) => {
       const entry = result.entry;
-      const breakdown = this.scoreEntry(entry, queryTokens, queryTags, queryDomain, now);
+      const vectorScore = cogneeScoreMap.get(entry.id) ?? 0;
+      const breakdown = this.scoreEntry(
+        entry,
+        queryTokens,
+        queryTags,
+        queryDomain,
+        now,
+        vectorScore,
+        activeWeights,
+      );
       return { entry, score: breakdown.total, breakdown };
     });
 
@@ -166,6 +285,11 @@ export class Brain {
     this.vault.add(fullEntry);
     this.updateVocabularyIncremental(fullEntry);
 
+    // Fire-and-forget Cognee sync
+    if (this.cognee?.isAvailable) {
+      this.cognee.addEntries([fullEntry]).catch(() => {});
+    }
+
     const result: CaptureResult = {
       captured: true,
       id: entry.id,
@@ -189,11 +313,37 @@ export class Brain {
     this.recomputeWeights();
   }
 
-  getRelevantPatterns(context: QueryContext): RankedResult[] {
+  async getRelevantPatterns(context: QueryContext): Promise<RankedResult[]> {
     return this.intelligentSearch(context.query, {
       domain: context.domain,
       tags: context.tags,
     });
+  }
+
+  async syncToCognee(): Promise<{ synced: number; cognified: boolean }> {
+    if (!this.cognee?.isAvailable) return { synced: 0, cognified: false };
+
+    const batchSize = 1000;
+    let offset = 0;
+    let totalSynced = 0;
+
+    while (true) {
+      const batch = this.vault.list({ limit: batchSize, offset });
+      if (batch.length === 0) break;
+
+      const { added } = await this.cognee.addEntries(batch);
+      totalSynced += added;
+      offset += batch.length;
+
+      if (batch.length < batchSize) break;
+    }
+
+    if (totalSynced === 0) return { synced: 0, cognified: false };
+
+    let cognified = false;
+    const cognifyResult = await this.cognee.cognify();
+    cognified = cognifyResult.status === 'ok';
+    return { synced: totalSynced, cognified };
   }
 
   rebuildVocabulary(): void {
@@ -249,7 +399,11 @@ export class Brain {
     queryTags: string[],
     queryDomain: string | undefined,
     now: number,
+    vectorScore: number = 0,
+    activeWeights?: ScoringWeights,
   ): ScoreBreakdown {
+    const w = activeWeights ?? this.weights;
+
     let semantic = 0;
     if (this.vocabulary.size > 0 && queryTokens.length > 0) {
       const entryText = [
@@ -274,14 +428,17 @@ export class Brain {
 
     const domainMatch = queryDomain && entry.domain === queryDomain ? 1.0 : 0;
 
-    const total =
-      this.weights.semantic * semantic +
-      this.weights.severity * severity +
-      this.weights.recency * recency +
-      this.weights.tagOverlap * tagOverlap +
-      this.weights.domainMatch * domainMatch;
+    const vector = vectorScore;
 
-    return { semantic, severity, recency, tagOverlap, domainMatch, total };
+    const total =
+      w.semantic * semantic +
+      w.vector * vector +
+      w.severity * severity +
+      w.recency * recency +
+      w.tagOverlap * tagOverlap +
+      w.domainMatch * domainMatch;
+
+    return { semantic, vector, severity, recency, tagOverlap, domainMatch, total };
   }
 
   private generateTags(title: string, description: string, context?: string): string[] {
@@ -375,6 +532,10 @@ export class Brain {
     tx();
   }
 
+  private getCogneeWeights(): ScoringWeights {
+    return { ...COGNEE_WEIGHTS };
+  }
+
   private recomputeWeights(): void {
     const db = this.vault.getDb();
     const feedbackCount = (
@@ -401,7 +562,10 @@ export class Brain {
       DEFAULT_WEIGHTS.semantic + WEIGHT_BOUND,
     );
 
-    const remaining = 1.0 - newWeights.semantic;
+    // vector stays 0 in base weights (only active during hybrid search)
+    newWeights.vector = 0;
+
+    const remaining = 1.0 - newWeights.semantic - newWeights.vector;
     const otherSum =
       DEFAULT_WEIGHTS.severity +
       DEFAULT_WEIGHTS.recency +

@@ -58,7 +58,7 @@ describe('createAgentRuntime', () => {
     runtime = null; // already closed
   });
 
-  it('brain should be wired to vault', () => {
+  it('brain should be wired to vault', async () => {
     runtime = createAgentRuntime({
       agentId: 'test-brain-wire',
       vaultPath: ':memory:',
@@ -79,7 +79,7 @@ describe('createAgentRuntime', () => {
 
     // Brain should find it
     runtime.brain.rebuildVocabulary();
-    const results = runtime.brain.intelligentSearch('runtime test', { limit: 5 });
+    const results = await runtime.brain.intelligentSearch('runtime test', { limit: 5 });
     expect(results.length).toBeGreaterThan(0);
   });
 

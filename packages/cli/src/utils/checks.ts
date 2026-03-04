@@ -114,6 +114,26 @@ function checkMcpRegistration(dir?: string): CheckResult {
   }
 }
 
+function checkCognee(): CheckResult {
+  const url = process.env.COGNEE_URL ?? 'http://localhost:8000/';
+  let host: string;
+  try {
+    host = new URL(url).host;
+  } catch {
+    return { status: 'warn', label: 'Cognee', detail: `invalid COGNEE_URL: ${url}` };
+  }
+  try {
+    execFileSync('curl', ['-fsS', '--max-time', '5', url], { stdio: 'ignore', timeout: 7_000 });
+    return { status: 'pass', label: 'Cognee', detail: `available at ${host}` };
+  } catch {
+    return {
+      status: 'warn',
+      label: 'Cognee',
+      detail: `not running at ${host} — vector search disabled (FTS5 still works)`,
+    };
+  }
+}
+
 export function runAllChecks(dir?: string): CheckResult[] {
   return [
     checkNodeVersion(),
@@ -123,5 +143,6 @@ export function runAllChecks(dir?: string): CheckResult[] {
     checkNodeModules(dir),
     checkAgentBuild(dir),
     checkMcpRegistration(dir),
+    checkCognee(),
   ];
 }
