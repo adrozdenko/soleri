@@ -1,0 +1,61 @@
+{
+  "name": "@soleri/core",
+  "version": "1.0.0",
+  "description": "Shared engine for Soleri agents — vault, brain, planner, LLM utilities, and facade infrastructure.",
+  "keywords": [
+    "soleri",
+    "core",
+    "vault",
+    "brain",
+    "planner",
+    "llm",
+    "mcp",
+    "ai",
+    "agent"
+  ],
+  "homepage": "https://soleri.dev",
+  "license": "Apache-2.0",
+  "author": "adrozdenko",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adrozdenko/soleri.git",
+    "directory": "packages/core"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "zod": "^3.24.2"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "peerDependenciesMeta": {
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
+  }
+}

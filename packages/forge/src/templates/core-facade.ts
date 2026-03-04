@@ -6,16 +6,11 @@ import type { AgentConfig } from '../types.js';
  */
 export function generateCoreFacade(config: AgentConfig): string {
   return `import { z } from 'zod';
-import type { FacadeConfig } from './types.js';
-import type { Vault } from '../vault/vault.js';
-import type { IntelligenceEntry } from '../intelligence/types.js';
+import type { FacadeConfig, Vault, IntelligenceEntry, Planner, Brain, KeyPool } from '@soleri/core';
 import { PERSONA } from '../identity/persona.js';
 import { activateAgent, deactivateAgent } from '../activation/activate.js';
 import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker } from '../activation/inject-claude-md.js';
-import type { Planner } from '../planning/planner.js';
-import type { Brain } from '../brain/brain.js';
 import type { LLMClient } from '../llm/llm-client.js';
-import type { KeyPool } from '../llm/key-pool.js';
 
 export function createCoreFacade(vault: Vault, planner: Planner, brain: Brain, llmClient?: LLMClient, openaiKeyPool?: KeyPool, anthropicKeyPool?: KeyPool): FacadeConfig {
   return {

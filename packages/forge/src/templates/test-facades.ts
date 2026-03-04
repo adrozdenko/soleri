@@ -17,17 +17,14 @@ export function generateFacadesTest(config: AgentConfig): string {
     .join('\n\n');
 
   return `import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Vault } from '../vault/vault.js';
-import { Brain } from '../brain/brain.js';
-import type { IntelligenceEntry } from '../intelligence/types.js';
+import { Vault, Brain, Planner, KeyPool } from '@soleri/core';
+import type { IntelligenceEntry } from '@soleri/core';
 import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 ${domainImports}
 import { createCoreFacade } from '../facades/core.facade.js';
-import { Planner } from '../planning/planner.js';
 import { LLMClient } from '../llm/llm-client.js';
-import { KeyPool } from '../llm/key-pool.js';
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
   return {

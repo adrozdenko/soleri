@@ -10,6 +10,8 @@ coverage/
 .salvador/
 docs/vault/sessions/
 docs/vault/.rejected/
+docs/vault/ideas/
+docs/vault/plans/
 
 # Workspace builds
 packages/*/dist/

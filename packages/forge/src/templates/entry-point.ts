@@ -24,15 +24,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 
-import { registerAllFacades } from './facades/facade-factory.js';
+import { Vault, Brain, Planner, KeyPool, loadKeyPoolConfig, loadIntelligenceData, registerAllFacades } from '@soleri/core';
 ${facadeImports}
 import { createCoreFacade } from './facades/core.facade.js';
-import { loadIntelligenceData } from './intelligence/loader.js';
-import { Vault } from './vault/vault.js';
-import { Planner } from './planning/planner.js';
-import { Brain } from './brain/brain.js';
 import { LLMClient } from './llm/llm-client.js';
-import { KeyPool, loadKeyPoolConfig } from './llm/key-pool.js';
 import { PERSONA, getPersonaPrompt } from './identity/persona.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -63,7 +58,7 @@ async function main(): Promise<void> {
   console.error(\`[\${PERSONA.name.toLowerCase()}] Brain: vocabulary \${brain.getVocabularySize()} terms\`);
 
   // Initialize LLM client (optional — works without API keys)
-  const keyPoolFiles = loadKeyPoolConfig();
+  const keyPoolFiles = loadKeyPoolConfig('${config.id}');
   const openaiKeyPool = new KeyPool(keyPoolFiles.openai);
   const anthropicKeyPool = new KeyPool(keyPoolFiles.anthropic);
   const llmClient = new LLMClient(openaiKeyPool, anthropicKeyPool);
