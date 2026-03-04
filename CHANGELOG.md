@@ -24,7 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Cognee integration** — Optional hybrid search combining SQLite FTS5 with Cognee vector embeddings + knowledge graph
-  - `CogneeClient` — HTTP client with health caching, AbortController timeouts, and fail-silent pattern
+  - `CogneeClient` — HTTP client modeled after Salvador MCP's battle-tested Cognee integration
+  - Auto-register/login auth with service account (no manual token setup required)
+  - `CHUNKS` search type default (reliable with small local models unlike `GRAPH_COMPLETION`)
+  - 120s search timeout (handles Ollama cold start), 5s health check, 30s general
+  - Debounced cognify with 30s sliding window (coalesces rapid ingests)
+  - Position-based scoring fallback when Cognee omits numeric scores
   - `CogneeConfig`, `CogneeSearchResult`, `CogneeStatus` types
   - Zero new npm dependencies (uses built-in `fetch`)
 - **Hybrid scoring** — When Cognee is available, search uses 6-dimension scoring (semantic TF-IDF 0.25, vector 0.35, severity 0.1, recency 0.1, tag overlap 0.1, domain match 0.1). Without Cognee, original 5-dimension weights preserved.
@@ -42,9 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Cognee initialization in generated entry points (mirrors LLM client pattern)
+- Cognee initialization in generated entry points (mirrors LLM client pattern) with env var overrides (`COGNEE_URL`, `COGNEE_API_TOKEN`, `COGNEE_EMAIL`, `COGNEE_PASSWORD`)
 - Background vault-to-Cognee sync on agent startup when Cognee is available
 - 3 new core facade operations: `cognee_status`, `cognee_sync`, `graph_search`
+- `graph_search` defaults to `CHUNKS` search type (configurable via `searchType` param)
 
 ### Changed
 
