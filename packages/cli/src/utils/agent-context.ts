@@ -4,7 +4,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-export interface AgentContext {
+interface AgentContext {
   agentPath: string;
   agentId: string;
   packageName: string;

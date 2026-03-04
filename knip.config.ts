@@ -22,7 +22,6 @@ const config: KnipConfig = {
       ],
     },
     'packages/cli': {
-      entry: ['src/main.ts'],
       project: ['src/**/*.ts'],
     },
   },

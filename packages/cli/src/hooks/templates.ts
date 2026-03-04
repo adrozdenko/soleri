@@ -23,7 +23,7 @@ function getAgentMeta(dir?: string): AgentMeta | null {
 
 // ── Claude Code ──
 
-export function generateClaudeCodeSettings(dir?: string): Record<string, string> {
+function generateClaudeCodeSettings(dir?: string): Record<string, string> {
   const meta = getAgentMeta(dir);
   const agentId = meta?.agentId ?? 'my-agent';
 
@@ -75,7 +75,7 @@ export function generateClaudeCodeSettings(dir?: string): Record<string, string>
 
 // ── Cursor ──
 
-export function generateCursorRules(dir?: string): Record<string, string> {
+function generateCursorRules(dir?: string): Record<string, string> {
   const meta = getAgentMeta(dir);
   const agentId = meta?.agentId ?? 'my-agent';
 
@@ -106,7 +106,7 @@ The agent uses the MCP protocol and is structured with facades, a vault, and a b
 
 // ── Windsurf ──
 
-export function generateWindsurfRules(dir?: string): Record<string, string> {
+function generateWindsurfRules(dir?: string): Record<string, string> {
   const meta = getAgentMeta(dir);
   const agentId = meta?.agentId ?? 'my-agent';
 
@@ -137,7 +137,7 @@ The agent uses the MCP protocol and is structured with facades, a vault, and a b
 
 // ── GitHub Copilot ──
 
-export function generateCopilotInstructions(dir?: string): Record<string, string> {
+function generateCopilotInstructions(dir?: string): Record<string, string> {
   const meta = getAgentMeta(dir);
   const agentId = meta?.agentId ?? 'my-agent';
 

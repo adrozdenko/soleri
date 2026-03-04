@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { detectAgent } from './agent-context.js';
 
-export interface CheckResult {
+interface CheckResult {
   status: 'pass' | 'fail' | 'warn';
   label: string;
   detail?: string;
@@ -30,7 +30,7 @@ export function checkNpm(): CheckResult {
   }
 }
 
-export function checkTsx(): CheckResult {
+function checkTsx(): CheckResult {
   try {
     const version = execFileSync('npx', ['tsx', '--version'], {
       encoding: 'utf-8',
@@ -81,7 +81,7 @@ export function checkNodeModules(dir?: string): CheckResult {
   return { status: 'pass', label: 'Dependencies', detail: 'node_modules/ exists' };
 }
 
-export function checkMcpRegistration(dir?: string): CheckResult {
+function checkMcpRegistration(dir?: string): CheckResult {
   const ctx = detectAgent(dir);
   if (!ctx) return { status: 'warn', label: 'MCP registration', detail: 'no agent detected' };
 
