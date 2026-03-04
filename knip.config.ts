@@ -9,6 +9,12 @@ const config: KnipConfig = {
         '@secretlint/secretlint-rule-preset-recommend', // secretlint plugin
       ],
     },
+    'packages/core': {
+      project: ['src/**/*.ts'],
+      ignoreDependencies: [
+        '@modelcontextprotocol/sdk', // optional peer dependency
+      ],
+    },
     'packages/forge': {
       project: ['src/**/*.ts'],
       ignoreDependencies: [
