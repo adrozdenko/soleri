@@ -47,6 +47,9 @@ export class KeyPool {
   }
 
   getActiveKey(): SecretString {
+    if (this.keys.length === 0) {
+      throw new Error('KeyPool has no keys — cannot get active key');
+    }
     return this.keys[this.activeIndex];
   }
 
@@ -148,6 +151,9 @@ export interface KeyPoolFiles {
  * 3. Empty pool
  */
 export function loadKeyPoolConfig(agentId: string): KeyPoolFiles {
+  if (!agentId || /[/\\]/.test(agentId) || agentId.includes('..')) {
+    throw new Error(`Invalid agentId: ${agentId}`);
+  }
   const keysFilePath = path.join(homedir(), `.${agentId}`, 'keys.json');
 
   let openaiKeys: string[] = [];

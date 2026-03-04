@@ -180,12 +180,16 @@ export class Vault {
       fp.severity = options.severity;
     }
     const wc = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
-    const rows = this.db
-      .prepare(
-        `SELECT e.*, -rank as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score DESC LIMIT @limit`,
-      )
-      .all({ query, limit, ...fp }) as Array<Record<string, unknown>>;
-    return rows.map(rowToSearchResult);
+    try {
+      const rows = this.db
+        .prepare(
+          `SELECT e.*, -rank as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score DESC LIMIT @limit`,
+        )
+        .all({ query, limit, ...fp }) as Array<Record<string, unknown>>;
+      return rows.map(rowToSearchResult);
+    } catch {
+      return [];
+    }
   }
 
   get(id: string): IntelligenceEntry | null {
@@ -331,12 +335,16 @@ export class Vault {
       fp.projectPath = options.projectPath;
     }
     const wc = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
-    const rows = this.db
-      .prepare(
-        `SELECT m.* FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid WHERE memories_fts MATCH @query ${wc} ORDER BY rank LIMIT @limit`,
-      )
-      .all({ query, limit, ...fp }) as Array<Record<string, unknown>>;
-    return rows.map(rowToMemory);
+    try {
+      const rows = this.db
+        .prepare(
+          `SELECT m.* FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid WHERE memories_fts MATCH @query ${wc} ORDER BY rank LIMIT @limit`,
+        )
+        .all({ query, limit, ...fp }) as Array<Record<string, unknown>>;
+      return rows.map(rowToMemory);
+    } catch {
+      return [];
+    }
   }
 
   listMemories(options?: {

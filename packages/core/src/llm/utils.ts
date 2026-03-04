@@ -173,6 +173,9 @@ export function computeDelay(error: unknown, attempt: number, config: RetryConfi
 
 export async function retry<T>(fn: () => Promise<T>, config?: Partial<RetryConfig>): Promise<T> {
   const resolved: RetryConfig = { ...DEFAULT_RETRY_CONFIG, ...config };
+  if (resolved.maxAttempts < 1) {
+    throw new Error(`retry maxAttempts must be >= 1, got ${resolved.maxAttempts}`);
+  }
   const shouldRetry = resolved.shouldRetry ?? isRetryable;
 
   let lastError: unknown;
@@ -207,7 +210,8 @@ export function parseRateLimitHeaders(headers: Headers): RateLimitInfo {
   const retryAfter = headers.get('retry-after');
 
   return {
-    remaining: remaining !== null ? parseInt(remaining, 10) : null,
+    remaining:
+      remaining !== null ? (isNaN(parseInt(remaining, 10)) ? null : parseInt(remaining, 10)) : null,
     resetMs: reset !== null ? parseResetDuration(reset) : null,
     retryAfterMs: retryAfter !== null ? parseRetryAfter(retryAfter) : null,
   };
