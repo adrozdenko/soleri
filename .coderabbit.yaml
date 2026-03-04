@@ -1,12 +1,7 @@
 language: en-US
 tone_instructions: >
   Be direct and technical. Focus on correctness, security, and performance.
-  Flag real issues, skip cosmetic nitpicks. Do not suggest adding docstrings
-  or JSDoc comments — this project does not use them as a convention.
-  Do not flag mutable internal references unless they cross a public API boundary.
-  Do not flag single-process concurrency issues (stale writes, race conditions)
-  unless the code explicitly supports multi-process usage.
-  Do not suggest defensive JSON.parse guards for self-written data.
+  Flag real issues only. Skip docstrings, cosmetic nitpicks, and single-process race conditions.
 
 reviews:
   profile: assertive
