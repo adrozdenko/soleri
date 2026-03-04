@@ -554,6 +554,33 @@ ${domainDescribes}
       expect(results[0].score).toBeGreaterThan(0);
       expect(results[0].breakdown.total).toBe(results[0].score);
     });
+
+    // ─── Cognee ops (graceful degradation without Docker) ─────────
+
+    it('cognee_status should report not configured when cognee is undefined', async () => {
+      const facade = makeCoreFacade();
+      const op = facade.ops.find((o) => o.name === 'cognee_status')!;
+      expect(op).toBeDefined();
+      const result = (await op.handler({})) as { available: boolean };
+      expect(result.available).toBe(false);
+    });
+
+    it('cognee_sync should return helpful message when cognee is unavailable', async () => {
+      const facade = makeCoreFacade();
+      const op = facade.ops.find((o) => o.name === 'cognee_sync')!;
+      expect(op).toBeDefined();
+      const result = (await op.handler({})) as { synced: boolean; message: string };
+      expect(result.synced).toBe(false);
+      expect(result.message).toContain('Cognee not available');
+    });
+
+    it('graph_search should return empty results when cognee is unavailable', async () => {
+      const facade = makeCoreFacade();
+      const op = facade.ops.find((o) => o.name === 'graph_search')!;
+      expect(op).toBeDefined();
+      const result = (await op.handler({ query: 'test' })) as { results: unknown[] };
+      expect(result.results).toEqual([]);
+    });
   });
 });
 `;
