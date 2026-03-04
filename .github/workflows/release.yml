@@ -35,6 +35,12 @@ jobs:
       - name: Test forge
         run: npm run test --workspace=@soleri/forge
 
+      - name: Build CLI
+        run: npm run build --workspace=@soleri/cli
+
+      - name: Test CLI
+        run: npm run test --workspace=@soleri/cli
+
       - name: Publish @soleri/core
         run: npm publish --workspace=@soleri/core --access public || echo "Already published — skipping"
         env:
@@ -42,6 +48,11 @@ jobs:
 
       - name: Publish @soleri/forge
         run: npm publish --workspace=@soleri/forge --access public || echo "Already published — skipping"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @soleri/cli
+        run: npm publish --workspace=@soleri/cli --access public || echo "Already published — skipping"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

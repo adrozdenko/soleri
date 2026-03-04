@@ -35,6 +35,22 @@ jobs:
       - run: npm run test --workspace=@soleri/forge
       - run: npm run typecheck --workspace=@soleri/forge
 
+  cli:
+    name: Build & Test CLI
+    needs: forge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run build --workspace=@soleri/forge
+      - run: npm run build --workspace=@soleri/cli
+      - run: npm run test --workspace=@soleri/cli
+      - run: npm run typecheck --workspace=@soleri/cli
+
   quality:
     name: Code Quality
     runs-on: ubuntu-latest

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { scaffold, previewScaffold, listAgents } from '../scaffolder.js';
 import { AgentConfigSchema } from '../types.js';
 import { installKnowledge } from '../knowledge-installer.js';
+import { addDomain } from '../domain-manager.js';
 
 interface OpDef {
   name: string;
@@ -146,5 +147,22 @@ export const forgeOps: OpDef[] = [
       installKnowledge(
         params as { agentPath: string; bundlePath: string; generateFacades?: boolean },
       ),
+  },
+  {
+    name: 'add_domain',
+    description:
+      'Add a new knowledge domain to an existing MCP agent. ' +
+      'Creates an empty bundle, generates a domain facade, patches index.ts and claude-md-content.ts, then rebuilds.',
+    schema: z.object({
+      agentPath: z.string().describe('Absolute path to the target agent project'),
+      domain: z.string().describe('Domain name in kebab-case (e.g., "security", "api-design")'),
+      noBuild: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe('Skip the build step after adding the domain'),
+    }),
+    handler: async (params) =>
+      addDomain(params as { agentPath: string; domain: string; noBuild?: boolean }),
   },
 ];

@@ -21,6 +21,10 @@ const config: KnipConfig = {
         '@vitest/coverage-v8', // optional vitest plugin
       ],
     },
+    'packages/cli': {
+      entry: ['src/main.ts'],
+      project: ['src/**/*.ts'],
+    },
   },
 };
 

@@ -15,7 +15,8 @@
   },
   "references": [
     { "path": "packages/core" },
-    { "path": "packages/forge" }
+    { "path": "packages/forge" },
+    { "path": "packages/cli" }
   ],
   "files": []
 }

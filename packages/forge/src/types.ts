@@ -51,6 +51,18 @@ export interface ScaffoldPreview {
   persona: { name: string; role: string };
 }
 
+/** Result of adding a domain to an existing agent */
+export interface AddDomainResult {
+  success: boolean;
+  agentPath: string;
+  domain: string;
+  agentId: string;
+  facadeGenerated: boolean;
+  buildOutput: string;
+  warnings: string[];
+  summary: string;
+}
+
 /** Result of installing knowledge packs into an existing agent */
 export interface InstallKnowledgeResult {
   success: boolean;

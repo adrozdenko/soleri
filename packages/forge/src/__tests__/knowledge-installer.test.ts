@@ -1,13 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  installKnowledge,
-  patchIndexTs,
-  patchClaudeMdContent,
-  generateVaultOnlyDomainFacade,
-} from '../knowledge-installer.js';
+import { installKnowledge, generateVaultOnlyDomainFacade } from '../knowledge-installer.js';
+import { patchIndexTs, patchClaudeMdContent } from '../patching.js';
 
 describe('Knowledge Installer', () => {
   let tempDir: string;
