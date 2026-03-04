@@ -286,15 +286,67 @@ export class Brain {
     if (cogneeAvailable && this.cognee) {
       try {
         const cogneeResults = await this.cognee.search(query, { limit: Math.max(limit * 2, 20) });
-        for (const cr of cogneeResults) {
-          if (cr.id) cogneeScoreMap.set(cr.id, cr.score);
+
+        // Build title → entryId reverse index from FTS results for text-based matching.
+        // Cognee assigns its own UUIDs to chunks and may strip embedded metadata during
+        // chunking, so we need multiple strategies to cross-reference results.
+        const titleToId = new Map<string, string>();
+        for (const r of rawResults) {
+          titleToId.set(r.entry.title.toLowerCase().trim(), r.entry.id);
         }
-        // Merge cognee-only entries into candidate pool
+
+        const vaultIdPattern = /\[vault-id:([^\]]+)\]/;
+        const unmatchedCogneeResults: Array<{ text: string; score: number }> = [];
+
         for (const cr of cogneeResults) {
-          if (cr.id && !rawResults.some((r) => r.entry.id === cr.id)) {
-            const vaultEntry = this.vault.get(cr.id);
-            if (vaultEntry) {
-              rawResults.push({ entry: vaultEntry, score: cr.score });
+          const text = cr.text ?? '';
+
+          // Strategy 1: Extract vault ID from [vault-id:XXX] prefix (if Cognee preserved it)
+          const vaultIdMatch = text.match(vaultIdPattern);
+          if (vaultIdMatch) {
+            const vaultId = vaultIdMatch[1];
+            cogneeScoreMap.set(vaultId, Math.max(cogneeScoreMap.get(vaultId) ?? 0, cr.score));
+            continue;
+          }
+
+          // Strategy 2: Match first line of chunk text against known entry titles.
+          // serializeEntry() puts the title on the first line after the [vault-id:] prefix,
+          // and Cognee's chunking typically preserves this as the chunk start.
+          const firstLine = text.split('\n')[0]?.trim().toLowerCase() ?? '';
+          const matchedId = firstLine ? titleToId.get(firstLine) : undefined;
+          if (matchedId) {
+            cogneeScoreMap.set(matchedId, Math.max(cogneeScoreMap.get(matchedId) ?? 0, cr.score));
+            continue;
+          }
+
+          // Strategy 3: Check if any known title appears as a substring in the chunk.
+          // Handles cases where the title isn't on the first line (mid-document chunks).
+          const textLower = text.toLowerCase();
+          let found = false;
+          for (const [title, id] of titleToId) {
+            if (title.length >= 8 && textLower.includes(title)) {
+              cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, cr.score));
+              found = true;
+              break;
+            }
+          }
+          if (!found && text.length > 0) {
+            unmatchedCogneeResults.push({ text, score: cr.score });
+          }
+        }
+
+        // Strategy 4: For Cognee-only semantic matches (not in FTS results),
+        // use the first line as a vault FTS query to find the source entry.
+        for (const unmatched of unmatchedCogneeResults) {
+          const searchTerm = unmatched.text.split('\n')[0]?.trim();
+          if (!searchTerm || searchTerm.length < 3) continue;
+          const vaultHits = this.vault.search(searchTerm, { limit: 1 });
+          if (vaultHits.length > 0) {
+            const id = vaultHits[0].entry.id;
+            cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, unmatched.score));
+            // Also add to FTS results pool if not already present
+            if (!rawResults.some((r) => r.entry.id === id)) {
+              rawResults.push(vaultHits[0]);
             }
           }
         }

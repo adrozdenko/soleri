@@ -227,9 +227,16 @@ describe('Brain', () => {
       ]);
     });
 
-    it('should include vector scores from Cognee in breakdown', async () => {
+    it('should match via [vault-id:] prefix (strategy 1)', async () => {
       const cognee = makeMockCognee({
-        searchResults: [{ id: 'hs-1', score: 0.92, text: 'Auth flow', searchType: 'INSIGHTS' }],
+        searchResults: [
+          {
+            id: 'cognee-uuid-1',
+            score: 0.92,
+            text: '[vault-id:hs-1]\nAuthentication flow\nJWT-based authentication for API endpoints.',
+            searchType: 'CHUNKS',
+          },
+        ],
       });
       const hybridBrain = new Brain(vault, cognee);
       const results = await hybridBrain.intelligentSearch('authentication');
@@ -239,25 +246,61 @@ describe('Brain', () => {
       expect(authResult!.breakdown.vector).toBe(0.92);
     });
 
-    it('should use cognee-aware weights when vector results are present', async () => {
+    it('should match via title first-line (strategy 2)', async () => {
+      // Cognee stripped the [vault-id:] prefix during chunking — title is on first line
       const cognee = makeMockCognee({
-        searchResults: [{ id: 'hs-1', score: 0.9, text: 'Auth', searchType: 'INSIGHTS' }],
+        searchResults: [
+          {
+            id: 'cognee-uuid-2',
+            score: 0.9,
+            text: 'Authentication flow\nJWT-based authentication for API endpoints.',
+            searchType: 'CHUNKS',
+          },
+        ],
       });
       const hybridBrain = new Brain(vault, cognee);
       const results = await hybridBrain.intelligentSearch('authentication');
-      // With cognee weights, vector contributes significantly
       const authResult = results.find((r) => r.entry.id === 'hs-1');
       expect(authResult).toBeDefined();
-      // vector=0.9 * weight=0.35 = 0.315 contribution
       expect(authResult!.breakdown.vector).toBe(0.9);
     });
 
-    it('should merge cognee-only entries into results', async () => {
-      // hs-2 may not match FTS5 for "authentication" but Cognee finds it via semantic similarity
+    it('should match via title substring (strategy 3)', async () => {
+      // Mid-document chunk where title isn't on the first line
       const cognee = makeMockCognee({
         searchResults: [
-          { id: 'hs-1', score: 0.95, text: 'Auth', searchType: 'INSIGHTS' },
-          { id: 'hs-2', score: 0.6, text: 'Logging', searchType: 'INSIGHTS' },
+          {
+            id: 'cognee-uuid-3',
+            score: 0.85,
+            text: 'Some preamble text\nAuthentication flow\nJWT-based auth...',
+            searchType: 'CHUNKS',
+          },
+        ],
+      });
+      const hybridBrain = new Brain(vault, cognee);
+      const results = await hybridBrain.intelligentSearch('authentication');
+      const authResult = results.find((r) => r.entry.id === 'hs-1');
+      expect(authResult).toBeDefined();
+      expect(authResult!.breakdown.vector).toBe(0.85);
+    });
+
+    it('should merge cognee-only entries via FTS fallback (strategy 4)', async () => {
+      // hs-2 may not match FTS5 for "authentication" but Cognee finds it via semantic similarity.
+      // The chunk text starts with the entry title so strategy 4's vault.search(firstLine) finds it.
+      const cognee = makeMockCognee({
+        searchResults: [
+          {
+            id: 'cognee-uuid-a',
+            score: 0.95,
+            text: 'Authentication flow\nJWT-based authentication for API endpoints.',
+            searchType: 'CHUNKS',
+          },
+          {
+            id: 'cognee-uuid-b',
+            score: 0.6,
+            text: 'Logging best practices\nStructured logging with correlation IDs.',
+            searchType: 'CHUNKS',
+          },
         ],
       });
       const hybridBrain = new Brain(vault, cognee);

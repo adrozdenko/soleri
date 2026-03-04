@@ -324,7 +324,9 @@ export class CogneeClient {
   // ─── Private helpers ───────────────────────────────────────────
 
   private serializeEntry(entry: IntelligenceEntry): string {
-    const parts = [entry.title, entry.description];
+    // Prefix with vault ID so we can cross-reference search results back to vault entries.
+    // Cognee assigns its own UUIDs to chunks — the vault ID would otherwise be lost.
+    const parts = [`[vault-id:${entry.id}]`, entry.title, entry.description];
     if (entry.context) parts.push(entry.context);
     if (entry.tags.length > 0) parts.push(`Tags: ${entry.tags.join(', ')}`);
     return parts.join('\n');
