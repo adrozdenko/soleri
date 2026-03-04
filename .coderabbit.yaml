@@ -1,13 +1,19 @@
 language: en-US
 tone_instructions: >
   Be direct and technical. Focus on correctness, security, and performance.
-  Flag real issues, skip cosmetic nitpicks.
+  Flag real issues, skip cosmetic nitpicks. Do not suggest adding docstrings
+  or JSDoc comments — this project does not use them as a convention.
+  Do not flag mutable internal references unless they cross a public API boundary.
+  Do not flag single-process concurrency issues (stale writes, race conditions)
+  unless the code explicitly supports multi-process usage.
+  Do not suggest defensive JSON.parse guards for self-written data.
 
 reviews:
   profile: assertive
   request_changes_workflow: true
   high_level_summary: true
   high_level_summary_placeholder: '@coderabbitai summary'
+  poem: false
   auto_review:
     enabled: true
     drafts: false
@@ -18,6 +24,8 @@ reviews:
         correctness of SQLite/FTS5 queries, TF-IDF math in brain,
         state machine transitions in planner, circuit breaker logic,
         and proper error handling. No protocol dependencies allowed here.
+        The Planner is single-process by design — do not flag stale-write
+        or multi-instance race conditions.
     - path: 'packages/forge/**'
       instructions: >
         This is @soleri/forge — agent scaffolder. Templates generate
@@ -26,15 +34,16 @@ reviews:
         and no static modules are inlined that belong in core.
     - path: 'docs/vault/**'
       instructions: >
-        Project knowledge vault. Check frontmatter schema compliance
-        (id, title, category, severity, tags). No business-sensitive
-        content should be in tracked files.
+        Project knowledge vault. These are design docs and captured knowledge,
+        not API documentation. Do not flag future-tense CLI commands or
+        features described as ideas/principles. Check frontmatter schema
+        compliance (id, title, category, severity, tags) only.
   path_filters:
     - '!dist/**'
     - '!node_modules/**'
     - '!package-lock.json'
     - '!coverage/**'
-    - '!*.tsbuildinfo'
+    - '!**/*.tsbuildinfo'
 
 chat:
   auto_reply: true
@@ -44,3 +53,7 @@ knowledge_base:
     scope: auto
   web_search:
     enabled: true
+
+pre_merge_checks:
+  docstring_coverage:
+    enabled: false
