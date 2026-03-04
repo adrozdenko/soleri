@@ -26,6 +26,8 @@ Instead of one generic assistant, you build specialized **agents** — each with
 
 ## What You Get
 
+**Platform:** macOS and Linux. Windows users need [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
+
 ```bash
 npx @soleri/cli create my-agent   # Interactive wizard — scaffold a new agent
 npx @soleri/cli list              # Show agents in current directory

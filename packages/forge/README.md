@@ -206,6 +206,7 @@ Soleri Forge is itself an MCP server built on the same patterns it generates:
 ## Requirements
 
 - Node.js 18+
+- macOS or Linux (Windows via [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install))
 - Claude Code (for MCP registration and activation)
 
 ## License
