@@ -287,12 +287,16 @@ export class Brain {
       try {
         const cogneeResults = await this.cognee.search(query, { limit: Math.max(limit * 2, 20) });
 
-        // Build title → entryId reverse index from FTS results for text-based matching.
+        // Build title → entryIds reverse index from FTS results for text-based matching.
         // Cognee assigns its own UUIDs to chunks and may strip embedded metadata during
         // chunking, so we need multiple strategies to cross-reference results.
-        const titleToId = new Map<string, string>();
+        // Multiple entries can share a title, so map to arrays of IDs.
+        const titleToIds = new Map<string, string[]>();
         for (const r of rawResults) {
-          titleToId.set(r.entry.title.toLowerCase().trim(), r.entry.id);
+          const key = r.entry.title.toLowerCase().trim();
+          const ids = titleToIds.get(key) ?? [];
+          ids.push(r.entry.id);
+          titleToIds.set(key, ids);
         }
 
         const vaultIdPattern = /\[vault-id:([^\]]+)\]/;
@@ -313,9 +317,11 @@ export class Brain {
           // serializeEntry() puts the title on the first line after the [vault-id:] prefix,
           // and Cognee's chunking typically preserves this as the chunk start.
           const firstLine = text.split('\n')[0]?.trim().toLowerCase() ?? '';
-          const matchedId = firstLine ? titleToId.get(firstLine) : undefined;
-          if (matchedId) {
-            cogneeScoreMap.set(matchedId, Math.max(cogneeScoreMap.get(matchedId) ?? 0, cr.score));
+          const matchedIds = firstLine ? titleToIds.get(firstLine) : undefined;
+          if (matchedIds) {
+            for (const id of matchedIds) {
+              cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, cr.score));
+            }
             continue;
           }
 
@@ -323,9 +329,11 @@ export class Brain {
           // Handles cases where the title isn't on the first line (mid-document chunks).
           const textLower = text.toLowerCase();
           let found = false;
-          for (const [title, id] of titleToId) {
+          for (const [title, ids] of titleToIds) {
             if (title.length >= 8 && textLower.includes(title)) {
-              cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, cr.score));
+              for (const id of ids) {
+                cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, cr.score));
+              }
               found = true;
               break;
             }
@@ -337,10 +345,17 @@ export class Brain {
 
         // Strategy 4: For Cognee-only semantic matches (not in FTS results),
         // use the first line as a vault FTS query to find the source entry.
+        // Preserve caller filters (domain/type/severity) to avoid reintroducing
+        // entries the original query excluded.
         for (const unmatched of unmatchedCogneeResults) {
           const searchTerm = unmatched.text.split('\n')[0]?.trim();
           if (!searchTerm || searchTerm.length < 3) continue;
-          const vaultHits = this.vault.search(searchTerm, { limit: 1 });
+          const vaultHits = this.vault.search(searchTerm, {
+            domain: options?.domain,
+            type: options?.type,
+            severity: options?.severity,
+            limit: 1,
+          });
           if (vaultHits.length > 0) {
             const id = vaultHits[0].entry.id;
             cogneeScoreMap.set(id, Math.max(cogneeScoreMap.get(id) ?? 0, unmatched.score));
