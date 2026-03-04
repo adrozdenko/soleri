@@ -46,6 +46,8 @@ describe('Facades', () => {
   let openaiKeyPool: KeyPool;
   let anthropicKeyPool: KeyPool;
   let llmClient: LLMClient;
+  const makeCoreFacade = () =>
+    createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
 
   beforeEach(() => {
     vault = new Vault(':memory:');
@@ -67,7 +69,7 @@ ${domainDescribes}
 
   describe('${config.id}_core', () => {
     it('should create core facade with expected ops', () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       expect(facade.name).toBe('${config.id}_core');
       const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('search');
@@ -88,7 +90,7 @@ ${domainDescribes}
         makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
       ]);
       brain = new Brain(vault);
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const searchOp = facade.ops.find((o) => o.name === 'search')!;
       const results = (await searchOp.handler({ query: 'pattern' })) as Array<{ entry: unknown; score: number; breakdown: unknown }>;
       expect(Array.isArray(results)).toBe(true);
@@ -102,21 +104,21 @@ ${domainDescribes}
         makeEntry({ id: 'vs1', domain: 'd1', tags: ['x'] }),
         makeEntry({ id: 'vs2', domain: 'd2', tags: ['y'] }),
       ]);
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const statsOp = facade.ops.find((o) => o.name === 'vault_stats')!;
       const stats = (await statsOp.handler({})) as { totalEntries: number };
       expect(stats.totalEntries).toBe(2);
     });
 
     it('health should return ok status', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const healthOp = facade.ops.find((o) => o.name === 'health')!;
       const health = (await healthOp.handler({})) as { status: string };
       expect(health.status).toBe('ok');
     });
 
     it('identity should return persona', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const identityOp = facade.ops.find((o) => o.name === 'identity')!;
       const persona = (await identityOp.handler({})) as { name: string; role: string };
       expect(persona.name).toBe('${escapeQuotes(config.name)}');
@@ -128,14 +130,14 @@ ${domainDescribes}
         makeEntry({ id: 'la1', domain: 'alpha', tags: ['a'] }),
         makeEntry({ id: 'la2', domain: 'beta', tags: ['b'] }),
       ]);
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const listOp = facade.ops.find((o) => o.name === 'list_all')!;
       const filtered = (await listOp.handler({ domain: 'alpha' })) as unknown[];
       expect(filtered).toHaveLength(1);
     });
 
     it('activate should return persona and setup status', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const activateOp = facade.ops.find((o) => o.name === 'activate')!;
       const result = (await activateOp.handler({ projectPath: '/tmp/nonexistent-test' })) as {
         activated: boolean;
@@ -154,7 +156,7 @@ ${domainDescribes}
     });
 
     it('activate with deactivate flag should return deactivation', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const activateOp = facade.ops.find((o) => o.name === 'activate')!;
       const result = (await activateOp.handler({ deactivate: true })) as { deactivated: boolean; message: string };
       expect(result.deactivated).toBe(true);
@@ -165,7 +167,7 @@ ${domainDescribes}
       const tempDir = join(tmpdir(), 'forge-inject-test-' + Date.now());
       mkdirSync(tempDir, { recursive: true });
       try {
-        const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+        const facade = makeCoreFacade();
         const injectOp = facade.ops.find((o) => o.name === 'inject_claude_md')!;
         const result = (await injectOp.handler({ projectPath: tempDir })) as {
           injected: boolean;
@@ -185,7 +187,7 @@ ${domainDescribes}
     it('inject_claude_md with global flag should target ~/.claude/CLAUDE.md', async () => {
       // We test the global path resolution by checking the returned path
       // contains .claude/CLAUDE.md (actual write may or may not happen depending on env)
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const injectOp = facade.ops.find((o) => o.name === 'inject_claude_md')!;
       const result = (await injectOp.handler({ global: true })) as {
         injected: boolean;
@@ -198,7 +200,7 @@ ${domainDescribes}
     });
 
     it('setup should return project and global CLAUDE.md status', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const setupOp = facade.ops.find((o) => o.name === 'setup')!;
       const result = (await setupOp.handler({ projectPath: '/tmp/nonexistent-test' })) as {
         agent: { name: string };
@@ -217,7 +219,7 @@ ${domainDescribes}
     });
 
     it('register should track new project', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const registerOp = facade.ops.find((o) => o.name === 'register')!;
       const result = (await registerOp.handler({ projectPath: '/tmp/reg-test-project', name: 'reg-test' })) as {
         project: { path: string; name: string; sessionCount: number };
@@ -232,7 +234,7 @@ ${domainDescribes}
     });
 
     it('register should increment session count for returning project', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const registerOp = facade.ops.find((o) => o.name === 'register')!;
       await registerOp.handler({ projectPath: '/tmp/reg-test-returning', name: 'returning' });
       const result = (await registerOp.handler({ projectPath: '/tmp/reg-test-returning', name: 'returning' })) as {
@@ -246,7 +248,7 @@ ${domainDescribes}
     });
 
     it('memory_capture should store a memory', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const captureOp = facade.ops.find((o) => o.name === 'memory_capture')!;
       const result = (await captureOp.handler({
         projectPath: '/test',
@@ -263,7 +265,7 @@ ${domainDescribes}
     });
 
     it('memory_search should find captured memories', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const captureOp = facade.ops.find((o) => o.name === 'memory_capture')!;
       await captureOp.handler({
         projectPath: '/test',
@@ -281,7 +283,7 @@ ${domainDescribes}
     });
 
     it('memory_list should return all memories with stats', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const captureOp = facade.ops.find((o) => o.name === 'memory_capture')!;
       await captureOp.handler({
         projectPath: '/test',
@@ -302,7 +304,7 @@ ${domainDescribes}
     });
 
     it('session_capture should store a session memory', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const sessionOp = facade.ops.find((o) => o.name === 'session_capture')!;
       const result = (await sessionOp.handler({
         projectPath: '/tmp/test-session',
@@ -323,7 +325,7 @@ ${domainDescribes}
         makeEntry({ id: 'exp2', domain: 'security', tags: ['xss'] }),
         makeEntry({ id: 'exp3', domain: 'api-design', tags: ['rest'] }),
       ]);
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const exportOp = facade.ops.find((o) => o.name === 'export')!;
       const result = (await exportOp.handler({})) as {
         exported: boolean;
@@ -343,7 +345,7 @@ ${domainDescribes}
         makeEntry({ id: 'exp-d1', domain: 'security', tags: ['auth'] }),
         makeEntry({ id: 'exp-d2', domain: 'api-design', tags: ['rest'] }),
       ]);
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const exportOp = facade.ops.find((o) => o.name === 'export')!;
       const result = (await exportOp.handler({ domain: 'security' })) as {
         bundles: Array<{ domain: string; entries: unknown[] }>;
@@ -355,7 +357,7 @@ ${domainDescribes}
     });
 
     it('create_plan should create a draft plan', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
       const result = (await createOp.handler({
         objective: 'Add caching',
@@ -368,7 +370,7 @@ ${domainDescribes}
     });
 
     it('get_plan should return a plan by id', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
       const created = (await createOp.handler({ objective: 'Test', scope: 'test' })) as { plan: { id: string } };
       const getOp = facade.ops.find((o) => o.name === 'get_plan')!;
@@ -378,7 +380,7 @@ ${domainDescribes}
     });
 
     it('get_plan without id should return active plans', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
       await createOp.handler({ objective: 'Plan A', scope: 'a' });
       const getOp = facade.ops.find((o) => o.name === 'get_plan')!;
@@ -388,7 +390,7 @@ ${domainDescribes}
     });
 
     it('approve_plan should approve and optionally start execution', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
       const created = (await createOp.handler({ objective: 'Approve', scope: 'test' })) as { plan: { id: string } };
       const approveOp = facade.ops.find((o) => o.name === 'approve_plan')!;
@@ -403,7 +405,7 @@ ${domainDescribes}
     });
 
     it('update_task should update task status', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
       const created = (await createOp.handler({
         objective: 'Task update',
@@ -423,7 +425,7 @@ ${domainDescribes}
     });
 
     it('complete_plan should complete with task summary', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
       const created = (await createOp.handler({
         objective: 'Complete me',
@@ -450,7 +452,7 @@ ${domainDescribes}
     });
 
     it('should have brain ops in core facade', () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('record_feedback');
       expect(opNames).toContain('rebuild_vocabulary');
@@ -458,7 +460,7 @@ ${domainDescribes}
     });
 
     it('record_feedback should record search feedback', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const feedbackOp = facade.ops.find((o) => o.name === 'record_feedback')!;
       const result = (await feedbackOp.handler({
         query: 'test query',
@@ -475,7 +477,7 @@ ${domainDescribes}
         makeEntry({ id: 'rv1', title: 'Rebuild vocab test', description: 'Testing vocabulary rebuild.', tags: ['rebuild'] }),
       ]);
       brain = new Brain(vault);
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const rebuildOp = facade.ops.find((o) => o.name === 'rebuild_vocabulary')!;
       const result = (await rebuildOp.handler({})) as { rebuilt: boolean; vocabularySize: number };
       expect(result.rebuilt).toBe(true);
@@ -483,7 +485,7 @@ ${domainDescribes}
     });
 
     it('brain_stats should return intelligence stats', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const statsOp = facade.ops.find((o) => o.name === 'brain_stats')!;
       const result = (await statsOp.handler({})) as {
         vocabularySize: number;
@@ -497,7 +499,7 @@ ${domainDescribes}
     });
 
     it('brain_stats should reflect feedback count after recording', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const feedbackOp = facade.ops.find((o) => o.name === 'record_feedback')!;
       await feedbackOp.handler({ query: 'q1', entryId: 'e1', action: 'accepted' });
       await feedbackOp.handler({ query: 'q2', entryId: 'e2', action: 'dismissed' });
@@ -507,7 +509,7 @@ ${domainDescribes}
     });
 
     it('llm_status should return provider availability', async () => {
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const llmStatusOp = facade.ops.find((o) => o.name === 'llm_status')!;
       const result = (await llmStatusOp.handler({})) as {
         providers: {
@@ -545,7 +547,7 @@ ${domainDescribes}
         makeEntry({ id: 'bs-1', domain: 'security', title: 'Authentication token handling', severity: 'critical', description: 'Always validate JWT tokens.', tags: ['auth', 'jwt'] }),
       ]);
       brain = new Brain(vault);
-      const facade = createCoreFacade(vault, planner, brain, undefined, llmClient, openaiKeyPool, anthropicKeyPool);
+      const facade = makeCoreFacade();
       const searchOp = facade.ops.find((o) => o.name === 'search')!;
       const results = (await searchOp.handler({ query: 'authentication token' })) as Array<{ entry: { id: string }; score: number; breakdown: { semantic: number; total: number } }>;
       expect(results.length).toBeGreaterThan(0);
