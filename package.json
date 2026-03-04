@@ -1,7 +1,7 @@
 {
   "name": "soleri-monorepo",
   "private": true,
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "An open-source framework for building AI assistants that learn, remember, and grow with you.",
   "keywords": [
     "ai",

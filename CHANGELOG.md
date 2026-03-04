@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`npm create soleri`** — Conventional npm create shorthand that delegates to `@soleri/cli`
-- Resolves `@soleri/cli` binary via `createRequire`, spawns with `create` prepended to args
-- Zero-config: `npm create soleri my-agent` just works
+- **`npm create soleri my-agent`** — Standard npm create shorthand for scaffolding agents
+- Thin wrapper that delegates to `@soleri/cli` — no extra dependencies or configuration
+- Supports all `@soleri/cli create` flags via pass-through args
 
 ## @soleri/cli@1.0.0 — 2026-03-04
 
