@@ -37,8 +37,13 @@ export async function addDomain(params: AddDomainParams): Promise<AddDomainResul
     return fail(agentPath, domain, 'No package.json found — is this an agent project?');
   }
 
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-  const pkgName: string = pkg.name ?? '';
+  let pkg: Record<string, unknown>;
+  try {
+    pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+  } catch {
+    return fail(agentPath, domain, 'Failed to parse package.json — is it valid JSON?');
+  }
+  const pkgName: string = (pkg.name as string) ?? '';
   if (!pkgName.endsWith('-mcp')) {
     return fail(agentPath, domain, `package.json name "${pkgName}" does not end with -mcp`);
   }
@@ -133,8 +138,12 @@ export async function addDomain(params: AddDomainParams): Promise<AddDomainResul
     }
   }
 
+  const hasPatchFailure = warnings.some(
+    (w) => w.includes('Could not patch') || w.includes('Build failed'),
+  );
+
   return {
-    success: !warnings.some((w) => w.includes('Build failed')),
+    success: !hasPatchFailure,
     agentPath,
     domain,
     agentId,

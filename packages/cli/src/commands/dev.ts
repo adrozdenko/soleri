@@ -28,7 +28,11 @@ export function registerDev(program: Command): void {
         process.exit(1);
       });
 
-      child.on('exit', (code) => {
+      child.on('exit', (code, signal) => {
+        if (signal) {
+          p.log.warn(`Process terminated by signal ${signal}`);
+          process.exit(1);
+        }
         process.exit(code ?? 0);
       });
     });

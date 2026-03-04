@@ -42,17 +42,32 @@ jobs:
         run: npm run test --workspace=@soleri/cli
 
       - name: Publish @soleri/core
-        run: npm publish --workspace=@soleri/core --access public || echo "Already published — skipping"
+        run: |
+          if npm view @soleri/core@$(node -p "require('./packages/core/package.json').version") version 2>/dev/null; then
+            echo "Version already published — skipping"
+          else
+            npm publish --workspace=@soleri/core --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @soleri/forge
-        run: npm publish --workspace=@soleri/forge --access public || echo "Already published — skipping"
+        run: |
+          if npm view @soleri/forge@$(node -p "require('./packages/forge/package.json').version") version 2>/dev/null; then
+            echo "Version already published — skipping"
+          else
+            npm publish --workspace=@soleri/forge --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @soleri/cli
-        run: npm publish --workspace=@soleri/cli --access public || echo "Already published — skipping"
+        run: |
+          if npm view @soleri/cli@$(node -p "require('./packages/cli/package.json').version") version 2>/dev/null; then
+            echo "Version already published — skipping"
+          else
+            npm publish --workspace=@soleri/cli --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

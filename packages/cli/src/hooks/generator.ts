@@ -13,11 +13,16 @@ export function installHooks(editor: EditorId, agentPath: string): string[] {
   const files = getEditorFiles(editor, agentPath);
   const written: string[] = [];
 
+  const overwritten: string[] = [];
   for (const [relPath, content] of Object.entries(files)) {
     const absPath = join(agentPath, relPath);
+    if (existsSync(absPath)) overwritten.push(relPath);
     mkdirSync(dirname(absPath), { recursive: true });
     writeFileSync(absPath, content, 'utf-8');
     written.push(relPath);
+  }
+  if (overwritten.length > 0) {
+    console.warn(`Warning: overwritten existing file(s): ${overwritten.join(', ')}`);
   }
 
   return written;

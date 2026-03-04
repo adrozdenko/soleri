@@ -22,21 +22,27 @@ export function registerInstallKnowledge(program: Command): void {
       const s = p.spinner();
       s.start(`Installing knowledge from ${bundlePath}...`);
 
-      const result = await installKnowledge({
-        agentPath: ctx.agentPath,
-        bundlePath,
-        generateFacades: opts.facades,
-      });
+      try {
+        const result = await installKnowledge({
+          agentPath: ctx.agentPath,
+          bundlePath,
+          generateFacades: opts.facades,
+        });
 
-      s.stop(result.success ? result.summary : 'Installation failed');
+        s.stop(result.success ? result.summary : 'Installation failed');
 
-      if (result.warnings.length > 0) {
-        for (const w of result.warnings) {
-          p.log.warn(w);
+        if (result.warnings.length > 0) {
+          for (const w of result.warnings) {
+            p.log.warn(w);
+          }
         }
-      }
 
-      if (!result.success) {
+        if (!result.success) {
+          process.exit(1);
+        }
+      } catch (err) {
+        s.stop('Installation failed');
+        p.log.error(err instanceof Error ? err.message : String(err));
         process.exit(1);
       }
     });

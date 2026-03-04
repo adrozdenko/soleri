@@ -1,5 +1,4 @@
 import type { Command } from 'commander';
-import * as p from '@clack/prompts';
 import { SUPPORTED_EDITORS, type EditorId } from '../hooks/templates.js';
 import { installHooks, removeHooks, detectInstalledHooks } from '../hooks/generator.js';
 import { detectAgent } from '../utils/agent-context.js';
@@ -14,13 +13,13 @@ export function registerHooks(program: Command): void {
     .description('Generate editor hooks/config files')
     .action((editor: string) => {
       if (!isValidEditor(editor)) {
-        p.log.error(`Unknown editor "${editor}". Supported: ${SUPPORTED_EDITORS.join(', ')}`);
+        log.fail(`Unknown editor "${editor}". Supported: ${SUPPORTED_EDITORS.join(', ')}`);
         process.exit(1);
       }
 
       const ctx = detectAgent();
       if (!ctx) {
-        p.log.error('No agent project detected in current directory.');
+        log.fail('No agent project detected in current directory.');
         process.exit(1);
       }
 
@@ -28,7 +27,7 @@ export function registerHooks(program: Command): void {
       for (const f of files) {
         log.pass(`Created ${f}`);
       }
-      p.log.info(`${editor} hooks installed for ${ctx.agentId}`);
+      log.info(`${editor} hooks installed for ${ctx.agentId}`);
     });
 
   hooks
@@ -37,24 +36,24 @@ export function registerHooks(program: Command): void {
     .description('Remove editor hooks/config files')
     .action((editor: string) => {
       if (!isValidEditor(editor)) {
-        p.log.error(`Unknown editor "${editor}". Supported: ${SUPPORTED_EDITORS.join(', ')}`);
+        log.fail(`Unknown editor "${editor}". Supported: ${SUPPORTED_EDITORS.join(', ')}`);
         process.exit(1);
       }
 
       const ctx = detectAgent();
       if (!ctx) {
-        p.log.error('No agent project detected in current directory.');
+        log.fail('No agent project detected in current directory.');
         process.exit(1);
       }
 
       const removed = removeHooks(editor, ctx.agentPath);
       if (removed.length === 0) {
-        p.log.info(`No ${editor} hooks found to remove.`);
+        log.info(`No ${editor} hooks found to remove.`);
       } else {
         for (const f of removed) {
           log.warn(`Removed ${f}`);
         }
-        p.log.info(`${editor} hooks removed from ${ctx.agentId}`);
+        log.info(`${editor} hooks removed from ${ctx.agentId}`);
       }
     });
 
@@ -64,7 +63,7 @@ export function registerHooks(program: Command): void {
     .action(() => {
       const ctx = detectAgent();
       if (!ctx) {
-        p.log.error('No agent project detected in current directory.');
+        log.fail('No agent project detected in current directory.');
         process.exit(1);
       }
 

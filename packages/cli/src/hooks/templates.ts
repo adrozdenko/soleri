@@ -15,10 +15,15 @@ interface AgentMeta {
   packageName: string;
 }
 
+/** Sanitize agent ID for safe interpolation into shell commands and templates. */
+function sanitizeId(id: string): string {
+  return id.replace(/[^a-z0-9-]/g, '');
+}
+
 function getAgentMeta(dir?: string): AgentMeta | null {
   const ctx = detectAgent(dir);
   if (!ctx) return null;
-  return { agentId: ctx.agentId, packageName: ctx.packageName };
+  return { agentId: sanitizeId(ctx.agentId), packageName: ctx.packageName };
 }
 
 // ── Claude Code ──
