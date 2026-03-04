@@ -14,17 +14,17 @@ The interactive wizard walks you through agent configuration: name, role, domain
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `soleri create [name]` | Interactive wizard to scaffold a new agent |
-| `soleri list [dir]` | Show agents in a directory |
-| `soleri add-domain <domain>` | Add a knowledge domain to the agent in cwd |
-| `soleri install-knowledge <pack>` | Install knowledge packs from a local path |
-| `soleri dev` | Run agent in development mode (stdio MCP server) |
-| `soleri doctor` | Health check — Node, npm, tsx, agent, deps, build, MCP |
-| `soleri hooks add <editor>` | Generate editor hooks/config files |
-| `soleri hooks remove <editor>` | Remove editor hooks/config files |
-| `soleri hooks list` | Show installed editor hooks |
+| Command                           | Description                                            |
+| --------------------------------- | ------------------------------------------------------ |
+| `soleri create [name]`            | Interactive wizard to scaffold a new agent             |
+| `soleri list [dir]`               | Show agents in a directory                             |
+| `soleri add-domain <domain>`      | Add a knowledge domain to the agent in cwd             |
+| `soleri install-knowledge <pack>` | Install knowledge packs from a local path              |
+| `soleri dev`                      | Run agent in development mode (stdio MCP server)       |
+| `soleri doctor`                   | Health check — Node, npm, tsx, agent, deps, build, MCP |
+| `soleri hooks add <editor>`       | Generate editor hooks/config files                     |
+| `soleri hooks remove <editor>`    | Remove editor hooks/config files                       |
+| `soleri hooks list`               | Show installed editor hooks                            |
 
 ### Create
 
