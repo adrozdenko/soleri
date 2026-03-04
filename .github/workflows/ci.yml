@@ -7,15 +7,30 @@ on:
     branches: [main]
 
 jobs:
-  forge:
-    name: Build & Test Forge
+  core:
+    name: Build & Test Core
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
-      - run: npm install
+          node-version: 20
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run test --workspace=@soleri/core
+      - run: npm run typecheck --workspace=@soleri/core
+
+  forge:
+    name: Build & Test Forge
+    needs: core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
       - run: npm run build --workspace=@soleri/forge
       - run: npm run test --workspace=@soleri/forge
       - run: npm run typecheck --workspace=@soleri/forge
@@ -27,8 +42,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
-      - run: npm install
+          node-version: 20
+      - run: npm ci
 
       - name: Lint (oxlint)
         run: npm run lint

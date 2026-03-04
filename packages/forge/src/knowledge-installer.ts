@@ -149,7 +149,7 @@ export function create${pascalCase(domain)}Facade(vault: Vault): FacadeConfig {
 
 // ---------- Main installer ----------
 
-export interface InstallKnowledgeParams {
+interface InstallKnowledgeParams {
   agentPath: string;
   bundlePath: string;
   generateFacades?: boolean;
