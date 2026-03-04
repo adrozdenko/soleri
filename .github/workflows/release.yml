@@ -71,6 +71,14 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Build create-soleri
+        run: npm run build --workspace=create-soleri
+
+      - name: Publish create-soleri
+        run: npm publish --workspace=create-soleri --access public || echo "Already published — skipping"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

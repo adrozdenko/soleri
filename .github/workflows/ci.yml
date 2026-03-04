@@ -51,6 +51,22 @@ jobs:
       - run: npm run test --workspace=@soleri/cli
       - run: npm run typecheck --workspace=@soleri/cli
 
+  create-soleri:
+    name: Build create-soleri
+    needs: cli
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run build --workspace=@soleri/forge
+      - run: npm run build --workspace=@soleri/cli
+      - run: npm run build --workspace=create-soleri
+      - run: npm run typecheck --workspace=create-soleri
+
   quality:
     name: Code Quality
     runs-on: ubuntu-latest

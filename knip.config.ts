@@ -24,6 +24,9 @@ const config: KnipConfig = {
     'packages/cli': {
       project: ['src/**/*.ts'],
     },
+    'packages/create-soleri': {
+      project: ['src/**/*.ts'],
+    },
   },
 };
 

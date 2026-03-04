@@ -16,7 +16,8 @@
   "references": [
     { "path": "packages/core" },
     { "path": "packages/forge" },
-    { "path": "packages/cli" }
+    { "path": "packages/cli" },
+    { "path": "packages/create-soleri" }
   ],
   "files": []
 }

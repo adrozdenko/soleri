@@ -29,11 +29,12 @@ Instead of one generic assistant, you build specialized **agents** — each with
 **Platform:** macOS and Linux. Windows users need [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
 
 ```bash
-npx @soleri/cli create my-agent   # Interactive wizard — scaffold a new agent
-npx @soleri/cli list              # Show agents in current directory
-npx @soleri/cli add-domain security  # Add a knowledge domain to your agent
-npx @soleri/cli dev               # Run agent locally in dev mode
-npx @soleri/cli doctor            # Check system health
+npm create soleri my-agent              # Quickest way — npm create shorthand
+npx @soleri/cli create my-agent        # Interactive wizard — scaffold a new agent
+npx @soleri/cli list                   # Show agents in current directory
+npx @soleri/cli add-domain security    # Add a knowledge domain to your agent
+npx @soleri/cli dev                    # Run agent locally in dev mode
+npx @soleri/cli doctor                 # Check system health
 npx @soleri/cli hooks add claude-code  # Install editor hooks
 ```
 
@@ -54,7 +55,7 @@ Your agent ships with a complete architecture and auto-captures patterns from yo
 Soleri is an agent forge. You create specialized agents — each with its own persona, domain expertise, and growing vault — all running on a shared engine.
 
 ```bash
-npx @soleri/cli create my-agent   # Forge a new agent
+npm create soleri my-agent   # Forge a new agent
 ```
 
 Give it a name, a domain, a voice. It ships with starter knowledge and learns from every session.
@@ -89,6 +90,7 @@ Give it a name, a domain, a voice. It ships with starter knowledge and learns fr
 | [`@soleri/core`](packages/core) | 1.0.0 | Shared engine — Vault, Brain, Planner, LLM utilities, facade infrastructure |
 | [`@soleri/forge`](packages/forge) | 4.1.0 | Agent scaffolder — generates config-driven MCP agents |
 | [`@soleri/cli`](packages/cli) | 1.0.0 | Developer CLI — create, manage, and develop agents from the terminal |
+| [`create-soleri`](packages/create-soleri) | 1.0.0 | `npm create soleri` shorthand — delegates to `@soleri/cli` |
 
 ### Knowledge Packs
 

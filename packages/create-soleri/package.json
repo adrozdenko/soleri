@@ -1,0 +1,31 @@
+{
+  "name": "create-soleri",
+  "version": "1.0.0",
+  "description": "npm create soleri — scaffold AI agents that learn, remember, and grow with you.",
+  "keywords": ["agent", "ai", "create", "generator", "mcp", "scaffold", "soleri"],
+  "homepage": "https://soleri.dev",
+  "license": "Apache-2.0",
+  "author": "adrozdenko",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adrozdenko/soleri.git",
+    "directory": "packages/create-soleri"
+  },
+  "bin": {
+    "create-soleri": "dist/main.js"
+  },
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@soleri/cli": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
