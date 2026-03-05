@@ -130,6 +130,73 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     `<!-- /${marker} -->`,
   );
 
+  // ─── Hook Packs section (when configured) ─────────────────────
+  if (config.hookPacks?.length) {
+    const PACK_INFO: Record<string, { description: string; hooks: Record<string, string> }> = {
+      'typescript-safety': {
+        description: 'Block unsafe TypeScript patterns',
+        hooks: {
+          'no-any-types': '`:any`, `as any`, `<any>`, `Record<string, any>`',
+          'no-console-log': '`console.log` in committed code',
+        },
+      },
+      a11y: {
+        description: 'Accessibility enforcement',
+        hooks: {
+          'semantic-html': 'Generic divs where semantic HTML should be used',
+          'focus-ring-required': 'Missing visible focus indicators',
+          'ux-touch-targets': 'Touch targets smaller than 44px',
+        },
+      },
+      'css-discipline': {
+        description: 'CSS best practices',
+        hooks: {
+          'no-important': '`!important` in CSS',
+          'no-inline-styles': 'Inline style attributes',
+        },
+      },
+      'clean-commits': {
+        description: 'Clean git history',
+        hooks: {
+          'no-ai-attribution': 'AI attribution in commits',
+        },
+      },
+    };
+
+    // Build rows — expand 'full' to constituent packs
+    const rows: Array<{ pack: string; hook: string; blocks: string }> = [];
+    for (const packName of config.hookPacks) {
+      if (packName === 'full') {
+        // Composed pack — expand all constituent packs
+        for (const [subPack, info] of Object.entries(PACK_INFO)) {
+          for (const [hook, blocks] of Object.entries(info.hooks)) {
+            rows.push({ pack: subPack, hook, blocks });
+          }
+        }
+      } else if (PACK_INFO[packName]) {
+        for (const [hook, blocks] of Object.entries(PACK_INFO[packName].hooks)) {
+          rows.push({ pack: packName, hook, blocks });
+        }
+      }
+    }
+
+    if (rows.length > 0) {
+      // Insert before the closing marker
+      const closingMarkerIndex = mdLines.length - 1;
+      const hookLines = [
+        '',
+        '## Hook Packs',
+        '',
+        'Quality gates installed in `.claude/`. Run `scripts/setup.sh` to install globally.',
+        '',
+        '| Pack | Hook | Blocks |',
+        '|------|------|--------|',
+        ...rows.map((r) => `| ${r.pack} | ${r.hook} | ${r.blocks} |`),
+      ];
+      mdLines.splice(closingMarkerIndex, 0, ...hookLines);
+    }
+  }
+
   // Escape each markdown line for use in a single-quoted TS string literal
   const quotedLines = mdLines.map((line) => {
     const escaped = line.replace(/\\/g, '\\\\').replace(/'/g, "\\'");

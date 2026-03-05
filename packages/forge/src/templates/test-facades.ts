@@ -126,6 +126,29 @@ ${domainDescribes}
             if (stats.totalEntries === 0) {
               recommendations.push('Vault is empty');
             }
+            // Check hook status
+            const { readdirSync } = await import('node:fs');
+            const agentClaudeDir = joinPath(__dirname, '..', '.claude');
+            const globalClaudeDir = joinPath(homedir(), '.claude');
+            const hookStatus = { agent: [] as string[], global: [] as string[], missing: [] as string[] };
+            if (exists(agentClaudeDir)) {
+              try {
+                const agentHooks = readdirSync(agentClaudeDir)
+                  .filter((f: string) => f.startsWith('hookify.') && f.endsWith('.local.md'))
+                  .map((f: string) => f.replace('hookify.', '').replace('.local.md', ''));
+                hookStatus.agent = agentHooks;
+                for (const hook of agentHooks) {
+                  if (exists(joinPath(globalClaudeDir, \`hookify.\${hook}.local.md\`))) {
+                    hookStatus.global.push(hook);
+                  } else {
+                    hookStatus.missing.push(hook);
+                  }
+                }
+              } catch { /* ignore */ }
+            }
+            if (hookStatus.missing.length > 0) {
+              recommendations.push(\`\${hookStatus.missing.length} hook(s) not installed globally — run scripts/setup.sh\`);
+            }
             if (recommendations.length === 0) {
               recommendations.push('${config.name} is fully set up and ready!');
             }
@@ -136,6 +159,7 @@ ${domainDescribes}
                 global: { exists: exists(globalClaudeMd), has_agent_section: hasAgentMarker(globalClaudeMd) },
               },
               vault: { entries: stats.totalEntries, domains: Object.keys(stats.byDomain) },
+              hooks: hookStatus,
               recommendations,
             };
           },
@@ -280,7 +304,9 @@ ${domainDescribes}
       const setupOp = facade.ops.find((o) => o.name === 'setup')!;
       const result = (await setupOp.handler({ projectPath: '/tmp/nonexistent-test' })) as {
         agent: { name: string };
+        claude_md: { project: { exists: boolean; has_agent_section: boolean }; global: { exists: boolean; has_agent_section: boolean } };
         vault: { entries: number };
+        hooks: { agent: string[]; global: string[]; missing: string[] };
         recommendations: string[];
       };
       expect(result.agent.name).toBe('${escapeQuotes(config.name)}');

@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { previewScaffold, scaffold } from '@soleri/forge/lib';
 import type { AgentConfig } from '@soleri/forge/lib';
+import { installPack } from '../hook-packs/installer.js';
 
 describe('create command', () => {
   let tempDir: string;
@@ -90,5 +91,113 @@ describe('create command', () => {
     const raw = JSON.parse(readFileSync(configPath, 'utf-8'));
     expect(raw.id).toBe('test-agent');
     expect(raw.domains).toEqual(['testing', 'quality']);
+  });
+
+  // ─── Hook pack integration tests ──────────────────────────────
+
+  it('should create .claude/ directory when hookPacks specified', () => {
+    const configWithHooks: AgentConfig = {
+      ...testConfig,
+      hookPacks: ['typescript-safety'],
+    };
+    const result = scaffold(configWithHooks);
+
+    expect(result.success).toBe(true);
+    expect(existsSync(join(tempDir, 'test-agent', '.claude'))).toBe(true);
+  });
+
+  it('should install hookify files to agent .claude/ via installPack', () => {
+    const configWithHooks: AgentConfig = {
+      ...testConfig,
+      hookPacks: ['typescript-safety'],
+    };
+    const result = scaffold(configWithHooks);
+    expect(result.success).toBe(true);
+
+    // Simulate what create.ts does: install packs into agent dir
+    const { installed } = installPack('typescript-safety', { projectDir: result.agentDir });
+    expect(installed.length).toBeGreaterThan(0);
+
+    // Verify hookify files exist in agent .claude/
+    const claudeDir = join(result.agentDir, '.claude');
+    const hookFiles = readdirSync(claudeDir).filter(
+      (f) => f.startsWith('hookify.') && f.endsWith('.local.md'),
+    );
+    expect(hookFiles.length).toBeGreaterThan(0);
+    expect(hookFiles.some((f) => f.includes('no-any-types'))).toBe(true);
+  });
+
+  it('should not create .claude/ when hookPacks is empty or undefined', () => {
+    const result = scaffold(testConfig);
+
+    expect(result.success).toBe(true);
+    expect(existsSync(join(tempDir, 'test-agent', '.claude'))).toBe(false);
+  });
+
+  it('should include hook packs in preview when hookPacks specified', () => {
+    const configWithHooks: AgentConfig = {
+      ...testConfig,
+      hookPacks: ['typescript-safety'],
+    };
+    const preview = previewScaffold(configWithHooks);
+
+    const hookEntry = preview.files.find((f) => f.path === '.claude/');
+    expect(hookEntry).toBeDefined();
+    expect(hookEntry!.description).toContain('typescript-safety');
+  });
+
+  it('should include Hook Packs section in CLAUDE.md when hookPacks specified', () => {
+    const configWithHooks: AgentConfig = {
+      ...testConfig,
+      hookPacks: ['typescript-safety'],
+    };
+    scaffold(configWithHooks);
+
+    const claudeMd = readFileSync(
+      join(tempDir, 'test-agent', 'src', 'activation', 'claude-md-content.ts'),
+      'utf-8',
+    );
+    expect(claudeMd).toContain('Hook Packs');
+    expect(claudeMd).toContain('no-any-types');
+  });
+
+  it('should not include Hook Packs section in CLAUDE.md when hookPacks undefined', () => {
+    scaffold(testConfig);
+
+    const claudeMd = readFileSync(
+      join(tempDir, 'test-agent', 'src', 'activation', 'claude-md-content.ts'),
+      'utf-8',
+    );
+    expect(claudeMd).not.toContain('Hook Packs');
+  });
+
+  it('should include hook copy logic in setup.sh when hookPacks specified', () => {
+    const configWithHooks: AgentConfig = {
+      ...testConfig,
+      hookPacks: ['typescript-safety'],
+    };
+    scaffold(configWithHooks);
+
+    const setupSh = readFileSync(join(tempDir, 'test-agent', 'scripts', 'setup.sh'), 'utf-8');
+    expect(setupSh).toContain('Installing hook packs');
+    expect(setupSh).toContain('hookify.');
+    expect(setupSh).toContain('GLOBAL_CLAUDE_DIR');
+  });
+
+  it('should not include hook copy logic in setup.sh when hookPacks undefined', () => {
+    scaffold(testConfig);
+
+    const setupSh = readFileSync(join(tempDir, 'test-agent', 'scripts', 'setup.sh'), 'utf-8');
+    expect(setupSh).not.toContain('Installing hook packs');
+  });
+
+  it('should mention hook packs in scaffold summary', () => {
+    const configWithHooks: AgentConfig = {
+      ...testConfig,
+      hookPacks: ['typescript-safety', 'a11y'],
+    };
+    const result = scaffold(configWithHooks);
+
+    expect(result.summary).toContain('2 hook pack(s) bundled in .claude/');
   });
 });
