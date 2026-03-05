@@ -9,6 +9,7 @@ import type { KeyPool } from '../llm/key-pool.js';
 import type { LLMClient } from '../llm/llm-client.js';
 import type { IdentityManager } from '../control/identity-manager.js';
 import type { IntentRouter } from '../control/intent-router.js';
+import type { LoopManager } from '../loop/loop-manager.js';
 import type { Logger } from '../logging/logger.js';
 import type { LogLevel } from '../logging/types.js';
 
@@ -43,10 +44,13 @@ export interface AgentRuntime {
   curator: Curator;
   governance: Governance;
   cognee: CogneeClient;
+  loop: LoopManager;
   identityManager: IdentityManager;
   intentRouter: IntentRouter;
   keyPool: { openai: KeyPool; anthropic: KeyPool };
   llmClient: LLMClient;
+  /** Timestamp (ms since epoch) when this runtime was created. */
+  createdAt: number;
   /** Close the vault database connection. Call on shutdown. */
   close(): void;
 }

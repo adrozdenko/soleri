@@ -101,7 +101,26 @@ export type {
 
 // ─── Planning ────────────────────────────────────────────────────────
 export { Planner } from './planning/planner.js';
-export type { PlanStatus, TaskStatus, PlanTask, Plan, PlanStore } from './planning/planner.js';
+export type {
+  PlanStatus,
+  TaskStatus,
+  PlanTask,
+  Plan,
+  PlanStore,
+  DriftItem,
+  ReconciliationReport,
+  ReviewEvidence,
+} from './planning/planner.js';
+
+// ─── Loop ────────────────────────────────────────────────────────────
+export { LoopManager } from './loop/loop-manager.js';
+export type {
+  LoopMode,
+  LoopConfig,
+  LoopIteration,
+  LoopStatus,
+  LoopState,
+} from './loop/types.js';
 
 // ─── LLM Types ───────────────────────────────────────────────────────
 export { SecretString, LLMError } from './llm/types.js';
@@ -172,4 +191,10 @@ export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/typ
 export { createAgentRuntime } from './runtime/runtime.js';
 export { createCoreOps } from './runtime/core-ops.js';
 export { createDomainFacade, createDomainFacades } from './runtime/domain-ops.js';
+export { createPlanningExtraOps } from './runtime/planning-extra-ops.js';
+export { createMemoryExtraOps } from './runtime/memory-extra-ops.js';
+export { createVaultExtraOps } from './runtime/vault-extra-ops.js';
+export { createAdminOps } from './runtime/admin-ops.js';
+export { createLoopOps } from './runtime/loop-ops.js';
+export { createOrchestrateOps } from './runtime/orchestrate-ops.js';
 export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';

@@ -16,6 +16,7 @@ import { Planner } from '../planning/planner.js';
 import { Curator } from '../curator/curator.js';
 import { Governance } from '../governance/governance.js';
 import { CogneeClient } from '../cognee/client.js';
+import { LoopManager } from '../loop/loop-manager.js';
 import { IdentityManager } from '../control/identity-manager.js';
 import { IntentRouter } from '../control/intent-router.js';
 import { KeyPool, loadKeyPoolConfig } from '../llm/key-pool.js';
@@ -74,6 +75,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   if (process.env.COGNEE_DATASET) cogneePartial.dataset = process.env.COGNEE_DATASET;
   const cognee = new CogneeClient(cogneePartial);
 
+  // Loop Manager — iterative validation loop tracking (in-memory, session-scoped)
+  const loop = new LoopManager();
+
   // Identity Manager — agent persona CRUD with versioning/rollback
   const identityManager = new IdentityManager(vault);
 
@@ -96,10 +100,12 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     curator,
     governance,
     cognee,
+    loop,
     identityManager,
     intentRouter,
     keyPool: { openai: openaiKeyPool, anthropic: anthropicKeyPool },
     llmClient,
+    createdAt: Date.now(),
     close: () => {
       cognee.resetPendingCognify();
       vault.close();

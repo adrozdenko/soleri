@@ -1,5 +1,5 @@
 /**
- * Generic core operations factory — 53 ops that every agent gets.
+ * Generic core operations factory — 109 ops that every agent gets.
  *
  * These ops are agent-agnostic (no persona, no activation).
  * The 5 agent-specific ops (health, identity, activate, inject_claude_md, setup)
@@ -13,13 +13,21 @@ import type { AgentRuntime } from './types.js';
 import type { GuidelineCategory, OperationalMode } from '../control/types.js';
 import type { PolicyType, PolicyPreset } from '../governance/types.js';
 import type { CogneeSearchType } from '../cognee/types.js';
+import { createPlanningExtraOps } from './planning-extra-ops.js';
+import { createMemoryExtraOps } from './memory-extra-ops.js';
+import { createVaultExtraOps } from './vault-extra-ops.js';
+import { createAdminOps } from './admin-ops.js';
+import { createLoopOps } from './loop-ops.js';
+import { createOrchestrateOps } from './orchestrate-ops.js';
 
 /**
- * Create the 60 generic core operations for an agent runtime.
+ * Create the 109 generic core operations for an agent runtime.
  *
  * Groups: search/vault (4), memory (4), export (1), planning (5),
  *         brain (7), brain intelligence (11), cognee (5),
- *         llm (2), curator (8), control (8), governance (5).
+ *         llm (2), curator (8), control (8), governance (5),
+ *         planning-extra (9), memory-extra (8), vault-extra (12),
+ *         admin (8), loop (7), orchestrate (5).
  */
 export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
   const {
@@ -1158,5 +1166,13 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
         return governance.getDashboard(params.projectPath as string);
       },
     },
+
+    // ─── Extra Ops (from dedicated modules) ─────────────────────────
+    ...createPlanningExtraOps(runtime),
+    ...createMemoryExtraOps(runtime),
+    ...createVaultExtraOps(runtime),
+    ...createAdminOps(runtime),
+    ...createLoopOps(runtime),
+    ...createOrchestrateOps(runtime),
   ];
 }

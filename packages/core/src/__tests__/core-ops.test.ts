@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 60 ops', () => {
-    expect(ops.length).toBe(60);
+  it('should return 109 ops', () => {
+    expect(ops.length).toBe(109);
   });
 
   it('should have all expected op names', () => {
@@ -111,6 +111,61 @@ describe('createCoreOps', () => {
     expect(names).toContain('governance_stats');
     expect(names).toContain('governance_expire');
     expect(names).toContain('governance_dashboard');
+    // Planning Extra (9)
+    expect(names).toContain('plan_iterate');
+    expect(names).toContain('plan_split');
+    expect(names).toContain('plan_reconcile');
+    expect(names).toContain('plan_complete_lifecycle');
+    expect(names).toContain('plan_dispatch');
+    expect(names).toContain('plan_review');
+    expect(names).toContain('plan_archive');
+    expect(names).toContain('plan_list_tasks');
+    expect(names).toContain('plan_stats');
+    // Memory Extra (8)
+    expect(names).toContain('memory_delete');
+    expect(names).toContain('memory_stats');
+    expect(names).toContain('memory_export');
+    expect(names).toContain('memory_import');
+    expect(names).toContain('memory_prune');
+    expect(names).toContain('memory_deduplicate');
+    expect(names).toContain('memory_topics');
+    expect(names).toContain('memory_by_project');
+    // Vault Extra (12)
+    expect(names).toContain('vault_get');
+    expect(names).toContain('vault_update');
+    expect(names).toContain('vault_remove');
+    expect(names).toContain('vault_bulk_add');
+    expect(names).toContain('vault_bulk_remove');
+    expect(names).toContain('vault_tags');
+    expect(names).toContain('vault_domains');
+    expect(names).toContain('vault_recent');
+    expect(names).toContain('vault_import');
+    expect(names).toContain('vault_seed');
+    expect(names).toContain('vault_backup');
+    expect(names).toContain('vault_age_report');
+    // Admin (8)
+    expect(names).toContain('admin_health');
+    expect(names).toContain('admin_tool_list');
+    expect(names).toContain('admin_config');
+    expect(names).toContain('admin_vault_size');
+    expect(names).toContain('admin_uptime');
+    expect(names).toContain('admin_version');
+    expect(names).toContain('admin_reset_cache');
+    expect(names).toContain('admin_diagnostic');
+    // Loop (7)
+    expect(names).toContain('loop_start');
+    expect(names).toContain('loop_iterate');
+    expect(names).toContain('loop_status');
+    expect(names).toContain('loop_cancel');
+    expect(names).toContain('loop_history');
+    expect(names).toContain('loop_is_active');
+    expect(names).toContain('loop_complete');
+    // Orchestrate (5)
+    expect(names).toContain('orchestrate_plan');
+    expect(names).toContain('orchestrate_execute');
+    expect(names).toContain('orchestrate_complete');
+    expect(names).toContain('orchestrate_status');
+    expect(names).toContain('orchestrate_quick_capture');
   });
 
   it('register should include governance summary', async () => {

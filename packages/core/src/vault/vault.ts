@@ -322,6 +322,143 @@ export class Vault {
     return this.db.prepare('DELETE FROM entries WHERE id = ?').run(id).changes > 0;
   }
 
+  /**
+   * Partial update of an existing entry's mutable fields.
+   * Returns the updated entry or null if not found.
+   */
+  update(
+    id: string,
+    fields: Partial<
+      Pick<
+        IntelligenceEntry,
+        | 'title'
+        | 'description'
+        | 'context'
+        | 'example'
+        | 'counterExample'
+        | 'why'
+        | 'tags'
+        | 'appliesTo'
+        | 'severity'
+        | 'type'
+        | 'domain'
+      >
+    >,
+  ): IntelligenceEntry | null {
+    const existing = this.get(id);
+    if (!existing) return null;
+    const merged: IntelligenceEntry = { ...existing, ...fields };
+    this.seed([merged]);
+    return this.get(id);
+  }
+
+  /**
+   * Remove multiple entries by IDs in a single transaction.
+   * Returns the number of entries actually removed.
+   */
+  bulkRemove(ids: string[]): number {
+    const stmt = this.db.prepare('DELETE FROM entries WHERE id = ?');
+    const tx = this.db.transaction((idList: string[]) => {
+      let count = 0;
+      for (const id of idList) {
+        count += stmt.run(id).changes;
+      }
+      return count;
+    });
+    return tx(ids);
+  }
+
+  /**
+   * List all unique tags with their occurrence counts.
+   */
+  getTags(): Array<{ tag: string; count: number }> {
+    const rows = this.db.prepare('SELECT tags FROM entries').all() as Array<{ tags: string }>;
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const tags: string[] = JSON.parse(row.tags || '[]');
+      for (const tag of tags) {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  /**
+   * List all domains with their entry counts.
+   */
+  getDomains(): Array<{ domain: string; count: number }> {
+    const rows = this.db
+      .prepare('SELECT domain, COUNT(*) as count FROM entries GROUP BY domain ORDER BY count DESC')
+      .all() as Array<{ domain: string; count: number }>;
+    return rows;
+  }
+
+  /**
+   * Get recently added or updated entries, ordered by updated_at DESC.
+   */
+  getRecent(limit: number = 20): IntelligenceEntry[] {
+    const rows = this.db
+      .prepare('SELECT * FROM entries ORDER BY updated_at DESC LIMIT ?')
+      .all(limit) as Array<Record<string, unknown>>;
+    return rows.map(rowToEntry);
+  }
+
+  /**
+   * Export the entire vault as a JSON-serializable bundle.
+   */
+  exportAll(): { entries: IntelligenceEntry[]; exportedAt: number; count: number } {
+    const rows = this.db
+      .prepare('SELECT * FROM entries ORDER BY domain, title')
+      .all() as Array<Record<string, unknown>>;
+    const entries = rows.map(rowToEntry);
+    return { entries, exportedAt: Math.floor(Date.now() / 1000), count: entries.length };
+  }
+
+  /**
+   * Get entry age distribution — how old entries are, bucketed.
+   */
+  getAgeReport(): {
+    total: number;
+    buckets: Array<{ label: string; count: number; minDays: number; maxDays: number }>;
+    oldestTimestamp: number | null;
+    newestTimestamp: number | null;
+  } {
+    const rows = this.db
+      .prepare('SELECT created_at, updated_at FROM entries')
+      .all() as Array<{ created_at: number; updated_at: number }>;
+    const now = Math.floor(Date.now() / 1000);
+    const bucketDefs = [
+      { label: 'today', minDays: 0, maxDays: 1 },
+      { label: 'this_week', minDays: 1, maxDays: 7 },
+      { label: 'this_month', minDays: 7, maxDays: 30 },
+      { label: 'this_quarter', minDays: 30, maxDays: 90 },
+      { label: 'older', minDays: 90, maxDays: Infinity },
+    ];
+    const counts = new Array(bucketDefs.length).fill(0) as number[];
+    let oldest: number | null = null;
+    let newest: number | null = null;
+    for (const row of rows) {
+      const ts = row.created_at;
+      if (oldest === null || ts < oldest) oldest = ts;
+      if (newest === null || ts > newest) newest = ts;
+      const ageDays = (now - ts) / 86400;
+      for (let i = 0; i < bucketDefs.length; i++) {
+        if (ageDays >= bucketDefs[i].minDays && ageDays < bucketDefs[i].maxDays) {
+          counts[i]++;
+          break;
+        }
+      }
+    }
+    return {
+      total: rows.length,
+      buckets: bucketDefs.map((b, i) => ({ ...b, count: counts[i] })),
+      oldestTimestamp: oldest,
+      newestTimestamp: newest,
+    };
+  }
+
   registerProject(path: string, name?: string): ProjectInfo {
     const projectName = name ?? path.replace(/\/$/, '').split('/').pop() ?? path;
     const existing = this.getProject(path);
@@ -464,6 +601,216 @@ export class Vault {
       | Record<string, unknown>
       | undefined;
     return row ? rowToMemory(row) : null;
+  }
+
+
+  deleteMemory(id: string): boolean {
+    return this.db.prepare('DELETE FROM memories WHERE id = ?').run(id).changes > 0;
+  }
+
+  memoryStatsDetailed(options?: {
+    projectPath?: string;
+    fromDate?: number;
+    toDate?: number;
+  }): MemoryStats & { oldest: number | null; newest: number | null; archivedCount: number } {
+    const filters: string[] = [];
+    const params: Record<string, unknown> = {};
+    if (options?.projectPath) {
+      filters.push('project_path = @projectPath');
+      params.projectPath = options.projectPath;
+    }
+    if (options?.fromDate) {
+      filters.push('created_at >= @fromDate');
+      params.fromDate = options.fromDate;
+    }
+    if (options?.toDate) {
+      filters.push('created_at <= @toDate');
+      params.toDate = options.toDate;
+    }
+    const wc = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
+
+    const total = (
+      this.db
+        .prepare(`SELECT COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL`)
+        .get(params) as { count: number }
+    ).count;
+
+    const archivedCount = (
+      this.db
+        .prepare(`SELECT COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NOT NULL`)
+        .get(params) as { count: number }
+    ).count;
+
+    const byTypeRows = this.db
+      .prepare(
+        `SELECT type as key, COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL GROUP BY type`,
+      )
+      .all(params) as Array<{ key: string; count: number }>;
+
+    const byProjectRows = this.db
+      .prepare(
+        `SELECT project_path as key, COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL GROUP BY project_path`,
+      )
+      .all(params) as Array<{ key: string; count: number }>;
+
+    const dateRange = this.db
+      .prepare(
+        `SELECT MIN(created_at) as oldest, MAX(created_at) as newest FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL`,
+      )
+      .get(params) as { oldest: number | null; newest: number | null };
+
+    return {
+      total,
+      byType: Object.fromEntries(byTypeRows.map((r) => [r.key, r.count])),
+      byProject: Object.fromEntries(byProjectRows.map((r) => [r.key, r.count])),
+      oldest: dateRange.oldest,
+      newest: dateRange.newest,
+      archivedCount,
+    };
+  }
+
+  exportMemories(options?: {
+    projectPath?: string;
+    type?: string;
+    includeArchived?: boolean;
+  }): Memory[] {
+    const filters: string[] = [];
+    const params: Record<string, unknown> = {};
+    if (!options?.includeArchived) {
+      filters.push('archived_at IS NULL');
+    }
+    if (options?.projectPath) {
+      filters.push('project_path = @projectPath');
+      params.projectPath = options.projectPath;
+    }
+    if (options?.type) {
+      filters.push('type = @type');
+      params.type = options.type;
+    }
+    const wc = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
+    const rows = this.db
+      .prepare(`SELECT * FROM memories ${wc} ORDER BY created_at ASC`)
+      .all(params) as Array<Record<string, unknown>>;
+    return rows.map(rowToMemory);
+  }
+
+  importMemories(memories: Memory[]): { imported: number; skipped: number } {
+    const upsert = this.db.prepare(`
+      INSERT OR IGNORE INTO memories (id, project_path, type, context, summary, topics, files_modified, tools_used, created_at, archived_at)
+      VALUES (@id, @projectPath, @type, @context, @summary, @topics, @filesModified, @toolsUsed, @createdAt, @archivedAt)
+    `);
+    let imported = 0;
+    let skipped = 0;
+    const tx = this.db.transaction((items: Memory[]) => {
+      for (const m of items) {
+        const result = upsert.run({
+          id: m.id,
+          projectPath: m.projectPath,
+          type: m.type,
+          context: m.context,
+          summary: m.summary,
+          topics: JSON.stringify(m.topics),
+          filesModified: JSON.stringify(m.filesModified),
+          toolsUsed: JSON.stringify(m.toolsUsed),
+          createdAt: m.createdAt,
+          archivedAt: m.archivedAt,
+        });
+        if (result.changes > 0) imported++;
+        else skipped++;
+      }
+    });
+    tx(memories);
+    return { imported, skipped };
+  }
+
+  pruneMemories(olderThanDays: number): { pruned: number } {
+    const cutoff = Math.floor(Date.now() / 1000) - olderThanDays * 86400;
+    const result = this.db
+      .prepare('DELETE FROM memories WHERE created_at < ? AND archived_at IS NULL')
+      .run(cutoff);
+    return { pruned: result.changes };
+  }
+
+  deduplicateMemories(): { removed: number; groups: Array<{ kept: string; removed: string[] }> } {
+    // Find duplicates by matching summary + project_path + type
+    const dupeRows = this.db
+      .prepare(`
+        SELECT m1.id as id1, m2.id as id2
+        FROM memories m1
+        JOIN memories m2 ON m1.summary = m2.summary
+          AND m1.project_path = m2.project_path
+          AND m1.type = m2.type
+          AND m1.id < m2.id
+          AND m1.archived_at IS NULL
+          AND m2.archived_at IS NULL
+      `)
+      .all() as Array<{ id1: string; id2: string }>;
+
+    // Group: keep the earliest (id1), remove all later duplicates
+    const groupMap = new Map<string, Set<string>>();
+    for (const row of dupeRows) {
+      if (!groupMap.has(row.id1)) groupMap.set(row.id1, new Set());
+      groupMap.get(row.id1)!.add(row.id2);
+    }
+
+    const groups: Array<{ kept: string; removed: string[] }> = [];
+    const toRemove = new Set<string>();
+    for (const [kept, removedSet] of groupMap) {
+      const removed = [...removedSet].filter((id) => !toRemove.has(id));
+      if (removed.length > 0) {
+        groups.push({ kept, removed });
+        for (const id of removed) toRemove.add(id);
+      }
+    }
+
+    if (toRemove.size > 0) {
+      const del = this.db.prepare('DELETE FROM memories WHERE id = ?');
+      const tx = this.db.transaction((ids: string[]) => {
+        for (const id of ids) del.run(id);
+      });
+      tx([...toRemove]);
+    }
+
+    return { removed: toRemove.size, groups };
+  }
+
+  memoryTopics(): Array<{ topic: string; count: number }> {
+    const rows = this.db
+      .prepare('SELECT topics FROM memories WHERE archived_at IS NULL')
+      .all() as Array<{ topics: string }>;
+
+    const topicCounts = new Map<string, number>();
+    for (const row of rows) {
+      const topics: string[] = JSON.parse(row.topics || '[]');
+      for (const topic of topics) {
+        topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1);
+      }
+    }
+
+    return [...topicCounts.entries()]
+      .map(([topic, count]) => ({ topic, count }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  memoriesByProject(): Array<{ project: string; count: number; memories: Memory[] }> {
+    const rows = this.db
+      .prepare(
+        'SELECT project_path as project, COUNT(*) as count FROM memories WHERE archived_at IS NULL GROUP BY project_path ORDER BY count DESC',
+      )
+      .all() as Array<{ project: string; count: number }>;
+
+    return rows.map((row) => {
+      const memories = this.db
+        .prepare(
+          'SELECT * FROM memories WHERE project_path = ? AND archived_at IS NULL ORDER BY created_at DESC',
+        )
+        .all(row.project) as Array<Record<string, unknown>>;
+      return {
+        project: row.project,
+        count: row.count,
+        memories: memories.map(rowToMemory),
+      };
+    });
   }
 
   getDb(): Database.Database {

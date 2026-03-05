@@ -230,8 +230,63 @@ ${domainDescribes}
       expect(opNames).toContain('governance_stats');
       expect(opNames).toContain('governance_expire');
       expect(opNames).toContain('governance_dashboard');
-      // Total: 65 (60 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(65);
+      // Planning Extra ops (9)
+      expect(opNames).toContain('plan_iterate');
+      expect(opNames).toContain('plan_split');
+      expect(opNames).toContain('plan_reconcile');
+      expect(opNames).toContain('plan_complete_lifecycle');
+      expect(opNames).toContain('plan_dispatch');
+      expect(opNames).toContain('plan_review');
+      expect(opNames).toContain('plan_archive');
+      expect(opNames).toContain('plan_list_tasks');
+      expect(opNames).toContain('plan_stats');
+      // Memory Extra ops (8)
+      expect(opNames).toContain('memory_delete');
+      expect(opNames).toContain('memory_stats');
+      expect(opNames).toContain('memory_export');
+      expect(opNames).toContain('memory_import');
+      expect(opNames).toContain('memory_prune');
+      expect(opNames).toContain('memory_deduplicate');
+      expect(opNames).toContain('memory_topics');
+      expect(opNames).toContain('memory_by_project');
+      // Vault Extra ops (12)
+      expect(opNames).toContain('vault_get');
+      expect(opNames).toContain('vault_update');
+      expect(opNames).toContain('vault_remove');
+      expect(opNames).toContain('vault_bulk_add');
+      expect(opNames).toContain('vault_bulk_remove');
+      expect(opNames).toContain('vault_tags');
+      expect(opNames).toContain('vault_domains');
+      expect(opNames).toContain('vault_recent');
+      expect(opNames).toContain('vault_import');
+      expect(opNames).toContain('vault_seed');
+      expect(opNames).toContain('vault_backup');
+      expect(opNames).toContain('vault_age_report');
+      // Admin ops (8)
+      expect(opNames).toContain('admin_health');
+      expect(opNames).toContain('admin_tool_list');
+      expect(opNames).toContain('admin_config');
+      expect(opNames).toContain('admin_vault_size');
+      expect(opNames).toContain('admin_uptime');
+      expect(opNames).toContain('admin_version');
+      expect(opNames).toContain('admin_reset_cache');
+      expect(opNames).toContain('admin_diagnostic');
+      // Loop ops (7)
+      expect(opNames).toContain('loop_start');
+      expect(opNames).toContain('loop_iterate');
+      expect(opNames).toContain('loop_status');
+      expect(opNames).toContain('loop_cancel');
+      expect(opNames).toContain('loop_history');
+      expect(opNames).toContain('loop_is_active');
+      expect(opNames).toContain('loop_complete');
+      // Orchestrate ops (5)
+      expect(opNames).toContain('orchestrate_plan');
+      expect(opNames).toContain('orchestrate_execute');
+      expect(opNames).toContain('orchestrate_complete');
+      expect(opNames).toContain('orchestrate_status');
+      expect(opNames).toContain('orchestrate_quick_capture');
+      // Total: 114 (109 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(114);
     });
 
     it('search should query across all domains with ranked results', async () => {
