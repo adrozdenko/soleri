@@ -547,64 +547,106 @@ body {
   color: var(--muted);
 }
 
+/* ── Pill-shaped theme toggle ── */
 .theme-toggle {
   border: none;
   background: transparent;
-  border-radius: var(--radius-full);
-  height: 28px;
-  width: 28px;
   padding: 0;
   cursor: pointer;
-  transition: color 0.2s ease;
-  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--muted);
-}
-
-.theme-toggle:hover {
-  color: var(--foreground-strong);
 }
 
 .toggle-track {
+  width: 52px;
+  height: 26px;
+  padding: 2px;
+  border-radius: 9999px;
+  position: relative;
+  background: #fff;
+  border: 1px solid #e4e4e7;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .toggle-track {
+  background: #09090b;
+  border-color: #27272a;
+}
+
+/* Sliding thumb */
+.toggle-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-
-.toggle-thumb {
-  display: none;
-}
-
-.toggle-icon {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e4e4e7;
   position: absolute;
-  z-index: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 28px;
+  transition: left 0.3s ease, background 0.3s ease;
+  z-index: 2;
+}
+
+[data-theme="dark"] .toggle-thumb {
+  left: 2px;
+  background: #27272a;
+}
+
+/* Icons inside thumb — stacked absolutely so they center perfectly */
+.thumb-icon {
+  width: 12px;
+  height: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
   transition: opacity 0.2s ease;
 }
 
-.toggle-sun {
-  color: inherit;
-  opacity: 0;
+[data-theme="dark"] .thumb-moon { opacity: 1; color: #fff; }
+[data-theme="light"] .thumb-sun { opacity: 1; color: #3f3f46; }
+body:not([data-theme="dark"]) .thumb-sun { opacity: 1; color: #3f3f46; }
+
+/* Background icons (static, opposite side of thumb) */
+.toggle-bg-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
 }
 
-.toggle-moon {
-  color: inherit;
-  opacity: 1;
+.toggle-bg-icon svg {
+  width: 12px;
+  height: 12px;
 }
 
-[data-theme="dark"] .toggle-sun {
-  opacity: 1;
+/* Sun bg icon sits on right when dark (visible), left when light (hidden behind thumb) */
+.toggle-bg-sun {
+  right: 3px;
+  color: #52525b;
 }
 
-[data-theme="dark"] .toggle-moon {
-  opacity: 0;
+.toggle-bg-moon {
+  left: 3px;
+  color: #52525b;
 }
+
+/* Hide the icon that's behind the thumb */
+[data-theme="dark"] .toggle-bg-moon { opacity: 0; }
+[data-theme="dark"] .toggle-bg-sun  { opacity: 1; }
+[data-theme="light"] .toggle-bg-moon { opacity: 1; }
+[data-theme="light"] .toggle-bg-sun  { opacity: 0; }
+body:not([data-theme="dark"]) .toggle-bg-moon { opacity: 1; }
+body:not([data-theme="dark"]) .toggle-bg-sun  { opacity: 0; }
 
 /* ============================================
  * PAGE HERO (inner pages - text only)
