@@ -101,7 +101,34 @@ else
   fi
 fi
 
-echo ""
+${
+  config.hookPacks?.length
+    ? `# Install hook packs to global ~/.claude/
+AGENT_CLAUDE_DIR="$AGENT_DIR/.claude"
+GLOBAL_CLAUDE_DIR="$HOME/.claude"
+
+if [ -d "$AGENT_CLAUDE_DIR" ]; then
+  echo ""
+  echo "Installing hook packs..."
+  mkdir -p "$GLOBAL_CLAUDE_DIR"
+  installed=0
+  skipped=0
+  for hook_file in "$AGENT_CLAUDE_DIR"/hookify.*.local.md; do
+    [ -f "$hook_file" ] || continue
+    dest="$GLOBAL_CLAUDE_DIR/$(basename "$hook_file")"
+    if [ -f "$dest" ]; then
+      skipped=$((skipped + 1))
+    else
+      cp "$hook_file" "$dest"
+      installed=$((installed + 1))
+    fi
+  done
+  echo "[ok] Hooks: $installed installed, $skipped already present"
+fi
+
+`
+    : ''
+}echo ""
 echo "=== Setup Complete ==="
 echo ""
 echo "Next:"

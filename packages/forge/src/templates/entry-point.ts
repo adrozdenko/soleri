@@ -143,6 +143,37 @@ async function main(): Promise<void> {
         if (s.totalEntries === 0) {
           recommendations.push('Vault is empty — add intelligence data or capture knowledge via domain facades');
         }
+
+        // Check hook status
+        const { readdirSync } = await import('node:fs');
+        const agentClaudeDir = joinPath(__dirname, '..', '.claude');
+        const globalClaudeDir = joinPath(homedir(), '.claude');
+
+        const hookStatus = { agent: [] as string[], global: [] as string[], missing: [] as string[] };
+
+        if (existsSync(agentClaudeDir)) {
+          try {
+            const agentHooks = readdirSync(agentClaudeDir)
+              .filter((f: string) => f.startsWith('hookify.') && f.endsWith('.local.md'))
+              .map((f: string) => f.replace('hookify.', '').replace('.local.md', ''));
+            hookStatus.agent = agentHooks;
+
+            for (const hook of agentHooks) {
+              if (existsSync(joinPath(globalClaudeDir, \`hookify.\${hook}.local.md\`))) {
+                hookStatus.global.push(hook);
+              } else {
+                hookStatus.missing.push(hook);
+              }
+            }
+          } catch {
+            // ignore read errors
+          }
+        }
+
+        if (hookStatus.missing.length > 0) {
+          recommendations.push(\`\${hookStatus.missing.length} hook(s) not installed globally — run scripts/setup.sh\`);
+        }
+
         if (recommendations.length === 0) {
           recommendations.push('${config.name} is fully set up and ready!');
         }
@@ -154,6 +185,7 @@ async function main(): Promise<void> {
             global: { exists: globalExists, has_agent_section: globalHasAgent },
           },
           vault: { entries: s.totalEntries, domains: Object.keys(s.byDomain) },
+          hooks: hookStatus,
           recommendations,
         };
       },

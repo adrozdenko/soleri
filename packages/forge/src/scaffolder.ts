@@ -77,6 +77,13 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     },
   ];
 
+  if (config.hookPacks?.length) {
+    files.push({
+      path: '.claude/',
+      description: `Hook pack files (${config.hookPacks.join(', ')})`,
+    });
+  }
+
   const facades = [
     ...config.domains.map((d) => ({
       name: `${config.id}_${d.replace(/-/g, '_')}`,
@@ -160,6 +167,10 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     'src/__tests__',
   ];
 
+  if (config.hookPacks?.length) {
+    dirs.push('.claude');
+  }
+
   for (const dir of dirs) {
     mkdirSync(join(agentDir, dir), { recursive: true });
   }
@@ -224,6 +235,10 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     `Activation system included — say "Hello, ${config.name}!" to activate`,
     `1 test suite — facades (vault, brain, planner, llm tests provided by @soleri/core)`,
   ];
+
+  if (config.hookPacks?.length) {
+    summaryLines.push(`${config.hookPacks.length} hook pack(s) bundled in .claude/`);
+  }
 
   if (mcpReg.registered) {
     summaryLines.push(`MCP server registered in ${mcpReg.path}`);

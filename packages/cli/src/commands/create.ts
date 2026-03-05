@@ -93,7 +93,7 @@ export function registerCreate(program: Command): void {
         // Install selected hook packs
         if (selectedPacks.length > 0) {
           for (const packName of selectedPacks) {
-            const { installed } = installPack(packName);
+            const { installed } = installPack(packName, { projectDir: result.agentDir });
             if (installed.length > 0) {
               p.log.success(`Hook pack "${packName}" installed (${installed.length} hooks)`);
             } else {
