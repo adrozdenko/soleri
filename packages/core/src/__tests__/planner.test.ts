@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Planner } from '../planning/planner.js';
+import type { PlanGap } from '../planning/gap-types.js';
+import { generateGapId } from '../planning/gap-types.js';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -226,67 +228,153 @@ describe('Planner', () => {
   });
 
   describe('grade', () => {
-    it('should grade a well-formed plan highly', () => {
+    it('should grade a well-formed plan highly on first iteration', () => {
       const plan = planner.create({
-        objective: 'Implement caching layer',
-        scope: 'API backend',
-        decisions: ['Use Redis', 'TTL of 5 min', 'Cache invalidation on write'],
+        objective: 'Implement a Redis caching layer for the API to reduce DB load by 50%',
+        scope: 'Backend API services only. Does not include frontend caching or CDN.',
+        decisions: [
+          'Use Redis because it provides sub-millisecond latency and supports TTL natively',
+          'Set TTL to 5 minutes since average data freshness requirement is 10 minutes',
+        ],
         tasks: [
-          { title: 'Set up Redis client', description: 'Connect to Redis instance' },
-          { title: 'Add cache middleware', description: 'Express middleware for caching' },
-          { title: 'Add invalidation logic', description: 'Purge on write operations' },
-          { title: 'Write integration tests', description: 'Test cache hit/miss scenarios' },
-          { title: 'Add monitoring', description: 'Track cache hit rate metrics' },
+          { title: 'Set up Redis client', description: 'Install and configure Redis connection pool' },
+          { title: 'Add cache middleware', description: 'Express middleware for transparent caching' },
+          { title: 'Add invalidation logic', description: 'Purge cache on write operations to ensure consistency' },
+          { title: 'Write integration tests', description: 'Test cache hit/miss scenarios with Redis' },
+          { title: 'Add monitoring', description: 'Track and verify cache hit rate metrics' },
         ],
       });
       const check = planner.grade(plan.id);
-      expect(check.score).toBeGreaterThanOrEqual(85);
+      // Iteration 1: minor gaps are free, so well-formed plan scores very high
+      expect(check.score).toBeGreaterThanOrEqual(95);
       expect(check.grade).toMatch(/^A/);
-      expect(check.gaps.length).toBeLessThanOrEqual(2);
+      expect(check.iteration).toBe(1);
       expect(check.checkId).toMatch(/^chk-/);
     });
 
     it('should give low score to empty plan', () => {
       const plan = planner.create({ objective: '', scope: '' });
       const check = planner.grade(plan.id);
-      expect(check.score).toBeLessThanOrEqual(40);
+      // Missing objective (critical=30) + scope (critical=30) + no tasks (critical=30) = 90 deduction
+      expect(check.score).toBeLessThanOrEqual(10);
+      expect(check.grade).toBe('F');
       expect(check.gaps.length).toBeGreaterThan(0);
+    });
+
+    it('should use severity-weighted scoring', () => {
+      // Plan with 1 critical gap (missing tasks) = -30 points
+      const plan = planner.create({
+        objective: 'Good objective with some detail',
+        scope: 'Narrow scope that excludes nothing important',
+      });
+      const check = planner.grade(plan.id);
+      // No tasks = critical (-30), but also minor gaps from completeness/semantic
+      // On iteration 1, minor gaps are free, so only critical gap counts
+      expect(check.score).toBe(70); // 100 - 30 (no tasks)
     });
 
     it('should detect duplicate task titles', () => {
       const plan = planner.create({
-        objective: 'Test duplicates',
-        scope: 'test',
-        decisions: ['Use approach A', 'Use approach B'],
+        objective: 'Test duplicate detection in plan grading system',
+        scope: 'Testing only, does not affect production',
+        decisions: ['Use approach A because it handles edge cases better due to type safety'],
         tasks: [
-          { title: 'Same title', description: 'First task' },
-          { title: 'Same title', description: 'Second task' },
-          { title: 'Unique title', description: 'Third task' },
+          { title: 'Same title', description: 'First task with description' },
+          { title: 'Same title', description: 'Second task with description' },
+          { title: 'Unique title', description: 'Third task with description' },
         ],
       });
       const check = planner.grade(plan.id);
       const dupGap = check.gaps.find((g) => g.description.includes('Duplicate'));
       expect(dupGap).toBeDefined();
+      expect(dupGap!.category).toBe('semantic-quality');
     });
 
-    it('should detect tasks missing descriptions', () => {
+    it('should detect tasks with short/missing descriptions', () => {
       const plan = planner.create({
-        objective: 'Test descriptions',
-        scope: 'test',
-        decisions: ['Decision A'],
+        objective: 'Test description detection in plan grading system',
+        scope: 'Testing only, does not affect production',
+        decisions: ['Use assertions because they provide clear feedback on failures'],
         tasks: [
-          { title: 'Task with desc', description: 'Has description' },
+          { title: 'Task with desc', description: 'Has a proper description' },
           { title: 'Task without desc', description: '' },
-          { title: 'Another task', description: 'Has description' },
+          { title: 'Another task', description: 'Also has a description' },
         ],
       });
       const check = planner.grade(plan.id);
-      const descGap = check.gaps.find((g) => g.description.includes('missing descriptions'));
+      const descGap = check.gaps.find((g) => g.description.includes('short descriptions'));
       expect(descGap).toBeDefined();
+      expect(descGap!.category).toBe('clarity');
+    });
+
+    it('should track iteration number across multiple grades', () => {
+      const plan = planner.create({
+        objective: 'Iteration tracking test plan',
+        scope: 'Test scope',
+      });
+      const check1 = planner.grade(plan.id);
+      const check2 = planner.grade(plan.id);
+      const check3 = planner.grade(plan.id);
+      expect(check1.iteration).toBe(1);
+      expect(check2.iteration).toBe(2);
+      expect(check3.iteration).toBe(3);
+    });
+
+    it('should apply iteration leniency — minor gaps free on iter 1', () => {
+      // Plan with only minor gaps: no metrics in objective, no exclusions in scope
+      const plan = planner.create({
+        objective: 'Build a comprehensive authentication system for the application',
+        scope: 'Backend authentication module',
+        decisions: [
+          'Use JWT tokens because they are stateless and work well with microservices',
+        ],
+        tasks: [
+          { title: 'Create auth middleware', description: 'JWT validation middleware for Express' },
+          { title: 'Add login endpoint', description: 'POST /auth/login with credential validation' },
+          { title: 'Add refresh tokens', description: 'Implement token refresh flow with rotation' },
+          { title: 'Write auth tests', description: 'Integration tests for all auth endpoints' },
+        ],
+      });
+
+      // Iteration 1: minor gaps free → score should be 100
+      const check1 = planner.grade(plan.id);
+      expect(check1.score).toBe(100);
+
+      // Iteration 2: minor gaps at half weight → score slightly lower
+      const check2 = planner.grade(plan.id);
+      expect(check2.score).toBeLessThan(check1.score);
+
+      // Iteration 3: minor gaps at full weight → score even lower
+      const check3 = planner.grade(plan.id);
+      expect(check3.score).toBeLessThanOrEqual(check2.score);
+    });
+
+    it('should cap category deductions', () => {
+      // Plan with many clarity issues (ambiguous words) — capped at 10
+      const plan = planner.create({
+        objective: 'Maybe perhaps build something simple and easy, possibly soon, etc',
+        scope: 'Various things, probably several modules, somehow',
+        decisions: [
+          'Use some appropriate approach because it seems good due to various reasons',
+        ],
+        tasks: [
+          { title: 'Do some stuff', description: 'Maybe implement various things somehow' },
+          { title: 'Maybe test', description: 'Perhaps write some tests probably' },
+          { title: 'Maybe deploy', description: 'Possibly deploy to various environments soon' },
+        ],
+      });
+      // Grade on iteration 3 to get full minor weight
+      planner.grade(plan.id);
+      planner.grade(plan.id);
+      const check3 = planner.grade(plan.id);
+      // Clarity category should be capped at 10 even though there are many ambiguous words
+      // Without cap, multiple minor clarity gaps (3x2=6, but also semantic-quality gaps)
+      // The key assertion: score shouldn't be destroyed by clarity alone
+      expect(check3.score).toBeGreaterThanOrEqual(50);
     });
 
     it('should store check in plan history', () => {
-      const plan = planner.create({ objective: 'History test', scope: 'test' });
+      const plan = planner.create({ objective: 'History test plan objective', scope: 'test scope' });
       planner.grade(plan.id);
       planner.grade(plan.id);
       const history = planner.getCheckHistory(plan.id);
@@ -295,32 +383,70 @@ describe('Planner', () => {
     });
 
     it('should persist latestCheck', () => {
-      const plan = planner.create({ objective: 'Persist test', scope: 'test' });
+      const plan = planner.create({ objective: 'Persist test plan objective', scope: 'test scope' });
       const check = planner.grade(plan.id);
       const latest = planner.getLatestCheck(plan.id);
       expect(latest).not.toBeNull();
       expect(latest!.checkId).toBe(check.checkId);
+    });
+
+    it('should detect circular dependencies', () => {
+      const plan = planner.create({
+        objective: 'Circular dependency detection test plan',
+        scope: 'Test scope only, does not affect production',
+        decisions: ['Test with circular deps because it validates the analysis engine'],
+        tasks: [
+          { title: 'Task A', description: 'First task in the cycle' },
+          { title: 'Task B', description: 'Second task in the cycle' },
+          { title: 'Task C', description: 'Third task (not in cycle)' },
+        ],
+      });
+      // Manually create circular deps
+      const p = planner.get(plan.id)!;
+      p.tasks[0].dependsOn = ['task-2'];
+      p.tasks[1].dependsOn = ['task-1'];
+      const check = planner.grade(plan.id);
+      const circGap = check.gaps.find((g) => g.description.includes('Circular'));
+      expect(circGap).toBeDefined();
+      expect(circGap!.severity).toBe('critical');
+    });
+
+    it('should use correct grade thresholds: A+=95, A=90, B=80, C=70, D=60', () => {
+      // We can verify by creating plans with known gap profiles
+      // Plan with 1 major gap = score 85 → grade B (80-89)
+      const plan = planner.create({
+        objective: 'Test threshold plan with a good objective description',
+        scope: 'Narrow scope, does not include anything beyond testing',
+        decisions: [], // no decisions = major gap from semantic-quality (-15)
+        tasks: [
+          { title: 'Task 1', description: 'First detailed task description' },
+          { title: 'Task 2', description: 'Second detailed task description' },
+          { title: 'Task 3', description: 'Third detailed task description' },
+        ],
+      });
+      const check = planner.grade(plan.id);
+      // 1 major gap (no decisions for 3 tasks) = -15, iter 1 minor gaps free
+      expect(check.score).toBe(85);
+      expect(check.grade).toBe('B');
     });
   });
 
   describe('meetsGrade', () => {
     it('should return true when plan meets target grade', () => {
       const plan = planner.create({
-        objective: 'Good plan',
-        scope: 'test',
-        decisions: ['D1', 'D2'],
+        objective: 'Build a comprehensive feature for the testing module',
+        scope: 'Testing module only, does not include deployment',
+        decisions: ['Use vitest because it integrates well with TypeScript due to native support'],
         tasks: [
-          { title: 'T1', description: 'D1' },
-          { title: 'T2', description: 'D2' },
-          { title: 'T3', description: 'D3' },
-          { title: 'T4', description: 'D4' },
-          { title: 'T5', description: 'D5' },
-          { title: 'T6', description: 'D6' },
+          { title: 'Write unit tests', description: 'Cover all edge cases in auth module' },
+          { title: 'Write integration tests', description: 'End-to-end API tests for auth flow' },
+          { title: 'Add CI pipeline', description: 'Run tests on every PR automatically' },
+          { title: 'Add coverage report', description: 'Track and verify code coverage metrics' },
         ],
       });
       const result = planner.meetsGrade(plan.id, 'B');
       expect(result.meets).toBe(true);
-      expect(result.check.score).toBeGreaterThanOrEqual(70);
+      expect(result.check.score).toBeGreaterThanOrEqual(80);
     });
 
     it('should return false when plan does not meet target grade', () => {
@@ -332,7 +458,7 @@ describe('Planner', () => {
 
   describe('getCheckHistory', () => {
     it('should return empty array for plan with no checks', () => {
-      const plan = planner.create({ objective: 'No checks', scope: 'test' });
+      const plan = planner.create({ objective: 'No checks plan', scope: 'test scope' });
       expect(planner.getCheckHistory(plan.id)).toEqual([]);
     });
 
@@ -343,12 +469,90 @@ describe('Planner', () => {
 
   describe('getLatestCheck', () => {
     it('should return null for plan with no checks', () => {
-      const plan = planner.create({ objective: 'No checks', scope: 'test' });
+      const plan = planner.create({ objective: 'No checks plan', scope: 'test scope' });
       expect(planner.getLatestCheck(plan.id)).toBeNull();
     });
 
     it('should throw for unknown plan', () => {
       expect(() => planner.getLatestCheck('plan-nonexistent')).toThrow('not found');
+    });
+  });
+
+  describe('custom gap analysis passes', () => {
+    it('should run custom passes alongside built-in ones', () => {
+      const customPass = (plan: { objective: string }): PlanGap[] => {
+        if (plan.objective.includes('TODO')) {
+          return [
+            {
+              id: generateGapId(),
+              severity: 'major',
+              category: 'semantic-quality',
+              description: 'Objective contains TODO — not ready for grading.',
+              recommendation: 'Resolve all TODOs before grading the plan.',
+              location: 'objective',
+              _trigger: 'custom_todo_check',
+            },
+          ];
+        }
+        return [];
+      };
+
+      const customPlanner = new Planner(join(tempDir, 'custom-plans.json'), {
+        customPasses: [customPass],
+      });
+
+      // Plan with TODO should get the custom gap
+      const plan = customPlanner.create({
+        objective: 'TODO: flesh out this objective for the project',
+        scope: 'Backend services only. Does not include frontend.',
+        decisions: ['Use TypeScript because it provides type safety due to static analysis'],
+        tasks: [
+          { title: 'Task A', description: 'First implementation task' },
+          { title: 'Task B', description: 'Second implementation task' },
+          { title: 'Task C', description: 'Third implementation task' },
+        ],
+      });
+      const check = customPlanner.grade(plan.id);
+      const todoGap = check.gaps.find((g) => g._trigger === 'custom_todo_check');
+      expect(todoGap).toBeDefined();
+      expect(todoGap!.severity).toBe('major');
+      // Score should reflect the -15 from the major custom gap
+      expect(check.score).toBeLessThan(100);
+    });
+
+    it('should not fire custom gaps when condition is not met', () => {
+      const customPass = (plan: { objective: string }): PlanGap[] => {
+        if (plan.objective.includes('TODO')) {
+          return [
+            {
+              id: generateGapId(),
+              severity: 'major',
+              category: 'semantic-quality',
+              description: 'Contains TODO',
+              recommendation: 'Fix it',
+            },
+          ];
+        }
+        return [];
+      };
+
+      const customPlanner = new Planner(join(tempDir, 'custom-plans2.json'), {
+        customPasses: [customPass],
+      });
+
+      const plan = customPlanner.create({
+        objective: 'Build a clean authentication system for the API endpoints',
+        scope: 'Backend services only. Does not include frontend or mobile.',
+        decisions: ['Use JWT because it is stateless and works with microservices'],
+        tasks: [
+          { title: 'Auth middleware', description: 'Create JWT validation middleware' },
+          { title: 'Login endpoint', description: 'POST /auth/login with credentials' },
+          { title: 'Refresh tokens', description: 'Token refresh flow with rotation' },
+        ],
+      });
+      const check = customPlanner.grade(plan.id);
+      const todoGap = check.gaps.find((g) => g.description.includes('TODO'));
+      expect(todoGap).toBeUndefined();
     });
   });
 

@@ -325,8 +325,12 @@ ${domainDescribes}
       expect(opNames).toContain('project_get_links');
       expect(opNames).toContain('project_linked_projects');
       expect(opNames).toContain('project_touch');
-      // Total: 149 (144 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(149);
+      // Cross-project memory ops (3)
+      expect(opNames).toContain('memory_promote_to_global');
+      expect(opNames).toContain('memory_configure');
+      expect(opNames).toContain('memory_cross_project_search');
+      // Total: 152 (147 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(152);
     });
 
     it('search should query across all domains with ranked results', async () => {

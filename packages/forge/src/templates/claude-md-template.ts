@@ -183,6 +183,10 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     `| Project links | ${bt}${toolPrefix}_core${bt} | ${bt}project_get_links${bt} |`,
     `| Linked projects | ${bt}${toolPrefix}_core${bt} | ${bt}project_linked_projects${bt} |`,
     `| Touch project | ${bt}${toolPrefix}_core${bt} | ${bt}project_touch${bt} |`,
+    // Cross-project memory ops
+    `| Promote to global | ${bt}${toolPrefix}_core${bt} | ${bt}memory_promote_to_global${bt} |`,
+    `| Configure memory | ${bt}${toolPrefix}_core${bt} | ${bt}memory_configure${bt} |`,
+    `| Cross-project search | ${bt}${toolPrefix}_core${bt} | ${bt}memory_cross_project_search${bt} |`,
   );
 
   mdLines.push(

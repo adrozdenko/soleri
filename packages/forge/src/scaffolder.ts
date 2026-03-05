@@ -251,6 +251,10 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'project_get_links',
         'project_linked_projects',
         'project_touch',
+        // Cross-project memory ops — 3
+        'memory_promote_to_global',
+        'memory_configure',
+        'memory_cross_project_search',
         // Agent-specific ops — 5
         'health',
         'identity',
@@ -354,7 +358,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     filesCreated.push(path);
   }
 
-  const totalOps = config.domains.length * 5 + 58; // 5 per domain + 53 core (from createCoreOps) + 5 agent-specific
+  const totalOps = config.domains.length * 5 + 61; // 5 per domain + 56 core (from createCoreOps) + 5 agent-specific
 
   // Register the agent as an MCP server in ~/.claude.json
   const mcpReg = registerMcpServer(config.id, agentDir);

@@ -1,5 +1,6 @@
 /**
  * Plan grading operations — 5 ops for iterative plan quality scoring.
+ * Uses 6-pass gap analysis with severity-weighted scoring (ported from Salvador).
  *
  * Ops: plan_grade, plan_check_history, plan_latest_check,
  *      plan_meets_grade, plan_auto_improve.
@@ -21,7 +22,7 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'plan_grade',
       description:
-        'Grade a plan — scores 0-100 across 10 criteria, returns grade + gaps.',
+        'Grade a plan using 6-pass gap analysis — severity-weighted scoring (critical=30, major=15, minor=2). Returns grade, score, gaps with recommendations, and iteration number.',
       auth: 'read',
       schema: z.object({
         planId: z.string().describe('The plan ID to grade.'),
@@ -34,7 +35,7 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
 
     {
       name: 'plan_check_history',
-      description: 'Get all grading checks for a plan (history).',
+      description: 'Get all grading checks for a plan (history). Shows score progression across iterations.',
       auth: 'read',
       schema: z.object({
         planId: z.string().describe('The plan ID.'),
@@ -63,7 +64,7 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'plan_meets_grade',
       description:
-        'Check if a plan meets a target grade. Grades the plan and returns boolean + check.',
+        'Check if a plan meets a target grade. Thresholds: A+=95, A=90, B=80, C=70, D=60.',
       auth: 'read',
       schema: z.object({
         planId: z.string().describe('The plan ID.'),
@@ -79,7 +80,7 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'plan_auto_improve',
       description:
-        'Grade a plan and return the worst gaps sorted by severity, with improvement suggestions.',
+        'Grade a plan and return gaps grouped by severity with actionable recommendations. Critical gaps first.',
       auth: 'read',
       schema: z.object({
         planId: z.string().describe('The plan ID.'),
@@ -88,17 +89,32 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
         const planId = params.planId as string;
         const check = planner.grade(planId);
 
-        // Sort gaps by severity: critical > major > minor
-        const severityOrder: Record<string, number> = { critical: 0, major: 1, minor: 2 };
-        const worstGaps = [...check.gaps].sort(
-          (a, b) => (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3),
+        // Sort gaps by severity: critical > major > minor > info
+        const severityOrder: Record<string, number> = { critical: 0, major: 1, minor: 2, info: 3 };
+        const sortedGaps = [...check.gaps].sort(
+          (a, b) => (severityOrder[a.severity] ?? 4) - (severityOrder[b.severity] ?? 4),
         );
 
-        const suggestions = worstGaps.map(
-          (g) => `[${g.severity.toUpperCase()}] ${g.category}: ${g.suggestion}`,
-        );
+        // Group by severity for structured output
+        const grouped: Record<string, Array<{ category: string; description: string; recommendation: string; location?: string }>> = {};
+        for (const g of sortedGaps) {
+          if (!grouped[g.severity]) grouped[g.severity] = [];
+          grouped[g.severity].push({
+            category: g.category,
+            description: g.description,
+            recommendation: g.recommendation,
+            ...(g.location ? { location: g.location } : {}),
+          });
+        }
 
-        return { check, worstGaps, suggestions };
+        return {
+          grade: check.grade,
+          score: check.score,
+          iteration: check.iteration,
+          totalGaps: check.gaps.length,
+          gapsBySeverity: grouped,
+          nextAction: check.score >= 90 ? 'approve' : 'iterate',
+        };
       },
     },
   ];

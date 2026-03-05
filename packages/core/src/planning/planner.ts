@@ -1,5 +1,9 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import type { PlanGap } from './gap-types.js';
+import { SEVERITY_WEIGHTS, CATEGORY_PENALTY_CAPS } from './gap-types.js';
+import { runGapAnalysis } from './gap-analysis.js';
+import type { GapAnalysisOptions } from './gap-analysis.js';
 
 export type PlanStatus = 'draft' | 'approved' | 'executing' | 'completed';
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed';
@@ -40,20 +44,48 @@ export interface ReviewEvidence {
 
 export type PlanGrade = 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
 
-export interface PlanGap {
-  severity: 'critical' | 'major' | 'minor';
-  category: 'scope' | 'tasks' | 'dependencies' | 'risks' | 'decisions';
-  description: string;
-  suggestion: string;
-}
-
 export interface PlanCheck {
   checkId: string;
   planId: string;
   grade: PlanGrade;
   score: number; // 0-100
   gaps: PlanGap[];
+  iteration: number;
   checkedAt: number;
+}
+
+/**
+ * Calculate score from gaps with severity-weighted deductions and iteration leniency.
+ * Ported from Salvador MCP's plan-grading.ts.
+ *
+ * - Minor gaps: weight=0 on iteration 1 (free sketching), weight=1 on iteration 2, full weight on 3+
+ * - Per-category deductions are capped before summing (prevents one category from tanking the score)
+ * - Score = max(0, 100 - totalDeductions)
+ */
+export function calculateScore(gaps: PlanGap[], iteration: number = 1): number {
+  const categoryTotals = new Map<string, number>();
+
+  for (const gap of gaps) {
+    let weight: number = SEVERITY_WEIGHTS[gap.severity];
+
+    // Iteration leniency for minor gaps
+    if (gap.severity === 'minor') {
+      if (iteration === 1) weight = 0;
+      else if (iteration === 2) weight = 1;
+      // iteration 3+: full weight (2)
+    }
+
+    const category = gap.category;
+    categoryTotals.set(category, (categoryTotals.get(category) ?? 0) + weight);
+  }
+
+  let deductions = 0;
+  for (const [category, total] of categoryTotals) {
+    const cap = CATEGORY_PENALTY_CAPS[category];
+    deductions += cap !== undefined ? Math.min(total, cap) : total;
+  }
+
+  return Math.max(0, 100 - deductions);
 }
 
 export interface Plan {
@@ -83,9 +115,11 @@ export interface PlanStore {
 export class Planner {
   private filePath: string;
   private store: PlanStore;
+  private gapOptions?: GapAnalysisOptions;
 
-  constructor(filePath: string) {
+  constructor(filePath: string, gapOptions?: GapAnalysisOptions) {
     this.filePath = filePath;
+    this.gapOptions = gapOptions;
     this.store = this.load();
   }
 
@@ -462,175 +496,49 @@ export class Planner {
   // ─── Grading ──────────────────────────────────────────────────────
 
   /**
-   * Grade a plan. Scores 0-100, returns grade + gaps.
-   * Criteria (10 pts each):
-   * 1. Has objective
-   * 2. Has scope
-   * 3. Has at least 1 task
-   * 4. All tasks have descriptions
-   * 5. Has decisions documented
-   * 6. No circular dependencies
-   * 7. Tasks have reasonable granularity (3-15 tasks)
-   * 8. Scope doesn't exceed 20 tasks
-   * 9. Has at least one decision per 3 tasks
-   * 10. All task titles are unique
+   * Grade a plan using 6-pass gap analysis with severity-weighted scoring.
+   * Ported from Salvador MCP's multi-pass grading engine.
+   *
+   * Scoring:
+   * - Each gap has a severity (critical=30, major=15, minor=2, info=0)
+   * - Deductions are per-category with optional caps
+   * - Iteration leniency: minor gaps free on iter 1, half on iter 2, full on 3+
+   * - Score = max(0, 100 - deductions)
+   *
+   * Grade thresholds: A+=95, A=90, B=80, C=70, D=60, F=<60
    */
   grade(planId: string): PlanCheck {
     const plan = this.get(planId);
     if (!plan) throw new Error(`Plan not found: ${planId}`);
 
-    let score = 0;
-    const gaps: PlanGap[] = [];
+    // Run 6-pass gap analysis
+    const gaps = runGapAnalysis(plan, this.gapOptions);
 
-    // 1. Has objective (10 pts)
-    if (plan.objective && plan.objective.trim().length > 0) {
-      score += 10;
-    } else {
-      gaps.push({
-        severity: 'critical',
-        category: 'scope',
-        description: 'Plan has no objective.',
-        suggestion: 'Add a clear objective describing what this plan achieves.',
-      });
-    }
-
-    // 2. Has scope (10 pts)
-    if (plan.scope && plan.scope.trim().length > 0) {
-      score += 10;
-    } else {
-      gaps.push({
-        severity: 'critical',
-        category: 'scope',
-        description: 'Plan has no scope defined.',
-        suggestion: 'Define the scope — what is included and excluded.',
-      });
-    }
-
-    // 3. Has at least 1 task (10 pts)
-    if (plan.tasks.length >= 1) {
-      score += 10;
-    } else {
-      gaps.push({
-        severity: 'critical',
-        category: 'tasks',
-        description: 'Plan has no tasks.',
-        suggestion: 'Add at least one task to make the plan actionable.',
-      });
-    }
-
-    // 4. All tasks have descriptions (10 pts)
-    const tasksWithoutDesc = plan.tasks.filter(
-      (t) => !t.description || t.description.trim().length === 0,
-    );
-    if (plan.tasks.length > 0 && tasksWithoutDesc.length === 0) {
-      score += 10;
-    } else if (plan.tasks.length === 0) {
-      // No tasks at all — already penalized by criterion 3
-      // Don't double-penalize; award this criterion vacuously
-      score += 10;
-    } else {
-      gaps.push({
-        severity: 'major',
-        category: 'tasks',
-        description: `${tasksWithoutDesc.length} task(s) missing descriptions: ${tasksWithoutDesc.map((t) => t.id).join(', ')}.`,
-        suggestion: 'Add descriptions to all tasks explaining what needs to be done.',
-      });
-    }
-
-    // 5. Has decisions documented (10 pts)
-    if (plan.decisions.length > 0) {
-      score += 10;
-    } else {
-      gaps.push({
-        severity: 'major',
-        category: 'decisions',
-        description: 'No decisions documented.',
-        suggestion: 'Document key decisions and their rationale.',
-      });
-    }
-
-    // 6. No circular dependencies (10 pts)
+    // Add circular dependency check (structural, not covered by gap-analysis passes)
     if (this.hasCircularDependencies(plan)) {
       gaps.push({
+        id: `gap_${Date.now()}_circ`,
         severity: 'critical',
-        category: 'dependencies',
+        category: 'structure',
         description: 'Circular dependencies detected among tasks.',
-        suggestion: 'Remove circular dependency chains so tasks can be executed in order.',
-      });
-    } else {
-      score += 10;
-    }
-
-    // 7. Tasks have reasonable granularity — 3 to 15 tasks (10 pts)
-    if (plan.tasks.length >= 3 && plan.tasks.length <= 15) {
-      score += 10;
-    } else if (plan.tasks.length > 0) {
-      gaps.push({
-        severity: 'minor',
-        category: 'tasks',
-        description:
-          plan.tasks.length < 3
-            ? `Only ${plan.tasks.length} task(s) — plan may lack granularity.`
-            : `${plan.tasks.length} tasks — plan may be too granular.`,
-        suggestion:
-          plan.tasks.length < 3
-            ? 'Break down the work into 3-15 well-defined tasks.'
-            : 'Consolidate related tasks to keep the plan between 3-15 tasks.',
+        recommendation: 'Remove circular dependency chains so tasks can be executed in order.',
+        location: 'tasks',
+        _trigger: 'circular_dependencies',
       });
     }
 
-    // 8. Scope doesn't exceed 20 tasks (10 pts)
-    if (plan.tasks.length <= 20) {
-      score += 10;
-    } else {
-      gaps.push({
-        severity: 'major',
-        category: 'scope',
-        description: `Plan has ${plan.tasks.length} tasks — exceeds the 20-task limit.`,
-        suggestion: 'Split into multiple plans or consolidate tasks to stay under 20.',
-      });
-    }
-
-    // 9. Has at least one decision per 3 tasks (10 pts)
-    const requiredDecisions = Math.max(1, Math.floor(plan.tasks.length / 3));
-    if (plan.decisions.length >= requiredDecisions) {
-      score += 10;
-    } else {
-      gaps.push({
-        severity: 'minor',
-        category: 'decisions',
-        description: `${plan.decisions.length} decision(s) for ${plan.tasks.length} tasks — expected at least ${requiredDecisions}.`,
-        suggestion: `Document at least 1 decision per 3 tasks (${requiredDecisions} needed).`,
-      });
-    }
-
-    // 10. All task titles are unique (10 pts)
-    const titleSet = new Set<string>();
-    const duplicateTitles: string[] = [];
-    for (const t of plan.tasks) {
-      if (titleSet.has(t.title)) {
-        duplicateTitles.push(t.title);
-      }
-      titleSet.add(t.title);
-    }
-    if (duplicateTitles.length === 0) {
-      score += 10;
-    } else {
-      gaps.push({
-        severity: 'minor',
-        category: 'tasks',
-        description: `Duplicate task titles: ${[...new Set(duplicateTitles)].join(', ')}.`,
-        suggestion: 'Give each task a unique, descriptive title.',
-      });
-    }
-
+    // Iteration = number of previous checks + 1
+    const iteration = plan.checks.length + 1;
+    const score = calculateScore(gaps, iteration);
     const grade = this.scoreToGrade(score);
+
     const check: PlanCheck = {
       checkId: `chk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       planId,
       grade,
       score,
       gaps,
+      iteration,
       checkedAt: Date.now(),
     };
 
@@ -673,20 +581,20 @@ export class Planner {
 
   private scoreToGrade(score: number): PlanGrade {
     if (score >= 95) return 'A+';
-    if (score >= 85) return 'A';
-    if (score >= 70) return 'B';
-    if (score >= 55) return 'C';
-    if (score >= 40) return 'D';
+    if (score >= 90) return 'A';
+    if (score >= 80) return 'B';
+    if (score >= 70) return 'C';
+    if (score >= 60) return 'D';
     return 'F';
   }
 
   private gradeToMinScore(grade: PlanGrade): number {
     switch (grade) {
       case 'A+': return 95;
-      case 'A': return 85;
-      case 'B': return 70;
-      case 'C': return 55;
-      case 'D': return 40;
+      case 'A': return 90;
+      case 'B': return 80;
+      case 'C': return 70;
+      case 'D': return 60;
       case 'F': return 0;
     }
   }

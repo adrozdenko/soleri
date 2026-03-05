@@ -100,7 +100,7 @@ export type {
 } from './cognee/types.js';
 
 // ─── Planning ────────────────────────────────────────────────────────
-export { Planner } from './planning/planner.js';
+export { Planner, calculateScore } from './planning/planner.js';
 export type {
   PlanStatus,
   TaskStatus,
@@ -111,9 +111,21 @@ export type {
   ReconciliationReport,
   ReviewEvidence,
   PlanGrade,
-  PlanGap,
   PlanCheck,
 } from './planning/planner.js';
+
+// ─── Plan Gap Analysis ──────────────────────────────────────────────
+export { runGapAnalysis } from './planning/gap-analysis.js';
+export type { GapAnalysisOptions, GapAnalysisPass } from './planning/gap-analysis.js';
+export {
+  SEVERITY_WEIGHTS,
+  CATEGORY_PENALTY_CAPS,
+  MIN_OBJECTIVE_LENGTH,
+  MIN_SCOPE_LENGTH,
+  MIN_DECISION_LENGTH,
+  generateGapId,
+} from './planning/gap-types.js';
+export type { GapSeverity, GapCategory, PlanGap } from './planning/gap-types.js';
 
 // ─── Loop ────────────────────────────────────────────────────────────
 export { LoopManager } from './loop/loop-manager.js';
@@ -213,4 +225,5 @@ export { createGradingOps } from './runtime/grading-ops.js';
 export { createCaptureOps } from './runtime/capture-ops.js';
 export { createCuratorExtraOps } from './runtime/curator-extra-ops.js';
 export { createProjectOps } from './runtime/project-ops.js';
+export { createMemoryCrossProjectOps } from './runtime/memory-cross-project-ops.js';
 export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';
