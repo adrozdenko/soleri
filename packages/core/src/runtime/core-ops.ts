@@ -12,13 +12,14 @@ import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { AgentRuntime } from './types.js';
 import type { GuidelineCategory, OperationalMode } from '../control/types.js';
 import type { PolicyType, PolicyPreset } from '../governance/types.js';
+import type { CogneeSearchType } from '../cognee/types.js';
 
 /**
- * Create the 53 generic core operations for an agent runtime.
+ * Create the 60 generic core operations for an agent runtime.
  *
  * Groups: search/vault (4), memory (4), export (1), planning (5),
- *         brain (7), brain intelligence (11), curator (8), control (8),
- *         governance (5).
+ *         brain (7), brain intelligence (11), cognee (5),
+ *         llm (2), curator (8), control (8), governance (5).
  */
 export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
   const {
@@ -28,6 +29,7 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
     planner,
     curator,
     governance,
+    cognee,
     identityManager,
     intentRouter,
     llmClient,
@@ -648,6 +650,134 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
           sessionId: params.sessionId as string | undefined,
           since: params.since as string | undefined,
           all: params.all as boolean | undefined,
+        });
+      },
+    },
+
+    // ─── Cognee ──────────────────────────────────────────────────
+    {
+      name: 'cognee_status',
+      description:
+        'Cognee vector search health — availability, URL, latency. Checks the Cognee API endpoint.',
+      auth: 'read',
+      handler: async () => {
+        return cognee.healthCheck();
+      },
+    },
+    {
+      name: 'cognee_search',
+      description:
+        'Vector similarity search via Cognee. Complements TF-IDF vault search with semantic understanding.',
+      auth: 'read',
+      schema: z.object({
+        query: z.string(),
+        searchType: z
+          .enum([
+            'SUMMARIES',
+            'CHUNKS',
+            'RAG_COMPLETION',
+            'TRIPLET_COMPLETION',
+            'GRAPH_COMPLETION',
+            'GRAPH_SUMMARY_COMPLETION',
+            'NATURAL_LANGUAGE',
+            'GRAPH_COMPLETION_COT',
+            'FEELING_LUCKY',
+            'CHUNKS_LEXICAL',
+          ])
+          .optional()
+          .describe('Cognee search type. Default CHUNKS (pure vector similarity).'),
+        limit: z.number().optional(),
+      }),
+      handler: async (params) => {
+        return cognee.search(params.query as string, {
+          searchType: params.searchType as CogneeSearchType | undefined,
+          limit: (params.limit as number) ?? 10,
+        });
+      },
+    },
+    {
+      name: 'cognee_add',
+      description:
+        'Ingest vault entries into Cognee for vector indexing. Auto-schedules cognify after ingest.',
+      auth: 'write',
+      schema: z.object({
+        entryIds: z.array(z.string()).describe('Vault entry IDs to ingest into Cognee.'),
+      }),
+      handler: async (params) => {
+        const ids = params.entryIds as string[];
+        const entries = ids
+          .map((id) => vault.get(id))
+          .filter((e): e is IntelligenceEntry => e !== null && e !== undefined);
+        if (entries.length === 0) return { added: 0, error: 'No matching vault entries found' };
+        return cognee.addEntries(entries);
+      },
+    },
+    {
+      name: 'cognee_cognify',
+      description:
+        'Trigger Cognee knowledge graph processing on the vault dataset. Usually auto-scheduled after add.',
+      auth: 'write',
+      handler: async () => {
+        return cognee.cognify();
+      },
+    },
+    {
+      name: 'cognee_config',
+      description: 'Get current Cognee client configuration and cached health status.',
+      auth: 'read',
+      handler: async () => {
+        return { config: cognee.getConfig(), cachedStatus: cognee.getStatus() };
+      },
+    },
+
+    // ─── LLM ─────────────────────────────────────────────────────
+    {
+      name: 'llm_rotate',
+      description:
+        'Force rotate the active API key for a provider. Useful when rate-limited or key is failing.',
+      auth: 'write',
+      schema: z.object({
+        provider: z.enum(['openai', 'anthropic']),
+      }),
+      handler: async (params) => {
+        const provider = params.provider as 'openai' | 'anthropic';
+        const pool = keyPool[provider];
+        if (!pool.hasKeys) return { rotated: false, error: `No ${provider} keys configured` };
+        const newKey = pool.rotateOnError();
+        return {
+          rotated: newKey !== null,
+          activeKeyIndex: pool.activeKeyIndex,
+          poolSize: pool.poolSize,
+          exhausted: pool.exhausted,
+        };
+      },
+    },
+    {
+      name: 'llm_call',
+      description: 'Make an LLM completion call. Uses model routing config and key pool rotation.',
+      auth: 'write',
+      schema: z.object({
+        systemPrompt: z.string().describe('System prompt for the LLM.'),
+        userPrompt: z.string().describe('User prompt / task input.'),
+        model: z
+          .string()
+          .optional()
+          .describe('Model name. Routed via model-routing.json if omitted.'),
+        temperature: z.number().optional().describe('Sampling temperature (0-2). Default 0.3.'),
+        maxTokens: z.number().optional().describe('Max output tokens. Default 500.'),
+        caller: z.string().optional().describe('Caller name for routing. Default "core-ops".'),
+        task: z.string().optional().describe('Task name for routing.'),
+      }),
+      handler: async (params) => {
+        return llmClient.complete({
+          provider: 'openai',
+          model: (params.model as string) ?? '',
+          systemPrompt: params.systemPrompt as string,
+          userPrompt: params.userPrompt as string,
+          temperature: params.temperature as number | undefined,
+          maxTokens: params.maxTokens as number | undefined,
+          caller: (params.caller as string) ?? 'core-ops',
+          task: params.task as string | undefined,
         });
       },
     },

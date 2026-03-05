@@ -15,6 +15,7 @@ import { BrainIntelligence } from '../brain/intelligence.js';
 import { Planner } from '../planning/planner.js';
 import { Curator } from '../curator/curator.js';
 import { Governance } from '../governance/governance.js';
+import { CogneeClient } from '../cognee/client.js';
 import { IdentityManager } from '../control/identity-manager.js';
 import { IntentRouter } from '../control/intent-router.js';
 import { KeyPool, loadKeyPoolConfig } from '../llm/key-pool.js';
@@ -66,6 +67,13 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Governance — policy engine + proposal tracker for gated knowledge capture
   const governance = new Governance(vault);
 
+  // Cognee — vector search client (graceful degradation if Cognee is down)
+  const cogneePartial: Partial<import('../cognee/types.js').CogneeConfig> = { dataset: agentId };
+  if (process.env.COGNEE_BASE_URL) cogneePartial.baseUrl = process.env.COGNEE_BASE_URL;
+  if (process.env.COGNEE_API_TOKEN) cogneePartial.apiToken = process.env.COGNEE_API_TOKEN;
+  if (process.env.COGNEE_DATASET) cogneePartial.dataset = process.env.COGNEE_DATASET;
+  const cognee = new CogneeClient(cogneePartial);
+
   // Identity Manager — agent persona CRUD with versioning/rollback
   const identityManager = new IdentityManager(vault);
 
@@ -87,10 +95,14 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     planner,
     curator,
     governance,
+    cognee,
     identityManager,
     intentRouter,
     keyPool: { openai: openaiKeyPool, anthropic: anthropicKeyPool },
     llmClient,
-    close: () => vault.close(),
+    close: () => {
+      cognee.resetPendingCognify();
+      vault.close();
+    },
   };
 }

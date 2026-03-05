@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 53 ops', () => {
-    expect(ops.length).toBe(53);
+  it('should return 60 ops', () => {
+    expect(ops.length).toBe(60);
   });
 
   it('should have all expected op names', () => {
@@ -96,6 +96,15 @@ describe('createCoreOps', () => {
     expect(names).toContain('route_intent');
     expect(names).toContain('morph');
     expect(names).toContain('get_behavior_rules');
+    // Cognee
+    expect(names).toContain('cognee_status');
+    expect(names).toContain('cognee_search');
+    expect(names).toContain('cognee_add');
+    expect(names).toContain('cognee_cognify');
+    expect(names).toContain('cognee_config');
+    // LLM
+    expect(names).toContain('llm_rotate');
+    expect(names).toContain('llm_call');
     // Governance
     expect(names).toContain('governance_policy');
     expect(names).toContain('governance_proposals');
@@ -282,6 +291,66 @@ describe('createCoreOps', () => {
     };
     expect(result.exported).toBe(true);
     expect(result.totalEntries).toBe(1);
+  });
+
+  it('cognee_status should return health check result', async () => {
+    // Cognee is not running in tests — should degrade gracefully
+    const result = (await findOp('cognee_status').handler({})) as {
+      available: boolean;
+      url: string;
+    };
+    expect(typeof result.available).toBe('boolean');
+    expect(typeof result.url).toBe('string');
+  });
+
+  it('cognee_search should return empty when unavailable', async () => {
+    const results = (await findOp('cognee_search').handler({
+      query: 'test pattern',
+    })) as unknown[];
+    expect(results).toEqual([]);
+  });
+
+  it('cognee_add should return 0 when unavailable', async () => {
+    runtime.vault.seed([
+      {
+        id: 'cog-1',
+        type: 'pattern',
+        domain: 'testing',
+        title: 'Cognee test',
+        severity: 'warning',
+        description: 'Test.',
+        tags: ['test'],
+      },
+    ]);
+    const result = (await findOp('cognee_add').handler({
+      entryIds: ['cog-1'],
+    })) as { added: number };
+    expect(result.added).toBe(0);
+  });
+
+  it('cognee_cognify should return unavailable when Cognee is down', async () => {
+    const result = (await findOp('cognee_cognify').handler({})) as { status: string };
+    expect(result.status).toBe('unavailable');
+  });
+
+  it('cognee_config should return config and null status', async () => {
+    const result = (await findOp('cognee_config').handler({})) as {
+      config: { baseUrl: string; dataset: string };
+      cachedStatus: null;
+    };
+    expect(result.config.baseUrl).toBe('http://localhost:8000');
+    expect(result.config.dataset).toBe('test-core-ops');
+    expect(result.cachedStatus).toBeNull();
+  });
+
+  it('llm_rotate should return rotation status', async () => {
+    const result = (await findOp('llm_rotate').handler({ provider: 'openai' })) as {
+      rotated?: boolean;
+      poolSize?: number;
+      error?: string;
+    };
+    // Either reports no keys or successfully rotates
+    expect(typeof result.rotated === 'boolean' || typeof result.error === 'string').toBe(true);
   });
 
   it('governance_policy get should return defaults', async () => {

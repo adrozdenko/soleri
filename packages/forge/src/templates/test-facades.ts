@@ -215,14 +215,23 @@ ${domainDescribes}
       expect(opNames).toContain('route_intent');
       expect(opNames).toContain('morph');
       expect(opNames).toContain('get_behavior_rules');
+      // Cognee ops (5)
+      expect(opNames).toContain('cognee_status');
+      expect(opNames).toContain('cognee_search');
+      expect(opNames).toContain('cognee_add');
+      expect(opNames).toContain('cognee_cognify');
+      expect(opNames).toContain('cognee_config');
+      // LLM ops (2)
+      expect(opNames).toContain('llm_rotate');
+      expect(opNames).toContain('llm_call');
       // Governance ops (5)
       expect(opNames).toContain('governance_policy');
       expect(opNames).toContain('governance_proposals');
       expect(opNames).toContain('governance_stats');
       expect(opNames).toContain('governance_expire');
       expect(opNames).toContain('governance_dashboard');
-      // Total: 58
-      expect(facade.ops.length).toBe(58);
+      // Total: 65 (60 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(65);
     });
 
     it('search should query across all domains with ranked results', async () => {

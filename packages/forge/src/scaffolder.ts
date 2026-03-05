@@ -92,7 +92,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     {
       name: `${config.id}_core`,
       ops: [
-        // From createCoreOps() — 48 generic ops
+        // From createCoreOps() — 60 generic ops
         'search',
         'vault_stats',
         'list_all',
@@ -125,6 +125,15 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'brain_promote_proposals',
         'brain_lifecycle',
         'brain_reset_extracted',
+        // Cognee ops — 5
+        'cognee_status',
+        'cognee_search',
+        'cognee_add',
+        'cognee_cognify',
+        'cognee_config',
+        // LLM ops — 2
+        'llm_rotate',
+        'llm_call',
         'curator_status',
         'curator_detect_duplicates',
         'curator_contradictions',
