@@ -48,7 +48,7 @@
       }
     }
   ],
-  "ignorePatterns": ["dist/**", "node_modules/**", "coverage/**", "*.config.js", "*.config.ts", "scripts/**", "website/**"],
+  "ignorePatterns": ["dist/**", "node_modules/**", "coverage/**", "*.config.js", "*.config.ts", "scripts/**"],
   "settings": { "vitest": { "typecheck": false } },
   "env": { "builtin": true }
 }
