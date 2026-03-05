@@ -101,6 +101,72 @@ describe('createDomainFacade', () => {
     expect(runtime.vault.get('rm-1')).toBeNull();
   });
 
+  it('capture should include governance action on default (moderate) preset', async () => {
+    const facade = createDomainFacade(runtime, 'test-domain', 'security');
+    const captureOp = facade.ops.find((o) => o.name === 'capture')!;
+    const result = (await captureOp.handler({
+      id: 'gov-cap-1',
+      type: 'pattern',
+      title: 'Governed Pattern',
+      severity: 'warning',
+      description: 'Test governance capture.',
+      tags: ['gov'],
+    })) as { captured: boolean; governance: { action: string } };
+    expect(result.captured).toBe(true);
+    expect(result.governance.action).toBe('capture');
+    expect(runtime.vault.get('gov-cap-1')).not.toBeNull();
+  });
+
+  it('capture should create proposal under strict preset', async () => {
+    runtime.governance.applyPreset('.', 'strict', 'test');
+    const facade = createDomainFacade(runtime, 'test-domain', 'security');
+    const captureOp = facade.ops.find((o) => o.name === 'capture')!;
+    const result = (await captureOp.handler({
+      id: 'gov-prop-1',
+      type: 'pattern',
+      title: 'Needs Review',
+      severity: 'warning',
+      description: 'Should be proposed.',
+      tags: ['gov'],
+    })) as {
+      captured: boolean;
+      governance: { action: string; proposalId: number; reason?: string };
+    };
+    expect(result.captured).toBe(false);
+    expect(result.governance.action).toBe('propose');
+    expect(result.governance.proposalId).toBeGreaterThan(0);
+    // Entry should NOT be in vault
+    expect(runtime.vault.get('gov-prop-1')).toBeNull();
+  });
+
+  it('capture should reject when total quota exceeded', async () => {
+    runtime.governance.setPolicy('.', 'quota', { maxEntriesTotal: 1 }, 'test');
+    runtime.vault.seed([
+      {
+        id: 'existing-1',
+        type: 'pattern',
+        domain: 'security',
+        title: 'Existing',
+        severity: 'warning',
+        description: 'Takes the slot.',
+        tags: ['fill'],
+      },
+    ]);
+    const facade = createDomainFacade(runtime, 'test-domain', 'security');
+    const captureOp = facade.ops.find((o) => o.name === 'capture')!;
+    const result = (await captureOp.handler({
+      id: 'gov-rej-1',
+      type: 'pattern',
+      title: 'Over Quota',
+      severity: 'warning',
+      description: 'Should be rejected.',
+      tags: ['gov'],
+    })) as { captured: boolean; governance: { action: string; reason?: string } };
+    expect(result.captured).toBe(false);
+    expect(result.governance.action).toBe('reject');
+    expect(runtime.vault.get('gov-rej-1')).toBeNull();
+  });
+
   it('get_entry should return specific entry', async () => {
     runtime.vault.seed([
       {

@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 48 ops', () => {
-    expect(ops.length).toBe(48);
+  it('should return 53 ops', () => {
+    expect(ops.length).toBe(53);
   });
 
   it('should have all expected op names', () => {
@@ -96,6 +96,12 @@ describe('createCoreOps', () => {
     expect(names).toContain('route_intent');
     expect(names).toContain('morph');
     expect(names).toContain('get_behavior_rules');
+    // Governance
+    expect(names).toContain('governance_policy');
+    expect(names).toContain('governance_proposals');
+    expect(names).toContain('governance_stats');
+    expect(names).toContain('governance_expire');
+    expect(names).toContain('governance_dashboard');
   });
 
   it('search should query vault via brain', async () => {
@@ -267,5 +273,37 @@ describe('createCoreOps', () => {
     };
     expect(result.exported).toBe(true);
     expect(result.totalEntries).toBe(1);
+  });
+
+  it('governance_policy get should return defaults', async () => {
+    const result = (await findOp('governance_policy').handler({
+      action: 'get',
+      projectPath: '/test',
+    })) as { quotas: { maxEntriesTotal: number } };
+    expect(result.quotas.maxEntriesTotal).toBe(500);
+  });
+
+  it('governance_stats should return quota and proposal stats', async () => {
+    const result = (await findOp('governance_stats').handler({
+      projectPath: '/test',
+    })) as {
+      quotaStatus: { total: number };
+      proposalStats: { total: number };
+    };
+    expect(typeof result.quotaStatus.total).toBe('number');
+    expect(typeof result.proposalStats.total).toBe('number');
+  });
+
+  it('governance_dashboard should return combined view', async () => {
+    const result = (await findOp('governance_dashboard').handler({
+      projectPath: '/test',
+    })) as {
+      vaultSize: number;
+      quotaPercent: number;
+      pendingProposals: number;
+    };
+    expect(typeof result.vaultSize).toBe('number');
+    expect(typeof result.quotaPercent).toBe('number');
+    expect(result.pendingProposals).toBe(0);
   });
 });

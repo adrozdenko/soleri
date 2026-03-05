@@ -14,6 +14,7 @@ import { Brain } from '../brain/brain.js';
 import { BrainIntelligence } from '../brain/intelligence.js';
 import { Planner } from '../planning/planner.js';
 import { Curator } from '../curator/curator.js';
+import { Governance } from '../governance/governance.js';
 import { IdentityManager } from '../control/identity-manager.js';
 import { IntentRouter } from '../control/intent-router.js';
 import { KeyPool, loadKeyPoolConfig } from '../llm/key-pool.js';
@@ -62,6 +63,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Curator — vault self-maintenance (dedup, contradictions, grooming, health)
   const curator = new Curator(vault);
 
+  // Governance — policy engine + proposal tracker for gated knowledge capture
+  const governance = new Governance(vault);
+
   // Identity Manager — agent persona CRUD with versioning/rollback
   const identityManager = new IdentityManager(vault);
 
@@ -82,6 +86,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     brainIntelligence,
     planner,
     curator,
+    governance,
     identityManager,
     intentRouter,
     keyPool: { openai: openaiKeyPool, anthropic: anthropicKeyPool },

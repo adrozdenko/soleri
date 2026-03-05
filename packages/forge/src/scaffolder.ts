@@ -141,6 +141,12 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'route_intent',
         'morph',
         'get_behavior_rules',
+        // Governance ops — 5
+        'governance_policy',
+        'governance_proposals',
+        'governance_stats',
+        'governance_expire',
+        'governance_dashboard',
         // Agent-specific ops — 5
         'health',
         'identity',
@@ -244,7 +250,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     filesCreated.push(path);
   }
 
-  const totalOps = config.domains.length * 5 + 53; // 5 per domain + 48 core (from createCoreOps) + 5 agent-specific
+  const totalOps = config.domains.length * 5 + 58; // 5 per domain + 53 core (from createCoreOps) + 5 agent-specific
 
   // Register the agent as an MCP server in ~/.claude.json
   const mcpReg = registerMcpServer(config.id, agentDir);

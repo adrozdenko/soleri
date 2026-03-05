@@ -215,8 +215,14 @@ ${domainDescribes}
       expect(opNames).toContain('route_intent');
       expect(opNames).toContain('morph');
       expect(opNames).toContain('get_behavior_rules');
-      // Total: 53
-      expect(facade.ops.length).toBe(53);
+      // Governance ops (5)
+      expect(opNames).toContain('governance_policy');
+      expect(opNames).toContain('governance_proposals');
+      expect(opNames).toContain('governance_stats');
+      expect(opNames).toContain('governance_expire');
+      expect(opNames).toContain('governance_dashboard');
+      // Total: 58
+      expect(facade.ops.length).toBe(58);
     });
 
     it('search should query across all domains with ranked results', async () => {
@@ -360,6 +366,32 @@ ${domainDescribes}
       const result = (await healthOp.handler({})) as { score: number };
       expect(result.score).toBeGreaterThan(0);
     });
+
+    it('governance_policy get should return default policy', async () => {
+      const facade = buildCoreFacade();
+      const policyOp = facade.ops.find((o) => o.name === 'governance_policy')!;
+      const result = (await policyOp.handler({ action: 'get', projectPath: '/test' })) as {
+        projectPath: string;
+        quotas: { maxEntriesTotal: number };
+        autoCapture: { enabled: boolean };
+      };
+      expect(result.projectPath).toBe('/test');
+      expect(result.quotas.maxEntriesTotal).toBe(500);
+      expect(result.autoCapture.enabled).toBe(true);
+    });
+
+    it('governance_dashboard should return combined view', async () => {
+      const facade = buildCoreFacade();
+      const dashOp = facade.ops.find((o) => o.name === 'governance_dashboard')!;
+      const result = (await dashOp.handler({ projectPath: '/test' })) as {
+        vaultSize: number;
+        quotaPercent: number;
+        pendingProposals: number;
+      };
+      expect(typeof result.vaultSize).toBe('number');
+      expect(typeof result.quotaPercent).toBe('number');
+      expect(result.pendingProposals).toBe(0);
+    });
   });
 });
 `;
@@ -417,7 +449,7 @@ function generateDomainDescribe(agentId: string, domain: string): string {
         severity: 'warning',
         description: 'A captured pattern.',
         tags: ['captured'],
-      })) as { captured: boolean };
+      })) as { captured: boolean; governance?: { action: string } };
       expect(result.captured).toBe(true);
       const entry = runtime.vault.get('${domain}-cap1');
       expect(entry).not.toBeNull();

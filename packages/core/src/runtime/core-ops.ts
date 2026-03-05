@@ -1,5 +1,5 @@
 /**
- * Generic core operations factory — 45 ops that every agent gets.
+ * Generic core operations factory — 53 ops that every agent gets.
  *
  * These ops are agent-agnostic (no persona, no activation).
  * The 5 agent-specific ops (health, identity, activate, inject_claude_md, setup)
@@ -11,12 +11,14 @@ import type { OpDefinition } from '../facades/types.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { AgentRuntime } from './types.js';
 import type { GuidelineCategory, OperationalMode } from '../control/types.js';
+import type { PolicyType, PolicyPreset } from '../governance/types.js';
 
 /**
- * Create the 48 generic core operations for an agent runtime.
+ * Create the 53 generic core operations for an agent runtime.
  *
  * Groups: search/vault (4), memory (4), export (1), planning (5),
- *         brain (7), brain intelligence (11), curator (8), control (8).
+ *         brain (7), brain intelligence (11), curator (8), control (8),
+ *         governance (5).
  */
 export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
   const {
@@ -25,6 +27,7 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
     brainIntelligence,
     planner,
     curator,
+    governance,
     identityManager,
     intentRouter,
     llmClient,
@@ -867,6 +870,144 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
         const rules = intentRouter.getBehaviorRules(mode);
         const currentMode = intentRouter.getCurrentMode();
         return { mode: mode ?? currentMode, rules };
+      },
+    },
+
+    // ─── Governance ─────────────────────────────────────────────────
+    {
+      name: 'governance_policy',
+      description:
+        'Get, set, or apply a preset to vault governance policies (quota, retention, auto-capture).',
+      auth: 'write',
+      schema: z.object({
+        action: z.enum(['get', 'set', 'applyPreset']),
+        projectPath: z.string(),
+        policyType: z.enum(['quota', 'retention', 'auto-capture']).optional(),
+        config: z.record(z.unknown()).optional(),
+        preset: z.enum(['strict', 'moderate', 'permissive']).optional(),
+        changedBy: z.string().optional(),
+      }),
+      handler: async (params) => {
+        const action = params.action as string;
+        const projectPath = params.projectPath as string;
+        if (action === 'get') {
+          return governance.getPolicy(projectPath);
+        }
+        if (action === 'set') {
+          governance.setPolicy(
+            projectPath,
+            params.policyType as PolicyType,
+            params.config as Record<string, unknown>,
+            params.changedBy as string | undefined,
+          );
+          return { updated: true, policy: governance.getPolicy(projectPath) };
+        }
+        if (action === 'applyPreset') {
+          governance.applyPreset(
+            projectPath,
+            params.preset as PolicyPreset,
+            params.changedBy as string | undefined,
+          );
+          return {
+            applied: true,
+            preset: params.preset,
+            policy: governance.getPolicy(projectPath),
+          };
+        }
+        return { error: 'Unknown action: ' + action };
+      },
+    },
+    {
+      name: 'governance_proposals',
+      description:
+        'Manage knowledge capture proposals — list, approve, reject, modify, get stats, or expire stale.',
+      auth: 'write',
+      schema: z.object({
+        action: z.enum(['list', 'approve', 'reject', 'modify', 'stats', 'expire']),
+        projectPath: z.string().optional(),
+        proposalId: z.number().optional(),
+        decidedBy: z.string().optional(),
+        note: z.string().optional(),
+        modifications: z.record(z.unknown()).optional(),
+        maxAgeDays: z.number().optional(),
+        limit: z.number().optional(),
+      }),
+      handler: async (params) => {
+        const action = params.action as string;
+        if (action === 'list') {
+          return governance.listPendingProposals(
+            params.projectPath as string | undefined,
+            params.limit as number | undefined,
+          );
+        }
+        if (action === 'approve') {
+          return governance.approveProposal(
+            params.proposalId as number,
+            params.decidedBy as string | undefined,
+          );
+        }
+        if (action === 'reject') {
+          return governance.rejectProposal(
+            params.proposalId as number,
+            params.decidedBy as string | undefined,
+            params.note as string | undefined,
+          );
+        }
+        if (action === 'modify') {
+          return governance.modifyProposal(
+            params.proposalId as number,
+            params.modifications as Record<string, unknown>,
+            params.decidedBy as string | undefined,
+          );
+        }
+        if (action === 'stats') {
+          return governance.getProposalStats(params.projectPath as string | undefined);
+        }
+        if (action === 'expire') {
+          const expired = governance.expireStaleProposals(params.maxAgeDays as number | undefined);
+          return { expired };
+        }
+        return { error: 'Unknown action: ' + action };
+      },
+    },
+    {
+      name: 'governance_stats',
+      description: 'Get governance statistics — quota status and proposal stats for a project.',
+      auth: 'read',
+      schema: z.object({
+        projectPath: z.string(),
+      }),
+      handler: async (params) => {
+        const projectPath = params.projectPath as string;
+        return {
+          quotaStatus: governance.getQuotaStatus(projectPath),
+          proposalStats: governance.getProposalStats(projectPath),
+        };
+      },
+    },
+    {
+      name: 'governance_expire',
+      description: 'Expire stale pending proposals older than a threshold.',
+      auth: 'write',
+      schema: z.object({
+        projectPath: z.string().optional(),
+        maxAgeDays: z.number().optional().describe('Days threshold. Default 14.'),
+      }),
+      handler: async (params) => {
+        const expired = governance.expireStaleProposals(params.maxAgeDays as number | undefined);
+        return { expired };
+      },
+    },
+    {
+      name: 'governance_dashboard',
+      description:
+        'Get governance dashboard — vault size, quota usage, pending proposals, acceptance rate, evaluation trend.',
+      auth: 'read',
+      schema: z.object({
+        projectPath: z.string(),
+      }),
+      handler: async (params) => {
+        return governance.getDashboard(params.projectPath as string);
       },
     },
   ];

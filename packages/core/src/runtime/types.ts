@@ -3,6 +3,7 @@ import type { Brain } from '../brain/brain.js';
 import type { BrainIntelligence } from '../brain/intelligence.js';
 import type { Planner } from '../planning/planner.js';
 import type { Curator } from '../curator/curator.js';
+import type { Governance } from '../governance/governance.js';
 import type { KeyPool } from '../llm/key-pool.js';
 import type { LLMClient } from '../llm/llm-client.js';
 import type { IdentityManager } from '../control/identity-manager.js';
@@ -39,6 +40,7 @@ export interface AgentRuntime {
   brainIntelligence: BrainIntelligence;
   planner: Planner;
   curator: Curator;
+  governance: Governance;
   identityManager: IdentityManager;
   intentRouter: IntentRouter;
   keyPool: { openai: KeyPool; anthropic: KeyPool };

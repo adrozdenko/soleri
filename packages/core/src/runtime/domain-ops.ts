@@ -25,7 +25,7 @@ export function createDomainFacade(
   agentId: string,
   domain: string,
 ): FacadeConfig {
-  const { vault, brain } = runtime;
+  const { vault, brain, governance } = runtime;
   const facadeName = `${agentId}_${domain.replace(/-/g, '_')}`;
 
   const ops: OpDefinition[] = [
@@ -92,21 +92,73 @@ export function createDomainFacade(
         counterExample: z.string().optional(),
         why: z.string().optional(),
         tags: z.array(z.string()).optional().default([]),
+        projectPath: z.string().optional().default('.'),
       }),
       handler: async (params) => {
-        return brain.enrichAndCapture({
-          id: params.id as string,
-          type: params.type as 'pattern' | 'anti-pattern' | 'rule',
-          domain,
-          title: params.title as string,
-          severity: params.severity as 'critical' | 'warning' | 'suggestion',
-          description: params.description as string,
-          context: params.context as string | undefined,
-          example: params.example as string | undefined,
-          counterExample: params.counterExample as string | undefined,
-          why: params.why as string | undefined,
-          tags: params.tags as string[],
+        const projectPath = (params.projectPath as string | undefined) ?? '.';
+        const entryType = params.type as string;
+        const title = params.title as string;
+
+        const decision = governance.evaluateCapture(projectPath, {
+          type: entryType,
+          category: domain,
+          title,
         });
+
+        switch (decision.action) {
+          case 'capture': {
+            const result = brain.enrichAndCapture({
+              id: params.id as string,
+              type: params.type as 'pattern' | 'anti-pattern' | 'rule',
+              domain,
+              title,
+              severity: params.severity as 'critical' | 'warning' | 'suggestion',
+              description: params.description as string,
+              context: params.context as string | undefined,
+              example: params.example as string | undefined,
+              counterExample: params.counterExample as string | undefined,
+              why: params.why as string | undefined,
+              tags: params.tags as string[],
+            });
+            return { ...result, governance: { action: 'capture' as const } };
+          }
+          case 'propose': {
+            const proposalId = governance.propose(
+              projectPath,
+              {
+                entryId: params.id as string,
+                title,
+                type: entryType,
+                category: domain,
+                data: {
+                  severity: params.severity,
+                  description: params.description,
+                  context: params.context,
+                  example: params.example,
+                  counterExample: params.counterExample,
+                  why: params.why,
+                  tags: params.tags,
+                },
+              },
+              'domain-capture',
+            );
+            return {
+              captured: false,
+              id: params.id as string,
+              autoTags: [],
+              governance: { action: 'propose' as const, proposalId, reason: decision.reason },
+            };
+          }
+          default: {
+            // reject or quarantine
+            return {
+              captured: false,
+              id: params.id as string,
+              autoTags: [],
+              governance: { action: decision.action, reason: decision.reason },
+            };
+          }
+        }
       },
     },
     {

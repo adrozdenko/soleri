@@ -37,6 +37,26 @@ export type {
   CuratorStatus,
 } from './curator/types.js';
 
+// ─── Governance ─────────────────────────────────────────────────────
+export { Governance } from './governance/governance.js';
+export type {
+  PolicyType,
+  PolicyPreset,
+  PolicyAction,
+  QuotaPolicy,
+  RetentionPolicy,
+  AutoCapturePolicy,
+  VaultPolicy,
+  QuotaStatus,
+  PolicyDecision,
+  BatchDecision,
+  PolicyAuditEntry,
+  ProposalStatus,
+  Proposal,
+  ProposalStats,
+  GovernanceDashboard,
+} from './governance/types.js';
+
 // ─── Brain ───────────────────────────────────────────────────────────
 export { Brain } from './brain/brain.js';
 export { BrainIntelligence } from './brain/intelligence.js';

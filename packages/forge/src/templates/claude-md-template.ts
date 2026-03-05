@@ -76,6 +76,11 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     `| Add guideline | ${bt}${toolPrefix}_core${bt} | ${bt}add_guideline${bt} |`,
     `| Remove guideline | ${bt}${toolPrefix}_core${bt} | ${bt}remove_guideline${bt} |`,
     `| Rollback identity | ${bt}${toolPrefix}_core${bt} | ${bt}rollback_identity${bt} |`,
+    `| Governance policy | ${bt}${toolPrefix}_core${bt} | ${bt}governance_policy${bt} |`,
+    `| Governance proposals | ${bt}${toolPrefix}_core${bt} | ${bt}governance_proposals${bt} |`,
+    `| Governance stats | ${bt}${toolPrefix}_core${bt} | ${bt}governance_stats${bt} |`,
+    `| Expire proposals | ${bt}${toolPrefix}_core${bt} | ${bt}governance_expire${bt} |`,
+    `| Governance dashboard | ${bt}${toolPrefix}_core${bt} | ${bt}governance_dashboard${bt} |`,
   );
 
   mdLines.push(
