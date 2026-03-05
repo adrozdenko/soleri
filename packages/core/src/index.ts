@@ -110,6 +110,9 @@ export type {
   DriftItem,
   ReconciliationReport,
   ReviewEvidence,
+  PlanGrade,
+  PlanGap,
+  PlanCheck,
 } from './planning/planner.js';
 
 // ─── Loop ────────────────────────────────────────────────────────────
@@ -183,6 +186,14 @@ export type {
   MorphResult,
 } from './control/types.js';
 
+// ─── Project Registry ──────────────────────────────────────────────
+export { ProjectRegistry } from './project/project-registry.js';
+export type { RegisteredProject, ProjectRule, LinkType, ProjectLink } from './project/types.js';
+
+// ─── Telemetry ─────────────────────────────────────────────────────
+export { Telemetry } from './telemetry/telemetry.js';
+export type { FacadeCall, TelemetryStats } from './telemetry/telemetry.js';
+
 // ─── Logging ────────────────────────────────────────────────────────
 export { Logger, createLogger } from './logging/logger.js';
 export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/types.js';
@@ -195,6 +206,11 @@ export { createPlanningExtraOps } from './runtime/planning-extra-ops.js';
 export { createMemoryExtraOps } from './runtime/memory-extra-ops.js';
 export { createVaultExtraOps } from './runtime/vault-extra-ops.js';
 export { createAdminOps } from './runtime/admin-ops.js';
+export { createAdminExtraOps } from './runtime/admin-extra-ops.js';
 export { createLoopOps } from './runtime/loop-ops.js';
 export { createOrchestrateOps } from './runtime/orchestrate-ops.js';
+export { createGradingOps } from './runtime/grading-ops.js';
+export { createCaptureOps } from './runtime/capture-ops.js';
+export { createCuratorExtraOps } from './runtime/curator-extra-ops.js';
+export { createProjectOps } from './runtime/project-ops.js';
 export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';

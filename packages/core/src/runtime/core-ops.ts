@@ -1,5 +1,5 @@
 /**
- * Generic core operations factory — 109 ops that every agent gets.
+ * Generic core operations factory — 144 ops that every agent gets.
  *
  * These ops are agent-agnostic (no persona, no activation).
  * The 5 agent-specific ops (health, identity, activate, inject_claude_md, setup)
@@ -17,17 +17,23 @@ import { createPlanningExtraOps } from './planning-extra-ops.js';
 import { createMemoryExtraOps } from './memory-extra-ops.js';
 import { createVaultExtraOps } from './vault-extra-ops.js';
 import { createAdminOps } from './admin-ops.js';
+import { createAdminExtraOps } from './admin-extra-ops.js';
 import { createLoopOps } from './loop-ops.js';
 import { createOrchestrateOps } from './orchestrate-ops.js';
+import { createGradingOps } from './grading-ops.js';
+import { createCaptureOps } from './capture-ops.js';
+import { createCuratorExtraOps } from './curator-extra-ops.js';
+import { createProjectOps } from './project-ops.js';
 
 /**
- * Create the 109 generic core operations for an agent runtime.
+ * Create the 144 generic core operations for an agent runtime.
  *
  * Groups: search/vault (4), memory (4), export (1), planning (5),
  *         brain (7), brain intelligence (11), cognee (5),
  *         llm (2), curator (8), control (8), governance (5),
  *         planning-extra (9), memory-extra (8), vault-extra (12),
- *         admin (8), loop (7), orchestrate (5).
+ *         admin (8), admin-extra (10), loop (7), orchestrate (5),
+ *         grading (5), capture (4), curator-extra (4), project (12).
  */
 export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
   const {
@@ -111,6 +117,8 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
         const { resolve } = await import('node:path');
         const projectPath = resolve((params.projectPath as string) ?? '.');
         const project = vault.registerProject(projectPath, params.name as string | undefined);
+        // Also track in project registry for cross-project features
+        runtime.projectRegistry.register(projectPath, params.name as string | undefined);
         const stats = vault.stats();
         const isNew = project.sessionCount === 1;
 
@@ -1172,7 +1180,12 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
     ...createMemoryExtraOps(runtime),
     ...createVaultExtraOps(runtime),
     ...createAdminOps(runtime),
+    ...createAdminExtraOps(runtime),
     ...createLoopOps(runtime),
     ...createOrchestrateOps(runtime),
+    ...createGradingOps(runtime),
+    ...createCaptureOps(runtime),
+    ...createCuratorExtraOps(runtime),
+    ...createProjectOps(runtime),
   ];
 }

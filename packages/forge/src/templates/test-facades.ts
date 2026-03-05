@@ -285,8 +285,48 @@ ${domainDescribes}
       expect(opNames).toContain('orchestrate_complete');
       expect(opNames).toContain('orchestrate_status');
       expect(opNames).toContain('orchestrate_quick_capture');
-      // Total: 114 (109 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(114);
+      // Capture ops (4)
+      expect(opNames).toContain('capture_knowledge');
+      expect(opNames).toContain('capture_quick');
+      expect(opNames).toContain('search_intelligent');
+      expect(opNames).toContain('search_feedback');
+      // Grading ops (5)
+      expect(opNames).toContain('plan_grade');
+      expect(opNames).toContain('plan_check_history');
+      expect(opNames).toContain('plan_latest_check');
+      expect(opNames).toContain('plan_meets_grade');
+      expect(opNames).toContain('plan_auto_improve');
+      // Admin Extra ops (10)
+      expect(opNames).toContain('admin_telemetry');
+      expect(opNames).toContain('admin_telemetry_recent');
+      expect(opNames).toContain('admin_telemetry_reset');
+      expect(opNames).toContain('admin_permissions');
+      expect(opNames).toContain('admin_vault_analytics');
+      expect(opNames).toContain('admin_search_insights');
+      expect(opNames).toContain('admin_module_status');
+      expect(opNames).toContain('admin_env');
+      expect(opNames).toContain('admin_gc');
+      expect(opNames).toContain('admin_export_config');
+      // Curator Extra ops (4)
+      expect(opNames).toContain('curator_entry_history');
+      expect(opNames).toContain('curator_record_snapshot');
+      expect(opNames).toContain('curator_queue_stats');
+      expect(opNames).toContain('curator_enrich');
+      // Project ops (12)
+      expect(opNames).toContain('project_get');
+      expect(opNames).toContain('project_list');
+      expect(opNames).toContain('project_unregister');
+      expect(opNames).toContain('project_get_rules');
+      expect(opNames).toContain('project_list_rules');
+      expect(opNames).toContain('project_add_rule');
+      expect(opNames).toContain('project_remove_rule');
+      expect(opNames).toContain('project_link');
+      expect(opNames).toContain('project_unlink');
+      expect(opNames).toContain('project_get_links');
+      expect(opNames).toContain('project_linked_projects');
+      expect(opNames).toContain('project_touch');
+      // Total: 149 (144 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(149);
     });
 
     it('search should query across all domains with ranked results', async () => {

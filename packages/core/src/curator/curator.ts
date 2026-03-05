@@ -93,6 +93,15 @@ export class Curator {
         created_at INTEGER NOT NULL DEFAULT (unixepoch())
       );
 
+      CREATE TABLE IF NOT EXISTS curator_entry_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entry_id TEXT NOT NULL,
+        snapshot TEXT NOT NULL,
+        changed_by TEXT DEFAULT 'system',
+        change_reason TEXT,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      );
+
       CREATE TABLE IF NOT EXISTS curator_contradictions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         pattern_id TEXT NOT NULL,
@@ -636,6 +645,210 @@ export class Curator {
       },
       recommendations,
     };
+  }
+
+  // ─── Entry History (Version Snapshots) ─────────────────────────
+
+  recordSnapshot(
+    entryId: string,
+    changedBy?: string,
+    changeReason?: string,
+  ): { recorded: boolean; historyId: number } {
+    const entry = this.vault.get(entryId);
+    if (!entry) return { recorded: false, historyId: -1 };
+
+    const db = this.vault.getDb();
+    const result = db
+      .prepare(
+        'INSERT INTO curator_entry_history (entry_id, snapshot, changed_by, change_reason, created_at) VALUES (?, ?, ?, ?, unixepoch())',
+      )
+      .run(entryId, JSON.stringify(entry), changedBy ?? 'system', changeReason ?? null);
+
+    return { recorded: true, historyId: Number(result.lastInsertRowid) };
+  }
+
+  getVersionHistory(
+    entryId: string,
+  ): Array<{
+    historyId: number;
+    entryId: string;
+    snapshot: IntelligenceEntry;
+    changedBy: string;
+    changeReason: string | null;
+    createdAt: number;
+  }> {
+    const db = this.vault.getDb();
+    const rows = db
+      .prepare(
+        'SELECT * FROM curator_entry_history WHERE entry_id = ? ORDER BY created_at ASC, id ASC',
+      )
+      .all(entryId) as Array<Record<string, unknown>>;
+
+    return rows.map((row) => ({
+      historyId: row.id as number,
+      entryId: row.entry_id as string,
+      snapshot: JSON.parse(row.snapshot as string) as IntelligenceEntry,
+      changedBy: row.changed_by as string,
+      changeReason: (row.change_reason as string) ?? null,
+      createdAt: row.created_at as number,
+    }));
+  }
+
+  // ─── Queue Stats ──────────────────────────────────────────────
+
+  getQueueStats(): {
+    totalEntries: number;
+    groomedEntries: number;
+    ungroomedEntries: number;
+    staleEntries: number;
+    freshEntries: number;
+    avgDaysSinceGroom: number;
+  } {
+    const db = this.vault.getDb();
+    const totalEntries = (
+      db.prepare('SELECT COUNT(*) as count FROM entries').get() as { count: number }
+    ).count;
+
+    const groomedEntries = (
+      db
+        .prepare(
+          'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
+        )
+        .get() as { count: number }
+    ).count;
+
+    const ungroomedEntries = totalEntries - groomedEntries;
+
+    const now = Math.floor(Date.now() / 1000);
+    const staleThreshold = now - 30 * 86400;
+    const freshThreshold = now - 7 * 86400;
+
+    const staleEntries = (
+      db
+        .prepare(
+          'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL AND last_groomed_at < ?',
+        )
+        .get(staleThreshold) as { count: number }
+    ).count;
+
+    const freshEntries = (
+      db
+        .prepare(
+          'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL AND last_groomed_at >= ?',
+        )
+        .get(freshThreshold) as { count: number }
+    ).count;
+
+    let avgDaysSinceGroom = 0;
+    if (groomedEntries > 0) {
+      const sumRow = db
+        .prepare(
+          'SELECT SUM(? - last_groomed_at) as total FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
+        )
+        .get(now) as { total: number | null };
+      const totalSeconds = sumRow.total ?? 0;
+      avgDaysSinceGroom = Math.round((totalSeconds / groomedEntries / 86400) * 100) / 100;
+    }
+
+    return {
+      totalEntries,
+      groomedEntries,
+      ungroomedEntries,
+      staleEntries,
+      freshEntries,
+      avgDaysSinceGroom,
+    };
+  }
+
+  // ─── Metadata Enrichment ──────────────────────────────────────
+
+  enrichMetadata(
+    entryId: string,
+  ): { enriched: boolean; changes: Array<{ field: string; before: string; after: string }> } {
+    const entry = this.vault.get(entryId);
+    if (!entry) return { enriched: false, changes: [] };
+
+    const changes: Array<{ field: string; before: string; after: string }> = [];
+    const updates: Partial<
+      Pick<IntelligenceEntry, 'title' | 'description' | 'tags' | 'severity' | 'type'>
+    > = {};
+
+    // Auto-capitalize title
+    if (entry.title.length > 0 && entry.title[0] !== entry.title[0].toUpperCase()) {
+      const capitalized = entry.title[0].toUpperCase() + entry.title.slice(1);
+      changes.push({ field: 'title', before: entry.title, after: capitalized });
+      updates.title = capitalized;
+    }
+
+    // Normalize tags: lowercase, trim, dedup
+    const normalizedTags = [...new Set(entry.tags.map((t) => t.toLowerCase().trim()))];
+    const tagsChanged =
+      normalizedTags.length !== entry.tags.length ||
+      normalizedTags.some((t, i) => t !== entry.tags[i]);
+    if (tagsChanged) {
+      changes.push({
+        field: 'tags',
+        before: JSON.stringify(entry.tags),
+        after: JSON.stringify(normalizedTags),
+      });
+      updates.tags = normalizedTags;
+    }
+
+    // Infer severity from keywords if currently 'suggestion'
+    if (entry.severity === 'suggestion') {
+      const text = (entry.title + ' ' + entry.description).toLowerCase();
+      const criticalKeywords = ['never', 'must not', 'critical', 'security', 'vulnerability'];
+      const warningKeywords = ['avoid', 'should not', 'deprecated', 'careful', 'warning'];
+      if (criticalKeywords.some((k) => text.includes(k))) {
+        changes.push({ field: 'severity', before: entry.severity, after: 'critical' });
+        updates.severity = 'critical';
+      } else if (warningKeywords.some((k) => text.includes(k))) {
+        changes.push({ field: 'severity', before: entry.severity, after: 'warning' });
+        updates.severity = 'warning';
+      }
+    }
+
+    // Infer type from title patterns
+    if (entry.type === 'pattern') {
+      const titleLower = entry.title.toLowerCase();
+      if (
+        titleLower.startsWith('avoid') ||
+        titleLower.startsWith('never') ||
+        titleLower.startsWith("don't") ||
+        titleLower.startsWith('do not')
+      ) {
+        changes.push({ field: 'type', before: entry.type, after: 'anti-pattern' });
+        updates.type = 'anti-pattern';
+      }
+    }
+
+    // Trim whitespace from description
+    const trimmed = entry.description.trim();
+    if (trimmed !== entry.description) {
+      changes.push({ field: 'description', before: entry.description, after: trimmed });
+      updates.description = trimmed;
+    }
+
+    if (changes.length === 0) {
+      return { enriched: false, changes: [] };
+    }
+
+    // Apply updates
+    this.vault.update(entryId, updates);
+
+    // Record snapshot
+    this.recordSnapshot(entryId, 'curator', 'Metadata enrichment');
+
+    // Log change
+    this.logChange(
+      'enrich_metadata',
+      entryId,
+      JSON.stringify(changes.map((c) => c.field)),
+      JSON.stringify(changes.map((c) => c.after)),
+      'Rule-based metadata enrichment',
+    );
+
+    return { enriched: true, changes };
   }
 
   // ─── Private Helpers ────────────────────────────────────────────

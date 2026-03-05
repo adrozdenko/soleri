@@ -10,6 +10,8 @@ import type { LLMClient } from '../llm/llm-client.js';
 import type { IdentityManager } from '../control/identity-manager.js';
 import type { IntentRouter } from '../control/intent-router.js';
 import type { LoopManager } from '../loop/loop-manager.js';
+import type { Telemetry } from '../telemetry/telemetry.js';
+import type { ProjectRegistry } from '../project/project-registry.js';
 import type { Logger } from '../logging/logger.js';
 import type { LogLevel } from '../logging/types.js';
 
@@ -49,6 +51,8 @@ export interface AgentRuntime {
   intentRouter: IntentRouter;
   keyPool: { openai: KeyPool; anthropic: KeyPool };
   llmClient: LLMClient;
+  telemetry: Telemetry;
+  projectRegistry: ProjectRegistry;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

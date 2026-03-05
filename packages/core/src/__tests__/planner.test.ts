@@ -225,6 +225,133 @@ describe('Planner', () => {
     });
   });
 
+  describe('grade', () => {
+    it('should grade a well-formed plan highly', () => {
+      const plan = planner.create({
+        objective: 'Implement caching layer',
+        scope: 'API backend',
+        decisions: ['Use Redis', 'TTL of 5 min', 'Cache invalidation on write'],
+        tasks: [
+          { title: 'Set up Redis client', description: 'Connect to Redis instance' },
+          { title: 'Add cache middleware', description: 'Express middleware for caching' },
+          { title: 'Add invalidation logic', description: 'Purge on write operations' },
+          { title: 'Write integration tests', description: 'Test cache hit/miss scenarios' },
+          { title: 'Add monitoring', description: 'Track cache hit rate metrics' },
+        ],
+      });
+      const check = planner.grade(plan.id);
+      expect(check.score).toBeGreaterThanOrEqual(85);
+      expect(check.grade).toMatch(/^A/);
+      expect(check.gaps.length).toBeLessThanOrEqual(2);
+      expect(check.checkId).toMatch(/^chk-/);
+    });
+
+    it('should give low score to empty plan', () => {
+      const plan = planner.create({ objective: '', scope: '' });
+      const check = planner.grade(plan.id);
+      expect(check.score).toBeLessThanOrEqual(40);
+      expect(check.gaps.length).toBeGreaterThan(0);
+    });
+
+    it('should detect duplicate task titles', () => {
+      const plan = planner.create({
+        objective: 'Test duplicates',
+        scope: 'test',
+        decisions: ['Use approach A', 'Use approach B'],
+        tasks: [
+          { title: 'Same title', description: 'First task' },
+          { title: 'Same title', description: 'Second task' },
+          { title: 'Unique title', description: 'Third task' },
+        ],
+      });
+      const check = planner.grade(plan.id);
+      const dupGap = check.gaps.find((g) => g.description.includes('Duplicate'));
+      expect(dupGap).toBeDefined();
+    });
+
+    it('should detect tasks missing descriptions', () => {
+      const plan = planner.create({
+        objective: 'Test descriptions',
+        scope: 'test',
+        decisions: ['Decision A'],
+        tasks: [
+          { title: 'Task with desc', description: 'Has description' },
+          { title: 'Task without desc', description: '' },
+          { title: 'Another task', description: 'Has description' },
+        ],
+      });
+      const check = planner.grade(plan.id);
+      const descGap = check.gaps.find((g) => g.description.includes('missing descriptions'));
+      expect(descGap).toBeDefined();
+    });
+
+    it('should store check in plan history', () => {
+      const plan = planner.create({ objective: 'History test', scope: 'test' });
+      planner.grade(plan.id);
+      planner.grade(plan.id);
+      const history = planner.getCheckHistory(plan.id);
+      expect(history).toHaveLength(2);
+      expect(history[0].checkId).not.toBe(history[1].checkId);
+    });
+
+    it('should persist latestCheck', () => {
+      const plan = planner.create({ objective: 'Persist test', scope: 'test' });
+      const check = planner.grade(plan.id);
+      const latest = planner.getLatestCheck(plan.id);
+      expect(latest).not.toBeNull();
+      expect(latest!.checkId).toBe(check.checkId);
+    });
+  });
+
+  describe('meetsGrade', () => {
+    it('should return true when plan meets target grade', () => {
+      const plan = planner.create({
+        objective: 'Good plan',
+        scope: 'test',
+        decisions: ['D1', 'D2'],
+        tasks: [
+          { title: 'T1', description: 'D1' },
+          { title: 'T2', description: 'D2' },
+          { title: 'T3', description: 'D3' },
+          { title: 'T4', description: 'D4' },
+          { title: 'T5', description: 'D5' },
+          { title: 'T6', description: 'D6' },
+        ],
+      });
+      const result = planner.meetsGrade(plan.id, 'B');
+      expect(result.meets).toBe(true);
+      expect(result.check.score).toBeGreaterThanOrEqual(70);
+    });
+
+    it('should return false when plan does not meet target grade', () => {
+      const plan = planner.create({ objective: '', scope: '' });
+      const result = planner.meetsGrade(plan.id, 'A+');
+      expect(result.meets).toBe(false);
+    });
+  });
+
+  describe('getCheckHistory', () => {
+    it('should return empty array for plan with no checks', () => {
+      const plan = planner.create({ objective: 'No checks', scope: 'test' });
+      expect(planner.getCheckHistory(plan.id)).toEqual([]);
+    });
+
+    it('should throw for unknown plan', () => {
+      expect(() => planner.getCheckHistory('plan-nonexistent')).toThrow('not found');
+    });
+  });
+
+  describe('getLatestCheck', () => {
+    it('should return null for plan with no checks', () => {
+      const plan = planner.create({ objective: 'No checks', scope: 'test' });
+      expect(planner.getLatestCheck(plan.id)).toBeNull();
+    });
+
+    it('should throw for unknown plan', () => {
+      expect(() => planner.getLatestCheck('plan-nonexistent')).toThrow('not found');
+    });
+  });
+
   describe('full lifecycle', () => {
     it('should support draft → approved → executing → completed with tasks', () => {
       const plan = planner.create({

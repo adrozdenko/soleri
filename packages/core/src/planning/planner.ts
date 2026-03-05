@@ -38,6 +38,24 @@ export interface ReviewEvidence {
   reviewedAt: number;
 }
 
+export type PlanGrade = 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
+
+export interface PlanGap {
+  severity: 'critical' | 'major' | 'minor';
+  category: 'scope' | 'tasks' | 'dependencies' | 'risks' | 'decisions';
+  description: string;
+  suggestion: string;
+}
+
+export interface PlanCheck {
+  checkId: string;
+  planId: string;
+  grade: PlanGrade;
+  score: number; // 0-100
+  gaps: PlanGap[];
+  checkedAt: number;
+}
+
 export interface Plan {
   id: string;
   objective: string;
@@ -49,6 +67,10 @@ export interface Plan {
   reconciliation?: ReconciliationReport;
   /** Review evidence — populated by addReview(). */
   reviews?: ReviewEvidence[];
+  /** Latest grading check. */
+  latestCheck?: PlanCheck;
+  /** All check history. */
+  checks: PlanCheck[];
   createdAt: number;
   updatedAt: number;
 }
@@ -73,7 +95,12 @@ export class Planner {
     }
     try {
       const data = readFileSync(this.filePath, 'utf-8');
-      return JSON.parse(data) as PlanStore;
+      const store = JSON.parse(data) as PlanStore;
+      // Backward compatibility: ensure every plan has a checks array
+      for (const plan of store.plans) {
+        plan.checks = plan.checks ?? [];
+      }
+      return store;
     } catch {
       return { version: '1.0', plans: [] };
     }
@@ -104,6 +131,7 @@ export class Planner {
         status: 'pending' as TaskStatus,
         updatedAt: now,
       })),
+      checks: [],
       createdAt: now,
       updatedAt: now,
     };
@@ -429,5 +457,263 @@ export class Planner {
       totalTasks,
       tasksByStatus,
     };
+  }
+
+  // ─── Grading ──────────────────────────────────────────────────────
+
+  /**
+   * Grade a plan. Scores 0-100, returns grade + gaps.
+   * Criteria (10 pts each):
+   * 1. Has objective
+   * 2. Has scope
+   * 3. Has at least 1 task
+   * 4. All tasks have descriptions
+   * 5. Has decisions documented
+   * 6. No circular dependencies
+   * 7. Tasks have reasonable granularity (3-15 tasks)
+   * 8. Scope doesn't exceed 20 tasks
+   * 9. Has at least one decision per 3 tasks
+   * 10. All task titles are unique
+   */
+  grade(planId: string): PlanCheck {
+    const plan = this.get(planId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+
+    let score = 0;
+    const gaps: PlanGap[] = [];
+
+    // 1. Has objective (10 pts)
+    if (plan.objective && plan.objective.trim().length > 0) {
+      score += 10;
+    } else {
+      gaps.push({
+        severity: 'critical',
+        category: 'scope',
+        description: 'Plan has no objective.',
+        suggestion: 'Add a clear objective describing what this plan achieves.',
+      });
+    }
+
+    // 2. Has scope (10 pts)
+    if (plan.scope && plan.scope.trim().length > 0) {
+      score += 10;
+    } else {
+      gaps.push({
+        severity: 'critical',
+        category: 'scope',
+        description: 'Plan has no scope defined.',
+        suggestion: 'Define the scope — what is included and excluded.',
+      });
+    }
+
+    // 3. Has at least 1 task (10 pts)
+    if (plan.tasks.length >= 1) {
+      score += 10;
+    } else {
+      gaps.push({
+        severity: 'critical',
+        category: 'tasks',
+        description: 'Plan has no tasks.',
+        suggestion: 'Add at least one task to make the plan actionable.',
+      });
+    }
+
+    // 4. All tasks have descriptions (10 pts)
+    const tasksWithoutDesc = plan.tasks.filter(
+      (t) => !t.description || t.description.trim().length === 0,
+    );
+    if (plan.tasks.length > 0 && tasksWithoutDesc.length === 0) {
+      score += 10;
+    } else if (plan.tasks.length === 0) {
+      // No tasks at all — already penalized by criterion 3
+      // Don't double-penalize; award this criterion vacuously
+      score += 10;
+    } else {
+      gaps.push({
+        severity: 'major',
+        category: 'tasks',
+        description: `${tasksWithoutDesc.length} task(s) missing descriptions: ${tasksWithoutDesc.map((t) => t.id).join(', ')}.`,
+        suggestion: 'Add descriptions to all tasks explaining what needs to be done.',
+      });
+    }
+
+    // 5. Has decisions documented (10 pts)
+    if (plan.decisions.length > 0) {
+      score += 10;
+    } else {
+      gaps.push({
+        severity: 'major',
+        category: 'decisions',
+        description: 'No decisions documented.',
+        suggestion: 'Document key decisions and their rationale.',
+      });
+    }
+
+    // 6. No circular dependencies (10 pts)
+    if (this.hasCircularDependencies(plan)) {
+      gaps.push({
+        severity: 'critical',
+        category: 'dependencies',
+        description: 'Circular dependencies detected among tasks.',
+        suggestion: 'Remove circular dependency chains so tasks can be executed in order.',
+      });
+    } else {
+      score += 10;
+    }
+
+    // 7. Tasks have reasonable granularity — 3 to 15 tasks (10 pts)
+    if (plan.tasks.length >= 3 && plan.tasks.length <= 15) {
+      score += 10;
+    } else if (plan.tasks.length > 0) {
+      gaps.push({
+        severity: 'minor',
+        category: 'tasks',
+        description:
+          plan.tasks.length < 3
+            ? `Only ${plan.tasks.length} task(s) — plan may lack granularity.`
+            : `${plan.tasks.length} tasks — plan may be too granular.`,
+        suggestion:
+          plan.tasks.length < 3
+            ? 'Break down the work into 3-15 well-defined tasks.'
+            : 'Consolidate related tasks to keep the plan between 3-15 tasks.',
+      });
+    }
+
+    // 8. Scope doesn't exceed 20 tasks (10 pts)
+    if (plan.tasks.length <= 20) {
+      score += 10;
+    } else {
+      gaps.push({
+        severity: 'major',
+        category: 'scope',
+        description: `Plan has ${plan.tasks.length} tasks — exceeds the 20-task limit.`,
+        suggestion: 'Split into multiple plans or consolidate tasks to stay under 20.',
+      });
+    }
+
+    // 9. Has at least one decision per 3 tasks (10 pts)
+    const requiredDecisions = Math.max(1, Math.floor(plan.tasks.length / 3));
+    if (plan.decisions.length >= requiredDecisions) {
+      score += 10;
+    } else {
+      gaps.push({
+        severity: 'minor',
+        category: 'decisions',
+        description: `${plan.decisions.length} decision(s) for ${plan.tasks.length} tasks — expected at least ${requiredDecisions}.`,
+        suggestion: `Document at least 1 decision per 3 tasks (${requiredDecisions} needed).`,
+      });
+    }
+
+    // 10. All task titles are unique (10 pts)
+    const titleSet = new Set<string>();
+    const duplicateTitles: string[] = [];
+    for (const t of plan.tasks) {
+      if (titleSet.has(t.title)) {
+        duplicateTitles.push(t.title);
+      }
+      titleSet.add(t.title);
+    }
+    if (duplicateTitles.length === 0) {
+      score += 10;
+    } else {
+      gaps.push({
+        severity: 'minor',
+        category: 'tasks',
+        description: `Duplicate task titles: ${[...new Set(duplicateTitles)].join(', ')}.`,
+        suggestion: 'Give each task a unique, descriptive title.',
+      });
+    }
+
+    const grade = this.scoreToGrade(score);
+    const check: PlanCheck = {
+      checkId: `chk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      planId,
+      grade,
+      score,
+      gaps,
+      checkedAt: Date.now(),
+    };
+
+    plan.checks.push(check);
+    plan.latestCheck = check;
+    plan.updatedAt = Date.now();
+    this.save();
+
+    return check;
+  }
+
+  /**
+   * Get the latest check for a plan.
+   */
+  getLatestCheck(planId: string): PlanCheck | null {
+    const plan = this.get(planId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+    return plan.latestCheck ?? null;
+  }
+
+  /**
+   * Get all checks for a plan (history).
+   */
+  getCheckHistory(planId: string): PlanCheck[] {
+    const plan = this.get(planId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+    return [...plan.checks];
+  }
+
+  /**
+   * Auto-grade: grade the plan and return whether it meets a target grade.
+   */
+  meetsGrade(planId: string, targetGrade: PlanGrade): { meets: boolean; check: PlanCheck } {
+    const check = this.grade(planId);
+    const targetScore = this.gradeToMinScore(targetGrade);
+    return { meets: check.score >= targetScore, check };
+  }
+
+  // ─── Grading Helpers ──────────────────────────────────────────────
+
+  private scoreToGrade(score: number): PlanGrade {
+    if (score >= 95) return 'A+';
+    if (score >= 85) return 'A';
+    if (score >= 70) return 'B';
+    if (score >= 55) return 'C';
+    if (score >= 40) return 'D';
+    return 'F';
+  }
+
+  private gradeToMinScore(grade: PlanGrade): number {
+    switch (grade) {
+      case 'A+': return 95;
+      case 'A': return 85;
+      case 'B': return 70;
+      case 'C': return 55;
+      case 'D': return 40;
+      case 'F': return 0;
+    }
+  }
+
+  private hasCircularDependencies(plan: Plan): boolean {
+    const visited = new Set<string>();
+    const inStack = new Set<string>();
+    const taskMap = new Map(plan.tasks.map((t) => [t.id, t]));
+
+    const dfs = (taskId: string): boolean => {
+      if (inStack.has(taskId)) return true;
+      if (visited.has(taskId)) return false;
+      visited.add(taskId);
+      inStack.add(taskId);
+      const task = taskMap.get(taskId);
+      if (task?.dependsOn) {
+        for (const dep of task.dependsOn) {
+          if (dfs(dep)) return true;
+        }
+      }
+      inStack.delete(taskId);
+      return false;
+    };
+
+    for (const task of plan.tasks) {
+      if (dfs(task.id)) return true;
+    }
+    return false;
   }
 }

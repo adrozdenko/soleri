@@ -143,6 +143,46 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     `| Orchestrate complete | ${bt}${toolPrefix}_core${bt} | ${bt}orchestrate_complete${bt} |`,
     `| Orchestrate status | ${bt}${toolPrefix}_core${bt} | ${bt}orchestrate_status${bt} |`,
     `| Quick capture | ${bt}${toolPrefix}_core${bt} | ${bt}orchestrate_quick_capture${bt} |`,
+    // Capture ops
+    `| Capture knowledge | ${bt}${toolPrefix}_core${bt} | ${bt}capture_knowledge${bt} |`,
+    `| Quick capture entry | ${bt}${toolPrefix}_core${bt} | ${bt}capture_quick${bt} |`,
+    `| Intelligent search | ${bt}${toolPrefix}_core${bt} | ${bt}search_intelligent${bt} |`,
+    `| Search feedback | ${bt}${toolPrefix}_core${bt} | ${bt}search_feedback${bt} |`,
+    // Grading ops
+    `| Grade plan | ${bt}${toolPrefix}_core${bt} | ${bt}plan_grade${bt} |`,
+    `| Check history | ${bt}${toolPrefix}_core${bt} | ${bt}plan_check_history${bt} |`,
+    `| Latest check | ${bt}${toolPrefix}_core${bt} | ${bt}plan_latest_check${bt} |`,
+    `| Meets grade | ${bt}${toolPrefix}_core${bt} | ${bt}plan_meets_grade${bt} |`,
+    `| Auto improve plan | ${bt}${toolPrefix}_core${bt} | ${bt}plan_auto_improve${bt} |`,
+    // Admin Extra ops
+    `| Telemetry stats | ${bt}${toolPrefix}_core${bt} | ${bt}admin_telemetry${bt} |`,
+    `| Recent calls | ${bt}${toolPrefix}_core${bt} | ${bt}admin_telemetry_recent${bt} |`,
+    `| Reset telemetry | ${bt}${toolPrefix}_core${bt} | ${bt}admin_telemetry_reset${bt} |`,
+    `| Permissions | ${bt}${toolPrefix}_core${bt} | ${bt}admin_permissions${bt} |`,
+    `| Vault analytics | ${bt}${toolPrefix}_core${bt} | ${bt}admin_vault_analytics${bt} |`,
+    `| Search insights | ${bt}${toolPrefix}_core${bt} | ${bt}admin_search_insights${bt} |`,
+    `| Module status | ${bt}${toolPrefix}_core${bt} | ${bt}admin_module_status${bt} |`,
+    `| Environment | ${bt}${toolPrefix}_core${bt} | ${bt}admin_env${bt} |`,
+    `| Garbage collect | ${bt}${toolPrefix}_core${bt} | ${bt}admin_gc${bt} |`,
+    `| Export config | ${bt}${toolPrefix}_core${bt} | ${bt}admin_export_config${bt} |`,
+    // Curator Extra ops
+    `| Entry history | ${bt}${toolPrefix}_core${bt} | ${bt}curator_entry_history${bt} |`,
+    `| Record snapshot | ${bt}${toolPrefix}_core${bt} | ${bt}curator_record_snapshot${bt} |`,
+    `| Queue stats | ${bt}${toolPrefix}_core${bt} | ${bt}curator_queue_stats${bt} |`,
+    `| Enrich metadata | ${bt}${toolPrefix}_core${bt} | ${bt}curator_enrich${bt} |`,
+    // Project ops
+    `| Get project | ${bt}${toolPrefix}_core${bt} | ${bt}project_get${bt} |`,
+    `| List projects | ${bt}${toolPrefix}_core${bt} | ${bt}project_list${bt} |`,
+    `| Unregister project | ${bt}${toolPrefix}_core${bt} | ${bt}project_unregister${bt} |`,
+    `| Project rules | ${bt}${toolPrefix}_core${bt} | ${bt}project_get_rules${bt} |`,
+    `| All project rules | ${bt}${toolPrefix}_core${bt} | ${bt}project_list_rules${bt} |`,
+    `| Add rule | ${bt}${toolPrefix}_core${bt} | ${bt}project_add_rule${bt} |`,
+    `| Remove rule | ${bt}${toolPrefix}_core${bt} | ${bt}project_remove_rule${bt} |`,
+    `| Link projects | ${bt}${toolPrefix}_core${bt} | ${bt}project_link${bt} |`,
+    `| Unlink projects | ${bt}${toolPrefix}_core${bt} | ${bt}project_unlink${bt} |`,
+    `| Project links | ${bt}${toolPrefix}_core${bt} | ${bt}project_get_links${bt} |`,
+    `| Linked projects | ${bt}${toolPrefix}_core${bt} | ${bt}project_linked_projects${bt} |`,
+    `| Touch project | ${bt}${toolPrefix}_core${bt} | ${bt}project_touch${bt} |`,
   );
 
   mdLines.push(

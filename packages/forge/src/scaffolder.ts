@@ -92,7 +92,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     {
       name: `${config.id}_core`,
       ops: [
-        // From createCoreOps() — 109 generic ops
+        // From createCoreOps() — 144 generic ops
         'search',
         'vault_stats',
         'list_all',
@@ -211,6 +211,46 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'orchestrate_complete',
         'orchestrate_status',
         'orchestrate_quick_capture',
+        // Grading ops — 5
+        'plan_grade',
+        'plan_check_history',
+        'plan_latest_check',
+        'plan_meets_grade',
+        'plan_auto_improve',
+        // Capture ops — 4
+        'capture_knowledge',
+        'capture_quick',
+        'search_intelligent',
+        'search_feedback',
+        // Admin Extra ops — 10
+        'admin_telemetry',
+        'admin_telemetry_recent',
+        'admin_telemetry_reset',
+        'admin_permissions',
+        'admin_vault_analytics',
+        'admin_search_insights',
+        'admin_module_status',
+        'admin_env',
+        'admin_gc',
+        'admin_export_config',
+        // Curator Extra ops — 4
+        'curator_entry_history',
+        'curator_record_snapshot',
+        'curator_queue_stats',
+        'curator_enrich',
+        // Project ops — 12
+        'project_get',
+        'project_list',
+        'project_unregister',
+        'project_get_rules',
+        'project_list_rules',
+        'project_add_rule',
+        'project_remove_rule',
+        'project_link',
+        'project_unlink',
+        'project_get_links',
+        'project_linked_projects',
+        'project_touch',
         // Agent-specific ops — 5
         'health',
         'identity',

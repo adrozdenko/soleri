@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 109 ops', () => {
-    expect(ops.length).toBe(109);
+  it('should return 144 ops', () => {
+    expect(ops.length).toBe(144);
   });
 
   it('should have all expected op names', () => {
@@ -152,6 +152,17 @@ describe('createCoreOps', () => {
     expect(names).toContain('admin_version');
     expect(names).toContain('admin_reset_cache');
     expect(names).toContain('admin_diagnostic');
+    // Admin Extra (10)
+    expect(names).toContain('admin_telemetry');
+    expect(names).toContain('admin_telemetry_recent');
+    expect(names).toContain('admin_telemetry_reset');
+    expect(names).toContain('admin_permissions');
+    expect(names).toContain('admin_vault_analytics');
+    expect(names).toContain('admin_search_insights');
+    expect(names).toContain('admin_module_status');
+    expect(names).toContain('admin_env');
+    expect(names).toContain('admin_gc');
+    expect(names).toContain('admin_export_config');
     // Loop (7)
     expect(names).toContain('loop_start');
     expect(names).toContain('loop_iterate');
@@ -166,6 +177,35 @@ describe('createCoreOps', () => {
     expect(names).toContain('orchestrate_complete');
     expect(names).toContain('orchestrate_status');
     expect(names).toContain('orchestrate_quick_capture');
+    // Grading (5)
+    expect(names).toContain('plan_grade');
+    expect(names).toContain('plan_check_history');
+    expect(names).toContain('plan_latest_check');
+    expect(names).toContain('plan_meets_grade');
+    expect(names).toContain('plan_auto_improve');
+    // Capture (4)
+    expect(names).toContain('capture_knowledge');
+    expect(names).toContain('capture_quick');
+    expect(names).toContain('search_intelligent');
+    expect(names).toContain('search_feedback');
+    // Curator Extra (4)
+    expect(names).toContain('curator_entry_history');
+    expect(names).toContain('curator_record_snapshot');
+    expect(names).toContain('curator_queue_stats');
+    expect(names).toContain('curator_enrich');
+    // Project (12)
+    expect(names).toContain('project_get');
+    expect(names).toContain('project_list');
+    expect(names).toContain('project_unregister');
+    expect(names).toContain('project_get_rules');
+    expect(names).toContain('project_list_rules');
+    expect(names).toContain('project_add_rule');
+    expect(names).toContain('project_remove_rule');
+    expect(names).toContain('project_link');
+    expect(names).toContain('project_unlink');
+    expect(names).toContain('project_get_links');
+    expect(names).toContain('project_linked_projects');
+    expect(names).toContain('project_touch');
   });
 
   it('register should include governance summary', async () => {

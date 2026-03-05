@@ -22,6 +22,8 @@ import { IntentRouter } from '../control/intent-router.js';
 import { KeyPool, loadKeyPoolConfig } from '../llm/key-pool.js';
 import { loadIntelligenceData } from '../intelligence/loader.js';
 import { LLMClient } from '../llm/llm-client.js';
+import { Telemetry } from '../telemetry/telemetry.js';
+import { ProjectRegistry } from '../project/project-registry.js';
 import { createLogger } from '../logging/logger.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
@@ -84,6 +86,12 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Intent Router — keyword-based intent classification and mode management
   const intentRouter = new IntentRouter(vault);
 
+  // Telemetry — in-memory facade call tracking
+  const telemetry = new Telemetry();
+
+  // Project Registry — multi-project tracking with rules and links
+  const projectRegistry = new ProjectRegistry(vault.getDb());
+
   // LLM key pools and client
   const keyPoolFiles = loadKeyPoolConfig(agentId);
   const openaiKeyPool = new KeyPool(keyPoolFiles.openai);
@@ -105,6 +113,8 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     intentRouter,
     keyPool: { openai: openaiKeyPool, anthropic: anthropicKeyPool },
     llmClient,
+    telemetry,
+    projectRegistry,
     createdAt: Date.now(),
     close: () => {
       cognee.resetPendingCognify();
