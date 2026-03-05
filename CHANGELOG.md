@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## @soleri/cli@1.0.2 — 2026-03-05
+
+### Added
+
+- **Auto-routing UserPromptSubmit hook** — Generated Claude Code settings now include a bash hook that keyword-matches every user prompt and outputs a visible `[MODE]` indicator (FIX-MODE, BUILD-MODE, IMPROVE-MODE, etc.), then instructs the LLM to call `route_intent` for full behavior rules
+- **SessionStart hook** — Reminds the LLM to register the project and check for active plans on session start
+
+## @soleri/forge@5.1.1 — 2026-03-05
+
+### Added
+
+- **Auto-Routing section in generated CLAUDE.md** — Tells the LLM how to respond when `[MODE-NAME]` indicators appear in system context, including calling `route_intent` and following behavior rules
+- **Control ops in facade table** — 8 new ops documented: `route_intent`, `morph`, `get_behavior_rules`, `get_identity`, `update_identity`, `add_guideline`, `remove_guideline`, `rollback_identity`
+
 ## @soleri/forge@5.1.0 — 2026-03-05
 
 ### Changed
