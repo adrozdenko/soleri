@@ -104,6 +104,10 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
         const stats = vault.stats();
         const isNew = project.sessionCount === 1;
 
+        // Expire stale proposals on session start (fire-and-forget)
+        const policy = governance.getPolicy(projectPath);
+        const expired = governance.expireStaleProposals(policy.autoCapture.autoExpireDays);
+
         const proposalStats = governance.getProposalStats(projectPath);
         const quotaStatus = governance.getQuotaStatus(projectPath);
 
@@ -121,6 +125,7 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
                 ? Math.round((quotaStatus.total / quotaStatus.maxTotal) * 100)
                 : 0,
             isQuotaWarning: quotaStatus.isWarning,
+            expiredThisSession: expired,
           },
         };
       },
