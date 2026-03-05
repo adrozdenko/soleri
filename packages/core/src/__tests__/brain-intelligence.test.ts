@@ -431,6 +431,41 @@ describe('BrainIntelligence', () => {
     expect(result.failed).toContain('non-existent');
   });
 
+  it('should gate promote through governance when strict preset', () => {
+    // Create a brain session and extract proposals
+    runtime.brainIntelligence.lifecycle({
+      action: 'start',
+      sessionId: 'gov-promo-1',
+      toolsUsed: ['w', 'w', 'w'],
+    });
+    runtime.brainIntelligence.lifecycle({ action: 'end', sessionId: 'gov-promo-1' });
+    runtime.brainIntelligence.extractKnowledge('gov-promo-1');
+
+    const proposals = runtime.brainIntelligence.getProposals({ sessionId: 'gov-promo-1' });
+    expect(proposals.length).toBeGreaterThan(0);
+
+    // Apply strict preset — requireReview: true
+    runtime.governance.applyPreset('.', 'strict', 'test');
+
+    const result = runtime.brainIntelligence.promoteProposals(
+      [proposals[0].id],
+      runtime.governance,
+      '.',
+    );
+
+    // Should be gated, not promoted
+    expect(result.promoted).toBe(0);
+    expect(result.gated.length).toBe(1);
+    expect(result.gated[0].action).toBe('propose');
+
+    // Entry should NOT be in vault
+    expect(runtime.vault.get(`proposal-${proposals[0].id}`)).toBeNull();
+
+    // But should be in governance proposals
+    const pending = runtime.governance.listPendingProposals('.');
+    expect(pending.some((p) => p.source === 'brain-promote')).toBe(true);
+  });
+
   // ─── Build Intelligence ────────────────────────────────────────
 
   it('should build intelligence pipeline', () => {

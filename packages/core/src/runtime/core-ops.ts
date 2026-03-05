@@ -574,13 +574,15 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'brain_promote_proposals',
       description:
-        'Promote knowledge proposals to vault entries. Creates intelligence entries from auto-extracted patterns.',
+        'Promote knowledge proposals to vault entries. Creates intelligence entries from auto-extracted patterns. Gated by governance policies.',
       auth: 'write',
       schema: z.object({
         proposalIds: z.array(z.string()).describe('IDs of proposals to promote.'),
+        projectPath: z.string().optional().default('.'),
       }),
       handler: async (params) => {
-        return brainIntelligence.promoteProposals(params.proposalIds as string[]);
+        const pp = (params.projectPath as string | undefined) ?? '.';
+        return brainIntelligence.promoteProposals(params.proposalIds as string[], governance, pp);
       },
     },
     {

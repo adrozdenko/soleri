@@ -658,10 +658,36 @@ export class BrainIntelligence {
     return rows.map((r) => this.rowToProposal(r));
   }
 
-  promoteProposals(proposalIds: string[]): { promoted: number; failed: string[] } {
+  promoteProposals(
+    proposalIds: string[],
+    governanceGate?: {
+      evaluateCapture: (
+        projectPath: string,
+        entry: { type: string; category: string; title?: string },
+      ) => { action: string; reason?: string };
+      propose: (
+        projectPath: string,
+        entryData: {
+          entryId?: string;
+          title: string;
+          type: string;
+          category: string;
+          data?: Record<string, unknown>;
+        },
+        source?: string,
+      ) => number;
+    },
+    projectPath?: string,
+  ): {
+    promoted: number;
+    failed: string[];
+    gated: Array<{ id: string; action: string; reason?: string }>;
+  } {
     const db = this.vault.getDb();
     let promoted = 0;
     const failed: string[] = [];
+    const gated: Array<{ id: string; action: string; reason?: string }> = [];
+    const pp = projectPath ?? '.';
 
     for (const id of proposalIds) {
       const row = db.prepare('SELECT * FROM brain_proposals WHERE id = ?').get(id) as
@@ -685,10 +711,46 @@ export class BrainIntelligence {
 
       if (row.promoted) continue; // Already promoted
 
-      // Add to vault as intelligence entry — map workflow to pattern since vault only accepts pattern/anti-pattern/rule
+      // Map type for vault
       const rawType = row.type;
       const vaultType: 'pattern' | 'anti-pattern' | 'rule' =
         rawType === 'anti-pattern' ? 'anti-pattern' : 'pattern';
+
+      // Governance gate (when provided)
+      if (governanceGate) {
+        const decision = governanceGate.evaluateCapture(pp, {
+          type: vaultType,
+          category: 'brain-intelligence',
+          title: row.title,
+        });
+
+        if (decision.action === 'propose') {
+          governanceGate.propose(
+            pp,
+            {
+              entryId: `proposal-${id}`,
+              title: row.title,
+              type: vaultType,
+              category: 'brain-intelligence',
+              data: {
+                severity: 'suggestion',
+                description: row.description,
+                tags: ['auto-extracted', row.rule],
+              },
+            },
+            'brain-promote',
+          );
+          gated.push({ id, action: 'propose', reason: decision.reason });
+          continue;
+        }
+
+        if (decision.action !== 'capture') {
+          gated.push({ id, action: decision.action, reason: decision.reason });
+          continue;
+        }
+      }
+
+      // Capture into vault
       this.brain.enrichAndCapture({
         id: `proposal-${id}`,
         type: vaultType,
@@ -703,7 +765,7 @@ export class BrainIntelligence {
       promoted++;
     }
 
-    return { promoted, failed };
+    return { promoted, failed, gated };
   }
 
   // ─── Intelligence Pipeline ────────────────────────────────────────
