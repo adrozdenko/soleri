@@ -19,6 +19,7 @@ import { IntentRouter } from '../control/intent-router.js';
 import { KeyPool, loadKeyPoolConfig } from '../llm/key-pool.js';
 import { loadIntelligenceData } from '../intelligence/loader.js';
 import { LLMClient } from '../llm/llm-client.js';
+import { createLogger } from '../logging/logger.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -34,6 +35,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const agentHome = join(homedir(), `.${agentId}`);
   const vaultPath = config.vaultPath ?? join(agentHome, 'vault.db');
   const plansPath = config.plansPath ?? join(agentHome, 'plans.json');
+
+  // Logger — structured output to stderr
+  const logger = createLogger({ level: config.logLevel, prefix: `[${agentId}]` });
 
   // Vault — persistent SQLite knowledge store
   const vault = new Vault(vaultPath);
@@ -72,6 +76,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
 
   return {
     config,
+    logger,
     vault,
     brain,
     brainIntelligence,
