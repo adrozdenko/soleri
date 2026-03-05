@@ -25,6 +25,10 @@ The interactive wizard walks you through agent configuration: name, role, domain
 | `soleri hooks add <editor>`       | Generate editor hooks/config files                     |
 | `soleri hooks remove <editor>`    | Remove editor hooks/config files                       |
 | `soleri hooks list`               | Show installed editor hooks                            |
+| `soleri hooks add-pack <pack>`    | Install a hook pack globally (~/.claude/)               |
+| `soleri hooks remove-pack <pack>` | Remove a hook pack                                     |
+| `soleri hooks list-packs`         | Show available hook packs and their status              |
+| `soleri hooks upgrade-pack <pack>`| Upgrade a hook pack to the latest version              |
 
 ### Create
 
@@ -47,9 +51,34 @@ The config file follows the same schema as the wizard output:
   "domains": ["security", "code-quality"],
   "principles": ["Security is not optional"],
   "greeting": "Ready to review.",
-  "outputDir": "."
+  "outputDir": ".",
+  "hookPacks": ["typescript-safety", "clean-commits"]
 }
 ```
+
+### Hook Packs
+
+Hook packs are curated sets of quality gate rules that install as hookify files to `~/.claude/`. They enforce code standards during AI-assisted development.
+
+**Built-in packs:**
+
+| Pack | Hooks | Description |
+|------|-------|-------------|
+| `typescript-safety` | no-any-types, no-console-log | Block unsafe TS patterns |
+| `a11y` | semantic-html, focus-ring-required, ux-touch-targets | Accessibility enforcement |
+| `css-discipline` | no-important, no-inline-styles | CSS best practices |
+| `clean-commits` | no-ai-attribution | No AI attribution in git |
+| `full` | All 8 hooks | Complete quality suite |
+
+```bash
+soleri hooks list-packs                    # See available packs
+soleri hooks add-pack typescript-safety    # Install globally
+soleri hooks add-pack full --project       # Install to project .claude/
+soleri hooks upgrade-pack full             # Upgrade to latest version
+soleri hooks remove-pack typescript-safety # Remove
+```
+
+**Custom packs:** Create a `.soleri/hook-packs/<pack-name>/` directory with a `manifest.json` and hookify `.md` files. Local packs override built-in packs with the same name.
 
 ### Editor Hooks
 

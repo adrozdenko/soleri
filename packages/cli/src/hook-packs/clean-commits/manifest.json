@@ -1,5 +1,6 @@
 {
   "name": "clean-commits",
+  "version": "1.0.0",
   "description": "No AI attribution in git commits",
   "hooks": ["no-ai-attribution"]
 }

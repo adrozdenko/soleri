@@ -1,5 +1,6 @@
 ---
 # Soleri Hook Pack: a11y
+# Version: 1.0.0
 # Rule: focus-ring-required
 name: focus-ring-required
 enabled: true

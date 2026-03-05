@@ -40,9 +40,11 @@ export function registerCreate(program: Command): void {
           }
         }
 
-        // Hook packs (interactive only)
+        // Hook packs — from config file or interactive prompt
         let selectedPacks: string[] = [];
-        if (!opts?.config) {
+        if (config.hookPacks && config.hookPacks.length > 0) {
+          selectedPacks = config.hookPacks;
+        } else if (!opts?.config) {
           const packs = listPacks();
           const packChoices = packs.map((pk) => ({
             value: pk.name,

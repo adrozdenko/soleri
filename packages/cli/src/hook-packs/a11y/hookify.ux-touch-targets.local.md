@@ -1,5 +1,6 @@
 ---
 # Soleri Hook Pack: a11y
+# Version: 1.0.0
 # Rule: ux-touch-targets
 name: ux-touch-targets
 enabled: true

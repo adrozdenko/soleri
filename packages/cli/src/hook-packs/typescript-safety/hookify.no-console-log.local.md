@@ -1,5 +1,6 @@
 ---
 # Soleri Hook Pack: typescript-safety
+# Version: 1.0.0
 # Rule: no-console-log
 name: no-console-log
 enabled: true

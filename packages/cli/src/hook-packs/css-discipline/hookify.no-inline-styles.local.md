@@ -1,5 +1,6 @@
 ---
 # Soleri Hook Pack: css-discipline
+# Version: 1.0.0
 # Rule: no-inline-styles
 name: no-inline-styles
 enabled: true

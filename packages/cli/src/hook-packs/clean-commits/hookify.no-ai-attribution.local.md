@@ -1,5 +1,6 @@
 ---
 # Soleri Hook Pack: clean-commits
+# Version: 1.0.0
 # Rule: no-ai-attribution
 name: no-ai-attribution
 enabled: true

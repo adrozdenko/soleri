@@ -1,5 +1,6 @@
 {
   "name": "full",
+  "version": "1.0.0",
   "description": "Complete quality suite — all 8 hooks",
   "hooks": ["no-any-types", "no-console-log", "no-important", "no-inline-styles", "semantic-html", "focus-ring-required", "ux-touch-targets", "no-ai-attribution"],
   "composedFrom": ["typescript-safety", "a11y", "css-discipline", "clean-commits"]

@@ -1,10 +1,16 @@
 /**
- * Hook pack installer — copies hookify files to ~/.claude/ for global enforcement.
+ * Hook pack installer — copies hookify files to ~/.claude/ (global) or project .claude/ (local).
  */
-import { existsSync, copyFileSync, unlinkSync, mkdirSync } from 'node:fs';
+import { existsSync, copyFileSync, unlinkSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { getPack } from './registry.js';
+
+/** Resolve the target .claude/ directory. */
+function resolveClaudeDir(projectDir?: string): string {
+  if (projectDir) return join(projectDir, '.claude');
+  return join(homedir(), '.claude');
+}
 
 /**
  * Resolve all hookify file paths for a pack, handling composed packs.
@@ -38,16 +44,19 @@ function resolveHookFiles(packName: string): Map<string, string> {
 }
 
 /**
- * Install a hook pack globally to ~/.claude/.
+ * Install a hook pack to ~/.claude/ (default) or project .claude/ (--project).
  * Skips files that already exist (idempotent).
  */
-export function installPack(packName: string): { installed: string[]; skipped: string[] } {
+export function installPack(
+  packName: string,
+  options?: { projectDir?: string },
+): { installed: string[]; skipped: string[] } {
   const pack = getPack(packName);
   if (!pack) {
     throw new Error(`Unknown hook pack: "${packName}"`);
   }
 
-  const claudeDir = join(homedir(), '.claude');
+  const claudeDir = resolveClaudeDir(options?.projectDir);
   mkdirSync(claudeDir, { recursive: true });
 
   const hookFiles = resolveHookFiles(packName);
@@ -68,15 +77,18 @@ export function installPack(packName: string): { installed: string[]; skipped: s
 }
 
 /**
- * Remove a hook pack's files from ~/.claude/.
+ * Remove a hook pack's files from target directory.
  */
-export function removePack(packName: string): { removed: string[] } {
+export function removePack(
+  packName: string,
+  options?: { projectDir?: string },
+): { removed: string[] } {
   const pack = getPack(packName);
   if (!pack) {
     throw new Error(`Unknown hook pack: "${packName}"`);
   }
 
-  const claudeDir = join(homedir(), '.claude');
+  const claudeDir = resolveClaudeDir(options?.projectDir);
   const removed: string[] = [];
 
   for (const hook of pack.manifest.hooks) {
@@ -94,11 +106,14 @@ export function removePack(packName: string): { removed: string[] } {
  * Check if a pack is installed.
  * Returns true (all hooks present), false (none present), or 'partial'.
  */
-export function isPackInstalled(packName: string): boolean | 'partial' {
+export function isPackInstalled(
+  packName: string,
+  options?: { projectDir?: string },
+): boolean | 'partial' {
   const pack = getPack(packName);
   if (!pack) return false;
 
-  const claudeDir = join(homedir(), '.claude');
+  const claudeDir = resolveClaudeDir(options?.projectDir);
   let present = 0;
 
   for (const hook of pack.manifest.hooks) {
@@ -110,4 +125,21 @@ export function isPackInstalled(packName: string): boolean | 'partial' {
   if (present === 0) return false;
   if (present === pack.manifest.hooks.length) return true;
   return 'partial';
+}
+
+/**
+ * Get the installed version of a hook from its file header.
+ * Returns null if no version found or file doesn't exist.
+ */
+export function getInstalledHookVersion(
+  hook: string,
+  options?: { projectDir?: string },
+): string | null {
+  const claudeDir = resolveClaudeDir(options?.projectDir);
+  const filePath = join(claudeDir, `hookify.${hook}.local.md`);
+  if (!existsSync(filePath)) return null;
+
+  const content = readFileSync(filePath, 'utf-8');
+  const match = content.match(/^# Version: (.+)$/m);
+  return match ? match[1] : null;
 }

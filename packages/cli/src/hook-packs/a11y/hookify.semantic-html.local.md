@@ -1,5 +1,6 @@
 ---
 # Soleri Hook Pack: a11y
+# Version: 1.0.0
 # Rule: semantic-html
 name: semantic-html
 enabled: true

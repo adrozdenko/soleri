@@ -1,5 +1,6 @@
 ---
 # Soleri Hook Pack: css-discipline
+# Version: 1.0.0
 # Rule: no-important
 name: no-important
 enabled: true

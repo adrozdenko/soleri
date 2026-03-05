@@ -11,21 +11,27 @@ export interface HookPackManifest {
   description: string;
   hooks: string[];
   composedFrom?: string[];
+  version?: string;
+  /** Whether this pack is built-in or user-defined */
+  source?: 'built-in' | 'local';
 }
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /** Root directory containing all built-in hook packs. */
-function getPacksRoot(): string {
+function getBuiltinRoot(): string {
   return __dirname;
 }
 
-/**
- * List all available built-in hook packs.
- */
-export function listPacks(): HookPackManifest[] {
-  const root = getPacksRoot();
+/** Local custom packs directory. */
+function getLocalRoot(): string {
+  return join(process.cwd(), '.soleri', 'hook-packs');
+}
+
+/** Scan a directory for pack manifests. */
+function scanPacksDir(root: string, source: 'built-in' | 'local'): HookPackManifest[] {
+  if (!existsSync(root)) return [];
   const entries = readdirSync(root, { withFileTypes: true });
   const packs: HookPackManifest[] = [];
 
@@ -36,6 +42,7 @@ export function listPacks(): HookPackManifest[] {
 
     try {
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as HookPackManifest;
+      manifest.source = source;
       packs.push(manifest);
     } catch {
       // Skip malformed manifests
@@ -46,18 +53,47 @@ export function listPacks(): HookPackManifest[] {
 }
 
 /**
- * Get a specific pack by name.
+ * List all available hook packs (built-in + local custom).
+ * Local packs in .soleri/hook-packs/ override built-in packs with the same name.
+ */
+export function listPacks(): HookPackManifest[] {
+  const builtIn = scanPacksDir(getBuiltinRoot(), 'built-in');
+  const local = scanPacksDir(getLocalRoot(), 'local');
+
+  // Local packs override built-in packs with same name
+  const byName = new Map<string, HookPackManifest>();
+  for (const pack of builtIn) byName.set(pack.name, pack);
+  for (const pack of local) byName.set(pack.name, pack);
+
+  return Array.from(byName.values());
+}
+
+/**
+ * Get a specific pack by name. Local packs take precedence.
  */
 export function getPack(name: string): { manifest: HookPackManifest; dir: string } | null {
-  const root = getPacksRoot();
-  const dir = join(root, name);
-  const manifestPath = join(dir, 'manifest.json');
+  // Check local first
+  const localDir = join(getLocalRoot(), name);
+  const localManifest = join(localDir, 'manifest.json');
+  if (existsSync(localManifest)) {
+    try {
+      const manifest = JSON.parse(readFileSync(localManifest, 'utf-8')) as HookPackManifest;
+      manifest.source = 'local';
+      return { manifest, dir: localDir };
+    } catch {
+      // Fall through to built-in
+    }
+  }
 
-  if (!existsSync(manifestPath)) return null;
+  // Then built-in
+  const builtinDir = join(getBuiltinRoot(), name);
+  const builtinManifest = join(builtinDir, 'manifest.json');
+  if (!existsSync(builtinManifest)) return null;
 
   try {
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as HookPackManifest;
-    return { manifest, dir };
+    const manifest = JSON.parse(readFileSync(builtinManifest, 'utf-8')) as HookPackManifest;
+    manifest.source = 'built-in';
+    return { manifest, dir: builtinDir };
   } catch {
     return null;
   }

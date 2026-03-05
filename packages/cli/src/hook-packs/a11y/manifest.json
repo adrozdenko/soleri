@@ -1,5 +1,6 @@
 {
   "name": "a11y",
+  "version": "1.0.0",
   "description": "Accessibility enforcement",
   "hooks": ["semantic-html", "focus-ring-required", "ux-touch-targets"]
 }

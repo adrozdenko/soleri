@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { detectAgent } from './agent-context.js';
+import { getInstalledPacks } from '../hook-packs/registry.js';
 
 interface CheckResult {
   status: 'pass' | 'fail' | 'warn';
@@ -134,6 +135,22 @@ function checkCognee(): CheckResult {
   }
 }
 
+export function checkHookPacks(): CheckResult {
+  const installed = getInstalledPacks();
+  if (installed.length === 0) {
+    return {
+      status: 'warn',
+      label: 'Hook packs',
+      detail: 'none installed — run soleri hooks list-packs',
+    };
+  }
+  return {
+    status: 'pass',
+    label: 'Hook packs',
+    detail: installed.join(', '),
+  };
+}
+
 export function runAllChecks(dir?: string): CheckResult[] {
   return [
     checkNodeVersion(),
@@ -143,6 +160,7 @@ export function runAllChecks(dir?: string): CheckResult[] {
     checkNodeModules(dir),
     checkAgentBuild(dir),
     checkMcpRegistration(dir),
+    checkHookPacks(),
     checkCognee(),
   ];
 }

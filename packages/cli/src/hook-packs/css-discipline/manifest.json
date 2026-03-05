@@ -1,5 +1,6 @@
 {
   "name": "css-discipline",
+  "version": "1.0.0",
   "description": "CSS best practices",
   "hooks": ["no-important", "no-inline-styles"]
 }

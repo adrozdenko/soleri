@@ -18,6 +18,8 @@ export const AgentConfigSchema = z.object({
   greeting: z.string().min(10).max(300),
   /** Output directory (parent — agent dir will be created inside) */
   outputDir: z.string().min(1),
+  /** Hook packs to install after scaffolding (optional) */
+  hookPacks: z.array(z.string()).optional(),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
