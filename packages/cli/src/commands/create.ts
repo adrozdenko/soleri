@@ -4,6 +4,8 @@ import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import { previewScaffold, scaffold, AgentConfigSchema } from '@soleri/forge/lib';
 import { runCreateWizard } from '../prompts/create-wizard.js';
+import { listPacks } from '../hook-packs/registry.js';
+import { installPack } from '../hook-packs/installer.js';
 
 export function registerCreate(program: Command): void {
   program
@@ -38,12 +40,36 @@ export function registerCreate(program: Command): void {
           }
         }
 
+        // Hook packs (interactive only)
+        let selectedPacks: string[] = [];
+        if (!opts?.config) {
+          const packs = listPacks();
+          const packChoices = packs.map((pk) => ({
+            value: pk.name,
+            label: pk.name,
+            hint: `${pk.description} (${pk.hooks.length} hooks)`,
+          }));
+
+          const chosen = await p.multiselect({
+            message: 'Install hook packs? (quality gates for ~/.claude/)',
+            options: packChoices,
+            required: false,
+          });
+
+          if (!p.isCancel(chosen)) {
+            selectedPacks = chosen as string[];
+          }
+        }
+
         // Preview
         const preview = previewScaffold(config);
 
         p.log.info(`Will create ${preview.files.length} files in ${preview.agentDir}`);
         p.log.info(`Facades: ${preview.facades.map((f) => f.name).join(', ')}`);
         p.log.info(`Domains: ${preview.domains.join(', ')}`);
+        if (selectedPacks.length > 0) {
+          p.log.info(`Hook packs: ${selectedPacks.join(', ')}`);
+        }
 
         const confirmed = await p.confirm({ message: 'Create agent?' });
         if (p.isCancel(confirmed) || !confirmed) {
@@ -57,11 +83,25 @@ export function registerCreate(program: Command): void {
         const result = scaffold(config);
         s.stop(result.success ? 'Agent created!' : 'Scaffolding failed');
 
-        if (result.success) {
-          p.note(result.summary, 'Next steps');
-        } else {
+        if (!result.success) {
           p.log.error(result.summary);
           process.exit(1);
+        }
+
+        // Install selected hook packs
+        if (selectedPacks.length > 0) {
+          for (const packName of selectedPacks) {
+            const { installed } = installPack(packName);
+            if (installed.length > 0) {
+              p.log.success(`Hook pack "${packName}" installed (${installed.length} hooks)`);
+            } else {
+              p.log.info(`Hook pack "${packName}" — all hooks already present`);
+            }
+          }
+        }
+
+        if (result.success) {
+          p.note(result.summary, 'Next steps');
         }
 
         p.outro('Done!');
