@@ -95,6 +95,16 @@ describe('Logger', () => {
     expect(errorSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('should fall back to info level for invalid SOLERI_LOG_LEVEL', () => {
+    process.env.SOLERI_LOG_LEVEL = 'verbose'; // invalid
+    const logger = createLogger();
+    logger.debug('hidden');
+    logger.info('visible');
+
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('[Soleri][INFO] visible');
+  });
+
   it('createLogger with no args returns a Logger instance', () => {
     const logger = createLogger();
     expect(logger).toBeInstanceOf(Logger);
@@ -168,11 +178,10 @@ describe('Logger file logging', () => {
     logger.enableFileLog(logDir);
 
     const files = readdirSync(logDir).filter((f) => f.endsWith('.log'));
-    const names = files.map((f) => f);
 
     // Old file should be pruned, recent + today should remain
-    expect(names).not.toContain(`agent-${oldDate}.log`);
-    expect(names).toContain(`agent-${recentDate}.log`);
+    expect(files).not.toContain(`agent-${oldDate}.log`);
+    expect(files).toContain(`agent-${recentDate}.log`);
   });
 
   it('should not prune files from different prefix', () => {

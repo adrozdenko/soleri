@@ -38,7 +38,8 @@ export class Logger {
     this.fileLogPrefix = 'agent';
     const envLevel = process.env.SOLERI_LOG_LEVEL as LogLevel | undefined;
     const level = config?.level ?? envLevel ?? 'info';
-    this.minLevel = Math.max(0, LEVEL_ORDER.indexOf(level));
+    const levelIndex = LEVEL_ORDER.indexOf(level);
+    this.minLevel = levelIndex >= 0 ? levelIndex : LEVEL_ORDER.indexOf('info');
 
     if (config?.fileLogDir) {
       this.enableFileLog(config.fileLogDir);
