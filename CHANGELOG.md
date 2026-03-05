@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## @soleri/cli@1.3.0 — 2026-03-05
+
+### Added
+
+- **Hook pack system** — Installable quality gates via `soleri hooks add-pack/remove-pack/list-packs/upgrade-pack`. Ships 5 built-in packs: `typescript-safety`, `a11y`, `css-discipline`, `clean-commits`, and `full` (composed from the other 4)
+- **Create wizard integration** — Multiselect prompt during `soleri create` lets users pick hook packs at scaffolding time
+- **`--project` flag** — `add-pack --project` / `remove-pack --project` installs hookify files to project `.claude/` instead of global `~/.claude/`, enabling team-shared quality gates
+- **`upgrade-pack` command** — Force-overwrites installed hooks with latest pack version
+- **Custom/local packs** — `.soleri/hook-packs/<name>/` directories with `manifest.json` are discovered alongside built-in packs; local packs override built-in packs with the same name
+- **Pack versioning** — All manifests include `version` field; hookify files embed `# Version:` headers for staleness detection
+- **`hookPacks` in config file** — `"hookPacks": ["typescript-safety"]` in JSON config for non-interactive `--config` mode
+- **Doctor hook pack check** — `soleri doctor` now reports hook pack installation status
+
+## @soleri/forge@5.2.0 — 2026-03-05
+
+### Added
+
+- **`hookPacks` field in `AgentConfigSchema`** — Optional `string[]` field for specifying hook packs in config files
+
 ## @soleri/forge@5.1.3 — 2026-03-05
 
 ### Added

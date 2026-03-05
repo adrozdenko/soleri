@@ -36,6 +36,7 @@ npx @soleri/cli add-domain security    # Add a knowledge domain to your agent
 npx @soleri/cli dev                    # Run agent locally in dev mode
 npx @soleri/cli doctor                 # Check system health
 npx @soleri/cli hooks add claude-code  # Install editor hooks
+npx @soleri/cli hooks add-pack full   # Install quality gate hooks
 ```
 
 Your agent ships with a complete architecture and auto-captures patterns from your sessions.
@@ -87,9 +88,9 @@ Give it a name, a domain, a voice. It ships with starter knowledge and learns fr
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| [`@soleri/core`](packages/core) | 2.0.1 | Shared engine — Vault, Brain, Planner, LLM utilities, facade infrastructure, Cognee hybrid search |
-| [`@soleri/forge`](packages/forge) | 4.2.2 | Agent scaffolder — generates config-driven MCP agents with optional Cognee integration |
-| [`@soleri/cli`](packages/cli) | 1.0.1 | Developer CLI — create, manage, and develop agents from the terminal |
+| [`@soleri/core`](packages/core) | 2.2.0 | Shared engine — Vault, Brain, Planner, LLM utilities, facade infrastructure, Cognee hybrid search |
+| [`@soleri/forge`](packages/forge) | 5.2.0 | Agent scaffolder — generates config-driven MCP agents with optional Cognee integration |
+| [`@soleri/cli`](packages/cli) | 1.3.0 | Developer CLI — create, manage, develop agents, and install hook packs |
 | [`create-soleri`](packages/create-soleri) | 1.0.0 | `npm create soleri` shorthand — delegates to `@soleri/cli` |
 
 ### Knowledge Packs
