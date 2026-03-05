@@ -428,7 +428,27 @@ export class Governance {
   }
 
   approveProposal(proposalId: number, decidedBy?: string): Proposal | null {
-    return this.resolveProposal(proposalId, 'approved', decidedBy);
+    const proposal = this.resolveProposal(proposalId, 'approved', decidedBy);
+    if (!proposal) return null;
+
+    // Auto-capture into vault from proposal data
+    const data = proposal.proposedData as Record<string, unknown>;
+    const entryId = proposal.entryId ?? `proposal-${proposal.id}`;
+    this.vault.add({
+      id: entryId,
+      type: (proposal.type as 'pattern' | 'anti-pattern' | 'rule') ?? 'pattern',
+      domain: proposal.category,
+      title: proposal.title,
+      severity: (data.severity as 'critical' | 'warning' | 'suggestion') ?? 'warning',
+      description: (data.description as string) ?? proposal.title,
+      context: data.context as string | undefined,
+      example: data.example as string | undefined,
+      counterExample: data.counterExample as string | undefined,
+      why: data.why as string | undefined,
+      tags: (data.tags as string[]) ?? [],
+    });
+
+    return proposal;
   }
 
   rejectProposal(proposalId: number, decidedBy?: string, note?: string): Proposal | null {

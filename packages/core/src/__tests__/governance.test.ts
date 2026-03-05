@@ -213,6 +213,48 @@ describe('Governance', () => {
       expect(approved!.decidedBy).toBe('admin');
     });
 
+    it('should auto-capture entry into vault on approval', () => {
+      const id = runtime.governance.propose('/test', {
+        entryId: 'approved-entry-1',
+        title: 'Approved pattern',
+        type: 'pattern',
+        category: 'testing',
+        data: {
+          severity: 'warning',
+          description: 'A pattern that was reviewed and approved.',
+          tags: ['governance', 'approved'],
+        },
+      });
+
+      // Before approval — not in vault
+      expect(runtime.vault.get('approved-entry-1')).toBeNull();
+
+      runtime.governance.approveProposal(id, 'admin');
+
+      // After approval — entry is in vault
+      const entry = runtime.vault.get('approved-entry-1');
+      expect(entry).not.toBeNull();
+      expect(entry!.domain).toBe('testing');
+      expect(entry!.title).toBe('Approved pattern');
+      expect(entry!.tags).toContain('governance');
+    });
+
+    it('should generate entry id from proposal id when entryId is missing', () => {
+      const id = runtime.governance.propose('/test', {
+        title: 'No entry id',
+        type: 'rule',
+        category: 'styling',
+        data: { severity: 'suggestion', description: 'Auto-id test.' },
+      });
+
+      runtime.governance.approveProposal(id);
+
+      const entry = runtime.vault.get(`proposal-${id}`);
+      expect(entry).not.toBeNull();
+      expect(entry!.type).toBe('rule');
+      expect(entry!.domain).toBe('styling');
+    });
+
     it('should reject a proposal with a note', () => {
       const id = runtime.governance.propose('/test', {
         title: 'Bad pattern',
