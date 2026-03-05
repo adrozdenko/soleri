@@ -104,6 +104,15 @@ describe('createCoreOps', () => {
     expect(names).toContain('governance_dashboard');
   });
 
+  it('register should include governance summary', async () => {
+    const result = (await findOp('register').handler({ projectPath: '/tmp/test-gov-reg' })) as {
+      governance: { pendingProposals: number; quotaPercent: number; isQuotaWarning: boolean };
+    };
+    expect(typeof result.governance.pendingProposals).toBe('number');
+    expect(typeof result.governance.quotaPercent).toBe('number');
+    expect(typeof result.governance.isQuotaWarning).toBe('boolean');
+  });
+
   it('search should query vault via brain', async () => {
     runtime.vault.seed([
       {

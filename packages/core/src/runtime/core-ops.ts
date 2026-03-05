@@ -104,6 +104,9 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
         const stats = vault.stats();
         const isNew = project.sessionCount === 1;
 
+        const proposalStats = governance.getProposalStats(projectPath);
+        const quotaStatus = governance.getQuotaStatus(projectPath);
+
         return {
           project,
           is_new: isNew,
@@ -111,6 +114,14 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
             ? 'Welcome! New project registered.'
             : 'Welcome back! Session #' + project.sessionCount + ' for ' + project.name + '.',
           vault: { entries: stats.totalEntries, domains: Object.keys(stats.byDomain) },
+          governance: {
+            pendingProposals: proposalStats.pending,
+            quotaPercent:
+              quotaStatus.maxTotal > 0
+                ? Math.round((quotaStatus.total / quotaStatus.maxTotal) * 100)
+                : 0,
+            isQuotaWarning: quotaStatus.isWarning,
+          },
         };
       },
     },
