@@ -139,6 +139,10 @@ export type {
   MorphResult,
 } from './control/types.js';
 
+// ─── Logging ────────────────────────────────────────────────────────
+export { Logger, createLogger } from './logging/logger.js';
+export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/types.js';
+
 // ─── Runtime Factory ────────────────────────────────────────────────
 export { createAgentRuntime } from './runtime/runtime.js';
 export { createCoreOps } from './runtime/core-ops.js';

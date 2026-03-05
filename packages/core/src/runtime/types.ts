@@ -7,6 +7,8 @@ import type { KeyPool } from '../llm/key-pool.js';
 import type { LLMClient } from '../llm/llm-client.js';
 import type { IdentityManager } from '../control/identity-manager.js';
 import type { IntentRouter } from '../control/intent-router.js';
+import type { Logger } from '../logging/logger.js';
+import type { LogLevel } from '../logging/types.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -21,6 +23,8 @@ export interface AgentRuntimeConfig {
   plansPath?: string;
   /** Intelligence data directory to seed vault from. Optional. */
   dataDir?: string;
+  /** Minimum log level. Default: 'info' (or SOLERI_LOG_LEVEL env var). */
+  logLevel?: LogLevel;
 }
 
 /**
@@ -29,6 +33,7 @@ export interface AgentRuntimeConfig {
  */
 export interface AgentRuntime {
   config: AgentRuntimeConfig;
+  logger: Logger;
   vault: Vault;
   brain: Brain;
   brainIntelligence: BrainIntelligence;
