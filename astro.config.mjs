@@ -40,9 +40,7 @@ export default defineConfig({
           label: 'Guides',
           translations: { uk: 'Посібники', it: 'Guide' },
           items: [
-            { slug: 'docs/guides/dashboard-day-1' },
-            { slug: 'docs/guides/dashboard-day-3' },
-            { slug: 'docs/guides/dashboard-day-20' },
+            { slug: 'docs/guides/dashboard' },
           ],
         },
         {
