@@ -276,3 +276,11 @@ starlight-lang-select {
 :root[data-theme='dark'] .sl-toggle-bg-sun  { opacity: 1; }
 :root[data-theme='light'] .sl-toggle-bg-moon { opacity: 1; }
 :root[data-theme='light'] .sl-toggle-bg-sun  { opacity: 0; }
+
+/* ── Search modal — collapse empty space below input ── */
+@media (min-width: 50rem) {
+  site-search dialog {
+    height: max-content;
+    min-height: 0;
+  }
+}

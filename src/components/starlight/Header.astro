@@ -5,6 +5,20 @@ import Search from 'virtual:starlight/components/Search';
 const shouldRenderSearch =
   config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
 
+const currentLocale = Astro.locals.starlightRoute.locale;
+const currentPath = Astro.url.pathname;
+
+/**
+ * Build locale-aware URL: root locale = /docs/*, others = /{locale}/docs/*
+ */
+function localizedHref(code: string): string {
+  // Strip any existing locale prefix and /docs/ prefix
+  const stripped = currentPath.replace(/^\/(uk|it)\//, '/');
+  if (code === 'root') return stripped;
+  // Insert locale prefix: /docs/foo → /uk/docs/foo
+  return `/${code}${stripped}`;
+}
+
 const navLinks = [
   { href: '/en/how-it-works.html', label: 'How it works' },
   { href: '/en/personas.html', label: 'Your Agent' },
@@ -12,11 +26,12 @@ const navLinks = [
   { href: '/docs/getting-started/', label: 'Docs' },
 ];
 
-const langs = [
-  { code: 'en', label: 'EN', href: '/docs/' },
-  { code: 'uk', label: 'UK', href: '/uk/docs/' },
-  { code: 'it', label: 'IT', href: '/it/docs/' },
-];
+const langs = Object.entries(config.locales).map(([code, locale]) => ({
+  code: code === 'root' ? 'en' : code,
+  label: (code === 'root' ? 'EN' : code).toUpperCase(),
+  href: localizedHref(code),
+  selected: code === currentLocale,
+}));
 ---
 
 <div class="header sl-header">
@@ -35,11 +50,13 @@ const langs = [
   <div class="sl-header-actions">
     {shouldRenderSearch && <Search />}
 
-    <div class="sl-lang-switcher">
-      {langs.map(l => (
-        <a href={l.href} class:list={[{ active: l.code === 'en' }]}>{l.label}</a>
-      ))}
-    </div>
+    {config.isMultilingual && (
+      <div class="sl-lang-switcher">
+        {langs.map(l => (
+          <a href={l.href} class:list={[{ active: l.selected }]}>{l.label}</a>
+        ))}
+      </div>
+    )}
 
     <button class="sl-theme-toggle" id="sl-theme-toggle" type="button" aria-label="Toggle color theme">
       <span class="sl-toggle-track">
