@@ -25,8 +25,11 @@ export type PlaybookIntent = 'BUILD' | 'FIX' | 'REVIEW' | 'PLAN' | 'IMPROVE' | '
  * The LLM uses these to guide design conversation with the user.
  */
 export interface BrainstormSection {
+  /** Section title (e.g., "Component API", "Color Requirements") */
   title: string;
+  /** What this section covers */
   description: string;
+  /** Guiding questions for the user */
   questions: string[];
 }
 
@@ -39,8 +42,11 @@ export interface BrainstormSection {
  * Gates inject checkId requirements into the planning lifecycle.
  */
 export interface PlaybookGate {
+  /** Which lifecycle phase this gate applies to */
   phase: 'brainstorming' | 'pre-execution' | 'post-task' | 'completion';
+  /** Human-readable requirement description */
   requirement: string;
+  /** Check type to create/validate */
   checkType: string;
 }
 
@@ -53,11 +59,15 @@ export interface PlaybookGate {
  * These become PlanTask entries during task splitting.
  */
 export interface PlaybookTaskTemplate {
+  /** Task type for the generated task */
   taskType: 'implementation' | 'test' | 'story' | 'documentation' | 'verification';
   /** Title template — may contain {objective} placeholder */
   titleTemplate: string;
+  /** Acceptance criteria injected into the task */
   acceptanceCriteria: string[];
+  /** Tools relevant to this task */
   tools: string[];
+  /** When this task should execute relative to implementation */
   order: 'before-implementation' | 'after-implementation' | 'parallel';
 }
 
@@ -70,12 +80,15 @@ export interface PlaybookTaskTemplate {
  * Playbooks are pure data objects with no logic.
  */
 export interface PlaybookDefinition {
+  /** Unique identifier (e.g., 'generic-tdd', 'domain-component-build') */
   id: string;
+  /** Which tier this playbook belongs to */
   tier: PlaybookTier;
+  /** Human-readable title */
   title: string;
   /** When to activate — maps to vault entry 'context' field */
   trigger: string;
-  /** Overview — maps to vault 'description' field */
+  /** Overview of what this playbook does — maps to vault 'description' field */
   description: string;
   /** Step-by-step process — maps to vault 'example' field */
   steps: string;
@@ -85,14 +98,25 @@ export interface PlaybookDefinition {
   extends?: string;
   /** Free string category (agents define their own domains) */
   category: string;
+  /** Searchable tags */
   tags: string[];
+  /** Intents that trigger this playbook */
   matchIntents: PlaybookIntent[];
+  /** Keywords in plan objective/scope that trigger this playbook */
   matchKeywords: string[];
+
+  // --- What this playbook injects into plans ---
+
+  /** Brainstorming sections for design exploration (used by brainstorm op) */
   brainstormSections?: BrainstormSection[];
+
+  /** Lifecycle gates to enforce */
   gates: PlaybookGate[];
+  /** Task templates to inject during task generation */
   taskTemplates: PlaybookTaskTemplate[];
-  /** Generic op names (not agent-prefixed) */
+  /** Generic op names to auto-inject into tool chain (not agent-prefixed) */
   toolInjections: string[];
+  /** Verification criteria for completion gate */
   verificationCriteria: string[];
 }
 
@@ -102,14 +126,22 @@ export interface PlaybookDefinition {
 
 /**
  * Result of matching and merging a generic + domain playbook pair.
+ * This is the shape that plan-handler receives after playbook resolution.
  */
 export interface MergedPlaybook {
+  /** The generic playbook (if matched) */
   generic?: PlaybookDefinition;
+  /** The domain playbook (if matched) */
   domain?: PlaybookDefinition;
+  /** Combined gates from both tiers (generic first, then domain) */
   mergedGates: PlaybookGate[];
+  /** Combined task templates (domain overrides generic where order conflicts) */
   mergedTasks: PlaybookTaskTemplate[];
+  /** Combined tool injections (deduplicated) */
   mergedTools: string[];
+  /** Combined verification criteria */
   mergedVerification: string[];
+  /** Human-readable label for the matched playbook(s) */
   label: string;
 }
 
@@ -121,7 +153,10 @@ export interface MergedPlaybook {
  * Result of playbook matching — includes the source of each match.
  */
 export interface PlaybookMatchResult {
+  /** The merged playbook (null if no match) */
   playbook: MergedPlaybook | null;
+  /** Which generic matched and why */
   genericMatch?: { id: string; source: 'vault' | 'builtin'; score: number };
+  /** Which domain matched and why */
   domainMatch?: { id: string; source: 'vault' | 'builtin'; score: number };
 }

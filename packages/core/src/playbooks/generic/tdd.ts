@@ -12,9 +12,9 @@ export const tddPlaybook: PlaybookDefinition = {
   tier: 'generic',
   title: 'Test-Driven Development',
   trigger:
-    'Use when intent is BUILD or FIX and implementation involves writing new code or modifying existing behavior.',
+    'Use when intent is BUILD or FIX and implementation involves writing new code or modifying existing behavior. Activates for any task that produces production code.',
   description:
-    'Enforces the RED-GREEN-REFACTOR cycle: write a failing test first, implement minimal code to pass it, then refactor. No production code exists without a test that demanded it.',
+    'Enforces the RED-GREEN-REFACTOR cycle: write a failing test first, implement minimal code to pass it, then refactor. No production code exists without a test that demanded it. Tests drive the design — if something is hard to test, the design needs simplification.',
   steps: `1. RED — Write the test first
    - Write a test that describes the desired behavior
    - Run it and watch it FAIL (read the actual output)
@@ -36,7 +36,7 @@ export const tddPlaybook: PlaybookDefinition = {
 
 IRON LAW: If you wrote production code before the test, DELETE IT and start over.`,
   expectedOutcome:
-    'Every piece of production code is demanded by a failing test. Test suite is comprehensive, fast, and trustworthy.',
+    'Every piece of production code is demanded by a failing test. Test suite is comprehensive, fast, and trustworthy. Design emerges from testing pressure — simple, decoupled, focused.',
   category: 'methodology',
   tags: ['tdd', 'testing', 'red-green-refactor', 'discipline', 'generic'],
   matchIntents: ['BUILD', 'FIX'],

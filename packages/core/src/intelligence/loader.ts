@@ -31,7 +31,7 @@ function validateEntry(entry: IntelligenceEntry): boolean {
   return (
     typeof entry.id === 'string' &&
     entry.id.length > 0 &&
-    ['pattern', 'anti-pattern', 'rule'].includes(entry.type) &&
+    ['pattern', 'anti-pattern', 'rule', 'playbook'].includes(entry.type) &&
     typeof entry.title === 'string' &&
     entry.title.length > 0 &&
     typeof entry.description === 'string' &&

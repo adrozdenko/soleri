@@ -12,9 +12,9 @@ export const brainstormingPlaybook: PlaybookDefinition = {
   tier: 'generic',
   title: 'Brainstorming — Design Before Code',
   trigger:
-    'Use when the request is creative, ambiguous, or involves building something new. Activates before any implementation work.',
+    'Use when the request is creative, ambiguous, or involves building something new. Activates before any implementation work to ensure design is explored and approved.',
   description:
-    'Structured design exploration before writing any code. The agent explores context, asks clarifying questions, proposes 2-3 approaches with trade-offs, and presents the design for approval. No code is written until the design is approved.',
+    'Structured design exploration before writing any code. The agent explores context, asks clarifying questions, proposes 2-3 approaches with trade-offs, and presents the design in digestible sections for approval. No code is written until the design is approved. This prevents the common failure mode of jumping into implementation before understanding what to build.',
   steps: `1. EXPLORE CONTEXT
    - What exists? Read relevant code, docs, prior art
    - What constraints apply? Tech stack, patterns, conventions
@@ -38,10 +38,11 @@ export const brainstormingPlaybook: PlaybookDefinition = {
 5. WRITE DESIGN DOCUMENT
    - Save approved design to docs/ or vault
    - Include decisions and rationale
+   - This becomes the source of truth for implementation
 
 HARD GATE: No implementation code until design is approved.`,
   expectedOutcome:
-    'A clear, approved design document that eliminates ambiguity. Implementation follows a known path. Decisions are documented with rationale.',
+    'A clear, approved design document that eliminates ambiguity. Implementation follows a known path. Decisions are documented with rationale. No surprises during coding.',
   category: 'methodology',
   tags: ['brainstorming', 'design', 'planning', 'exploration', 'generic'],
   matchIntents: ['BUILD', 'PLAN'],

@@ -12,19 +12,20 @@ export const systematicDebuggingPlaybook: PlaybookDefinition = {
   tier: 'generic',
   title: 'Systematic Debugging',
   trigger:
-    'Use when something is broken, failing, or behaving unexpectedly. Activates for any FIX intent.',
+    'Use when something is broken, failing, or behaving unexpectedly. Activates for any FIX intent. Prevents the common failure mode of guessing at fixes without understanding the root cause.',
   description:
-    'Four-phase root cause analysis: gather evidence, analyze patterns, form and test hypotheses, then implement the minimal fix. No fix is applied without first understanding WHY the bug exists.',
+    'Four-phase root cause analysis: gather evidence, analyze patterns, form and test hypotheses, then implement the minimal fix. No fix is applied without first understanding WHY the bug exists. If 3+ fix attempts fail, the architecture is questioned rather than trying more patches.',
   steps: `1. ROOT CAUSE ANALYSIS
    - Reproduce the bug reliably (exact steps, exact output)
-   - Trace backward: symptom -> immediate cause -> original trigger
+   - Trace backward: symptom → immediate cause → what called this → original trigger
    - Read the actual error output — do not guess from the description
    - Search vault for similar bugs and their root causes
 
 2. PATTERN ANALYSIS
    - Is this a known pattern? (race condition, stale cache, off-by-one, null ref)
    - Has this module had bugs before? Check git history
-   - Map the failure boundary: what works, what doesn't
+   - Are there related symptoms elsewhere?
+   - Map the failure boundary: what works, what doesn't, what's the edge
 
 3. HYPOTHESIS TESTING
    - Form 1-3 specific hypotheses about the root cause
@@ -39,9 +40,9 @@ export const systematicDebuggingPlaybook: PlaybookDefinition = {
    - Verify no regressions (run full test suite)
    - If 3+ fixes fail: stop and question the architecture
 
-IRON LAW: No fix without root cause understanding.`,
+IRON LAW: No fix without root cause understanding. No "try this and see."`,
   expectedOutcome:
-    'Bug is fixed at the root cause with a regression test. The fix is minimal and targeted.',
+    'Bug is fixed at the root cause with a regression test. The fix is minimal and targeted. Understanding is documented for future reference.',
   category: 'methodology',
   tags: ['debugging', 'root-cause', 'systematic', 'fix', 'generic'],
   matchIntents: ['FIX'],

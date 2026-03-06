@@ -12,9 +12,9 @@ export const verificationPlaybook: PlaybookDefinition = {
   tier: 'generic',
   title: 'Verification Before Completion',
   trigger:
-    'Use at the completion of any task or plan. Activates automatically as a completion gate.',
+    'Use at the completion of any task or plan. Activates automatically as a completion gate. Prevents the common failure mode of claiming success without running verification commands.',
   description:
-    'Every completion claim must be backed by evidence: run the command, read the output, only then assert the result. No self-reported success.',
+    'Every completion claim must be backed by evidence: run the command, read the output, only then assert the result. No self-reported success. No "the tests should pass." Actual output or it didn\'t happen.',
   steps: `1. IDENTIFY VERIFICATION COMMANDS
    - What commands prove this works? (test runner, build, lint, type check)
    - What manual checks are needed? (UI renders, API responds, file exists)
@@ -27,13 +27,22 @@ export const verificationPlaybook: PlaybookDefinition = {
 
 3. COLLECT EVIDENCE
    - For each claim, record the command and its output
-   - "Tests pass" -> show the test runner output
-   - "Build succeeds" -> show the build output
+   - "Tests pass" → show the test runner output
+   - "Build succeeds" → show the build output
+   - "No regressions" → show the full test suite output
 
 4. VERIFY AGAINST ACCEPTANCE CRITERIA
    - Check each acceptance criterion against collected evidence
    - Mark each as: VERIFIED (with evidence) or UNVERIFIED
-   - If any criterion is UNVERIFIED: the task is NOT complete`,
+   - If any criterion is UNVERIFIED: the task is NOT complete
+
+COMMON FALSE COMPLETIONS:
+| Claim | NOT Sufficient | Required |
+|-------|---------------|----------|
+| "Tests pass" | "I believe tests pass" | npm test output showing all pass |
+| "Build works" | "Should compile fine" | npm run build output with 0 errors |
+| "No regressions" | "Didn't change much" | Full test suite output |
+| "Types correct" | "Looks right to me" | tsc --noEmit output |`,
   expectedOutcome:
     'Every completion claim is backed by command output evidence. No ambiguity about whether the work is actually done.',
   category: 'methodology',
