@@ -156,6 +156,18 @@ starlight-lang-select {
   margin-left: auto;
 }
 
+/* GitHub link */
+.sl-github-link {
+  display: flex;
+  align-items: center;
+  color: var(--sl-color-gray-3);
+  transition: color 0.15s ease;
+}
+
+.sl-github-link:hover {
+  color: var(--sl-color-white);
+}
+
 /* Language switcher */
 .sl-lang-switcher {
   display: none;

@@ -29,6 +29,7 @@ export default defineConfig({
       sidebar: [
         {
           label: 'Start Here',
+          translations: { uk: 'Почніть тут', it: 'Inizia qui' },
           items: [
             { slug: 'docs/getting-started' },
             { slug: 'docs/your-agent' },
@@ -36,6 +37,7 @@ export default defineConfig({
         },
         {
           label: 'Reference',
+          translations: { uk: 'Довідка', it: 'Riferimento' },
           items: [
             { slug: 'docs/capabilities' },
             { slug: 'docs/api-reference' },
@@ -44,18 +46,13 @@ export default defineConfig({
         },
         {
           label: 'Advanced',
+          translations: { uk: 'Додатково', it: 'Avanzato' },
           items: [
             { slug: 'docs/extending' },
           ],
         },
       ],
-      social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/adrozdenko/soleri' },
-      ],
       customCss: ['./src/styles/docs-custom.css'],
-      editLink: {
-        baseUrl: 'https://github.com/adrozdenko/soleri/edit/main/',
-      },
     }),
     react(),
     tailwind({
