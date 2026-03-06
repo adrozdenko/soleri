@@ -39,6 +39,8 @@ const langs = Object.entries(config.locales).map(([code, locale]) => ({
 ---
 
 <div class="header sl-header">
+  <a href={backHref} class="sl-back-link">{backLabel}</a>
+
   <div class="sl-header-brand">
     <a href={`/${webLocale}/`} class="sl-brand-link">
       <span class="sl-brand-name">Soleri</span>
@@ -46,8 +48,6 @@ const langs = Object.entries(config.locales).map(([code, locale]) => ({
     <span class="sl-brand-separator">|</span>
     <span class="sl-brand-label">Docs</span>
   </div>
-
-  <a href={backHref} class="sl-back-link">{backLabel}</a>
 
   <div class="sl-header-actions">
     {shouldRenderSearch && <Search />}
@@ -79,6 +79,21 @@ const langs = Object.entries(config.locales).map(([code, locale]) => ({
       </span>
     </button>
   </div>
+</div>
+
+<!-- Aurora glow orbs (matches website) -->
+<div class="docs-glow docs-glow--amber" aria-hidden="true"></div>
+<div class="docs-glow docs-glow--green" aria-hidden="true"></div>
+<div class="docs-glow docs-glow--teal" aria-hidden="true"></div>
+
+<!-- Shooting rays (matches website background) -->
+<div class="docs-rays" aria-hidden="true">
+  <div class="docs-ray docs-ray--amber" style="top:120px;  animation: docs-chase-a 40s 0s ease-in infinite;"></div>
+  <div class="docs-ray docs-ray--teal"  style="top:380px;  animation: docs-chase-b 35s 3s ease-in infinite;"></div>
+  <div class="docs-ray docs-ray--amber" style="top:640px;  animation: docs-chase-c 45s 8s ease-in infinite;"></div>
+  <div class="docs-ray docs-ray--teal"  style="top:900px;  animation: docs-chase-a 38s 12s ease-in infinite;"></div>
+  <div class="docs-ray docs-ray--amber" style="top:1200px; animation: docs-chase-b 42s 5s ease-in infinite;"></div>
+  <div class="docs-ray docs-ray--teal"  style="top:1550px; animation: docs-chase-c 36s 18s ease-in infinite;"></div>
 </div>
 
 <script is:inline>
