@@ -1,0 +1,130 @@
+/* ============================================
+ * Soleri Docs — Starlight Theme Override
+ * Maps @soleri/tokens to Starlight --sl-* vars
+ * ============================================ */
+
+/* Import Soleri design tokens */
+@import '@soleri/tokens/css';
+
+/* ── Dark mode (Starlight default = :root) ── */
+:root {
+  --sl-color-white: var(--color-neutral-50);
+  --sl-color-gray-1: var(--color-neutral-100);
+  --sl-color-gray-2: var(--color-neutral-200);
+  --sl-color-gray-3: var(--color-neutral-400);
+  --sl-color-gray-4: var(--color-neutral-550);
+  --sl-color-gray-5: var(--color-neutral-700);
+  --sl-color-gray-6: var(--color-neutral-900);
+  --sl-color-black: var(--color-neutral-950);
+
+  /* Accent: teal/secondary */
+  --sl-color-accent-low: var(--color-secondary-900);
+  --sl-color-accent: var(--color-secondary-400);
+  --sl-color-accent-high: var(--color-secondary-200);
+
+  /* Status colors mapped to Soleri palette */
+  --sl-color-green-low: var(--color-tertiary-900);
+  --sl-color-green: var(--color-tertiary-400);
+  --sl-color-green-high: var(--color-tertiary-200);
+  --sl-color-orange-low: var(--color-primary-900);
+  --sl-color-orange: var(--color-primary-400);
+  --sl-color-orange-high: var(--color-primary-200);
+  --sl-color-red-low: hsl(339, 39%, 22%);
+  --sl-color-red: var(--color-error-500);
+  --sl-color-red-high: hsl(339, 82%, 87%);
+
+  /* Typography */
+  --sl-font: "Sora", "Segoe UI", system-ui, sans-serif;
+  --sl-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Shadows from Soleri tokens */
+  --sl-shadow-sm: var(--shadow-sm);
+  --sl-shadow-md: var(--shadow-md);
+  --sl-shadow-lg: var(--shadow-lg);
+}
+
+/* ── Light mode ── */
+:root[data-theme='light'] {
+  /* In Starlight light mode, "white" = darkest text, "black" = lightest bg */
+  --sl-color-white: var(--color-primary-800);
+  --sl-color-gray-1: var(--color-primary-700);
+  --sl-color-gray-2: var(--color-neutral-600);
+  --sl-color-gray-3: var(--color-neutral-550);
+  --sl-color-gray-4: var(--color-neutral-400);
+  --sl-color-gray-5: var(--color-neutral-200);
+  --sl-color-gray-6: color-mix(in srgb, var(--color-white) 92%, var(--color-secondary-300) 8%);
+  --sl-color-gray-7: color-mix(in srgb, var(--color-white) 96%, var(--color-secondary-100) 4%);
+  --sl-color-black: var(--color-white);
+
+  /* Accent: teal/secondary — darker for light bg */
+  --sl-color-accent-low: var(--color-secondary-50);
+  --sl-color-accent: var(--color-secondary-600);
+  --sl-color-accent-high: var(--color-secondary-700);
+
+  /* Status colors — light mode variants */
+  --sl-color-green-low: var(--color-tertiary-50);
+  --sl-color-green: var(--color-tertiary-500);
+  --sl-color-green-high: var(--color-tertiary-700);
+  --sl-color-orange-low: var(--color-primary-50);
+  --sl-color-orange: var(--color-primary-500);
+  --sl-color-orange-high: var(--color-primary-700);
+}
+
+/* ── Global refinements ── */
+
+/* Softer nav/sidebar border to match Soleri's subtle borders */
+starlight-menu-button + nav,
+.sidebar-content {
+  border-color: var(--sl-color-gray-5);
+}
+
+/* Code blocks: match website terminal aesthetic */
+:root {
+  --sl-color-bg-inline-code: var(--color-neutral-800);
+}
+:root[data-theme='light'] {
+  --sl-color-bg-inline-code: color-mix(in srgb, var(--color-primary-50) 60%, var(--color-white) 40%);
+}
+
+/* Site title — match Soleri brand weight */
+.site-title {
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+/* Sidebar active link — teal accent glow */
+nav[aria-label="Main"] a[aria-current="page"] {
+  background: rgb(var(--color-secondary-500-rgb) / 0.08);
+  border-radius: var(--radius-sm);
+}
+:root[data-theme='light'] nav[aria-label="Main"] a[aria-current="page"] {
+  background: rgb(var(--color-secondary-500-rgb) / 0.06);
+}
+
+/* Table styling — cleaner borders like website cards */
+table {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+th {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Heading anchor links — use accent color */
+.sl-markdown-content h2,
+.sl-markdown-content h3 {
+  letter-spacing: -0.015em;
+}
+
+/* Hero/splash page refinement */
+.hero > img {
+  border-radius: var(--radius-xl);
+}
+
+/* Search dialog — match Soleri glass surface */
+dialog {
+  border-radius: var(--radius-xl) !important;
+}

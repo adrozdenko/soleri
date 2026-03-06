@@ -49,7 +49,7 @@ export default defineConfig({
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/adrozdenko/soleri' },
       ],
-      customCss: [],
+      customCss: ['./src/styles/docs-custom.css'],
       editLink: {
         baseUrl: 'https://github.com/adrozdenko/soleri/edit/main/',
       },
