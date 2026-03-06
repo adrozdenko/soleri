@@ -368,12 +368,38 @@ starlight-lang-select {
 :root[data-theme='light'] .sl-toggle-bg-sun  { opacity: 0; }
 
 /* ============================================
- * PAGE BACKGROUND — match website atmosphere
+ * PAGE LAYOUT — centered container, panels
+ * attached to content (not viewport edges)
  * ============================================ */
 
-/* Page background color */
+/* Page background */
+html {
+  background: var(--bg);
+}
+
+/* Centered page container — keeps sidebar+content as a fixed-width unit */
 .page {
   background: var(--bg) !important;
+  max-width: var(--docs-max-width, 1320px);
+  margin-inline: auto;
+  position: relative;
+}
+
+/* Header: constrained to same max-width, centered */
+@media (min-width: 50rem) {
+  header.header {
+    max-width: var(--docs-max-width, 1320px) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+  }
+
+  /* Fixed sidebar: reposition to align with centered container */
+  .sidebar-pane {
+    left: max(0px, calc((100vw - var(--docs-max-width, 1320px)) / 2)) !important;
+    width: var(--sl-sidebar-width) !important;
+  }
 }
 
 /* Aurora glow orbs (subtle, non-animated for docs) */
@@ -409,7 +435,7 @@ starlight-lang-select {
   background: radial-gradient(circle, var(--color-primary-400) 0%, transparent 70%);
 }
 
-/* Main content frame inherits bg */
+/* Main content frame */
 .main-frame {
   position: relative;
   z-index: 1;
