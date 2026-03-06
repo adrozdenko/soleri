@@ -38,6 +38,7 @@ export default defineConfig({
           label: 'Guides',
           translations: { uk: 'Посібники', it: 'Guide' },
           items: [
+            { slug: 'docs/guides/workflow' },
             { slug: 'docs/guides/first-10-minutes' },
             { slug: 'docs/guides/knowledge-base' },
             { slug: 'docs/guides/code-review' },
