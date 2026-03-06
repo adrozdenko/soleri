@@ -10,6 +10,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'nav.teams': 'Teams',
     'nav.articles': 'Articles',
     'nav.community': 'Community',
+    'nav.docs': 'Docs',
     'nav.start': 'Get started',
     'hero.eyebrow': 'Open source',
     'hero.img.alt': 'Solarpunk cityscape with organic architecture, lush green vegetation, solar panels, and golden sunlight streaming through glass domes',
@@ -32,6 +33,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'nav.teams': 'Команди',
     'nav.articles': 'Статті',
     'nav.community': 'Спільнота',
+    'nav.docs': 'Документація',
     'nav.start': 'Почати',
     'hero.eyebrow': 'Відкритий код',
     'hero.img.alt': 'Соларпанк-міський пейзаж з органічною архітектурою, пишною зеленою рослинністю, сонячними панелями та золотим сонячним світлом, що пробивається крізь скляні куполи',
@@ -54,6 +56,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'nav.teams': 'Team',
     'nav.articles': 'Articoli',
     'nav.community': 'Community',
+    'nav.docs': 'Documentazione',
     'nav.start': 'Inizia ora',
     'hero.eyebrow': 'Open source',
     'hero.img.alt': 'Paesaggio solarpunk con architettura organica, vegetazione rigogliosa, pannelli solari e luce dorata che filtra attraverso cupole di vetro',
@@ -82,6 +85,7 @@ export function getNavLinks(locale: Locale) {
     { href: `${prefix}teams.html`, label: t(locale, 'nav.teams') },
     { href: `${prefix}articles.html`, label: t(locale, 'nav.articles') },
     { href: `${prefix}community.html`, label: t(locale, 'nav.community') },
+    { href: '/docs/', label: t(locale, 'nav.docs') },
     { href: `${prefix}getting-started.html`, label: t(locale, 'nav.start') },
   ];
 }
