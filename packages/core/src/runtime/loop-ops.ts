@@ -1,14 +1,14 @@
 /**
- * Loop operations — 7 ops for iterative validation loops.
+ * Loop operations — 8 ops for iterative validation loops.
  *
- * Ops: loop_start, loop_iterate, loop_status, loop_cancel,
- *      loop_history, loop_is_active, loop_complete.
+ * Ops: loop_start, loop_iterate, loop_iterate_gate, loop_status,
+ *      loop_cancel, loop_history, loop_is_active, loop_complete.
  */
 
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
-import type { LoopMode } from '../loop/types.js';
+import type { LoopMode, LoopKnowledge } from '../loop/types.js';
 
 const loopModeSchema = z.enum([
   'token-migration',
@@ -39,7 +39,7 @@ const DEFAULT_TARGET_SCORES: Partial<Record<LoopMode, number>> = {
 };
 
 /**
- * Create the 7 loop operations for an agent runtime.
+ * Create the 8 loop operations for an agent runtime.
  */
 export function createLoopOps(runtime: AgentRuntime): OpDefinition[] {
   const { loop } = runtime;
@@ -61,6 +61,22 @@ export function createLoopOps(runtime: AgentRuntime): OpDefinition[] {
           .number()
           .optional()
           .describe('Target validation score (0-100). Defaults vary by mode.'),
+        targetGrade: z
+          .string()
+          .optional()
+          .describe('Target grade for plan-iteration mode (e.g., "A", "A+").'),
+        completionPromise: z
+          .string()
+          .optional()
+          .describe('Completion promise text — loop completes when this appears in output.'),
+        validationInstructions: z
+          .string()
+          .optional()
+          .describe('Validation instructions appended to the prompt each iteration.'),
+        intent: z
+          .string()
+          .optional()
+          .describe('Detected intent for brain session recording (e.g., "BUILD", "FIX").'),
       }),
       handler: async (params) => {
         const mode = params.mode as LoopMode;
@@ -75,6 +91,10 @@ export function createLoopOps(runtime: AgentRuntime): OpDefinition[] {
           prompt,
           maxIterations,
           targetScore,
+          targetGrade: params.targetGrade as string | undefined,
+          completionPromise: params.completionPromise as string | undefined,
+          validationInstructions: params.validationInstructions as string | undefined,
+          intent: params.intent as string | undefined,
         });
 
         return {
@@ -93,14 +113,8 @@ export function createLoopOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'write',
       schema: z.object({
         passed: z.boolean().describe('Whether this iteration passed validation.'),
-        validationScore: z
-          .number()
-          .optional()
-          .describe('Numeric validation score (0-100).'),
-        validationResult: z
-          .string()
-          .optional()
-          .describe('Free-text validation result summary.'),
+        validationScore: z.number().optional().describe('Numeric validation score (0-100).'),
+        validationResult: z.string().optional().describe('Free-text validation result summary.'),
       }),
       handler: async (params) => {
         const iteration = loop.iterate({
@@ -117,6 +131,32 @@ export function createLoopOps(runtime: AgentRuntime): OpDefinition[] {
           loopActive: loop.isActive(),
           loopStatus: status?.status ?? 'max-iterations',
         };
+      },
+    },
+    {
+      name: 'loop_iterate_gate',
+      description:
+        'Gate-based loop iteration — accepts LLM output, scans for completion signals ' +
+        '(promise tags, heuristic detection), and returns allow/block decision. ' +
+        'Primary method for Stop hook integration.',
+      auth: 'write',
+      schema: z.object({
+        lastOutput: z.string().describe('The LLM response to scan for completion signals.'),
+        knowledge: z
+          .object({
+            items: z.array(z.string()).optional(),
+            patternsApplied: z.array(z.string()).optional(),
+            antiPatternsAvoided: z.array(z.string()).optional(),
+          })
+          .optional()
+          .describe('Knowledge items discovered during this iteration.'),
+      }),
+      handler: async (params) => {
+        const decision = loop.iterateWithGate(
+          params.lastOutput as string,
+          params.knowledge as LoopKnowledge | undefined,
+        );
+        return decision;
       },
     },
     {

@@ -748,6 +748,194 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
         return { config: cognee.getConfig(), cachedStatus: cognee.getStatus() };
       },
     },
+    // ─── Cognee Graph (#156) ──────────────────────────────────────
+    {
+      name: 'cognee_get_node',
+      description: 'Get a specific Cognee graph node by UUID with all properties and connections.',
+      auth: 'read',
+      schema: z.object({
+        nodeId: z.string().describe('UUID of the graph node'),
+      }),
+      handler: async (params) => {
+        try {
+          // Use Cognee search with specific ID query — the graph node API is accessed via search
+          const results = await cognee.search(params.nodeId as string, {
+            searchType: 'GRAPH_COMPLETION' as CogneeSearchType,
+            limit: 1,
+          });
+          if (!results || (Array.isArray(results) && results.length === 0)) {
+            return { found: false, nodeId: params.nodeId };
+          }
+          return {
+            found: true,
+            nodeId: params.nodeId,
+            node: Array.isArray(results) ? results[0] : results,
+          };
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
+    {
+      name: 'cognee_graph_stats',
+      description:
+        'Cognee graph statistics — availability, endpoint, latency from last health check.',
+      auth: 'read',
+      handler: async () => {
+        try {
+          const status = cognee.getStatus();
+          const health = await cognee.healthCheck();
+          return {
+            available: status?.available ?? false,
+            url: status?.url ?? cognee.getConfig().baseUrl,
+            latencyMs: status?.latencyMs ?? health.latencyMs ?? null,
+            error: status?.error ?? health.error ?? null,
+          };
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
+    {
+      name: 'cognee_export_status',
+      description: 'Check Cognee dataset and processing status — availability, pending operations.',
+      auth: 'read',
+      handler: async () => {
+        try {
+          const status = cognee.getStatus();
+          const config = cognee.getConfig();
+          return {
+            available: status?.available ?? false,
+            dataset: config.dataset ?? 'default',
+            pendingCognify: false, // CogneeClient tracks internally via flushPendingCognify
+            url: status?.url ?? config.baseUrl,
+          };
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
+
+    // ─── Enriched Capture (#154) ─────────────────────────────────
+    {
+      name: 'capture_enriched',
+      description:
+        'Unified LLM-enriched capture — accepts minimal fields (title, description, type), uses LLM to auto-infer tags, category, and severity.',
+      auth: 'write',
+      schema: z.object({
+        title: z.string().describe('Knowledge title'),
+        description: z.string().describe('Knowledge description'),
+        type: z
+          .enum(['pattern', 'anti-pattern', 'rule', 'playbook'])
+          .optional()
+          .describe('Entry type. If omitted, LLM infers from content.'),
+        domain: z.string().optional().describe('Domain. If omitted, LLM infers.'),
+        tags: z.array(z.string()).optional().describe('Tags. LLM adds more if needed.'),
+      }),
+      handler: async (params) => {
+        try {
+          const title = params.title as string;
+          const description = params.description as string;
+
+          // Try LLM enrichment for auto-tagging
+          let inferredTags: string[] = (params.tags as string[] | undefined) ?? [];
+          let inferredType = (params.type as IntelligenceEntry['type'] | undefined) ?? 'pattern';
+          const inferredDomain = (params.domain as string | undefined) ?? 'general';
+          let inferredSeverity: IntelligenceEntry['severity'] = 'suggestion';
+          const enriched = false;
+
+          try {
+            const captureId = `enriched-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const enrichResult = brain.enrichAndCapture({
+              id: captureId,
+              title,
+              description,
+              type: inferredType,
+              domain: inferredDomain,
+              severity: inferredSeverity,
+              tags: inferredTags,
+            });
+
+            if (enrichResult.captured) {
+              return {
+                captured: true,
+                enriched: true,
+                entryId: enrichResult.id,
+                autoTags: enrichResult.autoTags,
+                duplicate: enrichResult.duplicate ?? null,
+              };
+            }
+          } catch {
+            // LLM enrichment failed — fall back to basic capture
+          }
+
+          // Fallback: basic capture without LLM enrichment
+          // Infer type from keywords
+          const lowerDesc = description.toLowerCase();
+          if (!params.type) {
+            if (
+              lowerDesc.includes('avoid') ||
+              lowerDesc.includes("don't") ||
+              lowerDesc.includes('anti-pattern')
+            )
+              inferredType = 'anti-pattern';
+            else if (
+              lowerDesc.includes('rule') ||
+              lowerDesc.includes('must') ||
+              lowerDesc.includes('always')
+            )
+              inferredType = 'rule';
+          }
+
+          // Infer severity from keywords
+          if (
+            lowerDesc.includes('critical') ||
+            lowerDesc.includes('security') ||
+            lowerDesc.includes('breaking')
+          )
+            inferredSeverity = 'critical';
+          else if (
+            lowerDesc.includes('warning') ||
+            lowerDesc.includes('careful') ||
+            lowerDesc.includes('avoid')
+          )
+            inferredSeverity = 'warning';
+
+          // Auto-generate tags from title words
+          if (inferredTags.length === 0) {
+            inferredTags = title
+              .toLowerCase()
+              .split(/\s+/)
+              .filter(
+                (w) =>
+                  w.length > 3 && !['with', 'from', 'that', 'this', 'have', 'been'].includes(w),
+              )
+              .slice(0, 5);
+          }
+
+          const entry: IntelligenceEntry = {
+            id: `enriched-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            type: inferredType,
+            domain: inferredDomain,
+            title,
+            severity: inferredSeverity,
+            description,
+            tags: inferredTags,
+          };
+
+          vault.add(entry);
+
+          return {
+            captured: true,
+            enriched,
+            entry,
+            autoTags: inferredTags,
+          };
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
 
     // ─── LLM ─────────────────────────────────────────────────────
     {

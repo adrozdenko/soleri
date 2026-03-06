@@ -162,7 +162,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'governance_stats',
         'governance_expire',
         'governance_dashboard',
-        // Planning Extra ops — 9
+        // Planning Extra ops — 18
         'plan_iterate',
         'plan_split',
         'plan_reconcile',
@@ -172,6 +172,20 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'plan_archive',
         'plan_list_tasks',
         'plan_stats',
+        // Planning evidence (#148)
+        'plan_submit_evidence',
+        'plan_verify_task',
+        'plan_verify_plan',
+        // Subagent dispatch (#149)
+        'plan_review_spec',
+        'plan_review_quality',
+        'plan_review_outcome',
+        // Brainstorm (#150)
+        'plan_brainstorm',
+        // Auto-reconcile (#151)
+        'plan_auto_reconcile',
+        // Validate plan (#152)
+        'plan_validate',
         // Memory Extra ops — 8
         'memory_delete',
         'memory_stats',
@@ -194,6 +208,12 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'vault_seed',
         'vault_backup',
         'vault_age_report',
+        // Vault extra — seed canonical + knowledge lifecycle (5)
+        'vault_seed_canonical',
+        'knowledge_audit',
+        'knowledge_health',
+        'knowledge_merge',
+        'knowledge_reorganize',
         // Admin ops — 8
         'admin_health',
         'admin_tool_list',
@@ -203,9 +223,10 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'admin_version',
         'admin_reset_cache',
         'admin_diagnostic',
-        // Loop ops — 7
+        // Loop ops — 8
         'loop_start',
         'loop_iterate',
+        'loop_iterate_gate',
         'loop_status',
         'loop_cancel',
         'loop_history',
@@ -228,7 +249,13 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'capture_quick',
         'search_intelligent',
         'search_feedback',
-        // Admin Extra ops — 10
+        // Enriched capture (#154) — 1
+        'capture_enriched',
+        // Cognee graph (#156) — 3
+        'cognee_get_node',
+        'cognee_graph_stats',
+        'cognee_export_status',
+        // Admin Extra ops — 22
         'admin_telemetry',
         'admin_telemetry_recent',
         'admin_telemetry_reset',
@@ -239,6 +266,22 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'admin_env',
         'admin_gc',
         'admin_export_config',
+        // Admin key pool (#157)
+        'admin_key_pool_status',
+        'admin_create_token',
+        'admin_revoke_token',
+        'admin_list_tokens',
+        // Admin accounts (#158)
+        'admin_add_account',
+        'admin_remove_account',
+        'admin_rotate_account',
+        'admin_list_accounts',
+        'admin_account_status',
+        // Admin plugins (#159)
+        'admin_list_plugins',
+        'admin_plugin_status',
+        // Admin instruction validation (#160)
+        'admin_validate_instructions',
         // Curator Extra ops — 4
         'curator_entry_history',
         'curator_record_snapshot',

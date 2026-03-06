@@ -34,8 +34,8 @@ describe('createPlanningExtraOps', () => {
     return op;
   }
 
-  it('should return 9 ops', () => {
-    expect(ops.length).toBe(9);
+  it('should return 18 ops', () => {
+    expect(ops.length).toBe(18);
   });
 
   it('should have all expected op names', () => {
@@ -49,6 +49,20 @@ describe('createPlanningExtraOps', () => {
     expect(names).toContain('plan_archive');
     expect(names).toContain('plan_list_tasks');
     expect(names).toContain('plan_stats');
+    // #148: Evidence
+    expect(names).toContain('plan_submit_evidence');
+    expect(names).toContain('plan_verify_task');
+    expect(names).toContain('plan_verify_plan');
+    // #149: Subagent dispatch
+    expect(names).toContain('plan_review_spec');
+    expect(names).toContain('plan_review_quality');
+    expect(names).toContain('plan_review_outcome');
+    // #150: Brainstorm
+    expect(names).toContain('plan_brainstorm');
+    // #151: Auto-reconcile
+    expect(names).toContain('plan_auto_reconcile');
+    // #152: Validate
+    expect(names).toContain('plan_validate');
   });
 
   it('should assign correct auth levels', () => {
@@ -115,7 +129,7 @@ describe('createPlanningExtraOps', () => {
         planId: plan.id,
         objective: 'Updated',
       })) as { error: string };
-      expect(result.error).toContain("must be 'draft'");
+      expect(result.error).toContain("must be 'draft' or 'brainstorming'");
     });
 
     it('should return error for unknown plan', async () => {
@@ -138,7 +152,11 @@ describe('createPlanningExtraOps', () => {
           { title: 'Implement', description: 'Core implementation', dependsOn: ['task-1'] },
           { title: 'Test', description: 'Write tests', dependsOn: ['task-2'] },
         ],
-      })) as { split: boolean; taskCount: number; plan: { tasks: Array<{ dependsOn?: string[] }> } };
+      })) as {
+        split: boolean;
+        taskCount: number;
+        plan: { tasks: Array<{ dependsOn?: string[] }> };
+      };
       expect(result.split).toBe(true);
       expect(result.taskCount).toBe(3);
       expect(result.plan.tasks[1].dependsOn).toEqual(['task-1']);
@@ -161,9 +179,7 @@ describe('createPlanningExtraOps', () => {
       runtime.planner.approve(plan.id);
       const result = (await findOp('plan_split').handler({
         planId: plan.id,
-        tasks: [
-          { title: 'Only task', description: 'Single task' },
-        ],
+        tasks: [{ title: 'Only task', description: 'Single task' }],
       })) as { split: boolean; taskCount: number };
       expect(result.split).toBe(true);
       expect(result.taskCount).toBe(1);
@@ -177,7 +193,7 @@ describe('createPlanningExtraOps', () => {
         planId: plan.id,
         tasks: [{ title: 'T', description: 'D' }],
       })) as { error: string };
-      expect(result.error).toContain("must be 'draft' or 'approved'");
+      expect(result.error).toContain("must be 'brainstorming', 'draft', or 'approved'");
     });
   });
 
@@ -201,7 +217,7 @@ describe('createPlanningExtraOps', () => {
         ],
       })) as { reconciled: boolean; accuracy: number; driftCount: number };
       expect(result.reconciled).toBe(true);
-      expect(result.accuracy).toBe(50); // 1 drift out of 2 tasks = 50%
+      expect(result.accuracy).toBe(95); // 1 low-impact drift = 100 - 5 = 95
       expect(result.driftCount).toBe(1);
     });
 
@@ -236,7 +252,7 @@ describe('createPlanningExtraOps', () => {
         planId: plan.id,
         actualOutcome: 'Done',
       })) as { error: string };
-      expect(result.error).toContain("must be 'executing' or 'completed'");
+      expect(result.error).toContain("must be 'executing', 'validating', or 'reconciling'");
     });
   });
 
@@ -246,6 +262,7 @@ describe('createPlanningExtraOps', () => {
       const plan = createDraftPlan();
       runtime.planner.approve(plan.id);
       runtime.planner.startExecution(plan.id);
+      runtime.planner.startReconciliation(plan.id);
       runtime.planner.complete(plan.id);
 
       const result = (await findOp('plan_complete_lifecycle').handler({
@@ -272,6 +289,7 @@ describe('createPlanningExtraOps', () => {
       const plan = createDraftPlan();
       runtime.planner.approve(plan.id);
       runtime.planner.startExecution(plan.id);
+      runtime.planner.startReconciliation(plan.id);
       runtime.planner.complete(plan.id);
 
       const result = (await findOp('plan_complete_lifecycle').handler({
@@ -419,6 +437,7 @@ describe('createPlanningExtraOps', () => {
       const plan = createDraftPlan();
       runtime.planner.approve(plan.id);
       runtime.planner.startExecution(plan.id);
+      runtime.planner.startReconciliation(plan.id);
       runtime.planner.complete(plan.id);
 
       // Hack: set updatedAt to 60 days ago
@@ -446,6 +465,7 @@ describe('createPlanningExtraOps', () => {
       const plan = createDraftPlan();
       runtime.planner.approve(plan.id);
       runtime.planner.startExecution(plan.id);
+      runtime.planner.startReconciliation(plan.id);
       runtime.planner.complete(plan.id);
 
       const result = (await findOp('plan_archive').handler({
@@ -527,6 +547,7 @@ describe('createPlanningExtraOps', () => {
       runtime.planner.approve(plan2.id);
       runtime.planner.startExecution(plan2.id);
       runtime.planner.updateTask(plan2.id, 'task-1', 'completed');
+      runtime.planner.startReconciliation(plan2.id);
       runtime.planner.complete(plan2.id);
 
       const result = (await findOp('plan_stats').handler({})) as {

@@ -125,11 +125,23 @@ export type {
 } from './cognee/types.js';
 
 // ─── Planning ────────────────────────────────────────────────────────
-export { Planner, calculateScore } from './planning/planner.js';
+export {
+  Planner,
+  calculateScore,
+  calculateDriftScore,
+  isValidTransition,
+  getValidNextStatuses,
+  shouldExpire,
+  LIFECYCLE_TRANSITIONS,
+  NON_EXPIRING_STATUSES,
+  DRIFT_WEIGHTS,
+} from './planning/planner.js';
 export type {
   PlanStatus,
   TaskStatus,
+  TaskEvidence,
   PlanTask,
+  PlanDecision,
   Plan,
   PlanStore,
   DriftItem,
@@ -140,7 +152,12 @@ export type {
 } from './planning/planner.js';
 
 // ─── Plan Gap Analysis ──────────────────────────────────────────────
-export { runGapAnalysis } from './planning/gap-analysis.js';
+export {
+  runGapAnalysis,
+  createToolFeasibilityPass,
+  createFlowAlignmentPass,
+  createAntiPatternPass,
+} from './planning/gap-analysis.js';
 export type { GapAnalysisOptions, GapAnalysisPass } from './planning/gap-analysis.js';
 export {
   SEVERITY_WEIGHTS,
@@ -153,8 +170,17 @@ export {
 export type { GapSeverity, GapCategory, PlanGap } from './planning/gap-types.js';
 
 // ─── Loop ────────────────────────────────────────────────────────────
-export { LoopManager } from './loop/loop-manager.js';
-export type { LoopMode, LoopConfig, LoopIteration, LoopStatus, LoopState } from './loop/types.js';
+export { LoopManager, extractPromise, detectImplicitCompletion } from './loop/loop-manager.js';
+export type {
+  LoopMode,
+  LoopConfig,
+  LoopIteration,
+  LoopStatus,
+  LoopState,
+  LoopKnowledge,
+  LoopHistoryEntry,
+  LoopIterateDecision,
+} from './loop/types.js';
 
 // ─── LLM Types ───────────────────────────────────────────────────────
 export { SecretString, LLMError } from './llm/types.js';

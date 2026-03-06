@@ -64,7 +64,10 @@ describe('createOrchestrateOps', () => {
         objective: 'Build a new button component',
         scope: 'src/components/Button',
         domain: 'component',
-      })) as { plan: { id: string; objective: string; decisions: string[] }; recommendations: unknown[] };
+      })) as {
+        plan: { id: string; objective: string; decisions: string[] };
+        recommendations: unknown[];
+      };
 
       expect(result.plan).toBeDefined();
       expect(result.plan.objective).toBe('Build a new button component');
@@ -130,7 +133,7 @@ describe('createOrchestrateOps', () => {
       });
 
       const op = findOp('orchestrate_execute');
-      await expect(op.handler({ planId: plan.id })).rejects.toThrow(/must be 'approved'/);
+      await expect(op.handler({ planId: plan.id })).rejects.toThrow(/Invalid transition/);
     });
   });
 
@@ -138,13 +141,14 @@ describe('createOrchestrateOps', () => {
 
   describe('orchestrate_complete', () => {
     it('should complete plan, end session, and extract knowledge', async () => {
-      // Full lifecycle: create -> approve -> execute -> complete
+      // Full lifecycle: create -> approve -> execute -> reconciling -> complete
       const plan = runtime.planner.create({
         objective: 'Full lifecycle test',
         scope: 'test',
       });
       runtime.planner.approve(plan.id);
       runtime.planner.startExecution(plan.id);
+      runtime.planner.startReconciliation(plan.id);
 
       // Start a brain session
       const session = runtime.brainIntelligence.lifecycle({
@@ -176,6 +180,7 @@ describe('createOrchestrateOps', () => {
       const plan = runtime.planner.create({ objective: 'Abandoned test', scope: 'test' });
       runtime.planner.approve(plan.id);
       runtime.planner.startExecution(plan.id);
+      runtime.planner.startReconciliation(plan.id);
 
       const session = runtime.brainIntelligence.lifecycle({
         action: 'start',

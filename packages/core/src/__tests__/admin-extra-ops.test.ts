@@ -26,22 +26,37 @@ describe('createAdminExtraOps', () => {
     ops = createAdminExtraOps(runtime);
   }
 
-  it('should return 10 ops', () => {
+  it('should return 22 ops', () => {
     setup();
-    expect(ops).toHaveLength(10);
+    expect(ops).toHaveLength(22);
     const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'admin_telemetry',
-      'admin_telemetry_recent',
-      'admin_telemetry_reset',
-      'admin_permissions',
-      'admin_vault_analytics',
-      'admin_search_insights',
-      'admin_module_status',
-      'admin_env',
-      'admin_gc',
-      'admin_export_config',
-    ]);
+    // Original 10
+    expect(names).toContain('admin_telemetry');
+    expect(names).toContain('admin_telemetry_recent');
+    expect(names).toContain('admin_telemetry_reset');
+    expect(names).toContain('admin_permissions');
+    expect(names).toContain('admin_vault_analytics');
+    expect(names).toContain('admin_search_insights');
+    expect(names).toContain('admin_module_status');
+    expect(names).toContain('admin_env');
+    expect(names).toContain('admin_gc');
+    expect(names).toContain('admin_export_config');
+    // #157: Key pool
+    expect(names).toContain('admin_key_pool_status');
+    expect(names).toContain('admin_create_token');
+    expect(names).toContain('admin_revoke_token');
+    expect(names).toContain('admin_list_tokens');
+    // #158: Accounts
+    expect(names).toContain('admin_add_account');
+    expect(names).toContain('admin_remove_account');
+    expect(names).toContain('admin_rotate_account');
+    expect(names).toContain('admin_list_accounts');
+    expect(names).toContain('admin_account_status');
+    // #159: Plugins
+    expect(names).toContain('admin_list_plugins');
+    expect(names).toContain('admin_plugin_status');
+    // #160: Instruction validation
+    expect(names).toContain('admin_validate_instructions');
   });
 
   // ─── admin_telemetry ────────────────────────────────────────────
@@ -68,7 +83,13 @@ describe('createAdminExtraOps', () => {
       setup();
       runtime.telemetry.record({ facade: 'core', op: 'search', durationMs: 100, success: true });
       runtime.telemetry.record({ facade: 'core', op: 'search', durationMs: 200, success: true });
-      runtime.telemetry.record({ facade: 'core', op: 'register', durationMs: 50, success: false, error: 'test error' });
+      runtime.telemetry.record({
+        facade: 'core',
+        op: 'register',
+        durationMs: 50,
+        success: false,
+        error: 'test error',
+      });
 
       const result = (await findOp('admin_telemetry').handler({})) as {
         totalCalls: number;

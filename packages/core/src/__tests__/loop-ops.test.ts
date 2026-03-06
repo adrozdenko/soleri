@@ -269,8 +269,8 @@ describe('createLoopOps', () => {
     return op;
   }
 
-  it('exports 7 loop ops', () => {
-    expect(ops).toHaveLength(7);
+  it('exports 8 loop ops', () => {
+    expect(ops).toHaveLength(8);
     const names = ops.map((o) => o.name).sort();
     expect(names).toEqual([
       'loop_cancel',
@@ -278,6 +278,7 @@ describe('createLoopOps', () => {
       'loop_history',
       'loop_is_active',
       'loop_iterate',
+      'loop_iterate_gate',
       'loop_start',
       'loop_status',
     ]);

@@ -47,8 +47,8 @@ describe('createVaultExtraOps', () => {
     return op;
   }
 
-  it('should return 12 ops', () => {
-    expect(ops.length).toBe(12);
+  it('should return 17 ops', () => {
+    expect(ops.length).toBe(17);
   });
 
   it('should have all expected op names', () => {
@@ -65,6 +65,13 @@ describe('createVaultExtraOps', () => {
     expect(names).toContain('vault_seed');
     expect(names).toContain('vault_backup');
     expect(names).toContain('vault_age_report');
+    // #153: Seed canonical
+    expect(names).toContain('vault_seed_canonical');
+    // #155: Knowledge lifecycle
+    expect(names).toContain('knowledge_audit');
+    expect(names).toContain('knowledge_health');
+    expect(names).toContain('knowledge_merge');
+    expect(names).toContain('knowledge_reorganize');
   });
 
   // ─── vault_get ────────────────────────────────────────────────────
@@ -357,10 +364,7 @@ describe('createVaultExtraOps', () => {
   // ─── vault_age_report ─────────────────────────────────────────────
 
   it('vault_age_report should return age distribution', async () => {
-    runtime.vault.seed([
-      makeEntry({ id: 'va-1' }),
-      makeEntry({ id: 'va-2' }),
-    ]);
+    runtime.vault.seed([makeEntry({ id: 'va-1' }), makeEntry({ id: 'va-2' })]);
     const result = (await findOp('vault_age_report').handler({})) as {
       total: number;
       buckets: Array<{ label: string; count: number; minDays: number; maxDays: number }>;
@@ -390,7 +394,14 @@ describe('createVaultExtraOps', () => {
   // ─── Auth levels ──────────────────────────────────────────────────
 
   it('should assign correct auth levels', () => {
-    const readOps = ['vault_get', 'vault_tags', 'vault_domains', 'vault_recent', 'vault_backup', 'vault_age_report'];
+    const readOps = [
+      'vault_get',
+      'vault_tags',
+      'vault_domains',
+      'vault_recent',
+      'vault_backup',
+      'vault_age_report',
+    ];
     const writeOps = ['vault_update', 'vault_bulk_add', 'vault_import', 'vault_seed'];
     const adminOps = ['vault_remove', 'vault_bulk_remove'];
 

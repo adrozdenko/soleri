@@ -13,7 +13,10 @@ export type GapCategory =
   | 'feasibility'
   | 'risk'
   | 'clarity'
-  | 'semantic-quality';
+  | 'semantic-quality'
+  | 'tool-feasibility'
+  | 'flow-alignment'
+  | 'anti-pattern';
 
 export interface PlanGap {
   id: string;

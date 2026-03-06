@@ -95,7 +95,7 @@ describe('Planner', () => {
     it('should throw when approving non-draft plan', () => {
       const plan = planner.create({ objective: 'Already approved', scope: 'test' });
       planner.approve(plan.id);
-      expect(() => planner.approve(plan.id)).toThrow('must be');
+      expect(() => planner.approve(plan.id)).toThrow('Invalid transition');
     });
 
     it('should throw for unknown plan', () => {
@@ -113,7 +113,7 @@ describe('Planner', () => {
 
     it('should throw when executing non-approved plan', () => {
       const plan = planner.create({ objective: 'Not approved', scope: 'test' });
-      expect(() => planner.startExecution(plan.id)).toThrow('must be');
+      expect(() => planner.startExecution(plan.id)).toThrow('Invalid transition');
     });
   });
 
@@ -178,17 +178,25 @@ describe('Planner', () => {
   });
 
   describe('complete', () => {
-    it('should transition executing to completed', () => {
+    it('should transition reconciling to completed', () => {
       const plan = planner.create({ objective: 'Complete me', scope: 'test' });
       planner.approve(plan.id);
       planner.startExecution(plan.id);
+      planner.startReconciliation(plan.id);
       const completed = planner.complete(plan.id);
       expect(completed.status).toBe('completed');
     });
 
-    it('should throw when completing non-executing plan', () => {
+    it('should throw when completing from executing (must go through reconciling)', () => {
+      const plan = planner.create({ objective: 'Not reconciling', scope: 'test' });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      expect(() => planner.complete(plan.id)).toThrow('Invalid transition');
+    });
+
+    it('should throw when completing from draft', () => {
       const plan = planner.create({ objective: 'Not executing', scope: 'test' });
-      expect(() => planner.complete(plan.id)).toThrow('must be');
+      expect(() => planner.complete(plan.id)).toThrow('Invalid transition');
     });
   });
 
@@ -210,7 +218,7 @@ describe('Planner', () => {
   });
 
   describe('getActive', () => {
-    it('should return draft, approved, and executing plans', () => {
+    it('should return brainstorming, draft, approved, executing, validating, and reconciling plans', () => {
       planner.create({ objective: 'Draft', scope: 'a' });
       const p2 = planner.create({ objective: 'Approved', scope: 'b' });
       const p3 = planner.create({ objective: 'Executing', scope: 'c' });
@@ -220,6 +228,7 @@ describe('Planner', () => {
       planner.startExecution(p3.id);
       planner.approve(p4.id);
       planner.startExecution(p4.id);
+      planner.startReconciliation(p4.id);
       planner.complete(p4.id);
       const active = planner.getActive();
       expect(active).toHaveLength(3);
@@ -237,10 +246,22 @@ describe('Planner', () => {
           'Set TTL to 5 minutes since average data freshness requirement is 10 minutes',
         ],
         tasks: [
-          { title: 'Set up Redis client', description: 'Install and configure Redis connection pool' },
-          { title: 'Add cache middleware', description: 'Express middleware for transparent caching' },
-          { title: 'Add invalidation logic', description: 'Purge cache on write operations to ensure consistency' },
-          { title: 'Write integration tests', description: 'Test cache hit/miss scenarios with Redis' },
+          {
+            title: 'Set up Redis client',
+            description: 'Install and configure Redis connection pool',
+          },
+          {
+            title: 'Add cache middleware',
+            description: 'Express middleware for transparent caching',
+          },
+          {
+            title: 'Add invalidation logic',
+            description: 'Purge cache on write operations to ensure consistency',
+          },
+          {
+            title: 'Write integration tests',
+            description: 'Test cache hit/miss scenarios with Redis',
+          },
           { title: 'Add monitoring', description: 'Track and verify cache hit rate metrics' },
         ],
       });
@@ -325,13 +346,17 @@ describe('Planner', () => {
       const plan = planner.create({
         objective: 'Build a comprehensive authentication system for the application',
         scope: 'Backend authentication module',
-        decisions: [
-          'Use JWT tokens because they are stateless and work well with microservices',
-        ],
+        decisions: ['Use JWT tokens because they are stateless and work well with microservices'],
         tasks: [
           { title: 'Create auth middleware', description: 'JWT validation middleware for Express' },
-          { title: 'Add login endpoint', description: 'POST /auth/login with credential validation' },
-          { title: 'Add refresh tokens', description: 'Implement token refresh flow with rotation' },
+          {
+            title: 'Add login endpoint',
+            description: 'POST /auth/login with credential validation',
+          },
+          {
+            title: 'Add refresh tokens',
+            description: 'Implement token refresh flow with rotation',
+          },
           { title: 'Write auth tests', description: 'Integration tests for all auth endpoints' },
         ],
       });
@@ -354,9 +379,7 @@ describe('Planner', () => {
       const plan = planner.create({
         objective: 'Maybe perhaps build something simple and easy, possibly soon, etc',
         scope: 'Various things, probably several modules, somehow',
-        decisions: [
-          'Use some appropriate approach because it seems good due to various reasons',
-        ],
+        decisions: ['Use some appropriate approach because it seems good due to various reasons'],
         tasks: [
           { title: 'Do some stuff', description: 'Maybe implement various things somehow' },
           { title: 'Maybe test', description: 'Perhaps write some tests probably' },
@@ -374,7 +397,10 @@ describe('Planner', () => {
     });
 
     it('should store check in plan history', () => {
-      const plan = planner.create({ objective: 'History test plan objective', scope: 'test scope' });
+      const plan = planner.create({
+        objective: 'History test plan objective',
+        scope: 'test scope',
+      });
       planner.grade(plan.id);
       planner.grade(plan.id);
       const history = planner.getCheckHistory(plan.id);
@@ -383,7 +409,10 @@ describe('Planner', () => {
     });
 
     it('should persist latestCheck', () => {
-      const plan = planner.create({ objective: 'Persist test plan objective', scope: 'test scope' });
+      const plan = planner.create({
+        objective: 'Persist test plan objective',
+        scope: 'test scope',
+      });
       const check = planner.grade(plan.id);
       const latest = planner.getLatestCheck(plan.id);
       expect(latest).not.toBeNull();
@@ -557,7 +586,7 @@ describe('Planner', () => {
   });
 
   describe('full lifecycle', () => {
-    it('should support draft → approved → executing → completed with tasks', () => {
+    it('should support draft → approved → executing → reconciling → completed with tasks', () => {
       const plan = planner.create({
         objective: 'Full lifecycle test',
         scope: 'integration',
@@ -582,11 +611,60 @@ describe('Planner', () => {
       planner.updateTask(plan.id, 'task-2', 'completed');
       planner.updateTask(plan.id, 'task-3', 'skipped');
 
+      planner.startReconciliation(plan.id);
+      expect(planner.get(plan.id)!.status).toBe('reconciling');
+
       const final = planner.complete(plan.id);
       expect(final.status).toBe('completed');
       expect(final.tasks[0].status).toBe('completed');
       expect(final.tasks[1].status).toBe('completed');
       expect(final.tasks[2].status).toBe('skipped');
+    });
+
+    it('should support brainstorming → draft → approved → executing lifecycle', () => {
+      const plan = planner.create({
+        objective: 'Brainstorming lifecycle test',
+        scope: 'integration',
+        initialStatus: 'brainstorming',
+      });
+      expect(plan.status).toBe('brainstorming');
+
+      planner.promoteToDraft(plan.id);
+      expect(planner.get(plan.id)!.status).toBe('draft');
+
+      planner.approve(plan.id);
+      expect(planner.get(plan.id)!.status).toBe('approved');
+    });
+
+    it('should support validating state', () => {
+      const plan = planner.create({
+        objective: 'Validation lifecycle test',
+        scope: 'integration',
+        tasks: [{ title: 'Task 1', description: 'Test task' }],
+      });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      planner.startValidation(plan.id);
+      expect(planner.get(plan.id)!.status).toBe('validating');
+
+      // Can update tasks during validation
+      planner.updateTask(plan.id, 'task-1', 'completed');
+
+      // Can go back to executing from validating
+      planner.startExecution(plan.id);
+      expect(planner.get(plan.id)!.status).toBe('executing');
+    });
+
+    it('should support archiving completed plans', () => {
+      const plan = planner.create({ objective: 'Archive test', scope: 'test' });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      planner.startReconciliation(plan.id);
+      planner.complete(plan.id);
+
+      const archived = planner.archive();
+      expect(archived).toHaveLength(1);
+      expect(archived[0].status).toBe('archived');
     });
   });
 });
