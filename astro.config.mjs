@@ -37,7 +37,12 @@ export default defineConfig({
         {
           label: 'Guides',
           translations: { uk: 'Посібники', it: 'Guide' },
-          items: [{ slug: 'docs/guides/dashboard' }],
+          items: [
+            { slug: 'docs/guides/first-10-minutes' },
+            { slug: 'docs/guides/knowledge-base' },
+            { slug: 'docs/guides/code-review' },
+            { slug: 'docs/guides/dashboard' },
+          ],
         },
         {
           label: 'Reference',
