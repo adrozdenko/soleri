@@ -50,6 +50,7 @@ The goal isn't to capture everything — it's to capture what matters. A vault w
 New team members benefit immediately from a mature knowledge base:
 
 > **New developer:** "What are the most important patterns for this project?"
+>
 > **Agent:** _Found 8 critical patterns:_
 >
 > 1. All API errors must return { error, code, details } format
@@ -86,6 +87,7 @@ Every capture requires proposal review. This works well when knowledge accuracy 
 If your team works on multiple repositories, link them:
 
 > **You:** "Link this project to ../api-server as related"
+>
 > **You:** "Link this project to ../shared-components as parent"
 
 Now when someone on the API team captures a database migration pattern, the frontend team can find it through cross-project search.
@@ -101,6 +103,7 @@ Global patterns surface in every project, every search, for every team member.
 As the vault grows, the curator maintains quality:
 
 > **You:** "Run a vault health audit"
+>
 > **Agent:** _Vault health: 87/100_
 > _4 potential duplicates found_
 > _7 entries unused in 60+ days_
@@ -113,6 +116,7 @@ Regular audits prevent knowledge decay. Schedule them monthly — or let the bra
 Track how your knowledge base is performing:
 
 > **You:** "Show me vault stats"
+>
 > **Agent:** _142 entries across 5 domains. 98 patterns, 31 anti-patterns, 13 rules. Brain strength: avg 0.72. Top domain: security (38 entries). Most referenced pattern: "Consistent API Error Format" (referenced 23 times)._
 
 High reference counts mean the knowledge is actively useful. Low reference counts on old entries suggest decay candidates.

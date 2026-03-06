@@ -10,11 +10,13 @@ Your agent ships with a default personality and starter knowledge. But the real 
 Your agent has a persona — a name, role, and communication style. This isn't cosmetic. The persona shapes how the agent frames its responses, what it emphasizes, and how it communicates.
 
 > **You:** "What's your identity?"
+>
 > **Agent:** _Name: sentinel. Role: security-focused code review assistant. Voice: direct, technical, no-nonsense._
 
 You set the persona during scaffold, but you can change it anytime:
 
 > **You:** "Update your role to: full-stack development assistant focused on React and Node.js"
+>
 > **Agent:** _Identity updated. Role changed._
 
 ### Behavioral guidelines
@@ -22,6 +24,7 @@ You set the persona during scaffold, but you can change it anytime:
 Guidelines are rules the agent follows in every interaction. They shape behavior beyond the persona:
 
 > **You:** "Add this guideline: always suggest TypeScript strict mode when reviewing tsconfig changes"
+>
 > **Agent:** _Guideline added._
 
 Guidelines stack with vault knowledge. The vault has what to do; guidelines control how the agent approaches work.
@@ -45,6 +48,7 @@ npx @soleri/cli install-knowledge ./bundles/infrastructure-patterns
 Or capture knowledge interactively:
 
 > **You:** "Capture a critical pattern in the infrastructure domain: always set CPU and memory limits on Kubernetes pods."
+>
 > **Agent:** _Captured in infrastructure domain._
 
 ### Choosing domains

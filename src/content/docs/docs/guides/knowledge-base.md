@@ -10,6 +10,7 @@ Your agent is only as smart as what you teach it. This tutorial shows you how to
 A pattern is something that works — a proven approach you want to repeat. When you solve a problem and think "I should remember this," that's a pattern.
 
 > **You:** "Capture this pattern: always use optimistic updates for form submissions. Update the UI immediately, then reconcile with the server response. Users shouldn't wait for a round trip."
+>
 > **Agent:** _Captured: "Optimistic Updates for Forms" — severity: suggestion, domain: frontend._
 
 Notice the agent auto-assigned a severity and domain. You can override these, but the defaults are usually good enough.
@@ -19,6 +20,7 @@ Notice the agent auto-assigned a severity and domain. You can override these, bu
 Anti-patterns are just as valuable — they're mistakes you don't want to repeat. When you fix a bug caused by a bad approach, capture it:
 
 > **You:** "Capture this anti-pattern: never store JWT tokens in localStorage. We had a XSS vulnerability because of this. Use httpOnly cookies instead."
+>
 > **Agent:** _Captured anti-pattern: "Never Store JWTs in localStorage" — severity: critical._
 
 The agent marked this as critical because you said "vulnerability." Critical patterns always surface first in searches — they're impossible to miss.
@@ -34,6 +36,7 @@ Not everything is equally important. Severity controls what surfaces first:
 You can set severity explicitly:
 
 > **You:** "Capture a critical pattern in the security domain: always validate redirect URLs against an allowlist to prevent open redirect attacks."
+>
 > **Agent:** _Captured: "Validate Redirect URLs" — critical, security domain._
 
 When someone later searches for security patterns, this will be at the top.
@@ -49,6 +52,7 @@ npx @soleri/cli add-domain infrastructure
 Now when you capture something infrastructure-related, tag it to that domain:
 
 > **You:** "Capture this pattern in the infrastructure domain: always set CPU and memory limits on Kubernetes pods. Without limits, one pod can starve the whole node."
+>
 > **Agent:** _Captured: "Always Set K8s Resource Limits" — infrastructure domain._
 
 Domains keep things organized. When you search within a domain, you only get relevant results — not your frontend patterns mixed in with your infrastructure rules.
@@ -58,6 +62,7 @@ Domains keep things organized. When you search within a domain, you only get rel
 As your knowledge base grows, search becomes powerful. The agent ranks results by relevance, severity, and how often each pattern has been useful:
 
 > **You:** "Search for security patterns"
+>
 > **Agent:** _Found 3 entries:_
 >
 > 1. **Validate Redirect URLs** (critical) — prevent open redirect attacks
@@ -71,6 +76,7 @@ Critical entries always surface first. The more you use a pattern (reference it,
 See how your knowledge base is growing:
 
 > **You:** "Show me vault stats"
+>
 > **Agent:** You have **12 patterns** and **4 anti-patterns** across 3 domains: frontend, security, infrastructure. 16 entries total.
 
 ## How knowledge comes back to you
@@ -89,6 +95,7 @@ This is why severity and domains matter — they're not just labels. They direct
 The agent also has a brain — an intelligence layer that tracks pattern usage across sessions. Every time a pattern is used in a plan or referenced in a review, its strength increases. A pattern with high strength gets recommended proactively when the agent creates plans for related work.
 
 > **You:** "Search for patterns about database migrations"
+>
 > **Agent:** _Found 4 entries (ranked by relevance):_
 >
 > 1. **Always Set K8s Resource Limits** (critical, infrastructure) — score: 0.92

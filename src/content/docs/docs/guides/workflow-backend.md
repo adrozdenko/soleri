@@ -10,6 +10,7 @@ This is the [development workflow](/docs/guides/workflow/) applied to backend wo
 Before writing an endpoint or modifying a service, check what the team has established:
 
 > **You:** "What do we know about API error handling?"
+>
 > **Agent:** _Found 4 entries:_
 > 1. All errors must return { error, code, details } format (critical)
 > 2. Always include rate limit headers in responses (critical)
@@ -17,6 +18,7 @@ Before writing an endpoint or modifying a service, check what the team has estab
 > 4. Wrap database operations in transactions for multi-step mutations (pattern)
 >
 > **You:** "Any anti-patterns for authentication?"
+>
 > **Agent:** _Found 2 entries:_
 > 1. Never store JWTs in localStorage — use httpOnly cookies (critical)
 > 2. Don't roll your own password hashing — use bcrypt or argon2 (critical)
@@ -26,6 +28,7 @@ These are the rules your team agreed on. Searching takes seconds and prevents yo
 ## Plan: structure the backend task
 
 > **You:** "Plan: add a POST /teams endpoint with invite flow — create team, assign owner, send invite emails to members"
+>
 > **Agent:** _Plan created:_
 > 1. Define request/response schema with validation
 > 2. Implement handler — create team, assign owner role
@@ -45,10 +48,12 @@ During implementation, check your decisions:
 
 > **You:** "Does this error response match our conventions?
 > `res.status(400).json({ message: 'Invalid email' })`"
+>
 > **Agent:** _No — your convention requires `{ error: string, code: number, details?: object }`. Should be:_
 > `res.status(400).json({ error: 'Invalid email', code: 400, details: { field: 'email' } })`
 >
 > **You:** "Review this endpoint for security issues"
+>
 > **Agent:** _2 issues found:_
 > 1. No rate limiting on invite endpoint — potential abuse vector
 > 2. Invite token has no expiration — should expire in 48 hours
@@ -64,6 +69,7 @@ During the build, you discovered things:
 ## Complete: close the loop
 
 > **You:** "Complete the plan"
+>
 > **Agent:** _Plan complete. Accuracy: 100%. 2 patterns extracted._
 
 Next time someone builds an endpoint with email sending, the search step will surface the async queue pattern. Next time someone writes a database query, the SQL injection anti-pattern will be right there.

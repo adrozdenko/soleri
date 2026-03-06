@@ -18,6 +18,7 @@ She names it **design-buddy**, picks `frontend` and `design` as domains, and con
 Maya hasn't settled on a visual direction yet. She asks:
 
 > **Maya:** "I'm building a SaaS analytics dashboard. What color palettes work for this?"
+>
 > **Agent:** _Found 3 relevant entries._ Here are proven approaches:
 > **Trust & Clarity** — slate primary, teal accent. Projects authority. Best for enterprise.
 > **Vibrant Data** — purple primary, gradient accents. Stands out when the dashboard IS the product.
@@ -29,6 +30,7 @@ The agent already knows SaaS palettes from its starter knowledge — Maya didn't
 She picks Trust & Clarity, tweaks it in Figma, and captures the decision:
 
 > **Maya:** "Capture this: slate-900 for text, teal-600 for interactive elements, amber-500 for alerts. Slate-50 light mode, slate-950 dark mode."
+>
 > **Agent:** _Captured: "Dashboard Color Palette" — critical severity, design domain._
 
 She does the same for typography (Inter + JetBrains Mono) and spacing (8px grid). Three foundational decisions, all captured in her agent's vault — not in a doc she'll forget about.
@@ -40,6 +42,7 @@ She does the same for typography (Inter + JetBrains Mono) and spacing (8px grid)
 Maya builds a status badge with green background and white text. She mentions it to her agent.
 
 > **Maya:** "Status badge — green #22c55e background with white text. Does this work?"
+>
 > **Agent:** _Found: "WCAG contrast ratios" (critical)._ That combination is **2.8:1** — fails AA (needs 4.5:1). Consider: use a green dot indicator with dark text instead. Reduces visual noise for data-dense views.
 
 She didn't ask for a review. The agent flagged it because WCAG baselines are marked `critical` — they always surface.
@@ -47,11 +50,13 @@ She didn't ask for a review. The agent flagged it because WCAG baselines are mar
 Later, she hardcodes a hex color in CSS. The agent catches that too:
 
 > **Maya:** "Just styled the table headers. Slate background, light text."
+>
 > **Agent:** _Found: "Dashboard Color Palette" (critical)._ Your palette uses semantic names. Use `var(--color-slate-900)` instead of hardcoded hex — when the palette evolves, you change one file.
 
 Maya captures both fixes as rules. Then she formalizes her workflow:
 
 > **Maya:** "Create a playbook: Component Design Review — check palette compliance, WCAG contrast, 44px touch targets, 8px grid spacing."
+>
 > **Agent:** _Created playbook: "Component Design Review" — 4 steps with validation criteria._
 
 **Agent vault: 8 patterns + 1 playbook.**
@@ -70,6 +75,7 @@ The agent warns her about mistakes she already made and fixed. She'll never make
 Then Alex, a new frontend developer, joins the team. Instead of a half-day onboarding walkthrough, he scaffolds his own agent and links it to Maya's project:
 
 > **Alex:** "I need to build a notification banner. What are the design conventions?"
+>
 > **Agent:** _Cross-project search — 47 entries from linked dashboard project._
 > Colors: Trust & Clarity palette, always use CSS custom properties. Spacing: 8px grid. Accessibility: 44px touch targets, WCAG AA contrast. Typography: Inter for UI, JetBrains Mono for data.
 

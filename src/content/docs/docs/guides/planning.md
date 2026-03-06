@@ -22,6 +22,7 @@ You don't need to know every state — the agent manages transitions. What matte
 When you have a non-trivial task, ask the agent to plan it:
 
 > **You:** "Plan a migration from REST to GraphQL for our user endpoints."
+>
 > **Agent:** _Creating plan..._
 >
 > **Objective:** Migrate user endpoints from REST to GraphQL
@@ -41,9 +42,11 @@ Notice that last line. The agent checked its brain — the intelligence layer th
 The agent won't start working until you approve:
 
 > **You:** "Looks good, but add a step for deprecation notices on the old REST endpoints."
+>
 > **Agent:** _Updated plan — added step 6: "Add deprecation headers to REST responses." Plan is now in draft status. Approve to begin?_
 >
 > **You:** "Approved."
+>
 > **Agent:** _Plan approved. Starting execution._
 
 This is the two-gate system: first the plan is approved, then each task gets worked on individually. The agent won't skip ahead or make assumptions about what you want.
@@ -53,6 +56,7 @@ This is the two-gate system: first the plan is approved, then each task gets wor
 As the agent works through the plan, each task moves from pending to in-progress to completed:
 
 > **You:** "What's the plan status?"
+>
 > **Agent:** _Plan: "REST to GraphQL Migration"_
 > _Status: executing_
 > _Tasks: 3/6 completed, 1 in progress, 2 pending_
@@ -104,11 +108,13 @@ If you find yourself planning similar work repeatedly, turn it into a playbook:
 > 3. Add error handling for all failure cases
 > 4. Write integration tests
 > 5. Update API documentation"
+>
 > **Agent:** _Created playbook: "New API Endpoint" — 5 steps._
 
 Next time you need a new endpoint:
 
 > **You:** "Run the New API Endpoint playbook for a POST /teams endpoint."
+>
 > **Agent:** _Starting plan from playbook "New API Endpoint"..._
 
 The playbook becomes the starting template. The agent still creates a full plan from it — with brain recommendations injected — so each execution benefits from everything you've learned since the playbook was created.

@@ -18,6 +18,7 @@ That's it. Every task follows this loop. Some steps are quick (a search takes se
 Before you write a single line of code, ask the agent what it already knows.
 
 > **You:** "What do we know about form validation?"
+>
 > **Agent:** _Found 4 entries:_
 > 1. Always validate on both client and server (critical)
 > 2. Use optimistic updates for form submissions (pattern)
@@ -35,6 +36,7 @@ This takes 5 seconds. It saves you from repeating a solved problem, violating a 
 For anything beyond a quick fix, ask the agent to plan it. The plan pulls in brain recommendations — patterns that have worked before in similar tasks.
 
 > **You:** "Plan: add email validation to the signup form with real-time feedback"
+>
 > **Agent:** _Plan created:_
 > 1. Add validation schema for email field
 > 2. Implement real-time validation on input change
@@ -83,6 +85,7 @@ One sentence is enough. You can always enrich it later. The critical thing is th
 When the task is done, let the agent close the loop:
 
 > **You:** "Complete the plan"
+>
 > **Agent:** _Plan complete. Accuracy: 95%. 1 pattern extracted from this session._
 
 The agent reconciles what was planned vs what happened, records the session, and extracts any patterns it detected. This feeds the brain — next time someone plans similar work, the recommendations will be better.

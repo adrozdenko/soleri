@@ -24,6 +24,7 @@ You just built a button component. Ask your agent to look at it:
 
 > **You:** "Review this component for design system compliance:
 > `.btn { background: #3b82f6; color: white; padding: 6px 12px; font-size: 14px; }`"
+>
 > **Agent:** _Found 2 issues based on your captured patterns:_
 >
 > 1. **Hardcoded color** — `#3b82f6` should be `var(--color-primary)`. Your rule: always use CSS custom properties.
@@ -36,6 +37,7 @@ The agent didn't use generic rules — it used yours. The ones you captured beca
 Fix the issues and capture what you learned:
 
 > **You:** "Capture this: when calculating touch targets, account for both padding and line-height. A 14px font with 1.5 line-height and 12px vertical padding gives 45px — just above the 44px minimum."
+>
 > **Agent:** _Captured: "Touch Target Calculation Method"_
 
 Next time someone on your team wonders "how much padding do I need?", the agent has the answer — with the math.
@@ -62,6 +64,7 @@ Next time you build a component, run it:
 > `.card { background: var(--color-surface); padding: 16px; border-radius: 8px; }`
 > `.card-title { font-size: 18px; color: var(--color-text); }`
 > `.card-action { padding: 8px 16px; font-size: 14px; }`"
+>
 > **Agent:** _Running Component Review..._
 > Step 1: Colors — all using custom properties. **Pass.**
 > Step 2: Touch targets — `.card-action` is ~30px height. **Fail.** Increase vertical padding to 12px.

@@ -10,6 +10,7 @@ This is the [development workflow](/docs/guides/workflow/) applied to UX work �
 Before making a UX decision, check what's been established:
 
 > **You:** "What do we know about form design?"
+>
 > **Agent:** _Found 5 entries:_
 > 1. Show errors inline next to the field, not at the top (critical)
 > 2. Use optimistic updates for submissions — don't make users wait (pattern)
@@ -18,6 +19,7 @@ Before making a UX decision, check what's been established:
 > 5. Use loading skeletons instead of spinners for content areas (suggestion)
 >
 > **You:** "Any patterns for navigation?"
+>
 > **Agent:** _Found 3 entries:_
 > 1. Breadcrumbs for anything deeper than 2 levels (pattern)
 > 2. Keep mobile navigation to 5 items max — Hick's Law (critical)
@@ -28,6 +30,7 @@ These are your team's design decisions — not generic UX advice, but choices ma
 ## Plan: structure the design work
 
 > **You:** "Plan: redesign the settings page — it's grown to 40+ options across 6 categories, users can't find anything"
+>
 > **Agent:** _Plan created:_
 > 1. Audit current settings — group by frequency of use
 > 2. Define information architecture — primary vs advanced settings
@@ -45,9 +48,11 @@ The brain pulled in navigation patterns because a settings redesign with 6 categ
 During the redesign, check your choices:
 
 > **You:** "We're thinking of using tabs for the 6 settings categories. Good idea?"
+>
 > **Agent:** _Found relevant pattern: "Keep mobile navigation to 5 items max." 6 tabs will overflow on mobile. Consider: a sidebar navigation on desktop that collapses to a select dropdown on mobile, or group the 6 categories into 4 by merging related ones._
 >
 > **You:** "Should we hide advanced settings behind a toggle or put them on a separate page?"
+>
 > **Agent:** _No direct pattern found. This is a good candidate for capture after you decide._
 
 When the vault has nothing, that's a signal — this is a new decision worth documenting once you make it.
@@ -67,6 +72,7 @@ Notice the last one includes the **why** — "toggles imply instant effect." Thi
 ## Complete: close the loop
 
 > **You:** "Complete the plan"
+>
 > **Agent:** _Plan complete. Accuracy: 85%. Drift: testing step was replaced with stakeholder review. 3 patterns extracted._
 
 The settings page redesign knowledge is now captured. Next time someone adds a new settings category or redesigns another complex page, the search step surfaces all of this — the two-level hierarchy, the toggle vs checkbox rule, the mobile navigation constraint.

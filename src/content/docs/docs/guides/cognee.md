@@ -28,6 +28,7 @@ docker run -p 8000:8000 cognee/cognee:latest
 Then configure your agent to connect:
 
 > **You:** "Configure Cognee to connect to localhost:8000"
+>
 > **Agent:** _Cognee configured. Running health check... Available. Latency: 45ms._
 
 ### What happens during setup
@@ -50,6 +51,7 @@ When you capture a new pattern, the agent stores it in the vault (SQLite, local)
 After adding entries, Cognee needs to process them into vector embeddings and graph connections. This is called the "cognify" step:
 
 > **You:** "Run cognify on the vault dataset"
+>
 > **Agent:** _Processing 47 entries... Done. Knowledge graph updated._
 
 The agent handles this automatically with debounced scheduling — multiple rapid captures coalesce into a single cognify call, so Cognee isn't overwhelmed by batch operations.
@@ -59,6 +61,7 @@ The agent handles this automatically with debounced scheduling — multiple rapi
 When you search, the agent queries both TF-IDF (local) and Cognee (vector) and merges the results:
 
 > **You:** "Search for patterns about preventing unauthorized access"
+>
 > **Agent:** _Found 5 results (vault + Cognee):_
 >
 > 1. **Always Validate Redirect URLs** (vault, critical) — score: 0.94
@@ -90,6 +93,7 @@ If you use a hosted Cognee instance, your knowledge entries are sent to that ser
 ## Checking status
 
 > **You:** "What's the Cognee status?"
+>
 > **Agent:** _Cognee: available. URL: localhost:8000. Latency: 32ms. Dataset: vault. Last cognify: 2 hours ago._
 
 If Cognee goes down, your agent continues working normally — searches fall back to vault-only TF-IDF. There's no hard dependency. When Cognee comes back, vector search resumes automatically.

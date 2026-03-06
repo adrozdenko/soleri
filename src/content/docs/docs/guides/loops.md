@@ -29,6 +29,7 @@ Your agent ships with specialized modes for common tasks:
 ## Starting a loop
 
 > **You:** "Start a component-build loop: build a notification banner with dismiss button, success/error/warning variants, and accessible focus management."
+>
 > **Agent:** _Loop started. Mode: component-build. Target: 90/100. Max iterations: 20._
 >
 > _Iteration 1: Built base component with variants. Validation score: 62. Issues: missing focus trap, touch targets too small on dismiss button._
@@ -56,6 +57,7 @@ This is how loops integrate with hooks. A Stop hook can check the loop status an
 Every loop is recorded — you can review what happened:
 
 > **You:** "Show me loop history"
+>
 > **Agent:** _3 loops completed:_
 >
 > 1. component-build — "notification banner" — 3 iterations, completed, score: 94
@@ -81,6 +83,7 @@ Loop history feeds into the brain. The brain learns which types of tasks typical
 For tasks that don't fit the built-in modes, use custom loops with your own validation:
 
 > **You:** "Start a custom loop: refactor the auth module to use the repository pattern. Validate by checking that all database calls go through the repository, not directly through the ORM."
+>
 > **Agent:** _Loop started. Mode: custom. Max iterations: 20._
 
 Custom loops work the same way — iterate, validate, fix — but you define what "valid" means.

@@ -10,12 +10,14 @@ This is the [development workflow](/docs/guides/workflow/) applied to frontend w
 Before building a component or touching styles, search for existing patterns:
 
 > **You:** "What do we know about modal components?"
+>
 > **Agent:** _Found 3 entries:_
 > 1. Always trap focus inside modals (critical, accessibility)
 > 2. Close on Escape key and backdrop click (pattern)
 > 3. Restore focus to trigger element on close (pattern)
 >
 > **You:** "Any anti-patterns for forms?"
+>
 > **Agent:** _Found 2 entries:_
 > 1. Never disable the submit button without explanation (anti-pattern)
 > 2. Don't clear form on validation error — users lose their input (anti-pattern, critical)
@@ -27,6 +29,7 @@ These 10-second searches prevent you from rebuilding what the team already solve
 For anything beyond a quick style fix, plan it:
 
 > **You:** "Plan: build a notification banner with success, error, and warning variants, dismiss button, and auto-dismiss after 5 seconds"
+>
 > **Agent:** _Plan created:_
 > 1. Define component API — props, variants, events
 > 2. Build base layout with semantic HTML
@@ -47,12 +50,14 @@ During implementation, use the agent at decision points:
 > **You:** "Review this component for design system compliance:
 > `.banner { background: var(--color-surface); padding: 12px 16px; border-radius: 8px; }`
 > `.banner-dismiss { padding: 4px; font-size: 12px; }`"
+>
 > **Agent:** _1 issue found:_
 > _Touch target too small — `.banner-dismiss` is roughly 20px. Your rule: minimum 44px for interactive elements._
 
 Run playbooks for thorough checks:
 
 > **You:** "Run the component review playbook on this banner"
+>
 > **Agent:** _Running..._
 > _Step 1: Colors — all using custom properties. Pass._
 > _Step 2: Touch targets — dismiss button too small. Fail._
@@ -70,6 +75,7 @@ During the build, you figured out something worth keeping:
 ## Complete: close the loop
 
 > **You:** "Complete the plan"
+>
 > **Agent:** _Plan complete. Accuracy: 90%. 2 patterns extracted._
 
 The banner knowledge is now in the vault. Next time anyone on the team builds a notification component, the search step will surface everything you learned — touch targets, auto-dismiss UX, animation approach, accessibility attributes.

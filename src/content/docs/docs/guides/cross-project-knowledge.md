@@ -10,6 +10,7 @@ Most developers work on more than one project. A security pattern you captured i
 When two projects are related, link them so they can search each other's vaults:
 
 > **You:** "Link this project to ../api-server as related"
+>
 > **Agent:** _Linked: current project ↔ api-server (related, bidirectional)_
 
 Link types describe the relationship:
@@ -28,6 +29,7 @@ Once linked, cross-project search becomes available.
 When you search in a linked project, results from other projects can surface — weighted by relevance and link strength:
 
 > **You:** "Search across all projects for deployment patterns"
+>
 > **Agent:** _Found 7 results across 3 projects:_
 >
 > 1. **Always Set K8s Resource Limits** (from: api-server, critical) — score: 0.91
@@ -42,6 +44,7 @@ Results from the current project rank higher by default. Results from linked pro
 Some patterns are universal — they apply to every project you work on. Promote these to the global pool:
 
 > **You:** "Promote the 'Never Store JWTs in localStorage' pattern to global"
+>
 > **Agent:** _Promoted to global pool. This pattern will now surface in searches across all projects._
 
 Global patterns work by adding a `_global` tag to the entry. Any project can find them in cross-project searches, regardless of whether the projects are linked.
