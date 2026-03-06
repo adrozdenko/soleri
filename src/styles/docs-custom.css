@@ -186,6 +186,12 @@ starlight-lang-select {
   color: inherit;
 }
 
+.sl-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .sl-brand-name {
   font-size: 24px;
   font-weight: 700;
@@ -194,21 +200,22 @@ starlight-lang-select {
   color: var(--foreground-strong);
 }
 
-/* Nav links */
-.sl-header-nav {
+.sl-brand-separator {
+  color: var(--border);
+  font-weight: 300;
+  font-size: 18px;
+}
+
+.sl-brand-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Back to site link */
+.sl-back-link {
   display: none;
-  align-items: center;
-  gap: 2px;
-  margin-left: auto;
-}
-
-@media (min-width: 50rem) {
-  .sl-header-nav {
-    display: flex;
-  }
-}
-
-.sl-nav-link {
   color: var(--muted);
   text-decoration: none;
   font-size: 13px;
@@ -217,17 +224,18 @@ starlight-lang-select {
   border-radius: var(--radius-sm, 8px);
   transition: color 0.15s ease, background 0.15s ease;
   white-space: nowrap;
+  margin-left: auto;
 }
 
-.sl-nav-link:hover {
-  color: var(--foreground-strong);
-  background: var(--surface);
+@media (min-width: 50rem) {
+  .sl-back-link {
+    display: flex;
+  }
 }
 
-.sl-nav-link.active {
+.sl-back-link:hover {
   color: var(--foreground-strong);
   background: var(--surface);
-  font-weight: 600;
 }
 
 /* Actions group */

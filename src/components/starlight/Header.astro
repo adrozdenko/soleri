@@ -21,29 +21,14 @@ function localizedHref(code: string): string {
 const webLocale = currentLocale === 'root' || currentLocale === undefined ? 'en' : currentLocale;
 const webPrefix = `/${webLocale}/`;
 
-const navLinks = [
-  { href: `${webPrefix}how-it-works.html`, label: navLabel('nav.how', 'How it works') },
-  { href: `${webPrefix}personas.html`, label: navLabel('nav.agent', 'Your Agent') },
-  { href: `${webPrefix}teams.html`, label: navLabel('nav.teams', 'Teams') },
-  { href: `${webPrefix}articles.html`, label: navLabel('nav.articles', 'Articles') },
-  { href: `${webPrefix}community.html`, label: navLabel('nav.community', 'Community') },
-  { href: '/docs/getting-started/', label: navLabel('nav.docs', 'Docs'), active: true },
-  { href: `${webPrefix}getting-started.html`, label: navLabel('nav.start', 'Get started') },
-];
-
-function navLabel(_key: string, fallback: string): string {
-  /* i18n labels — extend as needed */
-  const labels: Record<string, Record<string, string>> = {
-    'nav.how':       { en: 'How it works', uk: 'Як це працює', it: 'Come funziona' },
-    'nav.agent':     { en: 'Your Agent', uk: 'Твій агент', it: 'Il tuo agente' },
-    'nav.teams':     { en: 'Teams', uk: 'Команди', it: 'Team' },
-    'nav.articles':  { en: 'Articles', uk: 'Статті', it: 'Articoli' },
-    'nav.community': { en: 'Community', uk: 'Спільнота', it: 'Community' },
-    'nav.docs':      { en: 'Docs', uk: 'Документація', it: 'Documentazione' },
-    'nav.start':     { en: 'Get started', uk: 'Почати', it: 'Inizia ora' },
-  };
-  return labels[_key]?.[webLocale] ?? fallback;
-}
+/* "Back to site" label — i18n */
+const backLabels: Record<string, string> = {
+  en: '← Back to site',
+  uk: '← На сайт',
+  it: '← Torna al sito',
+};
+const backLabel = backLabels[webLocale] ?? backLabels.en;
+const backHref = `/${webLocale}/`;
 
 const langs = Object.entries(config.locales).map(([code, locale]) => ({
   code: code === 'root' ? 'en' : code,
@@ -58,13 +43,11 @@ const langs = Object.entries(config.locales).map(([code, locale]) => ({
     <a href={`/${webLocale}/`} class="sl-brand-link">
       <span class="sl-brand-name">Soleri</span>
     </a>
+    <span class="sl-brand-separator">|</span>
+    <span class="sl-brand-label">Docs</span>
   </div>
 
-  <nav class="sl-header-nav" aria-label="Site navigation">
-    {navLinks.map(link => (
-      <a href={link.href} class:list={['sl-nav-link', { active: link.active }]}>{link.label}</a>
-    ))}
-  </nav>
+  <a href={backHref} class="sl-back-link">{backLabel}</a>
 
   <div class="sl-header-actions">
     {shouldRenderSearch && <Search />}
