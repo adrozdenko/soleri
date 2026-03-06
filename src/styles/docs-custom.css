@@ -1023,6 +1023,13 @@ header.header {
   border-bottom: none !important;
 }
 
+@media (max-width: 50rem) {
+  header.header {
+    background: var(--bg) !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+}
+
 /* ============================================
  * MOBILE SIDEBAR TOGGLE
  * ============================================ */
