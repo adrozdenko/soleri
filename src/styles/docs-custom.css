@@ -414,7 +414,7 @@ body {
 /* ── Shooting rays (light chasers) ── */
 .docs-rays {
   pointer-events: none;
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
