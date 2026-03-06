@@ -23,6 +23,9 @@ export default defineConfig({
         uk: { label: 'Ukrainian', lang: 'uk' },
         it: { label: 'Italiano', lang: 'it' },
       },
+      components: {
+        Header: './src/components/starlight/Header.astro',
+      },
       sidebar: [
         {
           label: 'Start Here',

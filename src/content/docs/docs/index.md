@@ -1,12 +1,11 @@
 ---
-title: Soleri Documentation
+title: Soleri Docs
 description: Build AI assistants that learn, remember, and grow.
-template: splash
-hero:
-  title: Soleri Docs
-  tagline: Everything you need to build, use, and extend intelligent agents.
-  actions:
-    - text: Get Started
-      link: /docs/getting-started/
-      icon: right-arrow
+head:
+  - tag: meta
+    attrs:
+      http-equiv: refresh
+      content: '0;url=/docs/getting-started/'
 ---
+
+Redirecting to [Getting Started](/docs/getting-started/)…
