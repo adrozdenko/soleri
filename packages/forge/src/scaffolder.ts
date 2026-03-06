@@ -165,7 +165,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'governance_stats',
         'governance_expire',
         'governance_dashboard',
-        // Planning Extra ops — 18
+        // Planning Extra ops — 22
         'plan_iterate',
         'plan_split',
         'plan_reconcile',
@@ -189,6 +189,11 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'plan_auto_reconcile',
         // Validate plan (#152)
         'plan_validate',
+        // Execution metrics + deliverables (#80, #83)
+        'plan_execution_metrics',
+        'plan_record_task_metrics',
+        'plan_submit_deliverable',
+        'plan_verify_deliverables',
         // Memory Extra ops — 8
         'memory_delete',
         'memory_stats',
@@ -226,7 +231,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'admin_version',
         'admin_reset_cache',
         'admin_diagnostic',
-        // Loop ops — 8
+        // Loop ops — 9
         'loop_start',
         'loop_iterate',
         'loop_iterate_gate',
@@ -235,6 +240,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'loop_history',
         'loop_is_active',
         'loop_complete',
+        'loop_anomaly_check',
         // Orchestrate ops — 5
         'orchestrate_plan',
         'orchestrate_execute',
@@ -258,7 +264,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'cognee_get_node',
         'cognee_graph_stats',
         'cognee_export_status',
-        // Admin Extra ops — 22
+        // Admin Extra ops — 23
         'admin_telemetry',
         'admin_telemetry_recent',
         'admin_telemetry_reset',
@@ -285,6 +291,8 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'admin_plugin_status',
         // Admin instruction validation (#160)
         'admin_validate_instructions',
+        // Hot reload (#63)
+        'admin_hot_reload',
         // Curator Extra ops — 4
         'curator_entry_history',
         'curator_record_snapshot',

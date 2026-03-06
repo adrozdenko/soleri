@@ -1,5 +1,5 @@
 /**
- * Generic core operations factory — 152 ops that every agent gets.
+ * Generic core operations factory — 158 ops that every agent gets.
  *
  * These ops are agent-agnostic (no persona, no activation).
  * The 5 agent-specific ops (health, identity, activate, inject_claude_md, setup)
@@ -28,14 +28,14 @@ import { createMemoryCrossProjectOps } from './memory-cross-project-ops.js';
 import { createPlaybookOps } from './playbook-ops.js';
 
 /**
- * Create the 185 generic core operations for an agent runtime.
+ * Create the 191 generic core operations for an agent runtime.
  *
  * Groups: search/vault (4), memory (4), export (1), planning (5),
  *         brain (7), brain intelligence (11), cognee (5),
  *         llm (2), curator (8), control (8), governance (5),
  *         playbook (5), prompt templates (2),
- *         planning-extra (18), memory-extra (8), vault-extra (17),
- *         admin (8), admin-extra (22), loop (8), orchestrate (5),
+ *         planning-extra (22), memory-extra (8), vault-extra (17),
+ *         admin (8), admin-extra (23), loop (9), orchestrate (5),
  *         grading (5), capture (4), curator-extra (4), project (12).
  */
 export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {

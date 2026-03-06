@@ -14,6 +14,7 @@
 import type {
   LoopConfig,
   LoopIteration,
+  LoopMode,
   LoopState,
   LoopKnowledge,
   LoopHistoryEntry,
@@ -105,6 +106,39 @@ export function detectImplicitCompletion(lastOutput: string, config: LoopConfig)
   return null;
 }
 
+// ─── Anomaly Detection ──────────────────────────────────────────
+
+/**
+ * Minimum expected duration (ms) per mode.
+ * Iterations finishing faster than this with low scores are flagged as anomalous.
+ */
+const MIN_DURATION_MS: Record<LoopMode, number> = {
+  'token-migration': 5000,
+  'contrast-fix': 2000,
+  'component-build': 5000,
+  'plan-iteration': 3000,
+  custom: 0,
+};
+
+/**
+ * Detect anomalous loop iteration patterns.
+ * Flags fast + low-score combos that suggest the agent is spinning without making progress.
+ */
+export function detectAnomaly(iteration: LoopIteration, mode: LoopMode): string | null {
+  const minDuration = MIN_DURATION_MS[mode];
+  if (minDuration === 0) return null; // custom mode — no threshold
+
+  const duration = iteration.durationMs ?? 0;
+  const score = iteration.validationScore ?? 0;
+
+  // Flag: iteration completed very fast with a low score
+  if (duration > 0 && duration < minDuration && !iteration.passed && score < 50) {
+    return `Anomaly: iteration ${iteration.iteration} completed in ${duration}ms (min expected: ${minDuration}ms) with score ${score} — possible no-op loop`;
+  }
+
+  return null;
+}
+
 // ─── LoopManager ─────────────────────────────────────────────────
 
 export class LoopManager {
@@ -189,7 +223,11 @@ export class LoopManager {
    * @param lastOutput - The LLM's last response to scan for completion signals
    * @param knowledge - Optional knowledge items discovered during this iteration
    */
-  iterateWithGate(lastOutput: string, knowledge?: LoopKnowledge): LoopIterateDecision {
+  iterateWithGate(
+    lastOutput: string,
+    knowledge?: LoopKnowledge,
+    durationMs?: number,
+  ): LoopIterateDecision {
     if (!this.activeLoop) {
       return { decision: 'allow', reason: 'No active loop' };
     }
@@ -276,11 +314,16 @@ export class LoopManager {
 
     // Continue loop — increment iteration
     const nextIteration = this.activeLoop.iterations.length + 1;
-    this.activeLoop.iterations.push({
+    const iterationEntry: LoopIteration = {
       iteration: nextIteration,
       timestamp: new Date().toISOString(),
       passed: false,
-    });
+      ...(durationMs !== undefined && { durationMs }),
+    };
+    this.activeLoop.iterations.push(iterationEntry);
+
+    // Run anomaly detection
+    const anomalyWarning = detectAnomaly(iterationEntry, config.mode);
 
     // Build validation hint for system message
     let validationHint = '';
@@ -320,6 +363,7 @@ export class LoopManager {
       prompt: fullPrompt,
       systemMessage,
       iteration: nextIteration,
+      ...(anomalyWarning && { anomalyWarning }),
     };
   }
 

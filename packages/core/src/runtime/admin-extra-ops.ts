@@ -1,9 +1,10 @@
 /**
- * Extended admin operations — 22 ops for production readiness.
+ * Extended admin operations — 23 ops for production readiness.
  *
  * Groups: telemetry (3), permissions (1), vault analytics (1),
  *         search insights (1), module status (1), env (1), gc (1), export config (1),
- *         key pool (4), profiles (5), plugins (2), instruction validation (1).
+ *         key pool (4), profiles (5), plugins (2), instruction validation (1),
+ *         hot reload (1).
  */
 
 import { z } from 'zod';
@@ -32,7 +33,7 @@ interface PluginInfo {
 }
 
 /**
- * Create 22 extended admin operations for production observability.
+ * Create 23 extended admin operations for production observability.
  */
 export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, brain, cognee, telemetry } = runtime;
@@ -525,6 +526,44 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
           opsCount: 5,
           ops: ['get_patterns', 'search', 'get_entry', 'capture', 'remove'],
         };
+      },
+    },
+
+    // ─── Hot Reload (#63) ──────────────────────────────────────
+    {
+      name: 'admin_hot_reload',
+      description:
+        'Hot-reload runtime caches — rebuilds brain vocabulary, vault FTS index, and prompt templates. Use after bulk vault changes.',
+      auth: 'write',
+      handler: async () => {
+        const reloaded: string[] = [];
+        let brainTerms = 0;
+        let templateCount = 0;
+
+        try {
+          brain.rebuildVocabulary();
+          brainTerms = brain.getStats().vocabularySize;
+          reloaded.push('brain');
+        } catch {
+          // Graceful degradation
+        }
+
+        try {
+          vault.rebuildFtsIndex();
+          reloaded.push('vault_fts');
+        } catch {
+          // Graceful degradation
+        }
+
+        try {
+          runtime.templateManager.load();
+          templateCount = runtime.templateManager.listTemplates().length;
+          reloaded.push('templates');
+        } catch {
+          // Graceful degradation
+        }
+
+        return { reloaded, brainTerms, templateCount };
       },
     },
 

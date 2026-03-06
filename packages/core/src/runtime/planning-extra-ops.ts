@@ -1,11 +1,12 @@
 /**
- * Extended planning operations — 18 ops for advanced plan lifecycle management.
+ * Extended planning operations — 22 ops for advanced plan lifecycle management.
  *
  * These complement the 5 basic planning ops in core-ops.ts with:
  * iteration, splitting, reconciliation, lifecycle completion,
  * dispatch, review, archival, task listing, statistics,
  * evidence submission, verification, validation, auto-reconciliation,
- * review prompt generation, and brainstorming.
+ * review prompt generation, brainstorming, execution metrics,
+ * deliverable submission, and deliverable verification.
  */
 
 import { z } from 'zod';
@@ -16,15 +17,15 @@ import { matchPlaybooks, type PlaybookMatchResult } from '../playbooks/index.js'
 import { entryToPlaybookDefinition } from '../playbooks/index.js';
 
 /**
- * Create 18 extended planning operations for an agent runtime.
+ * Create 22 extended planning operations for an agent runtime.
  *
  * Groups:
  *   mutation: plan_iterate, plan_split, plan_reconcile, plan_complete_lifecycle,
  *             plan_review, plan_archive, plan_submit_evidence, plan_auto_reconcile,
- *             plan_review_outcome
+ *             plan_review_outcome, plan_record_task_metrics, plan_submit_deliverable
  *   query:   plan_dispatch, plan_list_tasks, plan_stats, plan_verify_task,
  *             plan_verify_plan, plan_validate, plan_review_spec, plan_review_quality,
- *             plan_brainstorm
+ *             plan_brainstorm, plan_execution_metrics, plan_verify_deliverables
  */
 export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
   const { planner, vault } = runtime;
@@ -578,6 +579,136 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
       handler: async (params) => {
         try {
           return planner.verifyPlan(params.planId as string);
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
+
+    // ─── Execution Metrics (#80) ─────────────────────────────────
+    {
+      name: 'plan_execution_metrics',
+      description:
+        'Per-task timing and aggregate execution summary for a plan. Shows duration, status counts, and average task time.',
+      auth: 'read',
+      schema: z.object({
+        planId: z.string().describe('Plan ID to get metrics for'),
+      }),
+      handler: async (params) => {
+        try {
+          const plan = planner.get(params.planId as string);
+          if (!plan) return { error: `Plan not found: ${params.planId}` };
+
+          const taskMetrics = plan.tasks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            status: t.status,
+            startedAt: t.startedAt ?? null,
+            completedAt: t.completedAt ?? null,
+            metrics: t.metrics ?? null,
+          }));
+
+          return {
+            planId: plan.id,
+            status: plan.status,
+            executionSummary: plan.executionSummary ?? null,
+            taskMetrics,
+          };
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
+
+    // ─── Record Task Metrics (#80) ──────────────────────────────
+    {
+      name: 'plan_record_task_metrics',
+      description:
+        'Record execution metrics for a task — tool calls, model tier, estimated cost. Merges with existing metrics.',
+      auth: 'write',
+      schema: z.object({
+        planId: z.string().describe('Plan ID'),
+        taskId: z.string().describe('Task ID to record metrics for'),
+        toolCalls: z.number().optional().describe('Number of tool calls made'),
+        modelTier: z.string().optional().describe('Model tier used (e.g., "opus", "sonnet")'),
+        estimatedCostUsd: z.number().optional().describe('Estimated cost in USD'),
+        iterations: z.number().optional().describe('Number of iterations taken'),
+      }),
+      handler: async (params) => {
+        try {
+          const plan = planner.get(params.planId as string);
+          if (!plan) return { error: `Plan not found: ${params.planId}` };
+          const task = plan.tasks.find((t) => t.id === params.taskId);
+          if (!task) return { error: `Task not found: ${params.taskId}` };
+
+          if (!task.metrics) task.metrics = {};
+          if (params.toolCalls !== undefined) task.metrics.toolCalls = params.toolCalls as number;
+          if (params.modelTier !== undefined) task.metrics.modelTier = params.modelTier as string;
+          if (params.estimatedCostUsd !== undefined)
+            task.metrics.estimatedCostUsd = params.estimatedCostUsd as number;
+          if (params.iterations !== undefined)
+            task.metrics.iterations = params.iterations as number;
+
+          task.updatedAt = Date.now();
+          plan.updatedAt = Date.now();
+
+          return {
+            recorded: true,
+            taskId: task.id,
+            metrics: task.metrics,
+          };
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
+
+    // ─── Submit Deliverable (#83) ───────────────────────────────
+    {
+      name: 'plan_submit_deliverable',
+      description:
+        'Record a deliverable on a task. Auto-computes SHA-256 hash for file deliverables.',
+      auth: 'write',
+      schema: z.object({
+        planId: z.string().describe('Plan ID'),
+        taskId: z.string().describe('Task ID to attach deliverable to'),
+        type: z.enum(['file', 'vault_entry', 'url']).describe('Deliverable type'),
+        path: z.string().describe('File path, vault entry ID, or URL'),
+      }),
+      handler: async (params) => {
+        try {
+          const task = planner.submitDeliverable(params.planId as string, params.taskId as string, {
+            type: params.type as 'file' | 'vault_entry' | 'url',
+            path: params.path as string,
+          });
+          return {
+            submitted: true,
+            taskId: task.id,
+            deliverableCount: task.deliverables?.length ?? 0,
+          };
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
+
+    // ─── Verify Deliverables (#83) ──────────────────────────────
+    {
+      name: 'plan_verify_deliverables',
+      description:
+        'Verify all deliverables for a task — checks file existence + SHA-256 hash match, vault entry existence. Returns stale count.',
+      auth: 'read',
+      schema: z.object({
+        planId: z.string().describe('Plan ID'),
+        taskId: z.string().describe('Task ID to verify deliverables for'),
+      }),
+      handler: async (params) => {
+        try {
+          return planner.verifyDeliverables(
+            params.planId as string,
+            params.taskId as string,
+            vault,
+          );
         } catch (err) {
           return { error: (err as Error).message };
         }

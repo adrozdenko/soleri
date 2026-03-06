@@ -763,6 +763,18 @@ export class Vault {
   }
 
   /**
+   * Rebuild the FTS5 index for the entries table.
+   * Useful after bulk operations or if the index gets out of sync.
+   */
+  rebuildFtsIndex(): void {
+    try {
+      this.provider.run("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')");
+    } catch {
+      // Graceful degradation — FTS rebuild failed (e.g. table doesn't exist yet)
+    }
+  }
+
+  /**
    * Get the underlying persistence provider.
    */
   getProvider(): PersistenceProvider {

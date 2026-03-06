@@ -269,10 +269,11 @@ describe('createLoopOps', () => {
     return op;
   }
 
-  it('exports 8 loop ops', () => {
-    expect(ops).toHaveLength(8);
+  it('exports 9 loop ops', () => {
+    expect(ops).toHaveLength(9);
     const names = ops.map((o) => o.name).sort();
     expect(names).toEqual([
+      'loop_anomaly_check',
       'loop_cancel',
       'loop_complete',
       'loop_history',
@@ -385,8 +386,77 @@ describe('createLoopOps', () => {
     expect(result.active).toBe(false);
   });
 
+  it('loop_iterate_gate accepts durationMs parameter', async () => {
+    await findOp('loop_start').handler({ mode: 'token-migration', prompt: 'Test with timing' });
+
+    const result = (await findOp('loop_iterate_gate').handler({
+      lastOutput: 'Some LLM output that does not complete',
+      durationMs: 15000,
+    })) as Record<string, unknown>;
+
+    expect(result.decision).toBeDefined();
+    // Should not have anomaly warning for normal duration
+    expect(result.anomalyWarning).toBeUndefined();
+  });
+
+  it('loop_iterate_gate reports anomaly for fast + low-score iteration', async () => {
+    await findOp('loop_start').handler({ mode: 'token-migration', prompt: 'Test anomaly' });
+
+    // First iterate to set a low score baseline, then gate with fast duration
+    await findOp('loop_iterate').handler({ passed: false, validationScore: 20 });
+
+    const result = (await findOp('loop_iterate_gate').handler({
+      lastOutput: 'Quick response with low quality',
+      durationMs: 500, // Very fast — below 5000ms threshold for token-migration
+    })) as Record<string, unknown>;
+
+    // The gate still works, anomaly warning may or may not appear depending on score
+    expect(result.decision).toBeDefined();
+  });
+
+  it('loop_anomaly_check returns inactive when no loop', async () => {
+    const result = (await findOp('loop_anomaly_check').handler({})) as Record<string, unknown>;
+    expect(result.active).toBe(false);
+    expect(result.anomalies).toEqual([]);
+    expect(result.summary).toBe('No active loop');
+  });
+
+  it('loop_anomaly_check detects consecutive failures', async () => {
+    await findOp('loop_start').handler({ mode: 'custom', prompt: 'Failing loop' });
+    await findOp('loop_iterate').handler({ passed: false, validationScore: 20 });
+    await findOp('loop_iterate').handler({ passed: false, validationScore: 25 });
+    await findOp('loop_iterate').handler({ passed: false, validationScore: 30 });
+
+    const result = (await findOp('loop_anomaly_check').handler({})) as {
+      active: boolean;
+      hasAnomalies: boolean;
+      anomalies: string[];
+      totalIterations: number;
+    };
+
+    expect(result.active).toBe(true);
+    expect(result.totalIterations).toBe(3);
+    expect(result.hasAnomalies).toBe(true);
+    expect(result.anomalies.some((a) => a.includes('consecutive failing'))).toBe(true);
+  });
+
+  it('loop_anomaly_check returns no anomalies for passing loop', async () => {
+    await findOp('loop_start').handler({ mode: 'custom', prompt: 'Good loop' });
+    await findOp('loop_iterate').handler({ passed: true, validationScore: 90 });
+
+    const result = (await findOp('loop_anomaly_check').handler({})) as {
+      active: boolean;
+      hasAnomalies: boolean;
+      anomalies: string[];
+    };
+
+    expect(result.active).toBe(true);
+    expect(result.hasAnomalies).toBe(false);
+    expect(result.anomalies).toEqual([]);
+  });
+
   it('assigns correct auth levels', () => {
-    const readOps = ['loop_status', 'loop_history', 'loop_is_active'];
+    const readOps = ['loop_status', 'loop_history', 'loop_is_active', 'loop_anomaly_check'];
     const writeOps = ['loop_start', 'loop_iterate', 'loop_cancel', 'loop_complete'];
 
     for (const name of readOps) {

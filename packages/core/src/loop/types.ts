@@ -40,6 +40,8 @@ export interface LoopIteration {
   validationScore?: number;
   validationResult?: string;
   passed: boolean;
+  /** Duration of this iteration in milliseconds. */
+  durationMs?: number;
 }
 
 /** Loop lifecycle status. */
@@ -108,4 +110,6 @@ export interface LoopIterateDecision {
   outcome?: 'completed' | 'max_iterations';
   /** Whether completion was auto-detected (heuristic, not explicit promise). */
   autoCompleted?: boolean;
+  /** Warning if anomalous patterns detected in this iteration. */
+  anomalyWarning?: string;
 }

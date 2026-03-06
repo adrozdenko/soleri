@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname } from 'node:path';
 import type { PlanGap } from './gap-types.js';
 import { SEVERITY_WEIGHTS, CATEGORY_PENALTY_CAPS } from './gap-types.js';
@@ -83,6 +84,30 @@ export interface TaskEvidence {
   submittedAt: number;
 }
 
+export interface TaskMetrics {
+  durationMs?: number;
+  iterations?: number;
+  toolCalls?: number;
+  modelTier?: string;
+  estimatedCostUsd?: number;
+}
+
+export interface TaskDeliverable {
+  type: 'file' | 'vault_entry' | 'url';
+  path: string;
+  hash?: string;
+  verifiedAt?: number;
+  stale?: boolean;
+}
+
+export interface ExecutionSummary {
+  totalDurationMs: number;
+  tasksCompleted: number;
+  tasksSkipped: number;
+  tasksFailed: number;
+  avgTaskDurationMs: number;
+}
+
 export interface PlanTask {
   id: string;
   title: string;
@@ -96,6 +121,14 @@ export interface PlanTask {
   verified?: boolean;
   /** Task-level acceptance criteria (for verification checking). */
   acceptanceCriteria?: string[];
+  /** Timestamp when task was first moved to in_progress. */
+  startedAt?: number;
+  /** Timestamp when task reached a terminal state (completed/skipped/failed). */
+  completedAt?: number;
+  /** Per-task execution metrics. */
+  metrics?: TaskMetrics;
+  /** Deliverables produced by this task. */
+  deliverables?: TaskDeliverable[];
   updatedAt: number;
 }
 
@@ -245,6 +278,8 @@ export interface Plan {
     genericId?: string;
     domainId?: string;
   };
+  /** Aggregate execution metrics — populated by reconcile() and complete(). */
+  executionSummary?: ExecutionSummary;
   createdAt: number;
   updatedAt: number;
 }
@@ -391,9 +426,26 @@ export class Planner {
       );
     const task = plan.tasks.find((t) => t.id === taskId);
     if (!task) throw new Error(`Task not found: ${taskId}`);
+
+    const now = Date.now();
+
+    // Auto-set startedAt on first in_progress transition
+    if (status === 'in_progress' && !task.startedAt) {
+      task.startedAt = now;
+    }
+
+    // Auto-set completedAt and compute durationMs on terminal transitions
+    if (status === 'completed' || status === 'skipped' || status === 'failed') {
+      task.completedAt = now;
+      if (task.startedAt) {
+        if (!task.metrics) task.metrics = {};
+        task.metrics.durationMs = now - task.startedAt;
+      }
+    }
+
     task.status = status;
-    task.updatedAt = Date.now();
-    plan.updatedAt = Date.now();
+    task.updatedAt = now;
+    plan.updatedAt = now;
     this.save();
     return plan;
   }
@@ -430,6 +482,7 @@ export class Planner {
   complete(planId: string): Plan {
     const plan = this.get(planId);
     if (!plan) throw new Error(`Plan not found: ${planId}`);
+    plan.executionSummary = this.computeExecutionSummary(plan);
     this.transition(plan, 'completed');
     this.save();
     return plan;
@@ -606,6 +659,9 @@ export class Planner {
       reconciledAt: Date.now(),
     };
 
+    // Compute execution summary from per-task metrics
+    plan.executionSummary = this.computeExecutionSummary(plan);
+
     // Transition through reconciling → completed via FSM
     if (plan.status === 'executing' || plan.status === 'validating') {
       plan.status = 'reconciling';
@@ -659,7 +715,12 @@ export class Planner {
   getDispatch(
     planId: string,
     taskId: string,
-  ): { task: PlanTask; unmetDependencies: PlanTask[]; ready: boolean } {
+  ): {
+    task: PlanTask;
+    unmetDependencies: PlanTask[];
+    ready: boolean;
+    deliverableStatus?: { count: number; staleCount: number };
+  } {
     const plan = this.get(planId);
     if (!plan) throw new Error(`Plan not found: ${planId}`);
     const task = plan.tasks.find((t) => t.id === taskId);
@@ -675,7 +736,160 @@ export class Planner {
       }
     }
 
-    return { task, unmetDependencies, ready: unmetDependencies.length === 0 };
+    const result: {
+      task: PlanTask;
+      unmetDependencies: PlanTask[];
+      ready: boolean;
+      deliverableStatus?: { count: number; staleCount: number };
+    } = {
+      task,
+      unmetDependencies,
+      ready: unmetDependencies.length === 0,
+    };
+
+    // Include deliverable status if deliverables exist
+    if (task.deliverables && task.deliverables.length > 0) {
+      result.deliverableStatus = {
+        count: task.deliverables.length,
+        staleCount: task.deliverables.filter((d) => d.stale).length,
+      };
+    }
+
+    return result;
+  }
+
+  // ─── Execution Metrics & Deliverables ──────────────────────────
+
+  /**
+   * Compute aggregate execution summary from per-task metrics.
+   * Called from reconcile() and complete() to populate plan.executionSummary.
+   */
+  private computeExecutionSummary(plan: Plan): ExecutionSummary {
+    let totalDurationMs = 0;
+    let tasksCompleted = 0;
+    let tasksSkipped = 0;
+    let tasksFailed = 0;
+    let tasksWithDuration = 0;
+
+    for (const task of plan.tasks) {
+      if (task.status === 'completed') tasksCompleted++;
+      else if (task.status === 'skipped') tasksSkipped++;
+      else if (task.status === 'failed') tasksFailed++;
+
+      if (task.metrics?.durationMs) {
+        totalDurationMs += task.metrics.durationMs;
+        tasksWithDuration++;
+      }
+    }
+
+    return {
+      totalDurationMs,
+      tasksCompleted,
+      tasksSkipped,
+      tasksFailed,
+      avgTaskDurationMs:
+        tasksWithDuration > 0 ? Math.round(totalDurationMs / tasksWithDuration) : 0,
+    };
+  }
+
+  /**
+   * Submit a deliverable for a task. Auto-computes SHA-256 hash for file deliverables.
+   */
+  submitDeliverable(
+    planId: string,
+    taskId: string,
+    deliverable: { type: TaskDeliverable['type']; path: string; hash?: string },
+  ): PlanTask {
+    const plan = this.get(planId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+    const task = plan.tasks.find((t) => t.id === taskId);
+    if (!task) throw new Error(`Task not found: ${taskId}`);
+
+    const entry: TaskDeliverable = {
+      type: deliverable.type,
+      path: deliverable.path,
+    };
+
+    // Auto-compute hash for file deliverables
+    if (deliverable.type === 'file' && !deliverable.hash) {
+      try {
+        if (existsSync(deliverable.path)) {
+          const content = readFileSync(deliverable.path);
+          entry.hash = createHash('sha256').update(content).digest('hex');
+        }
+      } catch {
+        // Graceful degradation — skip hash if file can't be read
+      }
+    } else if (deliverable.hash) {
+      entry.hash = deliverable.hash;
+    }
+
+    if (!task.deliverables) task.deliverables = [];
+    task.deliverables.push(entry);
+    task.updatedAt = Date.now();
+    plan.updatedAt = Date.now();
+    this.save();
+    return task;
+  }
+
+  /**
+   * Verify all deliverables for a task.
+   * - file: checks existsSync + SHA-256 hash match
+   * - vault_entry: checks vault.get(path) non-null (requires vault instance)
+   * - url: skips (just records, no fetch)
+   */
+  verifyDeliverables(
+    planId: string,
+    taskId: string,
+    vault?: { get(id: string): unknown | null },
+  ): { verified: boolean; deliverables: TaskDeliverable[]; staleCount: number } {
+    const plan = this.get(planId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+    const task = plan.tasks.find((t) => t.id === taskId);
+    if (!task) throw new Error(`Task not found: ${taskId}`);
+
+    const deliverables = task.deliverables ?? [];
+    let staleCount = 0;
+    const now = Date.now();
+
+    for (const d of deliverables) {
+      d.stale = false;
+
+      if (d.type === 'file') {
+        if (!existsSync(d.path)) {
+          d.stale = true;
+          staleCount++;
+        } else if (d.hash) {
+          try {
+            const content = readFileSync(d.path);
+            const currentHash = createHash('sha256').update(content).digest('hex');
+            if (currentHash !== d.hash) {
+              d.stale = true;
+              staleCount++;
+            }
+          } catch {
+            d.stale = true;
+            staleCount++;
+          }
+        }
+        d.verifiedAt = now;
+      } else if (d.type === 'vault_entry') {
+        if (vault) {
+          const entry = vault.get(d.path);
+          if (!entry) {
+            d.stale = true;
+            staleCount++;
+          }
+        }
+        d.verifiedAt = now;
+      }
+      // url: skip — just record
+    }
+
+    plan.updatedAt = Date.now();
+    this.save();
+
+    return { verified: staleCount === 0, deliverables, staleCount };
   }
 
   // ─── Evidence & Verification ────────────────────────────────────

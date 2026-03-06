@@ -26,9 +26,9 @@ describe('createAdminExtraOps', () => {
     ops = createAdminExtraOps(runtime);
   }
 
-  it('should return 22 ops', () => {
+  it('should return 23 ops', () => {
     setup();
-    expect(ops).toHaveLength(22);
+    expect(ops).toHaveLength(23);
     const names = ops.map((o) => o.name);
     // Original 10
     expect(names).toContain('admin_telemetry');
@@ -57,6 +57,8 @@ describe('createAdminExtraOps', () => {
     expect(names).toContain('admin_plugin_status');
     // #160: Instruction validation
     expect(names).toContain('admin_validate_instructions');
+    // #63: Hot reload
+    expect(names).toContain('admin_hot_reload');
   });
 
   // ─── admin_telemetry ────────────────────────────────────────────
@@ -408,6 +410,30 @@ describe('createAdminExtraOps', () => {
       expect(result.modules).toContain('brain');
       expect(result.modules).toContain('telemetry');
       expect(result.modules.length).toBeGreaterThan(5);
+    });
+  });
+
+  // ─── admin_hot_reload ─────────────────────────────────────────
+
+  describe('admin_hot_reload', () => {
+    it('should reload brain, vault FTS, and templates', async () => {
+      setup();
+      const result = (await findOp('admin_hot_reload').handler({})) as {
+        reloaded: string[];
+        brainTerms: number;
+        templateCount: number;
+      };
+
+      expect(result.reloaded).toContain('brain');
+      expect(result.reloaded).toContain('vault_fts');
+      expect(result.reloaded).toContain('templates');
+      expect(typeof result.brainTerms).toBe('number');
+      expect(typeof result.templateCount).toBe('number');
+    });
+
+    it('should have write auth', () => {
+      setup();
+      expect(findOp('admin_hot_reload').auth).toBe('write');
     });
   });
 

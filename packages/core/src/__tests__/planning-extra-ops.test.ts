@@ -34,8 +34,8 @@ describe('createPlanningExtraOps', () => {
     return op;
   }
 
-  it('should return 18 ops', () => {
-    expect(ops.length).toBe(18);
+  it('should return 22 ops', () => {
+    expect(ops.length).toBe(22);
   });
 
   it('should have all expected op names', () => {
@@ -63,6 +63,12 @@ describe('createPlanningExtraOps', () => {
     expect(names).toContain('plan_auto_reconcile');
     // #152: Validate
     expect(names).toContain('plan_validate');
+    // #80: Execution metrics
+    expect(names).toContain('plan_execution_metrics');
+    expect(names).toContain('plan_record_task_metrics');
+    // #83: Deliverables
+    expect(names).toContain('plan_submit_deliverable');
+    expect(names).toContain('plan_verify_deliverables');
   });
 
   it('should assign correct auth levels', () => {
@@ -518,6 +524,137 @@ describe('createPlanningExtraOps', () => {
         planId: 'nonexistent',
       })) as { error: string };
       expect(result.error).toContain('Plan not found');
+    });
+  });
+
+  // ─── plan_execution_metrics ─────────────────────────────────────
+  describe('plan_execution_metrics', () => {
+    it('should return metrics for a plan with timed tasks', async () => {
+      const plan = createDraftPlan();
+      runtime.planner.approve(plan.id);
+      runtime.planner.startExecution(plan.id);
+      runtime.planner.updateTask(plan.id, 'task-1', 'in_progress');
+      runtime.planner.updateTask(plan.id, 'task-1', 'completed');
+
+      const result = (await findOp('plan_execution_metrics').handler({
+        planId: plan.id,
+      })) as {
+        planId: string;
+        taskMetrics: Array<{ id: string; startedAt: number | null; completedAt: number | null }>;
+        executionSummary: { tasksCompleted: number } | null;
+      };
+
+      expect(result.planId).toBe(plan.id);
+      expect(result.taskMetrics).toHaveLength(2);
+      // task-1 was transitioned, should have timing
+      const task1 = result.taskMetrics.find((t) => t.id === 'task-1')!;
+      expect(task1.startedAt).not.toBeNull();
+      expect(task1.completedAt).not.toBeNull();
+    });
+
+    it('should return error for unknown plan', async () => {
+      const result = (await findOp('plan_execution_metrics').handler({
+        planId: 'nonexistent',
+      })) as { error: string };
+      expect(result.error).toContain('Plan not found');
+    });
+  });
+
+  // ─── plan_record_task_metrics ─────────────────────────────────
+  describe('plan_record_task_metrics', () => {
+    it('should record tool calls and model tier on a task', async () => {
+      const plan = createDraftPlan();
+      runtime.planner.approve(plan.id);
+      runtime.planner.startExecution(plan.id);
+
+      const result = (await findOp('plan_record_task_metrics').handler({
+        planId: plan.id,
+        taskId: 'task-1',
+        toolCalls: 15,
+        modelTier: 'opus',
+      })) as {
+        recorded: boolean;
+        taskId: string;
+        metrics: { toolCalls: number; modelTier: string };
+      };
+
+      expect(result.recorded).toBe(true);
+      expect(result.taskId).toBe('task-1');
+      expect(result.metrics.toolCalls).toBe(15);
+      expect(result.metrics.modelTier).toBe('opus');
+    });
+
+    it('should return error for unknown task', async () => {
+      const plan = createDraftPlan();
+      const result = (await findOp('plan_record_task_metrics').handler({
+        planId: plan.id,
+        taskId: 'task-99',
+        toolCalls: 5,
+      })) as { error: string };
+      expect(result.error).toContain('Task not found');
+    });
+  });
+
+  // ─── plan_submit_deliverable ──────────────────────────────────
+  describe('plan_submit_deliverable', () => {
+    it('should record a vault_entry deliverable on a task', async () => {
+      const plan = createDraftPlan();
+
+      const result = (await findOp('plan_submit_deliverable').handler({
+        planId: plan.id,
+        taskId: 'task-1',
+        type: 'vault_entry',
+        path: 'patterns/my-pattern',
+      })) as { submitted: boolean; taskId: string; deliverableCount: number };
+
+      expect(result.submitted).toBe(true);
+      expect(result.taskId).toBe('task-1');
+      expect(result.deliverableCount).toBe(1);
+    });
+
+    it('should return error for unknown plan', async () => {
+      const result = (await findOp('plan_submit_deliverable').handler({
+        planId: 'nonexistent',
+        taskId: 'task-1',
+        type: 'file',
+        path: '/tmp/test.txt',
+      })) as { error: string };
+      expect(result.error).toContain('Plan not found');
+    });
+  });
+
+  // ─── plan_verify_deliverables ─────────────────────────────────
+  describe('plan_verify_deliverables', () => {
+    it('should verify deliverables on a task', async () => {
+      const plan = createDraftPlan();
+      // Submit a vault_entry deliverable
+      await runtime.planner.submitDeliverable(plan.id, 'task-1', {
+        type: 'vault_entry',
+        path: 'nonexistent-entry',
+      });
+
+      const result = (await findOp('plan_verify_deliverables').handler({
+        planId: plan.id,
+        taskId: 'task-1',
+      })) as { verified: boolean; deliverables: Array<{ stale: boolean }>; staleCount: number };
+
+      expect(result.verified).toBe(false); // vault entry doesn't exist
+      expect(result.deliverables).toHaveLength(1);
+      expect(result.staleCount).toBe(1);
+    });
+
+    it('should return error for task with no deliverables', async () => {
+      const plan = createDraftPlan();
+
+      const result = (await findOp('plan_verify_deliverables').handler({
+        planId: plan.id,
+        taskId: 'task-1',
+      })) as { verified: boolean; deliverables: unknown[]; staleCount: number };
+
+      // No deliverables means verified = true (nothing to check)
+      expect(result.verified).toBe(true);
+      expect(result.deliverables).toHaveLength(0);
+      expect(result.staleCount).toBe(0);
     });
   });
 

@@ -230,7 +230,7 @@ ${domainDescribes}
       expect(opNames).toContain('governance_stats');
       expect(opNames).toContain('governance_expire');
       expect(opNames).toContain('governance_dashboard');
-      // Planning Extra ops (9)
+      // Planning Extra ops (13)
       expect(opNames).toContain('plan_iterate');
       expect(opNames).toContain('plan_split');
       expect(opNames).toContain('plan_reconcile');
@@ -240,6 +240,10 @@ ${domainDescribes}
       expect(opNames).toContain('plan_archive');
       expect(opNames).toContain('plan_list_tasks');
       expect(opNames).toContain('plan_stats');
+      expect(opNames).toContain('plan_execution_metrics');
+      expect(opNames).toContain('plan_record_task_metrics');
+      expect(opNames).toContain('plan_submit_deliverable');
+      expect(opNames).toContain('plan_verify_deliverables');
       // Memory Extra ops (8)
       expect(opNames).toContain('memory_delete');
       expect(opNames).toContain('memory_stats');
@@ -271,7 +275,7 @@ ${domainDescribes}
       expect(opNames).toContain('admin_version');
       expect(opNames).toContain('admin_reset_cache');
       expect(opNames).toContain('admin_diagnostic');
-      // Loop ops (7)
+      // Loop ops (8)
       expect(opNames).toContain('loop_start');
       expect(opNames).toContain('loop_iterate');
       expect(opNames).toContain('loop_status');
@@ -279,6 +283,7 @@ ${domainDescribes}
       expect(opNames).toContain('loop_history');
       expect(opNames).toContain('loop_is_active');
       expect(opNames).toContain('loop_complete');
+      expect(opNames).toContain('loop_anomaly_check');
       // Orchestrate ops (5)
       expect(opNames).toContain('orchestrate_plan');
       expect(opNames).toContain('orchestrate_execute');
@@ -296,7 +301,7 @@ ${domainDescribes}
       expect(opNames).toContain('plan_latest_check');
       expect(opNames).toContain('plan_meets_grade');
       expect(opNames).toContain('plan_auto_improve');
-      // Admin Extra ops (10)
+      // Admin Extra ops (11)
       expect(opNames).toContain('admin_telemetry');
       expect(opNames).toContain('admin_telemetry_recent');
       expect(opNames).toContain('admin_telemetry_reset');
@@ -307,6 +312,7 @@ ${domainDescribes}
       expect(opNames).toContain('admin_env');
       expect(opNames).toContain('admin_gc');
       expect(opNames).toContain('admin_export_config');
+      expect(opNames).toContain('admin_hot_reload');
       // Curator Extra ops (4)
       expect(opNames).toContain('curator_entry_history');
       expect(opNames).toContain('curator_record_snapshot');
@@ -335,8 +341,8 @@ ${domainDescribes}
       expect(opNames).toContain('playbook_create');
       expect(opNames).toContain('playbook_match');
       expect(opNames).toContain('playbook_seed');
-      // Total: 190 (185 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(190);
+      // Total: 196 (191 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(196);
     });
 
     it('search should query across all domains with ranked results', async () => {

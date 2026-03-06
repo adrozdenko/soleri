@@ -1,8 +1,9 @@
 /**
- * Loop operations — 8 ops for iterative validation loops.
+ * Loop operations — 9 ops for iterative validation loops.
  *
  * Ops: loop_start, loop_iterate, loop_iterate_gate, loop_status,
- *      loop_cancel, loop_history, loop_is_active, loop_complete.
+ *      loop_cancel, loop_history, loop_is_active, loop_complete,
+ *      loop_anomaly_check.
  */
 
 import { z } from 'zod';
@@ -39,7 +40,7 @@ const DEFAULT_TARGET_SCORES: Partial<Record<LoopMode, number>> = {
 };
 
 /**
- * Create the 8 loop operations for an agent runtime.
+ * Create the 9 loop operations for an agent runtime.
  */
 export function createLoopOps(runtime: AgentRuntime): OpDefinition[] {
   const { loop } = runtime;
@@ -150,11 +151,16 @@ export function createLoopOps(runtime: AgentRuntime): OpDefinition[] {
           })
           .optional()
           .describe('Knowledge items discovered during this iteration.'),
+        durationMs: z
+          .number()
+          .optional()
+          .describe('Duration of this iteration in milliseconds (for anomaly detection).'),
       }),
       handler: async (params) => {
         const decision = loop.iterateWithGate(
           params.lastOutput as string,
           params.knowledge as LoopKnowledge | undefined,
+          params.durationMs as number | undefined,
         );
         return decision;
       },
@@ -227,6 +233,43 @@ export function createLoopOps(runtime: AgentRuntime): OpDefinition[] {
           loopId: completed.id,
           iterations: completed.iterations.length,
           status: completed.status,
+        };
+      },
+    },
+    {
+      name: 'loop_anomaly_check',
+      description:
+        'Check active loop iterations for anomalous patterns — fast iterations with low scores, repeated failures, no-progress loops.',
+      auth: 'read',
+      handler: async () => {
+        const status = loop.getStatus();
+        if (!status) {
+          return { active: false, anomalies: [], summary: 'No active loop' };
+        }
+
+        const { detectAnomaly } = await import('../loop/loop-manager.js');
+        const anomalies: string[] = [];
+
+        for (const iter of status.iterations) {
+          const warning = detectAnomaly(iter, status.config.mode);
+          if (warning) anomalies.push(warning);
+        }
+
+        // Check for repeated failures (3+ consecutive non-passing iterations)
+        const recent = status.iterations.slice(-3);
+        if (recent.length >= 3 && recent.every((i) => !i.passed)) {
+          anomalies.push(
+            `Warning: ${recent.length} consecutive failing iterations — consider cancelling or adjusting approach`,
+          );
+        }
+
+        return {
+          active: true,
+          loopId: status.id,
+          mode: status.config.mode,
+          totalIterations: status.iterations.length,
+          anomalies,
+          hasAnomalies: anomalies.length > 0,
         };
       },
     },

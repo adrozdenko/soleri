@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 185 ops', () => {
-    expect(ops.length).toBe(185);
+  it('should return 191 ops', () => {
+    expect(ops.length).toBe(191);
   });
 
   it('should have all expected op names', () => {

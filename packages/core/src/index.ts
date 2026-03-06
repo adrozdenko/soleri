@@ -140,6 +140,9 @@ export type {
   PlanStatus,
   TaskStatus,
   TaskEvidence,
+  TaskMetrics,
+  TaskDeliverable,
+  ExecutionSummary,
   PlanTask,
   PlanDecision,
   Plan,
@@ -170,7 +173,12 @@ export {
 export type { GapSeverity, GapCategory, PlanGap } from './planning/gap-types.js';
 
 // ─── Loop ────────────────────────────────────────────────────────────
-export { LoopManager, extractPromise, detectImplicitCompletion } from './loop/loop-manager.js';
+export {
+  LoopManager,
+  extractPromise,
+  detectImplicitCompletion,
+  detectAnomaly,
+} from './loop/loop-manager.js';
 export type {
   LoopMode,
   LoopConfig,
