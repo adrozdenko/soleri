@@ -278,9 +278,13 @@ starlight-lang-select {
 :root[data-theme='light'] .sl-toggle-bg-sun  { opacity: 0; }
 
 /* ── Search modal — collapse empty space below input ── */
+site-search dialog {
+  height: max-content;
+  min-height: 0;
+  max-height: calc(100% - 2rem);
+}
 @media (min-width: 50rem) {
   site-search dialog {
-    height: max-content;
-    min-height: 0;
+    max-height: calc(100% - 8rem);
   }
 }
