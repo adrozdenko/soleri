@@ -292,6 +292,19 @@ export type {
   Result,
   SoleriErrorOptions,
   RetryPreset,
-  RetryConfig,
+  RetryConfig as SoleriRetryConfig,
   RetryOptions,
 } from './errors/index.js';
+
+// ─── Persistence ───────────────────────────────────────────────────────
+export { SQLitePersistenceProvider } from './persistence/index.js';
+export type {
+  PersistenceProvider,
+  PersistenceParams,
+  RunResult,
+  PersistenceConfig,
+} from './persistence/index.js';
+
+// ─── Prompts ───────────────────────────────────────────────────────────
+export { TemplateManager, parseVariables, resolveIncludes } from './prompts/index.js';
+export type { PromptTemplate, TemplateVariable, RenderOptions } from './prompts/index.js';

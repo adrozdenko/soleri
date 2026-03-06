@@ -12,6 +12,7 @@ import type { IntentRouter } from '../control/intent-router.js';
 import type { LoopManager } from '../loop/loop-manager.js';
 import type { Telemetry } from '../telemetry/telemetry.js';
 import type { ProjectRegistry } from '../project/project-registry.js';
+import type { TemplateManager } from '../prompts/template-manager.js';
 import type { Logger } from '../logging/logger.js';
 import type { LogLevel } from '../logging/types.js';
 
@@ -28,6 +29,8 @@ export interface AgentRuntimeConfig {
   plansPath?: string;
   /** Intelligence data directory to seed vault from. Optional. */
   dataDir?: string;
+  /** Path to prompt templates directory. Default: ~/.{agentId}/templates */
+  templatesDir?: string;
   /** Minimum log level. Default: 'info' (or SOLERI_LOG_LEVEL env var). */
   logLevel?: LogLevel;
 }
@@ -53,6 +56,7 @@ export interface AgentRuntime {
   llmClient: LLMClient;
   telemetry: Telemetry;
   projectRegistry: ProjectRegistry;
+  templateManager: TemplateManager;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

@@ -140,6 +140,9 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         // LLM ops — 2
         'llm_rotate',
         'llm_call',
+        // Prompt ops — 2
+        'render_prompt',
+        'list_templates',
         'curator_status',
         'curator_detect_duplicates',
         'curator_contradictions',

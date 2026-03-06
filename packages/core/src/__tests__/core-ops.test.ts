@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 183 ops', () => {
-    expect(ops.length).toBe(183);
+  it('should return 185 ops', () => {
+    expect(ops.length).toBe(185);
   });
 
   it('should have all expected op names', () => {
@@ -212,6 +212,9 @@ describe('createCoreOps', () => {
     expect(names).toContain('project_get_links');
     expect(names).toContain('project_linked_projects');
     expect(names).toContain('project_touch');
+    // Prompt templates
+    expect(names).toContain('render_prompt');
+    expect(names).toContain('list_templates');
   });
 
   it('register should include governance summary', async () => {

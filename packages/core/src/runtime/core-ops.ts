@@ -28,14 +28,14 @@ import { createMemoryCrossProjectOps } from './memory-cross-project-ops.js';
 import { createPlaybookOps } from './playbook-ops.js';
 
 /**
- * Create the 152 generic core operations for an agent runtime.
+ * Create the 185 generic core operations for an agent runtime.
  *
  * Groups: search/vault (4), memory (4), export (1), planning (5),
  *         brain (7), brain intelligence (11), cognee (5),
  *         llm (2), curator (8), control (8), governance (5),
- *         playbook (5),
- *         planning-extra (9), memory-extra (8), vault-extra (12),
- *         admin (8), admin-extra (10), loop (7), orchestrate (5),
+ *         playbook (5), prompt templates (2),
+ *         planning-extra (18), memory-extra (8), vault-extra (17),
+ *         admin (8), admin-extra (22), loop (8), orchestrate (5),
  *         grading (5), capture (4), curator-extra (4), project (12).
  */
 export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
@@ -1382,5 +1382,34 @@ export function createCoreOps(runtime: AgentRuntime): OpDefinition[] {
     ...createCuratorExtraOps(runtime),
     ...createProjectOps(runtime),
     ...createMemoryCrossProjectOps(runtime),
+
+    // ─── Prompt Templates ─────────────────────────────────────────
+    {
+      name: 'render_prompt',
+      description:
+        'Render a prompt template with variable substitution. Templates are .prompt files loaded from the templates directory.',
+      auth: 'read' as const,
+      schema: z.object({
+        template: z.string().describe('Template name (without .prompt extension)'),
+        variables: z.record(z.string()).optional().default({}),
+        strict: z.boolean().optional().default(true),
+      }),
+      handler: async (params) => {
+        const rendered = runtime.templateManager.render(
+          params.template as string,
+          (params.variables ?? {}) as Record<string, string>,
+          { strict: params.strict as boolean },
+        );
+        return { rendered };
+      },
+    },
+    {
+      name: 'list_templates',
+      description: 'List all loaded prompt templates.',
+      auth: 'read' as const,
+      handler: async () => ({
+        templates: runtime.templateManager.listTemplates(),
+      }),
+    },
   ];
 }

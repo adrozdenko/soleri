@@ -1,6 +1,5 @@
-import Database from 'better-sqlite3';
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import type { PersistenceProvider } from '../persistence/types.js';
+import { SQLitePersistenceProvider } from '../persistence/sqlite-provider.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 export interface SearchResult {
@@ -39,18 +38,35 @@ export interface MemoryStats {
 }
 
 export class Vault {
-  private db: Database.Database;
+  private provider: PersistenceProvider;
+  private sqliteProvider: SQLitePersistenceProvider | null;
 
-  constructor(dbPath: string = ':memory:') {
-    if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
-    this.db = new Database(dbPath);
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('foreign_keys = ON');
+  /**
+   * Create a Vault with a PersistenceProvider or a SQLite path (backward compat).
+   */
+  constructor(providerOrPath: PersistenceProvider | string = ':memory:') {
+    if (typeof providerOrPath === 'string') {
+      const sqlite = new SQLitePersistenceProvider(providerOrPath);
+      this.provider = sqlite;
+      this.sqliteProvider = sqlite;
+      // SQLite-specific pragmas
+      this.provider.run('PRAGMA journal_mode = WAL');
+      this.provider.run('PRAGMA foreign_keys = ON');
+    } else {
+      this.provider = providerOrPath;
+      this.sqliteProvider =
+        providerOrPath instanceof SQLitePersistenceProvider ? providerOrPath : null;
+    }
     this.initialize();
   }
 
+  /** Backward-compatible factory. */
+  static createWithSQLite(dbPath: string = ':memory:'): Vault {
+    return new Vault(dbPath);
+  }
+
   private initialize(): void {
-    this.db.exec(`
+    this.provider.execSql(`
       CREATE TABLE IF NOT EXISTS entries (
         id TEXT PRIMARY KEY,
         type TEXT NOT NULL CHECK(type IN ('pattern', 'anti-pattern', 'rule', 'playbook')),
@@ -134,23 +150,13 @@ export class Vault {
     this.migrateBrainSchema();
   }
 
-  /**
-   * Migrate brain_feedback table from old schema (accepted/dismissed only)
-   * to new schema with source, confidence, duration, context, reason columns.
-   * Also adds extracted_at to brain_sessions if it exists.
-   */
   private migrateBrainSchema(): void {
-    // Check if brain_feedback needs migration (old schema lacks 'source' column)
-    const columns = this.db.prepare('PRAGMA table_info(brain_feedback)').all() as Array<{
-      name: string;
-    }>;
+    const columns = this.provider.all<{ name: string }>('PRAGMA table_info(brain_feedback)');
     const hasSource = columns.some((c) => c.name === 'source');
 
     if (!hasSource && columns.length > 0) {
-      // Old table exists without new columns — rebuild with expanded schema
-      this.db.transaction(() => {
-        this.db
-          .prepare(`
+      this.provider.transaction(() => {
+        this.provider.run(`
           CREATE TABLE brain_feedback_new (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             query TEXT NOT NULL,
@@ -163,29 +169,23 @@ export class Vault {
             reason TEXT,
             created_at INTEGER NOT NULL DEFAULT (unixepoch())
           )
-        `)
-          .run();
-        this.db
-          .prepare(`
+        `);
+        this.provider.run(`
           INSERT INTO brain_feedback_new (id, query, entry_id, action, created_at)
             SELECT id, query, entry_id, action, created_at FROM brain_feedback
-        `)
-          .run();
-        this.db.prepare('DROP TABLE brain_feedback').run();
-        this.db.prepare('ALTER TABLE brain_feedback_new RENAME TO brain_feedback').run();
-        this.db
-          .prepare('CREATE INDEX IF NOT EXISTS idx_brain_feedback_query ON brain_feedback(query)')
-          .run();
-      })();
+        `);
+        this.provider.run('DROP TABLE brain_feedback');
+        this.provider.run('ALTER TABLE brain_feedback_new RENAME TO brain_feedback');
+        this.provider.run(
+          'CREATE INDEX IF NOT EXISTS idx_brain_feedback_query ON brain_feedback(query)',
+        );
+      });
     }
 
-    // Add extracted_at to brain_sessions if it exists but lacks the column
     try {
-      const sessionCols = this.db.prepare('PRAGMA table_info(brain_sessions)').all() as Array<{
-        name: string;
-      }>;
+      const sessionCols = this.provider.all<{ name: string }>('PRAGMA table_info(brain_sessions)');
       if (sessionCols.length > 0 && !sessionCols.some((c) => c.name === 'extracted_at')) {
-        this.db.prepare('ALTER TABLE brain_sessions ADD COLUMN extracted_at TEXT').run();
+        this.provider.run('ALTER TABLE brain_sessions ADD COLUMN extracted_at TEXT');
       }
     } catch {
       // brain_sessions table doesn't exist yet — BrainIntelligence will create it
@@ -193,17 +193,17 @@ export class Vault {
   }
 
   seed(entries: IntelligenceEntry[]): number {
-    const upsert = this.db.prepare(`
+    const sql = `
       INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to)
       VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo)
       ON CONFLICT(id) DO UPDATE SET type=excluded.type,domain=excluded.domain,title=excluded.title,severity=excluded.severity,
         description=excluded.description,context=excluded.context,example=excluded.example,counter_example=excluded.counter_example,
         why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,updated_at=unixepoch()
-    `);
-    const tx = this.db.transaction((items: IntelligenceEntry[]) => {
+    `;
+    return this.provider.transaction(() => {
       let count = 0;
-      for (const entry of items) {
-        upsert.run({
+      for (const entry of entries) {
+        this.provider.run(sql, {
           id: entry.id,
           type: entry.type,
           domain: entry.domain,
@@ -221,7 +221,6 @@ export class Vault {
       }
       return count;
     });
-    return tx(entries);
   }
 
   search(
@@ -230,7 +229,7 @@ export class Vault {
   ): SearchResult[] {
     const limit = options?.limit ?? 10;
     const filters: string[] = [];
-    const fp: Record<string, string> = {};
+    const fp: Record<string, unknown> = {};
     if (options?.domain) {
       filters.push('e.domain = @domain');
       fp.domain = options.domain;
@@ -245,11 +244,10 @@ export class Vault {
     }
     const wc = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
     try {
-      const rows = this.db
-        .prepare(
-          `SELECT e.*, -rank as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score DESC LIMIT @limit`,
-        )
-        .all({ query, limit, ...fp }) as Array<Record<string, unknown>>;
+      const rows = this.provider.all<Record<string, unknown>>(
+        `SELECT e.*, -rank as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score DESC LIMIT @limit`,
+        { query, limit, ...fp },
+      );
       return rows.map(rowToSearchResult);
     } catch {
       return [];
@@ -257,9 +255,9 @@ export class Vault {
   }
 
   get(id: string): IntelligenceEntry | null {
-    const row = this.db.prepare('SELECT * FROM entries WHERE id = ?').get(id) as
-      | Record<string, unknown>
-      | undefined;
+    const row = this.provider.get<Record<string, unknown>>('SELECT * FROM entries WHERE id = ?', [
+      id,
+    ]);
     return row ? rowToEntry(row) : null;
   }
 
@@ -293,25 +291,22 @@ export class Vault {
       filters.push(`(${c.join(' OR ')})`);
     }
     const wc = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
-    const rows = this.db
-      .prepare(
-        `SELECT * FROM entries ${wc} ORDER BY severity, domain, title LIMIT @limit OFFSET @offset`,
-      )
-      .all({ ...params, limit: options?.limit ?? 50, offset: options?.offset ?? 0 }) as Array<
-      Record<string, unknown>
-    >;
+    const rows = this.provider.all<Record<string, unknown>>(
+      `SELECT * FROM entries ${wc} ORDER BY severity, domain, title LIMIT @limit OFFSET @offset`,
+      { ...params, limit: options?.limit ?? 50, offset: options?.offset ?? 0 },
+    );
     return rows.map(rowToEntry);
   }
 
   stats(): VaultStats {
-    const total = (
-      this.db.prepare('SELECT COUNT(*) as count FROM entries').get() as { count: number }
-    ).count;
+    const total = this.provider.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM entries',
+    )!.count;
     return {
       totalEntries: total,
-      byType: gc(this.db, 'type'),
-      byDomain: gc(this.db, 'domain'),
-      bySeverity: gc(this.db, 'severity'),
+      byType: gc(this.provider, 'type'),
+      byDomain: gc(this.provider, 'domain'),
+      bySeverity: gc(this.provider, 'severity'),
     };
   }
 
@@ -319,13 +314,9 @@ export class Vault {
     this.seed([entry]);
   }
   remove(id: string): boolean {
-    return this.db.prepare('DELETE FROM entries WHERE id = ?').run(id).changes > 0;
+    return this.provider.run('DELETE FROM entries WHERE id = ?', [id]).changes > 0;
   }
 
-  /**
-   * Partial update of an existing entry's mutable fields.
-   * Returns the updated entry or null if not found.
-   */
   update(
     id: string,
     fields: Partial<
@@ -352,27 +343,18 @@ export class Vault {
     return this.get(id);
   }
 
-  /**
-   * Remove multiple entries by IDs in a single transaction.
-   * Returns the number of entries actually removed.
-   */
   bulkRemove(ids: string[]): number {
-    const stmt = this.db.prepare('DELETE FROM entries WHERE id = ?');
-    const tx = this.db.transaction((idList: string[]) => {
+    return this.provider.transaction(() => {
       let count = 0;
-      for (const id of idList) {
-        count += stmt.run(id).changes;
+      for (const id of ids) {
+        count += this.provider.run('DELETE FROM entries WHERE id = ?', [id]).changes;
       }
       return count;
     });
-    return tx(ids);
   }
 
-  /**
-   * List all unique tags with their occurrence counts.
-   */
   getTags(): Array<{ tag: string; count: number }> {
-    const rows = this.db.prepare('SELECT tags FROM entries').all() as Array<{ tags: string }>;
+    const rows = this.provider.all<{ tags: string }>('SELECT tags FROM entries');
     const counts = new Map<string, number>();
     for (const row of rows) {
       const tags: string[] = JSON.parse(row.tags || '[]');
@@ -385,50 +367,37 @@ export class Vault {
       .sort((a, b) => b.count - a.count);
   }
 
-  /**
-   * List all domains with their entry counts.
-   */
   getDomains(): Array<{ domain: string; count: number }> {
-    const rows = this.db
-      .prepare('SELECT domain, COUNT(*) as count FROM entries GROUP BY domain ORDER BY count DESC')
-      .all() as Array<{ domain: string; count: number }>;
-    return rows;
+    return this.provider.all<{ domain: string; count: number }>(
+      'SELECT domain, COUNT(*) as count FROM entries GROUP BY domain ORDER BY count DESC',
+    );
   }
 
-  /**
-   * Get recently added or updated entries, ordered by updated_at DESC.
-   */
   getRecent(limit: number = 20): IntelligenceEntry[] {
-    const rows = this.db
-      .prepare('SELECT * FROM entries ORDER BY updated_at DESC LIMIT ?')
-      .all(limit) as Array<Record<string, unknown>>;
+    const rows = this.provider.all<Record<string, unknown>>(
+      'SELECT * FROM entries ORDER BY updated_at DESC LIMIT ?',
+      [limit],
+    );
     return rows.map(rowToEntry);
   }
 
-  /**
-   * Export the entire vault as a JSON-serializable bundle.
-   */
   exportAll(): { entries: IntelligenceEntry[]; exportedAt: number; count: number } {
-    const rows = this.db.prepare('SELECT * FROM entries ORDER BY domain, title').all() as Array<
-      Record<string, unknown>
-    >;
+    const rows = this.provider.all<Record<string, unknown>>(
+      'SELECT * FROM entries ORDER BY domain, title',
+    );
     const entries = rows.map(rowToEntry);
     return { entries, exportedAt: Math.floor(Date.now() / 1000), count: entries.length };
   }
 
-  /**
-   * Get entry age distribution — how old entries are, bucketed.
-   */
   getAgeReport(): {
     total: number;
     buckets: Array<{ label: string; count: number; minDays: number; maxDays: number }>;
     oldestTimestamp: number | null;
     newestTimestamp: number | null;
   } {
-    const rows = this.db.prepare('SELECT created_at, updated_at FROM entries').all() as Array<{
-      created_at: number;
-      updated_at: number;
-    }>;
+    const rows = this.provider.all<{ created_at: number; updated_at: number }>(
+      'SELECT created_at, updated_at FROM entries',
+    );
     const now = Math.floor(Date.now() / 1000);
     const bucketDefs = [
       { label: 'today', minDays: 0, maxDays: 1 },
@@ -464,21 +433,21 @@ export class Vault {
     const projectName = name ?? path.replace(/\/$/, '').split('/').pop() ?? path;
     const existing = this.getProject(path);
     if (existing) {
-      this.db
-        .prepare(
-          'UPDATE projects SET last_seen_at = unixepoch(), session_count = session_count + 1 WHERE path = ?',
-        )
-        .run(path);
+      this.provider.run(
+        'UPDATE projects SET last_seen_at = unixepoch(), session_count = session_count + 1 WHERE path = ?',
+        [path],
+      );
       return this.getProject(path)!;
     }
-    this.db.prepare('INSERT INTO projects (path, name) VALUES (?, ?)').run(path, projectName);
+    this.provider.run('INSERT INTO projects (path, name) VALUES (?, ?)', [path, projectName]);
     return this.getProject(path)!;
   }
 
   getProject(path: string): ProjectInfo | null {
-    const row = this.db.prepare('SELECT * FROM projects WHERE path = ?').get(path) as
-      | Record<string, unknown>
-      | undefined;
+    const row = this.provider.get<Record<string, unknown>>(
+      'SELECT * FROM projects WHERE path = ?',
+      [path],
+    );
     if (!row) return null;
     return {
       path: row.path as string,
@@ -490,9 +459,9 @@ export class Vault {
   }
 
   listProjects(): ProjectInfo[] {
-    const rows = this.db
-      .prepare('SELECT * FROM projects ORDER BY last_seen_at DESC')
-      .all() as Array<Record<string, unknown>>;
+    const rows = this.provider.all<Record<string, unknown>>(
+      'SELECT * FROM projects ORDER BY last_seen_at DESC',
+    );
     return rows.map((row) => ({
       path: row.path as string,
       name: row.name as string,
@@ -504,11 +473,9 @@ export class Vault {
 
   captureMemory(memory: Omit<Memory, 'id' | 'createdAt' | 'archivedAt'>): Memory {
     const id = `mem-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    this.db
-      .prepare(
-        `INSERT INTO memories (id, project_path, type, context, summary, topics, files_modified, tools_used) VALUES (@id, @projectPath, @type, @context, @summary, @topics, @filesModified, @toolsUsed)`,
-      )
-      .run({
+    this.provider.run(
+      `INSERT INTO memories (id, project_path, type, context, summary, topics, files_modified, tools_used) VALUES (@id, @projectPath, @type, @context, @summary, @topics, @filesModified, @toolsUsed)`,
+      {
         id,
         projectPath: memory.projectPath,
         type: memory.type,
@@ -517,7 +484,8 @@ export class Vault {
         topics: JSON.stringify(memory.topics),
         filesModified: JSON.stringify(memory.filesModified),
         toolsUsed: JSON.stringify(memory.toolsUsed),
-      });
+      },
+    );
     return this.getMemory(id)!;
   }
 
@@ -538,11 +506,10 @@ export class Vault {
     }
     const wc = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
     try {
-      const rows = this.db
-        .prepare(
-          `SELECT m.* FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid WHERE memories_fts MATCH @query ${wc} ORDER BY rank LIMIT @limit`,
-        )
-        .all({ query, limit, ...fp }) as Array<Record<string, unknown>>;
+      const rows = this.provider.all<Record<string, unknown>>(
+        `SELECT m.* FROM memories_fts fts JOIN memories m ON m.rowid = fts.rowid WHERE memories_fts MATCH @query ${wc} ORDER BY rank LIMIT @limit`,
+        { query, limit, ...fp },
+      );
       return rows.map(rowToMemory);
     } catch {
       return [];
@@ -566,30 +533,23 @@ export class Vault {
       params.projectPath = options.projectPath;
     }
     const wc = `WHERE ${filters.join(' AND ')}`;
-    const rows = this.db
-      .prepare(`SELECT * FROM memories ${wc} ORDER BY created_at DESC LIMIT @limit OFFSET @offset`)
-      .all({ ...params, limit: options?.limit ?? 50, offset: options?.offset ?? 0 }) as Array<
-      Record<string, unknown>
-    >;
+    const rows = this.provider.all<Record<string, unknown>>(
+      `SELECT * FROM memories ${wc} ORDER BY created_at DESC LIMIT @limit OFFSET @offset`,
+      { ...params, limit: options?.limit ?? 50, offset: options?.offset ?? 0 },
+    );
     return rows.map(rowToMemory);
   }
 
   memoryStats(): MemoryStats {
-    const total = (
-      this.db.prepare('SELECT COUNT(*) as count FROM memories WHERE archived_at IS NULL').get() as {
-        count: number;
-      }
-    ).count;
-    const byTypeRows = this.db
-      .prepare(
-        'SELECT type as key, COUNT(*) as count FROM memories WHERE archived_at IS NULL GROUP BY type',
-      )
-      .all() as Array<{ key: string; count: number }>;
-    const byProjectRows = this.db
-      .prepare(
-        'SELECT project_path as key, COUNT(*) as count FROM memories WHERE archived_at IS NULL GROUP BY project_path',
-      )
-      .all() as Array<{ key: string; count: number }>;
+    const total = this.provider.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM memories WHERE archived_at IS NULL',
+    )!.count;
+    const byTypeRows = this.provider.all<{ key: string; count: number }>(
+      'SELECT type as key, COUNT(*) as count FROM memories WHERE archived_at IS NULL GROUP BY type',
+    );
+    const byProjectRows = this.provider.all<{ key: string; count: number }>(
+      'SELECT project_path as key, COUNT(*) as count FROM memories WHERE archived_at IS NULL GROUP BY project_path',
+    );
     return {
       total,
       byType: Object.fromEntries(byTypeRows.map((r) => [r.key, r.count])),
@@ -598,14 +558,14 @@ export class Vault {
   }
 
   getMemory(id: string): Memory | null {
-    const row = this.db.prepare('SELECT * FROM memories WHERE id = ?').get(id) as
-      | Record<string, unknown>
-      | undefined;
+    const row = this.provider.get<Record<string, unknown>>('SELECT * FROM memories WHERE id = ?', [
+      id,
+    ]);
     return row ? rowToMemory(row) : null;
   }
 
   deleteMemory(id: string): boolean {
-    return this.db.prepare('DELETE FROM memories WHERE id = ?').run(id).changes > 0;
+    return this.provider.run('DELETE FROM memories WHERE id = ?', [id]).changes > 0;
   }
 
   memoryStatsDetailed(options?: {
@@ -629,39 +589,30 @@ export class Vault {
     }
     const wc = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
 
-    const total = (
-      this.db
-        .prepare(
-          `SELECT COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL`,
-        )
-        .get(params) as { count: number }
-    ).count;
+    const total = this.provider.get<{ count: number }>(
+      `SELECT COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL`,
+      params,
+    )!.count;
 
-    const archivedCount = (
-      this.db
-        .prepare(
-          `SELECT COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NOT NULL`,
-        )
-        .get(params) as { count: number }
-    ).count;
+    const archivedCount = this.provider.get<{ count: number }>(
+      `SELECT COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NOT NULL`,
+      params,
+    )!.count;
 
-    const byTypeRows = this.db
-      .prepare(
-        `SELECT type as key, COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL GROUP BY type`,
-      )
-      .all(params) as Array<{ key: string; count: number }>;
+    const byTypeRows = this.provider.all<{ key: string; count: number }>(
+      `SELECT type as key, COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL GROUP BY type`,
+      params,
+    );
 
-    const byProjectRows = this.db
-      .prepare(
-        `SELECT project_path as key, COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL GROUP BY project_path`,
-      )
-      .all(params) as Array<{ key: string; count: number }>;
+    const byProjectRows = this.provider.all<{ key: string; count: number }>(
+      `SELECT project_path as key, COUNT(*) as count FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL GROUP BY project_path`,
+      params,
+    );
 
-    const dateRange = this.db
-      .prepare(
-        `SELECT MIN(created_at) as oldest, MAX(created_at) as newest FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL`,
-      )
-      .get(params) as { oldest: number | null; newest: number | null };
+    const dateRange = this.provider.get<{ oldest: number | null; newest: number | null }>(
+      `SELECT MIN(created_at) as oldest, MAX(created_at) as newest FROM memories ${wc}${wc ? ' AND' : ' WHERE'} archived_at IS NULL`,
+      params,
+    )!;
 
     return {
       total,
@@ -692,22 +643,23 @@ export class Vault {
       params.type = options.type;
     }
     const wc = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
-    const rows = this.db
-      .prepare(`SELECT * FROM memories ${wc} ORDER BY created_at ASC`)
-      .all(params) as Array<Record<string, unknown>>;
+    const rows = this.provider.all<Record<string, unknown>>(
+      `SELECT * FROM memories ${wc} ORDER BY created_at ASC`,
+      Object.keys(params).length > 0 ? params : undefined,
+    );
     return rows.map(rowToMemory);
   }
 
   importMemories(memories: Memory[]): { imported: number; skipped: number } {
-    const upsert = this.db.prepare(`
+    const sql = `
       INSERT OR IGNORE INTO memories (id, project_path, type, context, summary, topics, files_modified, tools_used, created_at, archived_at)
       VALUES (@id, @projectPath, @type, @context, @summary, @topics, @filesModified, @toolsUsed, @createdAt, @archivedAt)
-    `);
+    `;
     let imported = 0;
     let skipped = 0;
-    const tx = this.db.transaction((items: Memory[]) => {
-      for (const m of items) {
-        const result = upsert.run({
+    this.provider.transaction(() => {
+      for (const m of memories) {
+        const result = this.provider.run(sql, {
           id: m.id,
           projectPath: m.projectPath,
           type: m.type,
@@ -723,22 +675,20 @@ export class Vault {
         else skipped++;
       }
     });
-    tx(memories);
     return { imported, skipped };
   }
 
   pruneMemories(olderThanDays: number): { pruned: number } {
     const cutoff = Math.floor(Date.now() / 1000) - olderThanDays * 86400;
-    const result = this.db
-      .prepare('DELETE FROM memories WHERE created_at < ? AND archived_at IS NULL')
-      .run(cutoff);
+    const result = this.provider.run(
+      'DELETE FROM memories WHERE created_at < ? AND archived_at IS NULL',
+      [cutoff],
+    );
     return { pruned: result.changes };
   }
 
   deduplicateMemories(): { removed: number; groups: Array<{ kept: string; removed: string[] }> } {
-    // Find duplicates by matching summary + project_path + type
-    const dupeRows = this.db
-      .prepare(`
+    const dupeRows = this.provider.all<{ id1: string; id2: string }>(`
         SELECT m1.id as id1, m2.id as id2
         FROM memories m1
         JOIN memories m2 ON m1.summary = m2.summary
@@ -747,10 +697,8 @@ export class Vault {
           AND m1.id < m2.id
           AND m1.archived_at IS NULL
           AND m2.archived_at IS NULL
-      `)
-      .all() as Array<{ id1: string; id2: string }>;
+      `);
 
-    // Group: keep the earliest (id1), remove all later duplicates
     const groupMap = new Map<string, Set<string>>();
     for (const row of dupeRows) {
       if (!groupMap.has(row.id1)) groupMap.set(row.id1, new Set());
@@ -768,20 +716,20 @@ export class Vault {
     }
 
     if (toRemove.size > 0) {
-      const del = this.db.prepare('DELETE FROM memories WHERE id = ?');
-      const tx = this.db.transaction((ids: string[]) => {
-        for (const id of ids) del.run(id);
+      this.provider.transaction(() => {
+        for (const id of toRemove) {
+          this.provider.run('DELETE FROM memories WHERE id = ?', [id]);
+        }
       });
-      tx([...toRemove]);
     }
 
     return { removed: toRemove.size, groups };
   }
 
   memoryTopics(): Array<{ topic: string; count: number }> {
-    const rows = this.db
-      .prepare('SELECT topics FROM memories WHERE archived_at IS NULL')
-      .all() as Array<{ topics: string }>;
+    const rows = this.provider.all<{ topics: string }>(
+      'SELECT topics FROM memories WHERE archived_at IS NULL',
+    );
 
     const topicCounts = new Map<string, number>();
     for (const row of rows) {
@@ -797,18 +745,15 @@ export class Vault {
   }
 
   memoriesByProject(): Array<{ project: string; count: number; memories: Memory[] }> {
-    const rows = this.db
-      .prepare(
-        'SELECT project_path as project, COUNT(*) as count FROM memories WHERE archived_at IS NULL GROUP BY project_path ORDER BY count DESC',
-      )
-      .all() as Array<{ project: string; count: number }>;
+    const rows = this.provider.all<{ project: string; count: number }>(
+      'SELECT project_path as project, COUNT(*) as count FROM memories WHERE archived_at IS NULL GROUP BY project_path ORDER BY count DESC',
+    );
 
     return rows.map((row) => {
-      const memories = this.db
-        .prepare(
-          'SELECT * FROM memories WHERE project_path = ? AND archived_at IS NULL ORDER BY created_at DESC',
-        )
-        .all(row.project) as Array<Record<string, unknown>>;
+      const memories = this.provider.all<Record<string, unknown>>(
+        'SELECT * FROM memories WHERE project_path = ? AND archived_at IS NULL ORDER BY created_at DESC',
+        [row.project],
+      );
       return {
         project: row.project,
         count: row.count,
@@ -817,19 +762,33 @@ export class Vault {
     });
   }
 
-  getDb(): Database.Database {
-    return this.db;
+  /**
+   * Get the underlying persistence provider.
+   */
+  getProvider(): PersistenceProvider {
+    return this.provider;
+  }
+
+  /**
+   * Get the raw better-sqlite3 Database (backward compat).
+   * Throws if the provider is not SQLite.
+   */
+  getDb(): import('better-sqlite3').Database {
+    if (this.sqliteProvider) {
+      return this.sqliteProvider.getDatabase();
+    }
+    throw new Error('getDb() is only available with SQLite provider');
   }
 
   close(): void {
-    this.db.close();
+    this.provider.close();
   }
 }
 
-function gc(db: Database.Database, col: string): Record<string, number> {
-  const rows = db
-    .prepare(`SELECT ${col} as key, COUNT(*) as count FROM entries GROUP BY ${col}`)
-    .all() as Array<{ key: string; count: number }>;
+function gc(provider: PersistenceProvider, col: string): Record<string, number> {
+  const rows = provider.all<{ key: string; count: number }>(
+    `SELECT ${col} as key, COUNT(*) as count FROM entries GROUP BY ${col}`,
+  );
   return Object.fromEntries(rows.map((r) => [r.key, r.count]));
 }
 

@@ -24,6 +24,8 @@ import { loadIntelligenceData } from '../intelligence/loader.js';
 import { LLMClient } from '../llm/llm-client.js';
 import { Telemetry } from '../telemetry/telemetry.js';
 import { ProjectRegistry } from '../project/project-registry.js';
+import { TemplateManager } from '../prompts/template-manager.js';
+import { existsSync } from 'node:fs';
 import { createLogger } from '../logging/logger.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
@@ -92,6 +94,13 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Project Registry — multi-project tracking with rules and links
   const projectRegistry = new ProjectRegistry(vault.getDb());
 
+  // Template Manager — prompt templates with variable substitution
+  const templatesDir = config.templatesDir ?? join(agentHome, 'templates');
+  const templateManager = new TemplateManager(templatesDir);
+  if (existsSync(templatesDir)) {
+    templateManager.load();
+  }
+
   // LLM key pools and client
   const keyPoolFiles = loadKeyPoolConfig(agentId);
   const openaiKeyPool = new KeyPool(keyPoolFiles.openai);
@@ -115,6 +124,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     llmClient,
     telemetry,
     projectRegistry,
+    templateManager,
     createdAt: Date.now(),
     close: () => {
       cognee.resetPendingCognify();

@@ -335,8 +335,8 @@ ${domainDescribes}
       expect(opNames).toContain('playbook_create');
       expect(opNames).toContain('playbook_match');
       expect(opNames).toContain('playbook_seed');
-      // Total: 188 (183 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(188);
+      // Total: 190 (185 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(190);
     });
 
     it('search should query across all domains with ranked results', async () => {
