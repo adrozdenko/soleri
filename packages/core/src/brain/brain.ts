@@ -47,7 +47,7 @@ const DEFAULT_WEIGHTS: ScoringWeights = {
   semantic: 0.4,
   vector: 0.0,
   severity: 0.15,
-  recency: 0.15,
+  temporalDecay: 0.15,
   tagOverlap: 0.15,
   domainMatch: 0.15,
 };
@@ -56,7 +56,7 @@ const COGNEE_WEIGHTS: ScoringWeights = {
   semantic: 0.25,
   vector: 0.35,
   severity: 0.1,
-  recency: 0.1,
+  temporalDecay: 0.1,
   tagOverlap: 0.1,
   domainMatch: 0.1,
 };
@@ -454,6 +454,42 @@ export class Brain {
     return this.vocabulary.size;
   }
 
+  async getDecayReport(
+    query: string,
+    limit: number = 10,
+  ): Promise<
+    Array<{
+      id: string;
+      title: string;
+      decayScore: number;
+      validUntil: number | null;
+      status: 'active' | 'expiring' | 'expired';
+    }>
+  > {
+    const results = await this.intelligentSearch(query, { limit });
+    const now = Math.floor(Date.now() / 1000);
+    return results.map((r) => {
+      const validUntil = r.entry.validUntil ?? null;
+      let status: 'active' | 'expiring' | 'expired' = 'active';
+      if (validUntil) {
+        if (validUntil <= now) status = 'expired';
+        else {
+          const validFrom = r.entry.validFrom ?? now;
+          const totalWindow = validUntil - validFrom;
+          const remaining = validUntil - now;
+          if (remaining <= totalWindow * 0.25) status = 'expiring';
+        }
+      }
+      return {
+        id: r.entry.id,
+        title: r.entry.title,
+        decayScore: r.breakdown.temporalDecay,
+        validUntil,
+        status,
+      };
+    });
+  }
+
   // ─── Private methods ─────────────────────────────────────────────
 
   private scoreEntry(
@@ -483,9 +519,7 @@ export class Brain {
 
     const severity = SEVERITY_SCORES[entry.severity] ?? 0.4;
 
-    const entryAge = now - (entry as unknown as { created_at?: number }).created_at!;
-    const halfLifeSeconds = RECENCY_HALF_LIFE_DAYS * 86400;
-    const recency = entryAge > 0 ? Math.exp((-Math.LN2 * entryAge) / halfLifeSeconds) : 1;
+    const temporalDecay = computeTemporalDecay(entry, now);
 
     const tagOverlap = queryTags.length > 0 ? jaccardSimilarity(queryTags, entry.tags) : 0;
 
@@ -497,11 +531,11 @@ export class Brain {
       w.semantic * semantic +
       w.vector * vector +
       w.severity * severity +
-      w.recency * recency +
+      w.temporalDecay * temporalDecay +
       w.tagOverlap * tagOverlap +
       w.domainMatch * domainMatch;
 
-    return { semantic, vector, severity, recency, tagOverlap, domainMatch, total };
+    return { semantic, vector, severity, temporalDecay, tagOverlap, domainMatch, total };
   }
 
   private generateTags(title: string, description: string, context?: string): string[] {
@@ -640,17 +674,45 @@ export class Brain {
     const remaining = 1.0 - newWeights.semantic - newWeights.vector;
     const otherSum =
       DEFAULT_WEIGHTS.severity +
-      DEFAULT_WEIGHTS.recency +
+      DEFAULT_WEIGHTS.temporalDecay +
       DEFAULT_WEIGHTS.tagOverlap +
       DEFAULT_WEIGHTS.domainMatch;
     const scale = remaining / otherSum;
     newWeights.severity = DEFAULT_WEIGHTS.severity * scale;
-    newWeights.recency = DEFAULT_WEIGHTS.recency * scale;
+    newWeights.temporalDecay = DEFAULT_WEIGHTS.temporalDecay * scale;
     newWeights.tagOverlap = DEFAULT_WEIGHTS.tagOverlap * scale;
     newWeights.domainMatch = DEFAULT_WEIGHTS.domainMatch * scale;
 
     this.weights = newWeights;
   }
+}
+
+function computeTemporalDecay(entry: IntelligenceEntry, now: number): number {
+  const entryRecord = entry as unknown as {
+    created_at?: number;
+    updated_at?: number;
+    valid_until?: number;
+    valid_from?: number;
+  };
+  const validUntil = entry.validUntil ?? entryRecord.valid_until;
+
+  if (!validUntil) {
+    // No expiry — use existing age-based exponential decay
+    const updatedAt = entryRecord.updated_at ?? entryRecord.created_at ?? now;
+    const ageSeconds = now - updatedAt;
+    const halfLifeSeconds = RECENCY_HALF_LIFE_DAYS * 86400;
+    return ageSeconds > 0 ? Math.exp((-Math.LN2 * ageSeconds) / halfLifeSeconds) : 1;
+  }
+
+  // With valid_until: linear ramp-down in last 25% of validity window
+  const validFrom = entry.validFrom ?? entryRecord.valid_from ?? entryRecord.created_at ?? now;
+  const totalWindow = validUntil - validFrom;
+  const remaining = validUntil - now;
+  if (remaining <= 0) return 0; // expired
+  if (totalWindow <= 0) return 1; // edge case: bad data
+  const decayZone = totalWindow * 0.25;
+  if (remaining > decayZone) return 1.0; // fully valid
+  return remaining / decayZone; // linear decay in last quarter
 }
 
 function clamp(value: number, min: number, max: number): number {

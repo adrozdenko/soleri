@@ -200,6 +200,8 @@ ${domainDescribes}
       expect(opNames).toContain('brain_feedback');
       expect(opNames).toContain('brain_feedback_stats');
       expect(opNames).toContain('brain_reset_extracted');
+      // Brain decay report (#89)
+      expect(opNames).toContain('brain_decay_report');
       // Agent-specific ops (5)
       expect(opNames).toContain('health');
       expect(opNames).toContain('identity');
@@ -266,6 +268,10 @@ ${domainDescribes}
       expect(opNames).toContain('vault_seed');
       expect(opNames).toContain('vault_backup');
       expect(opNames).toContain('vault_age_report');
+      // #89: Bi-temporal
+      expect(opNames).toContain('vault_set_temporal');
+      expect(opNames).toContain('vault_find_expiring');
+      expect(opNames).toContain('vault_find_expired');
       // Admin ops (8)
       expect(opNames).toContain('admin_health');
       expect(opNames).toContain('admin_tool_list');
@@ -313,11 +319,13 @@ ${domainDescribes}
       expect(opNames).toContain('admin_gc');
       expect(opNames).toContain('admin_export_config');
       expect(opNames).toContain('admin_hot_reload');
-      // Curator Extra ops (4)
+      // Curator Extra ops (4 + 1 hybrid)
       expect(opNames).toContain('curator_entry_history');
       expect(opNames).toContain('curator_record_snapshot');
       expect(opNames).toContain('curator_queue_stats');
       expect(opNames).toContain('curator_enrich');
+      // #36: Hybrid contradiction detection
+      expect(opNames).toContain('curator_hybrid_contradictions');
       // Project ops (12)
       expect(opNames).toContain('project_get');
       expect(opNames).toContain('project_list');
@@ -341,8 +349,8 @@ ${domainDescribes}
       expect(opNames).toContain('playbook_create');
       expect(opNames).toContain('playbook_match');
       expect(opNames).toContain('playbook_seed');
-      // Total: 196 (191 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(196);
+      // Total: 201 (196 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(201);
     });
 
     it('search should query across all domains with ranked results', async () => {

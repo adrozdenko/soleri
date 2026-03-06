@@ -1,8 +1,8 @@
 /**
- * Extra vault operations — 17 ops that extend the 4 base vault ops in core-ops.ts.
+ * Extra vault operations — 20 ops that extend the 4 base vault ops in core-ops.ts.
  *
  * Groups: single-entry CRUD (3), bulk (2), discovery (3), import/export (3),
- *         analytics (1), seed canonical (1), knowledge lifecycle (4).
+ *         analytics (1), seed canonical (1), knowledge lifecycle (4), temporal (3).
  */
 
 import { z } from 'zod';
@@ -491,6 +491,59 @@ export function createVaultExtraOps(runtime: AgentRuntime): OpDefinition[] {
         } catch (err) {
           return { error: (err as Error).message };
         }
+      },
+    },
+
+    // ─── Temporal (#89) ──────────────────────────────────────────────
+    {
+      name: 'vault_set_temporal',
+      description:
+        'Set valid_from and/or valid_until timestamps on a vault entry for bi-temporal validity windows.',
+      auth: 'write',
+      schema: z.object({
+        id: z.string().describe('Entry ID'),
+        validFrom: z.number().optional().describe('Unix epoch — when entry becomes active'),
+        validUntil: z.number().optional().describe('Unix epoch — when entry expires'),
+      }),
+      handler: async (params) => {
+        const updated = vault.setTemporal(
+          params.id as string,
+          params.validFrom as number | undefined,
+          params.validUntil as number | undefined,
+        );
+        if (!updated) return { error: 'Entry not found or no fields to update' };
+        const entry = vault.get(params.id as string);
+        return {
+          updated: true,
+          id: params.id,
+          validFrom: entry?.validFrom ?? null,
+          validUntil: entry?.validUntil ?? null,
+        };
+      },
+    },
+    {
+      name: 'vault_find_expiring',
+      description:
+        'Find vault entries expiring within a given number of days. Useful for proactive knowledge maintenance.',
+      auth: 'read',
+      schema: z.object({
+        withinDays: z.number().describe('Number of days to look ahead'),
+      }),
+      handler: async (params) => {
+        const entries = vault.findExpiring(params.withinDays as number);
+        return { entries, count: entries.length };
+      },
+    },
+    {
+      name: 'vault_find_expired',
+      description: 'List expired vault entries (valid_until in the past). Useful for cleanup.',
+      auth: 'read',
+      schema: z.object({
+        limit: z.number().optional().describe('Max results (default 50)'),
+      }),
+      handler: async (params) => {
+        const entries = vault.findExpired((params.limit as number | undefined) ?? 50);
+        return { entries, count: entries.length };
       },
     },
   ];

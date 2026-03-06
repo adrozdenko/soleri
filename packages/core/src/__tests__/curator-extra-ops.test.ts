@@ -26,15 +26,16 @@ describe('createCuratorExtraOps', () => {
     ops = createCuratorExtraOps(runtime);
   }
 
-  it('should return 4 ops', () => {
+  it('should return 5 ops', () => {
     setup();
-    expect(ops).toHaveLength(4);
+    expect(ops).toHaveLength(5);
     const names = ops.map((o) => o.name);
     expect(names).toEqual([
       'curator_entry_history',
       'curator_record_snapshot',
       'curator_queue_stats',
       'curator_enrich',
+      'curator_hybrid_contradictions',
     ]);
   });
 
@@ -338,6 +339,27 @@ describe('createCuratorExtraOps', () => {
       const severityChange = result.changes.find((c) => c.field === 'severity');
       expect(severityChange).toBeDefined();
       expect(severityChange!.after).toBe('critical');
+    });
+  });
+
+  // ─── curator_hybrid_contradictions ──────────────────────────────
+
+  describe('curator_hybrid_contradictions', () => {
+    it('should return empty contradictions and tfidf-only method', async () => {
+      setup();
+      const result = (await findOp('curator_hybrid_contradictions').handler({})) as {
+        contradictions: unknown[];
+        cogneeAvailable: boolean;
+        method: string;
+      };
+      expect(result.contradictions).toEqual([]);
+      expect(result.cogneeAvailable).toBe(false);
+      expect(result.method).toBe('tfidf-only');
+    });
+
+    it('should have read auth', () => {
+      setup();
+      expect(findOp('curator_hybrid_contradictions').auth).toBe('read');
     });
   });
 

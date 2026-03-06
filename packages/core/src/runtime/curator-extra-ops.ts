@@ -1,7 +1,7 @@
 /**
- * Extra curator operations — 4 ops that extend the 8 base curator ops in core-ops.ts.
+ * Extra curator operations — 5 ops that extend the 8 base curator ops in core-ops.ts.
  *
- * Groups: entry history (2), queue stats (1), metadata enrichment (1).
+ * Groups: entry history (2), queue stats (1), metadata enrichment (1), hybrid detection (1).
  */
 
 import { z } from 'zod';
@@ -65,6 +65,20 @@ export function createCuratorExtraOps(runtime: AgentRuntime): OpDefinition[] {
       }),
       handler: async (params) => {
         return curator.enrichMetadata(params.entryId as string);
+      },
+    },
+
+    // ─── Hybrid Contradiction Detection (#36) ────────────────────────
+    {
+      name: 'curator_hybrid_contradictions',
+      description:
+        'Detect contradictions using hybrid TF-IDF + Cognee vector similarity. Falls back to TF-IDF only when Cognee is unavailable.',
+      auth: 'read',
+      schema: z.object({
+        threshold: z.number().optional().describe('Similarity threshold (default 0.4)'),
+      }),
+      handler: async (params) => {
+        return curator.detectContradictionsHybrid(params.threshold as number | undefined);
       },
     },
   ];

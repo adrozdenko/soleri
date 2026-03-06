@@ -11,6 +11,8 @@ export interface IntelligenceEntry {
   why?: string;
   tags: string[];
   appliesTo?: string[];
+  validFrom?: number; // unix epoch — when entry becomes active
+  validUntil?: number; // unix epoch — when entry expires (null = never)
 }
 
 export interface IntelligenceBundle {

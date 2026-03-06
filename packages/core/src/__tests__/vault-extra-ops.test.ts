@@ -47,8 +47,8 @@ describe('createVaultExtraOps', () => {
     return op;
   }
 
-  it('should return 17 ops', () => {
-    expect(ops.length).toBe(17);
+  it('should return 20 ops', () => {
+    expect(ops.length).toBe(20);
   });
 
   it('should have all expected op names', () => {
@@ -72,6 +72,10 @@ describe('createVaultExtraOps', () => {
     expect(names).toContain('knowledge_health');
     expect(names).toContain('knowledge_merge');
     expect(names).toContain('knowledge_reorganize');
+    // #89: Bi-temporal
+    expect(names).toContain('vault_set_temporal');
+    expect(names).toContain('vault_find_expiring');
+    expect(names).toContain('vault_find_expired');
   });
 
   // ─── vault_get ────────────────────────────────────────────────────
@@ -414,5 +418,65 @@ describe('createVaultExtraOps', () => {
     for (const name of adminOps) {
       expect(findOp(name).auth).toBe('admin');
     }
+  });
+
+  // ─── vault_set_temporal ─────────────────────────────────────────
+
+  describe('vault_set_temporal', () => {
+    it('should set validUntil on an entry', async () => {
+      runtime.vault.seed([makeEntry({ id: 'temporal-1' })]);
+      const result = (await findOp('vault_set_temporal').handler({
+        id: 'temporal-1',
+        validUntil: Math.floor(Date.now() / 1000) + 86400 * 30,
+      })) as { updated: boolean; id: string; validUntil: number | null };
+      expect(result.updated).toBe(true);
+      expect(result.id).toBe('temporal-1');
+      expect(result.validUntil).toBeGreaterThan(0);
+    });
+
+    it('should return error for missing entry', async () => {
+      const result = (await findOp('vault_set_temporal').handler({
+        id: 'nonexistent',
+        validUntil: 1000,
+      })) as { error: string };
+      expect(result.error).toBeDefined();
+    });
+  });
+
+  // ─── vault_find_expiring ────────────────────────────────────────
+
+  describe('vault_find_expiring', () => {
+    it('should find entries expiring within N days', async () => {
+      const now = Math.floor(Date.now() / 1000);
+      runtime.vault.seed([
+        makeEntry({ id: 'exp-1' }),
+        makeEntry({ id: 'exp-2' }),
+        makeEntry({ id: 'exp-3' }),
+      ]);
+      runtime.vault.setTemporal('exp-1', undefined, now + 86400 * 5);
+      runtime.vault.setTemporal('exp-2', undefined, now + 86400 * 60);
+
+      const result = (await findOp('vault_find_expiring').handler({
+        withinDays: 10,
+      })) as { entries: unknown[]; count: number };
+      expect(result.count).toBe(1);
+    });
+  });
+
+  // ─── vault_find_expired ─────────────────────────────────────────
+
+  describe('vault_find_expired', () => {
+    it('should find expired entries', async () => {
+      const now = Math.floor(Date.now() / 1000);
+      runtime.vault.seed([makeEntry({ id: 'past-1' }), makeEntry({ id: 'past-2' })]);
+      runtime.vault.setTemporal('past-1', undefined, now - 86400);
+      runtime.vault.setTemporal('past-2', undefined, now + 86400);
+
+      const result = (await findOp('vault_find_expired').handler({})) as {
+        entries: unknown[];
+        count: number;
+      };
+      expect(result.count).toBe(1);
+    });
   });
 });

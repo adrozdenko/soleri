@@ -50,7 +50,10 @@
     "toolchain",
     "tsconfig",
     "tsbuildinfo",
+    "unixepoch",
     "upsert",
+    "antipattern",
+    "antipatterns",
     "vitest",
     "wcag",
     "windsurfrules"

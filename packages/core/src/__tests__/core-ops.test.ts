@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 191 ops', () => {
-    expect(ops.length).toBe(191);
+  it('should return 196 ops', () => {
+    expect(ops.length).toBe(196);
   });
 
   it('should have all expected op names', () => {
@@ -78,6 +78,8 @@ describe('createCoreOps', () => {
     expect(names).toContain('brain_promote_proposals');
     expect(names).toContain('brain_lifecycle');
     expect(names).toContain('brain_reset_extracted');
+    // Brain decay report (#89)
+    expect(names).toContain('brain_decay_report');
     // Curator
     expect(names).toContain('curator_status');
     expect(names).toContain('curator_detect_duplicates');
@@ -136,7 +138,7 @@ describe('createCoreOps', () => {
     expect(names).toContain('memory_deduplicate');
     expect(names).toContain('memory_topics');
     expect(names).toContain('memory_by_project');
-    // Vault Extra (12)
+    // Vault Extra (12 + 3 temporal)
     expect(names).toContain('vault_get');
     expect(names).toContain('vault_update');
     expect(names).toContain('vault_remove');
@@ -149,6 +151,10 @@ describe('createCoreOps', () => {
     expect(names).toContain('vault_seed');
     expect(names).toContain('vault_backup');
     expect(names).toContain('vault_age_report');
+    // #89: Bi-temporal
+    expect(names).toContain('vault_set_temporal');
+    expect(names).toContain('vault_find_expiring');
+    expect(names).toContain('vault_find_expired');
     // Admin (8)
     expect(names).toContain('admin_health');
     expect(names).toContain('admin_tool_list');
@@ -194,11 +200,13 @@ describe('createCoreOps', () => {
     expect(names).toContain('capture_quick');
     expect(names).toContain('search_intelligent');
     expect(names).toContain('search_feedback');
-    // Curator Extra (4)
+    // Curator Extra (4 + 1 hybrid)
     expect(names).toContain('curator_entry_history');
     expect(names).toContain('curator_record_snapshot');
     expect(names).toContain('curator_queue_stats');
     expect(names).toContain('curator_enrich');
+    // #36: Hybrid contradiction detection
+    expect(names).toContain('curator_hybrid_contradictions');
     // Project (12)
     expect(names).toContain('project_get');
     expect(names).toContain('project_list');

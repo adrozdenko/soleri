@@ -131,6 +131,8 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'brain_promote_proposals',
         'brain_lifecycle',
         'brain_reset_extracted',
+        // Brain decay report (#89) — 1
+        'brain_decay_report',
         // Cognee ops — 5
         'cognee_status',
         'cognee_search',
@@ -222,6 +224,10 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'knowledge_health',
         'knowledge_merge',
         'knowledge_reorganize',
+        // Bi-temporal vault ops (#89) — 3
+        'vault_set_temporal',
+        'vault_find_expiring',
+        'vault_find_expired',
         // Admin ops — 8
         'admin_health',
         'admin_tool_list',
@@ -293,11 +299,13 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'admin_validate_instructions',
         // Hot reload (#63)
         'admin_hot_reload',
-        // Curator Extra ops — 4
+        // Curator Extra ops — 5
         'curator_entry_history',
         'curator_record_snapshot',
         'curator_queue_stats',
         'curator_enrich',
+        // Hybrid contradiction detection (#36) — 1
+        'curator_hybrid_contradictions',
         // Project ops — 12
         'project_get',
         'project_list',

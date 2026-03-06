@@ -60,24 +60,24 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Planner — multi-step task tracking
   const planner = new Planner(plansPath);
 
-  // Brain — intelligence layer (TF-IDF scoring, auto-tagging, dedup)
-  const brain = new Brain(vault);
-
-  // Brain Intelligence — pattern strengths, session knowledge, intelligence pipeline
-  const brainIntelligence = new BrainIntelligence(vault, brain);
-
-  // Curator — vault self-maintenance (dedup, contradictions, grooming, health)
-  const curator = new Curator(vault);
-
-  // Governance — policy engine + proposal tracker for gated knowledge capture
-  const governance = new Governance(vault);
-
   // Cognee — vector search client (graceful degradation if Cognee is down)
   const cogneePartial: Partial<import('../cognee/types.js').CogneeConfig> = { dataset: agentId };
   if (process.env.COGNEE_BASE_URL) cogneePartial.baseUrl = process.env.COGNEE_BASE_URL;
   if (process.env.COGNEE_API_TOKEN) cogneePartial.apiToken = process.env.COGNEE_API_TOKEN;
   if (process.env.COGNEE_DATASET) cogneePartial.dataset = process.env.COGNEE_DATASET;
   const cognee = new CogneeClient(cogneePartial);
+
+  // Brain — intelligence layer (TF-IDF scoring, auto-tagging, dedup)
+  const brain = new Brain(vault, cognee);
+
+  // Brain Intelligence — pattern strengths, session knowledge, intelligence pipeline
+  const brainIntelligence = new BrainIntelligence(vault, brain);
+
+  // Curator — vault self-maintenance (dedup, contradictions, grooming, health)
+  const curator = new Curator(vault, cognee);
+
+  // Governance — policy engine + proposal tracker for gated knowledge capture
+  const governance = new Governance(vault);
 
   // Loop Manager — iterative validation loop tracking (in-memory, session-scoped)
   const loop = new LoopManager();

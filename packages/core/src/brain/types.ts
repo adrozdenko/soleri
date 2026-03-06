@@ -6,7 +6,7 @@ export interface ScoringWeights {
   semantic: number;
   vector: number;
   severity: number;
-  recency: number;
+  temporalDecay: number;
   tagOverlap: number;
   domainMatch: number;
 }
@@ -15,7 +15,7 @@ export interface ScoreBreakdown {
   semantic: number;
   vector: number;
   severity: number;
-  recency: number;
+  temporalDecay: number;
   tagOverlap: number;
   domainMatch: number;
   total: number;

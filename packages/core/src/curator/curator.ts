@@ -1,5 +1,6 @@
 import type { Vault } from '../vault/vault.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import type { CogneeClient } from '../cognee/client.js';
 import {
   tokenize,
   calculateTfIdf,
@@ -49,9 +50,11 @@ const DEFAULT_TAG_ALIASES: Array<[string, string]> = [
 
 export class Curator {
   private vault: Vault;
+  private cognee: CogneeClient | undefined;
 
-  constructor(vault: Vault) {
+  constructor(vault: Vault, cognee?: CogneeClient) {
     this.vault = vault;
+    this.cognee = cognee;
     this.initializeTables();
     this.seedDefaultAliases();
   }
@@ -376,6 +379,85 @@ export class Curator {
       | Record<string, unknown>
       | undefined;
     return row ? this.rowToContradiction(row) : null;
+  }
+
+  async detectContradictionsHybrid(threshold?: number): Promise<{
+    contradictions: Contradiction[];
+    cogneeAvailable: boolean;
+    method: 'hybrid' | 'tfidf-only';
+  }> {
+    const effectiveThreshold = threshold ?? DEFAULT_CONTRADICTION_THRESHOLD;
+    const entries = this.vault.list({ limit: 100000 });
+    const antipatterns = entries.filter((e) => e.type === 'anti-pattern');
+    const patterns = entries.filter((e) => e.type === 'pattern');
+
+    if (antipatterns.length === 0 || patterns.length === 0) {
+      return { contradictions: [], cogneeAvailable: false, method: 'tfidf-only' };
+    }
+
+    const vocabulary = this.buildVocabulary(entries);
+    const db = this.vault.getDb();
+    const detected: Contradiction[] = [];
+
+    const insertStmt = db.prepare(
+      `INSERT OR IGNORE INTO curator_contradictions (pattern_id, antipattern_id, similarity)
+       VALUES (?, ?, ?)`,
+    );
+
+    const cogneeAvailable = this.cognee?.isAvailable ?? false;
+
+    for (const ap of antipatterns) {
+      let candidates: IntelligenceEntry[];
+      try {
+        const searchResults = this.vault.search(ap.title, { type: 'pattern', limit: 20 });
+        candidates = searchResults.length > 0 ? searchResults.map((r) => r.entry) : patterns;
+      } catch {
+        candidates = patterns;
+      }
+
+      const apText = [ap.title, ap.description, ap.context ?? ''].join(' ');
+      const apVec = calculateTfIdf(tokenize(apText), vocabulary);
+
+      for (const pattern of candidates) {
+        const pText = [pattern.title, pattern.description, pattern.context ?? ''].join(' ');
+        const pVec = calculateTfIdf(tokenize(pText), vocabulary);
+        const tfidfScore = cosineSimilarity(apVec, pVec);
+
+        let finalScore = tfidfScore;
+        if (cogneeAvailable && this.cognee) {
+          try {
+            const cogneeResults = await this.cognee.search(`${ap.title} ${pattern.title}`, {
+              limit: 5,
+            });
+            const cogneeScore =
+              cogneeResults.length > 0
+                ? cogneeResults.reduce((sum, r) => sum + r.score, 0) / cogneeResults.length
+                : 0;
+            finalScore = 0.6 * tfidfScore + 0.4 * cogneeScore;
+          } catch {
+            finalScore = tfidfScore;
+          }
+        }
+
+        if (finalScore >= effectiveThreshold) {
+          const result = insertStmt.run(pattern.id, ap.id, finalScore);
+          if (result.changes > 0) {
+            const row = db
+              .prepare(
+                'SELECT * FROM curator_contradictions WHERE pattern_id = ? AND antipattern_id = ?',
+              )
+              .get(pattern.id, ap.id) as Record<string, unknown>;
+            detected.push(this.rowToContradiction(row));
+          }
+        }
+      }
+    }
+
+    return {
+      contradictions: detected,
+      cogneeAvailable,
+      method: cogneeAvailable ? 'hybrid' : 'tfidf-only',
+    };
   }
 
   // ─── Grooming ───────────────────────────────────────────────────

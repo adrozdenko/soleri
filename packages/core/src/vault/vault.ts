@@ -148,6 +148,20 @@ export class Vault {
       CREATE INDEX IF NOT EXISTS idx_brain_feedback_query ON brain_feedback(query);
     `);
     this.migrateBrainSchema();
+    this.migrateTemporalSchema();
+  }
+
+  private migrateTemporalSchema(): void {
+    try {
+      this.provider.run('ALTER TABLE entries ADD COLUMN valid_from INTEGER');
+    } catch {
+      // Column already exists
+    }
+    try {
+      this.provider.run('ALTER TABLE entries ADD COLUMN valid_until INTEGER');
+    } catch {
+      // Column already exists
+    }
   }
 
   private migrateBrainSchema(): void {
@@ -194,11 +208,11 @@ export class Vault {
 
   seed(entries: IntelligenceEntry[]): number {
     const sql = `
-      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to)
-      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo)
+      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until)
+      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil)
       ON CONFLICT(id) DO UPDATE SET type=excluded.type,domain=excluded.domain,title=excluded.title,severity=excluded.severity,
         description=excluded.description,context=excluded.context,example=excluded.example,counter_example=excluded.counter_example,
-        why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,updated_at=unixepoch()
+        why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,valid_from=excluded.valid_from,valid_until=excluded.valid_until,updated_at=unixepoch()
     `;
     return this.provider.transaction(() => {
       let count = 0;
@@ -216,6 +230,8 @@ export class Vault {
           why: entry.why ?? null,
           tags: JSON.stringify(entry.tags),
           appliesTo: JSON.stringify(entry.appliesTo ?? []),
+          validFrom: entry.validFrom ?? null,
+          validUntil: entry.validUntil ?? null,
         });
         count++;
       }
@@ -225,7 +241,13 @@ export class Vault {
 
   search(
     query: string,
-    options?: { domain?: string; type?: string; severity?: string; limit?: number },
+    options?: {
+      domain?: string;
+      type?: string;
+      severity?: string;
+      limit?: number;
+      includeExpired?: boolean;
+    },
   ): SearchResult[] {
     const limit = options?.limit ?? 10;
     const filters: string[] = [];
@@ -241,6 +263,12 @@ export class Vault {
     if (options?.severity) {
       filters.push('e.severity = @severity');
       fp.severity = options.severity;
+    }
+    if (!options?.includeExpired) {
+      const now = Math.floor(Date.now() / 1000);
+      filters.push('(e.valid_until IS NULL OR e.valid_until > @now)');
+      filters.push('(e.valid_from IS NULL OR e.valid_from <= @now)');
+      fp.now = now;
     }
     const wc = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
     try {
@@ -268,6 +296,7 @@ export class Vault {
     tags?: string[];
     limit?: number;
     offset?: number;
+    includeExpired?: boolean;
   }): IntelligenceEntry[] {
     const filters: string[] = [];
     const params: Record<string, unknown> = {};
@@ -289,6 +318,12 @@ export class Vault {
         return `tags LIKE @tag${i}`;
       });
       filters.push(`(${c.join(' OR ')})`);
+    }
+    if (!options?.includeExpired) {
+      const now = Math.floor(Date.now() / 1000);
+      filters.push('(valid_until IS NULL OR valid_until > @now)');
+      filters.push('(valid_from IS NULL OR valid_from <= @now)');
+      params.now = now;
     }
     const wc = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
     const rows = this.provider.all<Record<string, unknown>>(
@@ -333,6 +368,8 @@ export class Vault {
         | 'severity'
         | 'type'
         | 'domain'
+        | 'validFrom'
+        | 'validUntil'
       >
     >,
   ): IntelligenceEntry | null {
@@ -341,6 +378,43 @@ export class Vault {
     const merged: IntelligenceEntry = { ...existing, ...fields };
     this.seed([merged]);
     return this.get(id);
+  }
+
+  setTemporal(id: string, validFrom?: number, validUntil?: number): boolean {
+    const sets: string[] = [];
+    const params: Record<string, unknown> = { id };
+    if (validFrom !== undefined) {
+      sets.push('valid_from = @validFrom');
+      params.validFrom = validFrom;
+    }
+    if (validUntil !== undefined) {
+      sets.push('valid_until = @validUntil');
+      params.validUntil = validUntil;
+    }
+    if (sets.length === 0) return false;
+    sets.push('updated_at = unixepoch()');
+    return (
+      this.provider.run(`UPDATE entries SET ${sets.join(', ')} WHERE id = @id`, params).changes > 0
+    );
+  }
+
+  findExpiring(withinDays: number): IntelligenceEntry[] {
+    const now = Math.floor(Date.now() / 1000);
+    const cutoff = now + withinDays * 86400;
+    const rows = this.provider.all<Record<string, unknown>>(
+      'SELECT * FROM entries WHERE valid_until IS NOT NULL AND valid_until > @now AND valid_until <= @cutoff ORDER BY valid_until ASC',
+      { now, cutoff },
+    );
+    return rows.map(rowToEntry);
+  }
+
+  findExpired(limit: number = 50): IntelligenceEntry[] {
+    const now = Math.floor(Date.now() / 1000);
+    const rows = this.provider.all<Record<string, unknown>>(
+      'SELECT * FROM entries WHERE valid_until IS NOT NULL AND valid_until <= @now ORDER BY valid_until DESC LIMIT @limit',
+      { now, limit },
+    );
+    return rows.map(rowToEntry);
   }
 
   bulkRemove(ids: string[]): number {
@@ -818,6 +892,8 @@ function rowToEntry(row: Record<string, unknown>): IntelligenceEntry {
     why: (row.why as string) ?? undefined,
     tags: JSON.parse((row.tags as string) || '[]'),
     appliesTo: JSON.parse((row.applies_to as string) || '[]'),
+    validFrom: (row.valid_from as number) ?? undefined,
+    validUntil: (row.valid_until as number) ?? undefined,
   };
 }
 

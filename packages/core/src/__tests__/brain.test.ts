@@ -140,7 +140,7 @@ describe('Brain', () => {
       expect(breakdown).toHaveProperty('semantic');
       expect(breakdown).toHaveProperty('vector');
       expect(breakdown).toHaveProperty('severity');
-      expect(breakdown).toHaveProperty('recency');
+      expect(breakdown).toHaveProperty('temporalDecay');
       expect(breakdown).toHaveProperty('tagOverlap');
       expect(breakdown).toHaveProperty('domainMatch');
       expect(breakdown).toHaveProperty('total');
@@ -584,7 +584,7 @@ describe('Brain', () => {
         stats.weights.semantic +
         stats.weights.vector +
         stats.weights.severity +
-        stats.weights.recency +
+        stats.weights.temporalDecay +
         stats.weights.tagOverlap +
         stats.weights.domainMatch;
       expect(sum).toBeCloseTo(1.0, 5);
@@ -881,7 +881,7 @@ describe('Brain', () => {
       expect(results).toEqual([]);
     });
 
-    it('should fall back to severity + recency scoring when vocabulary is empty', async () => {
+    it('should fall back to severity + temporalDecay scoring when vocabulary is empty', async () => {
       vault.seed([
         makeEntry({
           id: 'gd-1',
