@@ -38,10 +38,17 @@ export default defineConfig({
           label: 'Guides',
           translations: { uk: 'Посібники', it: 'Guide' },
           items: [
-            { slug: 'docs/guides/knowledge-driven-development' },
             { slug: 'docs/guides/first-10-minutes' },
             { slug: 'docs/guides/knowledge-base' },
             { slug: 'docs/guides/code-review' },
+            { slug: 'docs/guides/dashboard' },
+          ],
+        },
+        {
+          label: 'Deep Dives',
+          translations: { uk: 'Поглиблено', it: 'Approfondimenti' },
+          items: [
+            { slug: 'docs/guides/knowledge-driven-development' },
             { slug: 'docs/guides/planning' },
             { slug: 'docs/guides/loops' },
             { slug: 'docs/guides/cross-project-knowledge' },
@@ -50,7 +57,6 @@ export default defineConfig({
             { slug: 'docs/guides/team-workflows' },
             { slug: 'docs/guides/under-the-hood' },
             { slug: 'docs/guides/security' },
-            { slug: 'docs/guides/dashboard' },
           ],
         },
         {
@@ -60,12 +66,8 @@ export default defineConfig({
             { slug: 'docs/capabilities' },
             { slug: 'docs/api-reference' },
             { slug: 'docs/cli-reference' },
+            { slug: 'docs/extending' },
           ],
-        },
-        {
-          label: 'Advanced',
-          translations: { uk: 'Додатково', it: 'Avanzato' },
-          items: [{ slug: 'docs/extending' }],
         },
       ],
       customCss: ['./src/styles/docs-custom.css'],
