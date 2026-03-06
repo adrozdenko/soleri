@@ -3,7 +3,7 @@ title: 'UX Workflow'
 description: 'Search → Plan → Work → Capture → Complete for design decisions, user experience, and interaction patterns.'
 ---
 
-This is the [development workflow](/docs/guides/workflow/) applied to UX work — design decisions, interaction patterns, usability standards, and design system governance.
+This is the [development workflow](/docs/guides/workflow/) applied to UX work — design decisions, interaction patterns, and usability standards.
 
 ## Search: what design decisions exist?
 

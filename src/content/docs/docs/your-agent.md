@@ -63,7 +63,7 @@ Multi-step procedures with validation criteria at each step. _[Details →](/doc
 
 ```
 "List available playbooks"
-"Run the component review playbook on this code"
+"Run the API endpoint review playbook on this code"
 "Create a playbook called 'Database Migration' with steps: ..."
 ```
 

@@ -11,24 +11,25 @@ If you followed the previous tutorials, you already have patterns in your vault.
 
 > **You:** "Capture these patterns:
 >
-> 1. Critical: never use hardcoded hex colors — always use CSS custom properties
-> 2. Critical: all interactive elements must be at least 44px touch target on mobile
-> 3. Warning: prefer semantic HTML elements over divs with ARIA roles"
->    **Agent:** _Captured 3 patterns._
+> 1. Critical: all API errors must return { error, code, details } format
+> 2. Critical: never catch exceptions without logging them
+> 3. Warning: prefer early returns over deeply nested if-else blocks"
+>
+> **Agent:** _Captured 3 patterns._
 
 These are now your standards. Your agent will reference them whenever they're relevant.
 
 ## Step 2: Ask for a review
 
-You just built a button component. Ask your agent to look at it:
+You just wrote a new endpoint. Ask your agent to look at it:
 
-> **You:** "Review this component for design system compliance:
-> `.btn { background: #3b82f6; color: white; padding: 6px 12px; font-size: 14px; }`"
+> **You:** "Review this handler:
+> `app.post('/users', (req, res) => { try { const user = createUser(req.body); res.json(user); } catch (e) { res.status(500).json({ message: 'Something went wrong' }); } })`"
 >
 > **Agent:** _Found 2 issues based on your captured patterns:_
 >
-> 1. **Hardcoded color** — `#3b82f6` should be `var(--color-primary)`. Your rule: always use CSS custom properties.
-> 2. **Touch target too small** — 6px padding on 14px text gives roughly 26px height. Your rule: minimum 44px for interactive elements on mobile.
+> 1. **Error format mismatch** — response uses `{ message }` but your rule requires `{ error, code, details }`.
+> 2. **Silent exception** — the catch block doesn't log the error. Your rule: never catch exceptions without logging them.
 
 The agent didn't use generic rules — it used yours. The ones you captured because they matter to your project.
 
@@ -36,43 +37,42 @@ The agent didn't use generic rules — it used yours. The ones you captured beca
 
 Fix the issues and capture what you learned:
 
-> **You:** "Capture this: when calculating touch targets, account for both padding and line-height. A 14px font with 1.5 line-height and 12px vertical padding gives 45px — just above the 44px minimum."
+> **You:** "Capture this: when handling database errors in API routes, always distinguish between validation errors (400) and internal errors (500). Include the failed field in details for validation errors so the frontend can highlight it."
 >
-> **Agent:** _Captured: "Touch Target Calculation Method"_
+> **Agent:** _Captured: "Database Error Handling in API Routes"_
 
-Next time someone on your team wonders "how much padding do I need?", the agent has the answer — with the math.
+Next time someone on your team writes an endpoint with database operations, the agent has the answer — with specific guidance on error categorization.
 
 ## Step 4: Create a playbook
 
-You keep checking the same things for every component. Turn that into a playbook — a repeatable checklist your agent can run:
+You keep checking the same things for every endpoint. Turn that into a playbook — a repeatable checklist your agent can run:
 
-> **You:** "Create a playbook called Component Review with these steps:
+> **You:** "Create a playbook called API Endpoint Review with these steps:
 >
-> 1. Check all colors use CSS custom properties (validate: no hex values in styles)
-> 2. Verify touch targets are at least 44px (validate: padding + line-height calculation)
-> 3. Check for semantic HTML (validate: no div-with-role where a native element works)
-> 4. Verify spacing uses the design grid (validate: values are multiples of 4 or 8)"
->    **Agent:** _Created playbook: "Component Review" — 4 steps with validation criteria._
+> 1. Check error responses match { error, code, details } format (validate: consistent shape)
+> 2. Verify all exceptions are logged before returning (validate: no silent catches)
+> 3. Check input validation happens before business logic (validate: early validation)
+> 4. Verify response status codes are appropriate (validate: not everything is 200 or 500)"
+>
+> **Agent:** _Created playbook: "API Endpoint Review" — 4 steps with validation criteria._
 
 A playbook is different from individual patterns — it's a step-by-step procedure with specific things to check at each step.
 
 ## Step 5: Run the playbook
 
-Next time you build a component, run it:
+Next time you build an endpoint, run it:
 
-> **You:** "Run the Component Review playbook on this card component:
-> `.card { background: var(--color-surface); padding: 16px; border-radius: 8px; }`
-> `.card-title { font-size: 18px; color: var(--color-text); }`
-> `.card-action { padding: 8px 16px; font-size: 14px; }`"
+> **You:** "Run the API Endpoint Review playbook on this handler:
+> `app.get('/teams/:id', async (req, res) => { const team = await db.teams.find(req.params.id); if (!team) return res.status(404).json({ error: 'Not found', code: 404 }); res.json(team); })`"
 >
-> **Agent:** _Running Component Review..._
-> Step 1: Colors — all using custom properties. **Pass.**
-> Step 2: Touch targets — `.card-action` is ~30px height. **Fail.** Increase vertical padding to 12px.
-> Step 3: Semantic HTML — can't verify from CSS alone, check your markup.
-> Step 4: Spacing — 16px, 8px are grid-aligned. **Pass.**
-> Result: 2 passed, 1 failed, 1 needs manual check.
+> **Agent:** _Running API Endpoint Review..._
+> Step 1: Error format — 404 response matches convention. **Pass.**
+> Step 2: Exception logging — no try/catch around database call. **Fail.** Database errors will crash the process.
+> Step 3: Input validation — no validation on `req.params.id`. **Fail.** Should validate it's a valid ID format.
+> Step 4: Status codes — 404 and 200 used correctly. **Pass.**
+> Result: 2 passed, 2 failed.
 
-Your agent just ran a design review using your team's exact standards. Not generic rules from the internet — your rules, built from your experience.
+Your agent just ran a code review using your team's exact standards. Not generic rules from the internet — your rules, built from your experience.
 
 ## How reviews use your knowledge
 
@@ -85,7 +85,7 @@ When you ask the agent to review code, here's what actually happens:
 
 The agent doesn't have opinions of its own. It checks your code against your rules — the ones you captured because they matter to your project. This is why building a good knowledge base makes reviews better over time. More patterns in the vault means more things the agent can catch.
 
-Playbooks take this further. When you run a playbook, each step triggers its own search against the vault. Step 1 might pull up color-related patterns, step 2 pulls up accessibility patterns, and so on. The playbook is the structure; the vault provides the intelligence.
+Playbooks take this further. When you run a playbook, each step triggers its own search against the vault. Step 1 might pull up error handling patterns, step 2 pulls up logging patterns, and so on. The playbook is the structure; the vault provides the intelligence.
 
 ## What you've built
 
@@ -95,7 +95,7 @@ You now have:
 - **Reviews** — your agent checks code against those rules, automatically
 - **Playbooks** — repeatable checklists for consistent quality
 
-Every pattern you capture makes reviews smarter. Every playbook you create saves time on the next component. The agent gets better because you're teaching it what matters to your project.
+Every pattern you capture makes reviews smarter. Every playbook you create saves time on the next review. The agent gets better because you're teaching it what matters to your project.
 
 ---
 

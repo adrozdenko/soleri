@@ -11,8 +11,8 @@ Soleri agents don't forget. They learn.
 
 You've been here before:
 
-- "We use CSS custom properties, not hex colors" — for the third time this week
-- "Our API errors follow this format..." — copy-pasting from a doc nobody maintains
+- "Our API errors must return { error, code, details }" — for the third time this week
+- "We always wrap external calls in a circuit breaker..." — copy-pasting from a doc nobody maintains
 - A new team member makes the same mistake you fixed last month, because the fix lives in your head
 
 Knowledge lives in people's heads, scattered docs, and Slack threads that nobody searches. When someone leaves, their knowledge leaves with them.

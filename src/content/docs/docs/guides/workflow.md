@@ -55,8 +55,8 @@ Work normally. The agent is there when you need it — ask questions, check patt
 
 During work, the agent is useful for:
 - **Checking decisions** — "Does this approach match our patterns?"
-- **Running reviews** — "Review this component against our standards"
-- **Running playbooks** — "Run the component review playbook on this code"
+- **Running reviews** — "Review this endpoint against our standards"
+- **Running playbooks** — "Run the API endpoint review playbook on this code"
 
 You don't have to use the agent for every line of code. Use it at decision points — when you're choosing an approach, when you're not sure about a convention, when you're done with a piece and want it checked.
 
