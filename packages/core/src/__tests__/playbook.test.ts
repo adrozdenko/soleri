@@ -1,8 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { Vault } from '../vault/vault.js';
 import { validatePlaybook, parsePlaybookFromEntry } from '../vault/playbook.js';
 import type { Playbook } from '../vault/playbook.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import { createAgentRuntime } from '../runtime/runtime.js';
+import { createCoreOps } from '../runtime/core-ops.js';
+import type { AgentRuntime, OpDefinition } from '../runtime/types.js';
 
 function makePlaybook(overrides: Partial<Playbook> = {}): Playbook {
   return {
@@ -161,5 +167,116 @@ describe('Vault playbook integration', () => {
     const results = vault.search('deploy checklist');
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].entry.id).toBe(pb.id);
+  });
+});
+
+describe('playbook_create op', () => {
+  let runtime: AgentRuntime;
+  let ops: OpDefinition[];
+  let plannerDir: string;
+
+  function findOp(name: string): OpDefinition {
+    const op = ops.find((o) => o.name === name);
+    if (!op) throw new Error(`Op "${name}" not found`);
+    return op;
+  }
+
+  beforeEach(() => {
+    plannerDir = join(tmpdir(), 'playbook-create-test-' + Date.now());
+    mkdirSync(plannerDir, { recursive: true });
+    runtime = createAgentRuntime({
+      agentId: 'test',
+      vaultPath: ':memory:',
+      plansPath: join(plannerDir, 'plans.json'),
+    });
+    ops = createCoreOps(runtime);
+  });
+
+  afterEach(() => {
+    runtime.close();
+    rmSync(plannerDir, { recursive: true, force: true });
+  });
+
+  it('should create a playbook and store it in the vault', async () => {
+    const result = (await findOp('playbook_create').handler({
+      title: 'PR Review',
+      domain: 'engineering',
+      description: 'Standard PR review procedure.',
+      steps: [
+        { title: 'Read diff', description: 'Review all changed files' },
+        { title: 'Run tests', description: 'Ensure CI passes', validation: 'All green' },
+        { title: 'Approve', description: 'Leave approval comment' },
+      ],
+      tags: ['review', 'pr'],
+    })) as { created: boolean; id: string; steps: number };
+
+    expect(result.created).toBe(true);
+    expect(result.steps).toBe(3);
+
+    // Verify it's in the vault
+    const entry = runtime.vault.get(result.id);
+    expect(entry).not.toBeNull();
+    expect(entry!.type).toBe('playbook');
+    expect(entry!.domain).toBe('engineering');
+
+    // Verify it parses back correctly
+    const playbook = parsePlaybookFromEntry(entry!);
+    expect(playbook).not.toBeNull();
+    expect(playbook!.steps).toHaveLength(3);
+    expect(playbook!.steps[0].order).toBe(1);
+    expect(playbook!.steps[2].order).toBe(3);
+  });
+
+  it('should reject a playbook with empty steps', async () => {
+    const result = (await findOp('playbook_create').handler({
+      title: 'Empty',
+      domain: 'test',
+      description: 'No steps.',
+      steps: [],
+      tags: [],
+    })) as { created: boolean; errors: string[] };
+
+    expect(result.created).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+
+  it('should reject a playbook with empty title', async () => {
+    const result = (await findOp('playbook_create').handler({
+      title: '',
+      domain: 'test',
+      description: 'Has steps but no title.',
+      steps: [{ title: 'Step 1', description: 'Do something' }],
+      tags: [],
+    })) as { created: boolean; errors: string[] };
+
+    expect(result.created).toBe(false);
+    expect(result.errors).toContain('Playbook title must not be empty');
+  });
+
+  it('should auto-generate ID when not provided', async () => {
+    const result = (await findOp('playbook_create').handler({
+      title: 'Auto ID Test',
+      domain: 'test',
+      description: 'Should get an auto ID.',
+      steps: [{ title: 'Step', description: 'Do it' }],
+      tags: [],
+    })) as { created: boolean; id: string };
+
+    expect(result.created).toBe(true);
+    expect(result.id).toMatch(/^playbook-test-/);
+  });
+
+  it('should use provided ID when given', async () => {
+    const result = (await findOp('playbook_create').handler({
+      id: 'my-custom-id',
+      title: 'Custom ID Test',
+      domain: 'test',
+      description: 'Has a custom ID.',
+      steps: [{ title: 'Step', description: 'Do it' }],
+      tags: [],
+    })) as { created: boolean; id: string };
+
+    expect(result.created).toBe(true);
+    expect(result.id).toBe('my-custom-id');
   });
 });

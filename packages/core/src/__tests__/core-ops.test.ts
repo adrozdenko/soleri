@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 149 ops', () => {
-    expect(ops.length).toBe(149);
+  it('should return 150 ops', () => {
+    expect(ops.length).toBe(150);
   });
 
   it('should have all expected op names', () => {
@@ -111,9 +111,10 @@ describe('createCoreOps', () => {
     expect(names).toContain('governance_stats');
     expect(names).toContain('governance_expire');
     expect(names).toContain('governance_dashboard');
-    // Playbook (2)
+    // Playbook (3)
     expect(names).toContain('playbook_list');
     expect(names).toContain('playbook_get');
+    expect(names).toContain('playbook_create');
     // Planning Extra (9)
     expect(names).toContain('plan_iterate');
     expect(names).toContain('plan_split');
