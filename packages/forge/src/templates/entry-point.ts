@@ -257,10 +257,23 @@ async function main(): Promise<void> {
     messages: [{ role: 'assistant' as const, content: { type: 'text' as const, text: getPersonaPrompt() } }],
   }));
 
-  registerAllFacades(server, allFacades);
+  // Hot ops — promoted to standalone MCP tools with full schema discovery
+  const hotOps = new Set([
+    'search_intelligent',
+    'capture_knowledge',
+    'orchestrate_plan',
+    'orchestrate_execute',
+    'orchestrate_complete',
+  ]);
+
+  registerAllFacades(server, allFacades, {
+    agentId: '${config.id}',
+    hotOps,
+    authPolicy: () => runtime.authPolicy,
+  });
 
   console.error(\`[\${tag}] \${PERSONA.name} — \${PERSONA.role}\`);
-  console.error(\`[\${tag}] Registered \${allFacades.length} facades with \${allFacades.reduce((sum, f) => sum + f.ops.length, 0)} operations\`);
+  console.error(\`[\${tag}] Registered \${allFacades.length} facades with \${allFacades.reduce((sum, f) => sum + f.ops.length, 0)} operations (\${hotOps.size} hot)\`);
 
   // ─── Transport + shutdown ──────────────────────────────────────
   const transport = new StdioServerTransport();

@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { z } from 'zod';
 import type { FacadeConfig, AuthPolicy } from '../facades/types.js';
 
-// Import the internal dispatchOp via registerFacade — we test through the public API
-// by creating a mock McpServer that captures the registered handler.
-import { registerFacade } from '../facades/facade-factory.js';
+import { registerFacade, registerAllFacades } from '../facades/facade-factory.js';
 
 function createTestFacade(): FacadeConfig {
   return {
@@ -168,5 +167,105 @@ describe('facade-factory auth enforcement', () => {
     // Switch to enforce at runtime
     mode = 'enforce';
     expect((await callOp(handler, 'write_op')).success).toBe(false);
+  });
+});
+
+describe('hot ops promotion', () => {
+  function createFacadeWithSchema(): FacadeConfig {
+    return {
+      name: 'test_facade',
+      description: 'Test facade',
+      ops: [
+        {
+          name: 'search',
+          description: 'Search knowledge',
+          auth: 'read',
+          hot: true,
+          schema: z.object({ query: z.string(), limit: z.number().optional() }),
+          handler: async (params) => ({ results: [], query: params.query }),
+        },
+        {
+          name: 'delete',
+          description: 'Delete entry',
+          auth: 'admin',
+          handler: async () => ({ deleted: true }),
+        },
+      ],
+    };
+  }
+
+  it('registers hot ops as standalone MCP tools', () => {
+    const registered: Array<{ name: string; description: string }> = [];
+    const mockServer = {
+      tool: (name: string, desc: string, _schema: unknown, _handler: unknown) => {
+        registered.push({ name, description: desc });
+      },
+    };
+
+    registerAllFacades(mockServer as never, [createFacadeWithSchema()], {
+      agentId: 'myagent',
+      hotOps: ['search'],
+    });
+
+    const names = registered.map((r) => r.name);
+    // Facade is registered
+    expect(names).toContain('test_facade');
+    // Hot op is promoted to standalone tool
+    expect(names).toContain('myagent_search');
+    // Non-hot op is NOT promoted
+    expect(names).not.toContain('myagent_delete');
+  });
+
+  it('hot flag on op definition also triggers promotion', () => {
+    const registered: string[] = [];
+    const mockServer = {
+      tool: (name: string) => {
+        registered.push(name);
+      },
+    };
+
+    registerAllFacades(mockServer as never, [createFacadeWithSchema()], {
+      agentId: 'myagent',
+    });
+
+    // op.hot = true on 'search' should promote it even without hotOps list
+    expect(registered).toContain('myagent_search');
+  });
+
+  it('hot ops execute correctly with full schema validation', async () => {
+    let capturedHandler: ((params: unknown) => Promise<unknown>) | null = null;
+    const mockServer = {
+      tool: (name: string, _desc: string, _schema: unknown, handler: unknown) => {
+        if (name === 'myagent_search') {
+          capturedHandler = handler as typeof capturedHandler;
+        }
+      },
+    };
+
+    registerAllFacades(mockServer as never, [createFacadeWithSchema()], {
+      agentId: 'myagent',
+    });
+
+    expect(capturedHandler).not.toBeNull();
+    const result = (await capturedHandler!({ query: 'test', limit: 5 })) as {
+      content: Array<{ text: string }>;
+    };
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.success).toBe(true);
+    expect(parsed.data.query).toBe('test');
+  });
+
+  it('no agentId means no hot ops promoted', () => {
+    const registered: string[] = [];
+    const mockServer = {
+      tool: (name: string) => {
+        registered.push(name);
+      },
+    };
+
+    registerAllFacades(mockServer as never, [createFacadeWithSchema()]);
+
+    // Only facade, no standalone tools
+    expect(registered).toEqual(['test_facade']);
   });
 });

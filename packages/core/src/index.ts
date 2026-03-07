@@ -243,6 +243,7 @@ export { wrapWithMiddleware } from './extensions/index.js';
 
 // ─── Facades ─────────────────────────────────────────────────────────
 export { registerFacade, registerAllFacades } from './facades/facade-factory.js';
+export type { RegisterOptions } from './facades/facade-factory.js';
 export { facadeInputSchema, AUTH_LEVEL_RANK } from './facades/types.js';
 export type {
   OpHandler,

@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import type { FacadeConfig, FacadeResponse, AuthPolicy } from './types.js';
+import type { FacadeConfig, FacadeResponse, AuthPolicy, OpDefinition } from './types.js';
 import { AUTH_LEVEL_RANK } from './types.js';
 
 export function registerFacade(
@@ -97,12 +97,101 @@ async function dispatchOp(
   }
 }
 
+/**
+ * Register a single hot op as a standalone MCP tool with full schema discovery.
+ * The op remains in its facade too — this is additive, not a move.
+ */
+function registerHotOp(
+  server: McpServer,
+  agentId: string,
+  facadeName: string,
+  op: OpDefinition,
+  authPolicy?: () => AuthPolicy,
+): void {
+  const toolName = `${agentId}_${op.name}`;
+  const schema = op.schema
+    ? (op.schema as z.ZodObject<z.ZodRawShape>).shape
+      ? (op.schema as z.ZodObject<z.ZodRawShape>)
+      : z.object({ params: op.schema })
+    : z.object({});
+
+  server.tool(
+    toolName,
+    op.description,
+    schema instanceof z.ZodObject ? schema.shape : {},
+    async (params): Promise<{ content: Array<{ type: 'text'; text: string }> }> => {
+      const policy = authPolicy?.();
+      const authResult = checkAuth(op.name, op.auth, facadeName, policy);
+      if (authResult) {
+        return { content: [{ type: 'text' as const, text: JSON.stringify(authResult, null, 2) }] };
+      }
+
+      try {
+        let validatedParams = params as Record<string, unknown>;
+        if (op.schema) {
+          const result = op.schema.safeParse(params);
+          if (!result.success) {
+            const response: FacadeResponse = {
+              success: false,
+              error: `Invalid params: ${result.error.message}`,
+              op: op.name,
+              facade: facadeName,
+            };
+            return {
+              content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }],
+            };
+          }
+          validatedParams = result.data as Record<string, unknown>;
+        }
+
+        const data = await op.handler(validatedParams);
+        const response: FacadeResponse = { success: true, data, op: op.name, facade: facadeName };
+        return { content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }] };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const response: FacadeResponse = {
+          success: false,
+          error: message,
+          op: op.name,
+          facade: facadeName,
+        };
+        return { content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }] };
+      }
+    },
+  );
+}
+
+export interface RegisterOptions {
+  authPolicy?: () => AuthPolicy;
+  /** Agent ID prefix for hot op tool names */
+  agentId?: string;
+  /** Op names to promote to standalone MCP tools (requires agentId) */
+  hotOps?: Set<string> | string[];
+}
+
 export function registerAllFacades(
   server: McpServer,
   facades: FacadeConfig[],
-  authPolicy?: () => AuthPolicy,
+  authPolicyOrOptions?: (() => AuthPolicy) | RegisterOptions,
 ): void {
+  // Support both legacy signature and new options
+  const opts: RegisterOptions =
+    typeof authPolicyOrOptions === 'function'
+      ? { authPolicy: authPolicyOrOptions }
+      : (authPolicyOrOptions ?? {});
+
+  const hotSet = opts.hotOps instanceof Set ? opts.hotOps : new Set(opts.hotOps ?? []);
+
   for (const facade of facades) {
-    registerFacade(server, facade, authPolicy);
+    registerFacade(server, facade, opts.authPolicy);
+
+    // Promote hot ops to standalone tools
+    if (opts.agentId) {
+      for (const op of facade.ops) {
+        if (op.hot || hotSet.has(op.name)) {
+          registerHotOp(server, opts.agentId, facade.name, op, opts.authPolicy);
+        }
+      }
+    }
   }
 }

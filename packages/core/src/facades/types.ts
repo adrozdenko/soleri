@@ -32,6 +32,8 @@ export interface OpDefinition {
   auth: AuthLevel;
   handler: OpHandler;
   schema?: z.ZodType;
+  /** Promote to a first-class MCP tool with full schema discovery. */
+  hot?: boolean;
 }
 
 /** Facade configuration — one MCP tool */
