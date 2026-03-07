@@ -9,7 +9,7 @@ const content: Record<Locale, GettingStartedContent> = {
       'From zero to a learning system in five minutes. Install Soleri, create your first agent, and start compounding knowledge.',
     eyebrow: 'From zero to a learning system in five minutes',
     heroTitle: 'Your first agent starts smart. It only gets smarter.',
-    heroSubtitle: 'Five steps. No configuration files to write. No API keys required.',
+    heroSubtitle: 'Three steps. No configuration files to write. No API keys required.',
     steps: [
       {
         title: 'Install',
@@ -19,64 +19,43 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Create your agent',
-        text: 'Give it a name and connect a vault. Soleri sets up domains, installs starter knowledge, and scans your project.',
+        text: 'Answer a few questions — name, role, domains. Soleri scaffolds the project, installs dependencies, builds, and registers it as a Claude Code MCP server. Ready to use.',
         code: `<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="ok">✓</span> Created agent config       <span class="cmt">~/.soleri/agents/my-agent/</span>
-<span class="ok">✓</span> Connected vault            <span class="val">starter knowledge: 34 patterns</span>
-<span class="ok">✓</span> Scanned project            <span class="val">React + TypeScript detected</span>
-<span class="ok">✓</span> Auto-captured              <span class="val">12 codebase patterns</span>
-<span class="ok">✓</span> Vault ready                <span class="val">46 entries, vectorized</span>
+<span class="cmt">◆ Display name:        My Agent</span>
+<span class="cmt">◆ Role:                Frontend architecture advisor</span>
+<span class="cmt">◆ Domains:             api-design, security, testing</span>
 
-<span class="cmt">Agent "my-agent" is ready.</span>`,
+<span class="ok">✓</span> Scaffolded             <span class="val">16 files, 2 facades, 66 ops</span>
+<span class="ok">✓</span> Built                  <span class="val">npm install + npm run build</span>
+<span class="ok">✓</span> MCP registered         <span class="cmt">~/.claude.json</span>
+<span class="ok">✓</span> 17 skills installed    <span class="cmt">TDD, debugging, planning, vault</span>
+
+<span class="cmt">Restart Claude Code, then say "Hello, My Agent!"</span>`,
         isInstallCmd: false,
       },
       {
-        title: 'Feed it knowledge',
-        text: "Add knowledge to your agent's vault. Install community packs, connect a team vault, or let the brain capture patterns from your work.",
-        code: `<span class="cmt"># Add a community knowledge pack</span>
-<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
+        title: 'Activate and grow',
+        text: 'Say hello in Claude Code. Your agent activates, captures knowledge as you work, and gets smarter over time. Add domains, install knowledge packs, or let the brain learn from your sessions.',
+        code: `<span class="cmt"># In Claude Code — activate the persona</span>
+<span class="prompt">></span> <span class="cmd">Hello, My Agent!</span>
 
-<span class="ok">✓</span> Installed react-patterns    <span class="val">v0.3.0</span>
-<span class="ok">✓</span> Added 28 patterns to vault
-<span class="ok">✓</span> Vectorized and graph-connected
+<span class="ok">✓</span> Persona activated      <span class="val">My Agent — Frontend architecture advisor</span>
+<span class="ok">✓</span> Vault ready            <span class="val">empty — will grow as you work</span>
+<span class="ok">✓</span> Brain tracking         <span class="val">enabled — captures patterns from sessions</span>
 
-<span class="cmt"># The brain captures patterns from your work</span>
-<span class="warn">!</span> You've replaced <span class="val">bg-blue-500</span> with <span class="ok">bg-primary</span> 3 times.
-  Capture as pattern? <span class="key">[y/n]</span>
+<span class="cmt"># Add more domains any time</span>
+<span class="prompt">$</span> <span class="cmd">soleri add-domain</span> <span class="arg">performance</span>
 
-<span class="ok">✓</span> Captured: <span class="val">semantic-token-enforcement</span>`,
-        isInstallCmd: false,
-      },
-      {
-        title: 'Extend',
-        text: "Connect your team's shared vault or add more knowledge packs. Knowledge stacks.",
-        code: `<span class="cmt"># Connect your team's shared vault</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>
+<span class="ok">✓</span> Created domain         <span class="val">performance</span>
+<span class="ok">✓</span> Rebuilt agent
 
-<span class="ok">✓</span> Connected team vault      <span class="val">142 entries</span>
-<span class="ok">✓</span> Search priority: agent → project → team
+<span class="cmt"># Check everything is healthy</span>
+<span class="prompt">$</span> <span class="cmd">soleri doctor</span>
 
-<span class="cmt"># Check vault status</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">status</span>
-
-<span class="ok">Entries:</span>     <span class="val">216</span>     <span class="cmt">vectorized, graph-connected</span>
-<span class="ok">Domains:</span>     <span class="val">3</span>       <span class="cmt">frontend, backend, cross-cutting</span>
-<span class="ok">Graph:</span>       <span class="val">412 edges</span>`,
-        isInstallCmd: false,
-      },
-      {
-        title: 'Health check',
-        text: 'Run doctor to verify everything is connected and up to date.',
-        code: `<span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
-
-<span class="ok">✓</span> Engine          <span class="val">v1.2.0</span>   <span class="cmt">up to date</span>
-<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>   <span class="cmt">up to date</span>
-<span class="ok">✓</span> domain-review   <span class="val">v0.5.0</span>   <span class="cmt">up to date</span>
-<span class="ok">✓</span> my-agent        <span class="val">config ok</span>
-<span class="ok">✓</span> Vault           <span class="val">216 entries, healthy</span>
-<span class="ok">✓</span> Brain           <span class="val">tracking enabled</span>
-<span class="ok">✓</span> Team vault      <span class="val">connected, synced</span>`,
+<span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
+<span class="ok">✓</span> Agent       <span class="val">built, registered</span>
+<span class="ok">✓</span> Hook packs  <span class="val">a11y, clean-commits, typescript-safety</span>`,
         isInstallCmd: false,
       },
     ],
@@ -105,7 +84,7 @@ const content: Record<Locale, GettingStartedContent> = {
       "Від нуля до навчальної системи за п'ять хвилин. Встановіть Soleri, створіть першого агента та починайте накопичувати знання.",
     eyebrow: "Від нуля до навчальної системи за п'ять хвилин",
     heroTitle: 'Ваш перший агент починає розумним. Далі стає лише розумнішим.',
-    heroSubtitle: "П'ять кроків. Жодних файлів конфігурації. Жодних API-ключів.",
+    heroSubtitle: 'Три кроки. Жодних файлів конфігурації. Жодних API-ключів.',
     steps: [
       {
         title: 'Встановіть',
@@ -114,65 +93,44 @@ const content: Record<Locale, GettingStartedContent> = {
         isInstallCmd: true,
       },
       {
-        title: 'Створіть твого агента',
-        text: 'Вкажіть назву та підключіть сховище. Soleri налаштує домени, встановить початкові знання та просканує проєкт.',
+        title: 'Створіть свого агента',
+        text: "Дайте відповіді на кілька питань — ім'я, роль, домени. Soleri створює проєкт, встановлює залежності, збирає та реєструє його як MCP-сервер для Claude Code. Готовий до роботи.",
         code: `<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="ok">✓</span> Створено конфігурацію агента       <span class="cmt">~/.soleri/agents/my-agent/</span>
-<span class="ok">✓</span> Підключене сховище            <span class="val">початкові знання: 34 патерни</span>
-<span class="ok">✓</span> Сканування проєкту            <span class="val">React + TypeScript виявлено</span>
-<span class="ok">✓</span> Автоматично захоплено        <span class="val">12 патернів з кодової бази</span>
-<span class="ok">✓</span> Сховище готове                <span class="val">46 записів, векторизовано</span>
+<span class="cmt">◆ Ім'я:                My Agent</span>
+<span class="cmt">◆ Роль:                Радник з фронтенд-архітектури</span>
+<span class="cmt">◆ Домени:              api-design, security, testing</span>
 
-<span class="cmt">Агент "my-agent" готовий.</span>`,
+<span class="ok">✓</span> Створено               <span class="val">16 файлів, 2 фасади, 66 операцій</span>
+<span class="ok">✓</span> Зібрано                <span class="val">npm install + npm run build</span>
+<span class="ok">✓</span> MCP зареєстровано      <span class="cmt">~/.claude.json</span>
+<span class="ok">✓</span> 17 навичок встановлено <span class="cmt">TDD, дебагінг, планування, сховище</span>
+
+<span class="cmt">Перезапустіть Claude Code, потім скажіть "Hello, My Agent!"</span>`,
         isInstallCmd: false,
       },
       {
-        title: 'Наповніть знаннями',
-        text: 'Додайте знання до сховища твого агента. Встановіть пакети знань спільноти, підключіть сховище команди або дозвольте мозку захоплювати патерни з вашої роботи.',
-        code: `<span class="cmt"># Додайте пакет знань спільноти</span>
-<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
+        title: 'Активуйте та розвивайте',
+        text: 'Привітайтеся в Claude Code. Ваш агент активується, захоплює знання під час роботи та стає розумнішим з часом. Додавайте домени, встановлюйте пакети знань або дозвольте мозку вчитися з ваших сесій.',
+        code: `<span class="cmt"># В Claude Code — активуйте персону</span>
+<span class="prompt">></span> <span class="cmd">Hello, My Agent!</span>
 
-<span class="ok">✓</span> Встановлено react-patterns    <span class="val">v0.3.0</span>
-<span class="ok">✓</span> Додано 28 патернів до сховища
-<span class="ok">✓</span> Векторизовано та зв'язано графами
+<span class="ok">✓</span> Персону активовано     <span class="val">My Agent — Радник з фронтенд-архітектури</span>
+<span class="ok">✓</span> Сховище готове          <span class="val">порожнє — зростатиме під час роботи</span>
+<span class="ok">✓</span> Мозок працює           <span class="val">увімкнено — захоплює патерни з сесій</span>
 
-<span class="cmt"># Мозок захоплює патерни з вашої роботи</span>
-<span class="warn">!</span> Ви замінили <span class="val">bg-blue-500</span> на <span class="ok">bg-primary</span> 3 рази.
-  Захопити як патерн? <span class="key">[y/n]</span>
+<span class="cmt"># Додайте нові домени будь-коли</span>
+<span class="prompt">$</span> <span class="cmd">soleri add-domain</span> <span class="arg">performance</span>
 
-<span class="ok">✓</span> Захоплено: <span class="val">semantic-token-enforcement</span>`,
-        isInstallCmd: false,
-      },
-      {
-        title: 'Розширте',
-        text: 'Підключіть спільне сховище вашої команди або додайте більше пакетів знань. Знання накопичуються.',
-        code: `<span class="cmt"># Підключіть спільне сховище вашої команди</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>
+<span class="ok">✓</span> Створено домен         <span class="val">performance</span>
+<span class="ok">✓</span> Агента перезібрано
 
-<span class="ok">✓</span> Підключено сховище команди      <span class="val">142 записів</span>
-<span class="ok">✓</span> Пріоритет пошуку: агент → проєкт → команда
+<span class="cmt"># Перевірте стан</span>
+<span class="prompt">$</span> <span class="cmd">soleri doctor</span>
 
-<span class="cmt"># Перевірте стан сховища</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">status</span>
-
-<span class="ok">Записи:</span>     <span class="val">216</span>     <span class="cmt">векторизовано, зв'язано графами</span>
-<span class="ok">Домени:</span>     <span class="val">3</span>       <span class="cmt">фронтенд, бекенд, наскрізні</span>
-<span class="ok">Граф:</span>       <span class="val">412 зв'язків</span>`,
-        isInstallCmd: false,
-      },
-      {
-        title: 'Перевірте стан',
-        text: 'Запустіть діагностику, щоб перевірити, чи все підключено та оновлено.',
-        code: `<span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
-
-<span class="ok">✓</span> Рушій          <span class="val">v1.2.0</span>   <span class="cmt">оновлено</span>
-<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>   <span class="cmt">оновлено</span>
-<span class="ok">✓</span> domain-review   <span class="val">v0.5.0</span>   <span class="cmt">оновлено</span>
-<span class="ok">✓</span> my-agent        <span class="val">конфігурація ок</span>
-<span class="ok">✓</span> Сховище           <span class="val">216 записів, в порядку</span>
-<span class="ok">✓</span> Мозок           <span class="val">відстеження увімкнено</span>
-<span class="ok">✓</span> Сховище команди      <span class="val">підключено, синхронізовано</span>`,
+<span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
+<span class="ok">✓</span> Агент       <span class="val">зібрано, зареєстровано</span>
+<span class="ok">✓</span> Хук-пакети  <span class="val">a11y, clean-commits, typescript-safety</span>`,
         isInstallCmd: false,
       },
     ],
@@ -185,7 +143,7 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Ваш Агент',
-        desc: 'Створюйте, налаштовуйте та розширюйте знання твого агента.',
+        desc: 'Створюйте, налаштовуйте та розширюйте знання свого агента.',
         href: 'personas.html',
       },
       {
@@ -202,7 +160,7 @@ const content: Record<Locale, GettingStartedContent> = {
     eyebrow: 'Da zero a un sistema di apprendimento in cinque minuti',
     heroTitle: 'Il tuo primo agente parte intelligente. Diventa solo più intelligente.',
     heroSubtitle:
-      'Cinque passaggi. Nessun file di configurazione da scrivere. Nessuna chiave API richiesta.',
+      'Tre passaggi. Nessun file di configurazione da scrivere. Nessuna chiave API richiesta.',
     steps: [
       {
         title: 'Installa',
@@ -212,64 +170,43 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Crea il tuo agente',
-        text: 'Dagli un nome e collega un Vault. Soleri configura i domini, installa conoscenze iniziali e scansiona il tuo progetto.',
+        text: 'Rispondi a poche domande — nome, ruolo, domini. Soleri crea il progetto, installa le dipendenze, compila e lo registra come server MCP per Claude Code. Pronto all\'uso.',
         code: `<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="ok">✓</span> Configurazione agente creata       <span class="cmt">~/.soleri/agents/my-agent/</span>
-<span class="ok">✓</span> Vault collegato                 <span class="val">conoscenze iniziali: 34 pattern</span>
-<span class="ok">✓</span> Progetto scansionato            <span class="val">React + TypeScript rilevato</span>
-<span class="ok">✓</span> Acquisizione automatica              <span class="val">12 pattern dal codice</span>
-<span class="ok">✓</span> Vault pronto                    <span class="val">46 voci, vettorializzate</span>
+<span class="cmt">◆ Nome:                My Agent</span>
+<span class="cmt">◆ Ruolo:               Consulente architettura frontend</span>
+<span class="cmt">◆ Domini:              api-design, security, testing</span>
 
-<span class="cmt">Agente "my-agent" è pronto.</span>`,
+<span class="ok">✓</span> Creato                 <span class="val">16 file, 2 facciate, 66 operazioni</span>
+<span class="ok">✓</span> Compilato              <span class="val">npm install + npm run build</span>
+<span class="ok">✓</span> MCP registrato         <span class="cmt">~/.claude.json</span>
+<span class="ok">✓</span> 17 skill installate    <span class="cmt">TDD, debugging, pianificazione, vault</span>
+
+<span class="cmt">Riavvia Claude Code, poi di' "Hello, My Agent!"</span>`,
         isInstallCmd: false,
       },
       {
-        title: 'Alimenta con conoscenze',
-        text: 'Aggiungi conoscenza al Vault del tuo agente. Installa pacchetti della comunità, collega un Vault di team o lascia che il cervello catturi pattern dal tuo lavoro.',
-        code: `<span class="cmt"># Aggiungi un pacchetto di conoscenze della comunità</span>
-<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
+        title: 'Attiva e fai crescere',
+        text: 'Saluta in Claude Code. Il tuo agente si attiva, cattura conoscenza mentre lavori e diventa più intelligente nel tempo. Aggiungi domini, installa pacchetti di conoscenza o lascia che il cervello impari dalle tue sessioni.',
+        code: `<span class="cmt"># In Claude Code — attiva la persona</span>
+<span class="prompt">></span> <span class="cmd">Hello, My Agent!</span>
 
-<span class="ok">✓</span> react-patterns installato    <span class="val">v0.3.0</span>
-<span class="ok">✓</span> 28 pattern aggiunti al Vault
-<span class="ok">✓</span> Vettorializzato e collegato al grafo
+<span class="ok">✓</span> Persona attivata       <span class="val">My Agent — Consulente architettura frontend</span>
+<span class="ok">✓</span> Vault pronto           <span class="val">vuoto — crescerà mentre lavori</span>
+<span class="ok">✓</span> Cervello attivo        <span class="val">abilitato — cattura pattern dalle sessioni</span>
 
-<span class="cmt"># Il cervello cattura pattern dal tuo lavoro</span>
-<span class="warn">!</span> Hai sostituito <span class="val">bg-blue-500</span> con <span class="ok">bg-primary</span> 3 volte.
-  Catturare come pattern? <span class="key">[y/n]</span>
+<span class="cmt"># Aggiungi nuovi domini in qualsiasi momento</span>
+<span class="prompt">$</span> <span class="cmd">soleri add-domain</span> <span class="arg">performance</span>
 
-<span class="ok">✓</span> Catturato: <span class="val">semantic-token-enforcement</span>`,
-        isInstallCmd: false,
-      },
-      {
-        title: 'Estendi',
-        text: 'Collega il Vault condiviso del tuo team o aggiungi altri pacchetti di conoscenza. La conoscenza si accumula.',
-        code: `<span class="cmt"># Collega il Vault condiviso del tuo team</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>
+<span class="ok">✓</span> Dominio creato         <span class="val">performance</span>
+<span class="ok">✓</span> Agente ricompilato
 
-<span class="ok">✓</span> Vault di team collegato         <span class="val">142 voci</span>
-<span class="ok">✓</span> Priorità di ricerca: agente → progetto → team
+<span class="cmt"># Verifica che tutto funzioni</span>
+<span class="prompt">$</span> <span class="cmd">soleri doctor</span>
 
-<span class="cmt"># Controlla lo stato del Vault</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">status</span>
-
-<span class="ok">Voci:</span>     <span class="val">216</span>     <span class="cmt">vettorializzate, collegate al grafo</span>
-<span class="ok">Domini:</span>     <span class="val">3</span>       <span class="cmt">frontend, backend, trasversali</span>
-<span class="ok">Grafico:</span>       <span class="val">412 archi</span>`,
-        isInstallCmd: false,
-      },
-      {
-        title: 'Controllo di integrità',
-        text: 'Esegui doctor per verificare che tutto sia connesso e aggiornato.',
-        code: `<span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
-
-<span class="ok">✓</span> Motore          <span class="val">v1.2.0</span>   <span class="cmt">aggiornato</span>
-<span class="ok">✓</span> domain-design   <span class="val">v0.8.0</span>   <span class="cmt">aggiornato</span>
-<span class="ok">✓</span> domain-review   <span class="val">v0.5.0</span>   <span class="cmt">aggiornato</span>
-<span class="ok">✓</span> my-agent        <span class="val">configurazione ok</span>
-<span class="ok">✓</span> Vault               <span class="val">216 voci, sano</span>
-<span class="ok">✓</span> Cervello           <span class="val">tracciamento abilitato</span>
-<span class="ok">✓</span> Vault di team       <span class="val">collegato, sincronizzato</span>`,
+<span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
+<span class="ok">✓</span> Agente      <span class="val">compilato, registrato</span>
+<span class="ok">✓</span> Hook pack   <span class="val">a11y, clean-commits, typescript-safety</span>`,
         isInstallCmd: false,
       },
     ],
