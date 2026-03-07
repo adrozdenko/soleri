@@ -239,6 +239,10 @@ export {
 export { KeyPool, loadKeyPoolConfig } from './llm/key-pool.js';
 export type { KeyPoolFiles } from './llm/key-pool.js';
 
+// ─── Extensions ──────────────────────────────────────────────────────
+export type { AgentExtensions, OpMiddleware, MiddlewareContext } from './extensions/index.js';
+export { wrapWithMiddleware } from './extensions/index.js';
+
 // ─── Facades ─────────────────────────────────────────────────────────
 export { registerFacade, registerAllFacades } from './facades/facade-factory.js';
 export { facadeInputSchema } from './facades/types.js';

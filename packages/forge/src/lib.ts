@@ -17,3 +17,4 @@ export type {
   AddDomainResult,
 } from './types.js';
 export { AgentConfigSchema } from './types.js';
+export { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';

@@ -23,8 +23,9 @@ import {
   createDomainFacades,
   registerAllFacades,
   seedDefaultPlaybooks,
+  wrapWithMiddleware,
 } from '@soleri/core';
-import type { OpDefinition } from '@soleri/core';
+import type { OpDefinition, AgentExtensions } from '@soleri/core';
 import { z } from 'zod';
 import { PERSONA, getPersonaPrompt } from './identity/persona.js';
 import { activateAgent, deactivateAgent } from './activation/activate.js';
@@ -210,6 +211,42 @@ async function main(): Promise<void> {
 
   const domainFacades = createDomainFacades(runtime, '${config.id}', ${domainsLiteral});
 
+  // ─── User extensions (auto-discovered from src/extensions/) ────
+  let extensions: AgentExtensions = {};
+  try {
+    const ext = await import('./extensions/index.js');
+    const loader = ext.default ?? ext.loadExtensions;
+    if (typeof loader === 'function') {
+      extensions = loader(runtime);
+    } else if (typeof loader === 'object') {
+      extensions = loader;
+    }
+    if (extensions.ops?.length || extensions.facades?.length || extensions.middleware?.length) {
+      console.error(\`[\${tag}] Extensions loaded: \${extensions.ops?.length ?? 0} ops, \${extensions.facades?.length ?? 0} facades, \${extensions.middleware?.length ?? 0} middleware\`);
+    }
+  } catch {
+    // No extensions directory or load error — run vanilla
+  }
+
+  // Merge user ops into core facade
+  if (extensions.ops?.length) {
+    coreFacade.ops.push(...extensions.ops);
+  }
+
+  // Collect user facades
+  const userFacades = extensions.facades ?? [];
+
+  // Apply middleware to all facades
+  const allFacades = [coreFacade, ...domainFacades, ...userFacades];
+  if (extensions.middleware?.length) {
+    wrapWithMiddleware(allFacades, extensions.middleware);
+  }
+
+  // Lifecycle: onStartup
+  if (extensions.hooks?.onStartup) {
+    await extensions.hooks.onStartup(runtime);
+  }
+
   // ─── MCP server ────────────────────────────────────────────────
   const server = new McpServer({
     name: '${config.id}-mcp',
@@ -220,11 +257,10 @@ async function main(): Promise<void> {
     messages: [{ role: 'assistant' as const, content: { type: 'text' as const, text: getPersonaPrompt() } }],
   }));
 
-  const facades = [coreFacade, ...domainFacades];
-  registerAllFacades(server, facades);
+  registerAllFacades(server, allFacades);
 
   console.error(\`[\${tag}] \${PERSONA.name} — \${PERSONA.role}\`);
-  console.error(\`[\${tag}] Registered \${facades.length} facades with \${facades.reduce((sum, f) => sum + f.ops.length, 0)} operations\`);
+  console.error(\`[\${tag}] Registered \${allFacades.length} facades with \${allFacades.reduce((sum, f) => sum + f.ops.length, 0)} operations\`);
 
   // ─── Transport + shutdown ──────────────────────────────────────
   const transport = new StdioServerTransport();
@@ -234,6 +270,13 @@ async function main(): Promise<void> {
 
   const shutdown = async (): Promise<void> => {
     console.error(\`[\${tag}] Shutting down...\`);
+    if (extensions.hooks?.onShutdown) {
+      try {
+        await extensions.hooks.onShutdown(runtime);
+      } catch (err) {
+        console.error(\`[\${tag}] Extension shutdown error:\`, err);
+      }
+    }
     runtime.close();
     process.exit(0);
   };

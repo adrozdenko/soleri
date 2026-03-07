@@ -23,6 +23,7 @@ import { generateActivate } from './templates/activate.js';
 import { generateReadme } from './templates/readme.js';
 import { generateSetupScript } from './templates/setup-script.js';
 import { generateSkills } from './templates/skills.js';
+import { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
 
 /**
  * Preview what scaffold will create without writing anything.
@@ -68,6 +69,10 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
       path: 'src/__tests__/facades.test.ts',
       description: `Facade integration tests — all ${config.domains.length + 1} facades`,
     },
+    {
+      path: 'src/extensions/',
+      description: 'User extension directory — custom ops, facades, middleware, hooks',
+    },
     { path: '.mcp.json', description: 'MCP client config for connecting to this agent' },
     {
       path: 'README.md',
@@ -79,8 +84,9 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     },
     {
       path: 'skills/',
-      description:
-        '17 built-in skills — TDD, debugging, planning, vault, brain, code patrol, retrospective, onboarding',
+      description: config.skills?.length
+        ? `${config.skills.length} selected skills`
+        : '17 built-in skills — TDD, debugging, planning, vault, brain, code patrol, retrospective, onboarding',
     },
   ];
 
@@ -402,6 +408,10 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     'src/identity',
     'src/activation',
     'src/__tests__',
+    'src/extensions',
+    'src/extensions/ops',
+    'src/extensions/facades',
+    'src/extensions/middleware',
   ];
 
   if (config.hookPacks?.length) {
@@ -447,6 +457,8 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     ['src/activation/activate.ts', generateActivate(config)],
     ['src/index.ts', generateEntryPoint(config)],
     ['src/__tests__/facades.test.ts', generateFacadesTest(config)],
+    ['src/extensions/index.ts', generateExtensionsIndex(config)],
+    ['src/extensions/ops/example.ts', generateExampleOp(config)],
   ];
 
   // Empty intelligence data bundles (domain facades come from @soleri/core at runtime)

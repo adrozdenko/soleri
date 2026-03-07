@@ -12,6 +12,7 @@ import { registerHooks } from './commands/hooks.js';
 import { registerGovernance } from './commands/governance.js';
 import { registerTest } from './commands/test.js';
 import { registerUpgrade } from './commands/upgrade.js';
+import { registerExtend } from './commands/extend.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -33,5 +34,6 @@ registerHooks(program);
 registerGovernance(program);
 registerTest(program);
 registerUpgrade(program);
+registerExtend(program);
 
 program.parse();
