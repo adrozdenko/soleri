@@ -3,7 +3,7 @@ import type { AgentConfig } from '../types.js';
 /**
  * Generate the main index.ts entry point for the agent.
  *
- * v5.0: Thin shell — delegates to createAgentRuntime(), createCoreOps(),
+ * v5.0: Thin shell — delegates to createAgentRuntime(), createSemanticFacades(),
  * and createDomainFacades() from @soleri/core. Only agent-specific code
  * (persona, activation) lives here.
  */
@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   createAgentRuntime,
-  createCoreOps,
+  createSemanticFacades,
   createDomainFacades,
   registerAllFacades,
   seedDefaultPlaybooks,
@@ -201,11 +201,11 @@ async function main(): Promise<void> {
   ];
 
   // ─── Assemble facades ──────────────────────────────────────────
-  const coreOps = createCoreOps(runtime);
-  const coreFacade = {
+  const semanticFacades = createSemanticFacades(runtime, '${config.id}');
+  const agentFacade = {
     name: '${config.id}_core',
-    description: 'Core operations — vault stats, cross-domain search, health check, identity, and activation system.',
-    ops: [...coreOps, ...agentOps],
+    description: 'Agent-specific operations — health, identity, activation, CLAUDE.md injection, setup.',
+    ops: agentOps,
   };
 
   const domainFacades = createDomainFacades(runtime, '${config.id}', ${domainsLiteral});
@@ -220,7 +220,7 @@ async function main(): Promise<void> {
     messages: [{ role: 'assistant' as const, content: { type: 'text' as const, text: getPersonaPrompt() } }],
   }));
 
-  const facades = [coreFacade, ...domainFacades];
+  const facades = [...semanticFacades, agentFacade, ...domainFacades];
   registerAllFacades(server, facades);
 
   console.error(\`[\${tag}] \${PERSONA.name} — \${PERSONA.role}\`);

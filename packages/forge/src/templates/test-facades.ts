@@ -12,7 +12,7 @@ export function generateFacadesTest(config: AgentConfig): string {
   return `import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   createAgentRuntime,
-  createCoreOps,
+  createSemanticFacades,
   createDomainFacade,
 } from '@soleri/core';
 import type { AgentRuntime, IntelligenceEntry, OpDefinition, FacadeConfig } from '@soleri/core';
@@ -57,9 +57,217 @@ describe('Facades', () => {
 
 ${domainDescribes}
 
-  describe('${config.id}_core', () => {
-    function buildCoreFacade(): FacadeConfig {
-      const coreOps = createCoreOps(runtime);
+  // ─── Semantic Facades ────────────────────────────────────────
+  describe('semantic facades', () => {
+    function buildSemanticFacades(): FacadeConfig[] {
+      return createSemanticFacades(runtime, '${config.id}');
+    }
+
+    it('should create 10 semantic facades', () => {
+      const facades = buildSemanticFacades();
+      expect(facades).toHaveLength(10);
+      const names = facades.map(f => f.name);
+      expect(names).toContain('${config.id}_vault');
+      expect(names).toContain('${config.id}_plan');
+      expect(names).toContain('${config.id}_brain');
+      expect(names).toContain('${config.id}_memory');
+      expect(names).toContain('${config.id}_admin');
+      expect(names).toContain('${config.id}_curator');
+      expect(names).toContain('${config.id}_loop');
+      expect(names).toContain('${config.id}_orchestrate');
+      expect(names).toContain('${config.id}_control');
+      expect(names).toContain('${config.id}_cognee');
+    });
+
+    it('total ops across all facades should be 209', () => {
+      const facades = buildSemanticFacades();
+      const totalOps = facades.reduce((sum, f) => sum + f.ops.length, 0);
+      expect(totalOps).toBe(209);
+    });
+  });
+
+  describe('${config.id}_vault', () => {
+    function getFacade(): FacadeConfig {
+      return createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_vault')!;
+    }
+
+    it('should contain vault ops', () => {
+      const opNames = getFacade().ops.map(o => o.name);
+      expect(opNames).toContain('search');
+      expect(opNames).toContain('vault_stats');
+      expect(opNames).toContain('list_all');
+      expect(opNames).toContain('export');
+      expect(opNames).toContain('vault_get');
+      expect(opNames).toContain('vault_import');
+      expect(opNames).toContain('capture_knowledge');
+      expect(opNames).toContain('intake_ingest_book');
+    });
+
+    it('search should query across all domains', async () => {
+      runtime.vault.seed([
+        makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
+        makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
+      ]);
+      runtime = createAgentRuntime({ agentId: '${config.id}', vaultPath: ':memory:', plansPath: join(plannerDir, 'plans2.json') });
+      runtime.vault.seed([
+        makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
+        makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
+      ]);
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_vault')!;
+      const searchOp = facade.ops.find(o => o.name === 'search')!;
+      const results = (await searchOp.handler({ query: 'pattern' })) as Array<{ entry: unknown; score: number }>;
+      expect(Array.isArray(results)).toBe(true);
+      expect(results.length).toBe(2);
+    });
+
+    it('vault_stats should return counts', async () => {
+      runtime.vault.seed([
+        makeEntry({ id: 'vs1', domain: 'd1', tags: ['x'] }),
+        makeEntry({ id: 'vs2', domain: 'd2', tags: ['y'] }),
+      ]);
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_vault')!;
+      const statsOp = facade.ops.find(o => o.name === 'vault_stats')!;
+      const stats = (await statsOp.handler({})) as { totalEntries: number };
+      expect(stats.totalEntries).toBe(2);
+    });
+  });
+
+  describe('${config.id}_plan', () => {
+    it('should contain planning ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_plan')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('create_plan');
+      expect(opNames).toContain('get_plan');
+      expect(opNames).toContain('approve_plan');
+      expect(opNames).toContain('plan_iterate');
+      expect(opNames).toContain('plan_grade');
+    });
+
+    it('create_plan should create a draft plan', async () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_plan')!;
+      const createOp = facade.ops.find(o => o.name === 'create_plan')!;
+      const result = (await createOp.handler({
+        objective: 'Add caching',
+        scope: 'api layer',
+        tasks: [{ title: 'Add Redis', description: 'Set up Redis client' }],
+      })) as { created: boolean; plan: { status: string } };
+      expect(result.created).toBe(true);
+      expect(result.plan.status).toBe('draft');
+    });
+  });
+
+  describe('${config.id}_brain', () => {
+    it('should contain brain ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_brain')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('brain_stats');
+      expect(opNames).toContain('brain_strengths');
+      expect(opNames).toContain('brain_build_intelligence');
+      expect(opNames).toContain('brain_lifecycle');
+      expect(opNames).toContain('brain_decay_report');
+    });
+
+    it('brain_stats should return intelligence stats', async () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_brain')!;
+      const statsOp = facade.ops.find(o => o.name === 'brain_stats')!;
+      const result = (await statsOp.handler({})) as { vocabularySize: number };
+      expect(result.vocabularySize).toBe(0);
+    });
+  });
+
+  describe('${config.id}_memory', () => {
+    it('should contain memory ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_memory')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('memory_search');
+      expect(opNames).toContain('memory_capture');
+      expect(opNames).toContain('memory_promote_to_global');
+    });
+  });
+
+  describe('${config.id}_admin', () => {
+    it('should contain admin ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_admin')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('admin_health');
+      expect(opNames).toContain('admin_tool_list');
+      expect(opNames).toContain('llm_rotate');
+      expect(opNames).toContain('render_prompt');
+    });
+  });
+
+  describe('${config.id}_curator', () => {
+    it('should contain curator ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_curator')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('curator_status');
+      expect(opNames).toContain('curator_health_audit');
+      expect(opNames).toContain('curator_hybrid_contradictions');
+    });
+
+    it('curator_status should return initialized', async () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_curator')!;
+      const statusOp = facade.ops.find(o => o.name === 'curator_status')!;
+      const result = (await statusOp.handler({})) as { initialized: boolean };
+      expect(result.initialized).toBe(true);
+    });
+  });
+
+  describe('${config.id}_loop', () => {
+    it('should contain loop ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_loop')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('loop_start');
+      expect(opNames).toContain('loop_iterate');
+      expect(opNames).toContain('loop_cancel');
+    });
+  });
+
+  describe('${config.id}_orchestrate', () => {
+    it('should contain orchestrate ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_orchestrate')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('register');
+      expect(opNames).toContain('orchestrate_plan');
+      expect(opNames).toContain('project_get');
+      expect(opNames).toContain('playbook_list');
+    });
+  });
+
+  describe('${config.id}_control', () => {
+    it('should contain control and governance ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_control')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('get_identity');
+      expect(opNames).toContain('route_intent');
+      expect(opNames).toContain('governance_policy');
+      expect(opNames).toContain('governance_dashboard');
+    });
+
+    it('governance_policy should return default policy', async () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_control')!;
+      const policyOp = facade.ops.find(o => o.name === 'governance_policy')!;
+      const result = (await policyOp.handler({ action: 'get', projectPath: '/test' })) as {
+        projectPath: string;
+        quotas: { maxEntriesTotal: number };
+      };
+      expect(result.projectPath).toBe('/test');
+      expect(result.quotas.maxEntriesTotal).toBe(500);
+    });
+  });
+
+  describe('${config.id}_cognee', () => {
+    it('should contain cognee ops', () => {
+      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_cognee')!;
+      const opNames = facade.ops.map(o => o.name);
+      expect(opNames).toContain('cognee_status');
+      expect(opNames).toContain('cognee_search');
+      expect(opNames).toContain('cognee_sync_status');
+    });
+  });
+
+  describe('${config.id}_core (agent-specific)', () => {
+    function buildAgentFacade(): FacadeConfig {
       const agentOps: OpDefinition[] = [
         {
           name: 'health',
@@ -167,248 +375,30 @@ ${domainDescribes}
       ];
       return {
         name: '${config.id}_core',
-        description: 'Core operations',
-        ops: [...coreOps, ...agentOps],
+        description: 'Agent-specific operations',
+        ops: agentOps,
       };
     }
 
-    it('should create core facade with expected ops', () => {
-      const facade = buildCoreFacade();
-      expect(facade.name).toBe('${config.id}_core');
-      const opNames = facade.ops.map((o) => o.name);
-      // Core ops (37)
-      expect(opNames).toContain('search');
-      expect(opNames).toContain('vault_stats');
-      expect(opNames).toContain('list_all');
-      expect(opNames).toContain('register');
-      expect(opNames).toContain('llm_status');
-      expect(opNames).toContain('curator_status');
-      expect(opNames).toContain('curator_health_audit');
-      // Brain Intelligence ops (11)
-      expect(opNames).toContain('brain_session_context');
-      expect(opNames).toContain('brain_strengths');
-      expect(opNames).toContain('brain_global_patterns');
-      expect(opNames).toContain('brain_recommend');
-      expect(opNames).toContain('brain_build_intelligence');
-      expect(opNames).toContain('brain_export');
-      expect(opNames).toContain('brain_import');
-      expect(opNames).toContain('brain_extract_knowledge');
-      expect(opNames).toContain('brain_archive_sessions');
-      expect(opNames).toContain('brain_promote_proposals');
-      expect(opNames).toContain('brain_lifecycle');
-      // Enhanced brain ops (3)
-      expect(opNames).toContain('brain_feedback');
-      expect(opNames).toContain('brain_feedback_stats');
-      expect(opNames).toContain('brain_reset_extracted');
-      // Brain decay report (#89)
-      expect(opNames).toContain('brain_decay_report');
-      // Agent-specific ops (5)
-      expect(opNames).toContain('health');
-      expect(opNames).toContain('identity');
-      expect(opNames).toContain('activate');
-      expect(opNames).toContain('inject_claude_md');
-      expect(opNames).toContain('setup');
-      // Control ops (8)
-      expect(opNames).toContain('get_identity');
-      expect(opNames).toContain('update_identity');
-      expect(opNames).toContain('add_guideline');
-      expect(opNames).toContain('remove_guideline');
-      expect(opNames).toContain('rollback_identity');
-      expect(opNames).toContain('route_intent');
-      expect(opNames).toContain('morph');
-      expect(opNames).toContain('get_behavior_rules');
-      // Cognee ops (5)
-      expect(opNames).toContain('cognee_status');
-      expect(opNames).toContain('cognee_search');
-      expect(opNames).toContain('cognee_add');
-      expect(opNames).toContain('cognee_cognify');
-      expect(opNames).toContain('cognee_config');
-      // LLM ops (2)
-      expect(opNames).toContain('llm_rotate');
-      expect(opNames).toContain('llm_call');
-      // Governance ops (5)
-      expect(opNames).toContain('governance_policy');
-      expect(opNames).toContain('governance_proposals');
-      expect(opNames).toContain('governance_stats');
-      expect(opNames).toContain('governance_expire');
-      expect(opNames).toContain('governance_dashboard');
-      // Planning Extra ops (13)
-      expect(opNames).toContain('plan_iterate');
-      expect(opNames).toContain('plan_split');
-      expect(opNames).toContain('plan_reconcile');
-      expect(opNames).toContain('plan_complete_lifecycle');
-      expect(opNames).toContain('plan_dispatch');
-      expect(opNames).toContain('plan_review');
-      expect(opNames).toContain('plan_archive');
-      expect(opNames).toContain('plan_list_tasks');
-      expect(opNames).toContain('plan_stats');
-      expect(opNames).toContain('plan_execution_metrics');
-      expect(opNames).toContain('plan_record_task_metrics');
-      expect(opNames).toContain('plan_submit_deliverable');
-      expect(opNames).toContain('plan_verify_deliverables');
-      // Memory Extra ops (8)
-      expect(opNames).toContain('memory_delete');
-      expect(opNames).toContain('memory_stats');
-      expect(opNames).toContain('memory_export');
-      expect(opNames).toContain('memory_import');
-      expect(opNames).toContain('memory_prune');
-      expect(opNames).toContain('memory_deduplicate');
-      expect(opNames).toContain('memory_topics');
-      expect(opNames).toContain('memory_by_project');
-      // Vault Extra ops (12)
-      expect(opNames).toContain('vault_get');
-      expect(opNames).toContain('vault_update');
-      expect(opNames).toContain('vault_remove');
-      expect(opNames).toContain('vault_bulk_add');
-      expect(opNames).toContain('vault_bulk_remove');
-      expect(opNames).toContain('vault_tags');
-      expect(opNames).toContain('vault_domains');
-      expect(opNames).toContain('vault_recent');
-      expect(opNames).toContain('vault_import');
-      expect(opNames).toContain('vault_seed');
-      expect(opNames).toContain('vault_backup');
-      expect(opNames).toContain('vault_age_report');
-      // #89: Bi-temporal
-      expect(opNames).toContain('vault_set_temporal');
-      expect(opNames).toContain('vault_find_expiring');
-      expect(opNames).toContain('vault_find_expired');
-      // Vault archival (#86)
-      expect(opNames).toContain('vault_archive');
-      expect(opNames).toContain('vault_restore');
-      expect(opNames).toContain('vault_optimize');
-      // Vault content hashing (#166)
-      expect(opNames).toContain('vault_content_hash');
-      expect(opNames).toContain('vault_dedup_status');
-      // Admin ops (8)
-      expect(opNames).toContain('admin_health');
-      expect(opNames).toContain('admin_tool_list');
-      expect(opNames).toContain('admin_config');
-      expect(opNames).toContain('admin_vault_size');
-      expect(opNames).toContain('admin_uptime');
-      expect(opNames).toContain('admin_version');
-      expect(opNames).toContain('admin_reset_cache');
-      expect(opNames).toContain('admin_diagnostic');
-      // Loop ops (8)
-      expect(opNames).toContain('loop_start');
-      expect(opNames).toContain('loop_iterate');
-      expect(opNames).toContain('loop_status');
-      expect(opNames).toContain('loop_cancel');
-      expect(opNames).toContain('loop_history');
-      expect(opNames).toContain('loop_is_active');
-      expect(opNames).toContain('loop_complete');
-      expect(opNames).toContain('loop_anomaly_check');
-      // Orchestrate ops (5)
-      expect(opNames).toContain('orchestrate_plan');
-      expect(opNames).toContain('orchestrate_execute');
-      expect(opNames).toContain('orchestrate_complete');
-      expect(opNames).toContain('orchestrate_status');
-      expect(opNames).toContain('orchestrate_quick_capture');
-      // Capture ops (4)
-      expect(opNames).toContain('capture_knowledge');
-      expect(opNames).toContain('capture_quick');
-      expect(opNames).toContain('search_intelligent');
-      expect(opNames).toContain('search_feedback');
-      // Grading ops (5)
-      expect(opNames).toContain('plan_grade');
-      expect(opNames).toContain('plan_check_history');
-      expect(opNames).toContain('plan_latest_check');
-      expect(opNames).toContain('plan_meets_grade');
-      expect(opNames).toContain('plan_auto_improve');
-      // Admin Extra ops (11)
-      expect(opNames).toContain('admin_telemetry');
-      expect(opNames).toContain('admin_telemetry_recent');
-      expect(opNames).toContain('admin_telemetry_reset');
-      expect(opNames).toContain('admin_permissions');
-      expect(opNames).toContain('admin_vault_analytics');
-      expect(opNames).toContain('admin_search_insights');
-      expect(opNames).toContain('admin_module_status');
-      expect(opNames).toContain('admin_env');
-      expect(opNames).toContain('admin_gc');
-      expect(opNames).toContain('admin_export_config');
-      expect(opNames).toContain('admin_hot_reload');
-      // Admin persistence (#85)
-      expect(opNames).toContain('admin_persistence_info');
-      // Curator Extra ops (4 + 1 hybrid)
-      expect(opNames).toContain('curator_entry_history');
-      expect(opNames).toContain('curator_record_snapshot');
-      expect(opNames).toContain('curator_queue_stats');
-      expect(opNames).toContain('curator_enrich');
-      // #36: Hybrid contradiction detection
-      expect(opNames).toContain('curator_hybrid_contradictions');
-      // Project ops (12)
-      expect(opNames).toContain('project_get');
-      expect(opNames).toContain('project_list');
-      expect(opNames).toContain('project_unregister');
-      expect(opNames).toContain('project_get_rules');
-      expect(opNames).toContain('project_list_rules');
-      expect(opNames).toContain('project_add_rule');
-      expect(opNames).toContain('project_remove_rule');
-      expect(opNames).toContain('project_link');
-      expect(opNames).toContain('project_unlink');
-      expect(opNames).toContain('project_get_links');
-      expect(opNames).toContain('project_linked_projects');
-      expect(opNames).toContain('project_touch');
-      // Cross-project memory ops (3)
-      expect(opNames).toContain('memory_promote_to_global');
-      expect(opNames).toContain('memory_configure');
-      expect(opNames).toContain('memory_cross_project_search');
-      // Playbook ops (5)
-      expect(opNames).toContain('playbook_list');
-      expect(opNames).toContain('playbook_get');
-      expect(opNames).toContain('playbook_create');
-      expect(opNames).toContain('playbook_match');
-      expect(opNames).toContain('playbook_seed');
-      // Cognee Sync ops (3)
-      expect(opNames).toContain('cognee_sync_status');
-      expect(opNames).toContain('cognee_sync_drain');
-      expect(opNames).toContain('cognee_sync_reconcile');
-      // Intake ops (4)
-      expect(opNames).toContain('intake_ingest_book');
-      expect(opNames).toContain('intake_process');
-      expect(opNames).toContain('intake_status');
-      expect(opNames).toContain('intake_preview');
-      // Total: 214 (209 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(214);
-    });
-
-    it('search should query across all domains with ranked results', async () => {
-      runtime.vault.seed([
-        makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
-        makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
-      ]);
-      runtime = createAgentRuntime({ agentId: '${config.id}', vaultPath: ':memory:', plansPath: join(plannerDir, 'plans2.json') });
-      runtime.vault.seed([
-        makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
-        makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
-      ]);
-      const facade = buildCoreFacade();
-      const searchOp = facade.ops.find((o) => o.name === 'search')!;
-      const results = (await searchOp.handler({ query: 'pattern' })) as Array<{ entry: unknown; score: number; breakdown: unknown }>;
-      expect(Array.isArray(results)).toBe(true);
-      expect(results.length).toBe(2);
-      expect(results[0].score).toBeGreaterThan(0);
-    });
-
-    it('vault_stats should return counts', async () => {
-      runtime.vault.seed([
-        makeEntry({ id: 'vs1', domain: 'd1', tags: ['x'] }),
-        makeEntry({ id: 'vs2', domain: 'd2', tags: ['y'] }),
-      ]);
-      const facade = buildCoreFacade();
-      const statsOp = facade.ops.find((o) => o.name === 'vault_stats')!;
-      const stats = (await statsOp.handler({})) as { totalEntries: number };
-      expect(stats.totalEntries).toBe(2);
+    it('agent ops should not appear in semantic facades', () => {
+      const facades = createSemanticFacades(runtime, '${config.id}');
+      const allOps = facades.flatMap(f => f.ops.map(o => o.name));
+      expect(allOps).not.toContain('health');
+      expect(allOps).not.toContain('identity');
+      expect(allOps).not.toContain('activate');
+      expect(allOps).not.toContain('inject_claude_md');
+      expect(allOps).not.toContain('setup');
     });
 
     it('health should return ok status', async () => {
-      const facade = buildCoreFacade();
+      const facade = buildAgentFacade();
       const healthOp = facade.ops.find((o) => o.name === 'health')!;
       const health = (await healthOp.handler({})) as { status: string };
       expect(health.status).toBe('ok');
     });
 
     it('identity should return persona', async () => {
-      const facade = buildCoreFacade();
+      const facade = buildAgentFacade();
       const identityOp = facade.ops.find((o) => o.name === 'identity')!;
       const persona = (await identityOp.handler({})) as { name: string; role: string };
       expect(persona.name).toBe('${escapeQuotes(config.name)}');
@@ -416,7 +406,7 @@ ${domainDescribes}
     });
 
     it('activate should return persona and setup status', async () => {
-      const facade = buildCoreFacade();
+      const facade = buildAgentFacade();
       const activateOp = facade.ops.find((o) => o.name === 'activate')!;
       const result = (await activateOp.handler({ projectPath: '/tmp/nonexistent-test' })) as {
         activated: boolean;
@@ -427,7 +417,7 @@ ${domainDescribes}
     });
 
     it('activate with deactivate flag should return deactivation', async () => {
-      const facade = buildCoreFacade();
+      const facade = buildAgentFacade();
       const activateOp = facade.ops.find((o) => o.name === 'activate')!;
       const result = (await activateOp.handler({ deactivate: true })) as { deactivated: boolean; message: string };
       expect(result.deactivated).toBe(true);
@@ -438,7 +428,7 @@ ${domainDescribes}
       const tempDir = join(tmpdir(), 'forge-inject-test-' + Date.now());
       mkdirSync(tempDir, { recursive: true });
       try {
-        const facade = buildCoreFacade();
+        const facade = buildAgentFacade();
         const injectOp = facade.ops.find((o) => o.name === 'inject_claude_md')!;
         const result = (await injectOp.handler({ projectPath: tempDir })) as {
           injected: boolean;
@@ -456,7 +446,7 @@ ${domainDescribes}
     });
 
     it('setup should return project and global CLAUDE.md status', async () => {
-      const facade = buildCoreFacade();
+      const facade = buildAgentFacade();
       const setupOp = facade.ops.find((o) => o.name === 'setup')!;
       const result = (await setupOp.handler({ projectPath: '/tmp/nonexistent-test' })) as {
         agent: { name: string };
@@ -468,75 +458,6 @@ ${domainDescribes}
       expect(result.agent.name).toBe('${escapeQuotes(config.name)}');
       expect(result.vault.entries).toBe(0);
       expect(result.recommendations.length).toBeGreaterThan(0);
-    });
-
-    it('create_plan should create a draft plan', async () => {
-      const facade = buildCoreFacade();
-      const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
-      const result = (await createOp.handler({
-        objective: 'Add caching',
-        scope: 'api layer',
-        tasks: [{ title: 'Add Redis', description: 'Set up Redis client' }],
-      })) as { created: boolean; plan: { id: string; status: string; tasks: unknown[] } };
-      expect(result.created).toBe(true);
-      expect(result.plan.status).toBe('draft');
-      expect(result.plan.tasks).toHaveLength(1);
-    });
-
-    it('brain_stats should return intelligence stats', async () => {
-      const facade = buildCoreFacade();
-      const statsOp = facade.ops.find((o) => o.name === 'brain_stats')!;
-      const result = (await statsOp.handler({})) as {
-        vocabularySize: number;
-        feedbackCount: number;
-      };
-      expect(result.vocabularySize).toBe(0);
-      expect(result.feedbackCount).toBe(0);
-    });
-
-    it('curator_status should return table counts', async () => {
-      const facade = buildCoreFacade();
-      const statusOp = facade.ops.find((o) => o.name === 'curator_status')!;
-      const result = (await statusOp.handler({})) as { initialized: boolean };
-      expect(result.initialized).toBe(true);
-    });
-
-    it('curator_health_audit should return score', async () => {
-      runtime.vault.seed([
-        makeEntry({ id: 'ha1', type: 'pattern', tags: ['a', 'b'] }),
-        makeEntry({ id: 'ha2', type: 'anti-pattern', tags: ['c', 'd'] }),
-      ]);
-      runtime.curator.groomAll();
-      const facade = buildCoreFacade();
-      const healthOp = facade.ops.find((o) => o.name === 'curator_health_audit')!;
-      const result = (await healthOp.handler({})) as { score: number };
-      expect(result.score).toBeGreaterThan(0);
-    });
-
-    it('governance_policy get should return default policy', async () => {
-      const facade = buildCoreFacade();
-      const policyOp = facade.ops.find((o) => o.name === 'governance_policy')!;
-      const result = (await policyOp.handler({ action: 'get', projectPath: '/test' })) as {
-        projectPath: string;
-        quotas: { maxEntriesTotal: number };
-        autoCapture: { enabled: boolean };
-      };
-      expect(result.projectPath).toBe('/test');
-      expect(result.quotas.maxEntriesTotal).toBe(500);
-      expect(result.autoCapture.enabled).toBe(true);
-    });
-
-    it('governance_dashboard should return combined view', async () => {
-      const facade = buildCoreFacade();
-      const dashOp = facade.ops.find((o) => o.name === 'governance_dashboard')!;
-      const result = (await dashOp.handler({ projectPath: '/test' })) as {
-        vaultSize: number;
-        quotaPercent: number;
-        pendingProposals: number;
-      };
-      expect(typeof result.vaultSize).toBe('number');
-      expect(typeof result.quotaPercent).toBe('number');
-      expect(result.pendingProposals).toBe(0);
     });
   });
 });

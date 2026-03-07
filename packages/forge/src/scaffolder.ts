@@ -42,7 +42,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     {
       path: 'src/index.ts',
       description:
-        'Entry point — thin shell using createAgentRuntime() + createCoreOps() from @soleri/core',
+        'Entry point — thin shell using createAgentRuntime() + createSemanticFacades() from @soleri/core',
     },
     ...config.domains.map((d) => ({
       path: `src/intelligence/data/${d}.json`,
@@ -96,266 +96,19 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
       name: `${config.id}_${d.replace(/-/g, '_')}`,
       ops: ['get_patterns', 'search', 'get_entry', 'capture', 'remove'],
     })),
-    {
-      name: `${config.id}_core`,
-      ops: [
-        // From createCoreOps() — 150 generic ops
-        'search',
-        'vault_stats',
-        'list_all',
-        'register',
-        'memory_search',
-        'memory_capture',
-        'memory_list',
-        'session_capture',
-        'export',
-        'create_plan',
-        'get_plan',
-        'approve_plan',
-        'update_task',
-        'complete_plan',
-        'record_feedback',
-        'brain_feedback',
-        'brain_feedback_stats',
-        'rebuild_vocabulary',
-        'brain_stats',
-        'llm_status',
-        'brain_session_context',
-        'brain_strengths',
-        'brain_global_patterns',
-        'brain_recommend',
-        'brain_build_intelligence',
-        'brain_export',
-        'brain_import',
-        'brain_extract_knowledge',
-        'brain_archive_sessions',
-        'brain_promote_proposals',
-        'brain_lifecycle',
-        'brain_reset_extracted',
-        // Brain decay report (#89) — 1
-        'brain_decay_report',
-        // Cognee ops — 5
-        'cognee_status',
-        'cognee_search',
-        'cognee_add',
-        'cognee_cognify',
-        'cognee_config',
-        // LLM ops — 2
-        'llm_rotate',
-        'llm_call',
-        // Prompt ops — 2
-        'render_prompt',
-        'list_templates',
-        'curator_status',
-        'curator_detect_duplicates',
-        'curator_contradictions',
-        'curator_resolve_contradiction',
-        'curator_groom',
-        'curator_groom_all',
-        'curator_consolidate',
-        'curator_health_audit',
-        'get_identity',
-        'update_identity',
-        'add_guideline',
-        'remove_guideline',
-        'rollback_identity',
-        'route_intent',
-        'morph',
-        'get_behavior_rules',
-        // Governance ops — 5
-        'governance_policy',
-        'governance_proposals',
-        'governance_stats',
-        'governance_expire',
-        'governance_dashboard',
-        // Planning Extra ops — 22
-        'plan_iterate',
-        'plan_split',
-        'plan_reconcile',
-        'plan_complete_lifecycle',
-        'plan_dispatch',
-        'plan_review',
-        'plan_archive',
-        'plan_list_tasks',
-        'plan_stats',
-        // Planning evidence (#148)
-        'plan_submit_evidence',
-        'plan_verify_task',
-        'plan_verify_plan',
-        // Subagent dispatch (#149)
-        'plan_review_spec',
-        'plan_review_quality',
-        'plan_review_outcome',
-        // Brainstorm (#150)
-        'plan_brainstorm',
-        // Auto-reconcile (#151)
-        'plan_auto_reconcile',
-        // Validate plan (#152)
-        'plan_validate',
-        // Execution metrics + deliverables (#80, #83)
-        'plan_execution_metrics',
-        'plan_record_task_metrics',
-        'plan_submit_deliverable',
-        'plan_verify_deliverables',
-        // Memory Extra ops — 8
-        'memory_delete',
-        'memory_stats',
-        'memory_export',
-        'memory_import',
-        'memory_prune',
-        'memory_deduplicate',
-        'memory_topics',
-        'memory_by_project',
-        // Vault Extra ops — 12
-        'vault_get',
-        'vault_update',
-        'vault_remove',
-        'vault_bulk_add',
-        'vault_bulk_remove',
-        'vault_tags',
-        'vault_domains',
-        'vault_recent',
-        'vault_import',
-        'vault_seed',
-        'vault_backup',
-        'vault_age_report',
-        // Vault extra — seed canonical + knowledge lifecycle (5)
-        'vault_seed_canonical',
-        'knowledge_audit',
-        'knowledge_health',
-        'knowledge_merge',
-        'knowledge_reorganize',
-        // Bi-temporal vault ops (#89) — 3
-        'vault_set_temporal',
-        'vault_find_expiring',
-        'vault_find_expired',
-        // Vault archival (#86) — 3
-        'vault_archive',
-        'vault_restore',
-        'vault_optimize',
-        // Vault content hashing (#166) — 2
-        'vault_content_hash',
-        'vault_dedup_status',
-        // Admin ops — 8
-        'admin_health',
-        'admin_tool_list',
-        'admin_config',
-        'admin_vault_size',
-        'admin_uptime',
-        'admin_version',
-        'admin_reset_cache',
-        'admin_diagnostic',
-        // Loop ops — 9
-        'loop_start',
-        'loop_iterate',
-        'loop_iterate_gate',
-        'loop_status',
-        'loop_cancel',
-        'loop_history',
-        'loop_is_active',
-        'loop_complete',
-        'loop_anomaly_check',
-        // Orchestrate ops — 5
-        'orchestrate_plan',
-        'orchestrate_execute',
-        'orchestrate_complete',
-        'orchestrate_status',
-        'orchestrate_quick_capture',
-        // Grading ops — 5
-        'plan_grade',
-        'plan_check_history',
-        'plan_latest_check',
-        'plan_meets_grade',
-        'plan_auto_improve',
-        // Capture ops — 4
-        'capture_knowledge',
-        'capture_quick',
-        'search_intelligent',
-        'search_feedback',
-        // Enriched capture (#154) — 1
-        'capture_enriched',
-        // Cognee graph (#156) — 3
-        'cognee_get_node',
-        'cognee_graph_stats',
-        'cognee_export_status',
-        // Cognee Sync ops — 3
-        'cognee_sync_status',
-        'cognee_sync_drain',
-        'cognee_sync_reconcile',
-        // Intake ops — 4
-        'intake_ingest_book',
-        'intake_process',
-        'intake_status',
-        'intake_preview',
-        // Admin Extra ops — 23
-        'admin_telemetry',
-        'admin_telemetry_recent',
-        'admin_telemetry_reset',
-        'admin_permissions',
-        'admin_vault_analytics',
-        'admin_search_insights',
-        'admin_module_status',
-        'admin_env',
-        'admin_gc',
-        'admin_export_config',
-        // Admin key pool (#157)
-        'admin_key_pool_status',
-        'admin_create_token',
-        'admin_revoke_token',
-        'admin_list_tokens',
-        // Admin accounts (#158)
-        'admin_add_account',
-        'admin_remove_account',
-        'admin_rotate_account',
-        'admin_list_accounts',
-        'admin_account_status',
-        // Admin plugins (#159)
-        'admin_list_plugins',
-        'admin_plugin_status',
-        // Admin instruction validation (#160)
-        'admin_validate_instructions',
-        // Hot reload (#63)
-        'admin_hot_reload',
-        // Admin persistence (#85) — 1
-        'admin_persistence_info',
-        // Curator Extra ops — 5
-        'curator_entry_history',
-        'curator_record_snapshot',
-        'curator_queue_stats',
-        'curator_enrich',
-        // Hybrid contradiction detection (#36) — 1
-        'curator_hybrid_contradictions',
-        // Project ops — 12
-        'project_get',
-        'project_list',
-        'project_unregister',
-        'project_get_rules',
-        'project_list_rules',
-        'project_add_rule',
-        'project_remove_rule',
-        'project_link',
-        'project_unlink',
-        'project_get_links',
-        'project_linked_projects',
-        'project_touch',
-        // Cross-project memory ops — 3
-        'memory_promote_to_global',
-        'memory_configure',
-        'memory_cross_project_search',
-        // Playbook ops — 5
-        'playbook_list',
-        'playbook_get',
-        'playbook_create',
-        'playbook_match',
-        'playbook_seed',
-        // Agent-specific ops — 5
-        'health',
-        'identity',
-        'activate',
-        'inject_claude_md',
-        'setup',
-      ],
-    },
+    // 10 semantic facades from createSemanticFacades()
+    { name: `${config.id}_vault`, ops: ['search', 'vault_stats', 'list_all', 'export', 'capture_enriched', '...vault-extra', '...capture', '...intake'] },
+    { name: `${config.id}_plan`, ops: ['create_plan', 'get_plan', 'approve_plan', 'update_task', 'complete_plan', '...planning-extra', '...grading'] },
+    { name: `${config.id}_brain`, ops: ['record_feedback', 'brain_feedback', 'brain_stats', 'llm_status', 'brain_strengths', '...19 brain ops'] },
+    { name: `${config.id}_memory`, ops: ['memory_search', 'memory_capture', 'memory_list', 'session_capture', '...memory-extra', '...cross-project'] },
+    { name: `${config.id}_admin`, ops: ['llm_rotate', 'llm_call', 'render_prompt', 'list_templates', '...admin', '...admin-extra'] },
+    { name: `${config.id}_curator`, ops: ['curator_status', 'curator_health_audit', '...8 curator ops', '...curator-extra'] },
+    { name: `${config.id}_loop`, ops: ['loop_start', 'loop_iterate', 'loop_cancel', '...loop ops'] },
+    { name: `${config.id}_orchestrate`, ops: ['register', '...orchestrate', '...project', '...playbook'] },
+    { name: `${config.id}_control`, ops: ['get_identity', 'route_intent', 'governance_policy', '...control+governance ops'] },
+    { name: `${config.id}_cognee`, ops: ['cognee_status', 'cognee_search', '...cognee ops', '...cognee-sync'] },
+    // Agent-specific facade
+    { name: `${config.id}_core`, ops: ['health', 'identity', 'activate', 'inject_claude_md', 'setup'] },
   ];
 
   return {
@@ -468,7 +221,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     filesCreated.push(path);
   }
 
-  const totalOps = config.domains.length * 5 + 61; // 5 per domain + 56 core (from createCoreOps) + 5 agent-specific
+  const totalOps = config.domains.length * 5 + 214; // 5 per domain + 209 semantic + 5 agent-specific
 
   // Auto-build: install dependencies and compile before registering MCP
   let buildSuccess = false;
@@ -503,7 +256,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
 
   const summaryLines = [
     `Created ${config.name} agent at ${agentDir}`,
-    `${config.domains.length + 1} facades with ${totalOps} operations`,
+    `${config.domains.length + 11} facades with ${totalOps} operations`,
     `${config.domains.length} empty knowledge domains ready for capture`,
     `Intelligence layer (Brain) — TF-IDF scoring, auto-tagging, duplicate detection`,
     `Activation system included — say "Hello, ${config.name}!" to activate`,

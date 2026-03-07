@@ -29,8 +29,6 @@ export type {
   MergedPlaybook,
   PlaybookMatchResult,
 } from './playbooks/index.js';
-export { createPlaybookOps } from './runtime/playbook-ops.js';
-
 // ─── Text Utilities ─────────────────────────────────────────────────
 export {
   tokenize,
@@ -285,22 +283,8 @@ export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/typ
 
 // ─── Runtime Factory ────────────────────────────────────────────────
 export { createAgentRuntime } from './runtime/runtime.js';
-export { createCoreOps } from './runtime/core-ops.js';
+export { createSemanticFacades } from './runtime/facades/index.js';
 export { createDomainFacade, createDomainFacades } from './runtime/domain-ops.js';
-export { createPlanningExtraOps } from './runtime/planning-extra-ops.js';
-export { createMemoryExtraOps } from './runtime/memory-extra-ops.js';
-export { createVaultExtraOps } from './runtime/vault-extra-ops.js';
-export { createAdminOps } from './runtime/admin-ops.js';
-export { createAdminExtraOps } from './runtime/admin-extra-ops.js';
-export { createLoopOps } from './runtime/loop-ops.js';
-export { createOrchestrateOps } from './runtime/orchestrate-ops.js';
-export { createGradingOps } from './runtime/grading-ops.js';
-export { createCaptureOps } from './runtime/capture-ops.js';
-export { createCuratorExtraOps } from './runtime/curator-extra-ops.js';
-export { createProjectOps } from './runtime/project-ops.js';
-export { createMemoryCrossProjectOps } from './runtime/memory-cross-project-ops.js';
-export { createCogneeSyncOps } from './runtime/cognee-sync-ops.js';
-export { createIntakeOps } from './runtime/intake-ops.js';
 export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';
 
 // ─── Errors ────────────────────────────────────────────────────────────

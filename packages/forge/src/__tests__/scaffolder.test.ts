@@ -138,7 +138,7 @@ describe('Scaffolder', () => {
 
       // v5.0 runtime factory pattern
       expect(entry).toContain('createAgentRuntime');
-      expect(entry).toContain('createCoreOps');
+      expect(entry).toContain('createSemanticFacades');
       expect(entry).toContain('createDomainFacades');
       expect(entry).toContain("from '@soleri/core'");
       expect(entry).toContain("agentId: 'atlas'");
@@ -221,7 +221,7 @@ describe('Scaffolder', () => {
 
       // Should use runtime factories from @soleri/core
       expect(facadesTest).toContain('createAgentRuntime');
-      expect(facadesTest).toContain('createCoreOps');
+      expect(facadesTest).toContain('createSemanticFacades');
       expect(facadesTest).toContain('createDomainFacade');
       expect(facadesTest).toContain("from '@soleri/core'");
 
