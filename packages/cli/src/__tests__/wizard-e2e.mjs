@@ -132,9 +132,8 @@ function runWizard(name, actions, opts = {}) {
 function archetypeActions(outDir, { downCount = 0 } = {}) {
   const arrows = DOWN.repeat(downCount);
   return [
-    { waitFor: 'kind of agent', send: arrows + ENTER },
+    { waitFor: 'kind of agent', send: arrows + SPACE + ENTER },
     { waitFor: 'Display name', send: ENTER },
-    { waitFor: 'Agent ID', send: ENTER },
     { waitFor: 'Role', send: ENTER },
     { waitFor: 'Description', send: ENTER },
     { waitFor: /domain|expertise/i, send: ENTER },
@@ -153,10 +152,10 @@ function archetypeActions(outDir, { downCount = 0 } = {}) {
 // Note: agentId is slugify(label), not the archetype value.
 // e.g., "Full-Stack Assistant" → "full-stack-assistant"
 const ARCHETYPES = [
-  { value: 'code-reviewer', agentId: 'code-reviewer', label: 'Code Reviewer', tone: 'pragmatic', totalSkills: 10, downCount: 0 },
+  { value: 'code-reviewer', agentId: 'code-reviewer', label: 'Code Reviewer', tone: 'mentor', totalSkills: 10, downCount: 0 },
   { value: 'security-auditor', agentId: 'security-auditor', label: 'Security Auditor', tone: 'precise', totalSkills: 10, downCount: 1 },
-  { value: 'api-architect', agentId: 'api-architect', label: 'API Architect', tone: 'mentor', totalSkills: 10, downCount: 2 },
-  { value: 'test-engineer', agentId: 'test-engineer', label: 'Test Engineer', tone: 'pragmatic', totalSkills: 10, downCount: 3 },
+  { value: 'api-architect', agentId: 'api-architect', label: 'API Architect', tone: 'pragmatic', totalSkills: 10, downCount: 2 },
+  { value: 'test-engineer', agentId: 'test-engineer', label: 'Test Engineer', tone: 'mentor', totalSkills: 10, downCount: 3 },
   { value: 'devops-pilot', agentId: 'devops-pilot', label: 'DevOps Pilot', tone: 'pragmatic', totalSkills: 10, downCount: 4 },
   { value: 'database-architect', agentId: 'database-architect', label: 'Database Architect', tone: 'precise', totalSkills: 10, downCount: 5 },
   { value: 'full-stack', agentId: 'full-stack-assistant', label: 'Full-Stack Assistant', tone: 'mentor', totalSkills: 11, downCount: 6 },
@@ -177,7 +176,7 @@ async function testCancelArchetype() {
 async function testCancelName() {
   console.log('\n  [2/14] Cancel at display name');
   const r = await runWizard('cancel-name', [
-    { waitFor: 'kind of agent', send: ENTER },
+    { waitFor: 'kind of agent', send: SPACE + ENTER },
     { waitFor: 'Display name', send: CTRL_C },
   ], { timeout: 15000 });
   assert(r.actionsCompleted >= 2, 'reached name prompt', 'cancel-name');
@@ -186,20 +185,18 @@ async function testCancelName() {
 async function testCancelRole() {
   console.log('\n  [3/14] Cancel at role');
   const r = await runWizard('cancel-role', [
-    { waitFor: 'kind of agent', send: ENTER },
+    { waitFor: 'kind of agent', send: SPACE + ENTER },
     { waitFor: 'Display name', send: ENTER },
-    { waitFor: 'Agent ID', send: ENTER },
     { waitFor: 'Role', send: CTRL_C },
   ], { timeout: 15000 });
-  assert(r.actionsCompleted >= 4, 'reached role prompt', 'cancel-role');
+  assert(r.actionsCompleted >= 3, 'reached role prompt', 'cancel-role');
 }
 
 async function testCancelSkills() {
   console.log('\n  [4/14] Cancel at skills');
   const r = await runWizard('cancel-skills', [
-    { waitFor: 'kind of agent', send: ENTER },
+    { waitFor: 'kind of agent', send: SPACE + ENTER },
     { waitFor: 'Display name', send: ENTER },
-    { waitFor: 'Agent ID', send: ENTER },
     { waitFor: 'Role', send: ENTER },
     { waitFor: 'Description', send: ENTER },
     { waitFor: /domain|expertise/i, send: ENTER },
@@ -207,7 +204,7 @@ async function testCancelSkills() {
     { waitFor: /tone/i, send: ENTER },
     { waitFor: /skill/i, send: CTRL_C },
   ], { timeout: 15000 });
-  assert(r.actionsCompleted >= 9, 'reached skills prompt', 'cancel-skills');
+  assert(r.actionsCompleted >= 8, 'reached skills prompt', 'cancel-skills');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -220,9 +217,8 @@ async function testDeclineConfirm() {
   mkdirSync(outDir, { recursive: true });
 
   const r = await runWizard('decline', [
-    { waitFor: 'kind of agent', send: ENTER },
+    { waitFor: 'kind of agent', send: SPACE + ENTER },
     { waitFor: 'Display name', send: ENTER },
-    { waitFor: 'Agent ID', send: ENTER },
     { waitFor: 'Role', send: ENTER },
     { waitFor: 'Description', send: ENTER },
     { waitFor: /domain|expertise/i, send: ENTER },
@@ -235,7 +231,7 @@ async function testDeclineConfirm() {
     { waitFor: /create agent/i, send: LEFT + ENTER },
   ], { timeout: 15000 });
 
-  assert(r.actionsCompleted >= 13, `all prompts reached (${r.actionsCompleted}/13)`, 'decline');
+  assert(r.actionsCompleted >= 12, `all prompts reached (${r.actionsCompleted}/12)`, 'decline');
   assert(!existsSync(join(outDir, 'code-reviewer', 'package.json')), 'no agent created', 'decline');
 }
 
@@ -254,7 +250,7 @@ async function testArchetype(arch, idx) {
   const ad = join(outDir, arch.agentId);
   const ctx = `archetype-${arch.agentId}`;
 
-  assert(r.actionsCompleted >= 12, `prompts reached (${r.actionsCompleted}/13)`, ctx);
+  assert(r.actionsCompleted >= 11, `prompts reached (${r.actionsCompleted}/12)`, ctx);
   assert(r.exitCode === 0, `exit 0 (got ${r.exitCode})`, ctx);
   assert(existsSync(join(ad, 'package.json')), 'package.json exists', ctx);
   assert(existsSync(join(ad, 'dist', 'index.js')), 'dist/index.js built', ctx);
@@ -276,7 +272,7 @@ async function testArchetype(arch, idx) {
     const skills = readdirSync(skillsDir);
     assert(skills.length === arch.totalSkills, `${arch.totalSkills} skills (got ${skills.length})`, ctx);
     // Core skills always present
-    for (const core of ['brainstorming', 'systematic-debugging', 'verification-before-completion', 'health-check', 'context-resume']) {
+    for (const core of ['brainstorming', 'systematic-debugging', 'verification-before-completion', 'health-check', 'context-resume', 'writing-plans', 'executing-plans']) {
       assert(skills.includes(core), `core skill: ${core}`, ctx);
     }
   } else {
@@ -317,31 +313,29 @@ async function testCustomArchetype() {
   const customGreeting = "Hey! Drop your GraphQL schema and I will check it for issues.";
 
   const r = await runWizard('custom', [
-    // Step 1: Select "✦ Create Custom" (7 downs from first)
-    { waitFor: 'kind of agent', send: DOWN.repeat(7) + ENTER },
+    // Step 1: Select "✦ Create Custom" (9 downs — 9 archetypes before _custom)
+    { waitFor: 'kind of agent', send: DOWN.repeat(9) + SPACE + ENTER },
     // Step 2: Type custom name
     { waitFor: 'Display name', send: customName + ENTER },
-    // Step 3: Accept auto-derived ID
-    { waitFor: 'Agent ID', send: ENTER },
-    // Step 4: Custom role (has playbook note first, then text prompt)
+    // Step 3: Custom role (has playbook note first, then text prompt)
     { waitFor: 'What does your agent do', send: customRole + ENTER },
-    // Step 5: Custom description
+    // Step 4: Custom description
     { waitFor: 'Describe your agent', send: customDesc + ENTER },
-    // Step 6: Domains — select security + api-design (space to toggle, then enter)
+    // Step 5: Domains — select security + api-design (space to toggle, then enter)
     //   Options: security(1st), code-review(2nd), testing(3rd), api-design(4th)
     //   None pre-selected for custom. Select security(space) + down×3 + api-design(space) + enter
     { waitFor: /domain|expertise/i, send: SPACE + DOWN + DOWN + DOWN + SPACE + ENTER },
-    // Step 7: Principles — select first two (space, down, space, enter)
+    // Step 6: Principles — select first two (space, down, space, enter)
     { waitFor: /principle|guiding/i, send: SPACE + DOWN + SPACE + ENTER },
-    // Step 8: Tone — select Precise (first option)
+    // Step 7: Tone — select Precise (first option)
     { waitFor: /tone/i, send: ENTER },
-    // Step 9: Skills — select writing-plans + vault-navigator (space, down×2, space, enter)
+    // Step 8: Skills — select vault-navigator + knowledge-harvest (space, down×2, space, enter)
     { waitFor: /skill/i, send: SPACE + DOWN + DOWN + SPACE + ENTER },
-    // Step 10: Greeting — select Custom (down + enter)
+    // Step 9: Greeting — select Custom (down + enter)
     { waitFor: /greeting/i, send: DOWN + ENTER },
     // Custom greeting text prompt
     { waitFor: 'Your greeting', send: customGreeting + ENTER },
-    // Step 11: Output directory
+    // Step 10: Output directory
     { waitFor: /output|directory/i, send: CTRL_U + outDir + ENTER, delay: 300 },
     // Hook packs — skip
     { waitFor: /hook|pack/i, send: ENTER },
@@ -352,7 +346,7 @@ async function testCustomArchetype() {
   const ad = join(outDir, customId);
   const ctx = 'custom-archetype';
 
-  assert(r.actionsCompleted >= 14, `prompts reached (${r.actionsCompleted}/15)`, ctx);
+  assert(r.actionsCompleted >= 13, `prompts reached (${r.actionsCompleted}/14)`, ctx);
   assert(r.exitCode === 0, `exit 0 (got ${r.exitCode})`, ctx);
   assert(existsSync(join(ad, 'package.json')), 'package.json exists', ctx);
 
@@ -374,12 +368,12 @@ async function testCustomArchetype() {
     assert(content.includes(customGreeting), 'custom greeting present', ctx);
   }
 
-  // Validate skills: 5 core + 2 optional (writing-plans, vault-navigator)
+  // Validate skills: 7 core + 2 optional (vault-navigator, knowledge-harvest)
   const skillsDir = join(ad, 'skills');
   if (existsSync(skillsDir)) {
     const skills = readdirSync(skillsDir);
-    assert(skills.length === 7, `7 skills (got ${skills.length})`, ctx);
-    assert(skills.includes('writing-plans'), 'has writing-plans', ctx);
+    assert(skills.length === 9, `9 skills (got ${skills.length})`, ctx);
+    assert(skills.includes('writing-plans'), 'has writing-plans (core)', ctx);
     assert(skills.includes('vault-navigator'), 'has vault-navigator', ctx);
     assert(!skills.includes('code-patrol'), 'no code-patrol (not selected)', ctx);
   }
@@ -403,9 +397,8 @@ async function testHookPacks() {
   // full(4th), typescript-safety(5th)
   // Select a11y(space) + down×4 + typescript-safety(space) + enter
   const r = await runWizard('hooks', [
-    { waitFor: 'kind of agent', send: ENTER },
+    { waitFor: 'kind of agent', send: SPACE + ENTER },
     { waitFor: 'Display name', send: ENTER },
-    { waitFor: 'Agent ID', send: ENTER },
     { waitFor: 'Role', send: ENTER },
     { waitFor: 'Description', send: ENTER },
     { waitFor: /domain|expertise/i, send: ENTER },
@@ -422,7 +415,7 @@ async function testHookPacks() {
   const ad = join(outDir, 'code-reviewer');
   const ctx = 'hook-packs';
 
-  assert(r.actionsCompleted >= 12, `prompts reached (${r.actionsCompleted}/13)`, ctx);
+  assert(r.actionsCompleted >= 11, `prompts reached (${r.actionsCompleted}/12)`, ctx);
   assert(r.exitCode === 0, `exit 0 (got ${r.exitCode})`, ctx);
 
   // Validate hooks were installed

@@ -94,19 +94,8 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
 
   if (p.isCancel(name)) return null;
 
-  // ─── Step 3: Agent ID (auto-derived, confirm or edit) ─────
-  const autoId = slugify(name);
-
-  const id = (await p.text({
-    message: 'Agent ID (auto-generated, press Enter to accept)',
-    placeholder: autoId,
-    initialValue: autoId,
-    validate: (v = '') => {
-      if (!/^[a-z][a-z0-9-]*$/.test(v)) return 'Must be kebab-case (e.g., "my-agent")';
-    },
-  })) as string;
-
-  if (p.isCancel(id)) return null;
+  // ─── Step 3: Agent ID (auto-derived from name) ─────────────
+  const id = slugify(name);
 
   // ─── Step 4: Role ─────────────────────────────────────────
   let role: string;
