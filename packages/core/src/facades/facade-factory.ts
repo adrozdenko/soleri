@@ -7,7 +7,7 @@ export function registerFacade(server: McpServer, facade: FacadeConfig): void {
 
   server.tool(
     facade.name,
-    `${facade.description}\n\nOperations: ${opNames.join(', ')}`,
+    facade.description,
     {
       op: z.string().describe(`Operation: ${opNames.join(' | ')}`),
       params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
