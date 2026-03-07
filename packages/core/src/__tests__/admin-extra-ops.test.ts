@@ -26,9 +26,9 @@ describe('createAdminExtraOps', () => {
     ops = createAdminExtraOps(runtime);
   }
 
-  it('should return 29 ops', () => {
+  it('should return 31 ops', () => {
     setup();
-    expect(ops).toHaveLength(29);
+    expect(ops).toHaveLength(31);
     const names = ops.map((o) => o.name);
     // Original 10
     expect(names).toContain('admin_telemetry');
@@ -66,6 +66,9 @@ describe('createAdminExtraOps', () => {
     expect(names).toContain('admin_list_flags');
     expect(names).toContain('admin_get_flag');
     expect(names).toContain('admin_set_flag');
+    // #182: Setup wizard
+    expect(names).toContain('admin_setup_check');
+    expect(names).toContain('admin_setup_run');
   });
 
   // ─── admin_telemetry ────────────────────────────────────────────

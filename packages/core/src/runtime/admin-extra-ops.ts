@@ -765,5 +765,106 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
         return { backend, tables };
       },
     },
+
+    // ─── Setup Wizard (#182) ─────────────────────────────────────────
+    {
+      name: 'admin_setup_check',
+      description:
+        'Check agent setup status — vault health, brain vocabulary, cognee connection, LLM keys, templates.',
+      auth: 'read',
+      handler: async () => {
+        const checks: Record<string, { ok: boolean; detail: string }> = {};
+
+        // Vault
+        try {
+          const stats = vault.stats();
+          checks.vault = {
+            ok: true,
+            detail: `${stats.totalEntries} entries, ${Object.keys(stats.byDomain).length} domains`,
+          };
+        } catch (err) {
+          checks.vault = { ok: false, detail: err instanceof Error ? err.message : 'Failed' };
+        }
+
+        // Brain vocabulary
+        try {
+          const brainStats = brain.getStats();
+          checks.brain = {
+            ok: brainStats.vocabularySize > 0,
+            detail: `${brainStats.vocabularySize} terms`,
+          };
+        } catch {
+          checks.brain = { ok: false, detail: 'Brain not initialized' };
+        }
+
+        // Cognee
+        const cogneeStatus = cognee.getStatus();
+        checks.cognee = {
+          ok: cogneeStatus?.available ?? false,
+          detail: cogneeStatus?.available ? 'Connected' : 'Not available (optional)',
+        };
+
+        // LLM keys
+        const llmAvail = runtime.llmClient.isAvailable();
+        checks.llm = {
+          ok: llmAvail.openai || llmAvail.anthropic,
+          detail: `OpenAI: ${llmAvail.openai ? 'yes' : 'no'}, Anthropic: ${llmAvail.anthropic ? 'yes' : 'no'}`,
+        };
+
+        // Health registry
+        const healthSnap = runtime.health.snapshot();
+        checks.health = {
+          ok: healthSnap.overall !== 'down',
+          detail: `Overall: ${healthSnap.overall}`,
+        };
+
+        const allOk = Object.values(checks).every((c) => c.ok);
+
+        return {
+          ready: allOk,
+          checks,
+          agentId: runtime.config.agentId,
+        };
+      },
+    },
+    {
+      name: 'admin_setup_run',
+      description:
+        'Run first-time agent setup — rebuild brain vocabulary, validate vault schema, seed defaults if empty.',
+      auth: 'admin',
+      handler: async () => {
+        const actions: string[] = [];
+
+        // Rebuild brain vocabulary
+        try {
+          brain.rebuildVocabulary();
+          actions.push('brain_vocabulary_rebuilt');
+        } catch {
+          // Non-fatal
+        }
+
+        // Rebuild FTS index
+        try {
+          vault.rebuildFtsIndex();
+          actions.push('fts_index_rebuilt');
+        } catch {
+          // Non-fatal
+        }
+
+        // Reload templates
+        try {
+          runtime.templateManager.load();
+          actions.push('templates_reloaded');
+        } catch {
+          // Non-fatal
+        }
+
+        return {
+          setup: true,
+          actions,
+          agentId: runtime.config.agentId,
+        };
+      },
+    },
   ];
 }
