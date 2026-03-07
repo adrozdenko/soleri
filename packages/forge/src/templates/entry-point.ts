@@ -215,7 +215,7 @@ async function main(): Promise<void> {
   let extensions: AgentExtensions = {};
   try {
     const ext = await import('./extensions/index.js');
-    const loader = ext.default ?? ext.loadExtensions;
+    const loader = ext.default ?? (ext as Record<string, unknown>).loadExtensions;
     if (typeof loader === 'function') {
       extensions = loader(runtime);
     } else if (typeof loader === 'object') {
