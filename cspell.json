@@ -54,6 +54,8 @@
     "upsert",
     "antipattern",
     "antipatterns",
+    "autoincrement",
+    "dedup",
     "vitest",
     "wcag",
     "windsurfrules"
