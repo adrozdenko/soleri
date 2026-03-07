@@ -54,6 +54,16 @@ describe('normalize', () => {
     const input = [[[1]], [[2, [3]]]];
     expect(await collect(normalize(input))).toEqual([1, 2, 3]);
   });
+
+  it('propagates error from rejected promise', async () => {
+    const input = Promise.reject(new Error('async failure'));
+    await expect(collect(normalize(input))).rejects.toThrow('async failure');
+  });
+
+  it('handles nested empty arrays', async () => {
+    const input = [[], [[]], [1, []]];
+    expect(await collect(normalize(input))).toEqual([1]);
+  });
 });
 
 describe('collect', () => {
