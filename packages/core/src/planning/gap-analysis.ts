@@ -3,13 +3,14 @@
  * Ported from Salvador MCP's plan-gap-content.ts / plan-gap-technical.ts /
  * plan-gap-domain.ts / plan-gap-antipattern.ts.
  *
- * 6 built-in passes (always run):
+ * 7 built-in passes (always run):
  *   1. Structure     — required fields present and sufficiently long
  *   2. Completeness  — measurable objectives, decision rationale, scope exclusions
  *   3. Feasibility   — overly broad scope, missing dependency awareness
  *   4. Risk          — breaking changes without mitigation, missing verification
  *   5. Clarity       — ambiguous language, vague criteria
  *   6. Semantic Quality — generic objectives, shallow rationale, non-concrete approach
+ *   7. Knowledge Depth — BONUS: vault pattern refs, acceptance criteria, domain indicators
  *
  * Opt-in pass factories (registered via customPasses):
  *   - createToolFeasibilityPass  — validates tool_chain entries and ordering
@@ -517,6 +518,143 @@ function analyzeSemanticQuality(plan: Plan): PlanGap[] {
   return gaps;
 }
 
+// ─── Pass 7: Knowledge Depth (Substance Bonuses) ────────────────
+
+/**
+ * Patterns that indicate vault/knowledge-informed content in task descriptions.
+ * Each match earns a bonus point — rewarding plans that reference specific
+ * patterns, anti-patterns, or domain knowledge rather than generic guidance.
+ */
+const KNOWLEDGE_INDICATORS = [
+  /vault\s*pattern/i,
+  /vault\s*patterns/i,
+  /anti-pattern/i,
+  /wcag\s*[\d.]+/i,
+  /aria-[a-z]+/i,
+  /\d+(\.\d+)?:\d+\s*(contrast|ratio)/i,
+  /\d+px\s*(touch|target|minimum|min)/i,
+  /acceptance\s*criteria/i,
+];
+
+/** Checks if task descriptions reference specific named patterns (e.g. "zod-form-validation"). */
+const NAMED_PATTERN_REGEX = /[a-z]+-[a-z]+-[a-z]+/;
+
+function analyzeKnowledgeDepth(plan: Plan): PlanGap[] {
+  const gaps: PlanGap[] = [];
+  const allTaskText = taskText(plan);
+
+  // Bonus: tasks reference vault patterns by name
+  let namedPatternCount = 0;
+  for (const task of plan.tasks) {
+    const desc = task.description || '';
+    const matches = desc.match(/[a-z]+-[a-z]+(-[a-z]+)*/g) || [];
+    // Filter to likely pattern IDs (hyphenated, 2+ segments, not common words)
+    const patternRefs = matches.filter(
+      (m) =>
+        m.length > 8 &&
+        NAMED_PATTERN_REGEX.test(m) &&
+        !['front-end', 'back-end', 'real-time', 'client-side', 'server-side'].includes(m),
+    );
+    namedPatternCount += patternRefs.length;
+  }
+
+  if (namedPatternCount >= 5) {
+    gaps.push(
+      gap(
+        'bonus',
+        'knowledge-depth',
+        `${namedPatternCount} vault pattern references across tasks — strong knowledge-informed plan.`,
+        '',
+        'tasks',
+        'vault_pattern_refs_high',
+      ),
+    );
+    gaps.push(
+      gap(
+        'bonus',
+        'knowledge-depth',
+        'Vault pattern density indicates expert-level domain knowledge.',
+        '',
+        'tasks',
+        'vault_pattern_density',
+      ),
+    );
+  } else if (namedPatternCount >= 2) {
+    gaps.push(
+      gap(
+        'bonus',
+        'knowledge-depth',
+        `${namedPatternCount} vault pattern references across tasks.`,
+        '',
+        'tasks',
+        'vault_pattern_refs_medium',
+      ),
+    );
+  }
+
+  // Bonus: tasks have specific acceptance criteria
+  let tasksWithCriteria = 0;
+  let totalCriteria = 0;
+  for (const task of plan.tasks) {
+    if (task.acceptanceCriteria && task.acceptanceCriteria.length > 0) {
+      tasksWithCriteria++;
+      totalCriteria += task.acceptanceCriteria.length;
+    }
+  }
+
+  if (plan.tasks.length > 0 && tasksWithCriteria / plan.tasks.length >= 0.8) {
+    gaps.push(
+      gap(
+        'bonus',
+        'knowledge-depth',
+        `${tasksWithCriteria}/${plan.tasks.length} tasks have acceptance criteria (${totalCriteria} total).`,
+        '',
+        'tasks',
+        'high_acceptance_criteria',
+      ),
+    );
+  }
+
+  // Bonus: knowledge indicator patterns in task text
+  let indicatorHits = 0;
+  for (const pattern of KNOWLEDGE_INDICATORS) {
+    if (pattern.test(allTaskText)) indicatorHits++;
+  }
+
+  if (indicatorHits >= 4) {
+    gaps.push(
+      gap(
+        'bonus',
+        'knowledge-depth',
+        `${indicatorHits} domain-specific knowledge indicators found (WCAG, ARIA, contrast ratios, touch targets, etc.).`,
+        '',
+        'tasks',
+        'domain_knowledge_indicators',
+      ),
+    );
+  }
+
+  // Bonus: rich task descriptions (avg > 80 chars per task)
+  if (plan.tasks.length > 0) {
+    const avgDescLength =
+      plan.tasks.reduce((sum, t) => sum + (t.description?.length ?? 0), 0) / plan.tasks.length;
+    if (avgDescLength >= 80) {
+      gaps.push(
+        gap(
+          'bonus',
+          'knowledge-depth',
+          `Task descriptions average ${Math.round(avgDescLength)} chars — detailed and specific.`,
+          '',
+          'tasks',
+          'rich_task_descriptions',
+        ),
+      );
+    }
+  }
+
+  return gaps;
+}
+
 // ─── Types ───────────────────────────────────────────────────────
 
 /** A custom gap analysis pass that agents can register. */
@@ -762,6 +900,7 @@ export function runGapAnalysis(plan: Plan, options?: GapAnalysisOptions): PlanGa
     ...analyzeRisk(plan),
     ...analyzeClarity(plan),
     ...analyzeSemanticQuality(plan),
+    ...analyzeKnowledgeDepth(plan),
   ];
 
   // Run custom passes (domain-specific checks like tool-feasibility, UI context, etc.)

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname } from 'node:path';
 import type { PlanGap } from './gap-types.js';
-import { SEVERITY_WEIGHTS, CATEGORY_PENALTY_CAPS } from './gap-types.js';
+import { SEVERITY_WEIGHTS, CATEGORY_PENALTY_CAPS, CATEGORY_BONUS_CAPS } from './gap-types.js';
 import { runGapAnalysis } from './gap-analysis.js';
 import type { GapAnalysisOptions } from './gap-analysis.js';
 
@@ -207,7 +207,8 @@ export interface PlanCheck {
  * - Score = max(0, 100 - totalDeductions)
  */
 export function calculateScore(gaps: PlanGap[], iteration: number = 1): number {
-  const categoryTotals = new Map<string, number>();
+  const categoryDeductions = new Map<string, number>();
+  const categoryBonuses = new Map<string, number>();
 
   for (const gap of gaps) {
     let weight: number = SEVERITY_WEIGHTS[gap.severity];
@@ -220,16 +221,27 @@ export function calculateScore(gaps: PlanGap[], iteration: number = 1): number {
     }
 
     const category = gap.category;
-    categoryTotals.set(category, (categoryTotals.get(category) ?? 0) + weight);
+    if (weight < 0) {
+      // Bonus — accumulate as positive value for capping, apply as negative deduction
+      categoryBonuses.set(category, (categoryBonuses.get(category) ?? 0) + Math.abs(weight));
+    } else {
+      categoryDeductions.set(category, (categoryDeductions.get(category) ?? 0) + weight);
+    }
   }
 
   let deductions = 0;
-  for (const [category, total] of categoryTotals) {
+  for (const [category, total] of categoryDeductions) {
     const cap = CATEGORY_PENALTY_CAPS[category];
     deductions += cap !== undefined ? Math.min(total, cap) : total;
   }
 
-  return Math.max(0, 100 - deductions);
+  let bonuses = 0;
+  for (const [category, total] of categoryBonuses) {
+    const cap = CATEGORY_BONUS_CAPS[category];
+    bonuses += cap !== undefined ? Math.min(total, cap) : total;
+  }
+
+  return Math.max(0, Math.min(100, 100 - deductions + bonuses));
 }
 
 /**

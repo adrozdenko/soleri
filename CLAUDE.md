@@ -4,11 +4,46 @@
 
 Salvador MCP is the reference implementation for Soleri. Every engine-level feature in Salvador should exist in every Soleri-generated agent.
 
-### Development Strategy
+### Development Strategy: Consult → Evaluate → Port or Improve
 
-1. **Port from Salvador** — Salvador's code is the blueprint. Copy patterns, abstractions, and battle-tested logic from Salvador into `@soleri/core` and `@soleri/forge`. Don't reinvent — adapt.
-2. **Generated agents = Salvador-grade** — A scaffolded agent must ship with the same capabilities as Salvador (minus domain-specific design system intelligence). Curator, brain intelligence pipeline, loops, orchestration, identity, governance — these are all engine features, not Salvador-specific.
-3. **Consult Salvador vault docs first** — Before building any feature, read the Salvador wiki documentation in `docs/vault/wiki/salvador-mcp/` and `docs/vault/wiki/salvador-vault/`. These describe exactly how each feature works, what ops it exposes, and how it integrates.
+Salvador is the **reference implementation, not gospel**. It works and it's battle-tested, but it was AI-generated — the internals haven't been deeply audited for optimality. Every feature port is an opportunity to validate and improve.
+
+**For every Soleri feature, follow this sequence:**
+
+1. **Consult Salvador first** — Before writing any code, read the Salvador implementation.
+   - Find the relevant source: `~/projects/salvador-mcp/src/` (code) or `docs/vault/wiki/` (architecture docs)
+   - Read the actual handler/module, not just the facade registration
+   - Understand the data flow end-to-end, not just the public API
+2. **Evaluate critically** — Salvador's code works, but ask:
+   - Is this over-engineered? Could it be simpler?
+   - Are there edge cases it misses?
+   - Is the abstraction level right, or did it abstract too early?
+   - Would this pattern make sense for a generic agent, or is it Salvador-specific?
+   - Are there performance issues hidden by small-scale usage?
+3. **Port or improve** — Three outcomes:
+   - **Port directly** — the code is solid, copy and adapt to `@soleri/core` conventions
+   - **Port with improvements** — the approach is right but the implementation can be cleaner/faster/simpler
+   - **Rewrite** — the approach itself is suboptimal; design a better one informed by what Salvador taught us
+4. **Document the delta** — If you improve or rewrite, note what changed and why. This feeds back into Salvador's own improvement.
+
+**Key Salvador source locations:**
+
+| Feature | Salvador path |
+|---------|--------------|
+| Facades | `src/tools/facades/*.facade.ts` |
+| Vault engine | `src/vault/` |
+| Brain/intelligence | `src/intelligence/`, `src/memory/` |
+| Planning | `src/planner/` |
+| Curator | `src/curator/` |
+| Telegram bot | `src/telegram/` |
+| Color science | `src/color/` |
+| Orchestration | `src/orchestrate/` |
+| Wiki docs | `docs/vault/wiki/salvador-mcp/`, `docs/vault/wiki/salvador-vault/` |
+
+### Additional Principles
+
+1. **Generated agents = Salvador-grade** — A scaffolded agent must ship with the same capabilities as Salvador (minus domain-specific design system intelligence). Curator, brain intelligence pipeline, loops, orchestration, identity, governance — these are all engine features, not Salvador-specific.
+2. **Consult Salvador vault docs first** — Before building any feature, read the Salvador wiki documentation in `docs/vault/wiki/salvador-mcp/` and `docs/vault/wiki/salvador-vault/`. These describe exactly how each feature works, what ops it exposes, and how it integrates.
 
 ### The 4-File Rule
 

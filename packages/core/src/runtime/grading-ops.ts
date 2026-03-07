@@ -1,6 +1,6 @@
 /**
  * Plan grading operations — 5 ops for iterative plan quality scoring.
- * Uses 6-pass gap analysis with severity-weighted scoring (ported from Salvador).
+ * Uses 7-pass gap analysis with severity-weighted scoring + substance bonuses.
  *
  * Ops: plan_grade, plan_check_history, plan_latest_check,
  *      plan_meets_grade, plan_auto_improve.
@@ -22,7 +22,7 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'plan_grade',
       description:
-        'Grade a plan using 6-pass gap analysis — severity-weighted scoring (critical=30, major=15, minor=2). Returns grade, score, gaps with recommendations, and iteration number.',
+        'Grade a plan using 7-pass gap analysis — severity-weighted scoring (critical=30, major=15, minor=2) with substance bonuses for vault-informed depth. Returns grade, score, gaps with recommendations, and iteration number.',
       auth: 'read',
       schema: z.object({
         planId: z.string().describe('The plan ID to grade.'),

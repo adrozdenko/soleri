@@ -5,7 +5,7 @@
 
 // ─── Severity & Category ─────────────────────────────────────────
 
-export type GapSeverity = 'critical' | 'major' | 'minor' | 'info';
+export type GapSeverity = 'critical' | 'major' | 'minor' | 'info' | 'bonus';
 
 export type GapCategory =
   | 'structure'
@@ -14,6 +14,7 @@ export type GapCategory =
   | 'risk'
   | 'clarity'
   | 'semantic-quality'
+  | 'knowledge-depth'
   | 'tool-feasibility'
   | 'flow-alignment'
   | 'anti-pattern';
@@ -32,12 +33,13 @@ export interface PlanGap {
 
 // ─── Scoring Constants ───────────────────────────────────────────
 
-/** Points deducted per gap severity. */
+/** Points deducted per gap severity. Negative = bonus (adds points). */
 export const SEVERITY_WEIGHTS: Record<GapSeverity, number> = {
   critical: 30,
   major: 15,
   minor: 2,
   info: 0,
+  bonus: -3,
 };
 
 /**
@@ -46,6 +48,14 @@ export const SEVERITY_WEIGHTS: Record<GapSeverity, number> = {
  */
 export const CATEGORY_PENALTY_CAPS: Record<string, number> = {
   clarity: 10,
+};
+
+/**
+ * Maximum bonus per category.
+ * Substance bonuses offset structural penalties but are capped to prevent gaming.
+ */
+export const CATEGORY_BONUS_CAPS: Record<string, number> = {
+  'knowledge-depth': 15,
 };
 
 // ─── Validation Thresholds ───────────────────────────────────────
