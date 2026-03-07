@@ -51,18 +51,37 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
     },
   ];
 
-  const archetypeValue = await p.select({
-    message: 'What kind of agent are you building?',
+  const archetypeValues = await p.multiselect({
+    message: 'What kind of agent are you building? (select one or more)',
     options: archetypeChoices,
+    required: false,
   });
 
-  if (p.isCancel(archetypeValue)) return null;
+  if (p.isCancel(archetypeValues)) return null;
 
-  const archetype: Archetype | undefined = ARCHETYPES.find((a) => a.value === archetypeValue);
-  const isCustom = archetypeValue === '_custom';
+  const selectedValues = archetypeValues as string[];
+  const isCustom = selectedValues.includes('_custom') || selectedValues.length === 0;
+  const selectedArchetypes = ARCHETYPES.filter((a) => selectedValues.includes(a.value));
+
+  // Merge defaults from all selected archetypes
+  function mergeDefaults(archetypes: Archetype[]) {
+    if (archetypes.length === 0) return null;
+    const domains = [...new Set(archetypes.flatMap((a) => a.defaults.domains))];
+    const principles = [...new Set(archetypes.flatMap((a) => a.defaults.principles))];
+    const skills = [...new Set(archetypes.flatMap((a) => a.defaults.skills))];
+    const tones = [...new Set(archetypes.map((a) => a.defaults.tone))];
+    return { domains, principles, skills, tones };
+  }
+
+  const merged = mergeDefaults(selectedArchetypes);
 
   // ─── Step 2: Display name ─────────────────────────────────
-  const nameDefault = archetype ? archetype.label : undefined;
+  const nameDefault =
+    selectedArchetypes.length === 1
+      ? selectedArchetypes[0].label
+      : selectedArchetypes.length > 1
+        ? selectedArchetypes.map((a) => a.label).join(' + ')
+        : undefined;
 
   const name = (await p.text({
     message: 'Display name',
@@ -92,29 +111,34 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
   // ─── Step 4: Role ─────────────────────────────────────────
   let role: string;
 
-  if (isCustom) {
-    p.note(
-      [
-        CUSTOM_ROLE_GUIDANCE.instruction,
-        '',
-        'Examples:',
-        ...CUSTOM_ROLE_GUIDANCE.examples.map((e) => `  "${e}"`),
-      ].join('\n'),
-      '\u2726 Custom Agent Playbook',
-    );
+  if (isCustom || selectedArchetypes.length > 1) {
+    if (isCustom) {
+      p.note(
+        [
+          CUSTOM_ROLE_GUIDANCE.instruction,
+          '',
+          'Examples:',
+          ...CUSTOM_ROLE_GUIDANCE.examples.map((e) => `  "${e}"`),
+        ].join('\n'),
+        '\u2726 Custom Agent Playbook',
+      );
+    }
 
-    const customRole = (await p.text({
-      message: 'What does your agent do? (one sentence)',
+    const rolePrompt = (await p.text({
+      message:
+        selectedArchetypes.length > 1
+          ? 'Combined role (describe what this multi-purpose agent does)'
+          : 'What does your agent do? (one sentence)',
       placeholder: 'Validates GraphQL schemas against federation rules',
       validate: (v) => {
         if (!v || v.length > 100) return 'Required (max 100 chars)';
       },
     })) as string;
 
-    if (p.isCancel(customRole)) return null;
-    role = customRole;
+    if (p.isCancel(rolePrompt)) return null;
+    role = rolePrompt;
   } else {
-    const prefilledRole = archetype!.defaults.role;
+    const prefilledRole = selectedArchetypes[0].defaults.role;
     const editedRole = (await p.text({
       message: 'Role (pre-filled, press Enter to accept)',
       initialValue: prefilledRole,
@@ -130,29 +154,34 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
   // ─── Step 5: Description ──────────────────────────────────
   let description: string;
 
-  if (isCustom) {
-    p.note(
-      [
-        CUSTOM_DESCRIPTION_GUIDANCE.instruction,
-        '',
-        'Example:',
-        ...CUSTOM_DESCRIPTION_GUIDANCE.examples.map((e) => `  "${e}"`),
-      ].join('\n'),
-      '\u2726 Description',
-    );
+  if (isCustom || selectedArchetypes.length > 1) {
+    if (isCustom) {
+      p.note(
+        [
+          CUSTOM_DESCRIPTION_GUIDANCE.instruction,
+          '',
+          'Example:',
+          ...CUSTOM_DESCRIPTION_GUIDANCE.examples.map((e) => `  "${e}"`),
+        ].join('\n'),
+        '\u2726 Description',
+      );
+    }
 
-    const customDesc = (await p.text({
-      message: 'Describe your agent in detail',
+    const descPrompt = (await p.text({
+      message:
+        selectedArchetypes.length > 1
+          ? 'Combined description (what does this multi-purpose agent do?)'
+          : 'Describe your agent in detail',
       placeholder: 'This agent helps developers with...',
       validate: (v) => {
         if (!v || v.length < 10 || v.length > 500) return 'Required (10-500 chars)';
       },
     })) as string;
 
-    if (p.isCancel(customDesc)) return null;
-    description = customDesc;
+    if (p.isCancel(descPrompt)) return null;
+    description = descPrompt;
   } else {
-    const prefilledDesc = archetype!.defaults.description;
+    const prefilledDesc = selectedArchetypes[0].defaults.description;
     const editedDesc = (await p.text({
       message: 'Description (pre-filled, press Enter to accept)',
       initialValue: prefilledDesc,
@@ -166,7 +195,7 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
   }
 
   // ─── Step 6: Domains (multiselect) ────────────────────────
-  const preselectedDomains = new Set(archetype?.defaults.domains ?? []);
+  const preselectedDomains = new Set(merged?.domains ?? []);
 
   const domainChoices = [
     ...DOMAIN_OPTIONS.map((d) => ({
@@ -228,14 +257,16 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
   }
 
   // ─── Step 7: Principles (multiselect) ─────────────────────
-  const preselectedPrinciples = new Set(archetype?.defaults.principles ?? []);
+  const preselectedPrinciples = new Set(merged?.principles ?? []);
 
   // Flatten categories into a single options list with group labels
-  const principleChoices = PRINCIPLE_CATEGORIES.flatMap((cat) => cat.options.map((o) => ({
+  const principleChoices = PRINCIPLE_CATEGORIES.flatMap((cat) =>
+    cat.options.map((o) => ({
       value: o.value,
       label: o.label,
       hint: cat.label,
-    })));
+    })),
+  );
 
   principleChoices.push({
     value: '_custom',
@@ -289,7 +320,16 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
   }
 
   // ─── Step 8: Communication tone ───────────────────────────
-  const defaultTone = archetype?.defaults.tone ?? 'pragmatic';
+  let defaultTone: 'precise' | 'mentor' | 'pragmatic';
+
+  if (merged && merged.tones.length === 1) {
+    defaultTone = merged.tones[0];
+  } else if (merged && merged.tones.length > 1) {
+    p.note(`Selected archetypes use different tones: ${merged.tones.join(', ')}`, 'Tone Conflict');
+    defaultTone = 'pragmatic';
+  } else {
+    defaultTone = 'pragmatic';
+  }
 
   const tone = await p.select({
     message: 'Communication tone',
@@ -304,7 +344,7 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
   if (p.isCancel(tone)) return null;
 
   // ─── Step 9: Skills (multiselect) ─────────────────────────
-  const preselectedSkills = new Set(archetype?.defaults.skills ?? []);
+  const preselectedSkills = new Set(merged?.skills ?? []);
 
   p.note(`Always included: ${CORE_SKILLS.join(', ')}`, 'Core Skills');
 
@@ -328,9 +368,10 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
   const selectedSkills = [...CORE_SKILLS, ...(skillSelection as string[])];
 
   // ─── Step 10: Greeting (auto or custom) ───────────────────
-  const autoGreeting = archetype
-    ? archetype.defaults.greetingTemplate(name)
-    : `Hello! I'm ${name}. I ${role[0].toLowerCase()}${role.slice(1)}.`;
+  const autoGreeting =
+    selectedArchetypes.length === 1
+      ? selectedArchetypes[0].defaults.greetingTemplate(name)
+      : `Hello! I'm ${name}. I ${role[0].toLowerCase()}${role.slice(1)}.`;
 
   const greetingChoice = await p.select({
     message: 'Greeting message',
