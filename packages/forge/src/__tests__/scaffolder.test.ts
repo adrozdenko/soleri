@@ -56,14 +56,17 @@ describe('Scaffolder', () => {
       expect(paths).not.toContain('src/facades/data-pipelines.facade.ts');
 
       // Should have domain facades + core facade in preview
-      expect(preview.facades).toHaveLength(4); // 3 domains + core
+      expect(preview.facades).toHaveLength(14); // 3 domains + 10 semantic + 1 agent core
       expect(preview.facades[0].name).toBe('atlas_data_pipelines');
 
-      // Core facade should list all 208 ops (203 core + 5 agent-specific)
+      // Agent-specific facade has 5 ops
       const coreFacade = preview.facades.find((f) => f.name === 'atlas_core')!;
-      expect(coreFacade.ops.length).toBe(214);
-      expect(coreFacade.ops).toContain('curator_status');
+      expect(coreFacade.ops.length).toBe(5);
       expect(coreFacade.ops).toContain('health');
+
+      // Semantic facades cover the rest
+      const vaultFacade = preview.facades.find((f) => f.name === 'atlas_vault')!;
+      expect(vaultFacade).toBeDefined();
 
       // Should NOT create any files
       expect(existsSync(join(tempDir, 'atlas'))).toBe(false);
