@@ -80,11 +80,18 @@
 /* Code block wrapper with copy button */
 .code-block {
   position: relative;
+  display: inline-flex;
+  align-items: flex-start;
   margin-bottom: 12px;
+  max-width: 100%;
 }
 
 .code-block .feature-code {
   padding-right: 48px;
+}
+
+.code-block .install-cmd {
+  margin-bottom: 0;
 }
 
 .copy-btn {
