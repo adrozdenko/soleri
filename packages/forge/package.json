@@ -31,6 +31,10 @@
     "./lib": {
       "types": "./dist/lib.d.ts",
       "import": "./dist/lib.js"
+    },
+    "./templates/extensions": {
+      "types": "./dist/templates/extensions.d.ts",
+      "import": "./dist/templates/extensions.js"
     }
   },
   "publishConfig": {
