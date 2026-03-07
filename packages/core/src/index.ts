@@ -326,7 +326,7 @@ export type {
 } from './persistence/index.js';
 
 // ─── Streams ──────────────────────────────────────────────────────────
-export { ReplayableStream } from './streams/index.js';
+export { ReplayableStream, fanOut } from './streams/index.js';
 export { normalize, collect } from './streams/index.js';
 export type { NestableInput } from './streams/index.js';
 
