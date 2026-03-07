@@ -19,6 +19,7 @@ import type { Logger } from '../logging/logger.js';
 import type { LogLevel } from '../logging/types.js';
 import type { AuthPolicy } from '../facades/types.js';
 import type { FeatureFlags } from './feature-flags.js';
+import type { HealthRegistry } from '../health/health-registry.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -67,6 +68,8 @@ export interface AgentRuntime {
   authPolicy: AuthPolicy;
   /** Feature flags — file-based + env var + runtime toggles. */
   flags: FeatureFlags;
+  /** Centralized health registry — subsystem status tracking. */
+  health: HealthRegistry;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

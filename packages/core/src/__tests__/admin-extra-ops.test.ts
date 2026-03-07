@@ -26,9 +26,9 @@ describe('createAdminExtraOps', () => {
     ops = createAdminExtraOps(runtime);
   }
 
-  it('should return 27 ops', () => {
+  it('should return 29 ops', () => {
     setup();
-    expect(ops).toHaveLength(27);
+    expect(ops).toHaveLength(29);
     const names = ops.map((o) => o.name);
     // Original 10
     expect(names).toContain('admin_telemetry');
@@ -59,6 +59,9 @@ describe('createAdminExtraOps', () => {
     expect(names).toContain('admin_validate_instructions');
     // #63: Hot reload
     expect(names).toContain('admin_hot_reload');
+    // #176: Health registry
+    expect(names).toContain('admin_health_snapshot');
+    expect(names).toContain('admin_subsystem_health');
     // #173: Feature flags
     expect(names).toContain('admin_list_flags');
     expect(names).toContain('admin_get_flag');

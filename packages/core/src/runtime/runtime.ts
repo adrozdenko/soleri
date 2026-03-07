@@ -30,6 +30,8 @@ import { TemplateManager } from '../prompts/template-manager.js';
 import { existsSync } from 'node:fs';
 import { createLogger } from '../logging/logger.js';
 import { FeatureFlags } from './feature-flags.js';
+import { HealthRegistry } from '../health/health-registry.js';
+import { checkVaultIntegrity } from '../health/vault-integrity.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -121,6 +123,30 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Intake Pipeline — PDF/book ingestion with LLM classification
   const intakePipeline = new IntakePipeline(vault.getProvider(), vault, llmClient);
 
+  // Health Registry — centralized subsystem status tracking
+  const health = new HealthRegistry();
+  health.register('vault', 'healthy');
+  health.register('brain', 'healthy');
+  health.register('cognee', cognee.getStatus()?.available ? 'healthy' : 'degraded');
+  health.register(
+    'llm',
+    llmClient.isAvailable().openai || llmClient.isAvailable().anthropic ? 'healthy' : 'degraded',
+  );
+  health.register('planner', 'healthy');
+
+  // Vault integrity check on startup (non-fatal)
+  try {
+    const integrity = checkVaultIntegrity(vault.getProvider());
+    if (!integrity.schemaValid || !integrity.ftsValid) {
+      health.update('vault', 'degraded', integrity.errors.join('; '));
+      if (integrity.ftsRebuilt) {
+        logger.info('Vault FTS index rebuilt automatically');
+      }
+    }
+  } catch {
+    // Integrity check itself failed — vault may still work
+  }
+
   return {
     config,
     logger,
@@ -143,6 +169,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     intakePipeline,
     authPolicy: { mode: 'permissive', callerLevel: 'admin' },
     flags: new FeatureFlags(join(agentHome, 'flags.json')),
+    health,
     createdAt: Date.now(),
     close: () => {
       syncManager.close();

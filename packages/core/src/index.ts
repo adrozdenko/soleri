@@ -288,6 +288,17 @@ export type { FacadeCall, TelemetryStats } from './telemetry/telemetry.js';
 export { Logger, createLogger } from './logging/logger.js';
 export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/types.js';
 
+// ─── Health ─────────────────────────────────────────────────────────
+export { HealthRegistry, withDegradation, checkVaultIntegrity } from './health/index.js';
+export type {
+  SubsystemStatus,
+  SubsystemHealth,
+  StatusChangeListener,
+  RecoveryHook,
+  HealthSnapshot,
+  IntegrityResult,
+} from './health/index.js';
+
 // ─── Runtime Factory ────────────────────────────────────────────────
 export { createAgentRuntime } from './runtime/runtime.js';
 export { createSemanticFacades } from './runtime/facades/index.js';

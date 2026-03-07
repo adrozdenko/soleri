@@ -660,6 +660,36 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
 
+    // ─── Health Registry (#176) ─────────────────────────────────────
+    {
+      name: 'admin_health_snapshot',
+      description:
+        'Full health snapshot — overall status plus per-subsystem health (status, failure count, last error).',
+      auth: 'read',
+      handler: async () => {
+        return runtime.health.snapshot();
+      },
+    },
+    {
+      name: 'admin_subsystem_health',
+      description: 'Get health status of a specific subsystem.',
+      auth: 'read',
+      schema: z.object({
+        subsystem: z.string().describe('Subsystem name (e.g. "vault", "cognee", "llm")'),
+      }),
+      handler: async (params) => {
+        const sub = runtime.health.get(params.subsystem as string);
+        if (!sub) {
+          const snapshot = runtime.health.snapshot();
+          return {
+            error: `Unknown subsystem: ${params.subsystem}`,
+            available: Object.keys(snapshot.subsystems),
+          };
+        }
+        return sub;
+      },
+    },
+
     // ─── Feature Flags (#173) ───────────────────────────────────────
     {
       name: 'admin_list_flags',
