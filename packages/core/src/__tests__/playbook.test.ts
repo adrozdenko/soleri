@@ -7,7 +7,7 @@ import { validatePlaybook, parsePlaybookFromEntry } from '../vault/playbook.js';
 import type { Playbook } from '../vault/playbook.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import { createAgentRuntime } from '../runtime/runtime.js';
-import { createCoreOps } from '../runtime/core-ops.js';
+import { createSemanticFacades } from '../runtime/facades/index.js';
 import type { AgentRuntime, OpDefinition } from '../runtime/types.js';
 
 function makePlaybook(overrides: Partial<Playbook> = {}): Playbook {
@@ -189,7 +189,7 @@ describe('playbook_create op', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createCoreOps(runtime);
+    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
   });
 
   afterEach(() => {
@@ -300,7 +300,7 @@ describe('playbook_match op', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createCoreOps(runtime);
+    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
   });
 
   afterEach(() => {
@@ -356,7 +356,7 @@ describe('playbook_seed op', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createCoreOps(runtime);
+    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
   });
 
   afterEach(() => {

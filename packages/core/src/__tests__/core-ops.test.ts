@@ -3,11 +3,11 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createAgentRuntime } from '../runtime/runtime.js';
-import { createCoreOps } from '../runtime/core-ops.js';
+import { createSemanticFacades } from '../runtime/facades/index.js';
 import type { AgentRuntime } from '../runtime/types.js';
 import type { OpDefinition } from '../facades/types.js';
 
-describe('createCoreOps', () => {
+describe('createSemanticFacades', () => {
   let runtime: AgentRuntime;
   let ops: OpDefinition[];
   let plannerDir: string;
@@ -20,7 +20,7 @@ describe('createCoreOps', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createCoreOps(runtime);
+    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
   });
 
   afterEach(() => {
@@ -267,7 +267,7 @@ describe('createCoreOps', () => {
     runtime.brain.rebuildVocabulary();
 
     // Re-create ops since brain state changed
-    ops = createCoreOps(runtime);
+    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
     const results = (await findOp('search').handler({ query: 'core ops test' })) as unknown[];
     expect(results.length).toBeGreaterThan(0);
   });
@@ -374,7 +374,7 @@ describe('createCoreOps', () => {
         tags: ['test'],
       },
     ]);
-    ops = createCoreOps(runtime);
+    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
     const result = (await findOp('brain_feedback').handler({
       query: 'test',
       entryId: 'bf-1',

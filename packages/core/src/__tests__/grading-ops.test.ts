@@ -3,7 +3,7 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createAgentRuntime } from '../runtime/runtime.js';
-import { createCoreOps } from '../runtime/core-ops.js';
+import { createSemanticFacades } from '../runtime/facades/index.js';
 import type { AgentRuntime } from '../runtime/types.js';
 import type { OpDefinition } from '../facades/types.js';
 
@@ -20,7 +20,7 @@ describe('Grading Ops', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createCoreOps(runtime);
+    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
   });
 
   afterEach(() => {
