@@ -362,6 +362,13 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
  * Scaffold a complete MCP agent project.
  */
 export function scaffold(config: AgentConfig): ScaffoldResult {
+  // Default greeting if not provided
+  if (!config.greeting) {
+    config = {
+      ...config,
+      greeting: `Hello! I'm ${config.name}, your AI assistant for ${config.role}.`,
+    };
+  }
   const agentDir = join(config.outputDir, config.id);
   const filesCreated: string[] = [];
 

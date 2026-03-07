@@ -14,10 +14,10 @@ export const AgentConfigSchema = z.object({
   domains: z.array(z.string().min(1)).min(1).max(20),
   /** Core principles the agent follows (3-7 recommended) */
   principles: z.array(z.string()).min(1).max(10),
-  /** Greeting message when agent introduces itself */
-  greeting: z.string().min(10).max(300),
-  /** Output directory (parent — agent dir will be created inside) */
-  outputDir: z.string().min(1),
+  /** Greeting message when agent introduces itself (auto-generated if omitted) */
+  greeting: z.string().min(10).max(300).optional(),
+  /** Output directory (parent — agent dir will be created inside, defaults to cwd) */
+  outputDir: z.string().min(1).optional().default(process.cwd()),
   /** Hook packs to install after scaffolding (optional) */
   hookPacks: z.array(z.string()).optional(),
 });

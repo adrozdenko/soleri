@@ -11,11 +11,14 @@ export function registerDoctor(program: Command): void {
 
       const results = runAllChecks();
       let hasFailures = false;
+      let hasWarnings = false;
 
       for (const r of results) {
         if (r.status === 'pass') log.pass(r.label, r.detail);
-        else if (r.status === 'warn') log.warn(r.label, r.detail);
-        else {
+        else if (r.status === 'warn') {
+          log.warn(r.label, r.detail);
+          hasWarnings = true;
+        } else {
           log.fail(r.label, r.detail);
           hasFailures = true;
         }
@@ -26,6 +29,10 @@ export function registerDoctor(program: Command): void {
       if (hasFailures) {
         log.info('Some checks failed. Fix the issues above and run soleri doctor again.');
         process.exit(1);
+      } else if (hasWarnings) {
+        log.info(
+          'All checks passed with warnings. Run from an agent directory to check agent-specific health.',
+        );
       } else {
         log.info('All checks passed!');
       }

@@ -12,8 +12,9 @@ export function registerCreate(program: Command): void {
     .command('create')
     .argument('[name]', 'Agent ID (kebab-case)')
     .option('-c, --config <path>', 'Path to JSON config file (skip interactive prompts)')
+    .option('-y, --yes', 'Skip confirmation prompts (use with --config for fully non-interactive)')
     .description('Create a new Soleri agent')
-    .action(async (name?: string, opts?: { config?: string }) => {
+    .action(async (name?: string, opts?: { config?: string; yes?: boolean }) => {
       try {
         let config;
 
@@ -40,6 +41,8 @@ export function registerCreate(program: Command): void {
           }
         }
 
+        const nonInteractive = !!(opts?.yes || opts?.config);
+
         // Hook packs — from config file or interactive prompt
         let selectedPacks: string[] = [];
         if (config.hookPacks && config.hookPacks.length > 0) {
@@ -56,7 +59,7 @@ export function registerCreate(program: Command): void {
             }
             selectedPacks = selectedPacks.filter((pk) => available.includes(pk));
           }
-        } else if (!opts?.config) {
+        } else if (!nonInteractive) {
           const packs = listPacks();
           const packChoices = packs.map((pk) => ({
             value: pk.name,
@@ -85,10 +88,12 @@ export function registerCreate(program: Command): void {
           p.log.info(`Hook packs: ${selectedPacks.join(', ')}`);
         }
 
-        const confirmed = await p.confirm({ message: 'Create agent?' });
-        if (p.isCancel(confirmed) || !confirmed) {
-          p.outro('Cancelled.');
-          return;
+        if (!nonInteractive) {
+          const confirmed = await p.confirm({ message: 'Create agent?' });
+          if (p.isCancel(confirmed) || !confirmed) {
+            p.outro('Cancelled.');
+            return;
+          }
         }
 
         // Scaffold + auto-build

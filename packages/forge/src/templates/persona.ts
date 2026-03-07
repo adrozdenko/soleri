@@ -18,7 +18,7 @@ export const PERSONA: AgentPersona = {
   principles: [
 ${principleLines}
   ],
-  greeting: '${escapeQuotes(config.greeting)}',
+  greeting: '${escapeQuotes(config.greeting ?? `Hello! I'm ${config.name}.`)}',
 };
 
 export function getPersonaPrompt(): string {

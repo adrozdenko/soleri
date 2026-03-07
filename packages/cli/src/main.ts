@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerCreate } from './commands/create.js';
 import { registerList } from './commands/list.js';
@@ -12,12 +13,15 @@ import { registerGovernance } from './commands/governance.js';
 import { registerTest } from './commands/test.js';
 import { registerUpgrade } from './commands/upgrade.js';
 
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json');
+
 const program = new Command();
 
 program
   .name('soleri')
   .description('Developer CLI for creating and managing Soleri AI agents')
-  .version('1.5.0');
+  .version(version);
 
 registerCreate(program);
 registerList(program);
