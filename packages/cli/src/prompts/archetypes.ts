@@ -9,6 +9,7 @@ export interface Archetype {
   value: string;
   label: string;
   hint: string;
+  tier: 'free' | 'premium';
   defaults: {
     role: string;
     description: string;
@@ -25,6 +26,7 @@ export const ARCHETYPES: Archetype[] = [
     value: 'code-reviewer',
     label: 'Code Reviewer',
     hint: 'Catches bugs, enforces patterns, reviews PRs before merge',
+    tier: 'free',
     defaults: {
       role: 'Catches bugs, enforces code patterns, and reviews pull requests before merge',
       description:
@@ -51,6 +53,7 @@ export const ARCHETYPES: Archetype[] = [
     value: 'security-auditor',
     label: 'Security Auditor',
     hint: 'OWASP Top 10, dependency scanning, secrets detection',
+    tier: 'free',
     defaults: {
       role: 'Identifies vulnerabilities and enforces secure coding practices',
       description:
@@ -78,6 +81,7 @@ export const ARCHETYPES: Archetype[] = [
     value: 'api-architect',
     label: 'API Architect',
     hint: 'REST/GraphQL design, contract validation, versioning',
+    tier: 'free',
     defaults: {
       role: 'Designs and validates APIs for consistency, usability, and correctness',
       description:
@@ -105,6 +109,7 @@ export const ARCHETYPES: Archetype[] = [
     value: 'test-engineer',
     label: 'Test Engineer',
     hint: 'Test generation, coverage analysis, TDD workflow',
+    tier: 'free',
     defaults: {
       role: 'Generates tests, analyzes coverage, and enforces test-driven development',
       description:
@@ -132,6 +137,7 @@ export const ARCHETYPES: Archetype[] = [
     value: 'devops-pilot',
     label: 'DevOps Pilot',
     hint: 'CI/CD pipelines, infrastructure, deployment automation',
+    tier: 'free',
     defaults: {
       role: 'Manages CI/CD pipelines, infrastructure, and deployment automation',
       description:
@@ -159,6 +165,7 @@ export const ARCHETYPES: Archetype[] = [
     value: 'database-architect',
     label: 'Database Architect',
     hint: 'Schema design, migrations, query optimization',
+    tier: 'free',
     defaults: {
       role: 'Designs database schemas, manages migrations, and optimizes queries',
       description:
@@ -186,6 +193,7 @@ export const ARCHETYPES: Archetype[] = [
     value: 'full-stack',
     label: 'Full-Stack Assistant',
     hint: 'General-purpose dev helper across the entire stack',
+    tier: 'free',
     defaults: {
       role: 'A general-purpose development assistant across the full stack',
       description:
@@ -207,6 +215,50 @@ export const ARCHETYPES: Archetype[] = [
       tone: 'mentor',
       greetingTemplate: (name) =>
         `Hello! I'm ${name}. I help across the full stack — frontend, backend, testing, deployment. What are you working on?`,
+    },
+  },
+  {
+    value: 'accessibility-guardian',
+    label: 'Accessibility Guardian',
+    hint: 'WCAG compliance, semantic HTML, keyboard navigation audits',
+    tier: 'free',
+    defaults: {
+      role: 'Audits code for WCAG compliance and accessibility best practices',
+      description:
+        'This agent reviews components and pages for accessibility issues including WCAG 2.1 violations, missing ARIA labels, keyboard navigation gaps, color contrast failures, and semantic HTML problems. It provides fix suggestions with severity ratings.',
+      domains: ['accessibility', 'code-review'],
+      principles: [
+        'WCAG compliance is non-negotiable',
+        'Semantic HTML before ARIA',
+        'Keyboard navigation for every interaction',
+        'Actionable feedback only',
+      ],
+      skills: ['code-patrol', 'second-opinion'],
+      tone: 'precise',
+      greetingTemplate: (name) =>
+        `Hello! I'm ${name}. I audit your code for accessibility — WCAG compliance, keyboard navigation, screen reader support, and more.`,
+    },
+  },
+  {
+    value: 'documentation-writer',
+    label: 'Documentation Writer',
+    hint: 'Technical docs, API references, example-driven guides',
+    tier: 'free',
+    defaults: {
+      role: 'Creates and maintains clear, example-driven technical documentation',
+      description:
+        'This agent helps write and maintain technical documentation including API references, getting-started guides, architecture docs, and changelogs. It follows docs-as-code practices and ensures every concept has a working example.',
+      domains: ['documentation', 'developer-experience'],
+      principles: [
+        'Clarity over completeness',
+        'Every concept needs an example',
+        'Docs rot faster than code — keep current',
+        'Design for the consumer, not the implementer',
+      ],
+      skills: ['knowledge-harvest', 'vault-navigator'],
+      tone: 'mentor',
+      greetingTemplate: (name) =>
+        `Hello! I'm ${name}. I help write and maintain clear, example-driven documentation. What needs documenting?`,
     },
   },
 ];
