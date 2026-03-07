@@ -28,8 +28,9 @@ export const forgeOps: OpDef[] = [
     name: 'create',
     description:
       'Scaffold a complete MCP agent project with activation system. ' +
-      'This creates the full directory structure, source files, config, and activation module. ' +
-      'After creation: npm install && npm run build, then say "Hello, {Name}!" to activate.',
+      'This creates the full directory structure, source files, config, and activation module, ' +
+      'then auto-builds (npm install + npm run build) and registers the MCP server. ' +
+      'After creation: restart Claude Code and say "Hello, {Name}!" to activate.',
     schema: AgentConfigSchema,
     handler: async (params) => {
       const config = AgentConfigSchema.parse(params);
@@ -111,7 +112,7 @@ export const forgeOps: OpDef[] = [
           {
             step: 6,
             action: 'Create the agent',
-            ask: 'Call create with the confirmed config. Then guide the user through npm install and npm run build. The MCP server is automatically registered in ~/.claude.json.',
+            ask: 'Call create with the confirmed config. The agent is auto-built (npm install + build) and MCP server is registered in ~/.claude.json automatically.',
           },
           {
             step: 7,

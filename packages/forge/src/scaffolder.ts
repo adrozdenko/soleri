@@ -8,6 +8,7 @@ import {
 } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 import type { AgentConfig, ScaffoldResult, ScaffoldPreview, AgentInfo } from './types.js';
 
 import { generatePackageJson } from './templates/package-json.js';
@@ -453,8 +454,36 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
 
   const totalOps = config.domains.length * 5 + 61; // 5 per domain + 56 core (from createCoreOps) + 5 agent-specific
 
-  // Register the agent as an MCP server in ~/.claude.json
-  const mcpReg = registerMcpServer(config.id, agentDir);
+  // Auto-build: install dependencies and compile before registering MCP
+  let buildSuccess = false;
+  let buildError: string | undefined;
+  try {
+    execFileSync('npm', ['install', '--no-fund', '--no-audit'], {
+      cwd: agentDir,
+      stdio: 'pipe',
+      timeout: 120_000,
+    });
+    execFileSync('npm', ['run', 'build'], {
+      cwd: agentDir,
+      stdio: 'pipe',
+      timeout: 60_000,
+    });
+    buildSuccess = true;
+  } catch (err) {
+    buildError = err instanceof Error ? err.message : String(err);
+  }
+
+  // Register the agent as an MCP server in ~/.claude.json (only if build succeeded)
+  let mcpReg: { registered: boolean; path: string; error?: string };
+  if (buildSuccess) {
+    mcpReg = registerMcpServer(config.id, agentDir);
+  } else {
+    mcpReg = {
+      registered: false,
+      path: join(homedir(), '.claude.json'),
+      error: 'Skipped — build failed',
+    };
+  }
 
   const summaryLines = [
     `Created ${config.name} agent at ${agentDir}`,
@@ -465,6 +494,13 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     `1 test suite — facades (vault, brain, planner, llm tests provided by @soleri/core)`,
     `${skillFiles.length} built-in skills (TDD, debugging, planning, vault, brain debrief)`,
   ];
+
+  if (buildSuccess) {
+    summaryLines.push('Built successfully (npm install + npm run build)');
+  } else {
+    summaryLines.push(`Warning: Auto-build failed: ${buildError}`);
+    summaryLines.push(`  Run manually: cd ${agentDir} && npm install && npm run build`);
+  }
 
   if (config.hookPacks?.length) {
     summaryLines.push(`${config.hookPacks.length} hook pack(s) bundled in .claude/`);
@@ -479,9 +515,6 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
   summaryLines.push(
     '',
     'Next steps:',
-    `  cd ${agentDir}`,
-    '  npm install && npm run build',
-    '  npm test              # verify all tests pass',
     '  Restart Claude Code',
     `  Say "Hello, ${config.name}!" to activate the persona`,
   );

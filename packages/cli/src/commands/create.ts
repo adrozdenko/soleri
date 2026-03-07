@@ -91,11 +91,11 @@ export function registerCreate(program: Command): void {
           return;
         }
 
-        // Scaffold
+        // Scaffold + auto-build
         const s = p.spinner();
-        s.start('Scaffolding agent...');
+        s.start('Scaffolding and building agent...');
         const result = scaffold(config);
-        s.stop(result.success ? 'Agent created!' : 'Scaffolding failed');
+        s.stop(result.success ? 'Agent created and built!' : 'Scaffolding failed');
 
         if (!result.success) {
           p.log.error(result.summary);
