@@ -60,7 +60,12 @@
     "wcag",
     "windsurfrules",
     "numpages",
-    "zeroblob"
+    "zeroblob",
+    "tsvector",
+    "tsquery",
+    "timestamptz",
+    "mmap",
+    "dbname"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [
