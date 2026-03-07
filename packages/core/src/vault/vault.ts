@@ -317,6 +317,30 @@ export class Vault {
     });
   }
 
+  /**
+   * Seed entries with content-hash dedup. Returns per-entry results.
+   * Unlike seed(), skips entries whose content already exists in the vault.
+   */
+  seedDedup(
+    entries: IntelligenceEntry[],
+  ): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
+    return this.provider.transaction(() => {
+      const results: Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> =
+        [];
+      for (const entry of entries) {
+        const hash = computeContentHash(entry);
+        const existing = this.findByContentHash(hash);
+        if (existing && existing !== entry.id) {
+          results.push({ id: entry.id, action: 'duplicate', existingId: existing });
+        } else {
+          this.seed([entry]);
+          results.push({ id: entry.id, action: 'inserted' });
+        }
+      }
+      return results;
+    });
+  }
+
   search(
     query: string,
     options?: {

@@ -71,6 +71,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
         let captured = 0;
         let proposed = 0;
         let rejected = 0;
+        let duplicated = 0;
         const results: Array<{ id: string; action: string; reason?: string }> = [];
 
         for (const entry of entries) {
@@ -89,7 +90,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
             switch (decision.action) {
               case 'capture': {
                 try {
-                  brain.enrichAndCapture({
+                  const captureResult = brain.enrichAndCapture({
                     id: entryId,
                     type: mappedType as 'pattern' | 'anti-pattern' | 'rule' | 'playbook',
                     domain: entry.domain,
@@ -102,8 +103,16 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                     counterExample: entry.counterExample,
                     why: entry.why,
                   });
-                  captured++;
-                  results.push({ id: entryId, action: 'capture' });
+                  if (captureResult.blocked) {
+                    duplicated++;
+                    results.push({
+                      id: captureResult.duplicate?.id ?? entryId,
+                      action: 'duplicate',
+                    });
+                  } else {
+                    captured++;
+                    results.push({ id: entryId, action: 'capture' });
+                  }
                 } catch (err) {
                   rejected++;
                   results.push({
@@ -163,7 +172,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
           }
         }
 
-        return { captured, proposed, rejected, results };
+        return { captured, proposed, rejected, duplicated, results };
       },
     },
 
@@ -198,7 +207,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
         const description = params.description as string;
         const tags = (params.tags as string[] | undefined) ?? [];
 
-        const id = `${domain}-${Date.now()}`;
+        const id = `${domain}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const mappedSeverity = 'info' as const;
         const mappedType = mapType(entryType);
 
@@ -212,7 +221,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
           switch (decision.action) {
             case 'capture': {
               try {
-                brain.enrichAndCapture({
+                const captureResult = brain.enrichAndCapture({
                   id,
                   type: mappedType as 'pattern' | 'anti-pattern' | 'rule' | 'playbook',
                   domain,
@@ -221,6 +230,13 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                   description,
                   tags,
                 });
+                if (captureResult.blocked) {
+                  return {
+                    captured: false,
+                    id: captureResult.duplicate?.id ?? id,
+                    governance: { action: 'duplicate' as const },
+                  };
+                }
                 return { captured: true, id, governance: { action: 'capture' as const } };
               } catch (err) {
                 return {

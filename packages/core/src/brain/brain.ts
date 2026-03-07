@@ -1,6 +1,7 @@
 import type { Vault } from '../vault/vault.js';
 import type { SearchResult } from '../vault/vault.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import { computeContentHash } from '../vault/content-hash.js';
 import {
   tokenize,
   calculateTf,
@@ -249,6 +250,19 @@ export class Brain {
       tags: mergedTags,
       appliesTo: entry.appliesTo,
     };
+
+    // Content-hash dedup: check after enrichment so tags match the stored hash
+    const contentHash = computeContentHash(fullEntry);
+    const existingByHash = this.vault.findByContentHash(contentHash);
+    if (existingByHash && existingByHash !== entry.id) {
+      return {
+        captured: false,
+        id: entry.id,
+        autoTags,
+        duplicate: { id: existingByHash, similarity: 1.0 },
+        blocked: true,
+      };
+    }
 
     this.vault.add(fullEntry);
     this.updateVocabularyIncremental(fullEntry);

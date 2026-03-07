@@ -197,6 +197,79 @@ describe('createCaptureOps', () => {
     });
   });
 
+  // ─── capture_knowledge content-hash dedup ──────────────────────
+
+  describe('capture_knowledge content-hash dedup', () => {
+    it('should skip duplicate entries with identical content', async () => {
+      setup();
+      const entry = {
+        type: 'pattern',
+        domain: 'testing',
+        title: 'Dedup test',
+        description: 'Should only be captured once.',
+        tags: ['dedup'],
+      };
+
+      // First capture succeeds
+      const first = (await findOp('capture_knowledge').handler({
+        entries: [entry],
+      })) as { captured: number; duplicated: number; results: Array<{ action: string }> };
+      expect(first.captured).toBe(1);
+      expect(first.duplicated).toBe(0);
+
+      // Second capture of same content is skipped
+      const second = (await findOp('capture_knowledge').handler({
+        entries: [entry],
+      })) as {
+        captured: number;
+        duplicated: number;
+        results: Array<{ id: string; action: string }>;
+      };
+      expect(second.captured).toBe(0);
+      expect(second.duplicated).toBe(1);
+      expect(second.results[0].action).toBe('duplicate');
+    });
+
+    it('should not flag entries with different content as duplicates', async () => {
+      setup();
+      const result = (await findOp('capture_knowledge').handler({
+        entries: [
+          { type: 'pattern', domain: 'a', title: 'One', description: 'First.' },
+          { type: 'pattern', domain: 'a', title: 'Two', description: 'Second.' },
+        ],
+      })) as { captured: number; duplicated: number };
+      expect(result.captured).toBe(2);
+      expect(result.duplicated).toBe(0);
+    });
+  });
+
+  // ─── capture_quick content-hash dedup ─────────────────────────
+
+  describe('capture_quick content-hash dedup', () => {
+    it('should skip duplicate on second quick capture', async () => {
+      setup();
+      const params = {
+        type: 'rule',
+        domain: 'testing',
+        title: 'Quick dedup',
+        description: 'Should only be captured once.',
+      };
+
+      const first = (await findOp('capture_quick').handler(params)) as {
+        captured: boolean;
+        governance: { action: string };
+      };
+      expect(first.captured).toBe(true);
+
+      const second = (await findOp('capture_quick').handler(params)) as {
+        captured: boolean;
+        governance: { action: string };
+      };
+      expect(second.captured).toBe(false);
+      expect(second.governance.action).toBe('duplicate');
+    });
+  });
+
   // ─── capture_knowledge with governance gating ───────────────────
 
   describe('capture_knowledge governance gating', () => {
