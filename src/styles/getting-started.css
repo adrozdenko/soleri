@@ -182,6 +182,80 @@
   line-height: 1.5;
 }
 
+/* ─── Wizard Reference ──────────────────────── */
+
+.wizard-ref .section-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: 8px;
+  max-width: 600px;
+}
+
+.ref-group {
+  margin-top: 36px;
+}
+
+.ref-group-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--foreground-strong);
+  margin-bottom: 4px;
+}
+
+.ref-group-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  max-width: 600px;
+}
+
+.ref-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.ref-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color 0.15s ease;
+}
+
+.ref-option:hover {
+  border-color: var(--accent-teal);
+}
+
+.ref-option-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground-strong);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.ref-option-hint {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.ref-core-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  padding: 8px 12px;
+  border-left: 2px solid var(--accent-teal);
+  background: var(--surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
 @media (max-width: 700px) {
   .step {
     grid-template-columns: 32px 1fr;
@@ -196,6 +270,10 @@
   }
 
   .next-links {
+    grid-template-columns: 1fr;
+  }
+
+  .ref-options {
     grid-template-columns: 1fr;
   }
 }

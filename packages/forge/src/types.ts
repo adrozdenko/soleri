@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+/** Communication tone for the agent persona */
+export const TONES = ['precise', 'mentor', 'pragmatic'] as const;
+export type Tone = (typeof TONES)[number];
+
 /** Agent configuration — everything needed to scaffold */
 export const AgentConfigSchema = z.object({
   /** Agent identifier (kebab-case, used for directory and package name) */
@@ -14,12 +18,16 @@ export const AgentConfigSchema = z.object({
   domains: z.array(z.string().min(1)).min(1).max(20),
   /** Core principles the agent follows (3-7 recommended) */
   principles: z.array(z.string()).min(1).max(10),
+  /** Communication tone: precise, mentor, or pragmatic */
+  tone: z.enum(TONES).optional().default('pragmatic'),
   /** Greeting message when agent introduces itself (auto-generated if omitted) */
   greeting: z.string().min(10).max(300).optional(),
   /** Output directory (parent — agent dir will be created inside, defaults to cwd) */
   outputDir: z.string().min(1).optional().default(process.cwd()),
   /** Hook packs to install after scaffolding (optional) */
   hookPacks: z.array(z.string()).optional(),
+  /** Skills to include (if omitted, all skills are included for backward compat) */
+  skills: z.array(z.string()).optional(),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

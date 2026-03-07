@@ -60,6 +60,34 @@ const c = gettingStartedContent(locale);
 
   <div class="soleri-mark mark-section"></div>
 
+  <!-- WIZARD REFERENCE -->
+  <section class="section spacious wizard-ref">
+    <div class="section-header">
+      <h2 class="section-title">{c.wizardRef.sectionTitle}</h2>
+      <p class="section-subtitle">{c.wizardRef.sectionSubtitle}</p>
+    </div>
+
+    {[c.wizardRef.archetypes, c.wizardRef.domains, c.wizardRef.principles, c.wizardRef.skills, c.wizardRef.tones].map((section) => (
+      <div class="ref-group">
+        <h3 class="ref-group-title">{section.title}</h3>
+        <p class="ref-group-desc">{section.description}</p>
+        <div class="ref-options">
+          {section.options.map((opt) => (
+            <div class="ref-option">
+              <span class="ref-option-name">{opt.name}</span>
+              <span class="ref-option-hint">{opt.hint}</span>
+            </div>
+          ))}
+        </div>
+        {section === c.wizardRef.skills && (
+          <p class="ref-core-note">{c.wizardRef.coreSkillsNote}</p>
+        )}
+      </div>
+    ))}
+  </section>
+
+  <div class="soleri-mark mark-section"></div>
+
   <!-- NEXT STEPS -->
   <section class="section spacious">
     <div class="section-header">

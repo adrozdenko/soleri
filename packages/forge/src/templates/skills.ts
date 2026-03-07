@@ -31,6 +31,8 @@ const AGENT_SPECIFIC_SKILLS = new Set([
  * Generate skill files for the scaffolded agent.
  * Returns [relativePath, content] tuples for each skill.
  *
+ * - If config.skills is set, only those skills are included.
+ * - If config.skills is undefined/empty, all skills are included (backward compat).
  * - Superpowers-adapted skills (MIT): copied as-is
  * - Engine-adapted skills: YOUR_AGENT_core → {config.id}_core
  */
@@ -44,8 +46,17 @@ export function generateSkills(config: AgentConfig): Array<[string, string]> {
     return files;
   }
 
+  // If skills array is present, filter to only those skills.
+  // undefined = include all (backward compat), [] = include none.
+  const allowedSkills = config.skills ? new Set(config.skills) : null; // null = include all (backward compat)
+
   for (const file of skillFiles) {
     const skillName = file.replace('.md', '');
+
+    if (allowedSkills && !allowedSkills.has(skillName)) {
+      continue;
+    }
+
     let content = readFileSync(join(SKILLS_DIR, file), 'utf-8');
 
     if (AGENT_SPECIFIC_SKILLS.has(skillName)) {

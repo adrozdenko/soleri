@@ -84,6 +84,12 @@ export function registerCreate(program: Command): void {
         p.log.info(`Will create ${preview.files.length} files in ${preview.agentDir}`);
         p.log.info(`Facades: ${preview.facades.map((f) => f.name).join(', ')}`);
         p.log.info(`Domains: ${preview.domains.join(', ')}`);
+        if (config.tone) {
+          p.log.info(`Tone: ${config.tone}`);
+        }
+        if (config.skills?.length) {
+          p.log.info(`Skills: ${config.skills.length} selected`);
+        }
         if (selectedPacks.length > 0) {
           p.log.info(`Hook packs: ${selectedPacks.join(', ')}`);
         }
