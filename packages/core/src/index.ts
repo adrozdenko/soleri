@@ -292,6 +292,8 @@ export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/typ
 export { createAgentRuntime } from './runtime/runtime.js';
 export { createSemanticFacades } from './runtime/facades/index.js';
 export { createDomainFacade, createDomainFacades } from './runtime/domain-ops.js';
+export { FeatureFlags } from './runtime/feature-flags.js';
+export type { FlagDefinition } from './runtime/feature-flags.js';
 export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';
 
 // ─── Errors ────────────────────────────────────────────────────────────

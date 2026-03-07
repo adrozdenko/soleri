@@ -29,6 +29,7 @@ import { ProjectRegistry } from '../project/project-registry.js';
 import { TemplateManager } from '../prompts/template-manager.js';
 import { existsSync } from 'node:fs';
 import { createLogger } from '../logging/logger.js';
+import { FeatureFlags } from './feature-flags.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -141,6 +142,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     syncManager,
     intakePipeline,
     authPolicy: { mode: 'permissive', callerLevel: 'admin' },
+    flags: new FeatureFlags(join(agentHome, 'flags.json')),
     createdAt: Date.now(),
     close: () => {
       syncManager.close();

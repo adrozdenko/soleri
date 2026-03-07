@@ -18,6 +18,7 @@ import type { IntakePipeline } from '../intake/intake-pipeline.js';
 import type { Logger } from '../logging/logger.js';
 import type { LogLevel } from '../logging/types.js';
 import type { AuthPolicy } from '../facades/types.js';
+import type { FeatureFlags } from './feature-flags.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -64,6 +65,8 @@ export interface AgentRuntime {
   intakePipeline: IntakePipeline;
   /** Mutable auth policy — controls facade dispatch enforcement. */
   authPolicy: AuthPolicy;
+  /** Feature flags — file-based + env var + runtime toggles. */
+  flags: FeatureFlags;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

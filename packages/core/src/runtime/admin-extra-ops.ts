@@ -660,6 +660,49 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
 
+    // ─── Feature Flags (#173) ───────────────────────────────────────
+    {
+      name: 'admin_list_flags',
+      description:
+        'List all feature flags with current state, description, and source (default/env/runtime).',
+      auth: 'read',
+      handler: async () => {
+        return runtime.flags.getAll();
+      },
+    },
+    {
+      name: 'admin_get_flag',
+      description: 'Get the current value of a specific feature flag.',
+      auth: 'read',
+      schema: z.object({
+        flag: z.string().describe('Flag name (e.g. "auth-enforcement", "cognee-sync")'),
+      }),
+      handler: async (params) => {
+        const flag = params.flag as string;
+        const all = runtime.flags.getAll();
+        const info = all[flag];
+        if (!info) {
+          return { error: `Unknown flag: ${flag}`, availableFlags: Object.keys(all) };
+        }
+        return { flag, ...info };
+      },
+    },
+    {
+      name: 'admin_set_flag',
+      description: 'Set a feature flag at runtime. Persists to flags.json.',
+      auth: 'admin',
+      schema: z.object({
+        flag: z.string().describe('Flag name'),
+        enabled: z.boolean().describe('Enable (true) or disable (false)'),
+      }),
+      handler: async (params) => {
+        const flag = params.flag as string;
+        const enabled = params.enabled as boolean;
+        runtime.flags.set(flag, enabled);
+        return { flag, enabled, persisted: true };
+      },
+    },
+
     // ─── Persistence ────────────────────────────────────────────────
     {
       name: 'admin_persistence_info',

@@ -26,9 +26,9 @@ describe('createAdminExtraOps', () => {
     ops = createAdminExtraOps(runtime);
   }
 
-  it('should return 24 ops', () => {
+  it('should return 27 ops', () => {
     setup();
-    expect(ops).toHaveLength(24);
+    expect(ops).toHaveLength(27);
     const names = ops.map((o) => o.name);
     // Original 10
     expect(names).toContain('admin_telemetry');
@@ -59,6 +59,10 @@ describe('createAdminExtraOps', () => {
     expect(names).toContain('admin_validate_instructions');
     // #63: Hot reload
     expect(names).toContain('admin_hot_reload');
+    // #173: Feature flags
+    expect(names).toContain('admin_list_flags');
+    expect(names).toContain('admin_get_flag');
+    expect(names).toContain('admin_set_flag');
   });
 
   // ─── admin_telemetry ────────────────────────────────────────────
@@ -170,28 +174,30 @@ describe('createAdminExtraOps', () => {
       expect(result.level).toBe('moderate');
     });
 
-    it('should allow setting permission level', async () => {
+    it('should allow setting auth mode', async () => {
       setup();
-      await findOp('admin_permissions').handler({ action: 'set', level: 'strict' });
+      await findOp('admin_permissions').handler({ action: 'set', mode: 'enforce' });
       const result = (await findOp('admin_permissions').handler({ action: 'get' })) as {
         level: string;
+        authPolicy: { mode: string; callerLevel: string };
       };
+      expect(result.authPolicy.mode).toBe('enforce');
       expect(result.level).toBe('strict');
     });
 
-    it('should not change level when set without level param', async () => {
+    it('should not change mode when set without mode param', async () => {
       setup();
-      await findOp('admin_permissions').handler({ action: 'set', level: 'permissive' });
+      await findOp('admin_permissions').handler({ action: 'set', mode: 'warn' });
       await findOp('admin_permissions').handler({ action: 'set' });
       const result = (await findOp('admin_permissions').handler({ action: 'get' })) as {
-        level: string;
+        authPolicy: { mode: string };
       };
-      expect(result.level).toBe('permissive');
+      expect(result.authPolicy.mode).toBe('warn');
     });
 
-    it('should have write auth', () => {
+    it('should have admin auth', () => {
       setup();
-      expect(findOp('admin_permissions').auth).toBe('write');
+      expect(findOp('admin_permissions').auth).toBe('admin');
     });
   });
 
@@ -458,9 +464,17 @@ describe('createAdminExtraOps', () => {
 
     it('should use write auth for mutation ops', () => {
       setup();
-      const writeOps = ['admin_telemetry_reset', 'admin_permissions', 'admin_gc'];
+      const writeOps = ['admin_telemetry_reset', 'admin_gc'];
       for (const name of writeOps) {
         expect(findOp(name).auth).toBe('write');
+      }
+    });
+
+    it('should use admin auth for sensitive ops', () => {
+      setup();
+      const adminOps = ['admin_permissions', 'admin_set_flag'];
+      for (const name of adminOps) {
+        expect(findOp(name).auth).toBe('admin');
       }
     });
   });
