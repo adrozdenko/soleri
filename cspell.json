@@ -71,7 +71,8 @@
     "upserts",
     "retag",
     "replayable",
-    "nestable"
+    "nestable",
+    "unhashed"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [
