@@ -288,6 +288,28 @@ export type { FacadeCall, TelemetryStats } from './telemetry/telemetry.js';
 export { Logger, createLogger } from './logging/logger.js';
 export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/types.js';
 
+// ─── CLAUDE.md Composition ──────────────────────────────────────────
+export {
+  composeCLAUDEmd,
+  FORMAT_VERSION,
+  OPEN_MARKER,
+  CLOSE_MARKER,
+  USER_ZONE_OPEN,
+  USER_ZONE_CLOSE,
+  injectCLAUDEmd,
+  removeCLAUDEmd,
+  hasCLAUDEmdBlock,
+  extractUserZone,
+} from './claudemd/index.js';
+export type {
+  ComposeOptions,
+  AgentMeta,
+  GlobalInstruction,
+  FacadeInstructions,
+  InjectionResult,
+  RemovalResult,
+} from './claudemd/index.js';
+
 // ─── Health ─────────────────────────────────────────────────────────
 export { HealthRegistry, withDegradation, checkVaultIntegrity } from './health/index.js';
 export type {
