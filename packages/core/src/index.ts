@@ -288,6 +288,16 @@ export type { FacadeCall, TelemetryStats } from './telemetry/telemetry.js';
 export { Logger, createLogger } from './logging/logger.js';
 export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/types.js';
 
+// ─── Scope Detection ────────────────────────────────────────────────
+export { detectScope } from './vault/scope-detector.js';
+export type {
+  ScopeTier,
+  ConfidenceLevel,
+  ScopeSignal,
+  ScopeDetectionResult,
+  ScopeInput,
+} from './vault/scope-detector.js';
+
 // ─── Enforcement ────────────────────────────────────────────────────
 export { EnforcementRegistry, ClaudeCodeAdapter } from './enforcement/index.js';
 export type {
