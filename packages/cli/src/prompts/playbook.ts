@@ -60,6 +60,11 @@ export const DOMAIN_OPTIONS: DomainOption[] = [
     hint: 'API docs, READMEs, changelogs, code comments',
   },
   { value: 'devops', label: 'devops', hint: 'CI/CD pipelines, infrastructure as code, deployment' },
+  {
+    value: 'developer-experience',
+    label: 'developer-experience',
+    hint: 'Developer tooling, onboarding, and ergonomics',
+  },
 ];
 
 export const CUSTOM_DOMAIN_GUIDANCE = {
@@ -95,6 +100,7 @@ export const PRINCIPLE_CATEGORIES: PrincipleCategory[] = [
       { value: 'Convention over configuration', label: 'Convention over configuration' },
       { value: 'Test everything that can break', label: 'Test everything that can break' },
       { value: 'Respect existing patterns', label: 'Respect existing patterns' },
+      { value: 'Progressive enhancement', label: 'Progressive enhancement' },
     ],
   },
   {
@@ -104,6 +110,7 @@ export const PRINCIPLE_CATEGORIES: PrincipleCategory[] = [
       { value: 'Fail closed, not open', label: 'Fail closed, not open' },
       { value: 'Zero trust by default', label: 'Zero trust by default' },
       { value: 'Least privilege always', label: 'Least privilege always' },
+      { value: 'Defense in depth', label: 'Defense in depth' },
     ],
   },
   {
@@ -136,6 +143,66 @@ export const PRINCIPLE_CATEGORIES: PrincipleCategory[] = [
       { value: 'Every migration must be reversible', label: 'Every migration must be reversible' },
     ],
   },
+  {
+    label: 'Code Review',
+    options: [
+      { value: 'Readable over clever', label: 'Readable over clever' },
+      { value: 'Small PR scope', label: 'Small PR scope' },
+    ],
+  },
+  {
+    label: 'API Design',
+    options: [
+      { value: 'Backward compatibility by default', label: 'Backward compatibility by default' },
+      { value: 'Consumer-driven contracts', label: 'Consumer-driven contracts' },
+    ],
+  },
+  {
+    label: 'Testing',
+    options: [
+      { value: 'Deterministic tests only', label: 'Deterministic tests only' },
+      { value: 'Test at boundaries, not internals', label: 'Test at boundaries, not internals' },
+    ],
+  },
+  {
+    label: 'Operations',
+    options: [
+      { value: 'Infrastructure as code', label: 'Infrastructure as code' },
+      { value: 'Blast radius awareness', label: 'Blast radius awareness' },
+    ],
+  },
+  {
+    label: 'Data',
+    options: [
+      {
+        value: 'Schema evolution over breaking changes',
+        label: 'Schema evolution over breaking changes',
+      },
+      { value: 'Query performance first', label: 'Query performance first' },
+    ],
+  },
+  {
+    label: 'Accessibility',
+    options: [
+      { value: 'WCAG compliance is non-negotiable', label: 'WCAG compliance is non-negotiable' },
+      { value: 'Semantic HTML before ARIA', label: 'Semantic HTML before ARIA' },
+      {
+        value: 'Keyboard navigation for every interaction',
+        label: 'Keyboard navigation for every interaction',
+      },
+    ],
+  },
+  {
+    label: 'Documentation',
+    options: [
+      { value: 'Clarity over completeness', label: 'Clarity over completeness' },
+      { value: 'Every concept needs an example', label: 'Every concept needs an example' },
+      {
+        value: 'Docs rot faster than code — keep current',
+        label: 'Docs rot faster than code — keep current',
+      },
+    ],
+  },
 ];
 
 export const CUSTOM_PRINCIPLE_GUIDANCE = {
@@ -160,6 +227,8 @@ export const CORE_SKILLS = [
   'verification-before-completion',
   'health-check',
   'context-resume',
+  'writing-plans',
+  'executing-plans',
 ] as const;
 
 export interface SkillCategory {
@@ -174,21 +243,6 @@ export interface SkillOption {
 }
 
 export const SKILL_CATEGORIES: SkillCategory[] = [
-  {
-    label: 'Planning & Execution',
-    options: [
-      {
-        value: 'writing-plans',
-        label: 'writing-plans',
-        hint: 'Structured multi-step planning before code changes',
-      },
-      {
-        value: 'executing-plans',
-        label: 'executing-plans',
-        hint: 'Execute approved plans with review checkpoints',
-      },
-    ],
-  },
   {
     label: 'Knowledge & Learning',
     options: [
