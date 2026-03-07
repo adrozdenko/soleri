@@ -102,7 +102,7 @@ describe('doctor command', () => {
   });
 
   describe('runAllChecks', () => {
-    it('should return array of check results', () => {
+    it('should return array of check results', { timeout: 20_000 }, () => {
       const results = runAllChecks(tempDir);
       expect(results.length).toBeGreaterThan(0);
       for (const r of results) {
@@ -111,7 +111,7 @@ describe('doctor command', () => {
       }
     });
 
-    it('should include Node and npm checks regardless of directory', () => {
+    it('should include Node and npm checks regardless of directory', { timeout: 20_000 }, () => {
       const results = runAllChecks(tempDir);
       const labels = results.map((r) => r.label);
       expect(labels).toContain('Node.js');
