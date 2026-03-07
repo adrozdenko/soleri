@@ -1,6 +1,7 @@
 import type { PersistenceProvider } from '../persistence/types.js';
 import { SQLitePersistenceProvider } from '../persistence/sqlite-provider.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import { computeContentHash } from './content-hash.js';
 
 export interface SearchResult {
   entry: IntelligenceEntry;
@@ -177,6 +178,7 @@ export class Vault {
     `);
     this.migrateBrainSchema();
     this.migrateTemporalSchema();
+    this.migrateContentHash();
   }
 
   private migrateTemporalSchema(): void {
@@ -189,6 +191,49 @@ export class Vault {
       this.provider.run('ALTER TABLE entries ADD COLUMN valid_until INTEGER');
     } catch {
       // Column already exists
+    }
+  }
+
+  private migrateContentHash(): void {
+    try {
+      this.provider.run('ALTER TABLE entries ADD COLUMN content_hash TEXT');
+    } catch {
+      // Column already exists
+    }
+    this.provider.execSql(
+      'CREATE INDEX IF NOT EXISTS idx_entries_content_hash ON entries(content_hash) WHERE content_hash IS NOT NULL',
+    );
+    // Backfill existing entries that lack a hash
+    const unhashed = this.provider.all<{
+      id: string;
+      type: string;
+      domain: string;
+      title: string;
+      description: string;
+      tags: string;
+      example: string | null;
+      counter_example: string | null;
+    }>(
+      'SELECT id, type, domain, title, description, tags, example, counter_example FROM entries WHERE content_hash IS NULL',
+    );
+    if (unhashed.length > 0) {
+      this.provider.transaction(() => {
+        for (const row of unhashed) {
+          const hash = computeContentHash({
+            type: row.type,
+            domain: row.domain,
+            title: row.title,
+            description: row.description,
+            tags: JSON.parse(row.tags),
+            example: row.example ?? undefined,
+            counterExample: row.counter_example ?? undefined,
+          });
+          this.provider.run('UPDATE entries SET content_hash = @hash WHERE id = @id', {
+            hash,
+            id: row.id,
+          });
+        }
+      });
     }
   }
 
@@ -236,11 +281,12 @@ export class Vault {
 
   seed(entries: IntelligenceEntry[]): number {
     const sql = `
-      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until)
-      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil)
+      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until,content_hash)
+      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil,@contentHash)
       ON CONFLICT(id) DO UPDATE SET type=excluded.type,domain=excluded.domain,title=excluded.title,severity=excluded.severity,
         description=excluded.description,context=excluded.context,example=excluded.example,counter_example=excluded.counter_example,
-        why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,valid_from=excluded.valid_from,valid_until=excluded.valid_until,updated_at=unixepoch()
+        why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,valid_from=excluded.valid_from,valid_until=excluded.valid_until,
+        content_hash=excluded.content_hash,updated_at=unixepoch()
     `;
     return this.provider.transaction(() => {
       let count = 0;
@@ -260,6 +306,7 @@ export class Vault {
           appliesTo: JSON.stringify(entry.appliesTo ?? []),
           validFrom: entry.validFrom ?? null,
           validUntil: entry.validUntil ?? null,
+          contentHash: computeContentHash(entry),
         });
         count++;
         if (this.syncManager) {
@@ -997,6 +1044,29 @@ export class Vault {
       return this.sqliteProvider.getDatabase();
     }
     throw new Error('getDb() is only available with SQLite provider');
+  }
+
+  /** Check if an entry with this content hash already exists. Returns the existing ID or null. */
+  findByContentHash(hash: string): string | null {
+    const row = this.provider.get<{ id: string }>(
+      'SELECT id FROM entries WHERE content_hash = @hash',
+      { hash },
+    );
+    return row?.id ?? null;
+  }
+
+  /** Get content hash stats for dedup reporting. */
+  contentHashStats(): { total: number; hashed: number; uniqueHashes: number } {
+    const total = this.provider.get<{ c: number }>('SELECT COUNT(*) as c FROM entries')?.c ?? 0;
+    const hashed =
+      this.provider.get<{ c: number }>(
+        'SELECT COUNT(*) as c FROM entries WHERE content_hash IS NOT NULL',
+      )?.c ?? 0;
+    const uniqueHashes =
+      this.provider.get<{ c: number }>(
+        'SELECT COUNT(DISTINCT content_hash) as c FROM entries WHERE content_hash IS NOT NULL',
+      )?.c ?? 0;
+    return { total, hashed, uniqueHashes };
   }
 
   close(): void {

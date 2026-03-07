@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Vault } from '../vault/vault.js';
+import { computeContentHash } from '../vault/content-hash.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
@@ -673,6 +674,77 @@ describe('Vault', () => {
       // SQLite backend should analyze and rebuild FTS
       expect(status.analyzed).toBe(true);
       v.close();
+    });
+  });
+
+  describe('Content-addressable hashing', () => {
+    it('seed populates content_hash', () => {
+      vault.seed([
+        {
+          id: 'ch-1',
+          type: 'pattern',
+          domain: 'test',
+          title: 'Hash test',
+          severity: 'warning',
+          description: 'Desc',
+          tags: ['a'],
+        },
+      ]);
+      const hash = computeContentHash({
+        type: 'pattern',
+        domain: 'test',
+        title: 'Hash test',
+        description: 'Desc',
+        tags: ['a'],
+      });
+      expect(vault.findByContentHash(hash)).toBe('ch-1');
+    });
+
+    it('findByContentHash returns null for unknown hash', () => {
+      expect(vault.findByContentHash('0000000000000000000000000000000000000000')).toBeNull();
+    });
+
+    it('contentHashStats returns correct counts', () => {
+      vault.seed([
+        {
+          id: 'hs-1',
+          type: 'pattern',
+          domain: 'd',
+          title: 'T1',
+          severity: 'warning',
+          description: 'D1',
+          tags: ['a'],
+        },
+        {
+          id: 'hs-2',
+          type: 'rule',
+          domain: 'd',
+          title: 'T2',
+          severity: 'warning',
+          description: 'D2',
+          tags: ['b'],
+        },
+      ]);
+      const stats = vault.contentHashStats();
+      expect(stats.total).toBeGreaterThanOrEqual(2);
+      expect(stats.hashed).toBe(stats.total);
+      expect(stats.uniqueHashes).toBe(stats.total);
+    });
+
+    it('backfill hashes existing entries on re-initialize', () => {
+      vault.seed([
+        {
+          id: 'bf-1',
+          type: 'pattern',
+          domain: 'd',
+          title: 'Backfill',
+          severity: 'warning',
+          description: 'D',
+          tags: [],
+        },
+      ]);
+      const stats = vault.contentHashStats();
+      expect(stats.hashed).toBe(stats.total);
     });
   });
 });

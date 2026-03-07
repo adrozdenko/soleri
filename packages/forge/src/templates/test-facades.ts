@@ -276,6 +276,9 @@ ${domainDescribes}
       expect(opNames).toContain('vault_archive');
       expect(opNames).toContain('vault_restore');
       expect(opNames).toContain('vault_optimize');
+      // Vault content hashing (#166)
+      expect(opNames).toContain('vault_content_hash');
+      expect(opNames).toContain('vault_dedup_status');
       // Admin ops (8)
       expect(opNames).toContain('admin_health');
       expect(opNames).toContain('admin_tool_list');
@@ -364,8 +367,8 @@ ${domainDescribes}
       expect(opNames).toContain('intake_process');
       expect(opNames).toContain('intake_status');
       expect(opNames).toContain('intake_preview');
-      // Total: 212 (207 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(212);
+      // Total: 214 (209 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(214);
     });
 
     it('search should query across all domains with ranked results', async () => {

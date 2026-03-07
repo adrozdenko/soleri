@@ -1,5 +1,5 @@
 /**
- * Generic core operations factory — 207 ops that every agent gets.
+ * Generic core operations factory — 209 ops that every agent gets.
  *
  * These ops are agent-agnostic (no persona, no activation).
  * The 5 agent-specific ops (health, identity, activate, inject_claude_md, setup)

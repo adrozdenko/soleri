@@ -233,6 +233,9 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'vault_archive',
         'vault_restore',
         'vault_optimize',
+        // Vault content hashing (#166) — 2
+        'vault_content_hash',
+        'vault_dedup_status',
         // Admin ops — 8
         'admin_health',
         'admin_tool_list',

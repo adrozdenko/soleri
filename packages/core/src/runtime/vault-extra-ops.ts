@@ -1,9 +1,9 @@
 /**
- * Extra vault operations — 23 ops that extend the 4 base vault ops in core-ops.ts.
+ * Extra vault operations — 25 ops that extend the 4 base vault ops in core-ops.ts.
  *
  * Groups: single-entry CRUD (3), bulk (2), discovery (3), import/export (3),
  *         analytics (1), seed canonical (1), knowledge lifecycle (4), temporal (3),
- *         archival (3).
+ *         archival (3), content hashing (2).
  */
 
 import { z } from 'zod';
@@ -584,6 +584,42 @@ export function createVaultExtraOps(runtime: AgentRuntime): OpDefinition[] {
       schema: z.object({}),
       handler: async () => {
         return vault.optimize();
+      },
+    },
+
+    // ── Content hashing (#166) ────────────────────────────────────────
+    {
+      name: 'vault_content_hash',
+      description: 'Compute content hash for an entry without inserting',
+      auth: 'read' as const,
+      schema: z.object({
+        type: z.string(),
+        domain: z.string(),
+        title: z.string(),
+        description: z.string(),
+        tags: z.array(z.string()).optional(),
+        example: z.string().optional(),
+        counterExample: z.string().optional(),
+      }),
+      handler: async (params) => {
+        const { computeContentHash: hashFn } = await import('../vault/content-hash.js');
+        const hash = hashFn(params as unknown as Parameters<typeof hashFn>[0]);
+        const existingId = vault.findByContentHash(hash);
+        return { hash, duplicate: existingId !== null, existingId };
+      },
+    },
+    {
+      name: 'vault_dedup_status',
+      description: 'Report content hash coverage and duplicate statistics',
+      auth: 'read' as const,
+      handler: async () => {
+        const stats = vault.contentHashStats();
+        const duplicates = stats.total - stats.uniqueHashes;
+        return {
+          ...stats,
+          duplicates,
+          coverage: stats.total > 0 ? Math.round((stats.hashed / stats.total) * 100) : 100,
+        };
       },
     },
   ];

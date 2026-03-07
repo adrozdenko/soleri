@@ -48,7 +48,7 @@ describe('createVaultExtraOps', () => {
   }
 
   it('should return 23 ops', () => {
-    expect(ops.length).toBe(23);
+    expect(ops.length).toBe(25);
   });
 
   it('should have all expected op names', () => {

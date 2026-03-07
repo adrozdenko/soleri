@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 207 ops', () => {
-    expect(ops.length).toBe(207);
+  it('should return 209 ops', () => {
+    expect(ops.length).toBe(209);
   });
 
   it('should have all expected op names', () => {
@@ -159,6 +159,9 @@ describe('createCoreOps', () => {
     expect(names).toContain('vault_archive');
     expect(names).toContain('vault_restore');
     expect(names).toContain('vault_optimize');
+    // Vault content hashing (#166)
+    expect(names).toContain('vault_content_hash');
+    expect(names).toContain('vault_dedup_status');
     // Admin (8)
     expect(names).toContain('admin_health');
     expect(names).toContain('admin_tool_list');

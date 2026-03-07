@@ -337,6 +337,15 @@ export type {
   FtsSearchOptions,
 } from './persistence/index.js';
 
+// ─── Streams ──────────────────────────────────────────────────────────
+export { ReplayableStream } from './streams/index.js';
+export { normalize, collect } from './streams/index.js';
+export type { NestableInput } from './streams/index.js';
+
+// ─── Content Hashing ──────────────────────────────────────────────────
+export { computeContentHash } from './vault/content-hash.js';
+export type { HashableEntry } from './vault/content-hash.js';
+
 // ─── Prompts ───────────────────────────────────────────────────────────
 export { TemplateManager, parseVariables, resolveIncludes } from './prompts/index.js';
 export type { PromptTemplate, TemplateVariable, RenderOptions } from './prompts/index.js';
