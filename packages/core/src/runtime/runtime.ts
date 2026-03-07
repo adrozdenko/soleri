@@ -140,6 +140,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     templateManager,
     syncManager,
     intakePipeline,
+    authPolicy: { mode: 'permissive', callerLevel: 'admin' },
     createdAt: Date.now(),
     close: () => {
       syncManager.close();

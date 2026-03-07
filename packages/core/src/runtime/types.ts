@@ -17,6 +17,7 @@ import type { CogneeSyncManager } from '../cognee/sync-manager.js';
 import type { IntakePipeline } from '../intake/intake-pipeline.js';
 import type { Logger } from '../logging/logger.js';
 import type { LogLevel } from '../logging/types.js';
+import type { AuthPolicy } from '../facades/types.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -61,6 +62,8 @@ export interface AgentRuntime {
   templateManager: TemplateManager;
   syncManager: CogneeSyncManager;
   intakePipeline: IntakePipeline;
+  /** Mutable auth policy — controls facade dispatch enforcement. */
+  authPolicy: AuthPolicy;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

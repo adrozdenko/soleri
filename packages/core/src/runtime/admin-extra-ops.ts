@@ -76,21 +76,32 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
     // ─── Permissions ────────────────────────────────────────────────
     {
       name: 'admin_permissions',
-      description: 'Get or set auth enforcement policy (strict, moderate, permissive).',
-      auth: 'write',
+      description:
+        'Get or set auth enforcement policy. Modes: permissive (no checks), warn (log violations), enforce (block violations).',
+      auth: 'admin',
       schema: z.object({
         action: z.enum(['get', 'set']),
-        level: z.enum(['strict', 'moderate', 'permissive']).optional(),
+        mode: z.enum(['permissive', 'warn', 'enforce']).optional(),
+        callerLevel: z.enum(['read', 'write', 'admin']).optional(),
       }),
       handler: async (params) => {
         const action = params.action as string;
         if (action === 'set') {
-          const level = params.level as PermissionLevel | undefined;
-          if (level) {
-            permissionLevel = level;
-          }
+          const mode = params.mode as 'permissive' | 'warn' | 'enforce' | undefined;
+          const callerLevel = params.callerLevel as 'read' | 'write' | 'admin' | undefined;
+          if (mode) runtime.authPolicy.mode = mode;
+          if (callerLevel) runtime.authPolicy.callerLevel = callerLevel;
+          // Keep legacy field in sync
+          permissionLevel =
+            mode === 'enforce' ? 'strict' : mode === 'warn' ? 'moderate' : 'permissive';
         }
-        return { level: permissionLevel };
+        return {
+          level: permissionLevel,
+          authPolicy: {
+            mode: runtime.authPolicy.mode,
+            callerLevel: runtime.authPolicy.callerLevel,
+          },
+        };
       },
     },
 

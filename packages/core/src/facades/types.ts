@@ -6,6 +6,25 @@ export type OpHandler = (params: Record<string, unknown>) => Promise<unknown>;
 /** Auth level required for an operation */
 export type AuthLevel = 'read' | 'write' | 'admin';
 
+/** Auth enforcement mode */
+export type AuthMode = 'permissive' | 'warn' | 'enforce';
+
+/** Auth policy for facade dispatch */
+export interface AuthPolicy {
+  mode: AuthMode;
+  /** Caller's auth level — ops requiring a higher level are blocked/warned */
+  callerLevel: AuthLevel;
+  /** Per-op overrides: opName → required level */
+  overrides?: Record<string, AuthLevel>;
+}
+
+/** Numeric auth level for comparison: read=0, write=1, admin=2 */
+export const AUTH_LEVEL_RANK: Record<AuthLevel, number> = {
+  read: 0,
+  write: 1,
+  admin: 2,
+};
+
 /** Operation definition within a facade */
 export interface OpDefinition {
   name: string;
