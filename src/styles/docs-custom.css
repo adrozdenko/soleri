@@ -194,6 +194,7 @@ starlight-lang-select {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .sl-brand-name {
@@ -230,17 +231,13 @@ starlight-lang-select {
     color 0.15s ease,
     background 0.15s ease;
   white-space: nowrap;
-  position: fixed;
-  left: 24px;
-  top: 0;
-  height: var(--sl-nav-height);
-  align-items: center;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 @media (min-width: 50rem) {
   .sl-back-link {
     display: flex;
+    align-items: center;
   }
 }
 
