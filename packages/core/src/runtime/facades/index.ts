@@ -1,0 +1,74 @@
+/**
+ * Semantic facade assembler — creates 10 domain-specific facades
+ * matching Salvador's engine-level architecture.
+ *
+ * Each facade becomes its own MCP tool with op dispatch.
+ */
+
+import type { FacadeConfig } from '../../facades/types.js';
+import type { AgentRuntime } from '../types.js';
+import { createVaultFacadeOps } from './vault-facade.js';
+import { createPlanFacadeOps } from './plan-facade.js';
+import { createBrainFacadeOps } from './brain-facade.js';
+import { createMemoryFacadeOps } from './memory-facade.js';
+import { createAdminFacadeOps } from './admin-facade.js';
+import { createCuratorFacadeOps } from './curator-facade.js';
+import { createLoopFacadeOps } from './loop-facade.js';
+import { createOrchestrateFacadeOps } from './orchestrate-facade.js';
+import { createControlFacadeOps } from './control-facade.js';
+import { createCogneeFacadeOps } from './cognee-facade.js';
+
+export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
+  return [
+    {
+      name: `${agentId}_vault`,
+      description: 'Knowledge management — search, CRUD, import/export, intake, archival.',
+      ops: createVaultFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_plan`,
+      description: 'Plan lifecycle — create, approve, execute, reconcile, complete, grading.',
+      ops: createPlanFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_brain`,
+      description: 'Learning system — intelligence pipeline, strengths, feedback, sessions.',
+      ops: createBrainFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_memory`,
+      description: 'Session & cross-project memory — capture, search, dedup, promote.',
+      ops: createMemoryFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_admin`,
+      description: 'Infrastructure — health, config, telemetry, tokens, LLM, prompts.',
+      ops: createAdminFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_curator`,
+      description: 'Quality — duplicate detection, contradictions, grooming, health audit.',
+      ops: createCuratorFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_loop`,
+      description: 'Iterative validation loops — start, iterate, cancel, complete, history.',
+      ops: createLoopFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_orchestrate`,
+      description: 'Execution orchestration — project registration, playbooks, plan/execute/complete.',
+      ops: createOrchestrateFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_control`,
+      description: 'Agent behavior — identity, intent routing, morphing, guidelines, governance.',
+      ops: createControlFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_cognee`,
+      description: 'Knowledge graph — Cognee search, sync, export, graph stats.',
+      ops: createCogneeFacadeOps(runtime),
+    },
+  ];
+}
