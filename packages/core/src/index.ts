@@ -288,6 +288,17 @@ export type { FacadeCall, TelemetryStats } from './telemetry/telemetry.js';
 export { Logger, createLogger } from './logging/logger.js';
 export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/types.js';
 
+// ─── Enforcement ────────────────────────────────────────────────────
+export { EnforcementRegistry, ClaudeCodeAdapter } from './enforcement/index.js';
+export type {
+  EnforcementTrigger,
+  EnforcementAction,
+  EnforcementRule,
+  EnforcementConfig,
+  HostAdapterResult,
+  HostAdapter,
+} from './enforcement/index.js';
+
 // ─── CLAUDE.md Composition ──────────────────────────────────────────
 export {
   composeCLAUDEmd,
