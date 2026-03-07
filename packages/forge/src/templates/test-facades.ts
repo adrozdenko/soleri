@@ -272,6 +272,10 @@ ${domainDescribes}
       expect(opNames).toContain('vault_set_temporal');
       expect(opNames).toContain('vault_find_expiring');
       expect(opNames).toContain('vault_find_expired');
+      // Vault archival (#86)
+      expect(opNames).toContain('vault_archive');
+      expect(opNames).toContain('vault_restore');
+      expect(opNames).toContain('vault_optimize');
       // Admin ops (8)
       expect(opNames).toContain('admin_health');
       expect(opNames).toContain('admin_tool_list');
@@ -319,6 +323,8 @@ ${domainDescribes}
       expect(opNames).toContain('admin_gc');
       expect(opNames).toContain('admin_export_config');
       expect(opNames).toContain('admin_hot_reload');
+      // Admin persistence (#85)
+      expect(opNames).toContain('admin_persistence_info');
       // Curator Extra ops (4 + 1 hybrid)
       expect(opNames).toContain('curator_entry_history');
       expect(opNames).toContain('curator_record_snapshot');
@@ -358,8 +364,8 @@ ${domainDescribes}
       expect(opNames).toContain('intake_process');
       expect(opNames).toContain('intake_status');
       expect(opNames).toContain('intake_preview');
-      // Total: 208 (203 core + 5 agent-specific)
-      expect(facade.ops.length).toBe(208);
+      // Total: 212 (207 core + 5 agent-specific)
+      expect(facade.ops.length).toBe(212);
     });
 
     it('search should query across all domains with ranked results', async () => {

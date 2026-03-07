@@ -9,6 +9,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Vault } from '../vault/vault.js';
 import type { Brain } from './brain.js';
+import type { PersistenceProvider } from '../persistence/types.js';
 import type {
   PatternStrength,
   StrengthsQuery,
@@ -40,18 +41,19 @@ const EXTRACTION_HIGH_FEEDBACK_RATIO = 0.8;
 export class BrainIntelligence {
   private vault: Vault;
   private brain: Brain;
+  private provider: PersistenceProvider;
 
   constructor(vault: Vault, brain: Brain) {
     this.vault = vault;
     this.brain = brain;
+    this.provider = vault.getProvider();
     this.initializeTables();
   }
 
   // ─── Table Initialization ─────────────────────────────────────────
 
   private initializeTables(): void {
-    const db = this.vault.getDb();
-    db.exec(`
+    this.provider.execSql(`
       CREATE TABLE IF NOT EXISTS brain_strengths (
         pattern TEXT NOT NULL,
         domain TEXT NOT NULL,
@@ -117,20 +119,19 @@ export class BrainIntelligence {
   // ─── Session Lifecycle ────────────────────────────────────────────
 
   lifecycle(input: SessionLifecycleInput): BrainSession {
-    const db = this.vault.getDb();
-
     if (input.action === 'start') {
       const id = input.sessionId ?? randomUUID();
-      db.prepare(
+      this.provider.run(
         `INSERT INTO brain_sessions (id, domain, context, tools_used, files_modified, plan_id)
          VALUES (?, ?, ?, ?, ?, ?)`,
-      ).run(
-        id,
-        input.domain ?? null,
-        input.context ?? null,
-        JSON.stringify(input.toolsUsed ?? []),
-        JSON.stringify(input.filesModified ?? []),
-        input.planId ?? null,
+        [
+          id,
+          input.domain ?? null,
+          input.context ?? null,
+          JSON.stringify(input.toolsUsed ?? []),
+          JSON.stringify(input.filesModified ?? []),
+          input.planId ?? null,
+        ],
       );
       return this.getSession(id)!;
     }
@@ -160,7 +161,7 @@ export class BrainIntelligence {
     }
 
     values.push(sessionId);
-    db.prepare(`UPDATE brain_sessions SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    this.provider.run(`UPDATE brain_sessions SET ${updates.join(', ')} WHERE id = ?`, values);
 
     // Auto-extract knowledge if session has enough signal
     this.autoExtractIfReady(this.getSession(sessionId)!);
@@ -191,11 +192,7 @@ export class BrainIntelligence {
   }
 
   getSessionContext(limit = 10): SessionContext {
-    const db = this.vault.getDb();
-
-    const rows = db
-      .prepare('SELECT * FROM brain_sessions ORDER BY started_at DESC LIMIT ?')
-      .all(limit) as Array<{
+    const rows = this.provider.all<{
       id: string;
       started_at: string;
       ended_at: string | null;
@@ -206,7 +203,7 @@ export class BrainIntelligence {
       plan_id: string | null;
       plan_outcome: string | null;
       extracted_at: string | null;
-    }>;
+    }>('SELECT * FROM brain_sessions ORDER BY started_at DESC LIMIT ?', [limit]);
 
     const sessions = rows.map((r) => this.rowToSession(r));
 
@@ -234,36 +231,20 @@ export class BrainIntelligence {
   }
 
   archiveSessions(olderThanDays = 30): { archived: number } {
-    const db = this.vault.getDb();
-    const result = db
-      .prepare(
-        `DELETE FROM brain_sessions
-         WHERE ended_at IS NOT NULL
-         AND started_at < datetime('now', '-' || ? || ' days')`,
-      )
-      .run(olderThanDays);
+    const result = this.provider.run(
+      `DELETE FROM brain_sessions
+       WHERE ended_at IS NOT NULL
+       AND started_at < datetime('now', '-' || ? || ' days')`,
+      [olderThanDays],
+    );
     return { archived: result.changes };
   }
 
   // ─── Strength Scoring ─────────────────────────────────────────────
 
   computeStrengths(): PatternStrength[] {
-    const db = this.vault.getDb();
-
     // Gather feedback data grouped by entry_id
-    const feedbackRows = db
-      .prepare(
-        `SELECT entry_id,
-                COUNT(*) as total,
-                SUM(CASE WHEN action = 'accepted' THEN 1 ELSE 0 END) as accepted,
-                SUM(CASE WHEN action = 'dismissed' THEN 1 ELSE 0 END) as dismissed,
-                SUM(CASE WHEN action = 'modified' THEN 1 ELSE 0 END) as modified,
-                SUM(CASE WHEN action = 'failed' THEN 1 ELSE 0 END) as failed,
-                MAX(created_at) as last_used
-         FROM brain_feedback
-         GROUP BY entry_id`,
-      )
-      .all() as Array<{
+    const feedbackRows = this.provider.all<{
       entry_id: string;
       total: number;
       accepted: number;
@@ -271,12 +252,22 @@ export class BrainIntelligence {
       modified: number;
       failed: number;
       last_used: string;
-    }>;
+    }>(
+      `SELECT entry_id,
+              COUNT(*) as total,
+              SUM(CASE WHEN action = 'accepted' THEN 1 ELSE 0 END) as accepted,
+              SUM(CASE WHEN action = 'dismissed' THEN 1 ELSE 0 END) as dismissed,
+              SUM(CASE WHEN action = 'modified' THEN 1 ELSE 0 END) as modified,
+              SUM(CASE WHEN action = 'failed' THEN 1 ELSE 0 END) as failed,
+              MAX(created_at) as last_used
+       FROM brain_feedback
+       GROUP BY entry_id`,
+    );
 
     // Count unique session domains as spread proxy
-    const sessionRows = db
-      .prepare('SELECT DISTINCT domain FROM brain_sessions WHERE domain IS NOT NULL')
-      .all() as Array<{ domain: string }>;
+    const sessionRows = this.provider.all<{ domain: string }>(
+      'SELECT DISTINCT domain FROM brain_sessions WHERE domain IS NOT NULL',
+    );
     const uniqueDomains = new Set(sessionRows.map((r) => r.domain));
 
     const now = Date.now();
@@ -326,23 +317,24 @@ export class BrainIntelligence {
       strengths.push(ps);
 
       // Persist
-      db.prepare(
+      this.provider.run(
         `INSERT OR REPLACE INTO brain_strengths
          (pattern, domain, strength, usage_score, spread_score, success_score, recency_score,
           usage_count, unique_contexts, success_rate, last_used, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-      ).run(
-        ps.pattern,
-        ps.domain,
-        ps.strength,
-        ps.usageScore,
-        ps.spreadScore,
-        ps.successScore,
-        ps.recencyScore,
-        ps.usageCount,
-        ps.uniqueContexts,
-        ps.successRate,
-        ps.lastUsed,
+        [
+          ps.pattern,
+          ps.domain,
+          ps.strength,
+          ps.usageScore,
+          ps.spreadScore,
+          ps.successScore,
+          ps.recencyScore,
+          ps.usageCount,
+          ps.uniqueContexts,
+          ps.successRate,
+          ps.lastUsed,
+        ],
       );
     }
 
@@ -350,7 +342,6 @@ export class BrainIntelligence {
   }
 
   getStrengths(query?: StrengthsQuery): PatternStrength[] {
-    const db = this.vault.getDb();
     const conditions: string[] = [];
     const values: unknown[] = [];
 
@@ -367,9 +358,7 @@ export class BrainIntelligence {
     const limit = query?.limit ?? 50;
     values.push(limit);
 
-    const rows = db
-      .prepare(`SELECT * FROM brain_strengths ${where} ORDER BY strength DESC LIMIT ?`)
-      .all(...values) as Array<{
+    const rows = this.provider.all<{
       pattern: string;
       domain: string;
       strength: number;
@@ -381,7 +370,7 @@ export class BrainIntelligence {
       unique_contexts: number;
       success_rate: number;
       last_used: string;
-    }>;
+    }>(`SELECT * FROM brain_strengths ${where} ORDER BY strength DESC LIMIT ?`, values);
 
     return rows.map((r) => ({
       pattern: r.pattern,
@@ -426,18 +415,20 @@ export class BrainIntelligence {
 
     // Boost patterns with high source-specific acceptance rates
     if (context.source) {
-      const db = this.vault.getDb();
       for (const s of strengths) {
-        const row = db
-          .prepare(
-            `SELECT COUNT(*) as total,
-                    SUM(CASE WHEN action = 'accepted' THEN 1 ELSE 0 END) as accepted,
-                    SUM(CASE WHEN action = 'modified' THEN 1 ELSE 0 END) as modified
-             FROM brain_feedback
-             WHERE entry_id = (SELECT id FROM entries WHERE title = ? LIMIT 1)
-               AND source = ?`,
-          )
-          .get(s.pattern, context.source) as {
+        const row = this.provider.get<{
+          total: number;
+          accepted: number;
+          modified: number;
+        }>(
+          `SELECT COUNT(*) as total,
+                  SUM(CASE WHEN action = 'accepted' THEN 1 ELSE 0 END) as accepted,
+                  SUM(CASE WHEN action = 'modified' THEN 1 ELSE 0 END) as modified
+           FROM brain_feedback
+           WHERE entry_id = (SELECT id FROM entries WHERE title = ? LIMIT 1)
+             AND source = ?`,
+          [s.pattern, context.source],
+        ) as {
           total: number;
           accepted: number;
           modified: number;
@@ -463,7 +454,6 @@ export class BrainIntelligence {
 
     const proposals: KnowledgeProposal[] = [];
     const rulesApplied: string[] = [];
-    const db = this.vault.getDb();
 
     // Rule 1: Repeated tool usage (3+ same tool)
     const toolCounts = new Map<string, number>();
@@ -474,7 +464,7 @@ export class BrainIntelligence {
       if (count >= EXTRACTION_TOOL_THRESHOLD) {
         rulesApplied.push('repeated_tool_usage');
         proposals.push(
-          this.createProposal(db, sessionId, 'repeated_tool_usage', 'pattern', {
+          this.createProposal(sessionId, 'repeated_tool_usage', 'pattern', {
             title: `Frequent use of ${tool}`,
             description: `Tool ${tool} was used ${count} times in session. Consider automating or abstracting this workflow.`,
             confidence: Math.min(0.9, 0.5 + count * 0.1),
@@ -487,7 +477,7 @@ export class BrainIntelligence {
     if (session.filesModified.length >= EXTRACTION_FILE_THRESHOLD) {
       rulesApplied.push('multi_file_edit');
       proposals.push(
-        this.createProposal(db, sessionId, 'multi_file_edit', 'pattern', {
+        this.createProposal(sessionId, 'multi_file_edit', 'pattern', {
           title: `Multi-file change pattern (${session.filesModified.length} files)`,
           description: `Session modified ${session.filesModified.length} files: ${session.filesModified.slice(0, 5).join(', ')}${session.filesModified.length > 5 ? '...' : ''}. This may indicate an architectural pattern.`,
           confidence: Math.min(0.8, 0.4 + session.filesModified.length * 0.05),
@@ -503,7 +493,7 @@ export class BrainIntelligence {
       if (durationMin > EXTRACTION_LONG_SESSION_MINUTES) {
         rulesApplied.push('long_session');
         proposals.push(
-          this.createProposal(db, sessionId, 'long_session', 'anti-pattern', {
+          this.createProposal(sessionId, 'long_session', 'anti-pattern', {
             title: `Long session (${Math.round(durationMin)} minutes)`,
             description: `Session lasted ${Math.round(durationMin)} minutes. Consider breaking complex tasks into smaller steps or improving automation.`,
             confidence: 0.5,
@@ -516,7 +506,7 @@ export class BrainIntelligence {
     if (session.planId && session.planOutcome === 'completed') {
       rulesApplied.push('plan_completed');
       proposals.push(
-        this.createProposal(db, sessionId, 'plan_completed', 'workflow', {
+        this.createProposal(sessionId, 'plan_completed', 'workflow', {
           title: `Successful plan: ${session.planId}`,
           description: `Plan ${session.planId} completed successfully. This workflow can be reused for similar tasks.`,
           confidence: 0.8,
@@ -528,7 +518,7 @@ export class BrainIntelligence {
     if (session.planId && session.planOutcome === 'abandoned') {
       rulesApplied.push('plan_abandoned');
       proposals.push(
-        this.createProposal(db, sessionId, 'plan_abandoned', 'anti-pattern', {
+        this.createProposal(sessionId, 'plan_abandoned', 'anti-pattern', {
           title: `Abandoned plan: ${session.planId}`,
           description: `Plan ${session.planId} was abandoned. Review what went wrong to avoid repeating in future sessions.`,
           confidence: 0.7,
@@ -537,15 +527,18 @@ export class BrainIntelligence {
     }
 
     // Rule 6: High feedback ratio (>80% accept or dismiss)
-    const feedbackRow = db
-      .prepare(
-        `SELECT COUNT(*) as total,
-                SUM(CASE WHEN action = 'accepted' THEN 1 ELSE 0 END) as accepted,
-                SUM(CASE WHEN action = 'dismissed' THEN 1 ELSE 0 END) as dismissed
-         FROM brain_feedback
-         WHERE created_at >= ? AND created_at <= ?`,
-      )
-      .get(session.startedAt, session.endedAt ?? new Date().toISOString()) as {
+    const feedbackRow = this.provider.get<{
+      total: number;
+      accepted: number;
+      dismissed: number;
+    }>(
+      `SELECT COUNT(*) as total,
+              SUM(CASE WHEN action = 'accepted' THEN 1 ELSE 0 END) as accepted,
+              SUM(CASE WHEN action = 'dismissed' THEN 1 ELSE 0 END) as dismissed
+       FROM brain_feedback
+       WHERE created_at >= ? AND created_at <= ?`,
+      [session.startedAt, session.endedAt ?? new Date().toISOString()],
+    ) as {
       total: number;
       accepted: number;
       dismissed: number;
@@ -558,7 +551,7 @@ export class BrainIntelligence {
       if (acceptRate >= EXTRACTION_HIGH_FEEDBACK_RATIO) {
         rulesApplied.push('high_accept_ratio');
         proposals.push(
-          this.createProposal(db, sessionId, 'high_accept_ratio', 'pattern', {
+          this.createProposal(sessionId, 'high_accept_ratio', 'pattern', {
             title: `High search acceptance rate (${Math.round(acceptRate * 100)}%)`,
             description: `Search results were accepted ${Math.round(acceptRate * 100)}% of the time. Brain scoring is well-calibrated for this type of work.`,
             confidence: 0.7,
@@ -567,7 +560,7 @@ export class BrainIntelligence {
       } else if (dismissRate >= EXTRACTION_HIGH_FEEDBACK_RATIO) {
         rulesApplied.push('high_dismiss_ratio');
         proposals.push(
-          this.createProposal(db, sessionId, 'high_dismiss_ratio', 'anti-pattern', {
+          this.createProposal(sessionId, 'high_dismiss_ratio', 'anti-pattern', {
             title: `High search dismissal rate (${Math.round(dismissRate * 100)}%)`,
             description: `Search results were dismissed ${Math.round(dismissRate * 100)}% of the time. Brain scoring may need recalibration for this domain.`,
             confidence: 0.7,
@@ -577,9 +570,9 @@ export class BrainIntelligence {
     }
 
     // Mark session as extracted
-    db.prepare("UPDATE brain_sessions SET extracted_at = datetime('now') WHERE id = ?").run(
+    this.provider.run("UPDATE brain_sessions SET extracted_at = datetime('now') WHERE id = ?", [
       sessionId,
-    );
+    ]);
 
     return {
       sessionId,
@@ -591,28 +584,26 @@ export class BrainIntelligence {
   resetExtracted(options?: { sessionId?: string; since?: string; all?: boolean }): {
     reset: number;
   } {
-    const db = this.vault.getDb();
-
     if (options?.sessionId) {
-      const info = db
-        .prepare(
-          'UPDATE brain_sessions SET extracted_at = NULL WHERE id = ? AND extracted_at IS NOT NULL',
-        )
-        .run(options.sessionId);
+      const info = this.provider.run(
+        'UPDATE brain_sessions SET extracted_at = NULL WHERE id = ? AND extracted_at IS NOT NULL',
+        [options.sessionId],
+      );
       return { reset: info.changes };
     }
 
     if (options?.since) {
-      const info = db
-        .prepare('UPDATE brain_sessions SET extracted_at = NULL WHERE extracted_at >= ?')
-        .run(options.since);
+      const info = this.provider.run(
+        'UPDATE brain_sessions SET extracted_at = NULL WHERE extracted_at >= ?',
+        [options.since],
+      );
       return { reset: info.changes };
     }
 
     if (options?.all) {
-      const info = db
-        .prepare('UPDATE brain_sessions SET extracted_at = NULL WHERE extracted_at IS NOT NULL')
-        .run();
+      const info = this.provider.run(
+        'UPDATE brain_sessions SET extracted_at = NULL WHERE extracted_at IS NOT NULL',
+      );
       return { reset: info.changes };
     }
 
@@ -624,7 +615,6 @@ export class BrainIntelligence {
     promoted?: boolean;
     limit?: number;
   }): KnowledgeProposal[] {
-    const db = this.vault.getDb();
     const conditions: string[] = [];
     const values: unknown[] = [];
 
@@ -641,9 +631,7 @@ export class BrainIntelligence {
     const limit = options?.limit ?? 50;
     values.push(limit);
 
-    const rows = db
-      .prepare(`SELECT * FROM brain_proposals ${where} ORDER BY created_at DESC LIMIT ?`)
-      .all(...values) as Array<{
+    const rows = this.provider.all<{
       id: string;
       session_id: string;
       rule: string;
@@ -653,7 +641,7 @@ export class BrainIntelligence {
       confidence: number;
       promoted: number;
       created_at: string;
-    }>;
+    }>(`SELECT * FROM brain_proposals ${where} ORDER BY created_at DESC LIMIT ?`, values);
 
     return rows.map((r) => this.rowToProposal(r));
   }
@@ -683,26 +671,23 @@ export class BrainIntelligence {
     failed: string[];
     gated: Array<{ id: string; action: string; reason?: string }>;
   } {
-    const db = this.vault.getDb();
     let promoted = 0;
     const failed: string[] = [];
     const gated: Array<{ id: string; action: string; reason?: string }> = [];
     const pp = projectPath ?? '.';
 
     for (const id of proposalIds) {
-      const row = db.prepare('SELECT * FROM brain_proposals WHERE id = ?').get(id) as
-        | {
-            id: string;
-            session_id: string;
-            rule: string;
-            type: string;
-            title: string;
-            description: string;
-            confidence: number;
-            promoted: number;
-            created_at: string;
-          }
-        | undefined;
+      const row = this.provider.get<{
+        id: string;
+        session_id: string;
+        rule: string;
+        type: string;
+        title: string;
+        description: string;
+        confidence: number;
+        promoted: number;
+        created_at: string;
+      }>('SELECT * FROM brain_proposals WHERE id = ?', [id]);
 
       if (!row) {
         failed.push(id);
@@ -761,7 +746,7 @@ export class BrainIntelligence {
         tags: ['auto-extracted', row.rule],
       });
 
-      db.prepare('UPDATE brain_proposals SET promoted = 1 WHERE id = ?').run(id);
+      this.provider.run('UPDATE brain_proposals SET promoted = 1 WHERE id = ?', [id]);
       promoted++;
     }
 
@@ -788,16 +773,13 @@ export class BrainIntelligence {
   }
 
   getGlobalPatterns(limit = 20): GlobalPattern[] {
-    const db = this.vault.getDb();
-    const rows = db
-      .prepare('SELECT * FROM brain_global_registry ORDER BY total_strength DESC LIMIT ?')
-      .all(limit) as Array<{
+    const rows = this.provider.all<{
       pattern: string;
       domains: string;
       total_strength: number;
       avg_strength: number;
       domain_count: number;
-    }>;
+    }>('SELECT * FROM brain_global_registry ORDER BY total_strength DESC LIMIT ?', [limit]);
 
     return rows.map((r) => ({
       pattern: r.pattern,
@@ -809,16 +791,13 @@ export class BrainIntelligence {
   }
 
   getDomainProfile(domain: string): DomainProfile | null {
-    const db = this.vault.getDb();
-    const row = db.prepare('SELECT * FROM brain_domain_profiles WHERE domain = ?').get(domain) as
-      | {
-          domain: string;
-          top_patterns: string;
-          session_count: number;
-          avg_session_duration: number;
-          last_activity: string;
-        }
-      | undefined;
+    const row = this.provider.get<{
+      domain: string;
+      top_patterns: string;
+      session_count: number;
+      avg_session_duration: number;
+      last_activity: string;
+    }>('SELECT * FROM brain_domain_profiles WHERE domain = ?', [domain]);
 
     if (!row) return null;
 
@@ -834,32 +813,27 @@ export class BrainIntelligence {
   // ─── Data Management ──────────────────────────────────────────────
 
   getStats(): BrainIntelligenceStats {
-    const db = this.vault.getDb();
-
-    const strengths = (
-      db.prepare('SELECT COUNT(*) as c FROM brain_strengths').get() as { c: number }
-    ).c;
-    const sessions = (db.prepare('SELECT COUNT(*) as c FROM brain_sessions').get() as { c: number })
-      .c;
-    const activeSessions = (
-      db.prepare('SELECT COUNT(*) as c FROM brain_sessions WHERE ended_at IS NULL').get() as {
-        c: number;
-      }
-    ).c;
-    const proposals = (
-      db.prepare('SELECT COUNT(*) as c FROM brain_proposals').get() as { c: number }
-    ).c;
-    const promotedProposals = (
-      db.prepare('SELECT COUNT(*) as c FROM brain_proposals WHERE promoted = 1').get() as {
-        c: number;
-      }
-    ).c;
-    const globalPatterns = (
-      db.prepare('SELECT COUNT(*) as c FROM brain_global_registry').get() as { c: number }
-    ).c;
-    const domainProfiles = (
-      db.prepare('SELECT COUNT(*) as c FROM brain_domain_profiles').get() as { c: number }
-    ).c;
+    const strengths = this.provider.get<{ c: number }>(
+      'SELECT COUNT(*) as c FROM brain_strengths',
+    )!.c;
+    const sessions = this.provider.get<{ c: number }>(
+      'SELECT COUNT(*) as c FROM brain_sessions',
+    )!.c;
+    const activeSessions = this.provider.get<{ c: number }>(
+      'SELECT COUNT(*) as c FROM brain_sessions WHERE ended_at IS NULL',
+    )!.c;
+    const proposals = this.provider.get<{ c: number }>(
+      'SELECT COUNT(*) as c FROM brain_proposals',
+    )!.c;
+    const promotedProposals = this.provider.get<{ c: number }>(
+      'SELECT COUNT(*) as c FROM brain_proposals WHERE promoted = 1',
+    )!.c;
+    const globalPatterns = this.provider.get<{ c: number }>(
+      'SELECT COUNT(*) as c FROM brain_global_registry',
+    )!.c;
+    const domainProfiles = this.provider.get<{ c: number }>(
+      'SELECT COUNT(*) as c FROM brain_domain_profiles',
+    )!.c;
 
     return {
       strengths,
@@ -873,13 +847,9 @@ export class BrainIntelligence {
   }
 
   exportData(): BrainExportData {
-    const db = this.vault.getDb();
-
     const strengths = this.getStrengths({ limit: 10000 });
 
-    const sessionRows = db
-      .prepare('SELECT * FROM brain_sessions ORDER BY started_at DESC')
-      .all() as Array<{
+    const sessionRows = this.provider.all<{
       id: string;
       started_at: string;
       ended_at: string | null;
@@ -890,19 +860,19 @@ export class BrainIntelligence {
       plan_id: string | null;
       plan_outcome: string | null;
       extracted_at: string | null;
-    }>;
+    }>('SELECT * FROM brain_sessions ORDER BY started_at DESC');
     const sessions = sessionRows.map((r) => this.rowToSession(r));
 
     const proposals = this.getProposals({ limit: 10000 });
     const globalPatterns = this.getGlobalPatterns(10000);
 
-    const profileRows = db.prepare('SELECT * FROM brain_domain_profiles').all() as Array<{
+    const profileRows = this.provider.all<{
       domain: string;
       top_patterns: string;
       session_count: number;
       avg_session_duration: number;
       last_activity: string;
-    }>;
+    }>('SELECT * FROM brain_domain_profiles');
     const domainProfiles = profileRows.map((r) => ({
       domain: r.domain,
       topPatterns: JSON.parse(r.top_patterns) as Array<{ pattern: string; strength: number }>,
@@ -922,136 +892,125 @@ export class BrainIntelligence {
   }
 
   importData(data: BrainExportData): BrainImportResult {
-    const db = this.vault.getDb();
     const result: BrainImportResult = {
       imported: { strengths: 0, sessions: 0, proposals: 0, globalPatterns: 0, domainProfiles: 0 },
     };
 
-    const tx = db.transaction(() => {
+    this.provider.transaction(() => {
       // Import strengths
-      const insertStrength = db.prepare(
-        `INSERT OR REPLACE INTO brain_strengths
-         (pattern, domain, strength, usage_score, spread_score, success_score, recency_score,
-          usage_count, unique_contexts, success_rate, last_used, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-      );
       for (const s of data.strengths) {
-        insertStrength.run(
-          s.pattern,
-          s.domain,
-          s.strength,
-          s.usageScore,
-          s.spreadScore,
-          s.successScore,
-          s.recencyScore,
-          s.usageCount,
-          s.uniqueContexts,
-          s.successRate,
-          s.lastUsed,
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_strengths
+           (pattern, domain, strength, usage_score, spread_score, success_score, recency_score,
+            usage_count, unique_contexts, success_rate, last_used, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+          [
+            s.pattern,
+            s.domain,
+            s.strength,
+            s.usageScore,
+            s.spreadScore,
+            s.successScore,
+            s.recencyScore,
+            s.usageCount,
+            s.uniqueContexts,
+            s.successRate,
+            s.lastUsed,
+          ],
         );
         result.imported.strengths++;
       }
 
       // Import sessions
-      const insertSession = db.prepare(
-        `INSERT OR IGNORE INTO brain_sessions
-         (id, started_at, ended_at, domain, context, tools_used, files_modified, plan_id, plan_outcome, extracted_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      );
       for (const s of data.sessions) {
-        const changes = insertSession.run(
-          s.id,
-          s.startedAt,
-          s.endedAt,
-          s.domain,
-          s.context,
-          JSON.stringify(s.toolsUsed),
-          JSON.stringify(s.filesModified),
-          s.planId,
-          s.planOutcome,
-          s.extractedAt ?? null,
+        const changes = this.provider.run(
+          `INSERT OR IGNORE INTO brain_sessions
+           (id, started_at, ended_at, domain, context, tools_used, files_modified, plan_id, plan_outcome, extracted_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            s.id,
+            s.startedAt,
+            s.endedAt,
+            s.domain,
+            s.context,
+            JSON.stringify(s.toolsUsed),
+            JSON.stringify(s.filesModified),
+            s.planId,
+            s.planOutcome,
+            s.extractedAt ?? null,
+          ],
         );
         if (changes.changes > 0) result.imported.sessions++;
       }
 
       // Import proposals
-      const insertProposal = db.prepare(
-        `INSERT OR IGNORE INTO brain_proposals
-         (id, session_id, rule, type, title, description, confidence, promoted, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      );
       for (const p of data.proposals) {
-        const changes = insertProposal.run(
-          p.id,
-          p.sessionId,
-          p.rule,
-          p.type,
-          p.title,
-          p.description,
-          p.confidence,
-          p.promoted ? 1 : 0,
-          p.createdAt,
+        const changes = this.provider.run(
+          `INSERT OR IGNORE INTO brain_proposals
+           (id, session_id, rule, type, title, description, confidence, promoted, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            p.id,
+            p.sessionId,
+            p.rule,
+            p.type,
+            p.title,
+            p.description,
+            p.confidence,
+            p.promoted ? 1 : 0,
+            p.createdAt,
+          ],
         );
         if (changes.changes > 0) result.imported.proposals++;
       }
 
       // Import global patterns
-      const insertGlobal = db.prepare(
-        `INSERT OR REPLACE INTO brain_global_registry
-         (pattern, domains, total_strength, avg_strength, domain_count, updated_at)
-         VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-      );
       for (const g of data.globalPatterns) {
-        insertGlobal.run(
-          g.pattern,
-          JSON.stringify(g.domains),
-          g.totalStrength,
-          g.avgStrength,
-          g.domainCount,
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_global_registry
+           (pattern, domains, total_strength, avg_strength, domain_count, updated_at)
+           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+          [g.pattern, JSON.stringify(g.domains), g.totalStrength, g.avgStrength, g.domainCount],
         );
         result.imported.globalPatterns++;
       }
 
       // Import domain profiles
-      const insertProfile = db.prepare(
-        `INSERT OR REPLACE INTO brain_domain_profiles
-         (domain, top_patterns, session_count, avg_session_duration, last_activity, updated_at)
-         VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-      );
       for (const d of data.domainProfiles) {
-        insertProfile.run(
-          d.domain,
-          JSON.stringify(d.topPatterns),
-          d.sessionCount,
-          d.avgSessionDuration,
-          d.lastActivity,
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_domain_profiles
+           (domain, top_patterns, session_count, avg_session_duration, last_activity, updated_at)
+           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+          [
+            d.domain,
+            JSON.stringify(d.topPatterns),
+            d.sessionCount,
+            d.avgSessionDuration,
+            d.lastActivity,
+          ],
         );
         result.imported.domainProfiles++;
       }
     });
 
-    tx();
     return result;
   }
 
   // ─── Private Helpers ──────────────────────────────────────────────
 
   private getSession(id: string): BrainSession | null {
-    const db = this.vault.getDb();
-    const row = db.prepare('SELECT * FROM brain_sessions WHERE id = ?').get(id) as
-      | {
-          id: string;
-          started_at: string;
-          ended_at: string | null;
-          domain: string | null;
-          context: string | null;
-          tools_used: string;
-          files_modified: string;
-          plan_id: string | null;
-          plan_outcome: string | null;
-          extracted_at: string | null;
-        }
-      | undefined;
+    const row = this.provider.get<{
+      id: string;
+      started_at: string;
+      ended_at: string | null;
+      domain: string | null;
+      context: string | null;
+      tools_used: string;
+      files_modified: string;
+      plan_id: string | null;
+      plan_outcome: string | null;
+      extracted_at: string | null;
+    }>('SELECT * FROM brain_sessions WHERE id = ?', [id]);
 
     if (!row) return null;
     return this.rowToSession(row);
@@ -1108,17 +1067,17 @@ export class BrainIntelligence {
   }
 
   private createProposal(
-    db: ReturnType<Vault['getDb']>,
     sessionId: string,
     rule: string,
     type: 'pattern' | 'anti-pattern' | 'workflow',
     data: { title: string; description: string; confidence: number },
   ): KnowledgeProposal {
     const id = randomUUID();
-    db.prepare(
+    this.provider.run(
       `INSERT INTO brain_proposals (id, session_id, rule, type, title, description, confidence)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).run(id, sessionId, rule, type, data.title, data.description, data.confidence);
+      [id, sessionId, rule, type, data.title, data.description, data.confidence],
+    );
 
     return {
       id,
@@ -1134,8 +1093,6 @@ export class BrainIntelligence {
   }
 
   private buildGlobalRegistry(strengths: PatternStrength[]): number {
-    const db = this.vault.getDb();
-
     // Group strengths by pattern
     const patternMap = new Map<string, PatternStrength[]>();
     for (const s of strengths) {
@@ -1144,13 +1101,7 @@ export class BrainIntelligence {
       patternMap.set(s.pattern, list);
     }
 
-    db.prepare('DELETE FROM brain_global_registry').run();
-
-    const insert = db.prepare(
-      `INSERT INTO brain_global_registry
-       (pattern, domains, total_strength, avg_strength, domain_count, updated_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-    );
+    this.provider.run('DELETE FROM brain_global_registry');
 
     let count = 0;
     for (const [pattern, entries] of patternMap) {
@@ -1158,7 +1109,12 @@ export class BrainIntelligence {
       const totalStrength = entries.reduce((sum, e) => sum + e.strength, 0);
       const avgStrength = totalStrength / entries.length;
 
-      insert.run(pattern, JSON.stringify(domains), totalStrength, avgStrength, domains.length);
+      this.provider.run(
+        `INSERT INTO brain_global_registry
+         (pattern, domains, total_strength, avg_strength, domain_count, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+        [pattern, JSON.stringify(domains), totalStrength, avgStrength, domains.length],
+      );
       count++;
     }
 
@@ -1166,8 +1122,6 @@ export class BrainIntelligence {
   }
 
   private buildDomainProfiles(strengths: PatternStrength[]): number {
-    const db = this.vault.getDb();
-
     // Group strengths by domain
     const domainMap = new Map<string, PatternStrength[]>();
     for (const s of strengths) {
@@ -1176,13 +1130,7 @@ export class BrainIntelligence {
       domainMap.set(s.domain, list);
     }
 
-    db.prepare('DELETE FROM brain_domain_profiles').run();
-
-    const insert = db.prepare(
-      `INSERT INTO brain_domain_profiles
-       (domain, top_patterns, session_count, avg_session_duration, last_activity, updated_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-    );
+    this.provider.run('DELETE FROM brain_domain_profiles');
 
     let count = 0;
     for (const [domain, entries] of domainMap) {
@@ -1193,34 +1141,37 @@ export class BrainIntelligence {
       }));
 
       // Count sessions for this domain
-      const sessionCount = (
-        db.prepare('SELECT COUNT(*) as c FROM brain_sessions WHERE domain = ?').get(domain) as {
-          c: number;
-        }
-      ).c;
+      const sessionCount = this.provider.get<{ c: number }>(
+        'SELECT COUNT(*) as c FROM brain_sessions WHERE domain = ?',
+        [domain],
+      )!.c;
 
       // Average session duration (in minutes)
-      const durationRow = db
-        .prepare(
-          `SELECT AVG(
-            (julianday(ended_at) - julianday(started_at)) * 1440
-          ) as avg_min
-          FROM brain_sessions
-          WHERE domain = ? AND ended_at IS NOT NULL`,
-        )
-        .get(domain) as { avg_min: number | null };
+      const durationRow = this.provider.get<{ avg_min: number | null }>(
+        `SELECT AVG(
+          (julianday(ended_at) - julianday(started_at)) * 1440
+        ) as avg_min
+        FROM brain_sessions
+        WHERE domain = ? AND ended_at IS NOT NULL`,
+        [domain],
+      )!;
 
       const lastActivity = entries.reduce(
         (latest, e) => (e.lastUsed > latest ? e.lastUsed : latest),
         '',
       );
 
-      insert.run(
-        domain,
-        JSON.stringify(topPatterns),
-        sessionCount,
-        durationRow.avg_min ?? 0,
-        lastActivity || new Date().toISOString(),
+      this.provider.run(
+        `INSERT INTO brain_domain_profiles
+         (domain, top_patterns, session_count, avg_session_duration, last_activity, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+        [
+          domain,
+          JSON.stringify(topPatterns),
+          sessionCount,
+          durationRow.avg_min ?? 0,
+          lastActivity || new Date().toISOString(),
+        ],
       );
       count++;
     }

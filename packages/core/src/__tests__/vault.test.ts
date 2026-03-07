@@ -491,4 +491,188 @@ describe('Vault', () => {
       expect(stats.byProject).toEqual({ '/a': 2, '/b': 1 });
     });
   });
+
+  describe('Vault archival and optimization', () => {
+    it('archive moves old entries', () => {
+      const v = new Vault(':memory:');
+      v.seed([
+        {
+          id: 'old-1',
+          type: 'pattern',
+          domain: 'test',
+          title: 'Old Pattern',
+          severity: 'suggestion',
+          description: 'Old entry',
+          tags: ['test'],
+        },
+      ]);
+      // Manually set the updated_at to 200 days ago
+      v.getProvider().run('UPDATE entries SET updated_at = ? WHERE id = ?', [
+        Math.floor(Date.now() / 1000) - 200 * 86400,
+        'old-1',
+      ]);
+      v.seed([
+        {
+          id: 'new-1',
+          type: 'pattern',
+          domain: 'test',
+          title: 'New Pattern',
+          severity: 'suggestion',
+          description: 'New entry',
+          tags: ['test'],
+        },
+      ]);
+
+      const result = v.archive({ olderThanDays: 90 });
+      expect(result.archived).toBe(1);
+      expect(v.get('old-1')).toBeNull();
+      expect(v.get('new-1')).not.toBeNull();
+      v.close();
+    });
+
+    it('archive respects olderThanDays', () => {
+      const v = new Vault(':memory:');
+      v.seed([
+        {
+          id: 'e1',
+          type: 'pattern',
+          domain: 'test',
+          title: 'Entry',
+          severity: 'suggestion',
+          description: 'Not old enough',
+          tags: ['test'],
+        },
+      ]);
+      // Entry is fresh (just created), archive with 1 day threshold
+      const result = v.archive({ olderThanDays: 1 });
+      expect(result.archived).toBe(0);
+      expect(v.get('e1')).not.toBeNull();
+      v.close();
+    });
+
+    it('archive returns 0 when no candidates', () => {
+      const v = new Vault(':memory:');
+      const result = v.archive({ olderThanDays: 30 });
+      expect(result.archived).toBe(0);
+      v.close();
+    });
+
+    it('archived entries excluded from search', () => {
+      const v = new Vault(':memory:');
+      v.seed([
+        {
+          id: 'search-1',
+          type: 'pattern',
+          domain: 'test',
+          title: 'Searchable Pattern',
+          severity: 'suggestion',
+          description: 'Should be archived',
+          tags: ['search'],
+        },
+      ]);
+      v.getProvider().run('UPDATE entries SET updated_at = ? WHERE id = ?', [
+        Math.floor(Date.now() / 1000) - 200 * 86400,
+        'search-1',
+      ]);
+
+      // Before archive: should appear in search
+      const before = v.search('searchable');
+      expect(before.length).toBeGreaterThan(0);
+
+      v.archive({ olderThanDays: 90 });
+
+      // After archive: should not appear
+      const after = v.search('searchable');
+      expect(after.length).toBe(0);
+      v.close();
+    });
+
+    it('restore brings entry back', () => {
+      const v = new Vault(':memory:');
+      v.seed([
+        {
+          id: 'restore-1',
+          type: 'pattern',
+          domain: 'test',
+          title: 'Restore Me',
+          severity: 'suggestion',
+          description: 'Will be restored',
+          tags: ['test'],
+        },
+      ]);
+      v.getProvider().run('UPDATE entries SET updated_at = ? WHERE id = ?', [
+        Math.floor(Date.now() / 1000) - 200 * 86400,
+        'restore-1',
+      ]);
+      v.archive({ olderThanDays: 90 });
+      expect(v.get('restore-1')).toBeNull();
+
+      const restored = v.restore('restore-1');
+      expect(restored).toBe(true);
+      expect(v.get('restore-1')).not.toBeNull();
+      expect(v.get('restore-1')!.title).toBe('Restore Me');
+      v.close();
+    });
+
+    it('restore returns false for missing id', () => {
+      const v = new Vault(':memory:');
+      const result = v.restore('nonexistent');
+      expect(result).toBe(false);
+      v.close();
+    });
+
+    it('restored entry appears in search', () => {
+      const v = new Vault(':memory:');
+      v.seed([
+        {
+          id: 'search-restore',
+          type: 'pattern',
+          domain: 'test',
+          title: 'Unique Findable Pattern',
+          severity: 'suggestion',
+          description: 'Will be found after restore',
+          tags: ['test'],
+        },
+      ]);
+      v.getProvider().run('UPDATE entries SET updated_at = ? WHERE id = ?', [
+        Math.floor(Date.now() / 1000) - 200 * 86400,
+        'search-restore',
+      ]);
+      v.archive({ olderThanDays: 90 });
+      v.restore('search-restore');
+
+      const results = v.search('unique findable');
+      expect(results.length).toBeGreaterThan(0);
+      v.close();
+    });
+
+    it('optimize runs without error', () => {
+      const v = new Vault(':memory:');
+      v.seed([
+        {
+          id: 'opt-1',
+          type: 'pattern',
+          domain: 'test',
+          title: 'Optimize Test',
+          severity: 'suggestion',
+          description: 'For optimization',
+          tags: ['test'],
+        },
+      ]);
+
+      expect(() => v.optimize()).not.toThrow();
+      v.close();
+    });
+
+    it('optimize returns status', () => {
+      const v = new Vault(':memory:');
+      const status = v.optimize();
+      expect(status).toHaveProperty('vacuumed');
+      expect(status).toHaveProperty('analyzed');
+      expect(status).toHaveProperty('ftsRebuilt');
+      // SQLite backend should analyze and rebuild FTS
+      expect(status.analyzed).toBe(true);
+      v.close();
+    });
+  });
 });

@@ -1,10 +1,10 @@
 /**
- * Extended admin operations — 23 ops for production readiness.
+ * Extended admin operations — 24 ops for production readiness.
  *
  * Groups: telemetry (3), permissions (1), vault analytics (1),
  *         search insights (1), module status (1), env (1), gc (1), export config (1),
  *         key pool (4), profiles (5), plugins (2), instruction validation (1),
- *         hot reload (1).
+ *         hot reload (1), persistence (1).
  */
 
 import { z } from 'zod';
@@ -33,7 +33,7 @@ interface PluginInfo {
 }
 
 /**
- * Create 23 extended admin operations for production observability.
+ * Create 24 extended admin operations for production observability.
  */
 export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, brain, cognee, telemetry } = runtime;
@@ -646,6 +646,39 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
         } catch (err) {
           return { error: (err as Error).message };
         }
+      },
+    },
+
+    // ─── Persistence ────────────────────────────────────────────────
+    {
+      name: 'admin_persistence_info',
+      description: 'Get persistence backend info: type, connection status, and table row counts.',
+      auth: 'read',
+      schema: z.object({}),
+      handler: async () => {
+        const provider = runtime.vault.getProvider();
+        const backend = provider.backend;
+
+        const tables: Record<string, number> = {};
+        const tableNames = [
+          'entries',
+          'entries_archive',
+          'memories',
+          'projects',
+          'brain_vocabulary',
+          'brain_feedback',
+        ];
+
+        for (const table of tableNames) {
+          try {
+            const row = provider.get<{ count: number }>(`SELECT COUNT(*) as count FROM ${table}`);
+            tables[table] = row?.count ?? 0;
+          } catch {
+            tables[table] = -1; // Table doesn't exist
+          }
+        }
+
+        return { backend, tables };
       },
     },
   ];

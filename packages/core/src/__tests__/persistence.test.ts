@@ -122,6 +122,72 @@ describe('SQLitePersistenceProvider', () => {
     p.close();
     expect(() => p.run('SELECT 1')).toThrow();
   });
+
+  it('backend returns sqlite', () => {
+    const p = new SQLitePersistenceProvider(':memory:');
+    expect(p.backend).toBe('sqlite');
+    p.close();
+  });
+
+  it('ftsSearch returns matches', () => {
+    const p = new SQLitePersistenceProvider(':memory:');
+    p.execSql(`
+      CREATE TABLE docs (rowid INTEGER PRIMARY KEY, title TEXT, body TEXT);
+      CREATE VIRTUAL TABLE docs_fts USING fts5(title, body, content=docs, content_rowid=rowid);
+      INSERT INTO docs (rowid, title, body) VALUES (1, 'Hello World', 'This is a test document');
+      INSERT INTO docs (rowid, title, body) VALUES (2, 'Goodbye', 'Another test here');
+      INSERT INTO docs_fts (rowid, title, body) VALUES (1, 'Hello World', 'This is a test document');
+      INSERT INTO docs_fts (rowid, title, body) VALUES (2, 'Goodbye', 'Another test here');
+    `);
+    const results = p.ftsSearch<{ title: string; body: string }>('docs', 'hello');
+    expect(results).toHaveLength(1);
+    expect(results[0].title).toBe('Hello World');
+    p.close();
+  });
+
+  it('ftsSearch respects limit/offset', () => {
+    const p = new SQLitePersistenceProvider(':memory:');
+    p.execSql(`
+      CREATE TABLE items (rowid INTEGER PRIMARY KEY, name TEXT);
+      CREATE VIRTUAL TABLE items_fts USING fts5(name, content=items, content_rowid=rowid);
+      INSERT INTO items (rowid, name) VALUES (1, 'test alpha');
+      INSERT INTO items (rowid, name) VALUES (2, 'test beta');
+      INSERT INTO items (rowid, name) VALUES (3, 'test gamma');
+      INSERT INTO items_fts (rowid, name) VALUES (1, 'test alpha');
+      INSERT INTO items_fts (rowid, name) VALUES (2, 'test beta');
+      INSERT INTO items_fts (rowid, name) VALUES (3, 'test gamma');
+    `);
+    const limited = p.ftsSearch<{ name: string }>('items', 'test', { limit: 2 });
+    expect(limited).toHaveLength(2);
+    const offset = p.ftsSearch<{ name: string }>('items', 'test', { limit: 1, offset: 2 });
+    expect(offset).toHaveLength(1);
+    p.close();
+  });
+
+  it('ftsSearch applies filters', () => {
+    const p = new SQLitePersistenceProvider(':memory:');
+    p.execSql(`
+      CREATE TABLE notes (rowid INTEGER PRIMARY KEY, title TEXT, category TEXT);
+      CREATE VIRTUAL TABLE notes_fts USING fts5(title, content=notes, content_rowid=rowid);
+      INSERT INTO notes (rowid, title, category) VALUES (1, 'design pattern', 'arch');
+      INSERT INTO notes (rowid, title, category) VALUES (2, 'design review', 'process');
+      INSERT INTO notes_fts (rowid, title) VALUES (1, 'design pattern');
+      INSERT INTO notes_fts (rowid, title) VALUES (2, 'design review');
+    `);
+    const filtered = p.ftsSearch<{ title: string; category: string }>('notes', 'design', {
+      filters: { category: 'arch' },
+    });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].category).toBe('arch');
+    p.close();
+  });
+
+  it('ftsRebuild no-ops gracefully', () => {
+    const p = new SQLitePersistenceProvider(':memory:');
+    // No FTS table exists — should not throw
+    expect(() => p.ftsRebuild('nonexistent')).not.toThrow();
+    p.close();
+  });
 });
 
 // ─── Vault with PersistenceProvider ───────────────────────────────────

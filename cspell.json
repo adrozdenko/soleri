@@ -65,7 +65,11 @@
     "tsquery",
     "timestamptz",
     "mmap",
-    "dbname"
+    "dbname",
+    "jaccard",
+    "millis",
+    "upserts",
+    "retag"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [

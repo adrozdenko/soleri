@@ -34,11 +34,41 @@ export interface PersistenceProvider {
   /** Run a function inside a transaction. Commits on success, rolls back on error. */
   transaction<T>(fn: () => T): T;
 
+  /** Identifies the backend engine. */
+  readonly backend: 'sqlite' | 'postgres';
+
+  /** Full-text search abstraction. */
+  ftsSearch<T = Record<string, unknown>>(
+    table: string,
+    query: string,
+    options?: FtsSearchOptions,
+  ): T[];
+
+  /** Rebuild FTS index for a table. */
+  ftsRebuild(table: string): void;
+
   /** Close the connection. */
   close(): void;
 }
 
 export interface PersistenceConfig {
-  type: 'sqlite';
+  type: 'sqlite' | 'postgres';
   path: string;
+  /** PostgreSQL connection string. */
+  connectionString?: string;
+  /** PostgreSQL pool size. */
+  poolSize?: number;
+}
+
+export interface FtsSearchOptions {
+  /** Columns to search (default: all FTS columns). */
+  columns?: string[];
+  /** Max results. */
+  limit?: number;
+  /** Skip N results. */
+  offset?: number;
+  /** Additional WHERE conditions on the base table. */
+  filters?: Record<string, unknown>;
+  /** Order by FTS relevance rank (default: true). */
+  orderByRank?: boolean;
 }

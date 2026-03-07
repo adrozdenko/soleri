@@ -34,8 +34,8 @@ describe('createCoreOps', () => {
     return op;
   }
 
-  it('should return 203 ops', () => {
-    expect(ops.length).toBe(203);
+  it('should return 207 ops', () => {
+    expect(ops.length).toBe(207);
   });
 
   it('should have all expected op names', () => {
@@ -155,6 +155,10 @@ describe('createCoreOps', () => {
     expect(names).toContain('vault_set_temporal');
     expect(names).toContain('vault_find_expiring');
     expect(names).toContain('vault_find_expired');
+    // Vault archival (#86)
+    expect(names).toContain('vault_archive');
+    expect(names).toContain('vault_restore');
+    expect(names).toContain('vault_optimize');
     // Admin (8)
     expect(names).toContain('admin_health');
     expect(names).toContain('admin_tool_list');
@@ -175,6 +179,8 @@ describe('createCoreOps', () => {
     expect(names).toContain('admin_env');
     expect(names).toContain('admin_gc');
     expect(names).toContain('admin_export_config');
+    // Admin persistence (#85)
+    expect(names).toContain('admin_persistence_info');
     // Loop (7)
     expect(names).toContain('loop_start');
     expect(names).toContain('loop_iterate');

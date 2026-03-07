@@ -1,6 +1,7 @@
 import type { Vault } from '../vault/vault.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { CogneeClient } from '../cognee/client.js';
+import type { PersistenceProvider } from '../persistence/types.js';
 import {
   tokenize,
   calculateTfIdf,
@@ -51,10 +52,12 @@ const DEFAULT_TAG_ALIASES: Array<[string, string]> = [
 export class Curator {
   private vault: Vault;
   private cognee: CogneeClient | undefined;
+  private provider: PersistenceProvider;
 
   constructor(vault: Vault, cognee?: CogneeClient) {
     this.vault = vault;
     this.cognee = cognee;
+    this.provider = vault.getProvider();
     this.initializeTables();
     this.seedDefaultAliases();
   }
@@ -62,8 +65,7 @@ export class Curator {
   // ─── Schema ─────────────────────────────────────────────────────
 
   private initializeTables(): void {
-    const db = this.vault.getDb();
-    db.exec(`
+    this.provider.execSql(`
       CREATE TABLE IF NOT EXISTS curator_entry_state (
         entry_id TEXT PRIMARY KEY,
         status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'stale', 'archived')),
@@ -115,41 +117,39 @@ export class Curator {
         resolved_at INTEGER,
         UNIQUE(pattern_id, antipattern_id)
       );
+      CREATE INDEX IF NOT EXISTS idx_curator_state_status ON curator_entry_state(status);
+      CREATE INDEX IF NOT EXISTS idx_curator_changelog_entry ON curator_changelog(entry_id);
     `);
   }
 
   private seedDefaultAliases(): void {
-    const db = this.vault.getDb();
-    const insertCanonical = db.prepare(
-      'INSERT OR IGNORE INTO curator_tag_canonical (tag) VALUES (?)',
-    );
-    const insertAlias = db.prepare(
-      'INSERT OR IGNORE INTO curator_tag_alias (alias, canonical) VALUES (?, ?)',
-    );
-    const tx = db.transaction(() => {
+    this.provider.transaction(() => {
       const canonicals = new Set(DEFAULT_TAG_ALIASES.map(([, c]) => c));
       for (const tag of canonicals) {
-        insertCanonical.run(tag);
+        this.provider.run('INSERT OR IGNORE INTO curator_tag_canonical (tag) VALUES (?)', [tag]);
       }
       for (const [alias, canonical] of DEFAULT_TAG_ALIASES) {
-        insertAlias.run(alias, canonical);
+        this.provider.run(
+          'INSERT OR IGNORE INTO curator_tag_alias (alias, canonical) VALUES (?, ?)',
+          [alias, canonical],
+        );
       }
     });
-    tx();
   }
 
   // ─── Status ─────────────────────────────────────────────────────
 
   getStatus(): CuratorStatus {
-    const db = this.vault.getDb();
     const tableCount = (table: string): number =>
-      (db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number }).count;
+      (
+        this.provider.get<{ count: number }>(`SELECT COUNT(*) as count FROM ${table}`) ?? {
+          count: 0,
+        }
+      ).count;
 
-    const lastGroomed = db
-      .prepare(
-        'SELECT MAX(last_groomed_at) as ts FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
-      )
-      .get() as { ts: number | null };
+    const lastGroomed = this.provider.get<{ ts: number | null }>(
+      'SELECT MAX(last_groomed_at) as ts FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
+    ) ?? { ts: null };
 
     return {
       initialized: true,
@@ -167,11 +167,11 @@ export class Curator {
   // ─── Tag Normalization ──────────────────────────────────────────
 
   normalizeTag(tag: string): TagNormalizationResult {
-    const db = this.vault.getDb();
     const lower = tag.toLowerCase().trim();
-    const row = db.prepare('SELECT canonical FROM curator_tag_alias WHERE alias = ?').get(lower) as
-      | { canonical: string }
-      | undefined;
+    const row = this.provider.get<{ canonical: string }>(
+      'SELECT canonical FROM curator_tag_alias WHERE alias = ?',
+      [lower],
+    );
     if (row) {
       return { original: tag, normalized: row.canonical, wasAliased: true };
     }
@@ -195,11 +195,10 @@ export class Curator {
 
     if (changed) {
       const dedupedTags = [...new Set(normalizedTags)];
-      const db = this.vault.getDb();
-      db.prepare('UPDATE entries SET tags = ?, updated_at = unixepoch() WHERE id = ?').run(
+      this.provider.run('UPDATE entries SET tags = ?, updated_at = unixepoch() WHERE id = ?', [
         JSON.stringify(dedupedTags),
         entryId,
-      );
+      ]);
       this.logChange(
         'normalize_tags',
         entryId,
@@ -213,26 +212,28 @@ export class Curator {
   }
 
   addTagAlias(alias: string, canonical: string): void {
-    const db = this.vault.getDb();
     const lower = alias.toLowerCase().trim();
     const canonicalLower = canonical.toLowerCase().trim();
-    db.prepare('INSERT OR IGNORE INTO curator_tag_canonical (tag) VALUES (?)').run(canonicalLower);
-    db.prepare('INSERT OR REPLACE INTO curator_tag_alias (alias, canonical) VALUES (?, ?)').run(
+    this.provider.run('INSERT OR IGNORE INTO curator_tag_canonical (tag) VALUES (?)', [
+      canonicalLower,
+    ]);
+    this.provider.run('INSERT OR REPLACE INTO curator_tag_alias (alias, canonical) VALUES (?, ?)', [
       lower,
       canonicalLower,
-    );
+    ]);
   }
 
   getCanonicalTags(): CanonicalTag[] {
-    const db = this.vault.getDb();
-    const rows = db
-      .prepare(
-        `SELECT c.tag, c.description,
-          (SELECT COUNT(*) FROM curator_tag_alias a WHERE a.canonical = c.tag) as alias_count
-        FROM curator_tag_canonical c
-        ORDER BY c.tag`,
-      )
-      .all() as Array<{ tag: string; description: string | null; alias_count: number }>;
+    const rows = this.provider.all<{
+      tag: string;
+      description: string | null;
+      alias_count: number;
+    }>(
+      `SELECT c.tag, c.description,
+        (SELECT COUNT(*) FROM curator_tag_alias a WHERE a.canonical = c.tag) as alias_count
+      FROM curator_tag_canonical c
+      ORDER BY c.tag`,
+    );
 
     return rows.map((row) => ({
       tag: row.tag,
@@ -243,11 +244,11 @@ export class Curator {
   }
 
   private countTagUsage(tag: string): number {
-    const db = this.vault.getDb();
-    const row = db
-      .prepare('SELECT COUNT(*) as count FROM entries WHERE tags LIKE ?')
-      .get(`%"${tag}"%`) as { count: number };
-    return row.count;
+    const row = this.provider.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM entries WHERE tags LIKE ?',
+      [`%"${tag}"%`],
+    );
+    return row?.count ?? 0;
   }
 
   // ─── Duplicate Detection ────────────────────────────────────────
@@ -315,13 +316,7 @@ export class Curator {
     if (antipatterns.length === 0 || patterns.length === 0) return [];
 
     const vocabulary = this.buildVocabulary(entries);
-    const db = this.vault.getDb();
     const detected: Contradiction[] = [];
-
-    const insertStmt = db.prepare(
-      `INSERT OR IGNORE INTO curator_contradictions (pattern_id, antipattern_id, similarity)
-       VALUES (?, ?, ?)`,
-    );
 
     for (const ap of antipatterns) {
       // Stage 1: FTS5 candidate retrieval (fall back to all patterns if FTS returns empty)
@@ -343,14 +338,16 @@ export class Curator {
         const similarity = cosineSimilarity(apVec, pVec);
 
         if (similarity >= effectiveThreshold) {
-          const result = insertStmt.run(pattern.id, ap.id, similarity);
+          const result = this.provider.run(
+            'INSERT OR IGNORE INTO curator_contradictions (pattern_id, antipattern_id, similarity) VALUES (?, ?, ?)',
+            [pattern.id, ap.id, similarity],
+          );
           if (result.changes > 0) {
-            const row = db
-              .prepare(
-                'SELECT * FROM curator_contradictions WHERE pattern_id = ? AND antipattern_id = ?',
-              )
-              .get(pattern.id, ap.id) as Record<string, unknown>;
-            detected.push(this.rowToContradiction(row));
+            const row = this.provider.get<Record<string, unknown>>(
+              'SELECT * FROM curator_contradictions WHERE pattern_id = ? AND antipattern_id = ?',
+              [pattern.id, ap.id],
+            );
+            if (row) detected.push(this.rowToContradiction(row));
           }
         }
       }
@@ -360,24 +357,22 @@ export class Curator {
   }
 
   getContradictions(status?: ContradictionStatus): Contradiction[] {
-    const db = this.vault.getDb();
     const query = status
       ? 'SELECT * FROM curator_contradictions WHERE status = ? ORDER BY similarity DESC'
       : 'SELECT * FROM curator_contradictions ORDER BY similarity DESC';
-    const rows = (status ? db.prepare(query).all(status) : db.prepare(query).all()) as Array<
-      Record<string, unknown>
-    >;
+    const rows = this.provider.all<Record<string, unknown>>(query, status ? [status] : undefined);
     return rows.map((r) => this.rowToContradiction(r));
   }
 
   resolveContradiction(id: number, resolution: 'resolved' | 'dismissed'): Contradiction | null {
-    const db = this.vault.getDb();
-    db.prepare(
+    this.provider.run(
       'UPDATE curator_contradictions SET status = ?, resolved_at = unixepoch() WHERE id = ?',
-    ).run(resolution, id);
-    const row = db.prepare('SELECT * FROM curator_contradictions WHERE id = ?').get(id) as
-      | Record<string, unknown>
-      | undefined;
+      [resolution, id],
+    );
+    const row = this.provider.get<Record<string, unknown>>(
+      'SELECT * FROM curator_contradictions WHERE id = ?',
+      [id],
+    );
     return row ? this.rowToContradiction(row) : null;
   }
 
@@ -396,13 +391,7 @@ export class Curator {
     }
 
     const vocabulary = this.buildVocabulary(entries);
-    const db = this.vault.getDb();
     const detected: Contradiction[] = [];
-
-    const insertStmt = db.prepare(
-      `INSERT OR IGNORE INTO curator_contradictions (pattern_id, antipattern_id, similarity)
-       VALUES (?, ?, ?)`,
-    );
 
     const cogneeAvailable = this.cognee?.isAvailable ?? false;
 
@@ -440,14 +429,16 @@ export class Curator {
         }
 
         if (finalScore >= effectiveThreshold) {
-          const result = insertStmt.run(pattern.id, ap.id, finalScore);
+          const result = this.provider.run(
+            'INSERT OR IGNORE INTO curator_contradictions (pattern_id, antipattern_id, similarity) VALUES (?, ?, ?)',
+            [pattern.id, ap.id, finalScore],
+          );
           if (result.changes > 0) {
-            const row = db
-              .prepare(
-                'SELECT * FROM curator_contradictions WHERE pattern_id = ? AND antipattern_id = ?',
-              )
-              .get(pattern.id, ap.id) as Record<string, unknown>;
-            detected.push(this.rowToContradiction(row));
+            const row = this.provider.get<Record<string, unknown>>(
+              'SELECT * FROM curator_contradictions WHERE pattern_id = ? AND antipattern_id = ?',
+              [pattern.id, ap.id],
+            );
+            if (row) detected.push(this.rowToContradiction(row));
           }
         }
       }
@@ -469,21 +460,22 @@ export class Curator {
     const tagsNormalized = this.normalizeTags(entryId);
 
     // Check staleness based on entry's updated_at timestamp
-    const db = this.vault.getDb();
-    const row = db.prepare('SELECT updated_at FROM entries WHERE id = ?').get(entryId) as
-      | { updated_at: number }
-      | undefined;
+    const row = this.provider.get<{ updated_at: number }>(
+      'SELECT updated_at FROM entries WHERE id = ?',
+      [entryId],
+    );
     const now = Math.floor(Date.now() / 1000);
     const stale = row ? now - row.updated_at > DEFAULT_STALE_DAYS * 86400 : false;
 
     const status = stale ? 'stale' : 'active';
 
     // Upsert entry state
-    db.prepare(
+    this.provider.run(
       `INSERT INTO curator_entry_state (entry_id, status, last_groomed_at)
        VALUES (?, ?, unixepoch())
        ON CONFLICT(entry_id) DO UPDATE SET status = excluded.status, last_groomed_at = unixepoch()`,
-    ).run(entryId, status);
+      [entryId, status],
+    );
 
     this.logChange('groom', entryId, null, `status=${status}`, 'Routine grooming');
 
@@ -532,12 +524,12 @@ export class Curator {
     const duplicates = this.detectDuplicates(undefined, duplicateThreshold);
 
     // Detect stale entries
-    const db = this.vault.getDb();
     const now = Math.floor(Date.now() / 1000);
     const staleThreshold = now - staleDaysThreshold * 86400;
-    const staleRows = db
-      .prepare('SELECT id FROM entries WHERE updated_at < ?')
-      .all(staleThreshold) as Array<{ id: string }>;
+    const staleRows = this.provider.all<{ id: string }>(
+      'SELECT id FROM entries WHERE updated_at < ?',
+      [staleThreshold],
+    );
     const staleEntries = staleRows.map((r) => r.id);
 
     // Detect contradictions
@@ -548,11 +540,12 @@ export class Curator {
     if (!dryRun) {
       // Archive stale entries
       for (const entryId of staleEntries) {
-        db.prepare(
+        this.provider.run(
           `INSERT INTO curator_entry_state (entry_id, status, last_groomed_at)
            VALUES (?, 'archived', unixepoch())
            ON CONFLICT(entry_id) DO UPDATE SET status = 'archived', last_groomed_at = unixepoch()`,
-        ).run(entryId);
+          [entryId],
+        );
         this.logChange(
           'archive',
           entryId,
@@ -596,12 +589,10 @@ export class Curator {
   // ─── Changelog ──────────────────────────────────────────────────
 
   getEntryHistory(entryId: string, limit?: number): ChangelogEntry[] {
-    const db = this.vault.getDb();
-    const rows = db
-      .prepare(
-        'SELECT * FROM curator_changelog WHERE entry_id = ? ORDER BY created_at DESC, id DESC LIMIT ?',
-      )
-      .all(entryId, limit ?? 50) as Array<Record<string, unknown>>;
+    const rows = this.provider.all<Record<string, unknown>>(
+      'SELECT * FROM curator_changelog WHERE entry_id = ? ORDER BY created_at DESC, id DESC LIMIT ?',
+      [entryId, limit ?? 50],
+    );
     return rows.map((r) => this.rowToChangelog(r));
   }
 
@@ -648,13 +639,13 @@ export class Curator {
     coverageScore = Math.max(0, coverageScore);
 
     // Freshness: penalize stale entries
-    const db = this.vault.getDb();
     const now = Math.floor(Date.now() / 1000);
     const staleThreshold = now - DEFAULT_STALE_DAYS * 86400;
     const staleCount = (
-      db
-        .prepare('SELECT COUNT(*) as count FROM entries WHERE updated_at < ?')
-        .get(staleThreshold) as { count: number }
+      this.provider.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM entries WHERE updated_at < ?',
+        [staleThreshold],
+      ) ?? { count: 0 }
     ).count;
     const staleRatio = staleCount / entries.length;
     const freshnessScore = 1 - staleRatio;
@@ -698,11 +689,9 @@ export class Curator {
 
     // Penalize ungroomed entries
     const groomedCount = (
-      db
-        .prepare(
-          'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
-        )
-        .get() as { count: number }
+      this.provider.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
+      ) ?? { count: 0 }
     ).count;
     if (groomedCount < entries.length) {
       const ungroomed = entries.length - groomedCount;
@@ -739,12 +728,10 @@ export class Curator {
     const entry = this.vault.get(entryId);
     if (!entry) return { recorded: false, historyId: -1 };
 
-    const db = this.vault.getDb();
-    const result = db
-      .prepare(
-        'INSERT INTO curator_entry_history (entry_id, snapshot, changed_by, change_reason, created_at) VALUES (?, ?, ?, ?, unixepoch())',
-      )
-      .run(entryId, JSON.stringify(entry), changedBy ?? 'system', changeReason ?? null);
+    const result = this.provider.run(
+      'INSERT INTO curator_entry_history (entry_id, snapshot, changed_by, change_reason, created_at) VALUES (?, ?, ?, ?, unixepoch())',
+      [entryId, JSON.stringify(entry), changedBy ?? 'system', changeReason ?? null],
+    );
 
     return { recorded: true, historyId: Number(result.lastInsertRowid) };
   }
@@ -757,12 +744,10 @@ export class Curator {
     changeReason: string | null;
     createdAt: number;
   }> {
-    const db = this.vault.getDb();
-    const rows = db
-      .prepare(
-        'SELECT * FROM curator_entry_history WHERE entry_id = ? ORDER BY created_at ASC, id ASC',
-      )
-      .all(entryId) as Array<Record<string, unknown>>;
+    const rows = this.provider.all<Record<string, unknown>>(
+      'SELECT * FROM curator_entry_history WHERE entry_id = ? ORDER BY created_at ASC, id ASC',
+      [entryId],
+    );
 
     return rows.map((row) => ({
       historyId: row.id as number,
@@ -784,17 +769,14 @@ export class Curator {
     freshEntries: number;
     avgDaysSinceGroom: number;
   } {
-    const db = this.vault.getDb();
     const totalEntries = (
-      db.prepare('SELECT COUNT(*) as count FROM entries').get() as { count: number }
+      this.provider.get<{ count: number }>('SELECT COUNT(*) as count FROM entries') ?? { count: 0 }
     ).count;
 
     const groomedEntries = (
-      db
-        .prepare(
-          'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
-        )
-        .get() as { count: number }
+      this.provider.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
+      ) ?? { count: 0 }
     ).count;
 
     const ungroomedEntries = totalEntries - groomedEntries;
@@ -804,28 +786,25 @@ export class Curator {
     const freshThreshold = now - 7 * 86400;
 
     const staleEntries = (
-      db
-        .prepare(
-          'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL AND last_groomed_at < ?',
-        )
-        .get(staleThreshold) as { count: number }
+      this.provider.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL AND last_groomed_at < ?',
+        [staleThreshold],
+      ) ?? { count: 0 }
     ).count;
 
     const freshEntries = (
-      db
-        .prepare(
-          'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL AND last_groomed_at >= ?',
-        )
-        .get(freshThreshold) as { count: number }
+      this.provider.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM curator_entry_state WHERE last_groomed_at IS NOT NULL AND last_groomed_at >= ?',
+        [freshThreshold],
+      ) ?? { count: 0 }
     ).count;
 
     let avgDaysSinceGroom = 0;
     if (groomedEntries > 0) {
-      const sumRow = db
-        .prepare(
-          'SELECT SUM(? - last_groomed_at) as total FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
-        )
-        .get(now) as { total: number | null };
+      const sumRow = this.provider.get<{ total: number | null }>(
+        'SELECT SUM(? - last_groomed_at) as total FROM curator_entry_state WHERE last_groomed_at IS NOT NULL',
+        [now],
+      ) ?? { total: 0 };
       const totalSeconds = sumRow.total ?? 0;
       avgDaysSinceGroom = Math.round((totalSeconds / groomedEntries / 86400) * 100) / 100;
     }
@@ -961,10 +940,10 @@ export class Curator {
     afterValue: string | null,
     reason: string,
   ): void {
-    const db = this.vault.getDb();
-    db.prepare(
+    this.provider.run(
       'INSERT INTO curator_changelog (action, entry_id, before_value, after_value, reason) VALUES (?, ?, ?, ?, ?)',
-    ).run(action, entryId, beforeValue, afterValue, reason);
+      [action, entryId, beforeValue, afterValue, reason],
+    );
   }
 
   private rowToContradiction(row: Record<string, unknown>): Contradiction {

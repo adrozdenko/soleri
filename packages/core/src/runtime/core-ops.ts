@@ -1,5 +1,5 @@
 /**
- * Generic core operations factory — 158 ops that every agent gets.
+ * Generic core operations factory — 207 ops that every agent gets.
  *
  * These ops are agent-agnostic (no persona, no activation).
  * The 5 agent-specific ops (health, identity, activate, inject_claude_md, setup)
@@ -30,14 +30,14 @@ import { createCogneeSyncOps } from './cognee-sync-ops.js';
 import { createIntakeOps } from './intake-ops.js';
 
 /**
- * Create the 203 generic core operations for an agent runtime.
+ * Create the 207 generic core operations for an agent runtime.
  *
  * Groups: search/vault (4), memory (4), export (1), planning (5),
  *         brain (8), brain intelligence (11), cognee (5),
  *         llm (2), curator (8), control (8), governance (5),
  *         playbook (5), prompt templates (2),
- *         planning-extra (22), memory-extra (8), vault-extra (20),
- *         admin (8), admin-extra (23), loop (9), orchestrate (5),
+ *         planning-extra (22), memory-extra (8), vault-extra (23),
+ *         admin (8), admin-extra (24), loop (9), orchestrate (5),
  *         grading (5), capture (4), curator-extra (5), project (12),
  *         cognee-sync (3), intake (4).
  */

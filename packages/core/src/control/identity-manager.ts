@@ -2,11 +2,13 @@
  * IdentityManager — Agent identity CRUD with versioning and rollback.
  *
  * Follows the Curator/BrainIntelligence pattern: separate class, own SQLite
- * tables, takes Vault as constructor dep. All methods synchronous (better-sqlite3).
+ * tables, takes Vault as constructor dep. Uses PersistenceProvider abstraction
+ * for all database access.
  */
 
 import { randomUUID } from 'node:crypto';
 import type { Vault } from '../vault/vault.js';
+import type { PersistenceProvider } from '../persistence/types.js';
 import type {
   AgentIdentity,
   IdentityVersion,
@@ -20,17 +22,18 @@ import type {
 
 export class IdentityManager {
   private vault: Vault;
+  private provider: PersistenceProvider;
 
   constructor(vault: Vault) {
     this.vault = vault;
+    this.provider = vault.getProvider();
     this.initializeTables();
   }
 
   // ─── Table Initialization ───────────────────────────────────────────
 
   private initializeTables(): void {
-    const db = this.vault.getDb();
-    db.exec(`
+    this.provider.execSql(`
       CREATE TABLE IF NOT EXISTS agent_identity (
         agent_id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -38,7 +41,7 @@ export class IdentityManager {
         description TEXT NOT NULL DEFAULT '',
         personality TEXT NOT NULL DEFAULT '[]',
         version INTEGER NOT NULL DEFAULT 1,
-        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch())
       );
 
       CREATE TABLE IF NOT EXISTS agent_identity_versions (
@@ -48,7 +51,7 @@ export class IdentityManager {
         snapshot TEXT NOT NULL,
         changed_by TEXT NOT NULL DEFAULT 'system',
         change_reason TEXT NOT NULL DEFAULT '',
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
         UNIQUE(agent_id, version)
       );
 
@@ -58,8 +61,8 @@ export class IdentityManager {
         category TEXT NOT NULL CHECK(category IN ('behavior', 'preference', 'restriction', 'style')),
         text TEXT NOT NULL,
         priority INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        updated_at INTEGER NOT NULL DEFAULT (unixepoch())
       );
 
       CREATE INDEX IF NOT EXISTS idx_guidelines_agent
@@ -72,10 +75,9 @@ export class IdentityManager {
   // ─── Identity CRUD ──────────────────────────────────────────────────
 
   getIdentity(agentId: string): AgentIdentity | null {
-    const db = this.vault.getDb();
-    const row = db.prepare('SELECT * FROM agent_identity WHERE agent_id = ?').get(agentId) as
-      | IdentityRow
-      | undefined;
+    const row = this.provider.get<IdentityRow>('SELECT * FROM agent_identity WHERE agent_id = ?', [
+      agentId,
+    ]);
     if (!row) return null;
 
     const guidelines = this.getGuidelines(agentId);
@@ -83,25 +85,25 @@ export class IdentityManager {
   }
 
   setIdentity(agentId: string, input: IdentityUpdateInput): AgentIdentity {
-    const db = this.vault.getDb();
-
-    db.transaction(() => {
-      const existing = db.prepare('SELECT * FROM agent_identity WHERE agent_id = ?').get(agentId) as
-        | IdentityRow
-        | undefined;
+    this.provider.transaction(() => {
+      const existing = this.provider.get<IdentityRow>(
+        'SELECT * FROM agent_identity WHERE agent_id = ?',
+        [agentId],
+      );
 
       if (existing) {
         // Snapshot current state before updating
         const snapshot = JSON.stringify(rowToIdentitySnapshot(existing));
-        db.prepare(
+        this.provider.run(
           `INSERT INTO agent_identity_versions (agent_id, version, snapshot, changed_by, change_reason)
            VALUES (?, ?, ?, ?, ?)`,
-        ).run(
-          agentId,
-          existing.version,
-          snapshot,
-          input.changedBy ?? 'system',
-          input.changeReason ?? '',
+          [
+            agentId,
+            existing.version,
+            snapshot,
+            input.changedBy ?? 'system',
+            input.changeReason ?? '',
+          ],
         );
 
         const newVersion = existing.version + 1;
@@ -112,12 +114,13 @@ export class IdentityManager {
           ? JSON.stringify(input.personality)
           : existing.personality;
 
-        db.prepare(
+        this.provider.run(
           `UPDATE agent_identity
            SET name = ?, role = ?, description = ?, personality = ?,
-               version = ?, updated_at = datetime('now')
+               version = ?, updated_at = unixepoch()
            WHERE agent_id = ?`,
-        ).run(name, role, description, personality, newVersion, agentId);
+          [name, role, description, personality, newVersion, agentId],
+        );
       } else {
         // First identity creation — version 1
         const name = input.name ?? agentId;
@@ -125,12 +128,13 @@ export class IdentityManager {
         const description = input.description ?? '';
         const personality = JSON.stringify(input.personality ?? []);
 
-        db.prepare(
+        this.provider.run(
           `INSERT INTO agent_identity (agent_id, name, role, description, personality, version)
            VALUES (?, ?, ?, ?, ?, 1)`,
-        ).run(agentId, name, role, description, personality);
+          [agentId, name, role, description, personality],
+        );
       }
-    })();
+    });
 
     return this.getIdentity(agentId)!;
   }
@@ -138,94 +142,92 @@ export class IdentityManager {
   // ─── Guidelines ─────────────────────────────────────────────────────
 
   addGuideline(agentId: string, input: GuidelineInput): Guideline {
-    const db = this.vault.getDb();
     const id = randomUUID();
     const priority = input.priority ?? 0;
 
-    db.prepare(
+    this.provider.run(
       `INSERT INTO agent_guidelines (id, agent_id, category, text, priority)
        VALUES (?, ?, ?, ?, ?)`,
-    ).run(id, agentId, input.category, input.text, priority);
+      [id, agentId, input.category, input.text, priority],
+    );
 
-    const row = db.prepare('SELECT * FROM agent_guidelines WHERE id = ?').get(id) as GuidelineRow;
-    return rowToGuideline(row);
+    const row = this.provider.get<GuidelineRow>('SELECT * FROM agent_guidelines WHERE id = ?', [
+      id,
+    ]);
+    return rowToGuideline(row!);
   }
 
   removeGuideline(guidelineId: string): boolean {
-    const db = this.vault.getDb();
-    const result = db.prepare('DELETE FROM agent_guidelines WHERE id = ?').run(guidelineId);
+    const result = this.provider.run('DELETE FROM agent_guidelines WHERE id = ?', [guidelineId]);
     return result.changes > 0;
   }
 
   getGuidelines(agentId: string, category?: GuidelineCategory): Guideline[] {
-    const db = this.vault.getDb();
     if (category) {
-      const rows = db
-        .prepare(
-          'SELECT * FROM agent_guidelines WHERE agent_id = ? AND category = ? ORDER BY priority DESC, created_at ASC',
-        )
-        .all(agentId, category) as GuidelineRow[];
+      const rows = this.provider.all<GuidelineRow>(
+        'SELECT * FROM agent_guidelines WHERE agent_id = ? AND category = ? ORDER BY priority DESC, created_at ASC',
+        [agentId, category],
+      );
       return rows.map(rowToGuideline);
     }
-    const rows = db
-      .prepare(
-        'SELECT * FROM agent_guidelines WHERE agent_id = ? ORDER BY priority DESC, created_at ASC',
-      )
-      .all(agentId) as GuidelineRow[];
+    const rows = this.provider.all<GuidelineRow>(
+      'SELECT * FROM agent_guidelines WHERE agent_id = ? ORDER BY priority DESC, created_at ASC',
+      [agentId],
+    );
     return rows.map(rowToGuideline);
   }
 
   // ─── Versioning ─────────────────────────────────────────────────────
 
   getVersionHistory(agentId: string, limit = 20): IdentityVersion[] {
-    const db = this.vault.getDb();
-    const rows = db
-      .prepare(
-        'SELECT * FROM agent_identity_versions WHERE agent_id = ? ORDER BY version DESC LIMIT ?',
-      )
-      .all(agentId, limit) as VersionRow[];
+    const rows = this.provider.all<VersionRow>(
+      'SELECT * FROM agent_identity_versions WHERE agent_id = ? ORDER BY version DESC LIMIT ?',
+      [agentId, limit],
+    );
     return rows.map(rowToVersion);
   }
 
   rollback(agentId: string, version: number): AgentIdentity {
-    const db = this.vault.getDb();
-
-    db.transaction(() => {
-      const versionRow = db
-        .prepare('SELECT * FROM agent_identity_versions WHERE agent_id = ? AND version = ?')
-        .get(agentId, version) as VersionRow | undefined;
+    this.provider.transaction(() => {
+      const versionRow = this.provider.get<VersionRow>(
+        'SELECT * FROM agent_identity_versions WHERE agent_id = ? AND version = ?',
+        [agentId, version],
+      );
 
       if (!versionRow) {
         throw new Error(`Version ${version} not found for agent ${agentId}`);
       }
 
       const snapshot = JSON.parse(versionRow.snapshot) as IdentitySnapshot;
-      const current = db
-        .prepare('SELECT * FROM agent_identity WHERE agent_id = ?')
-        .get(agentId) as IdentityRow;
+      const current = this.provider.get<IdentityRow>(
+        'SELECT * FROM agent_identity WHERE agent_id = ?',
+        [agentId],
+      )!;
 
       // Snapshot current state before rollback
       const currentSnapshot = JSON.stringify(rowToIdentitySnapshot(current));
-      db.prepare(
+      this.provider.run(
         `INSERT INTO agent_identity_versions (agent_id, version, snapshot, changed_by, change_reason)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(agentId, current.version, currentSnapshot, 'system', `Before rollback to v${version}`);
+        [agentId, current.version, currentSnapshot, 'system', `Before rollback to v${version}`],
+      );
 
       const newVersion = current.version + 1;
-      db.prepare(
+      this.provider.run(
         `UPDATE agent_identity
          SET name = ?, role = ?, description = ?, personality = ?,
-             version = ?, updated_at = datetime('now')
+             version = ?, updated_at = unixepoch()
          WHERE agent_id = ?`,
-      ).run(
-        snapshot.name,
-        snapshot.role,
-        snapshot.description,
-        JSON.stringify(snapshot.personality),
-        newVersion,
-        agentId,
+        [
+          snapshot.name,
+          snapshot.role,
+          snapshot.description,
+          JSON.stringify(snapshot.personality),
+          newVersion,
+          agentId,
+        ],
       );
-    })();
+    });
 
     return this.getIdentity(agentId)!;
   }

@@ -61,7 +61,7 @@ describe('Scaffolder', () => {
 
       // Core facade should list all 208 ops (203 core + 5 agent-specific)
       const coreFacade = preview.facades.find((f) => f.name === 'atlas_core')!;
-      expect(coreFacade.ops.length).toBe(208);
+      expect(coreFacade.ops.length).toBe(212);
       expect(coreFacade.ops).toContain('curator_status');
       expect(coreFacade.ops).toContain('health');
 

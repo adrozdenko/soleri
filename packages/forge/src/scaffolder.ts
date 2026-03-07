@@ -229,6 +229,10 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'vault_set_temporal',
         'vault_find_expiring',
         'vault_find_expired',
+        // Vault archival (#86) — 3
+        'vault_archive',
+        'vault_restore',
+        'vault_optimize',
         // Admin ops — 8
         'admin_health',
         'admin_tool_list',
@@ -309,6 +313,8 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
         'admin_validate_instructions',
         // Hot reload (#63)
         'admin_hot_reload',
+        // Admin persistence (#85) — 1
+        'admin_persistence_info',
         // Curator Extra ops — 5
         'curator_entry_history',
         'curator_record_snapshot',

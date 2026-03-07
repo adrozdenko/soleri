@@ -9,6 +9,7 @@
  */
 
 import type { Vault } from '../vault/vault.js';
+import type { PersistenceProvider } from '../persistence/types.js';
 import type {
   IntentType,
   OperationalMode,
@@ -96,10 +97,12 @@ const DEFAULT_MODES: ModeConfig[] = [
 
 export class IntentRouter {
   private vault: Vault;
+  private provider: PersistenceProvider;
   private currentMode: OperationalMode = 'GENERAL-MODE';
 
   constructor(vault: Vault) {
     this.vault = vault;
+    this.provider = vault.getProvider();
     this.initializeTables();
     this.seedDefaultModes();
   }
@@ -107,8 +110,7 @@ export class IntentRouter {
   // ─── Table Initialization ───────────────────────────────────────────
 
   private initializeTables(): void {
-    const db = this.vault.getDb();
-    db.exec(`
+    this.provider.execSql(`
       CREATE TABLE IF NOT EXISTS agent_modes (
         mode TEXT PRIMARY KEY,
         intent TEXT NOT NULL,
@@ -130,20 +132,21 @@ export class IntentRouter {
   }
 
   private seedDefaultModes(): void {
-    const db = this.vault.getDb();
-    const insert = db.prepare(
-      `INSERT OR IGNORE INTO agent_modes (mode, intent, description, behavior_rules, keywords)
-       VALUES (?, ?, ?, ?, ?)`,
-    );
-    for (const m of DEFAULT_MODES) {
-      insert.run(
-        m.mode,
-        m.intent,
-        m.description,
-        JSON.stringify(m.behaviorRules),
-        JSON.stringify(m.keywords),
-      );
-    }
+    this.provider.transaction(() => {
+      for (const m of DEFAULT_MODES) {
+        this.provider.run(
+          `INSERT OR IGNORE INTO agent_modes (mode, intent, description, behavior_rules, keywords)
+           VALUES (?, ?, ?, ?, ?)`,
+          [
+            m.mode,
+            m.intent,
+            m.description,
+            JSON.stringify(m.behaviorRules),
+            JSON.stringify(m.keywords),
+          ],
+        );
+      }
+    });
   }
 
   // ─── Intent Classification ──────────────────────────────────────────
@@ -194,26 +197,23 @@ export class IntentRouter {
   }
 
   private logRouting(prompt: string, classification: IntentClassification): void {
-    const db = this.vault.getDb();
-    db.prepare(
+    this.provider.run(
       `INSERT INTO agent_routing_log (prompt, intent, mode, confidence, matched_keywords)
        VALUES (?, ?, ?, ?, ?)`,
-    ).run(
-      prompt,
-      classification.intent,
-      classification.mode,
-      classification.confidence,
-      JSON.stringify(classification.matchedKeywords),
+      [
+        prompt,
+        classification.intent,
+        classification.mode,
+        classification.confidence,
+        JSON.stringify(classification.matchedKeywords),
+      ],
     );
   }
 
   // ─── Mode Management ───────────────────────────────────────────────
 
   morph(mode: OperationalMode): MorphResult {
-    const db = this.vault.getDb();
-    const row = db.prepare('SELECT * FROM agent_modes WHERE mode = ?').get(mode) as
-      | ModeRow
-      | undefined;
+    const row = this.provider.get<ModeRow>('SELECT * FROM agent_modes WHERE mode = ?', [mode]);
 
     if (!row) {
       throw new Error(`Unknown mode: ${mode}`);
@@ -231,41 +231,40 @@ export class IntentRouter {
   }
 
   getBehaviorRules(mode?: OperationalMode): string[] {
-    const db = this.vault.getDb();
     const target = mode ?? this.currentMode;
-    const row = db.prepare('SELECT behavior_rules FROM agent_modes WHERE mode = ?').get(target) as
-      | { behavior_rules: string }
-      | undefined;
+    const row = this.provider.get<{ behavior_rules: string }>(
+      'SELECT behavior_rules FROM agent_modes WHERE mode = ?',
+      [target],
+    );
 
     if (!row) return [];
     return JSON.parse(row.behavior_rules) as string[];
   }
 
   getModes(): ModeConfig[] {
-    const db = this.vault.getDb();
-    const rows = db.prepare('SELECT * FROM agent_modes ORDER BY mode').all() as ModeRow[];
+    const rows = this.provider.all<ModeRow>('SELECT * FROM agent_modes ORDER BY mode');
     return rows.map(rowToModeConfig);
   }
 
   registerMode(config: ModeConfig): void {
-    const db = this.vault.getDb();
-    db.prepare(
+    this.provider.run(
       `INSERT OR REPLACE INTO agent_modes (mode, intent, description, behavior_rules, keywords)
        VALUES (?, ?, ?, ?, ?)`,
-    ).run(
-      config.mode,
-      config.intent,
-      config.description,
-      JSON.stringify(config.behaviorRules),
-      JSON.stringify(config.keywords),
+      [
+        config.mode,
+        config.intent,
+        config.description,
+        JSON.stringify(config.behaviorRules),
+        JSON.stringify(config.keywords),
+      ],
     );
   }
 
   updateModeRules(mode: OperationalMode, rules: string[]): void {
-    const db = this.vault.getDb();
-    const result = db
-      .prepare('UPDATE agent_modes SET behavior_rules = ? WHERE mode = ?')
-      .run(JSON.stringify(rules), mode);
+    const result = this.provider.run('UPDATE agent_modes SET behavior_rules = ? WHERE mode = ?', [
+      JSON.stringify(rules),
+      mode,
+    ]);
     if (result.changes === 0) {
       throw new Error(`Unknown mode: ${mode}`);
     }
@@ -278,22 +277,21 @@ export class IntentRouter {
     byIntent: Record<string, number>;
     byMode: Record<string, number>;
   } {
-    const db = this.vault.getDb();
-    const total = (
-      db.prepare('SELECT COUNT(*) as count FROM agent_routing_log').get() as { count: number }
-    ).count;
+    const total = this.provider.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM agent_routing_log',
+    )!.count;
 
-    const intentRows = db
-      .prepare('SELECT intent, COUNT(*) as count FROM agent_routing_log GROUP BY intent')
-      .all() as Array<{ intent: string; count: number }>;
+    const intentRows = this.provider.all<{ intent: string; count: number }>(
+      'SELECT intent, COUNT(*) as count FROM agent_routing_log GROUP BY intent',
+    );
     const byIntent: Record<string, number> = {};
     for (const row of intentRows) {
       byIntent[row.intent] = row.count;
     }
 
-    const modeRows = db
-      .prepare('SELECT mode, COUNT(*) as count FROM agent_routing_log GROUP BY mode')
-      .all() as Array<{ mode: string; count: number }>;
+    const modeRows = this.provider.all<{ mode: string; count: number }>(
+      'SELECT mode, COUNT(*) as count FROM agent_routing_log GROUP BY mode',
+    );
     const byMode: Record<string, number> = {};
     for (const row of modeRows) {
       byMode[row.mode] = row.count;

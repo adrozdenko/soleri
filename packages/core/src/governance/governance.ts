@@ -1,4 +1,5 @@
 import type { Vault } from '../vault/vault.js';
+import type { PersistenceProvider } from '../persistence/types.js';
 import type {
   PolicyType,
   PolicyPreset,
@@ -73,17 +74,18 @@ const DEFAULT_PRESET: PolicyPreset = 'moderate';
 
 export class Governance {
   private vault: Vault;
+  private provider: PersistenceProvider;
 
   constructor(vault: Vault) {
     this.vault = vault;
+    this.provider = vault.getProvider();
     this.initializeTables();
   }
 
   // ─── Schema ─────────────────────────────────────────────────────
 
   private initializeTables(): void {
-    const db = this.vault.getDb();
-    db.exec(`
+    this.provider.execSql(`
       CREATE TABLE IF NOT EXISTS vault_policies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         project_path TEXT NOT NULL,
@@ -147,14 +149,12 @@ export class Governance {
   // ─── Policy CRUD ────────────────────────────────────────────────
 
   getPolicy(projectPath: string): VaultPolicy {
-    const db = this.vault.getDb();
     const defaults = POLICY_PRESETS[DEFAULT_PRESET];
 
-    const rows = db
-      .prepare(
-        'SELECT policy_type, config FROM vault_policies WHERE project_path = ? AND enabled = 1',
-      )
-      .all(projectPath) as Array<{ policy_type: string; config: string }>;
+    const rows = this.provider.all<{ policy_type: string; config: string }>(
+      'SELECT policy_type, config FROM vault_policies WHERE project_path = ? AND enabled = 1',
+      [projectPath],
+    );
 
     let quotas = defaults.quotas;
     let retention = defaults.retention;
@@ -176,26 +176,27 @@ export class Governance {
     config: Record<string, unknown>,
     changedBy?: string,
   ): void {
-    const db = this.vault.getDb();
-
     // Get old config for audit trail
-    const existing = db
-      .prepare('SELECT config FROM vault_policies WHERE project_path = ? AND policy_type = ?')
-      .get(projectPath, policyType) as { config: string } | undefined;
+    const existing = this.provider.get<{ config: string }>(
+      'SELECT config FROM vault_policies WHERE project_path = ? AND policy_type = ?',
+      [projectPath, policyType],
+    );
     const oldConfig = existing ? existing.config : null;
 
     // UPSERT policy
-    db.prepare(
+    this.provider.run(
       `INSERT INTO vault_policies (project_path, policy_type, config, updated_at)
        VALUES (?, ?, ?, unixepoch())
        ON CONFLICT(project_path, policy_type)
        DO UPDATE SET config = excluded.config, updated_at = excluded.updated_at`,
-    ).run(projectPath, policyType, JSON.stringify(config));
+      [projectPath, policyType, JSON.stringify(config)],
+    );
 
     // Audit trail
-    db.prepare(
+    this.provider.run(
       'INSERT INTO vault_policy_changes (project_path, policy_type, old_config, new_config, changed_by) VALUES (?, ?, ?, ?, ?)',
-    ).run(projectPath, policyType, oldConfig, JSON.stringify(config), changedBy ?? null);
+      [projectPath, policyType, oldConfig, JSON.stringify(config), changedBy ?? null],
+    );
   }
 
   applyPreset(projectPath: string, preset: PolicyPreset, changedBy?: string): void {
@@ -224,24 +225,23 @@ export class Governance {
 
   getQuotaStatus(projectPath: string): QuotaStatus {
     const policy = this.getPolicy(projectPath);
-    const db = this.vault.getDb();
 
-    const totalRow = db.prepare('SELECT COUNT(*) as count FROM entries').get() as { count: number };
-    const total = totalRow.count;
+    const totalRow = this.provider.get<{ count: number }>('SELECT COUNT(*) as count FROM entries');
+    const total = totalRow?.count ?? 0;
 
     // Count by domain (used as category proxy)
-    const categoryRows = db
-      .prepare('SELECT domain, COUNT(*) as count FROM entries GROUP BY domain')
-      .all() as Array<{ domain: string; count: number }>;
+    const categoryRows = this.provider.all<{ domain: string; count: number }>(
+      'SELECT domain, COUNT(*) as count FROM entries GROUP BY domain',
+    );
     const byCategory: Record<string, number> = {};
     for (const row of categoryRows) {
       byCategory[row.domain] = row.count;
     }
 
     // Count by type
-    const typeRows = db
-      .prepare('SELECT type, COUNT(*) as count FROM entries GROUP BY type')
-      .all() as Array<{ type: string; count: number }>;
+    const typeRows = this.provider.all<{ type: string; count: number }>(
+      'SELECT type, COUNT(*) as count FROM entries GROUP BY type',
+    );
     const byType: Record<string, number> = {};
     for (const row of typeRows) {
       byType[row.type] = row.count;
@@ -261,12 +261,7 @@ export class Governance {
   }
 
   getAuditTrail(projectPath: string, limit?: number): PolicyAuditEntry[] {
-    const db = this.vault.getDb();
-    const rows = db
-      .prepare(
-        'SELECT id, project_path, policy_type, old_config, new_config, changed_by, changed_at FROM vault_policy_changes WHERE project_path = ? ORDER BY changed_at DESC LIMIT ?',
-      )
-      .all(projectPath, limit ?? 50) as Array<{
+    const rows = this.provider.all<{
       id: number;
       project_path: string;
       policy_type: string;
@@ -274,7 +269,10 @@ export class Governance {
       new_config: string;
       changed_by: string | null;
       changed_at: number;
-    }>;
+    }>(
+      'SELECT id, project_path, policy_type, old_config, new_config, changed_by, changed_at FROM vault_policy_changes WHERE project_path = ? ORDER BY changed_at DESC LIMIT ?',
+      [projectPath, limit ?? 50],
+    );
 
     return rows.map((row) => ({
       id: row.id,
@@ -376,20 +374,20 @@ export class Governance {
     decision: PolicyDecision,
   ): void {
     try {
-      const db = this.vault.getDb();
-      db.prepare(
+      this.provider.run(
         `INSERT INTO vault_policy_evaluations
          (project_path, entry_type, entry_category, entry_title, action, reason, quota_total, quota_max)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ).run(
-        projectPath,
-        entry.type,
-        entry.category,
-        entry.title ?? null,
-        decision.action,
-        decision.reason ?? null,
-        decision.quotaStatus?.total ?? null,
-        decision.quotaStatus?.maxTotal ?? null,
+        [
+          projectPath,
+          entry.type,
+          entry.category,
+          entry.title ?? null,
+          decision.action,
+          decision.reason ?? null,
+          decision.quotaStatus?.total ?? null,
+          decision.quotaStatus?.maxTotal ?? null,
+        ],
       );
     } catch {
       // Fire-and-forget — don't fail capture because of evaluation logging
@@ -409,13 +407,10 @@ export class Governance {
     },
     source?: string,
   ): number {
-    const db = this.vault.getDb();
-    const result = db
-      .prepare(
-        `INSERT INTO vault_proposals (project_path, entry_id, title, type, category, proposed_data, source)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
+    const result = this.provider.run(
+      `INSERT INTO vault_proposals (project_path, entry_id, title, type, category, proposed_data, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
         projectPath,
         entryData.entryId ?? null,
         entryData.title,
@@ -423,7 +418,8 @@ export class Governance {
         entryData.category,
         JSON.stringify(entryData.data ?? {}),
         source ?? 'auto-capture',
-      );
+      ],
+    );
     return Number(result.lastInsertRowid);
   }
 
@@ -443,23 +439,23 @@ export class Governance {
     modifications: Record<string, unknown>,
     decidedBy?: string,
   ): Proposal | null {
-    const db = this.vault.getDb();
     const existing = this.getProposalById(proposalId);
     if (!existing || existing.status !== 'pending') return null;
 
     // Merge modifications into proposed data
     const merged = { ...existing.proposedData, ...modifications };
 
-    db.prepare(
+    this.provider.run(
       `UPDATE vault_proposals
        SET status = 'modified', proposed_data = ?, decided_at = unixepoch(),
            decided_by = ?, modification_note = ?
        WHERE id = ?`,
-    ).run(
-      JSON.stringify(merged),
-      decidedBy ?? null,
-      `Modified fields: ${Object.keys(modifications).join(', ')}`,
-      proposalId,
+      [
+        JSON.stringify(merged),
+        decidedBy ?? null,
+        `Modified fields: ${Object.keys(modifications).join(', ')}`,
+        proposalId,
+      ],
     );
 
     const proposal = this.getProposalById(proposalId);
@@ -468,31 +464,28 @@ export class Governance {
   }
 
   listPendingProposals(projectPath?: string, limit?: number): Proposal[] {
-    const db = this.vault.getDb();
     if (projectPath) {
-      const rows = db
-        .prepare(
-          'SELECT * FROM vault_proposals WHERE project_path = ? AND status = ? ORDER BY proposed_at DESC LIMIT ?',
-        )
-        .all(projectPath, 'pending', limit ?? 50);
-      return (rows as RawProposal[]).map(mapProposal);
+      const rows = this.provider.all<RawProposal>(
+        'SELECT * FROM vault_proposals WHERE project_path = ? AND status = ? ORDER BY proposed_at DESC LIMIT ?',
+        [projectPath, 'pending', limit ?? 50],
+      );
+      return rows.map(mapProposal);
     }
-    const rows = db
-      .prepare('SELECT * FROM vault_proposals WHERE status = ? ORDER BY proposed_at DESC LIMIT ?')
-      .all('pending', limit ?? 50);
-    return (rows as RawProposal[]).map(mapProposal);
+    const rows = this.provider.all<RawProposal>(
+      'SELECT * FROM vault_proposals WHERE status = ? ORDER BY proposed_at DESC LIMIT ?',
+      ['pending', limit ?? 50],
+    );
+    return rows.map(mapProposal);
   }
 
   getProposalStats(projectPath?: string): ProposalStats {
-    const db = this.vault.getDb();
     const whereClause = projectPath ? 'WHERE project_path = ?' : '';
     const params = projectPath ? [projectPath] : [];
 
-    const statusRows = db
-      .prepare(
-        `SELECT status, COUNT(*) as count FROM vault_proposals ${whereClause} GROUP BY status`,
-      )
-      .all(...params) as Array<{ status: string; count: number }>;
+    const statusRows = this.provider.all<{ status: string; count: number }>(
+      `SELECT status, COUNT(*) as count FROM vault_proposals ${whereClause} GROUP BY status`,
+      params,
+    );
 
     const stats: ProposalStats = {
       total: 0,
@@ -530,11 +523,10 @@ export class Governance {
     stats.acceptanceRate = decided > 0 ? (stats.approved + stats.modified) / decided : 0;
 
     // Category breakdown
-    const catRows = db
-      .prepare(
-        `SELECT category, status, COUNT(*) as count FROM vault_proposals ${whereClause} GROUP BY category, status`,
-      )
-      .all(...params) as Array<{ category: string; status: string; count: number }>;
+    const catRows = this.provider.all<{ category: string; status: string; count: number }>(
+      `SELECT category, status, COUNT(*) as count FROM vault_proposals ${whereClause} GROUP BY category, status`,
+      params,
+    );
 
     for (const row of catRows) {
       if (!stats.byCategory[row.category]) {
@@ -554,15 +546,13 @@ export class Governance {
   }
 
   expireStaleProposals(maxAgeDays?: number): number {
-    const db = this.vault.getDb();
     const days = maxAgeDays ?? 14;
     const cutoff = Math.floor(Date.now() / 1000) - days * 86400;
 
-    const result = db
-      .prepare(
-        "UPDATE vault_proposals SET status = 'expired', decided_at = unixepoch() WHERE status = 'pending' AND proposed_at < ?",
-      )
-      .run(cutoff);
+    const result = this.provider.run(
+      "UPDATE vault_proposals SET status = 'expired', decided_at = unixepoch() WHERE status = 'pending' AND proposed_at < ?",
+      [cutoff],
+    );
 
     return result.changes;
   }
@@ -575,13 +565,11 @@ export class Governance {
     const proposalStats = this.getProposalStats(projectPath);
 
     // Evaluation trend — count by action in last 7 days
-    const db = this.vault.getDb();
     const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 86400;
-    const trendRows = db
-      .prepare(
-        'SELECT action, COUNT(*) as count FROM vault_policy_evaluations WHERE project_path = ? AND evaluated_at > ? GROUP BY action',
-      )
-      .all(projectPath, sevenDaysAgo) as Array<{ action: string; count: number }>;
+    const trendRows = this.provider.all<{ action: string; count: number }>(
+      'SELECT action, COUNT(*) as count FROM vault_policy_evaluations WHERE project_path = ? AND evaluated_at > ? GROUP BY action',
+      [projectPath, sevenDaysAgo],
+    );
 
     const evaluationTrend: Record<string, number> = {};
     for (const row of trendRows) {
@@ -608,13 +596,11 @@ export class Governance {
   // ─── Private Helpers ────────────────────────────────────────────
 
   private countPending(projectPath: string): number {
-    const db = this.vault.getDb();
-    const row = db
-      .prepare(
-        "SELECT COUNT(*) as count FROM vault_proposals WHERE project_path = ? AND status = 'pending'",
-      )
-      .get(projectPath) as { count: number };
-    return row.count;
+    const row = this.provider.get<{ count: number }>(
+      "SELECT COUNT(*) as count FROM vault_proposals WHERE project_path = ? AND status = 'pending'",
+      [projectPath],
+    );
+    return row?.count ?? 0;
   }
 
   private captureFromProposal(proposal: Proposal): void {
@@ -641,22 +627,19 @@ export class Governance {
     decidedBy?: string,
     note?: string,
   ): Proposal | null {
-    const db = this.vault.getDb();
     const existing = this.getProposalById(proposalId);
     if (!existing || existing.status !== 'pending') return null;
 
-    db.prepare(
+    this.provider.run(
       'UPDATE vault_proposals SET status = ?, decided_at = unixepoch(), decided_by = ?, modification_note = ? WHERE id = ?',
-    ).run(status, decidedBy ?? null, note ?? null, proposalId);
+      [status, decidedBy ?? null, note ?? null, proposalId],
+    );
 
     return this.getProposalById(proposalId);
   }
 
   private getProposalById(id: number): Proposal | null {
-    const db = this.vault.getDb();
-    const row = db.prepare('SELECT * FROM vault_proposals WHERE id = ?').get(id) as
-      | RawProposal
-      | undefined;
+    const row = this.provider.get<RawProposal>('SELECT * FROM vault_proposals WHERE id = ?', [id]);
     return row ? mapProposal(row) : null;
   }
 }

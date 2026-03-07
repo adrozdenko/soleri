@@ -94,7 +94,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const telemetry = new Telemetry();
 
   // Project Registry — multi-project tracking with rules and links
-  const projectRegistry = new ProjectRegistry(vault.getDb());
+  const projectRegistry = new ProjectRegistry(vault.getProvider());
 
   // Template Manager — prompt templates with variable substitution
   const templatesDir = config.templatesDir ?? join(agentHome, 'templates');

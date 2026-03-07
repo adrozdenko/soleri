@@ -26,9 +26,9 @@ describe('createAdminExtraOps', () => {
     ops = createAdminExtraOps(runtime);
   }
 
-  it('should return 23 ops', () => {
+  it('should return 24 ops', () => {
     setup();
-    expect(ops).toHaveLength(23);
+    expect(ops).toHaveLength(24);
     const names = ops.map((o) => o.name);
     // Original 10
     expect(names).toContain('admin_telemetry');

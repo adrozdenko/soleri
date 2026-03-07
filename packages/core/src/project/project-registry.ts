@@ -2,11 +2,11 @@
  * Project Registry — SQLite-backed registry for tracking projects,
  * rules, and cross-project links.
  *
- * Uses the Vault's underlying SQLite database via `vault.getDb()`.
+ * Uses the Vault's underlying database via PersistenceProvider.
  * Tables are created lazily on first access.
  */
 
-import type Database from 'better-sqlite3';
+import type { PersistenceProvider } from '../persistence/types.js';
 import type { RegisteredProject, ProjectRule, ProjectLink, LinkType } from './types.js';
 
 /** Row shape for the projects table. */
@@ -82,15 +82,15 @@ function rowToLink(row: LinkRow): ProjectLink {
 }
 
 export class ProjectRegistry {
-  private db: Database.Database;
+  private provider: PersistenceProvider;
 
-  constructor(db: Database.Database) {
-    this.db = db;
+  constructor(provider: PersistenceProvider) {
+    this.provider = provider;
     this.initTables();
   }
 
   private initTables(): void {
-    this.db.exec(`
+    this.provider.execSql(`
       CREATE TABLE IF NOT EXISTS registered_projects (
         id TEXT PRIMARY KEY,
         path TEXT UNIQUE NOT NULL,
@@ -128,19 +128,19 @@ export class ProjectRegistry {
     const id = pathToId(path);
     const now = Date.now();
 
-    const existing = this.db.prepare('SELECT * FROM registered_projects WHERE id = ?').get(id) as
-      | ProjectRow
-      | undefined;
+    const existing = this.provider.get<ProjectRow>(
+      'SELECT * FROM registered_projects WHERE id = ?',
+      [id],
+    );
 
     if (existing) {
       // Update lastAccessedAt, and optionally name/metadata if provided
       const newName = name ?? existing.name;
       const newMetadata = metadata ? JSON.stringify(metadata) : existing.metadata;
-      this.db
-        .prepare(
-          'UPDATE registered_projects SET last_accessed_at = ?, name = ?, metadata = ? WHERE id = ?',
-        )
-        .run(now, newName, newMetadata, id);
+      this.provider.run(
+        'UPDATE registered_projects SET last_accessed_at = ?, name = ?, metadata = ? WHERE id = ?',
+        [now, newName, newMetadata, id],
+      );
       return rowToProject({
         ...existing,
         last_accessed_at: now,
@@ -157,11 +157,10 @@ export class ProjectRegistry {
       last_accessed_at: now,
       metadata: JSON.stringify(metadata ?? {}),
     };
-    this.db
-      .prepare(
-        'INSERT INTO registered_projects (id, path, name, registered_at, last_accessed_at, metadata) VALUES (?, ?, ?, ?, ?, ?)',
-      )
-      .run(row.id, row.path, row.name, row.registered_at, row.last_accessed_at, row.metadata);
+    this.provider.run(
+      'INSERT INTO registered_projects (id, path, name, registered_at, last_accessed_at, metadata) VALUES (?, ?, ?, ?, ?, ?)',
+      [row.id, row.path, row.name, row.registered_at, row.last_accessed_at, row.metadata],
+    );
 
     return rowToProject(row);
   }
@@ -170,9 +169,9 @@ export class ProjectRegistry {
    * Get a project by ID.
    */
   get(projectId: string): RegisteredProject | null {
-    const row = this.db.prepare('SELECT * FROM registered_projects WHERE id = ?').get(projectId) as
-      | ProjectRow
-      | undefined;
+    const row = this.provider.get<ProjectRow>('SELECT * FROM registered_projects WHERE id = ?', [
+      projectId,
+    ]);
     return row ? rowToProject(row) : null;
   }
 
@@ -180,9 +179,9 @@ export class ProjectRegistry {
    * Get a project by its filesystem path.
    */
   getByPath(path: string): RegisteredProject | null {
-    const row = this.db.prepare('SELECT * FROM registered_projects WHERE path = ?').get(path) as
-      | ProjectRow
-      | undefined;
+    const row = this.provider.get<ProjectRow>('SELECT * FROM registered_projects WHERE path = ?', [
+      path,
+    ]);
     return row ? rowToProject(row) : null;
   }
 
@@ -190,9 +189,9 @@ export class ProjectRegistry {
    * List all registered projects.
    */
   list(): RegisteredProject[] {
-    const rows = this.db
-      .prepare('SELECT * FROM registered_projects ORDER BY last_accessed_at DESC')
-      .all() as ProjectRow[];
+    const rows = this.provider.all<ProjectRow>(
+      'SELECT * FROM registered_projects ORDER BY last_accessed_at DESC',
+    );
     return rows.map(rowToProject);
   }
 
@@ -200,25 +199,26 @@ export class ProjectRegistry {
    * Unregister a project by ID. Also removes associated rules and links.
    */
   unregister(projectId: string): boolean {
-    const result = this.db.transaction(() => {
-      this.db.prepare('DELETE FROM project_rules WHERE project_id = ?').run(projectId);
-      this.db
-        .prepare('DELETE FROM project_links WHERE source_project_id = ? OR target_project_id = ?')
-        .run(projectId, projectId);
-      return (
-        this.db.prepare('DELETE FROM registered_projects WHERE id = ?').run(projectId).changes > 0
+    return this.provider.transaction(() => {
+      this.provider.run('DELETE FROM project_rules WHERE project_id = ?', [projectId]);
+      this.provider.run(
+        'DELETE FROM project_links WHERE source_project_id = ? OR target_project_id = ?',
+        [projectId, projectId],
       );
-    })();
-    return result;
+      return (
+        this.provider.run('DELETE FROM registered_projects WHERE id = ?', [projectId]).changes > 0
+      );
+    });
   }
 
   /**
    * Update the lastAccessedAt timestamp for a project.
    */
   touch(projectId: string): void {
-    this.db
-      .prepare('UPDATE registered_projects SET last_accessed_at = ? WHERE id = ?')
-      .run(Date.now(), projectId);
+    this.provider.run('UPDATE registered_projects SET last_accessed_at = ? WHERE id = ?', [
+      Date.now(),
+      projectId,
+    ]);
   }
 
   // ─── Rules ──────────────────────────────────────────────────────────
@@ -232,11 +232,10 @@ export class ProjectRegistry {
   ): ProjectRule {
     const id = `rule-${projectId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const now = Date.now();
-    this.db
-      .prepare(
-        'INSERT INTO project_rules (id, project_id, category, text, priority, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-      )
-      .run(id, projectId, rule.category, rule.text, rule.priority, now);
+    this.provider.run(
+      'INSERT INTO project_rules (id, project_id, category, text, priority, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, projectId, rule.category, rule.text, rule.priority, now],
+    );
 
     return {
       id,
@@ -252,11 +251,10 @@ export class ProjectRegistry {
    * Get all rules for a project.
    */
   getRules(projectId: string): ProjectRule[] {
-    const rows = this.db
-      .prepare(
-        'SELECT * FROM project_rules WHERE project_id = ? ORDER BY priority DESC, created_at ASC',
-      )
-      .all(projectId) as RuleRow[];
+    const rows = this.provider.all<RuleRow>(
+      'SELECT * FROM project_rules WHERE project_id = ? ORDER BY priority DESC, created_at ASC',
+      [projectId],
+    );
     return rows.map(rowToRule);
   }
 
@@ -264,7 +262,7 @@ export class ProjectRegistry {
    * Remove a rule by ID.
    */
   removeRule(ruleId: string): boolean {
-    return this.db.prepare('DELETE FROM project_rules WHERE id = ?').run(ruleId).changes > 0;
+    return this.provider.run('DELETE FROM project_rules WHERE id = ?', [ruleId]).changes > 0;
   }
 
   /**
@@ -285,20 +283,18 @@ export class ProjectRegistry {
    */
   link(sourceId: string, targetId: string, linkType: LinkType): ProjectLink {
     const now = Date.now();
-    const info = this.db
-      .prepare(
-        'INSERT OR IGNORE INTO project_links (source_project_id, target_project_id, link_type, created_at) VALUES (?, ?, ?, ?)',
-      )
-      .run(sourceId, targetId, linkType, now);
+    const info = this.provider.run(
+      'INSERT OR IGNORE INTO project_links (source_project_id, target_project_id, link_type, created_at) VALUES (?, ?, ?, ?)',
+      [sourceId, targetId, linkType, now],
+    );
 
     // If insert was ignored (duplicate), fetch existing
     if (info.changes === 0) {
-      const existing = this.db
-        .prepare(
-          'SELECT * FROM project_links WHERE source_project_id = ? AND target_project_id = ? AND link_type = ?',
-        )
-        .get(sourceId, targetId, linkType) as LinkRow;
-      return rowToLink(existing);
+      const existing = this.provider.get<LinkRow>(
+        'SELECT * FROM project_links WHERE source_project_id = ? AND target_project_id = ? AND link_type = ?',
+        [sourceId, targetId, linkType],
+      );
+      return rowToLink(existing!);
     }
 
     return {
@@ -316,26 +312,25 @@ export class ProjectRegistry {
    */
   unlink(sourceId: string, targetId: string, linkType?: LinkType): number {
     if (linkType) {
-      return this.db
-        .prepare(
-          'DELETE FROM project_links WHERE source_project_id = ? AND target_project_id = ? AND link_type = ?',
-        )
-        .run(sourceId, targetId, linkType).changes;
+      return this.provider.run(
+        'DELETE FROM project_links WHERE source_project_id = ? AND target_project_id = ? AND link_type = ?',
+        [sourceId, targetId, linkType],
+      ).changes;
     }
-    return this.db
-      .prepare('DELETE FROM project_links WHERE source_project_id = ? AND target_project_id = ?')
-      .run(sourceId, targetId).changes;
+    return this.provider.run(
+      'DELETE FROM project_links WHERE source_project_id = ? AND target_project_id = ?',
+      [sourceId, targetId],
+    ).changes;
   }
 
   /**
    * Get all links for a project (both outgoing and incoming).
    */
   getLinks(projectId: string): ProjectLink[] {
-    const rows = this.db
-      .prepare(
-        'SELECT * FROM project_links WHERE source_project_id = ? OR target_project_id = ? ORDER BY created_at DESC',
-      )
-      .all(projectId, projectId) as LinkRow[];
+    const rows = this.provider.all<LinkRow>(
+      'SELECT * FROM project_links WHERE source_project_id = ? OR target_project_id = ? ORDER BY created_at DESC',
+      [projectId, projectId],
+    );
     return rows.map(rowToLink);
   }
 

@@ -53,6 +53,7 @@ export class Vault {
       // SQLite-specific pragmas
       this.provider.run('PRAGMA journal_mode = WAL');
       this.provider.run('PRAGMA foreign_keys = ON');
+      this.provider.run('PRAGMA synchronous = NORMAL');
     } else {
       this.provider = providerOrPath;
       this.sqliteProvider =
@@ -99,6 +100,23 @@ export class Vault {
         INSERT INTO entries_fts(entries_fts,rowid,id,title,description,context,tags) VALUES('delete',old.rowid,old.id,old.title,old.description,old.context,old.tags);
         INSERT INTO entries_fts(rowid,id,title,description,context,tags) VALUES(new.rowid,new.id,new.title,new.description,new.context,new.tags);
       END;
+      CREATE TABLE IF NOT EXISTS entries_archive (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL,
+        domain TEXT NOT NULL,
+        title TEXT NOT NULL,
+        severity TEXT NOT NULL,
+        description TEXT NOT NULL,
+        context TEXT, example TEXT, counter_example TEXT, why TEXT,
+        tags TEXT NOT NULL DEFAULT '[]',
+        applies_to TEXT DEFAULT '[]',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        valid_from INTEGER,
+        valid_until INTEGER,
+        archived_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        archive_reason TEXT
+      );
       CREATE TABLE IF NOT EXISTS projects (
         path TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -151,6 +169,11 @@ export class Vault {
         created_at INTEGER NOT NULL DEFAULT (unixepoch())
       );
       CREATE INDEX IF NOT EXISTS idx_brain_feedback_query ON brain_feedback(query);
+      CREATE INDEX IF NOT EXISTS idx_entries_domain ON entries(domain);
+      CREATE INDEX IF NOT EXISTS idx_entries_type ON entries(type);
+      CREATE INDEX IF NOT EXISTS idx_entries_severity ON entries(severity);
+      CREATE INDEX IF NOT EXISTS idx_memories_project ON memories(project_path);
+      CREATE INDEX IF NOT EXISTS idx_memories_type ON memories(type);
     `);
     this.migrateBrainSchema();
     this.migrateTemporalSchema();
@@ -864,6 +887,98 @@ export class Vault {
   }
 
   /**
+   * Archive entries older than N days. Moves them to entries_archive.
+   */
+  archive(options: { olderThanDays: number; reason?: string }): { archived: number } {
+    const cutoff = Math.floor(Date.now() / 1000) - options.olderThanDays * 86400;
+    const reason = options.reason ?? `Archived: older than ${options.olderThanDays} days`;
+
+    return this.provider.transaction(() => {
+      // Find candidates
+      const candidates = this.provider.all<{ id: string }>(
+        'SELECT id FROM entries WHERE updated_at < ?',
+        [cutoff],
+      );
+
+      if (candidates.length === 0) return { archived: 0 };
+
+      let archived = 0;
+      for (const { id } of candidates) {
+        // Copy to archive
+        this.provider.run(
+          `INSERT OR IGNORE INTO entries_archive (id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until, archive_reason)
+           SELECT id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until, ?
+           FROM entries WHERE id = ?`,
+          [reason, id],
+        );
+        // Delete from active
+        const result = this.provider.run('DELETE FROM entries WHERE id = ?', [id]);
+        archived += result.changes;
+      }
+
+      return { archived };
+    });
+  }
+
+  /**
+   * Restore an archived entry back to the active table.
+   */
+  restore(id: string): boolean {
+    return this.provider.transaction(() => {
+      const archived = this.provider.get<Record<string, unknown>>(
+        'SELECT * FROM entries_archive WHERE id = ?',
+        [id],
+      );
+      if (!archived) return false;
+
+      this.provider.run(
+        `INSERT OR REPLACE INTO entries (id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until)
+         SELECT id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until
+         FROM entries_archive WHERE id = ?`,
+        [id],
+      );
+      this.provider.run('DELETE FROM entries_archive WHERE id = ?', [id]);
+      return true;
+    });
+  }
+
+  /**
+   * Optimize the database: VACUUM (SQLite only), ANALYZE, and FTS rebuild.
+   */
+  optimize(): { vacuumed: boolean; analyzed: boolean; ftsRebuilt: boolean } {
+    let vacuumed = false;
+    let analyzed = false;
+    let ftsRebuilt = false;
+
+    // VACUUM only for SQLite
+    if (this.provider.backend === 'sqlite') {
+      try {
+        this.provider.execSql('VACUUM');
+        vacuumed = true;
+      } catch {
+        // VACUUM may fail inside a transaction
+      }
+    }
+
+    try {
+      this.provider.execSql('ANALYZE');
+      analyzed = true;
+    } catch {
+      // Non-critical
+    }
+
+    try {
+      this.provider.ftsRebuild('entries');
+      this.provider.ftsRebuild('memories');
+      ftsRebuilt = true;
+    } catch {
+      // Non-critical
+    }
+
+    return { vacuumed, analyzed, ftsRebuilt };
+  }
+
+  /**
    * Get the underlying persistence provider.
    */
   getProvider(): PersistenceProvider {
@@ -875,6 +990,9 @@ export class Vault {
    * Throws if the provider is not SQLite.
    */
   getDb(): import('better-sqlite3').Database {
+    if (process.env.NODE_ENV !== 'test' && process.env.VITEST !== 'true') {
+      console.warn('Vault.getDb() is deprecated. Use vault.getProvider() instead.');
+    }
     if (this.sqliteProvider) {
       return this.sqliteProvider.getDatabase();
     }

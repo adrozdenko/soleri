@@ -8,14 +8,25 @@
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import type { PersistenceProvider, PersistenceParams, RunResult } from './types.js';
+import type {
+  PersistenceProvider,
+  PersistenceParams,
+  RunResult,
+  FtsSearchOptions,
+} from './types.js';
 
 export class SQLitePersistenceProvider implements PersistenceProvider {
+  readonly backend = 'sqlite' as const;
   private db: Database.Database;
 
   constructor(path: string = ':memory:') {
     if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
     this.db = new Database(path);
+    if (path !== ':memory:') {
+      this.db.pragma('cache_size = -64000'); // 64MB
+      this.db.pragma('temp_store = MEMORY');
+      this.db.pragma('mmap_size = 268435456'); // 256MB
+    }
   }
 
   execSql(sql: string): void {
@@ -47,6 +58,43 @@ export class SQLitePersistenceProvider implements PersistenceProvider {
     return this.db.transaction(fn)();
   }
 
+  ftsSearch<T = Record<string, unknown>>(
+    table: string,
+    query: string,
+    options?: FtsSearchOptions,
+  ): T[] {
+    const ftsTable = `${table}_fts`;
+    const cols = options?.columns?.length ? options.columns.join(', ') : `${table}.*`;
+    const orderBy = options?.orderByRank !== false ? `ORDER BY rank` : '';
+    const limit = options?.limit ? `LIMIT ${options.limit}` : '';
+    const offset = options?.offset ? `OFFSET ${options.offset}` : '';
+
+    const filterClauses: string[] = [];
+    const filterParams: unknown[] = [query];
+
+    if (options?.filters) {
+      for (const [key, value] of Object.entries(options.filters)) {
+        filterClauses.push(`${table}.${key} = ?`);
+        filterParams.push(value);
+      }
+    }
+
+    const filterSql = filterClauses.length ? `AND ${filterClauses.join(' AND ')}` : '';
+
+    const sql = `SELECT ${cols} FROM ${ftsTable} JOIN ${table} ON ${table}.rowid = ${ftsTable}.rowid WHERE ${ftsTable} MATCH ? ${filterSql} ${orderBy} ${limit} ${offset}`;
+
+    return this.all<T>(sql, filterParams);
+  }
+
+  ftsRebuild(table: string): void {
+    const ftsTable = `${table}_fts`;
+    try {
+      this.execSql(`INSERT INTO ${ftsTable}(${ftsTable}) VALUES('rebuild')`);
+    } catch {
+      // Graceful degradation: FTS table may not exist
+    }
+  }
+
   close(): void {
     this.db.close();
   }
@@ -54,9 +102,14 @@ export class SQLitePersistenceProvider implements PersistenceProvider {
   /**
    * Escape hatch: get the raw better-sqlite3 Database.
    * Used by modules that need direct db access (ProjectRegistry, BrainIntelligence, etc.).
-   * Will be deprecated once those modules migrate to PersistenceProvider.
+   * @deprecated Use provider methods instead.
    */
   getDatabase(): Database.Database {
+    if (process.env.NODE_ENV !== 'test' && process.env.VITEST !== 'true') {
+      console.warn(
+        'SQLitePersistenceProvider.getDatabase() is deprecated. Use provider methods instead.',
+      );
+    }
     return this.db;
   }
 }

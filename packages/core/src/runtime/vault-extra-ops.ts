@@ -1,8 +1,9 @@
 /**
- * Extra vault operations — 20 ops that extend the 4 base vault ops in core-ops.ts.
+ * Extra vault operations — 23 ops that extend the 4 base vault ops in core-ops.ts.
  *
  * Groups: single-entry CRUD (3), bulk (2), discovery (3), import/export (3),
- *         analytics (1), seed canonical (1), knowledge lifecycle (4), temporal (3).
+ *         analytics (1), seed canonical (1), knowledge lifecycle (4), temporal (3),
+ *         archival (3).
  */
 
 import { z } from 'zod';
@@ -544,6 +545,45 @@ export function createVaultExtraOps(runtime: AgentRuntime): OpDefinition[] {
       handler: async (params) => {
         const entries = vault.findExpired((params.limit as number | undefined) ?? 50);
         return { entries, count: entries.length };
+      },
+    },
+
+    // ─── Archival ───────────────────────────────────────────────────
+    {
+      name: 'vault_archive',
+      description:
+        'Archive entries older than N days to entries_archive table. Keeps active table lean.',
+      auth: 'write',
+      schema: z.object({
+        olderThanDays: z.number().describe('Archive entries not updated in this many days'),
+        reason: z.string().optional().describe('Reason for archiving'),
+      }),
+      handler: async (params) => {
+        return vault.archive({
+          olderThanDays: params.olderThanDays as number,
+          reason: params.reason as string | undefined,
+        });
+      },
+    },
+    {
+      name: 'vault_restore',
+      description: 'Restore an archived entry back to the active entries table.',
+      auth: 'write',
+      schema: z.object({
+        id: z.string().describe('ID of the archived entry to restore'),
+      }),
+      handler: async (params) => {
+        const restored = vault.restore(params.id as string);
+        return { restored, id: params.id };
+      },
+    },
+    {
+      name: 'vault_optimize',
+      description: 'Optimize the vault database: VACUUM (SQLite), ANALYZE, and FTS index rebuild.',
+      auth: 'write',
+      schema: z.object({}),
+      handler: async () => {
+        return vault.optimize();
       },
     },
   ];
