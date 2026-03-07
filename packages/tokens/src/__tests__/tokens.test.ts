@@ -205,7 +205,7 @@ describe('CSS files — zero raw colors outside primitives', () => {
 
   it('light.css targets [data-theme="light"]', () => {
     const css = readFileSync(resolve(cssDir, 'light.css'), 'utf-8');
-    expect(css).toContain('[data-theme="light"]');
+    expect(css).toContain("[data-theme='light']");
     expect(css).toContain('--bg:');
     expect(css).toContain('--foreground:');
     expect(css).toContain('--toggle-track-bg:');
@@ -213,7 +213,7 @@ describe('CSS files — zero raw colors outside primitives', () => {
 
   it('dark.css targets [data-theme="dark"]', () => {
     const css = readFileSync(resolve(cssDir, 'dark.css'), 'utf-8');
-    expect(css).toContain('[data-theme="dark"]');
+    expect(css).toContain("[data-theme='dark']");
     expect(css).toContain('--bg:');
     expect(css).toContain('--foreground:');
     expect(css).toContain('--toggle-track-bg:');
