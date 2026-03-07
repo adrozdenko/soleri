@@ -90,3 +90,5 @@ Controls how knowledge enters the vault — quotas, proposal gates, duplicate de
 3. **Search before building** — 5 seconds of search can save hours of rework
 4. **Use domains** — keep knowledge organized so searches stay relevant
 5. **Review brain recommendations** — they reflect what actually works in your project
+
+Your data stays on your machine — [Security & Privacy](/docs/guides/security/). For term definitions, see the [Glossary](/docs/glossary/). If something isn't working, check [Troubleshooting](/docs/troubleshooting/).

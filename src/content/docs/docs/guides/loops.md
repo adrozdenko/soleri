@@ -42,13 +42,25 @@ You didn't have to intervene between iterations. The agent validated its own wor
 
 ## Gate-based iteration
 
-For tighter integration, loops can use gate-based iteration — the agent scans its own output for completion signals and decides whether to continue or stop:
+For tighter integration, loops can use gate-based iteration — the agent uses specific signals to decide whether to continue or stop:
 
-- **Promise tags** — a specific text marker that signals "I'm done"
-- **Heuristic detection** — the agent recognizes patterns in its output that indicate completion
-- **Score thresholds** — numeric scores that must meet a minimum
+### Score thresholds
 
-This is how loops integrate with hooks. A Stop hook can check the loop status and decide whether to allow the agent to finish or force another iteration.
+Built-in modes (`component-build`, `plan-iteration`) use numeric scores. The agent runs a validation check each iteration and compares the score to the target. If the score meets or exceeds the target, the loop completes.
+
+### Promise tags
+
+Custom loops use promise tags — a text marker in the agent's output that signals convergence. When the agent determines its work meets the criteria you defined, it emits a completion marker. The loop system detects this and stops iterating.
+
+For example, in a custom loop to refactor a module, the agent validates its own output each iteration. When all checks pass, it signals completion. If the signal isn't present, the loop continues to the next iteration.
+
+### Heuristic detection
+
+The agent also recognizes patterns in its own output that indicate completion — like "all tests passing" or "no remaining issues found." This acts as a fallback when explicit signals aren't present.
+
+### Integration with hooks
+
+Hooks can participate in loop iteration. A Stop hook checks the current loop status and can force another iteration if the output doesn't meet quality standards. This is how hooks and loops work together — hooks define what "good enough" means, and the loop keeps iterating until the hook allows it to stop. See [Customizing Your Agent](/docs/guides/customizing/#hooks) for hook configuration.
 
 ## Loop history
 
@@ -88,4 +100,4 @@ Custom loops work the same way — iterate, validate, fix — but you define wha
 
 ---
 
-_Next: [Customizing Your Agent](/docs/guides/customizing/) — shape your agent's personality, domains, and behavior._
+_Next: [Customizing Your Agent](/docs/guides/customizing/) — shape your agent's personality, domains, and behavior. For term definitions, see the [Glossary](/docs/glossary/)._

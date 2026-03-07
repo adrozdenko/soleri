@@ -5,6 +5,8 @@ description: Everything a Soleri agent can do — 160+ operations across vault, 
 
 Every Soleri agent ships with **160+ operations** out of the box. This page shows what your agent can do, grouped by category.
 
+For parameter details on common operations, see the [API Reference](/docs/api-reference/). For CLI commands, see the [CLI Reference](/docs/cli-reference/). For term definitions, see the [Glossary](/docs/glossary/).
+
 ## Operation Summary
 
 | Category                                      | Ops          | What it does                                         |

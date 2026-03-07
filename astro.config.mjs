@@ -71,6 +71,8 @@ export default defineConfig({
             { slug: 'docs/api-reference' },
             { slug: 'docs/cli-reference' },
             { slug: 'docs/extending' },
+            { slug: 'docs/glossary' },
+            { slug: 'docs/troubleshooting' },
           ],
         },
       ],

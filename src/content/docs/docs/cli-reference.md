@@ -194,3 +194,7 @@ npx @soleri/cli upgrade [options]
 | Flag      | Description                          |
 | --------- | ------------------------------------ |
 | `--check` | Check for updates without installing |
+
+---
+
+_See [Customizing Your Agent](/docs/guides/customizing/) for detailed configuration guides. For API operations, see [API Reference](/docs/api-reference/) and [Capabilities](/docs/capabilities/). If something isn't working, check [Troubleshooting](/docs/troubleshooting/)._

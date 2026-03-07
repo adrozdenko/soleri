@@ -208,4 +208,8 @@ No parameters. Returns setup checklist status.
 
 ---
 
-For the complete list of all 160+ operations with parameters, see [Capabilities](/docs/capabilities/).
+For the complete list of all 160+ operations, see [Capabilities](/docs/capabilities/). For CLI commands, see [CLI Reference](/docs/cli-reference/). For term definitions, see [Glossary](/docs/glossary/).
+
+:::note[Coverage]
+This page documents the most commonly used operations. The remaining operations follow the same facade pattern — call with `op` and `params`. Use `admin_tool_list` to discover all available operations and their parameters in your running agent.
+:::

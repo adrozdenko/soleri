@@ -54,7 +54,16 @@ After adding entries, Cognee needs to process them into vector embeddings and gr
 >
 > **Agent:** _Processing 47 entries... Done. Knowledge graph updated._
 
-The agent handles this automatically with debounced scheduling — multiple rapid captures coalesce into a single cognify call, so Cognee isn't overwhelmed by batch operations.
+**What happens during cognify:**
+
+1. **Text extraction** — each entry's title, description, tags, and metadata are combined into a text document
+2. **Vector embedding** — Cognee generates vector embeddings for each document (using a configured embedding model — local or hosted)
+3. **Graph building** — Cognee creates nodes for each entry and edges for semantic relationships between them
+4. **Indexing** — the vectors are indexed for fast similarity search
+
+For a vault with ~100 entries, cognify typically takes 10-30 seconds locally, depending on your hardware and embedding model. Larger vaults (500+) may take a few minutes on first run.
+
+The agent handles cognify automatically with debounced scheduling — multiple rapid captures coalesce into a single cognify call, so Cognee isn't overwhelmed by batch operations. You can also trigger it manually after bulk imports.
 
 ### Searching
 
@@ -100,4 +109,4 @@ If Cognee goes down, your agent continues working normally — searches fall bac
 
 ---
 
-_Next: [Team Workflows](/docs/guides/team-workflows/) — how teams share and grow a knowledge base together._
+_Next: [Team Workflows](/docs/guides/team-workflows/) — how teams share and grow a knowledge base together. For term definitions, see the [Glossary](/docs/glossary/)._

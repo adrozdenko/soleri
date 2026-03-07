@@ -1,180 +1,63 @@
 ---
 title: Extending Your Agent
-description: Add domains, install knowledge packs, configure hooks, and upgrade your Soleri agent.
+description: Quick links for adding domains, knowledge packs, hooks, and upgrades.
 ---
 
-Your agent is designed to grow. Here's how to extend it beyond the initial scaffold.
+This page consolidates the key extension commands. For detailed explanations and configuration options, see [Customizing Your Agent](/docs/guides/customizing/).
 
-## Add a Knowledge Domain
+## Quick reference
 
-Domains are expertise areas. Each domain gets its own facade with 5 operations (search, capture, get, list, remove) and its own knowledge partition in the vault.
-
-```bash
-npx @soleri/cli add-domain security
-```
-
-This:
-
-1. Creates a domain facade registered with the MCP server
-2. Adds the domain to your agent's configuration
-3. Rebuilds the facade registry
-
-You can add as many domains as you need:
+### Add a domain
 
 ```bash
-npx @soleri/cli add-domain infrastructure
-npx @soleri/cli add-domain testing
-npx @soleri/cli add-domain performance
+npx @soleri/cli add-domain <name>
 ```
 
-### Custom Domain Knowledge
+Creates a domain facade with 5 operations and adds the domain to your agent. [Details →](/docs/guides/customizing/#adding-domains)
 
-After adding a domain, seed it with knowledge:
-
-```bash
-npx @soleri/cli install-knowledge ./bundles/security-patterns
-```
-
-Or capture knowledge interactively through your agent:
-
-```
-"Capture a critical security pattern:
-  Title: Always sanitize user input before database queries
-  Tags: sql-injection, input-validation"
-```
-
-## Knowledge Packs
-
-Knowledge packs are bundles of pre-built expertise you can install into your agent.
-
-### Installing a Pack
+### Install knowledge
 
 ```bash
 npx @soleri/cli install-knowledge <path-or-package>
 ```
 
-Packs can be:
+Imports a knowledge bundle (local directory or npm package) into your vault. [Details →](/docs/guides/customizing/#knowledge-packs)
 
-- A local directory with JSON/markdown knowledge entries
-- An npm package following the Soleri knowledge pack format
-
-### What's in a Pack
-
-A knowledge pack contains typed entries:
-
-```
-my-pack/
-├── patterns/          # Proven approaches
-├── anti-patterns/     # What to avoid
-├── principles/        # Guiding rules
-├── workflows/         # Step-by-step procedures
-└── manifest.json      # Pack metadata
-```
-
-### Available Tiers
-
-| Tier          | Source                 | Cost |
-| ------------- | ---------------------- | ---- |
-| **Starter**   | Ships with every agent | Free |
-| **Community** | npm registry           | Free |
-
-## Hook Packs
-
-Hooks are quality gates that run automatically during development. They catch common mistakes before they reach your codebase.
-
-### Install All Hooks
+### Install hooks
 
 ```bash
 npx @soleri/cli hooks add-pack full
+npx @soleri/cli hooks add claude-code
 ```
 
-### Available Hooks
+Adds quality gate hooks and editor integration. [Details →](/docs/guides/customizing/#hooks)
 
-| Hook                  | What it catches                   |
-| --------------------- | --------------------------------- |
-| `no-console-log`      | Leftover debug statements         |
-| `no-any-types`        | TypeScript `any` usage            |
-| `no-important`        | CSS `!important` declarations     |
-| `no-inline-styles`    | Inline `style=` attributes        |
-| `semantic-html`       | Non-semantic HTML elements        |
-| `focus-ring-required` | Missing keyboard focus indicators |
-| `ux-touch-targets`    | Touch targets smaller than 44px   |
-| `no-ai-attribution`   | AI attribution in commit messages |
-
-### Editor Integration
+### Set governance
 
 ```bash
-npx @soleri/cli hooks add claude-code    # Claude Code
-npx @soleri/cli hooks add cursor         # Cursor
-npx @soleri/cli hooks add vscode         # VS Code
+npx @soleri/cli governance --preset moderate
 ```
 
-## Upgrading
+Controls how knowledge enters your vault. [Details →](/docs/guides/customizing/#governance-policies)
 
-### Check for Updates
+### Upgrade
 
 ```bash
-npx @soleri/cli upgrade --check
+npx @soleri/cli upgrade --check    # Check for updates
+npx @soleri/cli upgrade            # Upgrade CLI
+npm update @soleri/core            # Upgrade engine
 ```
 
-### Upgrade the CLI
+[Details →](/docs/guides/customizing/#upgrading)
 
-```bash
-npx @soleri/cli upgrade
-```
-
-### Upgrade @soleri/core
-
-In your agent's directory:
-
-```bash
-npm update @soleri/core
-npm run build
-npm test
-```
-
-Core upgrades are backward-compatible within the same major version. Your agent's custom code, persona, and vault data are preserved.
-
-## Governance Policies
-
-Control how knowledge enters your agent's vault.
-
-### Presets
-
-```bash
-npx @soleri/cli governance --preset strict     # All captures require approval
-npx @soleri/cli governance --preset moderate   # Auto-approve suggestions, review critical
-npx @soleri/cli governance --preset permissive # Auto-approve everything
-```
-
-### View Current Policy
-
-```bash
-npx @soleri/cli governance --show
-```
-
-Governance controls:
-
-- **Quotas** — max entries per domain, per type
-- **Retention** — how long unused entries survive before decay
-- **Auto-capture** — which severity levels auto-approve
-
-## Project Linking
-
-Link related projects to share knowledge across them:
+### Link projects
 
 ```
 "Link this project to ../api-server as related"
-"Link this project to ../shared-lib as parent"
 ```
 
-Link types:
+Share knowledge across related codebases. [Details →](/docs/guides/customizing/#project-linking)
 
-| Type      | Meaning                   | Direction      |
-| --------- | ------------------------- | -------------- |
-| `related` | Same domain               | Bidirectional  |
-| `parent`  | Derives from another      | Unidirectional |
-| `child`   | Another derives from this | Unidirectional |
-| `fork`    | Code fork                 | Unidirectional |
+---
 
-Linked projects are included in cross-project searches with weighted relevance.
+_For full command documentation, see [CLI Reference](/docs/cli-reference/). For configuration details, see [Customizing Your Agent](/docs/guides/customizing/)._

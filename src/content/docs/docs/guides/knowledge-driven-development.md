@@ -85,6 +85,8 @@ Your agent is not a replacement for documentation, code comments, or team commun
 
 The agent doesn't proactively interrupt you. It doesn't enforce rules. It surfaces knowledge when asked, and it improves its recommendations based on what actually proves useful. You stay in control.
 
+See the [Success Story](/docs/guides/dashboard/) for a concrete example of this compound effect in action — a team going from blank slate to 50+ patterns in 20 days.
+
 ---
 
 _Next: [Under the Hood](/docs/guides/under-the-hood/) — understand exactly how the vault, brain, and memory work together._

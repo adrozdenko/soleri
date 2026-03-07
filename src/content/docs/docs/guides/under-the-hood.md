@@ -71,9 +71,18 @@ These recommendations appear as decisions in the plan — the agent tells you wh
 
 ### Knowledge extraction
 
-After a plan completes, the brain examines the session: what tools were used, what files were modified, how long it took, whether the outcome matched the plan. If it detects a reusable pattern, it extracts it back into the vault.
+After a plan completes, the brain examines the session and proposes new knowledge. Here's the process:
 
-This is the automatic part of the compound loop — you don't have to manually capture everything. The brain finds patterns in your work and proposes them.
+1. **Session scan** — the brain reviews the session record: which tools were called, what files were modified, how long each step took, and whether the outcome matched the plan
+2. **Pattern detection** — it looks for repeatable signals: the same tool sequence appearing across multiple sessions, steps that consistently take longer than estimated (planning insight), and solutions that resolved drift in past plans
+3. **Proposal generation** — detected patterns are proposed as new vault entries with auto-inferred type, severity, and tags. They enter the governance pipeline — in `moderate` mode, suggestions are auto-approved while warnings and critical entries go to proposal review
+4. **Strength initialization** — newly extracted patterns start with a moderate strength score. If the same pattern is independently extracted from multiple sessions, its confidence increases
+
+This is the automatic part of the compound loop — you don't have to manually capture everything. The brain finds patterns in your work and proposes them. You can review what was extracted after any plan completes:
+
+> **You:** "What patterns were extracted from the last session?"
+>
+> **Agent:** _2 patterns proposed: "GraphQL resolvers should validate input before calling service layer" (auto-approved, suggestion), "Always add deprecation headers before removing REST endpoints" (pending review, warning)._
 
 ## Memory and persistence
 

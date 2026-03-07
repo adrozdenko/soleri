@@ -94,4 +94,4 @@ Both are opt-in. Neither is required for core functionality. The vault, brain, p
 
 ---
 
-_Back to [Getting Started](/docs/getting-started/) or explore [Capabilities](/docs/capabilities/) for the full list of operations._
+_Back to [Getting Started](/docs/getting-started/). See [Customizing Your Agent](/docs/guides/customizing/) for governance policies and hook configuration, or explore [Capabilities](/docs/capabilities/) for the full list of operations._

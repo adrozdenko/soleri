@@ -113,3 +113,4 @@ Reports Node version, npm status, agent context, vault health, and CLAUDE.md sta
 - **[The Development Workflow](/docs/guides/workflow/)** — learn the five-step rhythm: Search → Plan → Work → Capture → Complete
 - **[Your First 10 Minutes](/docs/guides/first-10-minutes/)** — a hands-on tutorial to see your agent in action
 - **[Your Agent](/docs/your-agent/)** — reference for vault, brain, memory, and playbooks
+- **[Security & Privacy](/docs/guides/security/)** — your data stays local, zero network calls by default
