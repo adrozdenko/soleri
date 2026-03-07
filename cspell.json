@@ -69,7 +69,9 @@
     "jaccard",
     "millis",
     "upserts",
-    "retag"
+    "retag",
+    "replayable",
+    "nestable"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [
