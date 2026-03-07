@@ -5,6 +5,112 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## @soleri/core@2.5.0 — 2026-03-07
+
+### Added
+
+- **Cognee Sync Manager** — Queue-based dirty tracking with SQLite `cognee_sync_queue` table. Auto-enqueues on vault seed/remove/bulkRemove. Drain logic processes batches of 10 with max 3 retries. Health-flip detection auto-drains when Cognee comes back online. Startup reconciliation re-queues stale `processing` entries.
+- **Intake Pipeline** — 6-stage book/PDF ingestion: init → chunk → classify → dedup → store → finalize. SQLite `intake_jobs` + `intake_chunks` tables. Supports PDF (via optional `pdf-parse`) and plain text. LLM-powered content classification extracts patterns, anti-patterns, rules, and workflows.
+- **Content Classifier** — Uses `LLMClient.complete()` with structured JSON extraction to classify text chunks into typed knowledge items with titles, descriptions, severity, and tags.
+- **Dedup Gate** — TF-IDF cosine similarity (threshold 0.85) against existing vault entries to prevent near-duplicate ingestion.
+- **7 new ops** (196 → 203 total): `cognee_sync_status`, `cognee_sync_drain`, `cognee_sync_reconcile`, `intake_ingest_book`, `intake_process`, `intake_status`, `intake_preview`
+- **Temporal decay scoring** — Vault entries decay over time using configurable half-life. `decayedScore()` applies exponential decay to confidence scores based on entry age.
+- **Bi-temporal fields** — Vault entries track both `validFrom`/`validTo` (business time) and `recordedAt`/`supersededAt` (system time). Point-in-time queries via `vault.getAsOf(timestamp)`.
+- **Cognee × Curator hybrid** — Curator contradiction detection cross-references Cognee vector search results to surface semantic contradictions beyond keyword matching.
+- **Execution metrics** — Per-task timing with `startedAt`/`completedAt` auto-set on status transitions. `ExecutionSummary` aggregates across plan tasks.
+- **Task deliverables** — `submitDeliverable()` records file/vault_entry/url deliverables on plan tasks with SHA-256 hashing. `verifyDeliverables()` checks existence and hash staleness.
+- **Loop anomaly detection** — `detectAnomaly()` flags fast + low-score iteration combos. Per-mode duration thresholds.
+- **Admin hot reload** — `admin_hot_reload` op rebuilds brain vocabulary, vault FTS index, and template cache in one call.
+- `pdf-parse` added as optional dependency for PDF ingestion
+
+## @soleri/forge@5.6.0 — 2026-03-07
+
+### Changed
+
+- Core facade test template updated: 201 → 208 ops (7 new Cognee sync + intake ops)
+- Scaffolder preview array updated with 7 new op names
+- Scaffolder test expectations updated to match 208 agent ops
+
+## @soleri/forge@5.5.0 — 2026-03-06
+
+### Added
+
+- **17 built-in skills** shipped with every scaffolded agent — brainstorming, writing-plans, executing-plans, TDD, systematic-debugging, verification-before-completion, second-opinion, code-patrol, fix-and-learn, knowledge-harvest, vault-capture, vault-navigator, health-check, context-resume, brain-debrief, onboard-me, retrospective
+- Skills include YAML frontmatter with agent-specific `YOUR_AGENT_core` → `{agentId}_core` substitution
+- MIT attribution preserved in superpowers-adapted skills
+
+## @soleri/cli@1.5.0 — 2026-03-06
+
+### Added
+
+- **`soleri test`** — Run agent test suite via `vitest run`
+- **`soleri upgrade`** — Upgrade `@soleri/core` to latest in agent project
+- **`hookPacks` validation** — Validate hook pack names during config-based create
+
+## @soleri/cli@1.4.0 — 2026-03-06
+
+### Added
+
+- **`soleri governance`** — CLI command for governance policy management (list policies, view proposals, stats, expire stale proposals)
+
+## create-soleri@1.1.0 — 2026-03-06
+
+### Changed
+
+- Delegates to `@soleri/cli@1.4.0+` with governance support
+
+## @soleri/core@2.4.0 — 2026-03-06
+
+### Added
+
+- **84 new ops** across 6 modules (113 → 196 total, then +1 playbook_create = 197, then close parity gap to 185, then v6.1.0 to 191, then v6.2.0 to 196):
+  - **Planning** — `plan_execution_metrics`, `plan_record_task_metrics`, `plan_submit_deliverable`, `plan_verify_deliverables`, plan grading with A–F letter grades
+  - **Memory** — Cross-project search, promote to global, session capture
+  - **Vault** — Advanced search filters, bulk operations, export/import
+  - **Admin** — Health check, persistence check, setup global, list tools, admin hot reload
+  - **Loop** — Start/cancel/status/iterate with gate, anomaly check
+  - **Orchestrate** — Plan/execute/complete lifecycle
+  - **Project** — Register/get/list/unregister/get_rules/link_projects
+  - **Curator** — GPT-enrich, queue stats, groom all
+- **Playbook system** — Structured multi-step procedures stored as vault entries with `playbook_list`, `playbook_get`, `playbook_create` ops. Full Salvador playbook architecture ported to core.
+- **Errors module** — Structured error types with codes and metadata (`errors.ts`)
+- **Persistence abstraction** — `PersistenceProvider` interface decouples vault from raw SQLite (`persistence/provider.ts`)
+- **Prompt templates** — Compilable prompt templates with variable substitution (`templates/`)
+- **30 ops closing Salvador feature parity gap** (#148–#160)
+
+## @soleri/forge@5.4.0 — 2026-03-06
+
+### Changed
+
+- Core facade test template updated to match `@soleri/core@2.4.0` op count
+- Scaffolder preview array synced with all new ops
+
+## @soleri/core@2.3.0 — 2026-03-05
+
+### Added
+
+- **Structured logging** — `Logger` class with level-based filtering (debug/info/warn/error), JSON output mode, and context tags (#138)
+- **Brain typed feedback** — `BrainFeedback` with explicit `positive`/`negative`/`neutral` types and extraction tracking (#123)
+- **Auto-extraction on session end** — Brain automatically extracts knowledge when sessions complete
+- **Source-aware recommendations** — Brain recommendations include provenance (vault, brain, session)
+- **Governance module** — Policy engine with configurable capture gates, proposal workflow (propose → vote → approve/reject), and automatic expiration
+  - `GovernanceEngine` class with SQLite persistence
+  - Capture gating: `brain_promote_proposals` routed through governance approval
+  - Auto-capture on proposal approval and modification
+  - Governance summary in project register response
+  - Stale proposal expiration on session start
+
+## @soleri/forge@5.3.0 — 2026-03-05
+
+### Added
+
+- **Hook system for generated agents** — Scaffolded agents include Claude Code hooks for quality gates (#137)
+- Scaffolder op sync updated to match core 2.3.0
+
+### Changed
+
+- Domain-facade template marked as v4 legacy (v5.0+ agents use runtime factories)
+
 ## @soleri/cli@1.3.0 — 2026-03-05
 
 ### Added
