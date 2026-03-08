@@ -179,6 +179,18 @@ export class Vault {
     this.migrateBrainSchema();
     this.migrateTemporalSchema();
     this.migrateContentHash();
+    this.migrateTierColumn();
+  }
+
+  private migrateTierColumn(): void {
+    try {
+      this.provider.run("ALTER TABLE entries ADD COLUMN tier TEXT DEFAULT 'agent'");
+    } catch {
+      // Column already exists
+    }
+    this.provider.execSql(
+      'CREATE INDEX IF NOT EXISTS idx_entries_tier ON entries(tier) WHERE tier IS NOT NULL',
+    );
   }
 
   private migrateTemporalSchema(): void {
@@ -281,12 +293,12 @@ export class Vault {
 
   seed(entries: IntelligenceEntry[]): number {
     const sql = `
-      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until,content_hash)
-      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil,@contentHash)
+      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until,content_hash,tier)
+      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil,@contentHash,@tier)
       ON CONFLICT(id) DO UPDATE SET type=excluded.type,domain=excluded.domain,title=excluded.title,severity=excluded.severity,
         description=excluded.description,context=excluded.context,example=excluded.example,counter_example=excluded.counter_example,
         why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,valid_from=excluded.valid_from,valid_until=excluded.valid_until,
-        content_hash=excluded.content_hash,updated_at=unixepoch()
+        content_hash=excluded.content_hash,tier=excluded.tier,updated_at=unixepoch()
     `;
     return this.provider.transaction(() => {
       let count = 0;
@@ -307,6 +319,7 @@ export class Vault {
           validFrom: entry.validFrom ?? null,
           validUntil: entry.validUntil ?? null,
           contentHash: computeContentHash(entry),
+          tier: entry.tier ?? 'agent',
         });
         count++;
         if (this.syncManager) {
@@ -1119,6 +1132,7 @@ function rowToEntry(row: Record<string, unknown>): IntelligenceEntry {
     why: (row.why as string) ?? undefined,
     tags: JSON.parse((row.tags as string) || '[]'),
     appliesTo: JSON.parse((row.applies_to as string) || '[]'),
+    tier: (row.tier as IntelligenceEntry['tier']) ?? undefined,
     validFrom: (row.valid_from as number) ?? undefined,
     validUntil: (row.valid_until as number) ?? undefined,
   };

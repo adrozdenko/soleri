@@ -11,6 +11,7 @@ export interface IntelligenceEntry {
   why?: string;
   tags: string[];
   appliesTo?: string[];
+  tier?: 'agent' | 'project' | 'team'; // scope tier — auto-detected or manually set
   validFrom?: number; // unix epoch — when entry becomes active
   validUntil?: number; // unix epoch — when entry expires (null = never)
 }

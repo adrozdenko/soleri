@@ -8,6 +8,8 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import { detectScope } from '../vault/scope-detector.js';
+import type { ScopeTier, ScopeDetectionResult } from '../vault/scope-detector.js';
 
 /**
  * Create the 4 intelligent capture operations for an agent runtime.
@@ -26,6 +28,10 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'write',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
+        tier: z
+          .enum(['agent', 'project', 'team'])
+          .optional()
+          .describe('Manual tier override. If omitted, tier is auto-detected from content.'),
         entries: z.array(
           z.object({
             id: z.string().optional(),
@@ -49,11 +55,16 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
             example: z.string().optional(),
             counterExample: z.string().optional(),
             why: z.string().optional(),
+            tier: z
+              .enum(['agent', 'project', 'team'])
+              .optional()
+              .describe('Per-entry tier override. Falls back to top-level tier, then auto-detect.'),
           }),
         ),
       }),
       handler: async (params) => {
         const projectPath = (params.projectPath as string | undefined) ?? '.';
+        const topTier = params.tier as ScopeTier | undefined;
         const entries = params.entries as Array<{
           id?: string;
           type: string;
@@ -66,19 +77,41 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
           example?: string;
           counterExample?: string;
           why?: string;
+          tier?: ScopeTier;
         }>;
 
         let captured = 0;
         let proposed = 0;
         let rejected = 0;
         let duplicated = 0;
-        const results: Array<{ id: string; action: string; reason?: string }> = [];
+        const results: Array<{
+          id: string;
+          action: string;
+          reason?: string;
+          scope?: { tier: ScopeTier; confidence: string; reason: string };
+        }> = [];
 
         for (const entry of entries) {
           const entryId =
             entry.id ?? `${entry.domain}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
           const mappedSeverity = mapSeverity(entry.severity);
           const mappedType = mapType(entry.type);
+
+          // Scope detection: per-entry tier > top-level tier > auto-detect
+          const resolvedTier = entry.tier ?? topTier;
+          let scopeResult: ScopeDetectionResult | undefined;
+          let finalTier: ScopeTier;
+          if (resolvedTier) {
+            finalTier = resolvedTier;
+          } else {
+            scopeResult = detectScope({
+              title: entry.title,
+              description: entry.description,
+              category: entry.domain,
+              tags: entry.tags,
+            });
+            finalTier = scopeResult.tier;
+          }
 
           try {
             const decision = governance.evaluateCapture(projectPath, {
@@ -102,16 +135,38 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                     example: entry.example,
                     counterExample: entry.counterExample,
                     why: entry.why,
+                    tier: finalTier,
                   });
+                  const scopeMeta = scopeResult
+                    ? {
+                        tier: scopeResult.tier,
+                        confidence: scopeResult.confidence,
+                        reason: scopeResult.reason,
+                      }
+                    : {
+                        tier: finalTier,
+                        confidence: 'MANUAL' as const,
+                        reason: 'explicit override',
+                      };
                   if (captureResult.blocked) {
                     duplicated++;
                     results.push({
                       id: captureResult.duplicate?.id ?? entryId,
                       action: 'duplicate',
+                      scope: scopeMeta,
                     });
                   } else {
                     captured++;
-                    results.push({ id: entryId, action: 'capture' });
+                    const result: (typeof results)[number] = {
+                      id: entryId,
+                      action: 'capture',
+                      scope: scopeMeta,
+                    };
+                    if (scopeResult?.confidence === 'LOW') {
+                      result.reason =
+                        'Low confidence scope detection — consider reviewing tier assignment';
+                    }
+                    results.push(result);
                   }
                 } catch (err) {
                   rejected++;
@@ -198,6 +253,10 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
         title: z.string(),
         description: z.string(),
         tags: z.array(z.string()).optional().default([]),
+        tier: z
+          .enum(['agent', 'project', 'team'])
+          .optional()
+          .describe('Manual tier override. If omitted, tier is auto-detected from content.'),
       }),
       handler: async (params) => {
         const projectPath = (params.projectPath as string | undefined) ?? '.';
@@ -206,10 +265,28 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
         const title = params.title as string;
         const description = params.description as string;
         const tags = (params.tags as string[] | undefined) ?? [];
+        const manualTier = params.tier as ScopeTier | undefined;
 
         const id = `${domain}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const mappedSeverity = 'info' as const;
         const mappedType = mapType(entryType);
+
+        // Scope detection
+        let scopeResult: ScopeDetectionResult | undefined;
+        let finalTier: ScopeTier;
+        if (manualTier) {
+          finalTier = manualTier;
+        } else {
+          scopeResult = detectScope({ title, description, category: domain, tags });
+          finalTier = scopeResult.tier;
+        }
+        const scopeMeta = scopeResult
+          ? {
+              tier: scopeResult.tier,
+              confidence: scopeResult.confidence,
+              reason: scopeResult.reason,
+            }
+          : { tier: finalTier, confidence: 'MANUAL' as const, reason: 'explicit override' };
 
         try {
           const decision = governance.evaluateCapture(projectPath, {
@@ -229,15 +306,27 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                   severity: mapSeverity(mappedSeverity),
                   description,
                   tags,
+                  tier: finalTier,
                 });
                 if (captureResult.blocked) {
                   return {
                     captured: false,
                     id: captureResult.duplicate?.id ?? id,
                     governance: { action: 'duplicate' as const },
+                    scope: scopeMeta,
                   };
                 }
-                return { captured: true, id, governance: { action: 'capture' as const } };
+                const result: Record<string, unknown> = {
+                  captured: true,
+                  id,
+                  governance: { action: 'capture' as const },
+                  scope: scopeMeta,
+                };
+                if (scopeResult?.confidence === 'LOW') {
+                  result.reviewNote =
+                    'Low confidence scope detection — consider reviewing tier assignment';
+                }
+                return result;
               } catch (err) {
                 return {
                   captured: false,

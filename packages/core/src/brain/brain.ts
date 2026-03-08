@@ -249,6 +249,7 @@ export class Brain {
       why: entry.why,
       tags: mergedTags,
       appliesTo: entry.appliesTo,
+      tier: entry.tier,
     };
 
     // Content-hash dedup: check after enrichment so tags match the stored hash

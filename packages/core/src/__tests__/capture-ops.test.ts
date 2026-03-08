@@ -564,6 +564,208 @@ describe('createCaptureOps', () => {
     });
   });
 
+  // ─── Scope detection integration ────────────────────────────────
+
+  describe('capture_knowledge scope detection', () => {
+    it('should auto-detect team tier for universal patterns', async () => {
+      setup();
+      const result = (await findOp('capture_knowledge').handler({
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'accessibility',
+            title: 'WCAG contrast requirements',
+            description:
+              'All text must meet WCAG AA contrast ratio of 4.5:1 for accessibility compliance.',
+            tags: ['a11y', 'wcag'],
+          },
+        ],
+      })) as {
+        captured: number;
+        results: Array<{ scope?: { tier: string; confidence: string } }>;
+      };
+
+      expect(result.captured).toBe(1);
+      expect(result.results[0].scope).toBeDefined();
+      expect(result.results[0].scope!.tier).toBe('team');
+      expect(result.results[0].scope!.confidence).toBe('HIGH');
+    });
+
+    it('should auto-detect project tier for project-specific content', async () => {
+      setup();
+      const result = (await findOp('capture_knowledge').handler({
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'architecture',
+            title: 'Package imports',
+            description: 'Use @soleri/core for all vault operations in packages/core/src/vault.ts.',
+            tags: ['project-specific'],
+          },
+        ],
+      })) as {
+        captured: number;
+        results: Array<{ scope?: { tier: string; confidence: string } }>;
+      };
+
+      expect(result.captured).toBe(1);
+      expect(result.results[0].scope!.tier).toBe('project');
+    });
+
+    it('should auto-detect agent tier for personal preferences', async () => {
+      setup();
+      const result = (await findOp('capture_knowledge').handler({
+        entries: [
+          {
+            type: 'rule',
+            domain: 'workflow',
+            title: 'My editor preference',
+            description: 'I prefer using vim keybindings. My workflow involves ~/projects.',
+            tags: ['preference'],
+          },
+        ],
+      })) as {
+        captured: number;
+        results: Array<{ scope?: { tier: string } }>;
+      };
+
+      expect(result.captured).toBe(1);
+      expect(result.results[0].scope!.tier).toBe('agent');
+    });
+
+    it('should use top-level tier override when provided', async () => {
+      setup();
+      const result = (await findOp('capture_knowledge').handler({
+        tier: 'team',
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'testing',
+            title: 'Random note',
+            description: 'Something generic.',
+          },
+        ],
+      })) as {
+        captured: number;
+        results: Array<{ scope?: { tier: string; confidence: string } }>;
+      };
+
+      expect(result.captured).toBe(1);
+      expect(result.results[0].scope!.tier).toBe('team');
+      expect(result.results[0].scope!.confidence).toBe('MANUAL');
+    });
+
+    it('should use per-entry tier override over top-level', async () => {
+      setup();
+      const result = (await findOp('capture_knowledge').handler({
+        tier: 'team',
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'testing',
+            title: 'Override test',
+            description: 'Per-entry override.',
+            tier: 'agent',
+          },
+        ],
+      })) as {
+        captured: number;
+        results: Array<{ scope?: { tier: string; confidence: string } }>;
+      };
+
+      expect(result.captured).toBe(1);
+      expect(result.results[0].scope!.tier).toBe('agent');
+      expect(result.results[0].scope!.confidence).toBe('MANUAL');
+    });
+
+    it('should include review note for LOW confidence detections', async () => {
+      setup();
+      const result = (await findOp('capture_knowledge').handler({
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'other',
+            title: 'Ambiguous entry',
+            description: 'Something happened today.',
+          },
+        ],
+      })) as {
+        captured: number;
+        results: Array<{ scope?: { tier: string; confidence: string }; reason?: string }>;
+      };
+
+      expect(result.captured).toBe(1);
+      expect(result.results[0].scope!.confidence).toBe('LOW');
+      expect(result.results[0].reason).toContain('Low confidence');
+    });
+
+    it('should persist tier to vault entry', async () => {
+      setup();
+      const result = (await findOp('capture_knowledge').handler({
+        entries: [
+          {
+            id: 'tier-persist-1',
+            type: 'pattern',
+            domain: 'security',
+            title: 'XSS prevention rule',
+            description: 'Sanitize user input to prevent XSS injection attacks.',
+            tags: ['security'],
+          },
+        ],
+      })) as { captured: number };
+
+      expect(result.captured).toBe(1);
+      const entry = runtime.vault.get('tier-persist-1');
+      expect(entry).not.toBeNull();
+      expect(entry!.tier).toBe('team');
+    });
+  });
+
+  describe('capture_quick scope detection', () => {
+    it('should auto-detect tier', async () => {
+      setup();
+      const result = (await findOp('capture_quick').handler({
+        type: 'pattern',
+        domain: 'security',
+        title: 'Input sanitization',
+        description: 'Always sanitize user input to prevent XSS attacks.',
+        tags: ['security'],
+      })) as { captured: boolean; scope?: { tier: string; confidence: string } };
+
+      expect(result.captured).toBe(true);
+      expect(result.scope).toBeDefined();
+      expect(result.scope!.tier).toBe('team');
+    });
+
+    it('should accept manual tier override', async () => {
+      setup();
+      const result = (await findOp('capture_quick').handler({
+        type: 'rule',
+        domain: 'testing',
+        title: 'Generic note',
+        description: 'Something.',
+        tier: 'project',
+      })) as { captured: boolean; scope?: { tier: string; confidence: string } };
+
+      expect(result.captured).toBe(true);
+      expect(result.scope!.tier).toBe('project');
+      expect(result.scope!.confidence).toBe('MANUAL');
+    });
+
+    it('should include reviewNote for LOW confidence', async () => {
+      setup();
+      const result = (await findOp('capture_quick').handler({
+        type: 'rule',
+        domain: 'other',
+        title: 'Vague thing',
+        description: 'Not much context here.',
+      })) as { captured: boolean; reviewNote?: string };
+
+      expect(result.captured).toBe(true);
+      expect(result.reviewNote).toContain('Low confidence');
+    });
+  });
+
   // ─── Auth levels ───────────────────────────────────────────────
 
   describe('auth levels', () => {
