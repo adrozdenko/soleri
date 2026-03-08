@@ -1,12 +1,8 @@
 /**
- * Playbook Operations — 5 ops for playbook management.
+ * Playbook Operations — 8 ops for playbook management and execution.
  *
- * Existing ops (moved from core-ops.ts):
- *   playbook_list, playbook_get, playbook_create
- *
- * New ops:
- *   playbook_match  — match playbooks by intent + text
- *   playbook_seed   — seed built-in playbooks into vault
+ * Management: playbook_list, playbook_get, playbook_create, playbook_match, playbook_seed
+ * Execution:  playbook_start, playbook_step, playbook_complete
  */
 
 import { z } from 'zod';
@@ -17,11 +13,13 @@ import {
   matchPlaybooks,
   seedDefaultPlaybooks,
   entryToPlaybookDefinition,
+  getBuiltinPlaybook,
+  getAllBuiltinPlaybooks,
 } from '../playbooks/index.js';
 import type { PlaybookIntent } from '../playbooks/index.js';
 
 export function createPlaybookOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault } = runtime;
+  const { vault, playbookExecutor } = runtime;
 
   return [
     // ─── playbook_list ──────────────────────────────────────────────
@@ -155,7 +153,7 @@ export function createPlaybookOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
 
-    // ─── playbook_seed (NEW) ────────────────────────────────────────
+    // ─── playbook_seed ─────────────────────────────────────────────
     {
       name: 'playbook_seed',
       description:
@@ -163,6 +161,112 @@ export function createPlaybookOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'write',
       handler: async () => {
         return seedDefaultPlaybooks(vault);
+      },
+    },
+
+    // ─── playbook_start ──────────────────────────────────────────
+    {
+      name: 'playbook_start',
+      description:
+        'Start a playbook execution session. Returns the first step, tools, and gates. Use playbook_step to advance through steps.',
+      auth: 'write',
+      schema: z.object({
+        playbookId: z
+          .string()
+          .optional()
+          .describe('Built-in or vault playbook ID to start directly.'),
+        intent: z
+          .enum(['BUILD', 'FIX', 'REVIEW', 'PLAN', 'IMPROVE', 'DELIVER'])
+          .optional()
+          .describe('Auto-match a playbook by intent. Ignored if playbookId is provided.'),
+        text: z.string().optional().describe('Context text for auto-matching. Used with intent.'),
+      }),
+      handler: async (params) => {
+        const playbookId = params.playbookId as string | undefined;
+        const intent = params.intent as PlaybookIntent | undefined;
+        const text = (params.text as string | undefined) ?? '';
+
+        if (playbookId) {
+          // Direct start by ID — check built-in first, then vault
+          const builtin = getBuiltinPlaybook(playbookId);
+          if (builtin) {
+            return playbookExecutor.start(builtin);
+          }
+          const entry = vault.get(playbookId);
+          if (entry && entry.type === 'playbook') {
+            const def = entryToPlaybookDefinition(entry);
+            if (def) return playbookExecutor.start(def);
+          }
+          return { error: `Playbook not found: ${playbookId}` };
+        }
+
+        if (intent || text) {
+          // Auto-match
+          const vaultEntries = vault.list({ type: 'playbook', limit: 200 });
+          const vaultPlaybooks = vaultEntries
+            .map((e) => entryToPlaybookDefinition(e))
+            .filter((p): p is NonNullable<typeof p> => p !== null);
+
+          const match = matchPlaybooks(intent, text, vaultPlaybooks);
+          if (!match.playbook) {
+            return {
+              error: 'No matching playbook found',
+              available: getAllBuiltinPlaybooks().map((p) => ({ id: p.id, title: p.title })),
+            };
+          }
+          return playbookExecutor.start(match.playbook);
+        }
+
+        return {
+          error: 'Provide playbookId or intent/text for auto-matching',
+          available: getAllBuiltinPlaybooks().map((p) => ({ id: p.id, title: p.title })),
+        };
+      },
+    },
+
+    // ─── playbook_step ───────────────────────────────────────────
+    {
+      name: 'playbook_step',
+      description:
+        'Advance to the next step in an active playbook session. Marks the current step as done (or skipped) and returns the next step.',
+      auth: 'write',
+      schema: z.object({
+        sessionId: z.string().describe('Active playbook session ID from playbook_start.'),
+        output: z.string().optional().describe('Summary of what was accomplished in this step.'),
+        skip: z.boolean().optional().describe('Skip this step instead of completing it.'),
+      }),
+      handler: async (params) => {
+        return playbookExecutor.step(params.sessionId as string, {
+          output: params.output as string | undefined,
+          skip: params.skip as boolean | undefined,
+        });
+      },
+    },
+
+    // ─── playbook_complete ───────────────────────────────────────
+    {
+      name: 'playbook_complete',
+      description:
+        'Complete (or abort) a playbook session. Validates completion gates and returns a summary with pass/fail status.',
+      auth: 'write',
+      schema: z.object({
+        sessionId: z.string().describe('Active playbook session ID.'),
+        abort: z
+          .boolean()
+          .optional()
+          .describe('Abort instead of completing. Skips remaining steps.'),
+        gateResults: z
+          .record(z.boolean())
+          .optional()
+          .describe(
+            'Gate check results: { "gate-check-type": true/false }. Unmapped gates are treated as failed.',
+          ),
+      }),
+      handler: async (params) => {
+        return playbookExecutor.complete(params.sessionId as string, {
+          abort: params.abort as boolean | undefined,
+          gateResults: params.gateResults as Record<string, boolean> | undefined,
+        });
       },
     },
   ];

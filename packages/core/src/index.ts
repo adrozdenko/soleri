@@ -18,6 +18,7 @@ export {
   seedDefaultPlaybooks,
   playbookDefinitionToEntry,
   entryToPlaybookDefinition,
+  PlaybookExecutor,
 } from './playbooks/index.js';
 export type {
   PlaybookTier,
@@ -28,6 +29,12 @@ export type {
   PlaybookDefinition,
   MergedPlaybook,
   PlaybookMatchResult,
+  PlaybookSession,
+  PlaybookStepState,
+  PlaybookStepStatus,
+  StartResult,
+  StepResult,
+  CompleteResult,
 } from './playbooks/index.js';
 // ─── Text Utilities ─────────────────────────────────────────────────
 export {

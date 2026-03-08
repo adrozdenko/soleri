@@ -20,6 +20,7 @@ import type { LogLevel } from '../logging/types.js';
 import type { AuthPolicy } from '../facades/types.js';
 import type { FeatureFlags } from './feature-flags.js';
 import type { HealthRegistry } from '../health/health-registry.js';
+import type { PlaybookExecutor } from '../playbooks/playbook-executor.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -70,6 +71,8 @@ export interface AgentRuntime {
   flags: FeatureFlags;
   /** Centralized health registry — subsystem status tracking. */
   health: HealthRegistry;
+  /** Playbook executor — in-memory step-by-step workflow sessions. */
+  playbookExecutor: PlaybookExecutor;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

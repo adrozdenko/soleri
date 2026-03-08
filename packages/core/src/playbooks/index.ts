@@ -25,3 +25,14 @@ export {
   entryToPlaybookDefinition,
   seedDefaultPlaybooks,
 } from './playbook-seeder.js';
+
+// ─── Playbook Executor ─────────────────────────────────────────────
+export { PlaybookExecutor } from './playbook-executor.js';
+export type {
+  PlaybookSession,
+  PlaybookStepState,
+  PlaybookStepStatus,
+  StartResult,
+  StepResult,
+  CompleteResult,
+} from './playbook-executor.js';
