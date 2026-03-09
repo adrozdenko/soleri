@@ -9,12 +9,12 @@ dist/
 coverage/
 .wrangler/
 .salvador/
-docs/vault/sessions/
-docs/vault/.rejected/
-docs/vault/ideas/
-docs/vault/plans/
+docs/vault/*
+!docs/vault/README.md
+!docs/vault/_schema.md
 
 # Workspace builds
 packages/*/dist/
 packages/*/node_modules/
 *.tsbuildinfo
+AGENTS.md
