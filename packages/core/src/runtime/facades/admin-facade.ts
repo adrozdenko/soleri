@@ -8,11 +8,12 @@ import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 import { createAdminOps } from '../admin-ops.js';
 import { createAdminExtraOps } from '../admin-extra-ops.js';
+import { createPluginOps } from '../plugin-ops.js';
 
 export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { llmClient, keyPool } = runtime;
 
-  return [
+  const ops: OpDefinition[] = [
     // ─── LLM (inline from core-ops.ts) ──────────────────────────
     {
       name: 'llm_rotate',
@@ -98,4 +99,10 @@ export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     ...createAdminOps(runtime),
     ...createAdminExtraOps(runtime),
   ];
+
+  // Plugin ops must mutate the same live op array that MCP dispatch reads.
+  const pluginOps = createPluginOps(runtime, ops);
+  ops.push(...pluginOps);
+
+  return ops;
 }

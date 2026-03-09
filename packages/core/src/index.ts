@@ -400,6 +400,25 @@ export type { NestableInput } from './streams/index.js';
 export { computeContentHash } from './vault/content-hash.js';
 export type { HashableEntry } from './vault/content-hash.js';
 
+// ─── Plugin System ──────────────────────────────────────────────────────
+export {
+  PluginRegistry,
+  loadPlugins,
+  validateDependencies,
+  sortByDependencies,
+  pluginManifestSchema,
+} from './plugins/index.js';
+export type {
+  PluginManifest,
+  PluginStatus,
+  PluginProvenance,
+  LoadedPlugin,
+  RegisteredPlugin,
+  PluginFacadeBuilder,
+  PluginContext,
+  LoadResult as PluginLoadResult,
+} from './plugins/index.js';
+
 // ─── Prompts ───────────────────────────────────────────────────────────
 export { TemplateManager, parseVariables, resolveIncludes } from './prompts/index.js';
 export type { PromptTemplate, TemplateVariable, RenderOptions } from './prompts/index.js';

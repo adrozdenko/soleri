@@ -20,7 +20,7 @@ describe('createSemanticFacades', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
+    ops = createSemanticFacades(runtime, 'test').flatMap((f) => f.ops);
   });
 
   afterEach(() => {
@@ -34,8 +34,8 @@ describe('createSemanticFacades', () => {
     return op;
   }
 
-  it('should return 209 ops', () => {
-    expect(ops.length).toBe(209);
+  it('should return 224 ops', () => {
+    expect(ops.length).toBe(224);
   });
 
   it('should have all expected op names', () => {
@@ -267,7 +267,7 @@ describe('createSemanticFacades', () => {
     runtime.brain.rebuildVocabulary();
 
     // Re-create ops since brain state changed
-    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
+    ops = createSemanticFacades(runtime, 'test').flatMap((f) => f.ops);
     const results = (await findOp('search').handler({ query: 'core ops test' })) as unknown[];
     expect(results.length).toBeGreaterThan(0);
   });
@@ -374,7 +374,7 @@ describe('createSemanticFacades', () => {
         tags: ['test'],
       },
     ]);
-    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
+    ops = createSemanticFacades(runtime, 'test').flatMap((f) => f.ops);
     const result = (await findOp('brain_feedback').handler({
       query: 'test',
       entryId: 'bf-1',

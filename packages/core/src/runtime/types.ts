@@ -21,6 +21,7 @@ import type { AuthPolicy } from '../facades/types.js';
 import type { FeatureFlags } from './feature-flags.js';
 import type { HealthRegistry } from '../health/health-registry.js';
 import type { PlaybookExecutor } from '../playbooks/playbook-executor.js';
+import type { PluginRegistry } from '../plugins/plugin-registry.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -73,6 +74,8 @@ export interface AgentRuntime {
   health: HealthRegistry;
   /** Playbook executor — in-memory step-by-step workflow sessions. */
   playbookExecutor: PlaybookExecutor;
+  /** Plugin registry — dynamic facade loading without re-scaffold. */
+  pluginRegistry: PluginRegistry;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */
