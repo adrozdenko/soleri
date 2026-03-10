@@ -2,7 +2,12 @@
  * Transport — Barrel Exports
  */
 
-export type { TransportMode, HttpTransportConfig, TransportConfig } from './types.js';
+export type {
+  TransportMode,
+  HttpTransportConfig,
+  WsTransportConfig,
+  TransportConfig,
+} from './types.js';
 
 export {
   generateToken,
@@ -18,3 +23,10 @@ export { RateLimiter, type RateLimitResult } from './rate-limiter.js';
 export { SessionManager, type Session, type SessionManagerConfig } from './session-manager.js';
 
 export { HttpMcpServer, type HttpServerCallbacks, type HttpServerStats } from './http-server.js';
+
+export {
+  WsMcpServer,
+  type WsConnection,
+  type WsServerCallbacks,
+  type WsServerStats,
+} from './ws-server.js';

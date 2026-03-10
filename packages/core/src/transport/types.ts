@@ -3,7 +3,7 @@
  */
 
 /** Supported transport modes */
-export type TransportMode = 'stdio' | 'http';
+export type TransportMode = 'stdio' | 'http' | 'ws';
 
 /** HTTP transport configuration */
 export interface HttpTransportConfig {
@@ -25,8 +25,23 @@ export interface HttpTransportConfig {
   rateLimitWindow?: number;
 }
 
+/** WebSocket transport configuration */
+export interface WsTransportConfig {
+  /** Bearer token for authentication (validated on upgrade) */
+  authToken: string;
+  /** Heartbeat interval in ms (default: 30000). 0 to disable. */
+  heartbeatInterval?: number;
+  /** Max message size in bytes (default: 1MB) */
+  maxMessageSize?: number;
+  /** Session TTL in milliseconds (default: 3600000 = 1 hour). 0 to disable. */
+  sessionTTL?: number;
+  /** Session reaper interval in milliseconds (default: 60000 = 1 minute) */
+  reaperInterval?: number;
+}
+
 /** Combined transport configuration */
 export interface TransportConfig {
   mode: TransportMode;
   http?: HttpTransportConfig;
+  ws?: WsTransportConfig;
 }

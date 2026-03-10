@@ -430,7 +430,12 @@ export type {
 } from './plugins/index.js';
 
 // ─── Transport ─────────────────────────────────────────────────────────
-export type { TransportMode, HttpTransportConfig, TransportConfig } from './transport/index.js';
+export type {
+  TransportMode,
+  HttpTransportConfig,
+  WsTransportConfig,
+  TransportConfig,
+} from './transport/index.js';
 export {
   generateToken,
   loadToken,
@@ -445,6 +450,8 @@ export { SessionManager } from './transport/index.js';
 export type { Session, SessionManagerConfig } from './transport/index.js';
 export { HttpMcpServer } from './transport/index.js';
 export type { HttpServerCallbacks, HttpServerStats } from './transport/index.js';
+export { WsMcpServer } from './transport/index.js';
+export type { WsConnection, WsServerCallbacks, WsServerStats } from './transport/index.js';
 
 // ─── Prompts ───────────────────────────────────────────────────────────
 export { TemplateManager, parseVariables, resolveIncludes } from './prompts/index.js';
