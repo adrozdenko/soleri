@@ -429,6 +429,23 @@ export type {
   LoadResult as PluginLoadResult,
 } from './plugins/index.js';
 
+// ─── Transport ─────────────────────────────────────────────────────────
+export type { TransportMode, HttpTransportConfig, TransportConfig } from './transport/index.js';
+export {
+  generateToken,
+  loadToken,
+  saveToken,
+  getOrGenerateToken,
+  validateBearerToken,
+  authenticateRequest,
+} from './transport/index.js';
+export { RateLimiter } from './transport/index.js';
+export type { RateLimitResult } from './transport/index.js';
+export { SessionManager } from './transport/index.js';
+export type { Session, SessionManagerConfig } from './transport/index.js';
+export { HttpMcpServer } from './transport/index.js';
+export type { HttpServerCallbacks, HttpServerStats } from './transport/index.js';
+
 // ─── Prompts ───────────────────────────────────────────────────────────
 export { TemplateManager, parseVariables, resolveIncludes } from './prompts/index.js';
 export type { PromptTemplate, TemplateVariable, RenderOptions } from './prompts/index.js';
