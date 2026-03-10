@@ -182,6 +182,9 @@ export {
   IMAGE_MIME_TYPES,
   INTAKE_KEYWORDS,
 } from './chat/index.js';
+export { transcribeAudio, synthesizeSpeech } from './chat/index.js';
+export { MessageQueue } from './chat/index.js';
+export { BrowserSessionManager } from './chat/index.js';
 export { chunkResponse, convertMarkup, markdownToHtml } from './chat/index.js';
 export { runAgentLoop } from './chat/index.js';
 export { McpToolBridge } from './chat/index.js';
@@ -217,6 +220,16 @@ export type {
   FileIntent,
   FileInfo,
   MultimodalContent,
+  VoiceConfig,
+  TranscriptionResult,
+  SpeechResult,
+  QueuedMessage,
+  QueuedResponse,
+  QueueConfig,
+  BrowserSessionConfig,
+  BrowserSession,
+  BrowserTool,
+  BrowserToolResult,
 } from './chat/index.js';
 
 // ─── Cognee ─────────────────────────────────────────────────────────

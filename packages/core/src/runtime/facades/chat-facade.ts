@@ -16,6 +16,9 @@ import {
   cleanupTempFiles,
 } from '../../chat/file-handler.js';
 import type { FileInfo } from '../../chat/file-handler.js';
+import { transcribeAudio, synthesizeSpeech } from '../../chat/voice.js';
+import { MessageQueue } from '../../chat/queue.js';
+import { BrowserSessionManager } from '../../chat/browser-session.js';
 import { chunkResponse } from '../../chat/response-chunker.js';
 import { McpToolBridge } from '../../chat/mcp-bridge.js';
 import { createOutputCompressor } from '../../chat/output-compressor.js';
@@ -32,6 +35,8 @@ interface ChatState {
   cancellation: TaskCancellationManager | null;
   updater: SelfUpdateManager | null;
   notifications: NotificationEngine | null;
+  queue: MessageQueue | null;
+  browser: BrowserSessionManager | null;
 }
 
 function getOrCreateSessions(state: ChatState, config: ChatSessionConfig): ChatSessionManager {
@@ -57,6 +62,8 @@ export function createChatFacadeOps(_runtime: AgentRuntime): OpDefinition[] {
     cancellation: null,
     updater: null,
     notifications: null,
+    queue: null,
+    browser: null,
   };
 
   return [
@@ -721,6 +728,190 @@ export function createChatFacadeOps(_runtime: AgentRuntime): OpDefinition[] {
           return { initialized: false, checks: 0, running: false, sent: 0, lastPollAt: null };
         }
         return { initialized: true, ...state.notifications.stats() };
+      },
+    },
+
+    // ─── Voice Ops ─────────────────────────────────────────────────
+
+    {
+      name: 'chat_voice_transcribe',
+      description: 'Transcribe audio using OpenAI Whisper. Provide base64-encoded audio.',
+      auth: 'write',
+      schema: z.object({
+        audioBase64: z.string().describe('Base64-encoded audio data.'),
+        openaiApiKey: z.string().describe('OpenAI API key.'),
+        filename: z.string().optional().describe('Audio filename. Default: audio.ogg.'),
+      }),
+      handler: async (params) => {
+        const buffer = Buffer.from(params.audioBase64 as string, 'base64');
+        return transcribeAudio(
+          buffer,
+          {
+            openaiApiKey: params.openaiApiKey as string,
+          },
+          params.filename as string | undefined,
+        );
+      },
+    },
+
+    {
+      name: 'chat_voice_synthesize',
+      description: 'Synthesize speech from text using OpenAI TTS. Returns base64 MP3.',
+      auth: 'write',
+      schema: z.object({
+        text: z.string().describe('Text to synthesize.'),
+        openaiApiKey: z.string().describe('OpenAI API key.'),
+        voice: z.string().optional().describe('Voice ID. Default: onyx.'),
+      }),
+      handler: async (params) => {
+        const result = await synthesizeSpeech(params.text as string, {
+          openaiApiKey: params.openaiApiKey as string,
+          ttsVoice: params.voice as string | undefined,
+        });
+        if (!result) return { success: false, reason: 'No API key.' };
+        return {
+          success: result.success,
+          audioBase64: result.audio.toString('base64'),
+          audioSize: result.audio.length,
+        };
+      },
+    },
+
+    // ─── Queue Ops ─────────────────────────────────────────────────
+
+    {
+      name: 'chat_queue_init',
+      description: 'Initialize the message queue for disk-based chat relay.',
+      auth: 'write',
+      schema: z.object({
+        queueDir: z.string().describe('Base directory for inbox/outbox.'),
+      }),
+      handler: async (params) => {
+        state.queue = new MessageQueue({ queueDir: params.queueDir as string });
+        return {
+          initialized: true,
+          inbox: state.queue.inboxCount(),
+          outbox: state.queue.outboxCount(),
+        };
+      },
+    },
+
+    {
+      name: 'chat_queue_inbox',
+      description: 'Read pending messages from the queue inbox.',
+      auth: 'read',
+      schema: z.object({
+        queueDir: z.string().describe('Queue directory (auto-initializes).'),
+      }),
+      handler: async (params) => {
+        if (!state.queue) {
+          state.queue = new MessageQueue({ queueDir: params.queueDir as string });
+        }
+        const messages = state.queue.readInbox();
+        return { messages, count: messages.length, formatted: state.queue.formatInbox() };
+      },
+    },
+
+    {
+      name: 'chat_queue_reply',
+      description: 'Send a reply to a queued message. Removes from inbox, writes to outbox.',
+      auth: 'write',
+      schema: z.object({
+        messageId: z.string().describe('Original message ID.'),
+        chatId: z.string().describe('Target chat ID.'),
+        text: z.string().describe('Response text.'),
+        queueDir: z.string().describe('Queue directory.'),
+      }),
+      handler: async (params) => {
+        if (!state.queue) {
+          state.queue = new MessageQueue({ queueDir: params.queueDir as string });
+        }
+        const response = state.queue.sendResponse(
+          params.messageId as string,
+          params.chatId as string,
+          params.text as string,
+        );
+        return { sent: true, response };
+      },
+    },
+
+    {
+      name: 'chat_queue_drain',
+      description: 'Drain outbox — read and remove all pending responses.',
+      auth: 'write',
+      schema: z.object({
+        queueDir: z.string().describe('Queue directory.'),
+      }),
+      handler: async (params) => {
+        if (!state.queue) {
+          state.queue = new MessageQueue({ queueDir: params.queueDir as string });
+        }
+        const responses = state.queue.drainOutbox();
+        return { responses, count: responses.length };
+      },
+    },
+
+    // ─── Browser Session Ops ───────────────────────────────────────
+
+    {
+      name: 'chat_browser_init',
+      description: 'Initialize the browser session manager for per-chat Playwright isolation.',
+      auth: 'write',
+      schema: z.object({
+        maxSessions: z.number().optional().describe('Max concurrent sessions. Default: 3.'),
+        idleTimeoutMs: z.number().optional().describe('Idle timeout in ms. Default: 5 minutes.'),
+      }),
+      handler: async (params) => {
+        state.browser = new BrowserSessionManager({
+          maxSessions: params.maxSessions as number | undefined,
+          idleTimeoutMs: params.idleTimeoutMs as number | undefined,
+        });
+        return { initialized: true, maxSessions: params.maxSessions ?? 3 };
+      },
+    },
+
+    {
+      name: 'chat_browser_acquire',
+      description: 'Get or create a browser session for a chat. Spawns Playwright if needed.',
+      auth: 'write',
+      schema: z.object({
+        chatId: z.string().describe('Chat ID for isolation.'),
+      }),
+      handler: async (params) => {
+        if (!state.browser) {
+          state.browser = new BrowserSessionManager();
+        }
+        const session = state.browser.acquire(params.chatId as string);
+        return {
+          chatId: params.chatId,
+          pid: session.process.pid ?? null,
+          activeSessions: state.browser.size,
+        };
+      },
+    },
+
+    {
+      name: 'chat_browser_release',
+      description: 'Release a browser session for a chat.',
+      auth: 'write',
+      schema: z.object({
+        chatId: z.string().describe('Chat ID to release.'),
+      }),
+      handler: async (params) => {
+        if (!state.browser) return { released: false, reason: 'No browser manager.' };
+        const released = state.browser.release(params.chatId as string);
+        return { released, activeSessions: state.browser.size };
+      },
+    },
+
+    {
+      name: 'chat_browser_status',
+      description: 'Get browser session status — active sessions, per-chat info.',
+      auth: 'read',
+      handler: async () => {
+        if (!state.browser) return { initialized: false, activeSessions: 0, sessions: [] };
+        const sessions = state.browser.listSessions().map((id) => (Object.assign({chatId:id}, state.browser! .getInfo(id))));
+        return { initialized: true, activeSessions: state.browser.size, sessions };
       },
     },
   ];

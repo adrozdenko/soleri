@@ -15,6 +15,9 @@ export {
   IMAGE_MIME_TYPES,
   INTAKE_KEYWORDS,
 } from './file-handler.js';
+export { transcribeAudio, synthesizeSpeech } from './voice.js';
+export { MessageQueue } from './queue.js';
+export { BrowserSessionManager } from './browser-session.js';
 export { chunkResponse, convertMarkup, markdownToHtml } from './response-chunker.js';
 export { runAgentLoop } from './agent-loop.js';
 export { McpToolBridge } from './mcp-bridge.js';
@@ -59,3 +62,11 @@ export type {
   NotificationStats,
 } from './notifications.js';
 export type { FileIntent, FileInfo, MultimodalContent } from './file-handler.js';
+export type { VoiceConfig, TranscriptionResult, SpeechResult } from './voice.js';
+export type { QueuedMessage, QueuedResponse, QueueConfig } from './queue.js';
+export type {
+  BrowserSessionConfig,
+  BrowserSession,
+  BrowserTool,
+  BrowserToolResult,
+} from './browser-session.js';
