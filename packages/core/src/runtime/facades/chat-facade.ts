@@ -8,6 +8,8 @@ import type { AgentRuntime } from '../types.js';
 import { ChatSessionManager } from '../../chat/chat-session.js';
 import { ChatAuthManager } from '../../chat/auth-manager.js';
 import { chunkResponse } from '../../chat/response-chunker.js';
+import { McpToolBridge } from '../../chat/mcp-bridge.js';
+import { createOutputCompressor } from '../../chat/output-compressor.js';
 import type { ChatSessionConfig, ChatAuthConfig, ChunkConfig } from '../../chat/types.js';
 
 /**
@@ -17,6 +19,7 @@ import type { ChatSessionConfig, ChatAuthConfig, ChunkConfig } from '../../chat/
 interface ChatState {
   sessions: ChatSessionManager | null;
   auth: ChatAuthManager | null;
+  bridge: McpToolBridge | null;
 }
 
 function getOrCreateSessions(state: ChatState, config: ChatSessionConfig): ChatSessionManager {
@@ -35,7 +38,7 @@ function getOrCreateAuth(state: ChatState, config: ChatAuthConfig): ChatAuthMana
 }
 
 export function createChatFacadeOps(_runtime: AgentRuntime): OpDefinition[] {
-  const state: ChatState = { sessions: null, auth: null };
+  const state: ChatState = { sessions: null, auth: null, bridge: null };
 
   return [
     // ─── Session Ops ──────────────────────────────────────────────
@@ -304,6 +307,111 @@ export function createChatFacadeOps(_runtime: AgentRuntime): OpDefinition[] {
           enabled: auth.enabled,
           authenticatedCount: auth.authenticatedCount,
           authenticatedUsers: auth.listAuthenticated(),
+        };
+      },
+    },
+
+    // ─── MCP Bridge Ops ─────────────────────────────────────────────
+
+    {
+      name: 'chat_bridge_init',
+      description:
+        'Initialize the MCP tool bridge for local tool execution. Optional allowlist filters which tools are registered.',
+      auth: 'write',
+      schema: z.object({
+        allowlist: z
+          .array(z.string())
+          .optional()
+          .describe('Tool name allowlist. If unset, all tools are allowed.'),
+        maxOutput: z
+          .number()
+          .optional()
+          .describe('Max output length per tool call. Default: 10000.'),
+      }),
+      handler: async (params) => {
+        state.bridge = new McpToolBridge({
+          allowlist: params.allowlist as string[] | undefined,
+          compressor: createOutputCompressor(),
+          maxOutput: params.maxOutput as number | undefined,
+        });
+        return { initialized: true, toolCount: 0 };
+      },
+    },
+
+    {
+      name: 'chat_bridge_register',
+      description: 'Register a tool with the MCP bridge.',
+      auth: 'write',
+      schema: z.object({
+        name: z.string().describe('Tool name.'),
+        description: z.string().describe('Tool description.'),
+        inputSchema: z.record(z.unknown()).describe('JSON Schema for tool input.'),
+      }),
+      handler: async (params) => {
+        if (!state.bridge) {
+          state.bridge = new McpToolBridge({ compressor: createOutputCompressor() });
+        }
+        // Handler is a no-op since we can't pass functions through JSON
+        // Real handler registration happens in code, not via ops
+        state.bridge.register({
+          name: params.name as string,
+          description: params.description as string,
+          inputSchema: params.inputSchema as Record<string, unknown>,
+          handler: async () => ({ message: 'Registered via op — handler is a placeholder' }),
+        });
+        return { registered: true, name: params.name, totalTools: state.bridge.size };
+      },
+    },
+
+    {
+      name: 'chat_bridge_list',
+      description: 'List all tools registered with the MCP bridge.',
+      auth: 'read',
+      handler: async () => {
+        if (!state.bridge) return { tools: [], count: 0 };
+        const tools = state.bridge.listTools();
+        return { tools, count: tools.length };
+      },
+    },
+
+    {
+      name: 'chat_bridge_execute',
+      description: 'Execute a registered tool via the MCP bridge.',
+      auth: 'write',
+      schema: z.object({
+        name: z.string().describe('Tool name to execute.'),
+        input: z.record(z.unknown()).optional().describe('Tool input parameters.'),
+      }),
+      handler: async (params) => {
+        if (!state.bridge) return { output: 'Bridge not initialized', isError: true };
+        const result = await state.bridge.execute(
+          params.name as string,
+          (params.input as Record<string, unknown>) ?? {},
+        );
+        return result;
+      },
+    },
+
+    {
+      name: 'chat_compress_output',
+      description: 'Compress verbose tool output for chat display. Uses JSON-aware truncation.',
+      auth: 'read',
+      schema: z.object({
+        toolName: z.string().describe('Tool name (for compressor lookup).'),
+        output: z.string().describe('Raw tool output to compress.'),
+        maxLength: z.number().optional().describe('Max output length. Default: 4000.'),
+      }),
+      handler: async (params) => {
+        const compressor = createOutputCompressor();
+        const compressed = compressor(
+          params.toolName as string,
+          params.output as string,
+          params.maxLength as number | undefined,
+        );
+        return {
+          compressed,
+          originalLength: (params.output as string).length,
+          compressedLength: compressed.length,
         };
       },
     },
