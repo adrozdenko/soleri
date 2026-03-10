@@ -379,4 +379,66 @@ describe('Scaffolder', () => {
       expect(agents).toEqual([]);
     });
   });
+
+  describe('telegram scaffolding', () => {
+    const telegramConfig: AgentConfig = {
+      ...testConfig,
+      telegram: true,
+    };
+
+    it('should include telegram files in preview', () => {
+      telegramConfig.outputDir = tempDir;
+      const preview = previewScaffold(telegramConfig);
+      const paths = preview.files.map((f) => f.path);
+      expect(paths).toContain('src/telegram-bot.ts');
+      expect(paths).toContain('src/telegram-config.ts');
+      expect(paths).toContain('src/telegram-agent.ts');
+      expect(paths).toContain('src/telegram-supervisor.ts');
+    });
+
+    it('should not include telegram files without flag', () => {
+      const preview = previewScaffold(testConfig);
+      const paths = preview.files.map((f) => f.path);
+      expect(paths).not.toContain('src/telegram-bot.ts');
+    });
+
+    it('should generate telegram source files', () => {
+      telegramConfig.outputDir = tempDir;
+      const result = scaffold(telegramConfig);
+      // Build may fail (grammy not installed) but files should be created
+      expect(result.filesCreated).toContain('src/telegram-bot.ts');
+      expect(result.filesCreated).toContain('src/telegram-config.ts');
+      expect(result.filesCreated).toContain('src/telegram-agent.ts');
+      expect(result.filesCreated).toContain('src/telegram-supervisor.ts');
+
+      // Verify file contents reference the agent
+      const botContent = readFileSync(join(tempDir, 'atlas', 'src', 'telegram-bot.ts'), 'utf-8');
+      expect(botContent).toContain('Atlas');
+      expect(botContent).toContain('grammy');
+
+      const configContent = readFileSync(
+        join(tempDir, 'atlas', 'src', 'telegram-config.ts'),
+        'utf-8',
+      );
+      expect(configContent).toContain('.atlas');
+      expect(configContent).toContain('TELEGRAM_BOT_TOKEN');
+    });
+
+    it('should include grammy dependency in package.json', () => {
+      telegramConfig.outputDir = tempDir;
+      scaffold(telegramConfig);
+      const pkg = JSON.parse(readFileSync(join(tempDir, 'atlas', 'package.json'), 'utf-8'));
+      expect(pkg.dependencies.grammy).toBeDefined();
+      expect(pkg.scripts['telegram:start']).toBeDefined();
+      expect(pkg.scripts['telegram:dev']).toBeDefined();
+    });
+
+    it('should not include grammy without telegram flag', () => {
+      const result = scaffold(testConfig);
+      if (result.success) {
+        const pkg = JSON.parse(readFileSync(join(tempDir, 'atlas', 'package.json'), 'utf-8'));
+        expect(pkg.dependencies.grammy).toBeUndefined();
+      }
+    });
+  });
 });

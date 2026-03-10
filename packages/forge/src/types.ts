@@ -34,6 +34,8 @@ export const AgentConfigSchema = z.object({
   skills: z.array(z.string()).optional(),
   /** AI client setup target: Claude Code, Codex, or both */
   setupTarget: z.enum(SETUP_TARGETS).optional().default('claude'),
+  /** Enable Telegram transport scaffolding. Default: false. */
+  telegram: z.boolean().optional().default(false),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

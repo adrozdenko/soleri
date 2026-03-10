@@ -16,6 +16,12 @@ export function generatePackageJson(config: AgentConfig): string {
       test: 'vitest run',
       'test:watch': 'vitest',
       'test:coverage': 'vitest run --coverage',
+      ...(config.telegram
+        ? {
+            'telegram:start': 'node dist/telegram-supervisor.js',
+            'telegram:dev': 'tsx src/telegram-bot.ts',
+          }
+        : {}),
     },
     keywords: ['mcp', 'agent', config.id, ...config.domains.slice(0, 5)],
     license: 'MIT',
@@ -24,6 +30,7 @@ export function generatePackageJson(config: AgentConfig): string {
       '@modelcontextprotocol/sdk': '^1.12.1',
       '@soleri/core': '^2.0.0',
       zod: '^3.24.2',
+      ...(config.telegram ? { grammy: '^1.35.0' } : {}),
     },
     optionalDependencies: {
       '@anthropic-ai/sdk': '^0.39.0',

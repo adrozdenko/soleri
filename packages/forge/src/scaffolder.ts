@@ -25,6 +25,10 @@ import { generateSetupScript } from './templates/setup-script.js';
 import { generateAgentsMd } from './templates/agents-md.js';
 import { generateSkills } from './templates/skills.js';
 import { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
+import { generateTelegramBot } from './templates/telegram-bot.js';
+import { generateTelegramConfig } from './templates/telegram-config.js';
+import { generateTelegramAgent } from './templates/telegram-agent.js';
+import { generateTelegramSupervisor } from './templates/telegram-supervisor.js';
 
 function getSetupTarget(config: AgentConfig): 'claude' | 'codex' | 'both' {
   return config.setupTarget ?? 'claude';
@@ -121,6 +125,21 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
       path: '.claude/',
       description: `Hook pack files (${config.hookPacks.join(', ')})`,
     });
+  }
+
+  if (config.telegram) {
+    files.push(
+      {
+        path: 'src/telegram-bot.ts',
+        description: 'Telegram bot entry point with Grammy middleware',
+      },
+      { path: 'src/telegram-config.ts', description: 'Telegram config loading (env + file)' },
+      { path: 'src/telegram-agent.ts', description: 'Agent loop wired to MCP tools' },
+      {
+        path: 'src/telegram-supervisor.ts',
+        description: 'Process supervisor with restart and logging',
+      },
+    );
   }
 
   const facades = [
@@ -316,6 +335,16 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     ['src/extensions/index.ts', generateExtensionsIndex(config)],
     ['src/extensions/ops/example.ts', generateExampleOp(config)],
   ];
+
+  // Telegram transport files (optional)
+  if (config.telegram) {
+    sourceFiles.push(
+      ['src/telegram-bot.ts', generateTelegramBot(config)],
+      ['src/telegram-config.ts', generateTelegramConfig(config)],
+      ['src/telegram-agent.ts', generateTelegramAgent(config)],
+      ['src/telegram-supervisor.ts', generateTelegramSupervisor(config)],
+    );
+  }
 
   // Empty intelligence data bundles (domain facades come from @soleri/core at runtime)
   for (const domain of config.domains) {
