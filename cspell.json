@@ -72,7 +72,9 @@
     "retag",
     "replayable",
     "nestable",
-    "unhashed"
+    "unhashed",
+    "pgvector",
+    "falkordb"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [
