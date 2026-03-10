@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { translateSql } from '../persistence/postgres-provider.js';
-import { PostgresPersistenceProvider } from '../persistence/postgres-provider.js';
+import { translateSql, PostgresPersistenceProvider } from '../persistence/postgres-provider.js';
 
 describe('translateSql', () => {
   it('converts positional ? to $N', () => {
@@ -46,13 +45,72 @@ describe('translateSql', () => {
     );
     expect(result.values).toEqual(['Bob', 'id-1']);
   });
+
+  it('replaces INTEGER PRIMARY KEY AUTOINCREMENT with SERIAL PRIMARY KEY', () => {
+    const result = translateSql('CREATE TABLE t (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)');
+    expect(result.sql).toBe('CREATE TABLE t (id SERIAL PRIMARY KEY, name TEXT)');
+  });
+
+  it('strips PRAGMA statements', () => {
+    const result = translateSql('PRAGMA journal_mode = WAL');
+    expect(result.sql).toBe('-- pragma removed');
+  });
+
+  it('replaces INSERT OR IGNORE with INSERT', () => {
+    const result = translateSql('INSERT OR IGNORE INTO t (a) VALUES (?)', ['x']);
+    expect(result.sql).toBe('INSERT INTO t (a) VALUES ($1)');
+    expect(result.values).toEqual(['x']);
+  });
+
+  it('replaces INSERT OR REPLACE with INSERT', () => {
+    const result = translateSql('INSERT OR REPLACE INTO t (a) VALUES (?)', ['x']);
+    expect(result.sql).toBe('INSERT INTO t (a) VALUES ($1)');
+    expect(result.values).toEqual(['x']);
+  });
+
+  it('handles complex vault-style query with multiple named params', () => {
+    const result = translateSql(
+      'SELECT e.* FROM entries e WHERE e.domain = @domain AND e.type = @type ORDER BY e.title LIMIT @limit OFFSET @offset',
+      { domain: 'design', type: 'pattern', limit: 10, offset: 0 },
+    );
+    expect(result.sql).toBe(
+      'SELECT e.* FROM entries e WHERE e.domain = $1 AND e.type = $2 ORDER BY e.title LIMIT $3 OFFSET $4',
+    );
+    expect(result.values).toEqual(['design', 'pattern', 10, 0]);
+  });
+
+  it('handles vault seed query with many named params', () => {
+    const result = translateSql(
+      'INSERT INTO entries (id, type, domain) VALUES (@id, @type, @domain) ON CONFLICT(id) DO UPDATE SET type=excluded.type',
+      { id: 'e1', type: 'pattern', domain: 'general' },
+    );
+    expect(result.sql).toContain('VALUES ($1, $2, $3)');
+    expect(result.values).toEqual(['e1', 'pattern', 'general']);
+  });
 });
 
 describe('PostgresPersistenceProvider', () => {
-  it('backend returns postgres', () => {
-    // Access backend without connecting (class-level property)
-    // We can't instantiate without pg, so we test the translateSql export
-    // and verify the class exists with correct typing
+  it('class exists with correct backend', () => {
     expect(PostgresPersistenceProvider).toBeDefined();
+    expect(typeof PostgresPersistenceProvider.create).toBe('function');
+    expect(typeof PostgresPersistenceProvider.createSync).toBe('function');
+  });
+
+  it('createSync returns a provider instance', () => {
+    const provider = PostgresPersistenceProvider.createSync('postgresql://localhost/test');
+    expect(provider.backend).toBe('postgres');
+    expect(provider.getConnectionString()).toBe('postgresql://localhost/test');
+  });
+
+  it('ftsRebuild is a no-op (PostgreSQL GIN auto-maintains)', () => {
+    const provider = PostgresPersistenceProvider.createSync('postgresql://localhost/test');
+    // Should not throw
+    provider.ftsRebuild('entries');
+  });
+
+  it('close is safe to call multiple times', () => {
+    const provider = PostgresPersistenceProvider.createSync('postgresql://localhost/test');
+    provider.close();
+    provider.close(); // should not throw
   });
 });
