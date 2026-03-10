@@ -8,6 +8,8 @@ export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from 
 export { VaultManager, type ConnectedVault } from './vault/vault-manager.js';
 export { TIER_WEIGHTS } from './vault/vault-types.js';
 export { VaultBranching } from './vault/vault-branching.js';
+export { GitVaultSync } from './vault/git-vault-sync.js';
+export type { GitVaultSyncConfig } from './vault/git-vault-sync.js';
 export type {
   BranchAction,
   BranchEntry,
