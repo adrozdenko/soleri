@@ -17,6 +17,7 @@ import { createLoopFacadeOps } from './loop-facade.js';
 import { createOrchestrateFacadeOps } from './orchestrate-facade.js';
 import { createControlFacadeOps } from './control-facade.js';
 import { createCogneeFacadeOps } from './cognee-facade.js';
+import { createContextFacadeOps } from './context-facade.js';
 
 export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
   return [
@@ -57,7 +58,8 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
     },
     {
       name: `${agentId}_orchestrate`,
-      description: 'Execution orchestration — project registration, playbooks, plan/execute/complete.',
+      description:
+        'Execution orchestration — project registration, playbooks, plan/execute/complete.',
       ops: createOrchestrateFacadeOps(runtime),
     },
     {
@@ -69,6 +71,11 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       name: `${agentId}_cognee`,
       description: 'Knowledge graph — Cognee search, sync, export, graph stats.',
       ops: createCogneeFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_context`,
+      description: 'Context analysis — entity extraction, knowledge retrieval, confidence scoring.',
+      ops: createContextFacadeOps(runtime),
     },
   ];
 }

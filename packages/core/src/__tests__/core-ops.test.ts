@@ -35,7 +35,7 @@ describe('createSemanticFacades', () => {
   }
 
   it('should return 232 ops', () => {
-    expect(ops.length).toBe(244);
+    expect(ops.length).toBe(247);
   });
 
   it('should have all expected op names', () => {
@@ -109,6 +109,10 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('cognee_add');
     expect(names).toContain('cognee_cognify');
     expect(names).toContain('cognee_config');
+    // Context Engine (#172)
+    expect(names).toContain('context_extract_entities');
+    expect(names).toContain('context_retrieve_knowledge');
+    expect(names).toContain('context_analyze');
     // LLM
     expect(names).toContain('llm_rotate');
     expect(names).toContain('llm_call');

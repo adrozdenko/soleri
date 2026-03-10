@@ -25,6 +25,7 @@ import type { PluginRegistry } from '../plugins/plugin-registry.js';
 import type { PackInstaller } from '../packs/pack-installer.js';
 import type { VaultManager } from '../vault/vault-manager.js';
 import type { VaultBranching } from '../vault/vault-branching.js';
+import type { ContextEngine } from '../context/context-engine.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -43,6 +44,8 @@ export interface AgentRuntimeConfig {
   templatesDir?: string;
   /** Minimum log level. Default: 'info' (or SOLERI_LOG_LEVEL env var). */
   logLevel?: LogLevel;
+  /** Path to shared global vault. Default: ~/.soleri/vault.db */
+  sharedVaultPath?: string;
 }
 
 /**
@@ -85,6 +88,8 @@ export interface AgentRuntime {
   vaultManager: VaultManager;
   /** Vault branching — experiment with knowledge changes before merging. */
   vaultBranching: VaultBranching;
+  /** Context engine — entity extraction, knowledge retrieval, confidence scoring. */
+  contextEngine: ContextEngine;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

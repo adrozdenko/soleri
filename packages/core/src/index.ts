@@ -138,6 +138,19 @@ export type {
   SessionReplay,
 } from './brain/types.js';
 
+// ─── Context Engine ─────────────────────────────────────────────────
+export { ContextEngine } from './context/index.js';
+export type {
+  EntityType,
+  ExtractedEntity,
+  EntityExtractionResult,
+  KnowledgeItem,
+  KnowledgeRetrievalResult,
+  ConfidenceLevel as ContextConfidenceLevel,
+  ContextAnalysis,
+  ContextEngineConfig,
+} from './context/index.js';
+
 // ─── Cognee ─────────────────────────────────────────────────────────
 export { CogneeClient } from './cognee/client.js';
 export type {

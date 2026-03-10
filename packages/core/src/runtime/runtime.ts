@@ -26,7 +26,7 @@ import { IntakePipeline } from '../intake/intake-pipeline.js';
 import { Telemetry } from '../telemetry/telemetry.js';
 import { ProjectRegistry } from '../project/project-registry.js';
 import { TemplateManager } from '../prompts/template-manager.js';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { createLogger } from '../logging/logger.js';
 import { FeatureFlags } from './feature-flags.js';
 import { HealthRegistry } from '../health/health-registry.js';
@@ -36,6 +36,7 @@ import { PluginRegistry } from '../plugins/plugin-registry.js';
 import { PackInstaller } from '../packs/pack-installer.js';
 import { VaultManager } from '../vault/vault-manager.js';
 import { VaultBranching } from '../vault/vault-branching.js';
+import { ContextEngine } from '../context/context-engine.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -60,6 +61,16 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
 
   // Vault — persistent SQLite knowledge store (agent tier)
   const vault = vaultManager.open('agent', vaultPath);
+
+  // Shared vault — cross-agent intelligence (lower priority than agent vault)
+  try {
+    const sharedVaultDir = join(homedir(), '.soleri');
+    mkdirSync(sharedVaultDir, { recursive: true });
+    const sharedVaultPath = config.sharedVaultPath ?? join(sharedVaultDir, 'vault.db');
+    vaultManager.connect('shared', sharedVaultPath, 0.6);
+  } catch (err) {
+    logger.warn(`Shared vault unavailable: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   // Seed intelligence data if dataDir provided
   if (config.dataDir) {
@@ -142,6 +153,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Vault Branching — experiment with knowledge changes before merging
   const vaultBranching = new VaultBranching(vault);
 
+  // Context Engine — entity extraction, knowledge retrieval, confidence scoring
+  const contextEngine = new ContextEngine(vault, brain, brainIntelligence, cognee);
+
   // Health Registry — centralized subsystem status tracking
   const health = new HealthRegistry();
   health.register('vault', 'healthy');
@@ -194,6 +208,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     packInstaller,
     vaultManager,
     vaultBranching,
+    contextEngine,
     createdAt: Date.now(),
     close: () => {
       syncManager.close();
