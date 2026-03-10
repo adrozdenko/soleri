@@ -169,6 +169,19 @@ export type {
 // ─── Chat Transport ─────────────────────────────────────────────────
 export { ChatSessionManager, FragmentBuffer, ChatAuthManager } from './chat/index.js';
 export { TaskCancellationManager } from './chat/index.js';
+export { SelfUpdateManager, RESTART_EXIT_CODE } from './chat/index.js';
+export { NotificationEngine } from './chat/index.js';
+export {
+  detectFileIntent,
+  buildMultimodalContent,
+  saveTempFile,
+  cleanupTempFiles,
+  sanitizeForPersistence,
+  MAX_FILE_SIZE,
+  TEXT_EXTENSIONS,
+  IMAGE_MIME_TYPES,
+  INTAKE_KEYWORDS,
+} from './chat/index.js';
 export { chunkResponse, convertMarkup, markdownToHtml } from './chat/index.js';
 export { runAgentLoop } from './chat/index.js';
 export { McpToolBridge } from './chat/index.js';
@@ -196,6 +209,14 @@ export type {
   McpToolRegistration,
   OutputCompressor,
   CancellationInfo,
+  RestartContext,
+  RestartResult,
+  NotificationCheck,
+  NotificationEngineConfig,
+  NotificationStats,
+  FileIntent,
+  FileInfo,
+  MultimodalContent,
 } from './chat/index.js';
 
 // ─── Cognee ─────────────────────────────────────────────────────────

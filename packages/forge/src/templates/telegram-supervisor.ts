@@ -89,8 +89,24 @@ function startBot(): void {
     }
 
     if (code === SELF_UPDATE_EXIT_CODE) {
-      log('Bot requested self-update restart.');
-      restartCount = 0; // Reset backoff for intentional restarts
+      log('Bot requested self-update restart. Rebuilding...');
+      restartCount = 0;
+      try {
+        const { execFileSync } = require('node:child_process');
+        execFileSync('npm', ['run', 'build'], { cwd: process.cwd(), stdio: 'pipe', timeout: 60_000 });
+        log('Rebuild succeeded. Restarting...');
+      } catch (buildErr: unknown) {
+        const buildMsg = buildErr instanceof Error ? buildErr.message : String(buildErr);
+        log(\`Rebuild failed: \${buildMsg}. Attempting rollback...\`);
+        try {
+          const { execFileSync: execFile2 } = require('node:child_process');
+          execFile2('git', ['revert', 'HEAD', '--no-edit'], { cwd: process.cwd(), stdio: 'pipe', timeout: 30_000 });
+          execFile2('npm', ['run', 'build'], { cwd: process.cwd(), stdio: 'pipe', timeout: 60_000 });
+          log('Rollback succeeded. Restarting with previous code...');
+        } catch {
+          log('Rollback also failed. Restarting with current code anyway...');
+        }
+      }
       setTimeout(startBot, 1000);
       return;
     }

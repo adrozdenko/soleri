@@ -2,6 +2,19 @@ export { ChatSessionManager } from './chat-session.js';
 export { FragmentBuffer } from './fragment-buffer.js';
 export { ChatAuthManager } from './auth-manager.js';
 export { TaskCancellationManager } from './cancellation.js';
+export { SelfUpdateManager, RESTART_EXIT_CODE } from './self-update.js';
+export { NotificationEngine } from './notifications.js';
+export {
+  detectFileIntent,
+  buildMultimodalContent,
+  saveTempFile,
+  cleanupTempFiles,
+  sanitizeForPersistence,
+  MAX_FILE_SIZE,
+  TEXT_EXTENSIONS,
+  IMAGE_MIME_TYPES,
+  INTAKE_KEYWORDS,
+} from './file-handler.js';
 export { chunkResponse, convertMarkup, markdownToHtml } from './response-chunker.js';
 export { runAgentLoop } from './agent-loop.js';
 export { McpToolBridge } from './mcp-bridge.js';
@@ -39,3 +52,10 @@ export type {
 } from './agent-loop-types.js';
 
 export type { CancellationInfo } from './cancellation.js';
+export type { RestartContext, RestartResult } from './self-update.js';
+export type {
+  NotificationCheck,
+  NotificationEngineConfig,
+  NotificationStats,
+} from './notifications.js';
+export type { FileIntent, FileInfo, MultimodalContent } from './file-handler.js';

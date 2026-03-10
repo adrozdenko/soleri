@@ -20,10 +20,18 @@ import {
   ChatSessionManager,
   ChatAuthManager,
   TaskCancellationManager,
+  SelfUpdateManager,
+  RESTART_EXIT_CODE,
+  NotificationEngine,
   FragmentBuffer,
   chunkResponse,
+  detectFileIntent,
+  buildMultimodalContent,
+  saveTempFile,
+  cleanupTempFiles,
+  MAX_FILE_SIZE,
 } from '@soleri/core';
-import type { Fragment } from '@soleri/core';
+import type { Fragment, FileInfo } from '@soleri/core';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { mkdirSync, appendFileSync } from 'node:fs';
@@ -33,6 +41,8 @@ import { mkdirSync, appendFileSync } from 'node:fs';
 const CONFIG_DIR = join(homedir(), '.${config.id}');
 const SESSIONS_DIR = join(CONFIG_DIR, 'telegram-sessions');
 const AUTH_FILE = join(CONFIG_DIR, 'telegram-auth.json');
+const RESTART_FILE = join(CONFIG_DIR, 'telegram-restart.json');
+const UPLOAD_DIR = join(CONFIG_DIR, 'telegram-uploads');
 const LOG_DIR = join(CONFIG_DIR, 'logs');
 
 // ─── State ───────────────────────────────────────────────────────────
@@ -43,6 +53,8 @@ let sessions: ChatSessionManager;
 let auth: ChatAuthManager;
 let fragmentBuffer: FragmentBuffer;
 const cancellation = new TaskCancellationManager();
+const updater = new SelfUpdateManager(RESTART_FILE);
+let notifications: NotificationEngine;
 
 // ─── Event Logger ────────────────────────────────────────────────────
 
@@ -82,7 +94,36 @@ export async function startBot(): Promise<void> {
     (key, merged) => handleMergedMessage(key, merged),
   );
 
+  // Initialize notification engine
+  notifications = new NotificationEngine({
+    intervalMs: 30 * 60 * 1000, // 30 minutes
+    onNotify: async (_checkId, message) => {
+      try {
+        // Send to the most recently active chat
+        const activeSessions = sessions.listActive();
+        if (activeSessions.length > 0) {
+          await bot.api.sendMessage(activeSessions[0], message, { parse_mode: 'HTML' });
+        }
+      } catch {
+        // Notification delivery failure is non-critical
+      }
+    },
+  });
+
   const bot = new Bot(telegramConfig.botToken);
+
+  // ─── Restart Context ───────────────────────────────────────────
+
+  const restartCtx = updater.loadContext();
+  if (restartCtx) {
+    updater.clearContext();
+    try {
+      await bot.api.sendMessage(restartCtx.chatId, \`Back online! Restart reason: \${restartCtx.reason}.\`);
+      logEvent('restart_confirmed', restartCtx.chatId, { reason: restartCtx.reason });
+    } catch {
+      // Chat might not exist anymore
+    }
+  }
 
   // ─── Commands ──────────────────────────────────────────────────
 
@@ -120,6 +161,7 @@ export async function startBot(): Promise<void> {
         '/health — System status',
         '/help — This message',
         '/stop — Cancel current task',
+        '/restart — Restart the bot',
       ].join('\\n'),
       { parse_mode: 'HTML' },
     );
@@ -134,6 +176,118 @@ export async function startBot(): Promise<void> {
       logEvent('command', ctx.chat.id, { command: 'stop', ranMs: Date.now() - info.startedAt });
     } else {
       await ctx.reply('No task is currently running.');
+    }
+  });
+
+  bot.command('restart', async (ctx) => {
+    if (!checkAuth(ctx)) return;
+    const chatId = String(ctx.chat.id);
+    const result = updater.requestRestart(chatId, 'manual');
+    if (result.initiated) {
+      await ctx.reply('Restarting... I will be back shortly.');
+      logEvent('command', ctx.chat.id, { command: 'restart' });
+      setTimeout(() => process.exit(RESTART_EXIT_CODE), 1000);
+    } else {
+      await ctx.reply(\`Restart failed: \${result.error}\`);
+    }
+  });
+
+  // ─── Photo Messages ────────────────────────────────────────────
+
+  bot.on('message:photo', async (ctx) => {
+    if (!checkAuth(ctx)) return;
+    const chatId = String(ctx.chat.id);
+
+    try {
+      const photo = ctx.message.photo[ctx.message.photo.length - 1]; // Largest size
+      const file = await ctx.api.getFile(photo.file_id);
+      if (!file.file_path) {
+        await ctx.reply('Could not download photo.');
+        return;
+      }
+
+      const url = \`https://api.telegram.org/file/bot\${telegramConfig.botToken}/\${file.file_path}\`;
+      const resp = await fetch(url);
+      const buffer = Buffer.from(await resp.arrayBuffer());
+
+      if (buffer.length > MAX_FILE_SIZE) {
+        await ctx.reply('File too large (max 20MB). Please compress and try again.');
+        return;
+      }
+
+      const caption = ctx.message.caption ?? 'What do you see in this image?';
+      const fileInfo: FileInfo = {
+        name: file.file_path.split('/').pop() ?? 'photo.jpg',
+        mimeType: 'image/jpeg',
+        size: buffer.length,
+        data: buffer,
+      };
+
+      const intent = detectFileIntent(fileInfo.name, fileInfo.mimeType, caption);
+      const content = buildMultimodalContent(fileInfo, intent);
+
+      // Build multimodal user message for agent
+      const multimodalText = content.type === 'text'
+        ? \`[File: \${fileInfo.name}]\\n\${content.content}\\n\\n\${caption}\`
+        : \`[Image: \${fileInfo.name}, \${Math.round(fileInfo.size / 1024)}KB]\\n\${caption}\`;
+
+      logEvent('photo_in', ctx.chat.id, { size: buffer.length, intent });
+      await dispatchToAgent(chatId, multimodalText, ctx);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      await ctx.reply('Failed to process photo.');
+      logEvent('error', ctx.chat.id, { error: msg, type: 'photo' });
+    }
+  });
+
+  // ─── Document Messages ─────────────────────────────────────────
+
+  bot.on('message:document', async (ctx) => {
+    if (!checkAuth(ctx)) return;
+    const chatId = String(ctx.chat.id);
+    const doc = ctx.message.document;
+
+    try {
+      if (doc.file_size && doc.file_size > MAX_FILE_SIZE) {
+        await ctx.reply('File too large (max 20MB). Please compress and try again.');
+        return;
+      }
+
+      const file = await ctx.api.getFile(doc.file_id);
+      if (!file.file_path) {
+        await ctx.reply('Could not download document.');
+        return;
+      }
+
+      const url = \`https://api.telegram.org/file/bot\${telegramConfig.botToken}/\${file.file_path}\`;
+      const resp = await fetch(url);
+      const buffer = Buffer.from(await resp.arrayBuffer());
+
+      const filename = doc.file_name ?? 'document';
+      const mimeType = doc.mime_type ?? 'application/octet-stream';
+      const caption = ctx.message.caption ?? '';
+
+      const intent = detectFileIntent(filename, mimeType, caption);
+      const fileInfo: FileInfo = { name: filename, mimeType, size: buffer.length, data: buffer };
+
+      if (intent === 'intake') {
+        saveTempFile(UPLOAD_DIR, filename, buffer);
+        await ctx.reply(\`Saved \${filename} for knowledge ingestion.\`);
+        logEvent('document_intake', ctx.chat.id, { filename, size: buffer.length });
+        return;
+      }
+
+      const content = buildMultimodalContent(fileInfo, intent);
+      const userText = content.type === 'text'
+        ? \`[File: \${filename}]\\n\${content.content}\${caption ? '\\n\\n' + caption : ''}\`
+        : \`[Document: \${filename}, \${Math.round(buffer.length / 1024)}KB]\${caption ? '\\n' + caption : ''}\`;
+
+      logEvent('document_in', ctx.chat.id, { filename, size: buffer.length, intent });
+      await dispatchToAgent(chatId, userText, ctx);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      await ctx.reply('Failed to process document.');
+      logEvent('error', ctx.chat.id, { error: msg, type: 'document' });
     }
   });
 
@@ -183,6 +337,10 @@ export async function startBot(): Promise<void> {
 
   console.log('[${config.id}] Starting Telegram bot...');
   logEvent('bot_start', 'system');
+
+  // Start notification polling and periodic temp cleanup
+  notifications.start();
+  setInterval(() => cleanupTempFiles(UPLOAD_DIR, 3_600_000), 3_600_000); // 1h
 
   process.on('SIGINT', () => shutdown(bot));
   process.on('SIGTERM', () => shutdown(bot));
@@ -276,6 +434,8 @@ function shutdown(bot: Bot): void {
   console.log('[${config.id}] Shutting down...');
   logEvent('bot_stop', 'system');
   cancellation.cancelAll();
+  notifications.stop();
+  cleanupTempFiles(UPLOAD_DIR);
   fragmentBuffer.close();
   sessions.close();
   bot.stop();

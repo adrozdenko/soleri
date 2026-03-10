@@ -8,6 +8,14 @@ import type { AgentRuntime } from '../types.js';
 import { ChatSessionManager } from '../../chat/chat-session.js';
 import { ChatAuthManager } from '../../chat/auth-manager.js';
 import { TaskCancellationManager } from '../../chat/cancellation.js';
+import { SelfUpdateManager } from '../../chat/self-update.js';
+import { NotificationEngine } from '../../chat/notifications.js';
+import {
+  detectFileIntent,
+  buildMultimodalContent,
+  cleanupTempFiles,
+} from '../../chat/file-handler.js';
+import type { FileInfo } from '../../chat/file-handler.js';
 import { chunkResponse } from '../../chat/response-chunker.js';
 import { McpToolBridge } from '../../chat/mcp-bridge.js';
 import { createOutputCompressor } from '../../chat/output-compressor.js';
@@ -22,6 +30,8 @@ interface ChatState {
   auth: ChatAuthManager | null;
   bridge: McpToolBridge | null;
   cancellation: TaskCancellationManager | null;
+  updater: SelfUpdateManager | null;
+  notifications: NotificationEngine | null;
 }
 
 function getOrCreateSessions(state: ChatState, config: ChatSessionConfig): ChatSessionManager {
@@ -40,7 +50,14 @@ function getOrCreateAuth(state: ChatState, config: ChatAuthConfig): ChatAuthMana
 }
 
 export function createChatFacadeOps(_runtime: AgentRuntime): OpDefinition[] {
-  const state: ChatState = { sessions: null, auth: null, bridge: null, cancellation: null };
+  const state: ChatState = {
+    sessions: null,
+    auth: null,
+    bridge: null,
+    cancellation: null,
+    updater: null,
+    notifications: null,
+  };
 
   return [
     // ─── Session Ops ──────────────────────────────────────────────
@@ -504,6 +521,206 @@ export function createChatFacadeOps(_runtime: AgentRuntime): OpDefinition[] {
             };
           }),
         };
+      },
+    },
+
+    // ─── Self-Update Ops ───────────────────────────────────────────
+
+    {
+      name: 'chat_update_init',
+      description: 'Initialize self-update manager. Provide path for restart context persistence.',
+      auth: 'write',
+      schema: z.object({
+        contextPath: z.string().describe('Path for restart context JSON file.'),
+      }),
+      handler: async (params) => {
+        state.updater = new SelfUpdateManager(params.contextPath as string);
+        const pending = state.updater.loadContext();
+        return {
+          initialized: true,
+          hasPendingRestart: !!pending,
+          pendingContext: pending,
+        };
+      },
+    },
+
+    {
+      name: 'chat_update_request',
+      description: 'Request a restart. Saves context for post-restart confirmation.',
+      auth: 'write',
+      schema: z.object({
+        chatId: z.string().describe('Chat ID for post-restart confirmation.'),
+        reason: z
+          .enum(['self-update', 'rebuild', 'manual'])
+          .optional()
+          .describe('Restart reason. Default: manual.'),
+        commitSha: z.string().optional().describe('Git commit SHA if self-update.'),
+        contextPath: z.string().describe('Path for restart context.'),
+      }),
+      handler: async (params) => {
+        if (!state.updater) {
+          state.updater = new SelfUpdateManager(params.contextPath as string);
+        }
+        return state.updater.requestRestart(
+          params.chatId as string,
+          (params.reason as 'self-update' | 'rebuild' | 'manual') ?? 'manual',
+          params.commitSha as string | undefined,
+        );
+      },
+    },
+
+    {
+      name: 'chat_update_confirm',
+      description: 'Clear restart context after successful startup.',
+      auth: 'write',
+      schema: z.object({
+        contextPath: z.string().describe('Path for restart context.'),
+      }),
+      handler: async (params) => {
+        if (!state.updater) {
+          state.updater = new SelfUpdateManager(params.contextPath as string);
+        }
+        const context = state.updater.loadContext();
+        state.updater.clearContext();
+        return { confirmed: true, previousContext: context };
+      },
+    },
+
+    // ─── File Handling Ops ─────────────────────────────────────────
+
+    {
+      name: 'chat_file_detect_intent',
+      description: 'Detect user intent for a file — vision, text, or intake.',
+      auth: 'read',
+      schema: z.object({
+        filename: z.string().describe('Original filename.'),
+        mimeType: z.string().describe('MIME type.'),
+        userText: z.string().optional().describe('Accompanying user message text.'),
+      }),
+      handler: async (params) => {
+        const intent = detectFileIntent(
+          params.filename as string,
+          params.mimeType as string,
+          params.userText as string | undefined,
+        );
+        return { filename: params.filename, mimeType: params.mimeType, intent };
+      },
+    },
+
+    {
+      name: 'chat_file_build_content',
+      description: 'Build multimodal content from a file for the Anthropic API.',
+      auth: 'read',
+      schema: z.object({
+        filename: z.string().describe('Original filename.'),
+        mimeType: z.string().describe('MIME type.'),
+        dataBase64: z.string().describe('File content as base64.'),
+        intent: z.enum(['vision', 'text', 'intake']).describe('Detected intent.'),
+      }),
+      handler: async (params) => {
+        const file: FileInfo = {
+          name: params.filename as string,
+          mimeType: params.mimeType as string,
+          size: Buffer.byteLength(params.dataBase64 as string, 'base64'),
+          data: Buffer.from(params.dataBase64 as string, 'base64'),
+        };
+        return buildMultimodalContent(file, params.intent as 'vision' | 'text' | 'intake');
+      },
+    },
+
+    {
+      name: 'chat_file_cleanup',
+      description: 'Clean up temp files older than maxAgeMs.',
+      auth: 'write',
+      schema: z.object({
+        uploadDir: z.string().describe('Temp upload directory.'),
+        maxAgeMs: z.number().optional().describe('Max age in ms. Default: 1 hour.'),
+      }),
+      handler: async (params) => {
+        const removed = cleanupTempFiles(
+          params.uploadDir as string,
+          params.maxAgeMs as number | undefined,
+        );
+        return { removed, uploadDir: params.uploadDir };
+      },
+    },
+
+    // ─── Notification Ops ──────────────────────────────────────────
+
+    {
+      name: 'chat_notify_init',
+      description:
+        'Initialize the notification engine. Notifications are delivered via the provided callback pattern.',
+      auth: 'write',
+      schema: z.object({
+        intervalMs: z.number().optional().describe('Polling interval in ms. Default: 30 minutes.'),
+        defaultCooldownMs: z
+          .number()
+          .optional()
+          .describe('Default cooldown between notifications. Default: 4 hours.'),
+      }),
+      handler: async (params) => {
+        // The onNotify callback can't be passed via JSON — it's set up in code.
+        // This op initializes with a no-op that logs to console.
+        state.notifications = new NotificationEngine({
+          intervalMs: params.intervalMs as number | undefined,
+          defaultCooldownMs: params.defaultCooldownMs as number | undefined,
+          onNotify: async (checkId, message) => {
+            console.log(`[notification] ${checkId}: ${message}`);
+          },
+        });
+        return { initialized: true };
+      },
+    },
+
+    {
+      name: 'chat_notify_start',
+      description: 'Start the notification polling loop.',
+      auth: 'write',
+      handler: async () => {
+        if (!state.notifications) {
+          return { started: false, reason: 'Notification engine not initialized.' };
+        }
+        state.notifications.start();
+        return { started: true, ...state.notifications.stats() };
+      },
+    },
+
+    {
+      name: 'chat_notify_stop',
+      description: 'Stop the notification polling loop.',
+      auth: 'write',
+      handler: async () => {
+        if (!state.notifications) {
+          return { stopped: false, reason: 'Notification engine not initialized.' };
+        }
+        state.notifications.stop();
+        return { stopped: true, ...state.notifications.stats() };
+      },
+    },
+
+    {
+      name: 'chat_notify_poll',
+      description: 'Run all notification checks once (manual trigger).',
+      auth: 'write',
+      handler: async () => {
+        if (!state.notifications) {
+          return { polled: false, reason: 'Notification engine not initialized.' };
+        }
+        const notified = await state.notifications.poll();
+        return { polled: true, notified, ...state.notifications.stats() };
+      },
+    },
+
+    {
+      name: 'chat_notify_status',
+      description: 'Get notification engine status.',
+      auth: 'read',
+      handler: async () => {
+        if (!state.notifications) {
+          return { initialized: false, checks: 0, running: false, sent: 0, lastPollAt: null };
+        }
+        return { initialized: true, ...state.notifications.stats() };
       },
     },
   ];
