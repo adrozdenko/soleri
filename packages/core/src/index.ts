@@ -7,6 +7,13 @@ export { Vault } from './vault/vault.js';
 export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault/vault.js';
 export { VaultManager, type ConnectedVault } from './vault/vault-manager.js';
 export { TIER_WEIGHTS } from './vault/vault-types.js';
+export { VaultBranching } from './vault/vault-branching.js';
+export type {
+  BranchAction,
+  BranchEntry,
+  BranchSummary,
+  MergeResult,
+} from './vault/vault-branching.js';
 export type {
   VaultTier,
   VaultTierConfig,

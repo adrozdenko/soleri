@@ -35,6 +35,7 @@ import { PlaybookExecutor } from '../playbooks/playbook-executor.js';
 import { PluginRegistry } from '../plugins/plugin-registry.js';
 import { PackInstaller } from '../packs/pack-installer.js';
 import { VaultManager } from '../vault/vault-manager.js';
+import { VaultBranching } from '../vault/vault-branching.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -138,6 +139,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Pack Installer — knowledge pack management
   const packInstaller = new PackInstaller(vault, pluginRegistry);
 
+  // Vault Branching — experiment with knowledge changes before merging
+  const vaultBranching = new VaultBranching(vault);
+
   // Health Registry — centralized subsystem status tracking
   const health = new HealthRegistry();
   health.register('vault', 'healthy');
@@ -189,6 +193,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     pluginRegistry,
     packInstaller,
     vaultManager,
+    vaultBranching,
     createdAt: Date.now(),
     close: () => {
       syncManager.close();

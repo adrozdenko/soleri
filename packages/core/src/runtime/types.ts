@@ -24,6 +24,7 @@ import type { PlaybookExecutor } from '../playbooks/playbook-executor.js';
 import type { PluginRegistry } from '../plugins/plugin-registry.js';
 import type { PackInstaller } from '../packs/pack-installer.js';
 import type { VaultManager } from '../vault/vault-manager.js';
+import type { VaultBranching } from '../vault/vault-branching.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -82,6 +83,8 @@ export interface AgentRuntime {
   packInstaller: PackInstaller;
   /** Vault manager — multi-tier vault orchestration with cascading search. */
   vaultManager: VaultManager;
+  /** Vault branching — experiment with knowledge changes before merging. */
+  vaultBranching: VaultBranching;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */
