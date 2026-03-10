@@ -37,6 +37,7 @@ import { PackInstaller } from '../packs/pack-installer.js';
 import { VaultManager } from '../vault/vault-manager.js';
 import { VaultBranching } from '../vault/vault-branching.js';
 import { ContextEngine } from '../context/context-engine.js';
+import { AgencyManager } from '../agency/agency-manager.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -156,6 +157,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Context Engine — entity extraction, knowledge retrieval, confidence scoring
   const contextEngine = new ContextEngine(vault, brain, brainIntelligence, cognee);
 
+  // Agency Manager — proactive file watching, pattern surfacing (disabled by default)
+  const agencyManager = new AgencyManager(vault);
+
   // Health Registry — centralized subsystem status tracking
   const health = new HealthRegistry();
   health.register('vault', 'healthy');
@@ -209,6 +213,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     vaultManager,
     vaultBranching,
     contextEngine,
+    agencyManager,
     createdAt: Date.now(),
     close: () => {
       syncManager.close();

@@ -18,6 +18,7 @@ import { createOrchestrateFacadeOps } from './orchestrate-facade.js';
 import { createControlFacadeOps } from './control-facade.js';
 import { createCogneeFacadeOps } from './cognee-facade.js';
 import { createContextFacadeOps } from './context-facade.js';
+import { createAgencyFacadeOps } from './agency-facade.js';
 
 export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
   return [
@@ -76,6 +77,12 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       name: `${agentId}_context`,
       description: 'Context analysis — entity extraction, knowledge retrieval, confidence scoring.',
       ops: createContextFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_agency`,
+      description:
+        'Proactive intelligence — file watching, pattern surfacing, warnings, clarification.',
+      ops: createAgencyFacadeOps(runtime),
     },
   ];
 }

@@ -35,7 +35,7 @@ describe('createSemanticFacades', () => {
   }
 
   it('should return 232 ops', () => {
-    expect(ops.length).toBe(247);
+    expect(ops.length).toBe(255);
   });
 
   it('should have all expected op names', () => {
@@ -113,6 +113,15 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('context_extract_entities');
     expect(names).toContain('context_retrieve_knowledge');
     expect(names).toContain('context_analyze');
+    // Agency Mode (#171)
+    expect(names).toContain('agency_enable');
+    expect(names).toContain('agency_disable');
+    expect(names).toContain('agency_status');
+    expect(names).toContain('agency_config');
+    expect(names).toContain('agency_scan_file');
+    expect(names).toContain('agency_warnings');
+    expect(names).toContain('agency_surface_patterns');
+    expect(names).toContain('agency_clarify');
     // LLM
     expect(names).toContain('llm_rotate');
     expect(names).toContain('llm_call');

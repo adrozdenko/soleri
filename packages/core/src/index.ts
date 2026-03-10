@@ -138,6 +138,21 @@ export type {
   SessionReplay,
 } from './brain/types.js';
 
+// ─── Agency Mode ────────────────────────────────────────────────────
+export { AgencyManager } from './agency/index.js';
+export type {
+  ChangeType,
+  FileChange,
+  FileChangeListener,
+  WarningSeverity,
+  Warning,
+  WarningDetector,
+  SurfacedPattern,
+  ClarificationQuestion,
+  AgencyConfig,
+  AgencyStatus,
+} from './agency/index.js';
+
 // ─── Context Engine ─────────────────────────────────────────────────
 export { ContextEngine } from './context/index.js';
 export type {
