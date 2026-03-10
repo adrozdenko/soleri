@@ -434,6 +434,8 @@ export type {
   TransportMode,
   HttpTransportConfig,
   WsTransportConfig,
+  LspTransportConfig,
+  LspCapabilities,
   TransportConfig,
 } from './transport/index.js';
 export {
@@ -452,6 +454,19 @@ export { HttpMcpServer } from './transport/index.js';
 export type { HttpServerCallbacks, HttpServerStats } from './transport/index.js';
 export { WsMcpServer } from './transport/index.js';
 export type { WsConnection, WsServerCallbacks, WsServerStats } from './transport/index.js';
+export { LspServer } from './transport/index.js';
+export type {
+  LspRequest,
+  LspNotification,
+  LspResponse,
+  LspPosition,
+  LspRange,
+  LspDiagnostic,
+  LspCompletionItem,
+  LspHover,
+  LspCodeAction,
+  LspServerCallbacks,
+} from './transport/index.js';
 
 // ─── Prompts ───────────────────────────────────────────────────────────
 export { TemplateManager, parseVariables, resolveIncludes } from './prompts/index.js';

@@ -6,6 +6,8 @@ export type {
   TransportMode,
   HttpTransportConfig,
   WsTransportConfig,
+  LspTransportConfig,
+  LspCapabilities,
   TransportConfig,
 } from './types.js';
 
@@ -30,3 +32,17 @@ export {
   type WsServerCallbacks,
   type WsServerStats,
 } from './ws-server.js';
+
+export {
+  LspServer,
+  type LspRequest,
+  type LspNotification,
+  type LspResponse,
+  type LspPosition,
+  type LspRange,
+  type LspDiagnostic,
+  type LspCompletionItem,
+  type LspHover,
+  type LspCodeAction,
+  type LspServerCallbacks,
+} from './lsp-server.js';

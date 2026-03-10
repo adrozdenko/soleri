@@ -3,7 +3,7 @@
  */
 
 /** Supported transport modes */
-export type TransportMode = 'stdio' | 'http' | 'ws';
+export type TransportMode = 'stdio' | 'http' | 'ws' | 'lsp';
 
 /** HTTP transport configuration */
 export interface HttpTransportConfig {
@@ -39,9 +39,28 @@ export interface WsTransportConfig {
   reaperInterval?: number;
 }
 
+/** LSP transport configuration */
+export interface LspTransportConfig {
+  /** Agent capabilities to expose as LSP features */
+  capabilities?: LspCapabilities;
+}
+
+/** Which agent features to expose via LSP */
+export interface LspCapabilities {
+  /** Expose vault search as completions (default: true) */
+  completions?: boolean;
+  /** Expose quality gate violations as diagnostics (default: true) */
+  diagnostics?: boolean;
+  /** Expose pattern documentation as hover (default: true) */
+  hover?: boolean;
+  /** Expose agent ops as code actions (default: false) */
+  codeActions?: boolean;
+}
+
 /** Combined transport configuration */
 export interface TransportConfig {
   mode: TransportMode;
   http?: HttpTransportConfig;
   ws?: WsTransportConfig;
+  lsp?: LspTransportConfig;
 }
