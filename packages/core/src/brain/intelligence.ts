@@ -15,6 +15,9 @@ import type {
   StrengthsQuery,
   BrainSession,
   SessionLifecycleInput,
+  SessionListQuery,
+  SessionQuality,
+  SessionReplay,
   KnowledgeProposal,
   ExtractionResult,
   GlobalPattern,
@@ -238,6 +241,106 @@ export class BrainIntelligence {
       [olderThanDays],
     );
     return { archived: result.changes };
+  }
+
+  // ─── Session Query & Quality ─────────────────────────────────────
+
+  getSessionById(id: string): BrainSession | null {
+    return this.getSession(id);
+  }
+
+  listSessions(query?: SessionListQuery): BrainSession[] {
+    const conditions: string[] = [];
+    const values: unknown[] = [];
+
+    if (query?.domain) {
+      conditions.push('domain = ?');
+      values.push(query.domain);
+    }
+    if (query?.active === true) {
+      conditions.push('ended_at IS NULL');
+    } else if (query?.active === false) {
+      conditions.push('ended_at IS NOT NULL');
+    }
+    if (query?.extracted === true) {
+      conditions.push('extracted_at IS NOT NULL');
+    } else if (query?.extracted === false) {
+      conditions.push('extracted_at IS NULL');
+    }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+    const limit = query?.limit ?? 50;
+    const offset = query?.offset ?? 0;
+    values.push(limit, offset);
+
+    const rows = this.provider.all<{
+      id: string;
+      started_at: string;
+      ended_at: string | null;
+      domain: string | null;
+      context: string | null;
+      tools_used: string;
+      files_modified: string;
+      plan_id: string | null;
+      plan_outcome: string | null;
+      extracted_at: string | null;
+    }>(`SELECT * FROM brain_sessions ${where} ORDER BY started_at DESC LIMIT ? OFFSET ?`, values);
+
+    return rows.map((r) => this.rowToSession(r));
+  }
+
+  computeSessionQuality(sessionId: string): SessionQuality {
+    const session = this.getSession(sessionId);
+    if (!session) throw new Error('Session not found: ' + sessionId);
+
+    // Completeness (0-25): session ended + has context + has domain
+    let completeness = 0;
+    if (session.endedAt) completeness += 10;
+    if (session.context) completeness += 8;
+    if (session.domain) completeness += 7;
+
+    // Artifact density (0-25): files modified
+    const fileCount = session.filesModified.length;
+    const artifactDensity = Math.min(25, fileCount * 5);
+
+    // Tool engagement (0-25): unique tools used
+    const uniqueTools = new Set(session.toolsUsed).size;
+    const toolEngagement = Math.min(25, uniqueTools * 5);
+
+    // Outcome clarity (0-25): plan outcome + extraction status
+    let outcomeClarity = 0;
+    if (session.planId) outcomeClarity += 8;
+    if (session.planOutcome === 'completed') outcomeClarity += 10;
+    else if (session.planOutcome === 'abandoned') outcomeClarity += 5;
+    else if (session.planOutcome) outcomeClarity += 7;
+    if (session.extractedAt) outcomeClarity += 7;
+
+    const overall = completeness + artifactDensity + toolEngagement + outcomeClarity;
+
+    return {
+      sessionId,
+      overall,
+      completeness,
+      artifactDensity,
+      toolEngagement,
+      outcomeClarity,
+    };
+  }
+
+  replaySession(sessionId: string): SessionReplay {
+    const session = this.getSession(sessionId);
+    if (!session) throw new Error('Session not found: ' + sessionId);
+
+    const quality = this.computeSessionQuality(sessionId);
+    const proposals = this.getProposals({ sessionId });
+
+    let durationMinutes: number | null = null;
+    if (session.startedAt && session.endedAt) {
+      const ms = new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime();
+      durationMinutes = Math.round(ms / 60000);
+    }
+
+    return { session, quality, proposals, durationMinutes };
   }
 
   // ─── Strength Scoring ─────────────────────────────────────────────

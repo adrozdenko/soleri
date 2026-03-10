@@ -310,6 +310,66 @@ export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
     {
+      name: 'session_list',
+      description:
+        'List brain sessions with optional filters: domain, active/completed, extracted status.',
+      auth: 'read',
+      schema: z.object({
+        domain: z.string().optional(),
+        active: z.boolean().optional().describe('true = active (no end), false = completed.'),
+        extracted: z.boolean().optional().describe('true = knowledge extracted, false = not yet.'),
+        limit: z.number().optional().describe('Max results. Default 50.'),
+        offset: z.number().optional().describe('Pagination offset. Default 0.'),
+      }),
+      handler: async (params) => {
+        const sessions = brainIntelligence.listSessions({
+          domain: params.domain as string | undefined,
+          active: params.active as boolean | undefined,
+          extracted: params.extracted as boolean | undefined,
+          limit: (params.limit as number) ?? 50,
+          offset: (params.offset as number) ?? 0,
+        });
+        return { sessions, count: sessions.length };
+      },
+    },
+    {
+      name: 'session_get',
+      description: 'Get a single brain session by ID.',
+      auth: 'read',
+      schema: z.object({
+        sessionId: z.string(),
+      }),
+      handler: async (params) => {
+        const session = brainIntelligence.getSessionById(params.sessionId as string);
+        if (!session) return { error: 'Session not found', sessionId: params.sessionId };
+        return session;
+      },
+    },
+    {
+      name: 'session_quality',
+      description:
+        'Compute quality score for a session. 4-dimension scoring: completeness (0-25) + artifact density (0-25) + tool engagement (0-25) + outcome clarity (0-25).',
+      auth: 'read',
+      schema: z.object({
+        sessionId: z.string(),
+      }),
+      handler: async (params) => {
+        return brainIntelligence.computeSessionQuality(params.sessionId as string);
+      },
+    },
+    {
+      name: 'session_replay',
+      description:
+        'Replay a session — returns session data, quality score, extracted proposals, and duration.',
+      auth: 'read',
+      schema: z.object({
+        sessionId: z.string(),
+      }),
+      handler: async (params) => {
+        return brainIntelligence.replaySession(params.sessionId as string);
+      },
+    },
+    {
       name: 'brain_reset_extracted',
       description:
         'Reset extraction status on brain sessions, allowing re-extraction. Filter by sessionId, since date, or all.',

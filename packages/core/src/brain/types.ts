@@ -212,3 +212,29 @@ export interface BrainImportResult {
     domainProfiles: number;
   };
 }
+
+// ─── Session Management Types ─────────────────────────────────────
+
+export interface SessionListQuery {
+  domain?: string;
+  active?: boolean;
+  extracted?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export interface SessionQuality {
+  sessionId: string;
+  overall: number;
+  completeness: number;
+  artifactDensity: number;
+  toolEngagement: number;
+  outcomeClarity: number;
+}
+
+export interface SessionReplay {
+  session: BrainSession;
+  quality: SessionQuality;
+  proposals: KnowledgeProposal[];
+  durationMinutes: number | null;
+}

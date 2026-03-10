@@ -133,6 +133,9 @@ export type {
   SessionContext,
   BrainExportData,
   BrainImportResult,
+  SessionListQuery,
+  SessionQuality,
+  SessionReplay,
 } from './brain/types.js';
 
 // ─── Cognee ─────────────────────────────────────────────────────────

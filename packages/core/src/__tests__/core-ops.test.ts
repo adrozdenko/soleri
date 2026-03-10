@@ -35,7 +35,7 @@ describe('createSemanticFacades', () => {
   }
 
   it('should return 232 ops', () => {
-    expect(ops.length).toBe(240);
+    expect(ops.length).toBe(244);
   });
 
   it('should have all expected op names', () => {
@@ -78,6 +78,11 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('brain_promote_proposals');
     expect(names).toContain('brain_lifecycle');
     expect(names).toContain('brain_reset_extracted');
+    // Session management (#178)
+    expect(names).toContain('session_list');
+    expect(names).toContain('session_get');
+    expect(names).toContain('session_quality');
+    expect(names).toContain('session_replay');
     // Brain decay report (#89)
     expect(names).toContain('brain_decay_report');
     // Curator
