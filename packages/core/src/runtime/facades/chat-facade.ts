@@ -7,6 +7,7 @@ import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 import { ChatSessionManager } from '../../chat/chat-session.js';
 import { ChatAuthManager } from '../../chat/auth-manager.js';
+import { TaskCancellationManager } from '../../chat/cancellation.js';
 import { chunkResponse } from '../../chat/response-chunker.js';
 import { McpToolBridge } from '../../chat/mcp-bridge.js';
 import { createOutputCompressor } from '../../chat/output-compressor.js';
@@ -20,6 +21,7 @@ interface ChatState {
   sessions: ChatSessionManager | null;
   auth: ChatAuthManager | null;
   bridge: McpToolBridge | null;
+  cancellation: TaskCancellationManager | null;
 }
 
 function getOrCreateSessions(state: ChatState, config: ChatSessionConfig): ChatSessionManager {
@@ -38,7 +40,7 @@ function getOrCreateAuth(state: ChatState, config: ChatAuthConfig): ChatAuthMana
 }
 
 export function createChatFacadeOps(_runtime: AgentRuntime): OpDefinition[] {
-  const state: ChatState = { sessions: null, auth: null, bridge: null };
+  const state: ChatState = { sessions: null, auth: null, bridge: null, cancellation: null };
 
   return [
     // ─── Session Ops ──────────────────────────────────────────────
@@ -412,6 +414,95 @@ export function createChatFacadeOps(_runtime: AgentRuntime): OpDefinition[] {
           compressed,
           originalLength: (params.output as string).length,
           compressedLength: compressed.length,
+        };
+      },
+    },
+
+    // ─── Task Cancellation Ops ─────────────────────────────────────
+
+    {
+      name: 'chat_cancel_create',
+      description:
+        'Create an AbortSignal for a chat task. If a task is already running for this chat, it is cancelled first. Returns signal status.',
+      auth: 'write',
+      schema: z.object({
+        chatId: z.string().describe('Chat/session ID.'),
+        description: z.string().optional().describe('Description of what is running.'),
+      }),
+      handler: async (params) => {
+        if (!state.cancellation) {
+          state.cancellation = new TaskCancellationManager();
+        }
+        const signal = state.cancellation.create(
+          params.chatId as string,
+          params.description as string | undefined,
+        );
+        return {
+          chatId: params.chatId,
+          created: true,
+          aborted: signal.aborted,
+          activeTasks: state.cancellation.size,
+        };
+      },
+    },
+
+    {
+      name: 'chat_cancel_stop',
+      description: 'Cancel the running task for a chat. Aborts the associated AbortController.',
+      auth: 'write',
+      schema: z.object({
+        chatId: z.string().describe('Chat/session ID to cancel.'),
+      }),
+      handler: async (params) => {
+        if (!state.cancellation) {
+          return { cancelled: false, reason: 'No cancellation manager initialized.' };
+        }
+        const info = state.cancellation.cancel(params.chatId as string);
+        if (!info) {
+          return { cancelled: false, reason: 'No running task for this chat.' };
+        }
+        return {
+          cancelled: true,
+          chatId: params.chatId,
+          description: info.description ?? null,
+          ranForMs: Date.now() - info.startedAt,
+          activeTasks: state.cancellation.size,
+        };
+      },
+    },
+
+    {
+      name: 'chat_cancel_status',
+      description: 'Get cancellation status — running tasks, per-chat info.',
+      auth: 'read',
+      schema: z.object({
+        chatId: z.string().optional().describe('Specific chat to check. Omit for all.'),
+      }),
+      handler: async (params) => {
+        if (!state.cancellation) {
+          return { activeTasks: 0, running: [] };
+        }
+        if (params.chatId) {
+          const info = state.cancellation.getInfo(params.chatId as string);
+          return {
+            chatId: params.chatId,
+            running: !!info,
+            description: info?.description ?? null,
+            startedAt: info?.startedAt ?? null,
+            ranForMs: info ? Date.now() - info.startedAt : null,
+          };
+        }
+        const running = state.cancellation.listRunning();
+        return {
+          activeTasks: state.cancellation.size,
+          running: running.map((id) => {
+            const info = state.cancellation!.getInfo(id);
+            return {
+              chatId: id,
+              description: info?.description ?? null,
+              startedAt: info?.startedAt ?? null,
+            };
+          }),
         };
       },
     },

@@ -35,7 +35,7 @@ describe('createSemanticFacades', () => {
   }
 
   it('should return 232 ops', () => {
-    expect(ops.length).toBe(272);
+    expect(ops.length).toBe(275);
   });
 
   it('should have all expected op names', () => {
@@ -141,6 +141,10 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('chat_bridge_list');
     expect(names).toContain('chat_bridge_execute');
     expect(names).toContain('chat_compress_output');
+    // Chat cancellation (3)
+    expect(names).toContain('chat_cancel_create');
+    expect(names).toContain('chat_cancel_stop');
+    expect(names).toContain('chat_cancel_status');
     // LLM
     expect(names).toContain('llm_rotate');
     expect(names).toContain('llm_call');

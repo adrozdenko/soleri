@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { ChatSessionManager } from '../chat/chat-session.js';
 import { FragmentBuffer } from '../chat/fragment-buffer.js';
 import { ChatAuthManager } from '../chat/auth-manager.js';
+import { TaskCancellationManager } from '../chat/cancellation.js';
 import { chunkResponse, markdownToHtml, convertMarkup } from '../chat/response-chunker.js';
 import type { Fragment } from '../chat/types.js';
 
@@ -573,5 +574,92 @@ describe('ChatAuthManager', () => {
     auth.authenticate('user-1', 'secret');
     auth.authenticate('user-2', 'secret');
     expect(auth.listAuthenticated()).toEqual(['user-1', 'user-2']);
+  });
+});
+
+// ─── TaskCancellationManager ────────────────────────────────────────
+
+describe('TaskCancellationManager', () => {
+  let mgr: TaskCancellationManager;
+
+  beforeEach(() => {
+    mgr = new TaskCancellationManager();
+  });
+
+  test('create returns an AbortSignal', () => {
+    const signal = mgr.create('chat-1', 'running test');
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(signal.aborted).toBe(false);
+  });
+
+  test('cancel aborts the signal and returns info', () => {
+    const signal = mgr.create('chat-1', 'task A');
+    const info = mgr.cancel('chat-1');
+    expect(info).not.toBeNull();
+    expect(info!.description).toBe('task A');
+    expect(signal.aborted).toBe(true);
+    expect(mgr.size).toBe(0);
+  });
+
+  test('cancel returns null for unknown chatId', () => {
+    expect(mgr.cancel('nonexistent')).toBeNull();
+  });
+
+  test('create cancels existing task for same chatId', () => {
+    const signal1 = mgr.create('chat-1', 'task 1');
+    const signal2 = mgr.create('chat-1', 'task 2');
+    expect(signal1.aborted).toBe(true);
+    expect(signal2.aborted).toBe(false);
+    expect(mgr.size).toBe(1);
+  });
+
+  test('complete removes without aborting', () => {
+    const signal = mgr.create('chat-1');
+    mgr.complete('chat-1');
+    expect(signal.aborted).toBe(false);
+    expect(mgr.size).toBe(0);
+  });
+
+  test('isRunning returns correct state', () => {
+    expect(mgr.isRunning('chat-1')).toBe(false);
+    mgr.create('chat-1');
+    expect(mgr.isRunning('chat-1')).toBe(true);
+    mgr.cancel('chat-1');
+    expect(mgr.isRunning('chat-1')).toBe(false);
+  });
+
+  test('getInfo returns task details', () => {
+    mgr.create('chat-1', 'my task');
+    const info = mgr.getInfo('chat-1');
+    expect(info).not.toBeNull();
+    expect(info!.description).toBe('my task');
+    expect(info!.startedAt).toBeGreaterThan(0);
+    expect(mgr.getInfo('nonexistent')).toBeNull();
+  });
+
+  test('listRunning returns all active chat IDs', () => {
+    mgr.create('a');
+    mgr.create('b');
+    mgr.create('c');
+    expect(mgr.listRunning().sort()).toEqual(['a', 'b', 'c']);
+  });
+
+  test('cancelAll cancels everything', () => {
+    const s1 = mgr.create('a');
+    const s2 = mgr.create('b');
+    const count = mgr.cancelAll();
+    expect(count).toBe(2);
+    expect(s1.aborted).toBe(true);
+    expect(s2.aborted).toBe(true);
+    expect(mgr.size).toBe(0);
+  });
+
+  test('size reflects active task count', () => {
+    expect(mgr.size).toBe(0);
+    mgr.create('a');
+    mgr.create('b');
+    expect(mgr.size).toBe(2);
+    mgr.cancel('a');
+    expect(mgr.size).toBe(1);
   });
 });

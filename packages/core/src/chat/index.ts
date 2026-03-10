@@ -1,6 +1,7 @@
 export { ChatSessionManager } from './chat-session.js';
 export { FragmentBuffer } from './fragment-buffer.js';
 export { ChatAuthManager } from './auth-manager.js';
+export { TaskCancellationManager } from './cancellation.js';
 export { chunkResponse, convertMarkup, markdownToHtml } from './response-chunker.js';
 export { runAgentLoop } from './agent-loop.js';
 export { McpToolBridge } from './mcp-bridge.js';
@@ -36,3 +37,5 @@ export type {
   McpToolRegistration,
   OutputCompressor,
 } from './agent-loop-types.js';
+
+export type { CancellationInfo } from './cancellation.js';

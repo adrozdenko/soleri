@@ -168,6 +168,7 @@ export type {
 
 // ─── Chat Transport ─────────────────────────────────────────────────
 export { ChatSessionManager, FragmentBuffer, ChatAuthManager } from './chat/index.js';
+export { TaskCancellationManager } from './chat/index.js';
 export { chunkResponse, convertMarkup, markdownToHtml } from './chat/index.js';
 export { runAgentLoop } from './chat/index.js';
 export { McpToolBridge } from './chat/index.js';
@@ -194,6 +195,7 @@ export type {
   AgentLoopResult,
   McpToolRegistration,
   OutputCompressor,
+  CancellationInfo,
 } from './chat/index.js';
 
 // ─── Cognee ─────────────────────────────────────────────────────────

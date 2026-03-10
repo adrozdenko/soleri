@@ -19,6 +19,7 @@ import { createTelegramAgent } from './telegram-agent.js';
 import {
   ChatSessionManager,
   ChatAuthManager,
+  TaskCancellationManager,
   FragmentBuffer,
   chunkResponse,
 } from '@soleri/core';
@@ -41,6 +42,7 @@ let telegramConfig: TelegramConfig;
 let sessions: ChatSessionManager;
 let auth: ChatAuthManager;
 let fragmentBuffer: FragmentBuffer;
+const cancellation = new TaskCancellationManager();
 
 // ─── Event Logger ────────────────────────────────────────────────────
 
@@ -125,10 +127,11 @@ export async function startBot(): Promise<void> {
 
   bot.command('stop', async (ctx) => {
     const chatId = String(ctx.chat.id);
-    if (processingLocks.has(chatId)) {
-      // Cancellation is handled via AbortController in telegram-agent
-      await ctx.reply('Stopping current task...');
-      logEvent('command', ctx.chat.id, { command: 'stop' });
+    const info = cancellation.cancel(chatId);
+    if (info) {
+      const ranSec = ((Date.now() - info.startedAt) / 1000).toFixed(1);
+      await ctx.reply(\`Task cancelled after \${ranSec}s.\`);
+      logEvent('command', ctx.chat.id, { command: 'stop', ranMs: Date.now() - info.startedAt });
     } else {
       await ctx.reply('No task is currently running.');
     }
@@ -200,6 +203,7 @@ async function dispatchToAgent(
   }
 
   processingLocks.add(chatId);
+  const signal = cancellation.create(chatId, 'Processing message');
 
   try {
     // Append user message
@@ -209,10 +213,10 @@ async function dispatchToAgent(
       timestamp: Date.now(),
     });
 
-    // Run agent
+    // Run agent with cancellation signal
     const agent = createTelegramAgent(telegramConfig);
     const session = sessions.getOrCreate(chatId);
-    const result = await agent.run(session.messages);
+    const result = await agent.run(session.messages, { signal });
 
     // Append agent response
     sessions.appendMessages(chatId, result.newMessages);
@@ -234,11 +238,16 @@ async function dispatchToAgent(
       chunks: chunks.length,
     });
   } catch (error) {
+    if (signal.aborted) {
+      logEvent('cancelled', chatId);
+      return; // Already notified user via /stop handler
+    }
     const msg = error instanceof Error ? error.message : String(error);
     console.error(\`[agent] Error for chat \${chatId}:\`, msg);
     await ctx.reply('Sorry, I encountered an error. Please try again.');
     logEvent('error', chatId, { error: msg });
   } finally {
+    cancellation.complete(chatId);
     processingLocks.delete(chatId);
   }
 }
@@ -266,6 +275,7 @@ function checkAuth(ctx: { from?: { id: number }; reply: (text: string) => Promis
 function shutdown(bot: Bot): void {
   console.log('[${config.id}] Shutting down...');
   logEvent('bot_stop', 'system');
+  cancellation.cancelAll();
   fragmentBuffer.close();
   sessions.close();
   bot.stop();
