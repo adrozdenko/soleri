@@ -34,6 +34,7 @@ import { HealthRegistry } from '../health/health-registry.js';
 import { checkVaultIntegrity } from '../health/vault-integrity.js';
 import { PlaybookExecutor } from '../playbooks/playbook-executor.js';
 import { PluginRegistry } from '../plugins/plugin-registry.js';
+import { PackInstaller } from '../packs/pack-installer.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -131,6 +132,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Plugin Registry — dynamic facade loading
   const pluginRegistry = new PluginRegistry();
 
+  // Pack Installer — knowledge pack management
+  const packInstaller = new PackInstaller(vault, pluginRegistry);
+
   // Health Registry — centralized subsystem status tracking
   const health = new HealthRegistry();
   health.register('vault', 'healthy');
@@ -180,6 +184,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     health,
     playbookExecutor,
     pluginRegistry,
+    packInstaller,
     createdAt: Date.now(),
     close: () => {
       syncManager.close();

@@ -400,6 +400,16 @@ export type { NestableInput } from './streams/index.js';
 export { computeContentHash } from './vault/content-hash.js';
 export type { HashableEntry } from './vault/content-hash.js';
 
+// ─── Knowledge Packs ────────────────────────────────────────────────────
+export { PackInstaller, packManifestSchema } from './packs/index.js';
+export type {
+  PackManifest,
+  PackStatus,
+  InstalledPack,
+  InstallResult,
+  ValidateResult,
+} from './packs/index.js';
+
 // ─── Plugin System ──────────────────────────────────────────────────────
 export {
   PluginRegistry,

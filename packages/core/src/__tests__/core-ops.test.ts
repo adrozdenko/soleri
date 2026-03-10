@@ -34,8 +34,8 @@ describe('createSemanticFacades', () => {
     return op;
   }
 
-  it('should return 224 ops', () => {
-    expect(ops.length).toBe(224);
+  it('should return 228 ops', () => {
+    expect(ops.length).toBe(228);
   });
 
   it('should have all expected op names', () => {
