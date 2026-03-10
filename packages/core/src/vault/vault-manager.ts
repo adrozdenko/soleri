@@ -24,8 +24,17 @@ import {
 // VAULT MANAGER
 // =============================================================================
 
+/** A dynamically connected vault source with a name and priority. */
+export interface ConnectedVault {
+  name: string;
+  path: string;
+  priority: number;
+  vault: Vault;
+}
+
 export class VaultManager {
   private vaults = new Map<VaultTier, { vault: Vault; path: string }>();
+  private connected = new Map<string, ConnectedVault>();
   private weights: Record<VaultTier, number>;
   private config: VaultManagerConfig;
 
@@ -83,23 +92,82 @@ export class VaultManager {
     return true;
   }
 
+  // ─── Dynamic Named Connections ──────────────────────────────────────
+
   /**
-   * Search across all connected tiers with priority weighting.
+   * Connect a named vault source with a configurable priority.
+   * Throws if a vault with this name is already connected.
+   */
+  connect(name: string, path: string, priority = 0.5): ConnectedVault {
+    if (this.connected.has(name)) {
+      throw new Error(`Vault '${name}' is already connected`);
+    }
+    const vault = new Vault(path);
+    const entry: ConnectedVault = { name, path, priority, vault };
+    this.connected.set(name, entry);
+    return entry;
+  }
+
+  /**
+   * Disconnect a named vault source.
+   * Throws if not connected.
+   */
+  disconnectNamed(name: string): boolean {
+    const entry = this.connected.get(name);
+    if (!entry) return false;
+    entry.vault.close();
+    this.connected.delete(name);
+    return true;
+  }
+
+  /**
+   * List all dynamically connected vaults, sorted by priority descending.
+   */
+  listConnected(): Array<{ name: string; path: string; priority: number }> {
+    return Array.from(this.connected.values())
+      .sort((a, b) => b.priority - a.priority)
+      .map(({ name, path, priority }) => ({ name, path, priority }));
+  }
+
+  /**
+   * Get a named connected vault.
+   */
+  getConnected(name: string): ConnectedVault | undefined {
+    return this.connected.get(name);
+  }
+
+  // ─── Search ────────────────────────────────────────────────────────
+
+  /**
+   * Search across all connected tiers AND named vaults with priority weighting.
    *
-   * Results from each tier are weighted by the tier's priority,
+   * Results from each source are weighted by priority,
    * then merged and deduplicated (highest-priority entry wins).
    */
   search(query: string, limit = 20): SearchResult[] {
-    const allResults: Array<SearchResult & { tier: VaultTier; weightedScore: number }> = [];
+    const allResults: Array<SearchResult & { source: string; weightedScore: number }> = [];
 
+    // Tier vaults
     for (const [tier, { vault }] of this.vaults) {
       const weight = this.weights[tier];
       const results = vault.search(query);
       for (const r of results) {
         allResults.push({
           ...r,
-          tier,
+          source: tier,
           weightedScore: r.score * weight,
+        });
+      }
+    }
+
+    // Named connected vaults
+    for (const { name, priority, vault } of this.connected.values()) {
+      const results = vault.search(query);
+      for (const r of results) {
+        allResults.push({
+          ...r,
+          source: name,
+          weightedScore: r.score * priority,
         });
       }
     }
@@ -161,5 +229,9 @@ export class VaultManager {
       vault.close();
     }
     this.vaults.clear();
+    for (const { vault } of this.connected.values()) {
+      vault.close();
+    }
+    this.connected.clear();
   }
 }

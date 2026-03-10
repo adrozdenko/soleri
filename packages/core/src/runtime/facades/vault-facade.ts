@@ -269,6 +269,52 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
 
+    // ─── Named vault connections ────────────────────────────────
+    {
+      name: 'vault_connect_source',
+      description:
+        'Connect a named vault source (e.g., shared team knowledge base) with a configurable search priority.',
+      auth: 'admin',
+      schema: z.object({
+        name: z.string().describe('Unique name for this vault connection'),
+        path: z.string().describe('Path to the SQLite database file'),
+        priority: z
+          .number()
+          .min(0)
+          .max(2)
+          .optional()
+          .describe('Search priority weight (default: 0.5)'),
+      }),
+      handler: async (params) => {
+        const name = params.name as string;
+        const path = params.path as string;
+        const priority = (params.priority as number) ?? 0.5;
+        vaultManager.connect(name, path, priority);
+        return { connected: true, name, path, priority };
+      },
+    },
+    {
+      name: 'vault_disconnect_source',
+      description: 'Disconnect a named vault source.',
+      auth: 'admin',
+      schema: z.object({
+        name: z.string().describe('Name of the vault connection to remove'),
+      }),
+      handler: async (params) => {
+        const name = params.name as string;
+        const removed = vaultManager.disconnectNamed(name);
+        return { disconnected: removed, name };
+      },
+    },
+    {
+      name: 'vault_list_sources',
+      description: 'List all dynamically connected vault sources with their priorities.',
+      auth: 'read',
+      handler: async () => {
+        return { sources: vaultManager.listConnected() };
+      },
+    },
+
     // ─── Satellite ops ───────────────────────────────────────────
     ...createVaultExtraOps(runtime),
     ...createCaptureOps(runtime),

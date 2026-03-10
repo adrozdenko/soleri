@@ -5,7 +5,7 @@ export { loadIntelligenceData } from './intelligence/loader.js';
 // ─── Vault ───────────────────────────────────────────────────────────
 export { Vault } from './vault/vault.js';
 export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault/vault.js';
-export { VaultManager } from './vault/vault-manager.js';
+export { VaultManager, type ConnectedVault } from './vault/vault-manager.js';
 export { TIER_WEIGHTS } from './vault/vault-types.js';
 export type {
   VaultTier,
