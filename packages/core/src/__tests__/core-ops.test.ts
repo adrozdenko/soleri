@@ -35,7 +35,7 @@ describe('createSemanticFacades', () => {
   }
 
   it('should return 232 ops', () => {
-    expect(ops.length).toBe(255);
+    expect(ops.length).toBe(267);
   });
 
   it('should have all expected op names', () => {
@@ -122,6 +122,19 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('agency_warnings');
     expect(names).toContain('agency_surface_patterns');
     expect(names).toContain('agency_clarify');
+    // Chat transport (12)
+    expect(names).toContain('chat_session_init');
+    expect(names).toContain('chat_session_get');
+    expect(names).toContain('chat_session_append');
+    expect(names).toContain('chat_session_clear');
+    expect(names).toContain('chat_session_delete');
+    expect(names).toContain('chat_session_list');
+    expect(names).toContain('chat_chunk_response');
+    expect(names).toContain('chat_auth_init');
+    expect(names).toContain('chat_auth_check');
+    expect(names).toContain('chat_auth_authenticate');
+    expect(names).toContain('chat_auth_revoke');
+    expect(names).toContain('chat_auth_status');
     // LLM
     expect(names).toContain('llm_rotate');
     expect(names).toContain('llm_call');

@@ -420,6 +420,31 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
 
   if (p.isCancel(outputDir)) return null;
 
+  // ─── Step 12: Setup target ────────────────────────────────
+  const setupTarget = await p.select({
+    message: 'Setup target',
+    options: [
+      {
+        value: 'claude',
+        label: 'Claude Code',
+        hint: 'Generate/setup Claude integrations (default)',
+      },
+      {
+        value: 'codex',
+        label: 'Codex',
+        hint: 'Generate/setup Codex integrations',
+      },
+      {
+        value: 'both',
+        label: 'Both',
+        hint: 'Generate/setup for Claude Code and Codex',
+      },
+    ],
+    initialValue: 'claude',
+  });
+
+  if (p.isCancel(setupTarget)) return null;
+
   return {
     id,
     name,
@@ -431,5 +456,6 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
     greeting,
     outputDir,
     skills: selectedSkills,
+    setupTarget: setupTarget as 'claude' | 'codex' | 'both',
   };
 }

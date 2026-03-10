@@ -4,11 +4,91 @@ import type { AgentConfig } from '../types.js';
  * Generate a README.md for the scaffolded agent.
  */
 export function generateReadme(config: AgentConfig): string {
+  const setupTarget = config.setupTarget ?? 'claude';
+  const claudeSetup = setupTarget === 'claude' || setupTarget === 'both';
+  const codexSetup = setupTarget === 'codex' || setupTarget === 'both';
   const domainRows = config.domains
     .map((d) => `| ${d} | *Ready for knowledge capture* |`)
     .join('\n');
 
   const principleLines = config.principles.map((p) => `- ${p}`).join('\n');
+
+  const quickStartSession =
+    claudeSetup && codexSetup
+      ? 'Start a new Claude Code or Codex session, then say:'
+      : claudeSetup
+        ? 'Start a new Claude Code session, then say:'
+        : 'Start a new Codex session, then say:';
+
+  const prerequisites = [
+    '- **Node.js 18+** — `node --version` to check',
+    ...(claudeSetup ? ['- **Claude Code** — Anthropic CLI (`claude` command)'] : []),
+    ...(codexSetup ? ['- **Codex** — desktop/CLI with `~/.codex/config.toml`'] : []),
+  ].join('\n');
+
+  const helloFlow = [
+    `- ${config.name} returns its persona, principles, and tool recommendations`,
+    ...(claudeSetup ? [`- Claude can adopt the ${config.name} persona for the session`] : []),
+    ...(claudeSetup
+      ? [`- ${config.name} can inject/check CLAUDE.md integration when requested`]
+      : []),
+    ...(codexSetup
+      ? ['- Codex uses project-level AGENTS.md guidance and local skills for routing']
+      : []),
+  ].join('\n');
+
+  const manualSetupBlocks = [
+    ...(claudeSetup
+      ? [
+          [
+            '### Claude Code',
+            '',
+            'Add this to `~/.claude/settings.json` under `mcpServers`:',
+            '',
+            '```json',
+            '{',
+            '  "mcpServers": {',
+            `    "${config.id}": {`,
+            '      "command": "node",',
+            '      "args": ["dist/index.js"],',
+            `      "cwd": "/absolute/path/to/${config.id}"`,
+            '    }',
+            '  }',
+            '}',
+            '```',
+          ].join('\n'),
+        ]
+      : []),
+    ...(codexSetup
+      ? [
+          [
+            '### Codex',
+            '',
+            'Add this to `~/.codex/config.toml`:',
+            '',
+            '```toml',
+            `[mcp_servers.${config.id}]`,
+            'command = "node"',
+            `args = ["/absolute/path/to/${config.id}/dist/index.js"]`,
+            '```',
+          ].join('\n'),
+        ]
+      : []),
+  ].join('\n\n');
+
+  const skillsLead =
+    claudeSetup && codexSetup
+      ? `${config.name} ships with 17 structured workflow skills. In Claude Code they are invocable via \`/<skill-name>\`; in Codex they are available via generated AGENTS.md + local skill files.`
+      : claudeSetup
+        ? `${config.name} ships with 17 structured workflow skills, invocable via \`/<skill-name>\` in Claude Code:`
+        : `${config.name} ships with 17 structured workflow skills, available via generated AGENTS.md + local skill files in Codex:`;
+
+  const skillsInstallNote =
+    claudeSetup && codexSetup
+      ? 'Skills are installed to `~/.claude/commands/` and `~/.codex/skills/` during setup. Run `./scripts/setup.sh` to install or reinstall.'
+      : claudeSetup
+        ? 'Skills are installed to `~/.claude/commands/` during setup. Run `./scripts/setup.sh` to install or reinstall.'
+        : 'Skills are installed to `~/.codex/skills/` during setup. Run `./scripts/setup.sh` to install or reinstall.';
 
   return `# ${config.name} — ${config.role}
 
@@ -35,10 +115,10 @@ cd ${config.id}
 npm install
 npm run build
 
-# 2. Add to Claude Code
+# 2. Run setup
 ./scripts/setup.sh
 
-# 3. Start a new Claude Code session, then say:
+# 3. ${quickStartSession}
 #    "Hello, ${config.name}!"
 \`\`\`
 
@@ -46,33 +126,15 @@ That's it. ${config.name} will activate, check your setup, and offer to configur
 
 ## Prerequisites
 
-- **Node.js 18+** — \`node --version\` to check
-- **Claude Code** — Anthropic's CLI for Claude (\`claude\` command)
+${prerequisites}
 
 ## What Happens When You Say "Hello, ${config.name}!"
 
-1. ${config.name} returns its persona, principles, and tool recommendations
-2. Claude adopts the ${config.name} persona for the rest of the session
-3. ${config.name} checks if your project has CLAUDE.md integration
-4. If not, it offers to inject its configuration (facades table, intent detection, knowledge protocol)
+${helloFlow}
 
 ## Manual Setup (if setup.sh doesn't work)
 
-Add this to \`~/.claude/settings.json\` under \`mcpServers\`:
-
-\`\`\`json
-{
-  "mcpServers": {
-    "${config.id}": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "cwd": "/absolute/path/to/${config.id}"
-    }
-  }
-}
-\`\`\`
-
-Then restart Claude Code.
+${manualSetupBlocks}
 
 ## Domains
 
@@ -86,7 +148,7 @@ ${principleLines}
 
 ## Built-in Skills
 
-${config.name} ships with 17 structured workflow skills, invocable via \`/<skill-name>\` in Claude Code:
+${skillsLead}
 
 **Development Workflows:**
 
@@ -120,7 +182,7 @@ ${config.name} ships with 17 structured workflow skills, invocable via \`/<skill
 | \`/onboard-me\` | Instant project knowledge tour for newcomers |
 | \`/health-check\` | Vault maintenance — duplicates, contradictions, stale entries |
 
-Skills are installed to \`~/.claude/commands/\` during setup. Run \`./scripts/setup.sh\` to install or reinstall.
+${skillsInstallNote}
 
 ## Features
 
@@ -176,8 +238,8 @@ Use \`llm_status\` to check provider availability and key pool health.
 
 ### Activating and Deactivating
 
-- **"Hello, ${config.name}!"** — Activate the persona. Claude adopts ${config.name}'s identity, principles, and tool access for the session.
-- **"Goodbye, ${config.name}!"** — Deactivate. Claude returns to its default behavior.
+- **"Hello, ${config.name}!"** — Activate the persona. Your active client session adopts ${config.name}'s identity, principles, and tool access.
+- **"Goodbye, ${config.name}!"** — Deactivate and return to default assistant behavior.
 
 ### Daily Workflow
 

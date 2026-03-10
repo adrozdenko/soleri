@@ -4,6 +4,10 @@ import { z } from 'zod';
 export const TONES = ['precise', 'mentor', 'pragmatic'] as const;
 export type Tone = (typeof TONES)[number];
 
+/** Where to scaffold host/client integration setup. */
+export const SETUP_TARGETS = ['claude', 'codex', 'both'] as const;
+export type SetupTarget = (typeof SETUP_TARGETS)[number];
+
 /** Agent configuration — everything needed to scaffold */
 export const AgentConfigSchema = z.object({
   /** Agent identifier (kebab-case, used for directory and package name) */
@@ -28,6 +32,8 @@ export const AgentConfigSchema = z.object({
   hookPacks: z.array(z.string()).optional(),
   /** Skills to include (if omitted, all skills are included for backward compat) */
   skills: z.array(z.string()).optional(),
+  /** AI client setup target: Claude Code, Codex, or both */
+  setupTarget: z.enum(SETUP_TARGETS).optional().default('claude'),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

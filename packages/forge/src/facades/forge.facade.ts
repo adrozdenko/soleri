@@ -112,15 +112,15 @@ export const forgeOps: OpDef[] = [
           {
             step: 6,
             action: 'Create the agent',
-            ask: 'Call create with the confirmed config. The agent is auto-built (npm install + build) and MCP server is registered in ~/.claude.json automatically.',
+            ask: 'Call create with the confirmed config. The agent is auto-built (npm install + build) and MCP server registration is applied automatically for the selected setup target (Claude, Codex, or both).',
           },
           {
             step: 7,
             action: 'Next steps',
             suggest: [
-              'Restart Claude Code so the new MCP server is picked up',
+              'Restart your selected host client(s) so the new MCP server is picked up',
               'Say "Hello, {AgentName}!" to activate the persona in any session',
-              'The agent will check setup status and offer to inject its CLAUDE.md sections',
+              'For Claude setup, the agent can check setup status and inject CLAUDE.md sections',
               'Add initial knowledge by creating entries in the intelligence data JSON files',
               'Or use the agent and capture knowledge via the capture ops as you work',
             ],

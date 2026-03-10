@@ -22,14 +22,33 @@ import { generateInjectClaudeMd } from './templates/inject-claude-md.js';
 import { generateActivate } from './templates/activate.js';
 import { generateReadme } from './templates/readme.js';
 import { generateSetupScript } from './templates/setup-script.js';
+import { generateAgentsMd } from './templates/agents-md.js';
 import { generateSkills } from './templates/skills.js';
 import { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
+
+function getSetupTarget(config: AgentConfig): 'claude' | 'codex' | 'both' {
+  return config.setupTarget ?? 'claude';
+}
+
+function includesClaudeSetup(config: AgentConfig): boolean {
+  const target = getSetupTarget(config);
+  return target === 'claude' || target === 'both';
+}
+
+function includesCodexSetup(config: AgentConfig): boolean {
+  const target = getSetupTarget(config);
+  return target === 'codex' || target === 'both';
+}
 
 /**
  * Preview what scaffold will create without writing anything.
  */
 export function previewScaffold(config: AgentConfig): ScaffoldPreview {
   const agentDir = join(config.outputDir, config.id);
+  const claudeSetup = includesClaudeSetup(config);
+  const codexSetup = includesCodexSetup(config);
+  const setupLabel =
+    claudeSetup && codexSetup ? 'Claude Code + Codex' : claudeSetup ? 'Claude Code' : 'Codex';
 
   const files = [
     { path: 'package.json', description: 'NPM package with MCP SDK, SQLite, Zod dependencies' },
@@ -80,7 +99,7 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     },
     {
       path: 'scripts/setup.sh',
-      description: 'Automated setup — Node.js check, build, Claude Code MCP registration',
+      description: `Automated setup — Node.js check, build, ${setupLabel} MCP registration`,
     },
     {
       path: 'skills/',
@@ -90,7 +109,14 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     },
   ];
 
-  if (config.hookPacks?.length) {
+  if (codexSetup) {
+    files.push({
+      path: 'AGENTS.md',
+      description: 'Codex project instructions and activation workflow',
+    });
+  }
+
+  if (claudeSetup && config.hookPacks?.length) {
     files.push({
       path: '.claude/',
       description: `Hook pack files (${config.hookPacks.join(', ')})`,
@@ -208,6 +234,8 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
       greeting: `Hello! I'm ${config.name}, your AI assistant for ${config.role}.`,
     };
   }
+  const claudeSetup = includesClaudeSetup(config);
+  const codexSetup = includesCodexSetup(config);
   const agentDir = join(config.outputDir, config.id);
   const filesCreated: string[] = [];
 
@@ -238,7 +266,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     'src/extensions/middleware',
   ];
 
-  if (config.hookPacks?.length) {
+  if (claudeSetup && config.hookPacks?.length) {
     dirs.push('.claude');
   }
 
@@ -264,6 +292,10 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     ['README.md', generateReadme(config)],
     ['scripts/setup.sh', generateSetupScript(config)],
   ];
+
+  if (codexSetup) {
+    projectFiles.push(['AGENTS.md', generateAgentsMd(config)]);
+  }
 
   for (const [path, content] of projectFiles) {
     writeFileSync(join(agentDir, path), content, 'utf-8');
@@ -325,16 +357,41 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     buildError = err instanceof Error ? err.message : String(err);
   }
 
-  // Register the agent as an MCP server in ~/.claude.json (only if build succeeded)
-  let mcpReg: { registered: boolean; path: string; error?: string };
-  if (buildSuccess) {
-    mcpReg = registerMcpServer(config.id, agentDir);
-  } else {
-    mcpReg = {
-      registered: false,
-      path: join(homedir(), '.claude.json'),
-      error: 'Skipped — build failed',
-    };
+  // Register the agent as an MCP server in selected host configs (only if build succeeded)
+  const mcpRegistrations: Array<{ host: 'Claude Code' | 'Codex'; result: RegistrationResult }> = [];
+  if (claudeSetup) {
+    if (buildSuccess) {
+      mcpRegistrations.push({
+        host: 'Claude Code',
+        result: registerClaudeMcpServer(config.id, agentDir),
+      });
+    } else {
+      mcpRegistrations.push({
+        host: 'Claude Code',
+        result: {
+          registered: false,
+          path: join(homedir(), '.claude.json'),
+          error: 'Skipped — build failed',
+        },
+      });
+    }
+  }
+  if (codexSetup) {
+    if (buildSuccess) {
+      mcpRegistrations.push({
+        host: 'Codex',
+        result: registerCodexMcpServer(config.id, agentDir),
+      });
+    } else {
+      mcpRegistrations.push({
+        host: 'Codex',
+        result: {
+          registered: false,
+          path: join(homedir(), '.codex', 'config.toml'),
+          error: 'Skipped — build failed',
+        },
+      });
+    }
   }
 
   const summaryLines = [
@@ -354,22 +411,31 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     summaryLines.push(`  Run manually: cd ${agentDir} && npm install && npm run build`);
   }
 
-  if (config.hookPacks?.length) {
+  if (claudeSetup && config.hookPacks?.length) {
     summaryLines.push(`${config.hookPacks.length} hook pack(s) bundled in .claude/`);
   }
 
-  if (mcpReg.registered) {
-    summaryLines.push(`MCP server registered in ${mcpReg.path}`);
-  } else {
-    summaryLines.push(`Warning: Failed to register MCP server in ${mcpReg.path}: ${mcpReg.error}`);
+  for (const registration of mcpRegistrations) {
+    if (registration.result.registered) {
+      summaryLines.push(
+        `${registration.host} MCP server registered in ${registration.result.path}`,
+      );
+    } else {
+      summaryLines.push(
+        `Warning: Failed to register ${registration.host} MCP server in ${registration.result.path}: ${registration.result.error}`,
+      );
+    }
   }
 
-  summaryLines.push(
-    '',
-    'Next steps:',
-    '  Restart Claude Code',
-    `  Say "Hello, ${config.name}!" to activate the persona`,
-  );
+  const nextSteps = ['', 'Next steps:'];
+  if (claudeSetup) {
+    nextSteps.push('  Restart Claude Code');
+  }
+  if (codexSetup) {
+    nextSteps.push('  Restart Codex');
+  }
+  nextSteps.push(`  Say "Hello, ${config.name}!" to activate the persona`);
+  summaryLines.push(...nextSteps);
 
   return {
     success: true,
@@ -433,13 +499,19 @@ export function listAgents(parentDir: string): AgentInfo[] {
 }
 
 /**
+ * Registration result for host config updates.
+ */
+interface RegistrationResult {
+  registered: boolean;
+  path: string;
+  error?: string;
+}
+
+/**
  * Register the agent as an MCP server in ~/.claude.json (User MCPs).
  * Idempotent — updates existing entry if present.
  */
-function registerMcpServer(
-  agentId: string,
-  agentDir: string,
-): { registered: boolean; path: string; error?: string } {
+function registerClaudeMcpServer(agentId: string, agentDir: string): RegistrationResult {
   const claudeJsonPath = join(homedir(), '.claude.json');
 
   try {
@@ -467,6 +539,47 @@ function registerMcpServer(
     return {
       registered: false,
       path: claudeJsonPath,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/**
+ * Register the agent as an MCP server in ~/.codex/config.toml.
+ * Idempotent — updates existing section if present.
+ */
+function registerCodexMcpServer(agentId: string, agentDir: string): RegistrationResult {
+  const codexDir = join(homedir(), '.codex');
+  const codexConfigPath = join(codexDir, 'config.toml');
+  const sectionHeader = `[mcp_servers.${agentId}]`;
+  const sectionBlock = `${sectionHeader}
+command = "node"
+args = ["${join(agentDir, 'dist', 'index.js')}"]
+`;
+
+  try {
+    mkdirSync(codexDir, { recursive: true });
+
+    let content = existsSync(codexConfigPath) ? readFileSync(codexConfigPath, 'utf-8') : '';
+    const start = content.indexOf(sectionHeader);
+
+    if (start === -1) {
+      const trimmed = content.trimEnd();
+      content = trimmed.length === 0 ? `${sectionBlock}\n` : `${trimmed}\n\n${sectionBlock}\n`;
+    } else {
+      const afterHeader = start + sectionHeader.length;
+      const tail = content.slice(afterHeader);
+      const nextSectionOffset = tail.search(/\n\[[^\]]+\]/);
+      const end = nextSectionOffset === -1 ? content.length : afterHeader + nextSectionOffset;
+      content = `${content.slice(0, start).trimEnd()}\n\n${sectionBlock}\n${content.slice(end).trimStart()}`;
+    }
+
+    writeFileSync(codexConfigPath, content.replace(/\n{3,}/g, '\n\n'), 'utf-8');
+    return { registered: true, path: codexConfigPath };
+  } catch (err) {
+    return {
+      registered: false,
+      path: codexConfigPath,
       error: err instanceof Error ? err.message : String(err),
     };
   }

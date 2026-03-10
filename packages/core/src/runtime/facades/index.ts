@@ -19,6 +19,7 @@ import { createControlFacadeOps } from './control-facade.js';
 import { createCogneeFacadeOps } from './cognee-facade.js';
 import { createContextFacadeOps } from './context-facade.js';
 import { createAgencyFacadeOps } from './agency-facade.js';
+import { createChatFacadeOps } from './chat-facade.js';
 
 export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
   return [
@@ -83,6 +84,12 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       description:
         'Proactive intelligence — file watching, pattern surfacing, warnings, clarification.',
       ops: createAgencyFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_chat`,
+      description:
+        'Chat transport — session management, response chunking, authentication for chat-based interfaces.',
+      ops: createChatFacadeOps(runtime),
     },
   ];
 }

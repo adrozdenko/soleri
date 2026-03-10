@@ -166,6 +166,25 @@ export type {
   ContextEngineConfig,
 } from './context/index.js';
 
+// ─── Chat Transport ─────────────────────────────────────────────────
+export { ChatSessionManager, FragmentBuffer, ChatAuthManager } from './chat/index.js';
+export { chunkResponse, convertMarkup, markdownToHtml } from './chat/index.js';
+export type {
+  ChatRole,
+  ChatMessage,
+  ChatSession,
+  ChatSessionConfig,
+  Fragment,
+  FragmentBufferConfig,
+  MarkupFormat,
+  ChunkConfig,
+  ChatAuthConfig,
+  AuthRecord,
+  AuthState,
+  ChatManagerConfig,
+  ChatManagerStatus,
+} from './chat/index.js';
+
 // ─── Cognee ─────────────────────────────────────────────────────────
 export { CogneeClient } from './cognee/client.js';
 export type {

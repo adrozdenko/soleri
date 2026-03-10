@@ -36,6 +36,9 @@ The interactive wizard walks you through agent configuration: name, role, domain
 # Interactive wizard
 soleri create my-agent
 
+# Force host setup target
+soleri create my-agent --setup-target codex
+
 # Non-interactive with config file
 soleri create --config agent.json
 ```
@@ -52,6 +55,7 @@ The config file follows the same schema as the wizard output:
   "principles": ["Security is not optional"],
   "greeting": "Ready to review.",
   "outputDir": ".",
+  "setupTarget": "both",
   "hookPacks": ["typescript-safety", "clean-commits"]
 }
 ```

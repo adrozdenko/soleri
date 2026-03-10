@@ -10,11 +10,12 @@ export { addDomain } from './domain-manager.js';
 export { patchIndexTs, patchClaudeMdContent } from './patching.js';
 export type {
   AgentConfig,
+  SetupTarget,
   ScaffoldResult,
   ScaffoldPreview,
   AgentInfo,
   InstallKnowledgeResult,
   AddDomainResult,
 } from './types.js';
-export { AgentConfigSchema } from './types.js';
+export { AgentConfigSchema, SETUP_TARGETS } from './types.js';
 export { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';

@@ -13,6 +13,8 @@ import { registerGovernance } from './commands/governance.js';
 import { registerTest } from './commands/test.js';
 import { registerUpgrade } from './commands/upgrade.js';
 import { registerExtend } from './commands/extend.js';
+import { registerInstall } from './commands/install.js';
+import { registerUninstall } from './commands/uninstall.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -38,6 +40,8 @@ function showWelcome(): void {
   console.log(`    ${BOLD}soleri test${RESET}          Run agent tests`);
   console.log(`    ${BOLD}soleri add-domain${RESET}    Add a knowledge domain`);
   console.log(`    ${BOLD}soleri hooks${RESET}         Manage editor hooks`);
+  console.log(`    ${BOLD}soleri install${RESET}       Register agent as MCP server`);
+  console.log(`    ${BOLD}soleri uninstall${RESET}     Remove agent MCP server entry`);
   console.log();
   console.log(`  ${DIM}Run ${BOLD}soleri --help${RESET}${DIM} for all commands${RESET}`);
   console.log();
@@ -64,5 +68,7 @@ registerGovernance(program);
 registerTest(program);
 registerUpgrade(program);
 registerExtend(program);
+registerInstall(program);
+registerUninstall(program);
 
 program.parse();
