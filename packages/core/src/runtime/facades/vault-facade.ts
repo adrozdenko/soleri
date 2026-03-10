@@ -6,13 +6,14 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../../facades/types.js';
 import type { IntelligenceEntry } from '../../intelligence/types.js';
+import type { VaultTier } from '../../vault/vault-types.js';
 import type { AgentRuntime } from '../types.js';
 import { createVaultExtraOps } from '../vault-extra-ops.js';
 import { createCaptureOps } from '../capture-ops.js';
 import { createIntakeOps } from '../intake-ops.js';
 
 export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, cognee, llmClient, syncManager, intakePipeline } = runtime;
+  const { vault, brain, intakePipeline, vaultManager } = runtime;
 
   return [
     // ─── Search / Vault (inline from core-ops.ts) ───────────────
@@ -212,6 +213,59 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         } catch (err) {
           return { error: (err as Error).message };
         }
+      },
+    },
+
+    // ─── Multi-vault ops ────────────────────────────────────────
+    {
+      name: 'vault_connect',
+      description:
+        'Connect an additional vault tier (project or team). Opens a separate SQLite database.',
+      auth: 'admin',
+      schema: z.object({
+        tier: z.enum(['project', 'team']).describe('Vault tier to connect'),
+        path: z.string().describe('Path to the SQLite database file'),
+      }),
+      handler: async (params) => {
+        const tier = params.tier as VaultTier;
+        const path = params.path as string;
+        vaultManager.open(tier, path);
+        return { connected: true, tier, path };
+      },
+    },
+    {
+      name: 'vault_disconnect',
+      description: 'Disconnect a vault tier. Cannot disconnect the agent tier.',
+      auth: 'admin',
+      schema: z.object({
+        tier: z.enum(['project', 'team']).describe('Vault tier to disconnect'),
+      }),
+      handler: async (params) => {
+        const tier = params.tier as VaultTier;
+        const removed = vaultManager.disconnect(tier);
+        return { disconnected: removed, tier };
+      },
+    },
+    {
+      name: 'vault_tiers',
+      description: 'List all vault tiers with connection status and entry counts.',
+      auth: 'read',
+      handler: async () => {
+        return { tiers: vaultManager.listTiers() };
+      },
+    },
+    {
+      name: 'vault_search_all',
+      description:
+        'Search across all connected vault tiers with priority-weighted cascading. Agent tier results ranked highest.',
+      auth: 'read',
+      schema: z.object({
+        query: z.string(),
+        limit: z.number().optional(),
+      }),
+      handler: async (params) => {
+        const results = vaultManager.search(params.query as string, (params.limit as number) ?? 20);
+        return { results, count: results.length };
       },
     },
 

@@ -9,7 +9,6 @@
 
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { Vault } from '../vault/vault.js';
 import { Brain } from '../brain/brain.js';
 import { BrainIntelligence } from '../brain/intelligence.js';
 import { Planner } from '../planning/planner.js';
@@ -35,6 +34,7 @@ import { checkVaultIntegrity } from '../health/vault-integrity.js';
 import { PlaybookExecutor } from '../playbooks/playbook-executor.js';
 import { PluginRegistry } from '../plugins/plugin-registry.js';
 import { PackInstaller } from '../packs/pack-installer.js';
+import { VaultManager } from '../vault/vault-manager.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -54,8 +54,11 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Logger — structured output to stderr
   const logger = createLogger({ level: config.logLevel, prefix: `[${agentId}]` });
 
-  // Vault — persistent SQLite knowledge store
-  const vault = new Vault(vaultPath);
+  // Vault Manager — multi-tier vault orchestration
+  const vaultManager = new VaultManager({ agentId });
+
+  // Vault — persistent SQLite knowledge store (agent tier)
+  const vault = vaultManager.open('agent', vaultPath);
 
   // Seed intelligence data if dataDir provided
   if (config.dataDir) {
@@ -185,11 +188,12 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     playbookExecutor,
     pluginRegistry,
     packInstaller,
+    vaultManager,
     createdAt: Date.now(),
     close: () => {
       syncManager.close();
       cognee.resetPendingCognify();
-      vault.close();
+      vaultManager.close();
     },
   };
 }
