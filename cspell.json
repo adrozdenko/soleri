@@ -18,6 +18,7 @@
     "clinerules",
     "cursorrules",
     "cognee",
+    "cooldown",
     "cognify",
     "cspell",
     "deadcode",
@@ -84,6 +85,7 @@
     "SECURITY.md",
     "CONTRIBUTING.md",
     "packages/*/README.md",
-    "docs/**/*.md"
+    "docs/**/*.md",
+    "src/content/docs/**/*.md"
   ]
 }

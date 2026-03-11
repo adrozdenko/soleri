@@ -1,13 +1,13 @@
 ---
 title: Your Agent — Quick Reference
-description: A concise reference for vault, brain, memory, playbooks, and orchestration — with links to detailed guides.
+description: A concise reference for vault, brain, memory, playbooks, orchestration, and all 13 facades — with links to detailed guides.
 ---
 
 This page is your cheat sheet. For detailed explanations, see the linked deep dives.
 
 ## The Vault
 
-Your agent's long-term knowledge store. SQLite database with full-text search. _[Details →](/docs/guides/under-the-hood/#the-vault)_
+Your agent's long-term knowledge store. SQLite database with full-text search, branching, sharing, and multi-tier connections. _[Details →](/docs/guides/under-the-hood/#the-vault)_
 
 **Entry structure:**
 
@@ -26,6 +26,8 @@ Your agent's long-term knowledge store. SQLite database with full-text search. _
 "Show me vault stats"
 ```
 
+**Advanced features:** vault branching (experiment without affecting main vault), Obsidian sync, knowledge pack import/export, team review workflows, multi-tier vault connections. _[66 ops →](/docs/capabilities/#vault)_
+
 ## The Brain
 
 Tracks which patterns actually work. Learns from usage, strengthens useful patterns, decays unused ones. _[Details →](/docs/guides/under-the-hood/#the-brain)_
@@ -34,6 +36,7 @@ Tracks which patterns actually work. Learns from usage, strengthens useful patte
 - Ranks search results by proven usefulness, not just keyword match
 - Surfaces recommendations when you create plans
 - Extracts patterns automatically from completed work sessions
+- Runs a full lifecycle: extract → promote → archive
 
 **Common operations:**
 
@@ -55,6 +58,23 @@ Knowledge persists across sessions in local files. Link projects to share knowle
 "Promote this pattern to global"
 ```
 
+## Planning
+
+Multi-step task planning with grading, verification, evidence, and drift detection. _[Details →](/docs/guides/planning/)_
+
+**The lifecycle:** create → grade → approve → split → execute → reconcile → complete
+
+**Common operations:**
+
+```
+"Create a plan for migrating the auth system"
+"Grade this plan"
+"Submit evidence for task completion"
+"Reconcile the plan against what happened"
+```
+
+_[32 ops →](/docs/capabilities/#plan)_
+
 ## Playbooks
 
 Multi-step procedures with validation criteria at each step. _[Details →](/docs/guides/code-review/#step-4-create-a-playbook)_
@@ -65,7 +85,10 @@ Multi-step procedures with validation criteria at each step. _[Details →](/doc
 "List available playbooks"
 "Run the API endpoint review playbook on this code"
 "Create a playbook called 'Database Migration' with steps: ..."
+"Find a playbook that matches this context"
 ```
+
+_[8 ops →](/docs/capabilities/#playbooks)_
 
 ## Orchestration
 
@@ -82,6 +105,65 @@ vault knowledge → brain recommendations → plans → work → knowledge extra
 Controls how knowledge enters the vault — quotas, proposal gates, duplicate detection. _[Details →](/docs/guides/customizing/#governance-policies)_
 
 **Presets:** `strict` (all require approval), `moderate` (auto-approve suggestions), `permissive` (auto-approve all)
+
+## Curator
+
+Automated vault quality management — deduplication, contradiction detection, health audits, tag normalization, LLM enrichment. _[Details →](/docs/guides/under-the-hood/#the-curator)_
+
+**Common operations:**
+
+```
+"Run a health audit"
+"Detect duplicates in the vault"
+"Check for contradictions"
+"Groom all vault entries"
+```
+
+_[13 ops →](/docs/capabilities/#curator)_
+
+## Chat
+
+Session management, authentication, voice, browser isolation, and message queue for chat transports (Telegram, web). _[41 ops →](/docs/capabilities/#chat)_
+
+**Subsystems:** sessions, auth, MCP bridge, task cancellation, self-update, file handling, notifications, voice (Whisper + TTS), message queue, per-chat browser isolation.
+
+## Agency
+
+Proactive mode — your agent watches file changes and surfaces relevant vault patterns without being asked. _[8 ops →](/docs/capabilities/#agency)_
+
+```
+"Enable agency mode"
+"Scan this file for warnings"
+"Show pending warnings"
+```
+
+## Context
+
+Entity extraction, knowledge retrieval, and context analysis. Analyzes prompts to extract files, functions, domains, and technologies. _[3 ops →](/docs/capabilities/#context)_
+
+## Transports
+
+Four ways to connect: **stdio** (Claude Code), **HTTP/SSE** (web), **WebSocket** (real-time), **LSP** (editors). _[Guide →](/docs/guides/transports/)_
+
+## All 13 Facades
+
+| Facade | Ops | Primary purpose |
+|--------|-----|-----------------|
+| [Vault](/docs/capabilities/#vault) | 66 | Knowledge storage, search, branching, sharing |
+| [Admin](/docs/capabilities/#admin) | 56 | Health, telemetry, plugins, packs, accounts |
+| [Chat](/docs/capabilities/#chat) | 41 | Chat transport integration |
+| [Plan](/docs/capabilities/#plan) | 32 | Planning, grading, verification |
+| [Orchestrate](/docs/capabilities/#orchestrate) | 26 | Lifecycle, projects, playbooks |
+| [Brain](/docs/capabilities/#brain) | 23 | Learning, strength, recommendations |
+| [Memory](/docs/capabilities/#memory) | 15 | Cross-session, cross-project |
+| [Curator](/docs/capabilities/#curator) | 13 | Vault quality management |
+| [Control](/docs/capabilities/#control) | 13 | Identity, governance |
+| [Cognee](/docs/capabilities/#cognee) | 11 | Vector search, knowledge graph |
+| [Loop](/docs/capabilities/#loop) | 9 | Iterative validation |
+| [Agency](/docs/capabilities/#agency) | 8 | Proactive file watching |
+| [Context](/docs/capabilities/#context) | 3 | Entity extraction, analysis |
+
+**Total: 200+ operations** plus 5 per domain.
 
 ## Day-to-Day Tips
 
