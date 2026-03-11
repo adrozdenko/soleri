@@ -11,7 +11,7 @@ Salvador is the **reference implementation, not gospel**. It works and it's batt
 **For every Soleri feature, follow this sequence:**
 
 1. **Consult Salvador first** — Before writing any code, read the Salvador implementation.
-   - Find the relevant source: `~/projects/salvador-mcp/src/` (code) or `docs/vault/wiki/` (architecture docs)
+   - Find the relevant source: `~/projects/salvador-mcp/src/` (code) or `docs/vault/patterns/` (vault patterns)
    - Read the actual handler/module, not just the facade registration
    - Understand the data flow end-to-end, not just the public API
 2. **Evaluate critically** — Salvador's code works, but ask:
@@ -38,12 +38,12 @@ Salvador is the **reference implementation, not gospel**. It works and it's batt
 | Telegram bot | `src/telegram/` |
 | Color science | `src/color/` |
 | Orchestration | `src/orchestrate/` |
-| Wiki docs | `docs/vault/wiki/salvador-mcp/`, `docs/vault/wiki/salvador-vault/` |
+| Vault patterns | `docs/vault/patterns/` (283 files across 14 categories) |
 
 ### Additional Principles
 
 1. **Generated agents = Salvador-grade** — A scaffolded agent must ship with the same capabilities as Salvador (minus domain-specific design system intelligence). Curator, brain intelligence pipeline, loops, orchestration, identity, governance — these are all engine features, not Salvador-specific.
-2. **Consult Salvador vault docs first** — Before building any feature, read the Salvador wiki documentation in `docs/vault/wiki/salvador-mcp/` and `docs/vault/wiki/salvador-vault/`. These describe exactly how each feature works, what ops it exposes, and how it integrates.
+2. **Consult Salvador vault docs first** — Before building any feature, read the Salvador wiki documentation in `docs/vault/patterns/` and `docs/vault/patterns/`. These describe exactly how each feature works, what ops it exposes, and how it integrates.
 
 ### The 4-File Rule
 
@@ -52,7 +52,7 @@ Every new core feature requires changes in all 4 template files:
 | File                                           | What to add                                    |
 | ---------------------------------------------- | ---------------------------------------------- |
 | `packages/core/src/`                           | Implementation (new module or extend existing) |
-| `packages/forge/src/templates/core-facade.ts`  | Facade ops with Zod schemas                    |
+| `packages/core/src/facades/facade-factory.ts`  | Register new facade if adding one               |
 | `packages/forge/src/templates/test-facades.ts` | Tests for every new op                         |
 | `packages/forge/src/templates/entry-point.ts`  | Initialization if the feature needs setup      |
 
