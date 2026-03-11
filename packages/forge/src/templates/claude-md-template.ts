@@ -54,84 +54,38 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     '',
   ];
 
-  // ─── Curated Facade Table ──────────────────────────────
+  // ─── Compact Facade Table ───────────────────────────────
   mdLines.push(
-    '## Key Operations',
+    '## Essential Tools',
+    `<!-- ${toolPrefix}:tools -->`,
     '',
-    `Full list: ${bt}${toolPrefix}_core op:admin_tool_list${bt}`,
-    '',
-    '| Need | Facade | Op |',
-    '|------|--------|----|',
+    '| Facade | Key Ops |',
+    '|--------|---------|',
+    `| ${bt}${toolPrefix}_core${bt} | ${bt}health${bt}, ${bt}search${bt}, ${bt}identity${bt}, ${bt}register${bt}, ${bt}activate${bt} |`,
   );
 
-  // Essential
-  mdLines.push(
-    `| Health check | ${bt}${toolPrefix}_core${bt} | ${bt}health${bt} |`,
-    `| Search all | ${bt}${toolPrefix}_core${bt} | ${bt}search${bt} |`,
-    `| Identity | ${bt}${toolPrefix}_core${bt} | ${bt}identity${bt} |`,
-  );
-
-  // Domain-specific (3 rows per domain)
+  // Domain facades — one row per domain
   for (const d of config.domains) {
     const toolName = `${toolPrefix}_${d.replace(/-/g, '_')}`;
     mdLines.push(
-      `| ${d} patterns | ${bt}${toolName}${bt} | ${bt}get_patterns${bt} |`,
-      `| Search ${d} | ${bt}${toolName}${bt} | ${bt}search${bt} |`,
-      `| Capture ${d} | ${bt}${toolName}${bt} | ${bt}capture${bt} |`,
+      `| ${bt}${toolName}${bt} | ${bt}get_patterns${bt}, ${bt}search${bt}, ${bt}capture${bt} |`,
     );
   }
 
-  // Knowledge & Search
+  // Engine facades — compact, grouped by concern
   mdLines.push(
-    `| Intelligent search | ${bt}${toolPrefix}_core${bt} | ${bt}search_intelligent${bt} |`,
-    `| Quick capture | ${bt}${toolPrefix}_core${bt} | ${bt}capture_quick${bt} |`,
-    `| Batch capture | ${bt}${toolPrefix}_core${bt} | ${bt}capture_knowledge${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (vault) | ${bt}search_intelligent${bt}, ${bt}capture_knowledge${bt}, ${bt}capture_quick${bt}, ${bt}search_feedback${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (memory) | ${bt}memory_search${bt}, ${bt}memory_capture${bt}, ${bt}session_capture${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (planning) | ${bt}create_plan${bt}, ${bt}approve_plan${bt}, ${bt}plan_split${bt}, ${bt}plan_reconcile${bt}, ${bt}plan_complete_lifecycle${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (orchestrate) | ${bt}orchestrate_plan${bt}, ${bt}orchestrate_execute${bt}, ${bt}orchestrate_complete${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (brain) | ${bt}brain_stats${bt}, ${bt}brain_feedback${bt}, ${bt}rebuild_vocabulary${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (control) | ${bt}route_intent${bt}, ${bt}morph${bt}, ${bt}get_behavior_rules${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (loop) | ${bt}loop_start${bt}, ${bt}loop_iterate${bt}, ${bt}loop_status${bt}, ${bt}loop_cancel${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (governance) | ${bt}governance_dashboard${bt}, ${bt}governance_policy${bt}, ${bt}governance_proposals${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} (admin) | ${bt}admin_health${bt}, ${bt}admin_tool_list${bt}, ${bt}admin_diagnostic${bt} |`,
   );
 
-  // Memory
-  mdLines.push(
-    `| Memory search | ${bt}${toolPrefix}_core${bt} | ${bt}memory_search${bt} |`,
-    `| Memory capture | ${bt}${toolPrefix}_core${bt} | ${bt}memory_capture${bt} |`,
-    `| Session capture | ${bt}${toolPrefix}_core${bt} | ${bt}session_capture${bt} |`,
-  );
-
-  // Planning
-  mdLines.push(
-    `| Create plan | ${bt}${toolPrefix}_core${bt} | ${bt}create_plan${bt} |`,
-    `| Approve plan | ${bt}${toolPrefix}_core${bt} | ${bt}approve_plan${bt} |`,
-    `| Update task | ${bt}${toolPrefix}_core${bt} | ${bt}update_task${bt} |`,
-    `| Complete plan | ${bt}${toolPrefix}_core${bt} | ${bt}complete_plan${bt} |`,
-  );
-
-  // Orchestration
-  mdLines.push(
-    `| Orchestrate plan | ${bt}${toolPrefix}_core${bt} | ${bt}orchestrate_plan${bt} |`,
-    `| Orchestrate execute | ${bt}${toolPrefix}_core${bt} | ${bt}orchestrate_execute${bt} |`,
-    `| Orchestrate complete | ${bt}${toolPrefix}_core${bt} | ${bt}orchestrate_complete${bt} |`,
-  );
-
-  // Brain & Control
-  mdLines.push(
-    `| Brain stats | ${bt}${toolPrefix}_core${bt} | ${bt}brain_stats${bt} |`,
-    `| Brain feedback | ${bt}${toolPrefix}_core${bt} | ${bt}brain_feedback${bt} |`,
-    `| Route intent | ${bt}${toolPrefix}_core${bt} | ${bt}route_intent${bt} |`,
-    `| Get behavior rules | ${bt}${toolPrefix}_core${bt} | ${bt}get_behavior_rules${bt} |`,
-    `| Morph mode | ${bt}${toolPrefix}_core${bt} | ${bt}morph${bt} |`,
-  );
-
-  // Admin
-  mdLines.push(
-    `| Admin health | ${bt}${toolPrefix}_core${bt} | ${bt}admin_health${bt} |`,
-    `| Tool list | ${bt}${toolPrefix}_core${bt} | ${bt}admin_tool_list${bt} |`,
-  );
-
-  // Governance
-  mdLines.push(
-    `| Governance dashboard | ${bt}${toolPrefix}_core${bt} | ${bt}governance_dashboard${bt} |`,
-    `| Governance policy | ${bt}${toolPrefix}_core${bt} | ${bt}governance_policy${bt} |`,
-  );
-
-  mdLines.push('');
+  mdLines.push('', `> Full list: ${bt}${toolPrefix}_core op:admin_tool_list${bt}`, '');
 
   // ─── Shared Behavioral Rules ───────────────────────────
   mdLines.push(...getSharedRules(toolPrefix));
