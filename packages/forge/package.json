@@ -1,6 +1,6 @@
 {
   "name": "@soleri/forge",
-  "version": "5.14.7",
+  "version": "5.14.8",
   "description": "Scaffold AI agents that learn, remember, and grow with you.",
   "keywords": [
     "agent",
@@ -42,7 +42,7 @@
   },
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "tsc && cp -r src/skills dist/skills",
+    "build": "tsc && rm -rf dist/skills && cp -r src/skills dist/skills",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
