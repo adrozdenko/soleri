@@ -39,6 +39,9 @@ export const AgentConfigSchema = z.object({
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 
+/** Input type — fields with defaults are optional (use before Zod parsing) */
+export type AgentConfigInput = z.input<typeof AgentConfigSchema>;
+
 /** Result of scaffolding */
 export interface ScaffoldResult {
   success: boolean;

@@ -10,6 +10,7 @@ export { addDomain } from './domain-manager.js';
 export { patchIndexTs, patchClaudeMdContent } from './patching.js';
 export type {
   AgentConfig,
+  AgentConfigInput,
   SetupTarget,
   ScaffoldResult,
   ScaffoldPreview,

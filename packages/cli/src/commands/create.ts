@@ -58,11 +58,17 @@ export function registerCreate(program: Command): void {
             config = parsed.data;
           } else {
             // Interactive wizard
-            config = await runCreateWizard(name);
-            if (!config) {
+            const wizardResult = await runCreateWizard(name);
+            if (!wizardResult) {
               p.outro('Cancelled.');
               return;
             }
+            const parsed = AgentConfigSchema.safeParse(wizardResult);
+            if (!parsed.success) {
+              p.log.error(`Invalid config: ${parsed.error.message}`);
+              process.exit(1);
+            }
+            config = parsed.data;
           }
 
           const setupTarget = parseSetupTarget(opts?.setupTarget);

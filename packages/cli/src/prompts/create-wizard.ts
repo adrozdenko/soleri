@@ -6,7 +6,7 @@
  * is Enter / arrow keys / space bar.
  */
 import * as p from '@clack/prompts';
-import type { AgentConfig } from '@soleri/forge/lib';
+import type { AgentConfigInput } from '@soleri/forge/lib';
 import { ARCHETYPES, type Archetype } from './archetypes.js';
 import {
   DOMAIN_OPTIONS,
@@ -31,10 +31,10 @@ function slugify(name: string): string {
 }
 
 /**
- * Run the interactive create wizard and return an AgentConfig.
+ * Run the interactive create wizard and return an AgentConfigInput.
  * Returns null if the user cancels at any point.
  */
-export async function runCreateWizard(initialName?: string): Promise<AgentConfig | null> {
+export async function runCreateWizard(initialName?: string): Promise<AgentConfigInput | null> {
   p.intro('Create a new Soleri agent');
 
   // ─── Step 1: Archetype ────────────────────────────────────
