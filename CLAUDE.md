@@ -58,9 +58,32 @@ Every new core feature requires changes in all 4 template files:
 
 If any of the 4 are missed, the generated agent ships incomplete.
 
+### CLAUDE.md Split Injection Architecture
+
+Generated agents inject TWO separate blocks into CLAUDE.md:
+
+| Block | Marker | Content | Injected |
+|-------|--------|---------|----------|
+| **Engine rules** | `<!-- soleri:engine-rules -->` | Shared behavioral rules (vault-first, planning, output formatting, clean commits, etc.) — prefix-free `op:name` syntax | Once globally, skipped if already present |
+| **Agent block** | `<!-- agent-id:mode -->` | Lightweight: identity, activation, facade table mapping `op:name` → `agentId_core op:name` | Per agent |
+
+**Key files:**
+
+| File | Purpose |
+|------|---------|
+| `packages/forge/src/templates/shared-rules.ts` | Engine rules content — agent-agnostic, `op:name` syntax |
+| `packages/forge/src/templates/claude-md-template.ts` | Generates `claude-md-content.ts` — exports agent block + engine rules |
+| `packages/forge/src/templates/inject-claude-md.ts` | Generates `inject-claude-md.ts` — dual-marker injection logic |
+
+**When adding engine-level behavioral rules:** Add to `shared-rules.ts` (not the agent template). These apply to all agents.
+
+**When adding agent-specific content:** Add to `claude-md-template.ts` (identity, activation, facade table, hook packs).
+
+**Updating existing agents:** `soleri agent refresh` regenerates both `claude-md-content.ts` and `inject-claude-md.ts` from latest forge templates.
+
 ### Feature Gap
 
-Currently generated agents have ~36 ops across 2 facades. Salvador has 181+ ops across 14 facades. See GitHub milestones v5.1–v7.0 for the structured plan to close this gap.
+Generated agents now ship with 209+ ops across 13+ semantic facades (vault, plan, brain, memory, admin, curator, loop, orchestrate, control, cognee, governance, figma, github) plus domain facades. Salvador has 181+ ops across 14 facades. The op gap is closed; remaining work is domain-specific intelligence (design system, color science).
 
 ### Package Architecture
 
@@ -68,7 +91,7 @@ Currently generated agents have ~36 ops across 2 facades. Salvador has 181+ ops 
 | --------------- | ------------------------------------------------------------ | ------------------------------- |
 | `@soleri/core`  | Engine — vault, brain, planner, cognee, LLM utils, facades   | `packages/core/src/`            |
 | `@soleri/forge` | Scaffold — generates agent projects from config              | `packages/forge/src/templates/` |
-| `@soleri/cli`   | Developer CLI — create, list, add-domain, dev, doctor, hooks | `packages/cli/src/`             |
+| `@soleri/cli`   | Developer CLI — create, list, add-domain, dev, doctor, hooks, agent (status/update/refresh/diff) | `packages/cli/src/`             |
 | `create-soleri` | npm create shorthand                                         | `packages/create-soleri/`       |
 
 ### Testing Protocol
