@@ -120,16 +120,17 @@ export function patchClaudeMdContent(
 
   if (domainsToAdd.length === 0) return source;
 
-  // Try primary anchor first, then fallback for older agents
-  let anchorIdx = source.indexOf("'| Memory search |");
+  // Try anchors in order: v6 (curated table), v5 (full table), v4 (legacy)
+  let anchorIdx = source.indexOf("'| Intelligent search |");
   if (anchorIdx === -1) {
-    // Older agents: insert before the empty line preceding ## Intent Detection
+    anchorIdx = source.indexOf("'| Memory search |");
+  }
+  if (anchorIdx === -1) {
+    // v4 agents: insert before ## Intent Detection
     anchorIdx = source.indexOf("'## Intent Detection'");
     if (anchorIdx === -1) return null;
-    // Back up to include the preceding empty string line ('',)
     const emptyLineIdx = source.lastIndexOf("'',", anchorIdx);
     if (emptyLineIdx !== -1 && anchorIdx - emptyLineIdx < 20) {
-      // Find the start of that line (the indentation)
       const lineStart = source.lastIndexOf('\n', emptyLineIdx);
       anchorIdx = lineStart === -1 ? emptyLineIdx : lineStart + 1;
     }
