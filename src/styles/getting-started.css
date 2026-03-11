@@ -192,6 +192,78 @@
   max-width: 600px;
 }
 
+/* Flow bar — visual step sequence */
+.wizard-flow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 32px;
+  margin-bottom: 8px;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.wizard-flow-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.wizard-flow-step:not(:last-child)::after {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  background: var(--border);
+  margin-left: 8px;
+}
+
+.wizard-flow-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-teal);
+  color: var(--background);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.wizard-flow-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground-strong);
+}
+
+/* Step badge */
+.ref-step-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 100px;
+  background: var(--accent-teal);
+  color: var(--background);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.ref-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
 .ref-group {
   margin-top: 36px;
 }
@@ -200,7 +272,6 @@
   font-size: 16px;
   font-weight: 700;
   color: var(--foreground-strong);
-  margin-bottom: 4px;
 }
 
 .ref-group-desc {
@@ -211,6 +282,40 @@
   max-width: 600px;
 }
 
+/* Archetype primary group */
+.ref-group-primary {
+  margin-top: 32px;
+  padding: 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-teal);
+  background: var(--surface);
+}
+
+.ref-options-archetypes {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.ref-option-archetype {
+  border-color: var(--neutral-700-60);
+  padding: 14px 16px;
+}
+
+.ref-option-archetype .ref-option-name {
+  font-size: 14px;
+}
+
+.ref-prefills-note {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--code-bg);
+  border: 1px solid var(--neutral-700-60);
+  line-height: 1.6;
+}
+
+/* Standard option cards */
 .ref-options {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -245,6 +350,31 @@
   line-height: 1.5;
 }
 
+/* Principle category grouping */
+.ref-category {
+  margin-bottom: 16px;
+}
+
+.ref-category-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ref-category .ref-options {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.ref-category .ref-option {
+  padding: 8px 12px;
+}
+
 .ref-core-note {
   margin-top: 10px;
   font-size: 12px;
@@ -274,6 +404,28 @@
   }
 
   .ref-options {
+    grid-template-columns: 1fr;
+  }
+
+  .wizard-flow {
+    gap: 2px;
+    padding: 10px 14px;
+  }
+
+  .wizard-flow-label {
+    font-size: 11px;
+  }
+
+  .wizard-flow-step:not(:last-child)::after {
+    width: 12px;
+    margin-left: 4px;
+  }
+
+  .ref-group-primary {
+    padding: 16px;
+  }
+
+  .ref-category .ref-options {
     grid-template-columns: 1fr;
   }
 }

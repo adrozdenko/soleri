@@ -146,6 +146,8 @@ const content: Record<Locale, GettingStartedContent> = {
         ],
       },
       coreSkillsNote: 'Always included: brainstorming, systematic-debugging, verification-before-completion, health-check, context-resume',
+      stepLabel: 'Step',
+      prefillsNote: 'Picking an archetype pre-fills domains, principles, skills, and tone. Choose "Create Custom" to set each one yourself.',
     },
     nextTitle: 'Keep going',
     nextLinks: [
@@ -309,6 +311,8 @@ const content: Record<Locale, GettingStartedContent> = {
         ],
       },
       coreSkillsNote: 'Завжди включені: brainstorming, systematic-debugging, verification-before-completion, health-check, context-resume',
+      stepLabel: 'Крок',
+      prefillsNote: 'Обравши архетип, ви автоматично заповнюєте домени, принципи, навички та тон. Оберіть "Створити власний" для повного контролю.',
     },
     nextTitle: 'Продовжуйте',
     nextLinks: [
@@ -473,6 +477,8 @@ const content: Record<Locale, GettingStartedContent> = {
         ],
       },
       coreSkillsNote: 'Sempre incluse: brainstorming, systematic-debugging, verification-before-completion, health-check, context-resume',
+      stepLabel: 'Passo',
+      prefillsNote: 'Scegliendo un archetipo si precompilano domini, principi, skill e tono. Scegli "Crea personalizzato" per impostare tutto manualmente.',
     },
     nextTitle: 'Continua',
     nextLinks: [
@@ -528,6 +534,8 @@ interface WizardRef {
   skills: WizardSection;
   tones: WizardSection;
   coreSkillsNote: string;
+  stepLabel: string;
+  prefillsNote: string;
 }
 
 interface GettingStartedContent {

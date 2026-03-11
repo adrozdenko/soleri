@@ -13,6 +13,18 @@ export function getStaticPaths() {
 
 const { locale } = Astro.props as { locale: Locale };
 const c = gettingStartedContent(locale);
+
+// Group principles by category (hint field)
+const principleCategories: Array<{ cat: string; opts: Array<{ name: string; hint: string }> }> = [];
+const catMap = new Map<string, Array<{ name: string; hint: string }>>();
+for (const opt of c.wizardRef.principles.options) {
+  const cat = opt.hint;
+  if (!catMap.has(cat)) {
+    catMap.set(cat, []);
+    principleCategories.push({ cat, opts: catMap.get(cat)! });
+  }
+  catMap.get(cat)!.push(opt);
+}
 ---
 <BaseLayout
   title={c.title}
@@ -67,23 +79,106 @@ const c = gettingStartedContent(locale);
       <p class="section-subtitle">{c.wizardRef.sectionSubtitle}</p>
     </div>
 
-    {[c.wizardRef.archetypes, c.wizardRef.domains, c.wizardRef.principles, c.wizardRef.skills, c.wizardRef.tones].map((section) => (
-      <div class="ref-group">
-        <h3 class="ref-group-title">{section.title}</h3>
-        <p class="ref-group-desc">{section.description}</p>
-        <div class="ref-options">
-          {section.options.map((opt) => (
-            <div class="ref-option">
-              <span class="ref-option-name">{opt.name}</span>
-              <span class="ref-option-hint">{opt.hint}</span>
-            </div>
-          ))}
+    <!-- Wizard flow bar -->
+    <div class="wizard-flow">
+      {[c.wizardRef.archetypes, c.wizardRef.domains, c.wizardRef.principles, c.wizardRef.skills, c.wizardRef.tones].map((section, i) => (
+        <div class="wizard-flow-step">
+          <span class="wizard-flow-num">{i + 1}</span>
+          <span class="wizard-flow-label">{section.title}</span>
         </div>
-        {section === c.wizardRef.skills && (
-          <p class="ref-core-note">{c.wizardRef.coreSkillsNote}</p>
-        )}
+      ))}
+    </div>
+
+    <!-- Step 1: Archetypes — primary choice -->
+    <div class="ref-group ref-group-primary">
+      <div class="ref-group-header">
+        <span class="ref-step-badge">{c.wizardRef.stepLabel} 1</span>
+        <h3 class="ref-group-title">{c.wizardRef.archetypes.title}</h3>
       </div>
-    ))}
+      <p class="ref-group-desc">{c.wizardRef.archetypes.description}</p>
+      <div class="ref-options ref-options-archetypes">
+        {c.wizardRef.archetypes.options.map((opt) => (
+          <div class="ref-option ref-option-archetype">
+            <span class="ref-option-name">{opt.name}</span>
+            <span class="ref-option-hint">{opt.hint}</span>
+          </div>
+        ))}
+      </div>
+      <p class="ref-prefills-note">{c.wizardRef.prefillsNote}</p>
+    </div>
+
+    <!-- Step 2: Domains -->
+    <div class="ref-group">
+      <div class="ref-group-header">
+        <span class="ref-step-badge">{c.wizardRef.stepLabel} 2</span>
+        <h3 class="ref-group-title">{c.wizardRef.domains.title}</h3>
+      </div>
+      <p class="ref-group-desc">{c.wizardRef.domains.description}</p>
+      <div class="ref-options">
+        {c.wizardRef.domains.options.map((opt) => (
+          <div class="ref-option">
+            <span class="ref-option-name">{opt.name}</span>
+            <span class="ref-option-hint">{opt.hint}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Step 3: Principles — grouped by category -->
+    <div class="ref-group">
+      <div class="ref-group-header">
+        <span class="ref-step-badge">{c.wizardRef.stepLabel} 3</span>
+        <h3 class="ref-group-title">{c.wizardRef.principles.title}</h3>
+      </div>
+      <p class="ref-group-desc">{c.wizardRef.principles.description}</p>
+      {principleCategories.map(({ cat, opts }) => (
+        <div class="ref-category">
+          <span class="ref-category-label">{cat}</span>
+          <div class="ref-options">
+            {opts.map((opt) => (
+              <div class="ref-option">
+                <span class="ref-option-name">{opt.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Step 4: Skills -->
+    <div class="ref-group">
+      <div class="ref-group-header">
+        <span class="ref-step-badge">{c.wizardRef.stepLabel} 4</span>
+        <h3 class="ref-group-title">{c.wizardRef.skills.title}</h3>
+      </div>
+      <p class="ref-group-desc">{c.wizardRef.skills.description}</p>
+      <div class="ref-options">
+        {c.wizardRef.skills.options.map((opt) => (
+          <div class="ref-option">
+            <span class="ref-option-name">{opt.name}</span>
+            <span class="ref-option-hint">{opt.hint}</span>
+          </div>
+        ))}
+      </div>
+      <p class="ref-core-note">{c.wizardRef.coreSkillsNote}</p>
+    </div>
+
+    <!-- Step 5: Tones -->
+    <div class="ref-group">
+      <div class="ref-group-header">
+        <span class="ref-step-badge">{c.wizardRef.stepLabel} 5</span>
+        <h3 class="ref-group-title">{c.wizardRef.tones.title}</h3>
+      </div>
+      <p class="ref-group-desc">{c.wizardRef.tones.description}</p>
+      <div class="ref-options">
+        {c.wizardRef.tones.options.map((opt) => (
+          <div class="ref-option">
+            <span class="ref-option-name">{opt.name}</span>
+            <span class="ref-option-hint">{opt.hint}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   </section>
 
   <div class="soleri-mark mark-section"></div>
