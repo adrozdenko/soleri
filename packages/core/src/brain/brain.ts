@@ -172,6 +172,7 @@ export class Brain {
 
     if (rawResults.length === 0) return [];
 
+    const seedCount = rawResults.length;
     const queryTokens = tokenize(query);
     const queryTags = options?.tags ?? [];
     const queryDomain = options?.domain;
@@ -197,6 +198,17 @@ export class Brain {
     });
 
     ranked.sort((a, b) => b.score - a.score);
+
+    // Small corpus guard: when the FTS seed is small (< 50 entries), TF-IDF scoring
+    // becomes too aggressive and filters out relevant results. If filtering to `limit`
+    // would discard more than half the seed, return all seed results sorted by score.
+    if (seedCount < 50 && limit < seedCount && ranked.length > limit) {
+      const wouldKeep = limit;
+      if (wouldKeep < seedCount / 2) {
+        return ranked.slice(0, seedCount);
+      }
+    }
+
     return ranked.slice(0, limit);
   }
 

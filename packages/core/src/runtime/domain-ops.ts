@@ -59,11 +59,30 @@ export function createDomainFacade(
         limit: z.number().optional(),
       }),
       handler: async (params) => {
-        return brain.intelligentSearch(params.query as string, {
+        const limit = (params.limit as number) ?? 10;
+        const results = await brain.intelligentSearch(params.query as string, {
           domain,
           tags: params.tags as string[] | undefined,
-          limit: (params.limit as number) ?? 10,
+          limit,
         });
+        // Fallback: when brain returns empty, try vault FTS directly
+        if (results.length === 0) {
+          const ftsResults = vault.search(params.query as string, { domain, limit });
+          return ftsResults.map((r) => ({
+            entry: r.entry,
+            score: 0,
+            breakdown: {
+              semantic: 0,
+              vector: 0,
+              severity: 0,
+              temporalDecay: 0,
+              tagOverlap: 0,
+              domainMatch: 0,
+              total: 0,
+            },
+          }));
+        }
+        return results;
       },
     },
     {

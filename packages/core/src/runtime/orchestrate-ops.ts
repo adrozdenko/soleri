@@ -62,6 +62,19 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
           // Brain has no data yet — proceed without recommendations
         }
 
+        // Fallback: if brain returned nothing, pull from vault
+        if (recommendations.length === 0) {
+          try {
+            const vaultResults = vault.search(objective, { domain, limit: 5 });
+            recommendations = vaultResults.map((r) => ({
+              pattern: r.entry.title,
+              strength: 50,
+            }));
+          } catch {
+            // Vault search failed — proceed without recommendations
+          }
+        }
+
         // Build decisions from recommendations
         const decisions = recommendations.map(
           (r) => `Brain pattern: ${r.pattern} (strength: ${r.strength.toFixed(1)})`,

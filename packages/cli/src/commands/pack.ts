@@ -7,8 +7,8 @@
  * Resolution order: local path → built-in → npm registry.
  */
 
-import { join } from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve as pathResolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import { PackLockfile, inferPackType, resolvePack, checkNpmVersion } from '@soleri/core';
@@ -351,6 +351,68 @@ export function registerPack(program: Command): void {
       } catch {
         s.stop('Search failed');
         p.log.warn('Could not search npm registry. Check your network connection.');
+      }
+    });
+
+  // ─── available ─────────────────────────────────────────────
+  pack
+    .command('available')
+    .option('--dir <path>', 'Custom packs directory to scan')
+    .description('List available knowledge packs (built-in starter and community)')
+    .action((opts: { dir?: string }) => {
+      const searchDirs: string[] = [];
+      if (opts.dir) {
+        searchDirs.push(pathResolve(opts.dir));
+      } else {
+        const candidates = [
+          join(process.cwd(), 'knowledge-packs'),
+          pathResolve(import.meta.dirname ?? '.', '..', '..', '..', '..', '..', 'knowledge-packs'),
+        ];
+        for (const c of candidates) {
+          if (existsSync(c)) searchDirs.push(c);
+        }
+      }
+
+      if (searchDirs.length === 0) {
+        p.log.info('No knowledge-packs directory found. Use --dir to specify a path.');
+        return;
+      }
+
+      let total = 0;
+      for (const baseDir of searchDirs) {
+        const categories = readdirSync(baseDir, { withFileTypes: true })
+          .filter((d) => d.isDirectory())
+          .map((d) => d.name);
+
+        for (const category of categories) {
+          const categoryDir = join(baseDir, category);
+          const packs = readdirSync(categoryDir, { withFileTypes: true }).filter(
+            (d) => d.isDirectory() && existsSync(join(categoryDir, d.name, 'soleri-pack.json')),
+          );
+
+          if (packs.length === 0) continue;
+
+          console.log(`\n  ${category}/`);
+          for (const pk of packs) {
+            try {
+              const manifest = JSON.parse(
+                readFileSync(join(categoryDir, pk.name, 'soleri-pack.json'), 'utf-8'),
+              );
+              const domains = (manifest.domains as string[])?.join(', ') || '—';
+              console.log(`    ${manifest.id}@${manifest.version}  ${manifest.description || ''}`);
+              console.log(`      domains: ${domains}`);
+              total++;
+            } catch {
+              // skip malformed packs
+            }
+          }
+        }
+      }
+
+      if (total === 0) {
+        p.log.info('No packs found.');
+      } else {
+        console.log(`\n  ${total} pack(s) available.\n`);
       }
     });
 
