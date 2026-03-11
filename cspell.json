@@ -74,7 +74,8 @@
     "nestable",
     "unhashed",
     "pgvector",
-    "falkordb"
+    "falkordb",
+    "chunker"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [

@@ -73,13 +73,13 @@ Give it a name, a domain, a voice. It ships with starter knowledge and learns fr
 ├─────────────────────────────────────────────────────────┤
 │  Scaffold       @soleri/forge (config-driven templates) │
 ├─────────────────────────────────────────────────────────┤
-│  Transports     MCP (Claude Code) · REST · LSP          │
+│  Transports     MCP · HTTP/SSE · WebSocket · LSP · Telegram │
 └─────────────────────────────────────────────────────────┘
 ```
 
 - **Engine (`@soleri/core`)** — Shared infrastructure for all agents. Vault (SQLite + FTS5), Brain (hybrid TF-IDF + optional Cognee vector search), Planner (state machine), LLM utilities (circuit breaker, key pool, retry), and facade system. Pure logic, zero protocol dependencies.
 - **Scaffold (`@soleri/forge`)** — Generates config-driven agent projects that import from `@soleri/core`. Creates persona, activation, LLM client, and domain facades — the agent-specific parts.
-- **Transports** — MCP for Claude Code and Cursor today, REST and LSP designed into the architecture.
+- **Transports** — MCP for Claude Code and Cursor, HTTP/SSE for REST APIs, WebSocket for bidirectional streaming, LSP for editor-native integration, and Telegram for conversational access.
 - **Domains** — Pluggable expertise modules (frontend, backend, cross-cutting, and custom).
 - **Vault Backends** — Three-tier model: agent vault (personal), project vault (team conventions), team vault (shared across all projects). Local filesystem, git sync, or remote API.
 - **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys for local vault search, pattern matching, and brain tracking. Optional Cognee integration adds vector embeddings and knowledge graph when available.
@@ -88,9 +88,9 @@ Give it a name, a domain, a voice. It ships with starter knowledge and learns fr
 
 | Package                                   | Version | Description                                                                                       |
 | ----------------------------------------- | ------- | ------------------------------------------------------------------------------------------------- |
-| [`@soleri/core`](packages/core)           | 2.5.0   | Shared engine — Vault, Brain, Planner, Curator, Governance, Loops, Cognee hybrid search, PDF intake |
-| [`@soleri/forge`](packages/forge)         | 5.6.0   | Agent scaffolder — generates config-driven MCP agents with 208 ops and 17 built-in skills          |
-| [`@soleri/cli`](packages/cli)             | 1.5.0   | Developer CLI — create, manage, develop agents, governance, hook packs, and test commands           |
+| [`@soleri/core`](packages/core)           | 2.11.0  | Shared engine — Vault, Brain, Planner, Curator, Transports, Plugins, Packs, Intelligence, Cognee   |
+| [`@soleri/forge`](packages/forge)         | 5.12.0  | Agent scaffolder — generates config-driven MCP agents with Telegram support and 17 built-in skills  |
+| [`@soleri/cli`](packages/cli)             | 1.10.0  | Developer CLI — create, skills, packs, telemetry, archetypes, hook packs, Obsidian sync             |
 | [`create-soleri`](packages/create-soleri) | 1.1.0   | `npm create soleri` shorthand — delegates to `@soleri/cli`                                         |
 
 ### Knowledge Packs

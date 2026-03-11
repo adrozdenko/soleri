@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## @soleri/core@2.11.0 — 2026-03-11
+
+### Added
+
+- **Multi-transport layer** — HTTP/SSE, WebSocket, and LSP transports for agents reachable beyond MCP. Includes session management, fragment buffering, message chunking, and authentication primitives.
+- **Chat transport infrastructure** — Agent loop with MCP bridge, output compressor, and task cancellation manager for conversational interfaces.
+- **Telegram transport primitives** — Voice/TTS via Whisper, message queue for zero-cost relay mode, and per-chat browser session management with Playwright isolation.
+- **Self-update engine** — Agents can update themselves in-place. Includes file handling for photos/PDFs/docs and a notification engine for proactive alerts.
+- **Multi-vault architecture** — Tiered search across agent/project/team vaults with dynamic named connections and priority-weighted resolution. Connect and disconnect vaults at runtime.
+- **Vault branching** — Create named vault branches for experimentation with merge, list, and delete operations.
+- **Git vault sync** — Auto-commit vault changes to git for version-controlled knowledge with push/pull sync.
+- **PostgreSQL persistence provider** — Full `PersistenceProvider` implementation for concurrent multi-writer environments. Vault scaling benchmarked at 10K+ entries.
+- **Knowledge pack system** — Pack format spec with install, validate, and lifecycle ops. Unified resolver with lockfile, semver compatibility checks, and npm registry resolution. Obsidian bidirectional sync.
+- **Knowledge scoping** — Vault export, git sync, and team review workflows (submit, approve, reject, list pending). Vault branching for experimentation.
+- **Intelligence layer** — Agency mode with file watching, pattern surfacing, and warning detection. Context engine with entity extraction, knowledge retrieval, and confidence scoring. Session lifecycle with quality scoring and replay.
+- **Plugin system** — Runtime plugin lifecycle with registry, load/unload, and status ops.
+- **Playbook execution engine** — Start/step/complete lifecycle for multi-step validated procedures.
+- **Architecture primitives** — Feature flags (file + env + runtime layers), auth level enforcement in facade factory, hybrid facade strategy promoting hot ops to standalone MCP tools, host-agnostic enforcement layer, CLAUDE.md auto-composition, health registry with graceful degradation, content-hash dedup at capture, smart capture with 3-tier scope detection.
+- **Telemetry ops** — Facade and LLM telemetry metrics, migration runner for schema upgrades.
+- **Pack authoring** — CLI-accessible validation and deprecation utilities for knowledge pack authors.
+- **Skills system** — Skills CLI with pack search, update, and semver compatibility checks.
+- **Stream utilities** — `ReplayableStream` with `fanOut` helper and `maxBuffer`, content-addressable hashing, normalize/collect helpers.
+
+### Changed
+
+- Removed dead code flagged by knip audit (#188)
+
+## @soleri/forge@5.12.0 — 2026-03-11
+
+### Added
+
+- **Telegram forge templates** — Scaffolder generates Telegram bot, agent config, and supervisor templates. Full scaffolder integration for chat-enabled agents.
+- **Chat transport templates** — Session, fragment buffer, chunker, and auth primitives generated for all new agents.
+- **Pack system templates** — Unified pack system with lockfile and resolver scaffolded into generated agents.
+- **Self-update and notifications** — Generated agents include self-update engine and notification infrastructure.
+- **Task cancellation** — Chat transport task cancellation manager in generated code.
+- **Hot op promotion** — Hybrid facade strategy scaffolded: frequently-used ops promoted to standalone MCP tools for better LLM discovery.
+
+### Changed
+
+- Removed dead code flagged by knip audit (#188)
+
+## @soleri/cli@1.10.0 — 2026-03-11
+
+### Added
+
+- **`soleri skills`** — Skills CLI for searching, installing, updating, and managing agent skills with semver compatibility checks.
+- **`soleri pack`** — Pack authoring commands: create, validate, deprecate, and publish knowledge packs.
+- **`soleri telemetry`** — Telemetry ops and migration runner for agent lifecycle management.
+- **Archetype system** — Multi-archetype selection with union merge strategy during `soleri create`. 2 new archetypes: Accessibility Guardian and Documentation Writer. Domain-specific principles and tier field for archetype classification.
+- **Obsidian sync** — Bidirectional sync between agent vault and Obsidian via CLI.
+- **Starter knowledge packs** — Pre-built packs installable during scaffolding.
+- **Premium archetypes** — Extended archetype library with npm registry resolution.
+- **Unified pack system** — Lockfile, resolver, and CLI commands for pack management.
+- **Agent lifecycle CLI** — Telemetry ops and migration runner accessible from the command line.
+
+### Fixed
+
+- Auto-derive agent ID correctly during multiselect wizard flow
+- Doctor `runAllChecks` test timeout increased for reliability
+
+### Changed
+
+- Removed dead code flagged by knip audit (#188)
+
 ## @soleri/core@2.5.0 — 2026-03-07
 
 ### Added
