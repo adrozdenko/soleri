@@ -10,6 +10,7 @@ import { createAdminOps } from '../admin-ops.js';
 import { createAdminExtraOps } from '../admin-extra-ops.js';
 import { createPluginOps } from '../plugin-ops.js';
 import { createPackOps } from '../pack-ops.js';
+import { createTelemetryOps } from '../telemetry-ops.js';
 
 export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { llmClient, keyPool } = runtime;
@@ -107,6 +108,9 @@ export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
 
   // Pack ops
   ops.push(...createPackOps(runtime));
+
+  // Telemetry ops
+  ops.push(...createTelemetryOps(runtime));
 
   return ops;
 }

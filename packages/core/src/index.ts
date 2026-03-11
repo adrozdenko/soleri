@@ -494,6 +494,10 @@ export {
 } from './runtime/deprecation.js';
 export type { DeprecationInfo } from './runtime/deprecation.js';
 
+// ─── Migrations ────────────────────────────────────────────────────────
+export { MigrationRunner } from './migrations/index.js';
+export type { Migration, MigrationResult, MigrationState } from './migrations/index.js';
+
 // ─── Errors ────────────────────────────────────────────────────────────
 export {
   SoleriErrorCode,

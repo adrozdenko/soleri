@@ -17,6 +17,7 @@ import { registerInstall } from './commands/install.js';
 import { registerUninstall } from './commands/uninstall.js';
 import { registerPack } from './commands/pack.js';
 import { registerSkills } from './commands/skills.js';
+import { registerAgent } from './commands/agent.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -74,5 +75,6 @@ registerInstall(program);
 registerUninstall(program);
 registerPack(program);
 registerSkills(program);
+registerAgent(program);
 
 program.parse();

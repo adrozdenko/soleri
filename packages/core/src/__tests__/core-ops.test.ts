@@ -35,7 +35,7 @@ describe('createSemanticFacades', () => {
   }
 
   it('should return 232 ops', () => {
-    expect(ops.length).toBe(299);
+    expect(ops.length).toBe(301);
   });
 
   it('should have all expected op names', () => {
@@ -256,6 +256,9 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('admin_export_config');
     // Admin persistence (#85)
     expect(names).toContain('admin_persistence_info');
+    // Telemetry extended (#181)
+    expect(names).toContain('telemetry_errors');
+    expect(names).toContain('telemetry_slow_ops');
     // Loop (7)
     expect(names).toContain('loop_start');
     expect(names).toContain('loop_iterate');
