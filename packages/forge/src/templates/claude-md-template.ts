@@ -9,10 +9,10 @@ import { getEngineMarker, getEngineRulesContent } from './shared-rules.js';
  * 2. Agent block — lightweight, agent-specific, under `<!-- agent-id:mode -->`
  *    - Identity (persona, domains, principles)
  *    - Session start protocol
- *    - Curated facade table (~30 key ops, grouped by category)
+ *    - Facade table (~60 key ops across all 13 semantic facades + domains)
  *    - Hook packs (conditional)
  *
- * The facade table maps `op:name` → actual `agentId_core op:name` tool calls.
+ * The facade table maps `op:name` → actual `agentId_<facade> op:name` tool calls.
  * Full op list is always available via `admin_tool_list`.
  */
 export function generateClaudeMdTemplate(config: AgentConfig): string {
@@ -73,20 +73,32 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     );
   }
 
-  // Engine facades — compact, grouped by concern
+  // Engine facades — use actual tool names (standalone facades, NOT _core sub-groups)
   mdLines.push(
-    `| ${bt}${toolPrefix}_core${bt} (vault) | ${bt}search_intelligent${bt}, ${bt}capture_knowledge${bt}, ${bt}capture_quick${bt}, ${bt}search_feedback${bt} |`,
-    `| ${bt}${toolPrefix}_core${bt} (memory) | ${bt}memory_search${bt}, ${bt}memory_capture${bt}, ${bt}session_capture${bt} |`,
-    `| ${bt}${toolPrefix}_core${bt} (planning) | ${bt}create_plan${bt}, ${bt}approve_plan${bt}, ${bt}plan_split${bt}, ${bt}plan_reconcile${bt}, ${bt}plan_complete_lifecycle${bt} |`,
-    `| ${bt}${toolPrefix}_core${bt} (orchestrate) | ${bt}orchestrate_plan${bt}, ${bt}orchestrate_execute${bt}, ${bt}orchestrate_complete${bt} |`,
-    `| ${bt}${toolPrefix}_core${bt} (brain) | ${bt}brain_stats${bt}, ${bt}brain_feedback${bt}, ${bt}rebuild_vocabulary${bt} |`,
-    `| ${bt}${toolPrefix}_core${bt} (control) | ${bt}route_intent${bt}, ${bt}morph${bt}, ${bt}get_behavior_rules${bt} |`,
-    `| ${bt}${toolPrefix}_core${bt} (loop) | ${bt}loop_start${bt}, ${bt}loop_iterate${bt}, ${bt}loop_status${bt}, ${bt}loop_cancel${bt} |`,
-    `| ${bt}${toolPrefix}_core${bt} (governance) | ${bt}governance_dashboard${bt}, ${bt}governance_policy${bt}, ${bt}governance_proposals${bt} |`,
-    `| ${bt}${toolPrefix}_core${bt} (admin) | ${bt}admin_health${bt}, ${bt}admin_tool_list${bt}, ${bt}admin_diagnostic${bt} |`,
+    // Vault — knowledge lifecycle, capture, search, management
+    `| ${bt}${toolPrefix}_vault${bt} | ${bt}search_intelligent${bt}, ${bt}capture_knowledge${bt}, ${bt}capture_quick${bt}, ${bt}search_feedback${bt} |`,
+    `| ${bt}${toolPrefix}_vault${bt} (keeper) | ${bt}knowledge_audit${bt}, ${bt}knowledge_health${bt}, ${bt}knowledge_merge${bt}, ${bt}knowledge_reorganize${bt} |`,
+    `| ${bt}${toolPrefix}_vault${bt} (mgmt) | ${bt}vault_get${bt}, ${bt}vault_update${bt}, ${bt}vault_remove${bt}, ${bt}vault_tags${bt}, ${bt}vault_domains${bt}, ${bt}vault_recent${bt} |`,
+    // Curator — quality, dedup, contradictions, grooming
+    `| ${bt}${toolPrefix}_curator${bt} | ${bt}curator_status${bt}, ${bt}curator_detect_duplicates${bt}, ${bt}curator_contradictions${bt}, ${bt}curator_groom_all${bt}, ${bt}curator_consolidate${bt}, ${bt}curator_health_audit${bt} |`,
+    `| ${bt}${toolPrefix}_curator${bt} (advanced) | ${bt}curator_enrich${bt}, ${bt}curator_hybrid_contradictions${bt}, ${bt}curator_entry_history${bt}, ${bt}curator_queue_stats${bt} |`,
+    // Planning, orchestration, brain
+    `| ${bt}${toolPrefix}_plan${bt} | ${bt}create_plan${bt}, ${bt}approve_plan${bt}, ${bt}plan_split${bt}, ${bt}plan_reconcile${bt}, ${bt}plan_complete_lifecycle${bt} |`,
+    `| ${bt}${toolPrefix}_orchestrate${bt} | ${bt}orchestrate_plan${bt}, ${bt}orchestrate_execute${bt}, ${bt}orchestrate_complete${bt} |`,
+    `| ${bt}${toolPrefix}_brain${bt} | ${bt}brain_stats${bt}, ${bt}brain_feedback${bt}, ${bt}rebuild_vocabulary${bt}, ${bt}brain_strengths${bt}, ${bt}brain_recommend${bt} |`,
+    // Memory, control, loop
+    `| ${bt}${toolPrefix}_memory${bt} | ${bt}memory_search${bt}, ${bt}memory_capture${bt}, ${bt}session_capture${bt} |`,
+    `| ${bt}${toolPrefix}_control${bt} | ${bt}route_intent${bt}, ${bt}morph${bt}, ${bt}get_behavior_rules${bt}, ${bt}governance_dashboard${bt}, ${bt}governance_policy${bt} |`,
+    `| ${bt}${toolPrefix}_loop${bt} | ${bt}loop_start${bt}, ${bt}loop_iterate${bt}, ${bt}loop_status${bt}, ${bt}loop_cancel${bt} |`,
+    // Intelligence — cognee, context, agency
+    `| ${bt}${toolPrefix}_cognee${bt} | ${bt}cognee_search${bt}, ${bt}cognee_graph_stats${bt}, ${bt}cognee_export_status${bt} |`,
+    `| ${bt}${toolPrefix}_context${bt} | ${bt}context_extract_entities${bt}, ${bt}context_retrieve_knowledge${bt}, ${bt}context_analyze${bt} |`,
+    `| ${bt}${toolPrefix}_agency${bt} | ${bt}agency_enable${bt}, ${bt}agency_status${bt}, ${bt}agency_surface_patterns${bt}, ${bt}agency_warnings${bt}, ${bt}agency_clarify${bt} |`,
+    // Admin
+    `| ${bt}${toolPrefix}_admin${bt} | ${bt}admin_health${bt}, ${bt}admin_tool_list${bt}, ${bt}admin_diagnostic${bt} |`,
   );
 
-  mdLines.push('', `> Full list: ${bt}${toolPrefix}_core op:admin_tool_list${bt}`, '');
+  mdLines.push('', `> Full list: ${bt}${toolPrefix}_admin op:admin_tool_list${bt}`, '');
 
   // ─── Hook Packs (conditional) ──────────────────────────
   appendHookPacks(mdLines, config);
