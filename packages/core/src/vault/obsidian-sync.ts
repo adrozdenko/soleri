@@ -11,7 +11,8 @@
 
 import { mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join, extname, relative, dirname } from 'node:path';
-import type { Vault, SearchResult } from './vault.js';
+import type { Vault } from './vault.js';
+import type { IntelligenceEntry } from '../intelligence/types.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -72,7 +73,7 @@ export interface ConflictInfo {
 /**
  * Convert a vault entry to Obsidian-compatible markdown with YAML frontmatter.
  */
-export function toObsidianMarkdown(entry: SearchResult): string {
+export function toObsidianMarkdown(entry: IntelligenceEntry): string {
   const lines: string[] = ['---'];
 
   lines.push(`id: "${entry.id}"`);

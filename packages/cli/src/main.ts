@@ -15,6 +15,7 @@ import { registerUpgrade } from './commands/upgrade.js';
 import { registerExtend } from './commands/extend.js';
 import { registerInstall } from './commands/install.js';
 import { registerUninstall } from './commands/uninstall.js';
+import { registerPack } from './commands/pack.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -70,5 +71,6 @@ registerUpgrade(program);
 registerExtend(program);
 registerInstall(program);
 registerUninstall(program);
+registerPack(program);
 
 program.parse();

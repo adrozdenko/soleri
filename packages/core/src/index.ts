@@ -533,12 +533,20 @@ export type { HashableEntry } from './vault/content-hash.js';
 
 // ─── Knowledge Packs ────────────────────────────────────────────────────
 export { PackInstaller, packManifestSchema } from './packs/index.js';
+export { PackLockfile, inferPackType } from './packs/index.js';
+export { resolvePack, checkNpmVersion } from './packs/index.js';
 export type {
   PackManifest,
   PackStatus,
   InstalledPack,
   InstallResult,
   ValidateResult,
+  LockEntry,
+  PackType,
+  PackSource,
+  LockfileData,
+  ResolvedPack,
+  ResolveOptions,
 } from './packs/index.js';
 
 // ─── Plugin System ──────────────────────────────────────────────────────

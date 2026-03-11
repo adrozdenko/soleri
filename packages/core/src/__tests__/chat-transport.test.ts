@@ -50,8 +50,8 @@ describe('ChatSessionManager', () => {
       expect(s1).toBe(s2);
     });
 
-    test('get returns null for missing session', () => {
-      expect(manager.get('nonexistent')).toBeNull();
+    test('get returns undefined for missing session', () => {
+      expect(manager.get('nonexistent')).toBeUndefined();
     });
 
     test('has checks existence', () => {

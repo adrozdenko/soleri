@@ -69,7 +69,7 @@ export class ChatSessionManager {
   /**
    * Get a session without creating one.
    */
-  get(sessionId: string): ChatSession | null {
+  get(sessionId: string): ChatSession | undefined {
     return this.sessions.get(sessionId) ?? this.loadFromDisk(sessionId);
   }
 
@@ -260,15 +260,15 @@ export class ChatSessionManager {
     }
   }
 
-  private loadFromDisk(sessionId: string): ChatSession | null {
+  private loadFromDisk(sessionId: string): ChatSession | undefined {
     const path = this.sessionPath(sessionId);
-    if (!existsSync(path)) return null;
+    if (!existsSync(path)) return undefined;
 
     try {
       const data = readFileSync(path, 'utf-8');
       return JSON.parse(data) as ChatSession;
     } catch {
-      return null;
+      return undefined;
     }
   }
 
