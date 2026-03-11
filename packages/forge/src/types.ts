@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 /** Communication tone for the agent persona */
-export const TONES = ['precise', 'mentor', 'pragmatic'] as const;
-export type Tone = (typeof TONES)[number];
+const TONES = ['precise', 'mentor', 'pragmatic'] as const;
 
 /** Where to scaffold host/client integration setup. */
 export const SETUP_TARGETS = ['claude', 'codex', 'both'] as const;

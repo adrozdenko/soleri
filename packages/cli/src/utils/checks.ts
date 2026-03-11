@@ -135,7 +135,7 @@ function checkCognee(): CheckResult {
   }
 }
 
-export function checkHookPacks(): CheckResult {
+function checkHookPacks(): CheckResult {
   const installed = getInstalledPacks();
   if (installed.length === 0) {
     return {

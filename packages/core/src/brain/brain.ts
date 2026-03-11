@@ -23,17 +23,6 @@ import type {
   FeedbackStats,
 } from './types.js';
 
-// Re-export types for backward compatibility
-export type {
-  ScoringWeights,
-  ScoreBreakdown,
-  RankedResult,
-  SearchOptions,
-  CaptureResult,
-  BrainStats,
-  QueryContext,
-} from './types.js';
-
 // ─── Severity scoring ──────────────────────────────────────────────
 
 const SEVERITY_SCORES: Record<string, number> = {

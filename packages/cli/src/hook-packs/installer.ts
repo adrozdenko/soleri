@@ -1,7 +1,7 @@
 /**
  * Hook pack installer — copies hookify files to ~/.claude/ (global) or project .claude/ (local).
  */
-import { existsSync, copyFileSync, unlinkSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, copyFileSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { getPack } from './registry.js';
@@ -125,21 +125,4 @@ export function isPackInstalled(
   if (present === 0) return false;
   if (present === pack.manifest.hooks.length) return true;
   return 'partial';
-}
-
-/**
- * Get the installed version of a hook from its file header.
- * Returns null if no version found or file doesn't exist.
- */
-export function getInstalledHookVersion(
-  hook: string,
-  options?: { projectDir?: string },
-): string | null {
-  const claudeDir = resolveClaudeDir(options?.projectDir);
-  const filePath = join(claudeDir, `hookify.${hook}.local.md`);
-  if (!existsSync(filePath)) return null;
-
-  const content = readFileSync(filePath, 'utf-8');
-  const match = content.match(/^# Version: (.+)$/m);
-  return match ? match[1] : null;
 }

@@ -6,7 +6,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 
-export interface HookPackManifest {
+interface HookPackManifest {
   name: string;
   description: string;
   hooks: string[];

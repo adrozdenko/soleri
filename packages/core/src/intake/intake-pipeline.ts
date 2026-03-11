@@ -53,7 +53,7 @@ function mapKnowledgeType(kt: KnowledgeType): IntelligenceEntry['type'] {
  * Strategy: split on form-feed characters first (common in pdf-parse output).
  * If that yields fewer segments than expected, fall back to equal-length splits.
  */
-export function splitIntoPages(text: string, numPages: number): string[] {
+function splitIntoPages(text: string, numPages: number): string[] {
   if (numPages <= 0) return [text];
 
   // Try form-feed split first

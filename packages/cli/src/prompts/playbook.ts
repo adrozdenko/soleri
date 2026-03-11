@@ -7,7 +7,7 @@
 
 // ─── Domains ────────────────────────────────────────────────
 
-export interface DomainOption {
+interface DomainOption {
   value: string;
   label: string;
   hint: string;
@@ -107,12 +107,12 @@ export const CUSTOM_DOMAIN_GUIDANCE = {
 
 // ─── Principles ─────────────────────────────────────────────
 
-export interface PrincipleCategory {
+interface PrincipleCategory {
   label: string;
   options: PrincipleOption[];
 }
 
-export interface PrincipleOption {
+interface PrincipleOption {
   value: string;
   label: string;
 }
@@ -363,12 +363,12 @@ export const CORE_SKILLS = [
   'executing-plans',
 ] as const;
 
-export interface SkillCategory {
+interface SkillCategory {
   label: string;
   options: SkillOption[];
 }
 
-export interface SkillOption {
+interface SkillOption {
   value: string;
   label: string;
   hint: string;
@@ -447,7 +447,7 @@ export const ALL_OPTIONAL_SKILLS = SKILL_CATEGORIES.flatMap((c) => c.options.map
 
 // ─── Tones ──────────────────────────────────────────────────
 
-export interface ToneOption {
+interface ToneOption {
   value: 'precise' | 'mentor' | 'pragmatic';
   label: string;
   hint: string;

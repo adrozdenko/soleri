@@ -68,26 +68,3 @@ export function generateSkills(config: AgentConfig): Array<[string, string]> {
 
   return files;
 }
-
-/**
- * List all bundled skill names with their descriptions (from YAML frontmatter).
- */
-export function listSkillDescriptions(): Array<{ name: string; description: string }> {
-  let skillFiles: string[];
-
-  try {
-    skillFiles = readdirSync(SKILLS_DIR).filter((f) => f.endsWith('.md'));
-  } catch {
-    return [];
-  }
-
-  return skillFiles.map((file) => {
-    const content = readFileSync(join(SKILLS_DIR, file), 'utf-8');
-    const nameMatch = content.match(/^name:\s*(.+)$/m);
-    const descMatch = content.match(/^description:\s*"?(.+?)"?\s*$/m);
-    return {
-      name: nameMatch?.[1]?.trim() ?? file.replace('.md', ''),
-      description: descMatch?.[1]?.trim() ?? '',
-    };
-  });
-}

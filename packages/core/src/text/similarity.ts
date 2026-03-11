@@ -5,7 +5,7 @@ export type SparseVector = Map<string, number>;
 
 // ─── Stopwords ─────────────────────────────────────────────────────
 
-export const STOPWORDS = new Set([
+const STOPWORDS = new Set([
   'a',
   'an',
   'the',
