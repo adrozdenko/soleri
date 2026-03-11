@@ -262,7 +262,7 @@ describe('Scaffolder', () => {
         .filter((e) => e.isDirectory())
         .map((e) => e.name);
 
-      expect(skillDirs).toHaveLength(17);
+      expect(skillDirs).toHaveLength(19);
 
       // Verify each skill dir has a SKILL.md
       for (const dir of skillDirs) {
@@ -280,6 +280,8 @@ describe('Scaffolder', () => {
         'brainstorming',
         'code-patrol',
         'context-resume',
+        'deliver-and-ship',
+        'env-setup',
         'executing-plans',
         'fix-and-learn',
         'health-check',

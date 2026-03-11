@@ -12,6 +12,7 @@ const AGENT_SPECIFIC_SKILLS = new Set([
   'brainstorming',
   'code-patrol',
   'context-resume',
+  'deliver-and-ship',
   'executing-plans',
   'fix-and-learn',
   'health-check',

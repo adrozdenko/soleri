@@ -76,7 +76,16 @@
     "unhashed",
     "pgvector",
     "falkordb",
-    "chunker"
+    "chunker",
+    "clippy",
+    "mypy",
+    "pyproject",
+    "pipenv",
+    "pipfile",
+    "getenv",
+    "libvips",
+    "venv",
+    "lockfiles"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [
