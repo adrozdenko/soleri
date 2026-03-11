@@ -436,6 +436,15 @@ export type {
   ScopeInput,
 } from './vault/scope-detector.js';
 
+// ─── Knowledge Review ──────────────────────────────────────────────
+export { KnowledgeReview } from './vault/knowledge-review.js';
+export type {
+  ReviewStatus,
+  ReviewEntry,
+  ReviewSubmission,
+  ReviewDecision,
+} from './vault/knowledge-review.js';
+
 // ─── Enforcement ────────────────────────────────────────────────────
 export { EnforcementRegistry, ClaudeCodeAdapter } from './enforcement/index.js';
 export type {

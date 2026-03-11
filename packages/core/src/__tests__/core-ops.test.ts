@@ -35,7 +35,7 @@ describe('createSemanticFacades', () => {
   }
 
   it('should return 232 ops', () => {
-    expect(ops.length).toBe(301);
+    expect(ops.length).toBe(314);
   });
 
   it('should have all expected op names', () => {
@@ -234,6 +234,23 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('obsidian_export');
     expect(names).toContain('obsidian_import');
     expect(names).toContain('obsidian_sync');
+    // Vault Sharing — Scoping (#105)
+    expect(names).toContain('vault_detect_scope');
+    expect(names).toContain('vault_set_scope');
+    expect(names).toContain('vault_list_by_scope');
+    // Vault Sharing — Export (#104)
+    expect(names).toContain('vault_export_pack');
+    expect(names).toContain('vault_import_pack');
+    // Vault Sharing — Git Sync (#67)
+    expect(names).toContain('vault_git_push');
+    expect(names).toContain('vault_git_pull');
+    expect(names).toContain('vault_git_sync');
+    // Vault Sharing — Review (#65)
+    expect(names).toContain('vault_submit_review');
+    expect(names).toContain('vault_approve');
+    expect(names).toContain('vault_reject');
+    expect(names).toContain('vault_pending_reviews');
+    expect(names).toContain('vault_review_stats');
     // Admin (8)
     expect(names).toContain('admin_health');
     expect(names).toContain('admin_tool_list');

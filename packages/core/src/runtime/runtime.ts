@@ -38,6 +38,7 @@ import { VaultManager } from '../vault/vault-manager.js';
 import { VaultBranching } from '../vault/vault-branching.js';
 import { ContextEngine } from '../context/context-engine.js';
 import { AgencyManager } from '../agency/agency-manager.js';
+import { KnowledgeReview } from '../vault/knowledge-review.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -160,6 +161,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Agency Manager — proactive file watching, pattern surfacing (disabled by default)
   const agencyManager = new AgencyManager(vault);
 
+  // Knowledge Review — team review workflows (submit/approve/reject)
+  const knowledgeReview = new KnowledgeReview(vault.getProvider());
+
   // Health Registry — centralized subsystem status tracking
   const health = new HealthRegistry();
   health.register('vault', 'healthy');
@@ -214,6 +218,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     vaultBranching,
     contextEngine,
     agencyManager,
+    knowledgeReview,
     createdAt: Date.now(),
     close: () => {
       syncManager.close();

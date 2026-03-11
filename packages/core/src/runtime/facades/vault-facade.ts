@@ -11,6 +11,7 @@ import type { AgentRuntime } from '../types.js';
 import { createVaultExtraOps } from '../vault-extra-ops.js';
 import { createCaptureOps } from '../capture-ops.js';
 import { createIntakeOps } from '../intake-ops.js';
+import { createVaultSharingOps } from '../vault-sharing-ops.js';
 import { ObsidianSync } from '../../vault/obsidian-sync.js';
 
 export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
@@ -477,5 +478,6 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     ...createVaultExtraOps(runtime),
     ...createCaptureOps(runtime),
     ...createIntakeOps(intakePipeline),
+    ...createVaultSharingOps(runtime),
   ];
 }

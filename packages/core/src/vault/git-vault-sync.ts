@@ -19,7 +19,14 @@
  */
 
 import { execFile } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+  unlinkSync,
+  readdirSync,
+  readFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
@@ -152,12 +159,131 @@ export class GitVaultSync {
     }
   }
 
+  /**
+   * Pull entries from git directory into the vault.
+   * Reads all JSON files and returns them as IntelligenceEntry[].
+   * Conflict resolution: if onConflict is 'git', git version wins; 'vault' keeps existing.
+   */
+  async pull(
+    vault: {
+      get: (id: string) => IntelligenceEntry | null;
+      seed: (entries: IntelligenceEntry[]) => number;
+    },
+    options?: { onConflict?: 'git' | 'vault' },
+  ): Promise<{ imported: number; skipped: number; conflicts: number }> {
+    this.ensureInitialized();
+    const onConflict = options?.onConflict ?? 'git';
+    let imported = 0;
+    let skipped = 0;
+    let conflicts = 0;
+
+    const entries = this.readAllEntries();
+    for (const entry of entries) {
+      const existing = vault.get(entry.id);
+      if (existing) {
+        if (onConflict === 'vault') {
+          skipped++;
+          conflicts++;
+          continue;
+        }
+        conflicts++;
+      }
+      vault.seed([entry]);
+      imported++;
+    }
+
+    return { imported, skipped, conflicts };
+  }
+
+  /**
+   * Bidirectional sync: push vault entries to git AND pull git-only entries to vault.
+   */
+  async sync(
+    vault: {
+      get: (id: string) => IntelligenceEntry | null;
+      seed: (entries: IntelligenceEntry[]) => number;
+      exportAll: () => { entries: IntelligenceEntry[] };
+    },
+    options?: { onConflict?: 'git' | 'vault' },
+  ): Promise<{ pushed: number; pulled: number; conflicts: number }> {
+    this.ensureInitialized();
+    const onConflict = options?.onConflict ?? 'git';
+
+    // Push: vault → git
+    const { entries: vaultEntries } = vault.exportAll();
+    for (const entry of vaultEntries) {
+      this.writeEntry(entry);
+    }
+
+    // Pull: git → vault (only entries not in vault)
+    const gitEntries = this.readAllEntries();
+    const vaultIds = new Set(vaultEntries.map((e) => e.id));
+    let pulled = 0;
+    let conflicts = 0;
+
+    for (const entry of gitEntries) {
+      if (vaultIds.has(entry.id)) continue; // Already synced via push
+      const existing = vault.get(entry.id);
+      if (existing) {
+        if (onConflict === 'vault') {
+          conflicts++;
+          continue;
+        }
+        conflicts++;
+      }
+      vault.seed([entry]);
+      pulled++;
+    }
+
+    // Commit all changes
+    if (this.autoCommit && (vaultEntries.length > 0 || pulled > 0)) {
+      await this.git('add', '.');
+      await this.git(
+        'commit',
+        '-m',
+        `vault: sync ${vaultEntries.length} pushed, ${pulled} pulled`,
+        '--allow-empty',
+      );
+    }
+
+    return { pushed: vaultEntries.length, pulled, conflicts };
+  }
+
   /** Get the repo directory path. */
   getRepoDir(): string {
     return this.repoDir;
   }
 
   // ─── Internal ─────────────────────────────────────────────
+
+  /**
+   * Read all JSON entry files from the git directory.
+   */
+  private readAllEntries(): IntelligenceEntry[] {
+    const entries: IntelligenceEntry[] = [];
+    if (!existsSync(this.repoDir)) return entries;
+
+    const domains = readdirSync(this.repoDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && d.name !== '.git')
+      .map((d) => d.name);
+
+    for (const domain of domains) {
+      const domainDir = join(this.repoDir, domain);
+      const files = readdirSync(domainDir).filter((f) => f.endsWith('.json'));
+      for (const file of files) {
+        try {
+          const content = readFileSync(join(domainDir, file), 'utf-8');
+          const entry = JSON.parse(content) as IntelligenceEntry;
+          if (entry.id && entry.type && entry.domain) {
+            entries.push(entry);
+          }
+        } catch {
+          // Skip malformed files
+        }
+      }
+    }
+    return entries;
+  }
 
   private writeEntry(entry: IntelligenceEntry): void {
     const domainDir = join(this.repoDir, entry.domain);

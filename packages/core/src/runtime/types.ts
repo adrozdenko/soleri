@@ -27,6 +27,7 @@ import type { VaultManager } from '../vault/vault-manager.js';
 import type { VaultBranching } from '../vault/vault-branching.js';
 import type { ContextEngine } from '../context/context-engine.js';
 import type { AgencyManager } from '../agency/agency-manager.js';
+import type { KnowledgeReview } from '../vault/knowledge-review.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -93,6 +94,8 @@ export interface AgentRuntime {
   contextEngine: ContextEngine;
   /** Agency manager — proactive file watching, pattern surfacing, warning detection. */
   agencyManager: AgencyManager;
+  /** Knowledge review — team review workflows (submit/approve/reject). */
+  knowledgeReview: KnowledgeReview;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */
