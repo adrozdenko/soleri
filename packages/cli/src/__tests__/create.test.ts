@@ -158,7 +158,7 @@ describe('create command', () => {
       'utf-8',
     );
     expect(claudeMd).toContain('Hook Packs');
-    expect(claudeMd).toContain('no-any-types');
+    expect(claudeMd).toContain('typescript-safety');
   });
 
   it('should not include Hook Packs section in CLAUDE.md when hookPacks undefined', () => {
