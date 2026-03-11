@@ -45,6 +45,7 @@
     "secrets:check": "secretlint \"packages/*/src/**\"",
     "deadcode:knip": "knip",
     "deadcode:ts-prune": "ts-prune",
+    "test:e2e": "vitest run --config e2e/vitest.config.ts --dir e2e",
     "prepare": "husky"
   },
   "dependencies": {
