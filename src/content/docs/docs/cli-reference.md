@@ -211,6 +211,85 @@ See [Extending Your Agent](/docs/extending/) for full documentation.
 
 ---
 
+### install
+
+Register your agent as an MCP server in Claude Code.
+
+```bash
+npx @soleri/cli install
+```
+
+Adds the agent to `~/.claude.json` so Claude Code discovers it on startup. Run from inside your agent directory.
+
+---
+
+### uninstall
+
+Remove your agent's MCP server registration.
+
+```bash
+npx @soleri/cli uninstall
+```
+
+Removes the entry from `~/.claude.json`.
+
+---
+
+### pack
+
+Unified pack manager for hooks, skills, knowledge, and domains.
+
+```bash
+npx @soleri/cli pack <subcommand> [options]
+```
+
+**Subcommands:**
+
+| Subcommand   | Description                          |
+| ------------ | ------------------------------------ |
+| `list`       | List available packs                 |
+| `install`    | Install a pack                       |
+| `uninstall`  | Remove a pack                        |
+| `validate`   | Validate a pack before installing    |
+
+**Options:**
+
+| Flag           | Description                          |
+| -------------- | ------------------------------------ |
+| `--type <type>`| Pack type: `hooks`, `skills`, `knowledge`, `domains` |
+
+---
+
+### skills
+
+Manage agent skills (convenience wrapper for `pack --type skills`).
+
+```bash
+npx @soleri/cli skills [subcommand]
+```
+
+Lists, installs, or removes skill packs for your agent.
+
+---
+
+### agent
+
+Agent lifecycle management.
+
+```bash
+npx @soleri/cli agent <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand | Description                          |
+| ---------- | ------------------------------------ |
+| `status`   | Show agent status and configuration  |
+| `update`   | Update agent to latest engine        |
+| `diff`     | Show differences from latest scaffold|
+
+---
+
 ### upgrade
 
 Check for and perform CLI upgrades.

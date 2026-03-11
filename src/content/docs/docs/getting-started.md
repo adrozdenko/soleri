@@ -5,9 +5,9 @@ description: Install Soleri, create your first agent, and connect it to Claude C
 
 ## Prerequisites
 
-- **Node.js 20+** — check with `node -v`
+- **Node.js 18+** — check with `node -v`
 - **Claude Code** or **Cursor** — your AI-powered editor
-- **npm 9+** — ships with Node.js
+- **npm** — ships with Node.js
 
 ## Create Your Agent
 
@@ -34,7 +34,10 @@ my-agent/
 │   ├── index.ts              # MCP server entry point
 │   ├── identity/persona.ts   # Agent personality
 │   ├── activation/           # Claude Code integration
+│   ├── extensions/           # Your custom ops, facades, middleware
 │   └── intelligence/data/    # Starter knowledge
+├── skills/                    # 17 built-in skills
+├── scripts/setup.sh           # One-command install + register
 ├── package.json
 ├── tsconfig.json
 └── vitest.config.ts

@@ -20,8 +20,10 @@ Your agent ships with specialized modes for common tasks:
 
 | Mode | Target score | Max iterations | Use case |
 |------|-------------|----------------|----------|
+| **token-migration** | 95 | 20 | Migrate hardcoded colors to semantic tokens |
+| **contrast-fix** | all pass | 15 | Fix color contrast to meet WCAG thresholds |
 | **component-build** | 90 | 20 | Build something that passes all quality checks |
-| **plan-iteration** | 90 | 10 | Iterate on a plan until it reaches a target grade |
+| **plan-iteration** | grade A | 10 | Iterate on a plan until it reaches a target grade |
 | **custom** | — | 20 | Any task with a validation step you define |
 
 ## Starting a loop

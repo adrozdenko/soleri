@@ -101,7 +101,7 @@ Each agent exposes two types of MCP tools:
 - `record_feedback` `rebuild_vocabulary` `brain_stats`
 - `llm_status`
 
-Total: `(domains x 5) + 24` operations per agent.
+Total: 200+ operations per agent (13 semantic facades + 5 per domain).
 
 ## Forge Operations
 
@@ -201,7 +201,7 @@ Soleri Forge is itself an MCP server built on the same patterns it generates:
 - **`src/patching.ts`** — Shared source file patching utilities
 - **`src/lib.ts`** — Public API re-exports for programmatic access
 - **`src/types.ts`** — Config schema and result types (Zod-validated)
-- **`src/templates/`** — 27 template generators
+- **`src/templates/`** — 19 template generators
 
 ## Requirements
 
