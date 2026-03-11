@@ -37,6 +37,8 @@ export interface LockEntry {
   hooks: string[];
   /** Whether facades were registered */
   facadesRegistered: boolean;
+  /** Compatible @soleri/core version range (from manifest "soleri" field) */
+  soleriRange?: string;
 }
 
 export type PackType = 'hooks' | 'skills' | 'knowledge' | 'domain' | 'bundle';

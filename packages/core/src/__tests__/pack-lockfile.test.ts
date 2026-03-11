@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { PackLockfile, inferPackType } from '../packs/lockfile.js';
 import type { LockEntry } from '../packs/lockfile.js';
-import { resolvePack } from '../packs/resolver.js';
+import { resolvePack, checkVersionCompat } from '../packs/resolver.js';
 
 function makeTempDir(): string {
   return mkdtempSync(join(tmpdir(), 'pack-lock-'));
@@ -206,5 +206,56 @@ describe('resolvePack', () => {
 
   test('throws for nonexistent local path', () => {
     expect(() => resolvePack('/nonexistent/absolute/path', { npm: false })).toThrow(/not found/);
+  });
+});
+
+// ─── checkVersionCompat ──────────────────────────────────────
+
+describe('checkVersionCompat', () => {
+  test('returns true for empty/undefined range', () => {
+    expect(checkVersionCompat('2.10.0')).toBe(true);
+    expect(checkVersionCompat('2.10.0', '')).toBe(true);
+    expect(checkVersionCompat('2.10.0', undefined)).toBe(true);
+  });
+
+  test('exact version match', () => {
+    expect(checkVersionCompat('2.10.0', '2.10.0')).toBe(true);
+    expect(checkVersionCompat('2.10.1', '2.10.0')).toBe(false);
+  });
+
+  test('caret range ^X.Y.Z', () => {
+    expect(checkVersionCompat('2.10.0', '^2.0.0')).toBe(true);
+    expect(checkVersionCompat('2.0.0', '^2.0.0')).toBe(true);
+    expect(checkVersionCompat('3.0.0', '^2.0.0')).toBe(false);
+    expect(checkVersionCompat('1.9.9', '^2.0.0')).toBe(false);
+  });
+
+  test('tilde range ~X.Y.Z', () => {
+    expect(checkVersionCompat('1.2.5', '~1.2.3')).toBe(true);
+    expect(checkVersionCompat('1.2.3', '~1.2.3')).toBe(true);
+    expect(checkVersionCompat('1.3.0', '~1.2.3')).toBe(false);
+    expect(checkVersionCompat('1.2.2', '~1.2.3')).toBe(false);
+  });
+
+  test('compound range >=X.Y.Z <A.B.C', () => {
+    expect(checkVersionCompat('2.5.0', '>=2.0.0 <3.0.0')).toBe(true);
+    expect(checkVersionCompat('2.0.0', '>=2.0.0 <3.0.0')).toBe(true);
+    expect(checkVersionCompat('3.0.0', '>=2.0.0 <3.0.0')).toBe(false);
+    expect(checkVersionCompat('1.9.9', '>=2.0.0 <3.0.0')).toBe(false);
+  });
+
+  test('single >= constraint', () => {
+    expect(checkVersionCompat('3.0.0', '>=2.0.0')).toBe(true);
+    expect(checkVersionCompat('2.0.0', '>=2.0.0')).toBe(true);
+    expect(checkVersionCompat('1.9.9', '>=2.0.0')).toBe(false);
+  });
+
+  test('single < constraint', () => {
+    expect(checkVersionCompat('2.9.9', '<3.0.0')).toBe(true);
+    expect(checkVersionCompat('3.0.0', '<3.0.0')).toBe(false);
+  });
+
+  test('unparseable version returns true (permissive)', () => {
+    expect(checkVersionCompat('not-a-version', '^2.0.0')).toBe(true);
   });
 });

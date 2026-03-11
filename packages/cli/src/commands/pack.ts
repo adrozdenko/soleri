@@ -265,6 +265,94 @@ export function registerPack(program: Command): void {
         console.log(`  ${item.id}  ${item.current} → ${item.latest}`);
       }
     });
+
+  // ─── update ─────────────────────────────────────────────────
+  pack
+    .command('update')
+    .argument('[packId]', 'Specific pack to update (or all)')
+    .option('--force', 'Force update even if version is incompatible')
+    .description('Update installed packs to latest compatible version')
+    .action((packId: string | undefined, _opts: { force?: boolean }) => {
+      const lockfilePath = getLockfilePath();
+      const lockfile = new PackLockfile(lockfilePath);
+      const ctx = detectAgent();
+      if (!ctx) return;
+
+      let entries = lockfile.list().filter((e) => e.source === 'npm');
+      if (packId) {
+        entries = entries.filter((e) => e.id === packId);
+        if (entries.length === 0) {
+          p.log.error(
+            lockfile.has(packId)
+              ? `Pack "${packId}" is local/built-in and cannot be updated from npm.`
+              : `Pack "${packId}" is not installed.`,
+          );
+          process.exit(1);
+        }
+      }
+
+      if (entries.length === 0) {
+        p.log.info('No npm-sourced packs to update.');
+        return;
+      }
+
+      const s = p.spinner();
+      s.start('Checking for updates...');
+
+      let updated = 0;
+      for (const entry of entries) {
+        const npmPkg = entry.id.startsWith('@') ? entry.id : `@soleri/pack-${entry.id}`;
+        const latest = checkNpmVersion(npmPkg);
+        if (!latest || latest === entry.version) continue;
+
+        // Update lockfile entry with new version
+        lockfile.set({ ...entry, version: latest, installedAt: new Date().toISOString() });
+        updated++;
+        p.log.info(`  ${entry.id}: ${entry.version} → ${latest}`);
+      }
+
+      if (updated > 0) {
+        lockfile.save();
+        s.stop(`Updated ${updated} pack(s)`);
+      } else {
+        s.stop('All packs up to date');
+      }
+    });
+
+  // ─── search ─────────────────────────────────────────────────
+  pack
+    .command('search')
+    .argument('<query>', 'Search term')
+    .option('--type <type>', 'Filter by pack type')
+    .description('Search for packs on the npm registry')
+    .action((query: string) => {
+      const s = p.spinner();
+      s.start(`Searching npm for "${query}"...`);
+
+      try {
+        const { execFileSync } = require('node:child_process');
+        const searchTerm = `soleri-pack-${query}`;
+        const result = execFileSync('npm', ['search', searchTerm, '--json'], {
+          encoding: 'utf-8',
+          timeout: 15_000,
+        });
+
+        const packages = JSON.parse(result || '[]');
+        const filtered = packages.filter(
+          (pkg: { name: string }) =>
+            pkg.name.includes('soleri-pack') || pkg.name.startsWith('@soleri/pack-'),
+        );
+
+        s.stop(filtered.length > 0 ? `Found ${filtered.length} pack(s)` : 'No packs found');
+
+        for (const pkg of filtered) {
+          console.log(`  ${pkg.name}@${pkg.version}  ${pkg.description || ''}`);
+        }
+      } catch {
+        s.stop('Search failed');
+        p.log.warn('Could not search npm registry. Check your network connection.');
+      }
+    });
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────

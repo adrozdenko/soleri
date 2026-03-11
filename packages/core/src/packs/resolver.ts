@@ -154,6 +154,73 @@ function resolveFromNpm(pack: string, options: ResolveOptions): ResolvedPack {
 }
 
 /**
+ * Check basic semver compatibility: does `version` satisfy `range`?
+ *
+ * Supports: ">=1.0.0", ">=1.0.0 <2.0.0", "^1.2.3", exact version "1.0.0".
+ * Returns true if range is empty/undefined (no constraint).
+ */
+export function checkVersionCompat(version: string, range?: string): boolean {
+  if (!range) return true;
+  const r = range.trim();
+  if (!r) return true;
+
+  const v = parseVer(version);
+  if (!v) return true; // Can't parse → don't block
+
+  // Handle caret: ^1.2.3 means >=1.2.3 <2.0.0
+  if (r.startsWith('^')) {
+    const base = parseVer(r.slice(1));
+    if (!base) return true;
+    return compareVer(v, base) >= 0 && v[0] === base[0];
+  }
+
+  // Handle tilde: ~1.2.3 means >=1.2.3 <1.3.0
+  if (r.startsWith('~')) {
+    const base = parseVer(r.slice(1));
+    if (!base) return true;
+    return compareVer(v, base) >= 0 && v[0] === base[0] && v[1] === base[1];
+  }
+
+  // Handle compound ranges: ">=1.0.0 <2.0.0"
+  const parts = r.split(/\s+/).filter(Boolean);
+  return parts.every((part) => {
+    if (part.startsWith('>=')) {
+      const base = parseVer(part.slice(2));
+      return base ? compareVer(v, base) >= 0 : true;
+    }
+    if (part.startsWith('>')) {
+      const base = parseVer(part.slice(1));
+      return base ? compareVer(v, base) > 0 : true;
+    }
+    if (part.startsWith('<=')) {
+      const base = parseVer(part.slice(2));
+      return base ? compareVer(v, base) <= 0 : true;
+    }
+    if (part.startsWith('<')) {
+      const base = parseVer(part.slice(1));
+      return base ? compareVer(v, base) < 0 : true;
+    }
+    // Exact match
+    const exact = parseVer(part);
+    return exact ? compareVer(v, exact) === 0 : true;
+  });
+}
+
+type SemVer = [number, number, number];
+
+function parseVer(s: string): SemVer | null {
+  const m = s.trim().match(/^(\d+)\.(\d+)\.(\d+)/);
+  return m ? [+m[1], +m[2], +m[3]] : null;
+}
+
+function compareVer(a: SemVer, b: SemVer): number {
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+/**
  * Check if a newer version is available on npm.
  * Returns the latest version string, or null if check fails.
  */

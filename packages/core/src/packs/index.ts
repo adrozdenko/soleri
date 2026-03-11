@@ -16,5 +16,5 @@ export { PackInstaller } from './pack-installer.js';
 export { PackLockfile, inferPackType } from './lockfile.js';
 export type { LockEntry, PackType, PackSource, LockfileData } from './lockfile.js';
 
-export { resolvePack, checkNpmVersion } from './resolver.js';
+export { resolvePack, checkNpmVersion, checkVersionCompat } from './resolver.js';
 export type { ResolvedPack, ResolveOptions } from './resolver.js';

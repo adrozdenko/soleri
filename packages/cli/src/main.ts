@@ -16,6 +16,7 @@ import { registerExtend } from './commands/extend.js';
 import { registerInstall } from './commands/install.js';
 import { registerUninstall } from './commands/uninstall.js';
 import { registerPack } from './commands/pack.js';
+import { registerSkills } from './commands/skills.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -72,5 +73,6 @@ registerExtend(program);
 registerInstall(program);
 registerUninstall(program);
 registerPack(program);
+registerSkills(program);
 
 program.parse();
