@@ -127,6 +127,17 @@ The curator is an automated maintenance system that keeps vault quality high:
 
 You can run curator operations manually, or let them happen as part of the brain's lifecycle.
 
+## Testing
+
+Soleri ships with a comprehensive test suite to verify all of this works correctly:
+
+- **Unit tests** (`npm test`) — test individual modules within each package
+- **E2E tests** (`npm run test:e2e`) — 124 integration tests across 10 files that exercise every engine feature: vault persistence, brain intelligence, curator health audits, governance policies, plan state machine, MCP transport, HTTP/WebSocket servers, CLI commands, scaffold pipeline, and concurrent operations
+
+The E2E suite uses real SQLite databases, real MCP stdio transport, and real scaffolded agents — not mocks. When tests pass, the engine works.
+
+For details on running and writing tests, see [Testing](/docs/guides/testing/).
+
 ---
 
 _Next: [Security & Privacy](/docs/guides/security/) — understand where your data lives and who can access it._

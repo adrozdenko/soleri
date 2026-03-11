@@ -65,7 +65,7 @@ my-agent/
     identity/          # Agent persona and principles
     activation/        # CLAUDE.md injection + activation flow
     planning/          # Multi-step plan state machine
-    __tests__/         # 6 test suites (~220 tests)
+    __tests__/         # Generated test suites
   scripts/
     setup.sh           # One-command install, build, register
     copy-assets.js     # Build script for intelligence data

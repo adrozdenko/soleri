@@ -80,7 +80,7 @@ npx @soleri/cli test [options]
 | `--watch`    | Re-run tests on file changes |
 | `--coverage` | Generate coverage report     |
 
-Runs vitest under the hood.
+Runs vitest under the hood. For the monorepo-level E2E test suite, use `npm run test:e2e` from the project root. See [Testing](/docs/guides/testing/) for full details.
 
 ---
 

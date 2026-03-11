@@ -57,6 +57,7 @@ export default defineConfig({
             { slug: 'docs/guides/loops' },
             { slug: 'docs/guides/cross-project-knowledge' },
             { slug: 'docs/guides/customizing' },
+            { slug: 'docs/guides/testing' },
             { slug: 'docs/guides/cognee' },
             { slug: 'docs/guides/team-workflows' },
             { slug: 'docs/guides/under-the-hood' },

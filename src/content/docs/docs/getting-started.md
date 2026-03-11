@@ -54,6 +54,8 @@ Test that it works:
 npm test
 ```
 
+For the full Soleri test suite (unit + E2E integration), see [Testing](/docs/guides/testing/).
+
 ## Connect to Claude Code
 
 Add your agent to Claude Code's MCP configuration. Create or edit `.mcp.json` in your project root:

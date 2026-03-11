@@ -112,6 +112,15 @@ npx @soleri/cli install-knowledge ./bundles/react-patterns
 - **Cross-project knowledge** — Link projects and search across them with weighted relevance.
 - **Health checks** — `soleri doctor` reports engine version, domain status, vault health, brain tracking, and team sync state.
 
+## Testing
+
+```bash
+npm test                # Unit tests (core, forge, CLI)
+npm run test:e2e        # E2E tests (124 tests across 10 files)
+```
+
+The E2E suite covers the full stack: scaffold pipeline, all 13+ engine facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, HTTP/WebSocket transports, and generated agent quality validation.
+
 ## Contributing
 
 From fixing typos to building domain modules — see [CONTRIBUTING.md](CONTRIBUTING.md).

@@ -62,8 +62,20 @@ git clone https://github.com/adrozdenko/soleri.git
 cd soleri
 npm install
 npm run build
-npm test
+npm test              # Unit tests
+npm run test:e2e      # E2E tests (124 tests across 10 files)
 ```
+
+## Testing
+
+All PRs must pass both unit and E2E tests.
+
+| Layer | Command | What it covers |
+|-------|---------|----------------|
+| Unit | `npm test` | Package-level tests in core, forge, CLI |
+| E2E | `npm run test:e2e` | Cross-package integration — facades, transports, CLI, scaffold, persistence, concurrency |
+
+Run E2E tests after changes to `@soleri/core` (engine), `@soleri/forge` (templates), or `@soleri/cli` (commands).
 
 ## Code Standards
 

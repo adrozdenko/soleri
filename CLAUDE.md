@@ -73,10 +73,38 @@ Currently generated agents have ~36 ops across 2 facades. Salvador has 181+ ops 
 
 ### Testing Protocol
 
-1. Unit tests in core (`packages/core/src/__tests__/`)
-2. Scaffold tests in forge (`packages/forge/src/__tests__/`)
-3. **Always scaffold a test agent and run its tests** after template changes — forge tests verify the template generates, but only a scaffolded agent verifies the generated code compiles and passes
-4. Smoke test with real Cognee when touching hybrid search
+**Three layers of testing — all must pass before merge:**
+
+| Layer | Command | What it covers |
+|-------|---------|----------------|
+| Unit | `npm test` | Package-level tests in core, forge, CLI |
+| E2E | `npm run test:e2e` | Cross-package integration (124 tests, 10 files) |
+| Smoke | Manual | Scaffold a real agent, build, run |
+
+**Unit tests:**
+1. Core engine tests (`packages/core/src/__tests__/`)
+2. Scaffold template tests (`packages/forge/src/__tests__/`)
+3. CLI command tests (`packages/cli/src/__tests__/`)
+
+**E2E tests (`e2e/`):**
+1. `scaffold-and-build` — Template → npm install → tsc --noEmit pipeline
+2. `full-pipeline` — All 13+ facades through the dispatch layer (vault, brain, plan, memory, admin, curator, loop, control, cognee, orchestrate, domain)
+3. `mcp-transport` — Over-the-wire MCP via real stdio subprocess
+4. `scaffold-edge-cases` — Many domains, telegram, tones, skills filter, duplicates
+5. `persistence` — Vault/brain/plan data survives runtime close/reopen
+6. `curator-brain-governance` — Health audits, learning loop, policy lifecycle, orchestrate
+7. `concurrent-and-performance` — Parallel facade calls, bulk ops, latency bounds
+8. `cli-commands` — Non-interactive create, list, doctor, add-domain, governance
+9. `transports` — SessionManager, RateLimiter, HTTP/SSE, WebSocket servers
+10. `skills-and-domains` — SKILL.md validation, domain data integrity, skills filtering
+
+**When to run E2E:**
+- After any change to `@soleri/core` facades or engine modules
+- After any change to `@soleri/forge` templates
+- After any change to `@soleri/cli` commands
+- Before any release
+
+**Smoke test:** Always scaffold a test agent and run its tests after template changes — forge tests verify the template generates, but only a scaffolded agent verifies the generated code compiles and passes. Smoke test with real Cognee when touching hybrid search.
 
 ### Conventions
 
