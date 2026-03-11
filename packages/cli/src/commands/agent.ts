@@ -6,12 +6,16 @@
  */
 
 import { join } from 'node:path';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import { PackLockfile, checkNpmVersion, checkVersionCompat } from '@soleri/core';
-import { generateClaudeMdTemplate, generateInjectClaudeMd } from '@soleri/forge/lib';
+import {
+  generateClaudeMdTemplate,
+  generateInjectClaudeMd,
+  generateSkills,
+} from '@soleri/forge/lib';
 import type { AgentConfig } from '@soleri/forge/lib';
 import { detectAgent } from '../utils/agent-context.js';
 
@@ -63,11 +67,11 @@ export function registerAgent(program: Command): void {
               version: agentVersion,
               engine: coreVersion,
               engineLatest: latestCore,
-              packs: packs.map((p) => ({
-                id: p.id,
-                version: p.version,
-                type: p.type,
-                source: p.source,
+              packs: packs.map((pk) => ({
+                id: pk.id,
+                version: pk.version,
+                type: pk.type,
+                source: pk.source,
               })),
               vault: { exists: hasVault },
             },
@@ -169,8 +173,9 @@ export function registerAgent(program: Command): void {
   agent
     .command('refresh')
     .option('--dry-run', 'Preview what would change without writing')
-    .description('Regenerate CLAUDE.md content from latest forge templates')
-    .action((opts: { dryRun?: boolean }) => {
+    .option('--skip-skills', 'Skip skill sync (only regenerate activation files)')
+    .description('Regenerate activation files and sync skills from latest forge templates')
+    .action((opts: { dryRun?: boolean; skipSkills?: boolean }) => {
       const ctx = detectAgent();
       if (!ctx) {
         p.log.error('No agent project detected in current directory.');
@@ -191,18 +196,56 @@ export function registerAgent(program: Command): void {
       const newContent = generateClaudeMdTemplate(config);
       const newInject = generateInjectClaudeMd(config);
 
+      // Generate skills from latest forge templates
+      const skillFiles = opts.skipSkills ? [] : generateSkills(config);
+
       if (opts.dryRun) {
         p.log.info(`Would regenerate: ${contentPath}`);
         p.log.info(`Would regenerate: ${injectPath}`);
         p.log.info(`Agent: ${config.name} (${config.domains.length} domains)`);
         p.log.info(`Domains: ${config.domains.join(', ')}`);
+        if (skillFiles.length > 0) {
+          // Check which skills are new vs existing
+          const newSkills = skillFiles.filter(
+            ([relPath]) => !existsSync(join(ctx.agentPath, relPath)),
+          );
+          const updatedSkills = skillFiles.filter(([relPath]) =>
+            existsSync(join(ctx.agentPath, relPath)),
+          );
+          p.log.info(
+            `Skills: ${skillFiles.length} total (${newSkills.length} new, ${updatedSkills.length} updated)`,
+          );
+          for (const [relPath] of newSkills) {
+            p.log.info(`  + ${relPath}`);
+          }
+        }
         return;
       }
 
+      // Write activation files
       writeFileSync(contentPath, newContent, 'utf-8');
       writeFileSync(injectPath, newInject, 'utf-8');
       p.log.success(`Regenerated ${contentPath}`);
       p.log.success(`Regenerated ${injectPath}`);
+
+      // Sync skills
+      if (skillFiles.length > 0) {
+        let newCount = 0;
+        let updatedCount = 0;
+        for (const [relPath, content] of skillFiles) {
+          const fullPath = join(ctx.agentPath, relPath);
+          const dirPath = join(fullPath, '..');
+          const isNew = !existsSync(fullPath);
+          mkdirSync(dirPath, { recursive: true });
+          writeFileSync(fullPath, content, 'utf-8');
+          if (isNew) newCount++;
+          else updatedCount++;
+        }
+        p.log.success(
+          `Synced ${skillFiles.length} skills (${newCount} new, ${updatedCount} updated)`,
+        );
+      }
+
       p.log.info('Run `npm run build` to compile, then re-inject CLAUDE.md.');
     });
 
@@ -236,7 +279,7 @@ function readAgentConfig(agentPath: string, agentId: string): AgentConfig | null
     join(agentPath, 'src', 'identity', 'persona.ts'),
     join(agentPath, 'src', 'activation', 'persona.ts'),
   ];
-  const personaPath = personaCandidates.find((p) => existsSync(p));
+  const personaPath = personaCandidates.find((candidate) => existsSync(candidate));
   if (!personaPath) return null;
   const personaSrc = readFileSync(personaPath, 'utf-8');
 

@@ -23,3 +23,4 @@ export { generateExtensionsIndex, generateExampleOp } from './templates/extensio
 export { generateClaudeMdTemplate } from './templates/claude-md-template.js';
 export { getEngineRulesContent, getEngineMarker } from './templates/shared-rules.js';
 export { generateInjectClaudeMd } from './templates/inject-claude-md.js';
+export { generateSkills } from './templates/skills.js';
