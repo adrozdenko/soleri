@@ -2,26 +2,15 @@ import type { AgentConfig } from '../types.js';
 
 /**
  * Generates src/activation/activate.ts for a new agent.
- * Provides the activate/deactivate system that returns full context
- * to Claude — persona, guidelines, tool recommendations, setup status.
+ *
+ * Activation is ADAPTIVE — it discovers current capabilities at runtime
+ * (vault domains, installed packs, identity changes) rather than returning
+ * a frozen snapshot from scaffold time. PERSONA is the birth config;
+ * the activation response reflects what the agent has become.
  *
  * Uses array-joined pattern because generated code contains template literals.
  */
 export function generateActivate(config: AgentConfig): string {
-  const toolPrefix = config.id; // keep hyphens — matches MCP tool registration
-  const _marker = `${config.id}:mode`;
-
-  // Build tool recommendations from config domains
-  const toolRecLines: string[] = [];
-  for (const d of config.domains) {
-    const toolName = `${toolPrefix}_${d.replace(/-/g, '_')}`;
-    toolRecLines.push(`      { intent: 'search ${d}', facade: '${toolName}', op: 'search' },`);
-    toolRecLines.push(
-      `      { intent: '${d} patterns', facade: '${toolName}', op: 'get_patterns' },`,
-    );
-    toolRecLines.push(`      { intent: 'capture ${d}', facade: '${toolName}', op: 'capture' },`);
-  }
-
   // Build behavioral guidelines from config principles
   const guidelineLines = config.principles
     .map((p) => {
@@ -30,23 +19,32 @@ export function generateActivate(config: AgentConfig): string {
     })
     .join('\n');
 
+  // Static domain list (from scaffold time) — used as baseline
+  const configDomains = JSON.stringify(config.domains);
+
   return [
     "import { join } from 'node:path';",
+    "import { existsSync, readFileSync } from 'node:fs';",
     "import { homedir } from 'node:os';",
     "import { PERSONA } from '../identity/persona.js';",
     "import { hasAgentMarker, removeClaudeMdGlobal } from './inject-claude-md.js';",
-    "import type { Vault, Planner, Plan } from '@soleri/core';",
+    "import type { AgentRuntime } from '@soleri/core';",
     '',
     'export interface ActivationResult {',
     '  activated: boolean;',
-    '  persona: {',
+    '  origin: {',
     '    name: string;',
     '    role: string;',
     '    description: string;',
+    '  };',
+    '  current: {',
+    '    role: string;',
     '    greeting: string;',
+    '    domains: string[];',
+    '    capabilities: Array<{ domain: string; entries: number }>;',
+    '    installed_packs: Array<{ id: string; type: string }>;',
     '  };',
     '  guidelines: string[];',
-    '  tool_recommendations: Array<{ intent: string; facade: string; op: string }>;',
     '  session_instruction: string;',
     '  setup_status: {',
     '    claude_md_injected: boolean;',
@@ -67,20 +65,80 @@ export function generateActivate(config: AgentConfig): string {
     '}',
     '',
     '/**',
-    ` * Activate ${config.name} — returns full context for Claude to adopt the persona.`,
+    ` * Activate ${config.name} — discovers current capabilities and returns adaptive context.`,
+    ' *',
+    ' * PERSONA is the birth config. The activation response reflects what the agent',
+    ' * has become through installed packs, captured knowledge, and identity updates.',
     ' */',
-    'export function activateAgent(vault: Vault, projectPath: string, planner?: Planner): ActivationResult {',
-    '  // Check CLAUDE.md injection status (project-level and global)',
+    'export function activateAgent(runtime: AgentRuntime, projectPath: string): ActivationResult {',
+    '  const { vault, planner, identityManager } = runtime;',
+    '',
+    '  // ─── Setup status ──────────────────────────────────────────',
     "  const projectClaudeMd = join(projectPath, 'CLAUDE.md');",
     "  const globalClaudeMd = join(homedir(), '.claude', 'CLAUDE.md');",
     '  const claudeMdInjected = hasAgentMarker(projectClaudeMd);',
     '  const globalClaudeMdInjected = hasAgentMarker(globalClaudeMd);',
     '',
-    '  // Check vault status',
+    '  // ─── Vault stats — what the agent actually knows ──────────',
     '  const stats = vault.stats();',
     '  const vaultHasEntries = stats.totalEntries > 0;',
     '',
-    "  // Build next steps based on what's missing",
+    '  // ─── Discover domains ─────────────────────────────────────',
+    `  const configuredDomains: string[] = ${configDomains};`,
+    '  const vaultDomains = Object.keys(stats.byDomain);',
+    '',
+    '  // Merge configured + vault-discovered domains (dedup)',
+    '  const allDomains = [...new Set([...configuredDomains, ...vaultDomains])];',
+    '',
+    '  // Build capability map — entries per domain',
+    '  const capabilities = allDomains.map((d) => ({',
+    '    domain: d,',
+    '    entries: stats.byDomain[d] ?? 0,',
+    '  }));',
+    '',
+    '  // ─── Discover installed packs ─────────────────────────────',
+    '  const installedPacks: Array<{ id: string; type: string }> = [];',
+    '  try {',
+    "    const lockPath = join(projectPath, 'soleri.lock');",
+    '    if (existsSync(lockPath)) {',
+    "      const lockData = JSON.parse(readFileSync(lockPath, 'utf-8'));",
+    '      if (lockData.packs) {',
+    '        for (const [id, entry] of Object.entries(lockData.packs)) {',
+    '          installedPacks.push({ id, type: (entry as Record<string, string>).type ?? "unknown" });',
+    '        }',
+    '      }',
+    '    }',
+    '  } catch {',
+    '    // Lock file missing or corrupt — proceed without pack info',
+    '  }',
+    '',
+    '  // ─── Dynamic role — based on what the agent actually covers ─',
+    "  const currentIdentity = identityManager.getIdentity('" + config.id + "');",
+    '  const newDomains = allDomains.filter((d) => !configuredDomains.includes(d));',
+    '  let currentRole = currentIdentity?.role ?? PERSONA.role;',
+    '',
+    '  // If the agent has grown beyond its birth domains, reflect that',
+    '  if (newDomains.length > 0) {',
+    '    const formatted = newDomains.map((d) => d.replace(/-/g, " ")).join(", ");',
+    '    currentRole = `${PERSONA.role} (also covering ${formatted})`;',
+    '  }',
+    '',
+    '  // ─── Dynamic greeting ─────────────────────────────────────',
+    "  let greeting = `Hello! I'm ${PERSONA.name}.`;",
+    '  if (allDomains.length > configuredDomains.length) {',
+    "    greeting += ` I started as a ${PERSONA.role} and have expanded to also cover ${newDomains.map((d) => d.replace(/-/g, ' ')).join(', ')}.`;",
+    '  } else {',
+    '    greeting += ` ${PERSONA.role} ready to help.`;',
+    '  }',
+    '  if (stats.totalEntries > 0) {',
+    '    const domainSummary = capabilities',
+    '      .filter((c) => c.entries > 0)',
+    '      .map((c) => `${c.entries} ${c.domain.replace(/-/g, " ")}`)',
+    '      .join(", ");',
+    '    greeting += ` Vault: ${stats.totalEntries} entries (${domainSummary}).`;',
+    '  }',
+    '',
+    '  // ─── Next steps ───────────────────────────────────────────',
     '  const nextSteps: string[] = [];',
     '  if (!globalClaudeMdInjected && !claudeMdInjected) {',
     `    nextSteps.push('No CLAUDE.md configured — run inject_claude_md with global: true for all projects, or without for this project only');`,
@@ -88,10 +146,7 @@ export function generateActivate(config: AgentConfig): string {
     `    nextSteps.push('Global CLAUDE.md not configured — run inject_claude_md with global: true to enable activation in all projects');`,
     '  }',
     '  if (!vaultHasEntries) {',
-    "    nextSteps.push('Vault is empty — start capturing knowledge with the domain capture ops');",
-    '  }',
-    '  if (nextSteps.length === 0) {',
-    `    nextSteps.push('All set! ${config.name} is fully integrated.');`,
+    "    nextSteps.push('Vault is empty — start capturing knowledge with the domain capture ops, or install a knowledge pack with soleri pack install');",
     '  }',
     '',
     '  // Check for executing plans',
@@ -105,25 +160,30 @@ export function generateActivate(config: AgentConfig): string {
     '    nextSteps.unshift(`${executingPlans.length} plan(s) in progress — use get_plan to review`);',
     '  }',
     '',
+    '  if (nextSteps.length === 0) {',
+    `    nextSteps.push('All set! ${config.name} is ready.');`,
+    '  }',
+    '',
     '  return {',
     '    activated: true,',
-    '    persona: {',
+    '    origin: {',
     '      name: PERSONA.name,',
     '      role: PERSONA.role,',
     '      description: PERSONA.description,',
-    '      greeting: PERSONA.greeting,',
+    '    },',
+    '    current: {',
+    '      role: currentRole,',
+    '      greeting,',
+    '      domains: allDomains,',
+    '      capabilities,',
+    '      installed_packs: installedPacks,',
     '    },',
     '    guidelines: [',
     guidelineLines,
     '    ],',
-    '    tool_recommendations: [',
-    `      { intent: 'health check', facade: '${toolPrefix}_core', op: 'health' },`,
-    `      { intent: 'search all', facade: '${toolPrefix}_core', op: 'search' },`,
-    `      { intent: 'vault stats', facade: '${toolPrefix}_core', op: 'vault_stats' },`,
-    ...toolRecLines,
-    '    ],',
-    `    session_instruction: 'You are now ' + PERSONA.name + ', a ' + PERSONA.role + '. Stay in character for the ENTIRE session. ' +`,
-    `      'Reference patterns from the knowledge vault. Provide concrete examples. Flag anti-patterns with severity.',`,
+    "    session_instruction: `You are ${PERSONA.name}. Your origin role is ${PERSONA.role}, but you have grown — your current capabilities span: ${allDomains.join(', ')}. ` +",
+    "      'Adapt your expertise to match your actual knowledge. ' +",
+    "      'Reference patterns from the knowledge vault. Provide concrete examples. Flag anti-patterns with severity.',",
     '    setup_status: {',
     '      claude_md_injected: claudeMdInjected,',
     '      global_claude_md_injected: globalClaudeMdInjected,',
@@ -139,7 +199,6 @@ export function generateActivate(config: AgentConfig): string {
     ` * Deactivate ${config.name} — drops persona and cleans up CLAUDE.md sections.`,
     ' */',
     'export function deactivateAgent(): DeactivationResult {',
-    '  // Remove agent sections from global CLAUDE.md on deactivation',
     '  const globalResult = removeClaudeMdGlobal();',
     '  return {',
     '    deactivated: true,',

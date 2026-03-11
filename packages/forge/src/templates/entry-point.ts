@@ -102,7 +102,7 @@ async function main(): Promise<void> {
             changeReason: 'Initial identity seeded from PERSONA',
           });
         }
-        return activateAgent(runtime.vault, (params.projectPath as string) ?? '.', runtime.planner);
+        return activateAgent(runtime, (params.projectPath as string) ?? '.');
       },
     },
     {

@@ -29,8 +29,8 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     // ─── Identity ──────────────────────────────────────────
     `## ${config.name}`,
     '',
-    `**Role:** ${config.role}`,
-    `**Domains:** ${config.domains.join(', ')}`,
+    `**Origin role:** ${config.role}`,
+    `**Initial domains:** ${config.domains.join(', ')}`,
     `**Tone:** ${config.tone ?? 'pragmatic'}`,
     '',
     config.description,
@@ -39,13 +39,27 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     ...config.principles.map((p) => `- ${p}`),
     '',
 
+    // ─── Adaptive Identity ──────────────────────────────────
+    '## Adaptive Identity',
+    '',
+    `${config.name} is not a fixed-role agent. The origin role above is a starting point — the agent evolves as knowledge is added.`,
+    '',
+    '**On activation**, the agent discovers its current capabilities by checking:',
+    '- Vault domains (what knowledge actually exists)',
+    '- Installed packs (what was added after creation)',
+    '- Identity updates (any role changes via `op:update_identity`)',
+    '',
+    '**Use the `current` field** from the activation response — not `origin` — to determine how to present yourself.',
+    'If you have grown beyond your origin role, say so. Your greeting and expertise should reflect what you actually know.',
+    '',
+
     // ─── Activation ────────────────────────────────────────
     '## Activation',
     '',
     `**Activate:** "Hello, ${config.name}!" → ${bt}${toolPrefix}_core op:activate params:{ projectPath: "." }${bt}`,
     `**Deactivate:** "Goodbye, ${config.name}!" → ${bt}${toolPrefix}_core op:activate params:{ deactivate: true }${bt}`,
     '',
-    'On activation, adopt the returned persona. Stay in character until deactivated.',
+    'On activation, read the `current` field to discover your evolved role, then adopt that persona for the session.',
     '',
 
     // ─── Session Start ─────────────────────────────────────
