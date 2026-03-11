@@ -1,6 +1,6 @@
 {
   "name": "@soleri/forge",
-  "version": "5.14.6",
+  "version": "5.14.7",
   "description": "Scaffold AI agents that learn, remember, and grow with you.",
   "keywords": [
     "agent",
