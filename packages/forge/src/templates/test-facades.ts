@@ -63,9 +63,10 @@ ${domainDescribes}
       return createSemanticFacades(runtime, '${config.id}');
     }
 
-    it('should create 10 semantic facades', () => {
+    it('should create all expected semantic facades', () => {
       const facades = buildSemanticFacades();
-      expect(facades).toHaveLength(10);
+      // At least the core 10 facades must exist; new ones may be added by @soleri/core
+      expect(facades.length).toBeGreaterThanOrEqual(10);
       const names = facades.map(f => f.name);
       expect(names).toContain('${config.id}_vault');
       expect(names).toContain('${config.id}_plan');
@@ -79,10 +80,11 @@ ${domainDescribes}
       expect(names).toContain('${config.id}_cognee');
     });
 
-    it('total ops across all facades should be 209', () => {
+    it('total ops across all facades should meet minimum threshold', () => {
       const facades = buildSemanticFacades();
       const totalOps = facades.reduce((sum, f) => sum + f.ops.length, 0);
-      expect(totalOps).toBe(209);
+      // At least 209 ops (baseline); new ops may be added by @soleri/core
+      expect(totalOps).toBeGreaterThanOrEqual(209);
     });
   });
 

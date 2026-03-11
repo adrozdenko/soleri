@@ -11,7 +11,7 @@ import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import { PackLockfile, checkNpmVersion, checkVersionCompat } from '@soleri/core';
-import { generateClaudeMdTemplate } from '@soleri/forge/lib';
+import { generateClaudeMdTemplate, generateInjectClaudeMd } from '@soleri/forge/lib';
 import type { AgentConfig } from '@soleri/forge/lib';
 import { detectAgent } from '../utils/agent-context.js';
 
@@ -186,18 +186,23 @@ export function registerAgent(program: Command): void {
         return;
       }
 
-      const targetPath = join(ctx.agentPath, 'src', 'activation', 'claude-md-content.ts');
+      const contentPath = join(ctx.agentPath, 'src', 'activation', 'claude-md-content.ts');
+      const injectPath = join(ctx.agentPath, 'src', 'activation', 'inject-claude-md.ts');
       const newContent = generateClaudeMdTemplate(config);
+      const newInject = generateInjectClaudeMd(config);
 
       if (opts.dryRun) {
-        p.log.info(`Would regenerate: ${targetPath}`);
+        p.log.info(`Would regenerate: ${contentPath}`);
+        p.log.info(`Would regenerate: ${injectPath}`);
         p.log.info(`Agent: ${config.name} (${config.domains.length} domains)`);
         p.log.info(`Domains: ${config.domains.join(', ')}`);
         return;
       }
 
-      writeFileSync(targetPath, newContent, 'utf-8');
-      p.log.success(`Regenerated ${targetPath}`);
+      writeFileSync(contentPath, newContent, 'utf-8');
+      writeFileSync(injectPath, newInject, 'utf-8');
+      p.log.success(`Regenerated ${contentPath}`);
+      p.log.success(`Regenerated ${injectPath}`);
       p.log.info('Run `npm run build` to compile, then re-inject CLAUDE.md.');
     });
 
