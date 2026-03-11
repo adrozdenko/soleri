@@ -262,7 +262,7 @@ describe('Scaffolder', () => {
         .filter((e) => e.isDirectory())
         .map((e) => e.name);
 
-      expect(skillDirs).toHaveLength(19);
+      expect(skillDirs).toHaveLength(22);
 
       // Verify each skill dir has a SKILL.md
       for (const dir of skillDirs) {
@@ -276,6 +276,8 @@ describe('Scaffolder', () => {
       const skillDirs = readdirSync(skillsDir).sort();
 
       expect(skillDirs).toEqual([
+        'agent-dev',
+        'agent-persona',
         'brain-debrief',
         'brainstorming',
         'code-patrol',
@@ -292,6 +294,7 @@ describe('Scaffolder', () => {
         'systematic-debugging',
         'test-driven-development',
         'vault-capture',
+        'vault-curate',
         'vault-navigator',
         'verification-before-completion',
         'writing-plans',

@@ -8,6 +8,8 @@ const SKILLS_DIR = join(__dirname, '..', 'skills');
 
 /** Skills that use YOUR_AGENT_core placeholder and need agent-specific substitution. */
 const AGENT_SPECIFIC_SKILLS = new Set([
+  'agent-dev',
+  'agent-persona',
   'brain-debrief',
   'brainstorming',
   'code-patrol',
@@ -23,6 +25,7 @@ const AGENT_SPECIFIC_SKILLS = new Set([
   'systematic-debugging',
   'test-driven-development',
   'vault-capture',
+  'vault-curate',
   'vault-navigator',
   'verification-before-completion',
   'writing-plans',
