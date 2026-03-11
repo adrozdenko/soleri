@@ -6,11 +6,13 @@
  */
 
 import { join } from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import { PackLockfile, checkNpmVersion, checkVersionCompat } from '@soleri/core';
+import { generateClaudeMdTemplate } from '@soleri/forge/lib';
+import type { AgentConfig } from '@soleri/forge/lib';
 import { detectAgent } from '../utils/agent-context.js';
 
 export function registerAgent(program: Command): void {
@@ -163,6 +165,42 @@ export function registerAgent(program: Command): void {
       }
     });
 
+  // ─── refresh ────────────────────────────────────────────────
+  agent
+    .command('refresh')
+    .option('--dry-run', 'Preview what would change without writing')
+    .description('Regenerate CLAUDE.md content from latest forge templates')
+    .action((opts: { dryRun?: boolean }) => {
+      const ctx = detectAgent();
+      if (!ctx) {
+        p.log.error('No agent project detected in current directory.');
+        process.exit(1);
+        return;
+      }
+
+      // Reconstruct AgentConfig from the existing agent
+      const config = readAgentConfig(ctx.agentPath, ctx.agentId);
+      if (!config) {
+        p.log.error('Could not read agent config from persona.ts and entry point.');
+        process.exit(1);
+        return;
+      }
+
+      const targetPath = join(ctx.agentPath, 'src', 'activation', 'claude-md-content.ts');
+      const newContent = generateClaudeMdTemplate(config);
+
+      if (opts.dryRun) {
+        p.log.info(`Would regenerate: ${targetPath}`);
+        p.log.info(`Agent: ${config.name} (${config.domains.length} domains)`);
+        p.log.info(`Domains: ${config.domains.join(', ')}`);
+        return;
+      }
+
+      writeFileSync(targetPath, newContent, 'utf-8');
+      p.log.success(`Regenerated ${targetPath}`);
+      p.log.info('Run `npm run build` to compile, then re-inject CLAUDE.md.');
+    });
+
   // ─── diff ───────────────────────────────────────────────────
   agent
     .command('diff')
@@ -178,4 +216,75 @@ export function registerAgent(program: Command): void {
       p.log.info('Template diff is available after `soleri agent update --check`.');
       p.log.info('Full template comparison will be added in a future release.');
     });
+}
+
+/**
+ * Reconstruct an AgentConfig from an existing scaffolded agent.
+ *
+ * Reads persona from src/activation/persona.ts (PERSONA constant)
+ * and domains from src/index.ts (createDomainFacades call).
+ */
+function readAgentConfig(agentPath: string, agentId: string): AgentConfig | null {
+  // Read persona.ts source to extract PERSONA fields
+  // Try both locations: v6+ (src/identity/) and v5 (src/activation/)
+  const personaCandidates = [
+    join(agentPath, 'src', 'identity', 'persona.ts'),
+    join(agentPath, 'src', 'activation', 'persona.ts'),
+  ];
+  const personaPath = personaCandidates.find((p) => existsSync(p));
+  if (!personaPath) return null;
+  const personaSrc = readFileSync(personaPath, 'utf-8');
+
+  const name = extractStringField(personaSrc, 'name') ?? agentId;
+  const role = extractStringField(personaSrc, 'role') ?? '';
+  const description = extractStringField(personaSrc, 'description') ?? '';
+  const tone =
+    (extractStringField(personaSrc, 'tone') as 'precise' | 'mentor' | 'pragmatic') ?? 'pragmatic';
+  const greeting = extractStringField(personaSrc, 'greeting') ?? `Hello! I'm ${name}.`;
+  const principles = extractArrayField(personaSrc, 'principles');
+
+  // Read domains from entry point
+  const indexPath = join(agentPath, 'src', 'index.ts');
+  const domains = existsSync(indexPath) ? extractDomains(readFileSync(indexPath, 'utf-8')) : [];
+
+  // Read hookPacks from .claude/ if present
+  const hookPacks: string[] = [];
+
+  // Read package.json for outputDir
+  const pkg = JSON.parse(readFileSync(join(agentPath, 'package.json'), 'utf-8'));
+
+  return {
+    id: agentId,
+    name,
+    role,
+    description,
+    domains,
+    principles,
+    tone,
+    greeting,
+    outputDir: agentPath,
+    hookPacks,
+    setupTarget: pkg.soleri?.setupTarget ?? 'claude',
+    telegram: false,
+  };
+}
+
+function extractStringField(src: string, field: string): string | undefined {
+  const re = new RegExp(`${field}:\\s*'([^']*)'`);
+  const m = src.match(re);
+  return m ? m[1].replace(/\\'/g, "'") : undefined;
+}
+
+function extractArrayField(src: string, field: string): string[] {
+  const re = new RegExp(`${field}:\\s*\\[([\\s\\S]*?)\\]`);
+  const m = src.match(re);
+  if (!m) return [];
+  return [...m[1].matchAll(/'([^']*)'/g)].map((x) => x[1]);
+}
+
+function extractDomains(indexSrc: string): string[] {
+  const m = indexSrc.match(/createDomainFacades\(runtime,\s*['"][^'"]+['"]\s*,\s*\[([\s\S]*?)\]\)/);
+  if (!m) return [];
+  // Match both single and double quoted strings
+  return [...m[1].matchAll(/['"]([^'"]+)['"]/g)].map((x) => x[1]);
 }
