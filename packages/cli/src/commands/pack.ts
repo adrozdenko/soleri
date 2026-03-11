@@ -353,6 +353,221 @@ export function registerPack(program: Command): void {
         p.log.warn('Could not search npm registry. Check your network connection.');
       }
     });
+
+  // ─── create ─────────────────────────────────────────────────
+  pack
+    .command('create')
+    .description('Scaffold a new pack project')
+    .action(async () => {
+      const name = await p.text({ message: 'Pack name:', placeholder: 'my-react-patterns' });
+      if (p.isCancel(name) || !name) return;
+
+      const packType = await p.select({
+        message: 'Pack type:',
+        options: [
+          { value: 'knowledge', label: 'Knowledge — vault entries, patterns, anti-patterns' },
+          { value: 'skills', label: 'Skills — workflow skill files' },
+          { value: 'hooks', label: 'Hooks — editor hook files' },
+          { value: 'bundle', label: 'Bundle — multiple content types' },
+        ],
+      });
+      if (p.isCancel(packType)) return;
+
+      const description = await p.text({
+        message: 'Description:',
+        placeholder: 'Patterns for React hooks and state management',
+      });
+      if (p.isCancel(description)) return;
+
+      const author = await p.text({ message: 'Author:', placeholder: '@username' });
+      if (p.isCancel(author)) return;
+
+      const dir = join(process.cwd(), String(name));
+      const { mkdirSync, writeFileSync } = require('node:fs');
+
+      mkdirSync(dir, { recursive: true });
+
+      // Scaffold manifest
+      const manifest: Record<string, unknown> = {
+        id: name,
+        version: '1.0.0',
+        description: description || '',
+        author: author || '',
+        license: 'MIT',
+        soleri: '>=2.0.0',
+      };
+
+      // Scaffold content directories based on type
+      if (packType === 'knowledge' || packType === 'bundle') {
+        const vaultDir = join(dir, 'vault');
+        mkdirSync(vaultDir, { recursive: true });
+        writeFileSync(join(vaultDir, 'patterns.json'), JSON.stringify([], null, 2) + '\n', 'utf-8');
+        manifest.vault = { dir: 'vault' };
+      }
+
+      if (packType === 'skills' || packType === 'bundle') {
+        const skillsDir = join(dir, 'skills');
+        mkdirSync(skillsDir, { recursive: true });
+        writeFileSync(
+          join(skillsDir, 'example.md'),
+          `# Example Skill\n\nReplace this with your skill content.\n`,
+          'utf-8',
+        );
+        manifest.skills = { dir: 'skills' };
+      }
+
+      if (packType === 'hooks' || packType === 'bundle') {
+        const hooksDir = join(dir, 'hooks');
+        mkdirSync(hooksDir, { recursive: true });
+        writeFileSync(
+          join(hooksDir, 'example.md'),
+          `# Example Hook\n\nReplace this with your hook content.\n`,
+          'utf-8',
+        );
+        manifest.hooks = { dir: 'hooks' };
+      }
+
+      writeFileSync(
+        join(dir, 'soleri-pack.json'),
+        JSON.stringify(manifest, null, 2) + '\n',
+        'utf-8',
+      );
+
+      p.log.success(`Created ${name}/`);
+      p.log.info(`  soleri-pack.json`);
+      if (manifest.vault) p.log.info(`  vault/patterns.json`);
+      if (manifest.skills) p.log.info(`  skills/example.md`);
+      if (manifest.hooks) p.log.info(`  hooks/example.md`);
+      p.log.info(`\nNext: edit content, then \`soleri pack validate ${name}/\``);
+    });
+
+  // ─── validate ───────────────────────────────────────────────
+  pack
+    .command('validate')
+    .argument('<path>', 'Path to pack directory')
+    .description('Validate a pack before publishing')
+    .action((packPath: string) => {
+      const { resolve } = require('node:path');
+      const dir = resolve(packPath);
+      const errors: string[] = [];
+      const warnings: string[] = [];
+
+      // Check manifest exists
+      const manifestPath = join(dir, 'soleri-pack.json');
+      if (!existsSync(manifestPath)) {
+        p.log.error(`No soleri-pack.json found at ${dir}`);
+        process.exit(1);
+      }
+
+      let manifest: Record<string, unknown>;
+      try {
+        manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+      } catch {
+        p.log.error('Invalid JSON in soleri-pack.json');
+        process.exit(1);
+        return;
+      }
+
+      // Required fields
+      if (!manifest.id || typeof manifest.id !== 'string')
+        errors.push('Missing or invalid "id" field');
+      if (!manifest.version || typeof manifest.version !== 'string')
+        errors.push('Missing or invalid "version" field');
+      if (manifest.version && !/^\d+\.\d+\.\d+/.test(manifest.version as string))
+        errors.push('Version must be valid semver (e.g., 1.0.0)');
+      if (!manifest.soleri) warnings.push('Missing "soleri" compatibility range');
+
+      // Naming convention
+      const id = manifest.id as string;
+      if (id && !id.match(/^[@a-z0-9][\w./-]*$/i)) {
+        errors.push(`Pack id "${id}" contains invalid characters`);
+      }
+
+      // Content directories exist
+      const packType = inferPackType(
+        manifest as { vault?: unknown; skills?: unknown; hooks?: unknown },
+      );
+      if (manifest.vault) {
+        const vaultDir = join(dir, (manifest.vault as { dir?: string }).dir || 'vault');
+        if (!existsSync(vaultDir)) errors.push(`Vault directory not found: ${vaultDir}`);
+      }
+      if (manifest.skills) {
+        const skillsDir = join(dir, (manifest.skills as { dir?: string }).dir || 'skills');
+        if (!existsSync(skillsDir)) errors.push(`Skills directory not found: ${skillsDir}`);
+      }
+      if (manifest.hooks) {
+        const hooksDir = join(dir, (manifest.hooks as { dir?: string }).dir || 'hooks');
+        if (!existsSync(hooksDir)) errors.push(`Hooks directory not found: ${hooksDir}`);
+      }
+
+      // Report
+      if (errors.length > 0) {
+        p.log.error(`Validation failed (${errors.length} error(s)):`);
+        for (const err of errors) console.log(`  ✗ ${err}`);
+        if (warnings.length > 0) {
+          for (const warn of warnings) console.log(`  ⚠ ${warn}`);
+        }
+        process.exit(1);
+      }
+
+      if (warnings.length > 0) {
+        for (const warn of warnings) p.log.warn(warn);
+      }
+
+      p.log.success(`Pack "${id}" v${manifest.version} (${packType}) is valid`);
+    });
+
+  // ─── publish ────────────────────────────────────────────────
+  pack
+    .command('publish')
+    .argument('[path]', 'Path to pack directory', '.')
+    .option('--dry-run', 'Show what would be published without publishing')
+    .description('Publish pack to npm registry')
+    .action((packPath: string, opts: { dryRun?: boolean }) => {
+      const { resolve } = require('node:path');
+      const { execFileSync } = require('node:child_process');
+      const dir = resolve(packPath);
+
+      // Validate first
+      const manifestPath = join(dir, 'soleri-pack.json');
+      if (!existsSync(manifestPath)) {
+        p.log.error(`No soleri-pack.json found at ${dir}`);
+        process.exit(1);
+      }
+
+      // Check for package.json (needed for npm publish)
+      const pkgPath = join(dir, 'package.json');
+      if (!existsSync(pkgPath)) {
+        // Auto-generate from manifest
+        const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+        const pkg = {
+          name: manifest.id.startsWith('@') ? manifest.id : `soleri-pack-${manifest.id}`,
+          version: manifest.version,
+          description: manifest.description || '',
+          keywords: ['soleri', 'soleri-pack', manifest.type || 'knowledge'].filter(Boolean),
+          files: ['soleri-pack.json', 'vault', 'skills', 'hooks'].filter((f) =>
+            existsSync(join(dir, f)),
+          ),
+        };
+        const { writeFileSync } = require('node:fs');
+        writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
+        p.log.info('Generated package.json from manifest');
+      }
+
+      const s = p.spinner();
+      s.start(opts.dryRun ? 'Dry run...' : 'Publishing to npm...');
+
+      try {
+        const args = ['publish', dir, '--access', 'public'];
+        if (opts.dryRun) args.push('--dry-run');
+        execFileSync('npm', args, { stdio: 'pipe', timeout: 60_000 });
+        s.stop(opts.dryRun ? 'Dry run complete' : 'Published successfully');
+      } catch (err) {
+        s.stop('Publish failed');
+        p.log.error(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────

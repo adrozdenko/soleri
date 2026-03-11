@@ -487,6 +487,12 @@ export { createDomainFacade, createDomainFacades } from './runtime/domain-ops.js
 export { FeatureFlags } from './runtime/feature-flags.js';
 export type { FlagDefinition } from './runtime/feature-flags.js';
 export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';
+export {
+  deprecationWarning,
+  wrapDeprecated,
+  resetDeprecationWarnings,
+} from './runtime/deprecation.js';
+export type { DeprecationInfo } from './runtime/deprecation.js';
 
 // ─── Errors ────────────────────────────────────────────────────────────
 export {
