@@ -9,6 +9,7 @@ const SKILLS_DIR = join(__dirname, '..', 'skills');
 /** Skills that use YOUR_AGENT_core placeholder and need agent-specific substitution. */
 const AGENT_SPECIFIC_SKILLS = new Set([
   'agent-dev',
+  'agent-guide',
   'agent-persona',
   'brain-debrief',
   'brainstorming',

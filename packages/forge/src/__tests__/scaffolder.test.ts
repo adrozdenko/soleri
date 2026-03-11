@@ -262,7 +262,7 @@ describe('Scaffolder', () => {
         .filter((e) => e.isDirectory())
         .map((e) => e.name);
 
-      expect(skillDirs).toHaveLength(22);
+      expect(skillDirs).toHaveLength(23);
 
       // Verify each skill dir has a SKILL.md
       for (const dir of skillDirs) {
@@ -277,6 +277,7 @@ describe('Scaffolder', () => {
 
       expect(skillDirs).toEqual([
         'agent-dev',
+        'agent-guide',
         'agent-persona',
         'brain-debrief',
         'brainstorming',
