@@ -65,6 +65,31 @@ export const DOMAIN_OPTIONS: DomainOption[] = [
     label: 'developer-experience',
     hint: 'Developer tooling, onboarding, and ergonomics',
   },
+  {
+    value: 'design-tokens',
+    label: 'design-tokens',
+    hint: 'Semantic tokens, color systems, spacing scales, typography',
+  },
+  {
+    value: 'frontend',
+    label: 'frontend',
+    hint: 'Component patterns, state management, rendering, bundling',
+  },
+  {
+    value: 'ux-design',
+    label: 'ux-design',
+    hint: 'User flows, conversion, onboarding, forms, navigation',
+  },
+  {
+    value: 'knowledge-management',
+    label: 'knowledge-management',
+    hint: 'Vault curation, pattern lifecycle, cross-project learning',
+  },
+  {
+    value: 'governance',
+    label: 'governance',
+    hint: 'Approval gates, policy enforcement, audit trails',
+  },
 ];
 
 export const CUSTOM_DOMAIN_GUIDANCE = {
@@ -200,6 +225,113 @@ export const PRINCIPLE_CATEGORIES: PrincipleCategory[] = [
       {
         value: 'Docs rot faster than code — keep current',
         label: 'Docs rot faster than code — keep current',
+      },
+    ],
+  },
+  {
+    label: 'Design Systems',
+    options: [
+      { value: 'Semantic tokens over primitives', label: 'Semantic tokens over primitives' },
+      {
+        value: 'Component variant enum over boolean props',
+        label: 'Component variant enum over boolean props',
+      },
+      {
+        value: 'Atomic design classification for component hierarchy',
+        label: 'Atomic design classification for component hierarchy',
+      },
+      {
+        value: 'Token enforcement: blocked then forbidden then preferred',
+        label: 'Token enforcement: blocked then forbidden then preferred',
+      },
+      {
+        value: 'Respect existing design system patterns',
+        label: 'Respect existing design system patterns',
+      },
+      {
+        value: 'Every component needs accessibility baseline',
+        label: 'Every component needs accessibility baseline',
+      },
+    ],
+  },
+  {
+    label: 'Frontend Engineering',
+    options: [
+      {
+        value: 'Stack-aware implementation over generic advice',
+        label: 'Stack-aware implementation over generic advice',
+      },
+      { value: 'UX patterns inform code structure', label: 'UX patterns inform code structure' },
+      {
+        value: 'Performance budget before feature scope',
+        label: 'Performance budget before feature scope',
+      },
+      {
+        value: 'Accessible by default, not bolted on after',
+        label: 'Accessible by default, not bolted on after',
+      },
+    ],
+  },
+  {
+    label: 'UX Intelligence',
+    options: [
+      {
+        value: 'User behavior drives design decisions',
+        label: 'User behavior drives design decisions',
+      },
+      {
+        value: 'Accessibility is not a feature, it is a baseline',
+        label: 'Accessibility is not a feature, it is a baseline',
+      },
+      {
+        value: 'Measure conversion impact of every UX change',
+        label: 'Measure conversion impact of every UX change',
+      },
+      {
+        value: 'Progressive disclosure over information overload',
+        label: 'Progressive disclosure over information overload',
+      },
+    ],
+  },
+  {
+    label: 'Knowledge Management',
+    options: [
+      {
+        value: 'Knowledge-gather before execute, always',
+        label: 'Knowledge-gather before execute, always',
+      },
+      {
+        value: 'Vault is the single source of truth',
+        label: 'Vault is the single source of truth',
+      },
+      {
+        value: 'Capture lessons at the moment of discovery',
+        label: 'Capture lessons at the moment of discovery',
+      },
+      {
+        value: 'Cross-project patterns beat project-local fixes',
+        label: 'Cross-project patterns beat project-local fixes',
+      },
+      {
+        value: 'Domain vocabulary must be explicit and extensible',
+        label: 'Domain vocabulary must be explicit and extensible',
+      },
+    ],
+  },
+  {
+    label: 'Governance',
+    options: [
+      {
+        value: 'Two-gate approval: plan then execute, never skip',
+        label: 'Two-gate approval: plan then execute, never skip',
+      },
+      {
+        value: 'Protocol enforcement via checkpoint gates',
+        label: 'Protocol enforcement via checkpoint gates',
+      },
+      {
+        value: 'Data-driven architecture: logic in config, not code',
+        label: 'Data-driven architecture: logic in config, not code',
       },
     ],
   },

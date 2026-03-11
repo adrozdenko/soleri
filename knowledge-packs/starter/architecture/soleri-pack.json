@@ -1,0 +1,10 @@
+{
+  "id": "starter-architecture",
+  "name": "Architecture Starter Pack",
+  "version": "1.0.0",
+  "description": "Clean architecture, DDD patterns, API design, error handling — foundational architecture patterns and anti-patterns.",
+  "domains": ["architecture"],
+  "vault": {
+    "dir": "vault"
+  }
+}

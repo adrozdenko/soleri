@@ -1,0 +1,10 @@
+{
+  "id": "starter-security",
+  "name": "Security Starter Pack",
+  "version": "1.0.0",
+  "description": "OWASP Top 10, auth patterns, input validation, secrets management — essential security patterns and anti-patterns for any codebase.",
+  "domains": ["security"],
+  "vault": {
+    "dir": "vault"
+  }
+}

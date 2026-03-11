@@ -35,7 +35,7 @@ describe('createSemanticFacades', () => {
   }
 
   it('should return 232 ops', () => {
-    expect(ops.length).toBe(296);
+    expect(ops.length).toBe(299);
   });
 
   it('should have all expected op names', () => {
@@ -230,6 +230,10 @@ describe('createSemanticFacades', () => {
     // Vault content hashing (#166)
     expect(names).toContain('vault_content_hash');
     expect(names).toContain('vault_dedup_status');
+    // Obsidian sync (#127)
+    expect(names).toContain('obsidian_export');
+    expect(names).toContain('obsidian_import');
+    expect(names).toContain('obsidian_sync');
     // Admin (8)
     expect(names).toContain('admin_health');
     expect(names).toContain('admin_tool_list');

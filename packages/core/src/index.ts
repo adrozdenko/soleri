@@ -10,6 +10,23 @@ export { TIER_WEIGHTS } from './vault/vault-types.js';
 export { VaultBranching } from './vault/vault-branching.js';
 export { GitVaultSync } from './vault/git-vault-sync.js';
 export type { GitVaultSyncConfig } from './vault/git-vault-sync.js';
+export {
+  ObsidianSync,
+  toObsidianMarkdown,
+  fromObsidianMarkdown,
+  titleToSlug,
+} from './vault/obsidian-sync.js';
+export type {
+  ObsidianSyncConfig,
+  ExportOptions as ObsidianExportOptions,
+  ImportOptions as ObsidianImportOptions,
+  SyncMode as ObsidianSyncMode,
+  SyncOptions as ObsidianSyncOptions,
+  ExportResult as ObsidianExportResult,
+  ImportResult as ObsidianImportResult,
+  SyncResult as ObsidianSyncResult,
+  ConflictInfo,
+} from './vault/obsidian-sync.js';
 export type {
   BranchAction,
   BranchEntry,
