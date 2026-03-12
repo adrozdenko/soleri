@@ -480,7 +480,7 @@ export const CUSTOM_DESCRIPTION_GUIDANCE = {
 export const CUSTOM_GREETING_GUIDANCE = {
   instruction: 'Write a custom greeting (first thing users see)',
   examples: [
-    "Hola! I'm Salvador — your design system guardian.",
+    "Hello! I'm your design system guardian. Let's build something beautiful.",
     'Ready to review. Drop a PR link or describe the issue.',
     "Hey! Let's make sure your APIs are rock solid.",
   ],
