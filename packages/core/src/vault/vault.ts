@@ -210,7 +210,7 @@ export class Vault {
   private migrateOriginColumn(): void {
     try {
       this.provider.run(
-        "ALTER TABLE entries ADD COLUMN origin TEXT NOT NULL DEFAULT 'user' CHECK(origin IN ('agent', 'user'))",
+        "ALTER TABLE entries ADD COLUMN origin TEXT NOT NULL DEFAULT 'user' CHECK(origin IN ('agent', 'pack', 'user'))",
       );
     } catch {
       // Column already exists
@@ -373,7 +373,7 @@ export class Vault {
       domain?: string;
       type?: string;
       severity?: string;
-      origin?: 'agent' | 'user';
+      origin?: 'agent' | 'pack' | 'user';
       limit?: number;
       includeExpired?: boolean;
     },
@@ -426,7 +426,7 @@ export class Vault {
     domain?: string;
     type?: string;
     severity?: string;
-    origin?: 'agent' | 'user';
+    origin?: 'agent' | 'pack' | 'user';
     tags?: string[];
     limit?: number;
     offset?: number;

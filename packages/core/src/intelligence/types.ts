@@ -12,7 +12,7 @@ export interface IntelligenceEntry {
   tags: string[];
   appliesTo?: string[];
   tier?: 'agent' | 'project' | 'team'; // scope tier — auto-detected or manually set
-  origin?: 'agent' | 'user'; // knowledge origin — 'agent' = ships with engine, 'user' = personal capture
+  origin?: 'agent' | 'pack' | 'user'; // knowledge origin — 'agent' = engine, 'pack' = installable knowledge pack, 'user' = personal capture
   validFrom?: number; // unix epoch — when entry becomes active
   validUntil?: number; // unix epoch — when entry expires (null = never)
 }
