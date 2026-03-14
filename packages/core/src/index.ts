@@ -1,6 +1,6 @@
 // ─── Intelligence ────────────────────────────────────────────────────
 export type { IntelligenceEntry, IntelligenceBundle } from './intelligence/types.js';
-export { loadIntelligenceData } from './intelligence/loader.js';
+export { loadIntelligenceData, loadPacks } from './intelligence/loader.js';
 
 // ─── Vault ───────────────────────────────────────────────────────────
 export { Vault } from './vault/vault.js';

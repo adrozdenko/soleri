@@ -93,3 +93,41 @@ function validateEntry(entry: IntelligenceEntry): boolean {
     Array.isArray(entry.tags)
   );
 }
+
+/**
+ * Load all knowledge packs from a packs directory.
+ * Each subdirectory is a pack with JSON bundle files and an optional soleri-pack.json manifest.
+ *
+ * Structure:
+ *   packsDir/
+ *     design-system/
+ *       soleri-pack.json        ← optional manifest
+ *       design-tokens.json      ← IntelligenceBundle
+ *       components.json         ← IntelligenceBundle
+ *     clean-code/
+ *       refactoring.json        ← IntelligenceBundle
+ *
+ * Returns entries grouped by pack name for installPack() calls.
+ */
+export function loadPacks(
+  packsDir: string,
+): Array<{ packName: string; entries: IntelligenceEntry[] }> {
+  const result: Array<{ packName: string; entries: IntelligenceEntry[] }> = [];
+  let dirs: string[];
+  try {
+    dirs = readdirSync(packsDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && !d.name.startsWith('.'))
+      .map((d) => d.name);
+  } catch {
+    return result;
+  }
+
+  for (const dir of dirs) {
+    const packPath = join(packsDir, dir);
+    const entries = loadIntelligenceData(packPath);
+    if (entries.length > 0) {
+      result.push({ packName: dir, entries });
+    }
+  }
+  return result;
+}

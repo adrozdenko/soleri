@@ -344,6 +344,24 @@ export class Vault {
   }
 
   /**
+   * Install a knowledge pack — seeds entries with origin:'pack' and content-hash dedup.
+   * Packs are installable domain knowledge (UX laws, design tokens, clean code rules).
+   * Unlike seed(), this forces origin:'pack' regardless of what the entry says.
+   */
+  installPack(entries: IntelligenceEntry[]): { installed: number; skipped: number } {
+    let installed = 0;
+    let skipped = 0;
+    // Tag all entries with origin:'pack' and seed — seed() handles its own transaction
+    const tagged = entries.map((e) => ({ ...e, origin: 'pack' as const }));
+    const results = this.seedDedup(tagged);
+    for (const r of results) {
+      if (r.action === 'inserted') installed++;
+      else skipped++;
+    }
+    return { installed, skipped };
+  }
+
+  /**
    * Seed entries with content-hash dedup. Returns per-entry results.
    * Unlike seed(), skips entries whose content already exists in the vault.
    */
