@@ -227,7 +227,44 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
           }
         }
 
-        return { captured, proposed, rejected, duplicated, results };
+        // Auto-suggest links for captured entries (Zettelkasten enrichment)
+        let suggestedLinks: Array<{
+          entryId: string;
+          title: string;
+          suggestedType: string;
+          score: number;
+        }> = [];
+        try {
+          if (captured > 0) {
+            const firstCaptured = results.find((r) => r.action === 'capture');
+            if (firstCaptured) {
+              const { LinkManager } = await import('../vault/linking.js');
+              const lm = new LinkManager(vault.getProvider());
+              const suggestions = lm.suggestLinks(firstCaptured.id, 3);
+              suggestedLinks = suggestions
+                .filter(
+                  (s) => s.entryId !== firstCaptured.id && !s.entryId.endsWith(firstCaptured.id),
+                )
+                .map((s) => ({
+                  entryId: s.entryId,
+                  title: s.title,
+                  suggestedType: s.suggestedType,
+                  score: s.score,
+                }));
+            }
+          }
+        } catch {
+          /* never break capture for suggestions */
+        }
+
+        return {
+          captured,
+          proposed,
+          rejected,
+          duplicated,
+          results,
+          ...(suggestedLinks.length > 0 ? { suggestedLinks } : {}),
+        };
       },
     },
 
