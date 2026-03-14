@@ -136,6 +136,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                     counterExample: entry.counterExample,
                     why: entry.why,
                     tier: finalTier,
+                    origin: 'user',
                   });
                   const scopeMeta = scopeResult
                     ? {
@@ -344,6 +345,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                   description,
                   tags,
                   tier: finalTier,
+                  origin: 'user',
                 });
                 if (captureResult.blocked) {
                   return {

@@ -178,6 +178,7 @@ export class Vault {
     `);
     this.migrateBrainSchema();
     this.migrateTemporalSchema();
+    this.migrateOriginColumn();
     this.migrateContentHash();
     this.migrateTierColumn();
   }
@@ -204,6 +205,17 @@ export class Vault {
     } catch {
       // Column already exists
     }
+  }
+
+  private migrateOriginColumn(): void {
+    try {
+      this.provider.run(
+        "ALTER TABLE entries ADD COLUMN origin TEXT NOT NULL DEFAULT 'user' CHECK(origin IN ('agent', 'user'))",
+      );
+    } catch {
+      // Column already exists
+    }
+    this.provider.execSql('CREATE INDEX IF NOT EXISTS idx_entries_origin ON entries(origin)');
   }
 
   private migrateContentHash(): void {
@@ -293,12 +305,12 @@ export class Vault {
 
   seed(entries: IntelligenceEntry[]): number {
     const sql = `
-      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until,content_hash,tier)
-      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil,@contentHash,@tier)
+      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until,content_hash,tier,origin)
+      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil,@contentHash,@tier,@origin)
       ON CONFLICT(id) DO UPDATE SET type=excluded.type,domain=excluded.domain,title=excluded.title,severity=excluded.severity,
         description=excluded.description,context=excluded.context,example=excluded.example,counter_example=excluded.counter_example,
         why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,valid_from=excluded.valid_from,valid_until=excluded.valid_until,
-        content_hash=excluded.content_hash,tier=excluded.tier,updated_at=unixepoch()
+        content_hash=excluded.content_hash,tier=excluded.tier,origin=excluded.origin,updated_at=unixepoch()
     `;
     return this.provider.transaction(() => {
       let count = 0;
@@ -320,6 +332,7 @@ export class Vault {
           validUntil: entry.validUntil ?? null,
           contentHash: computeContentHash(entry),
           tier: entry.tier ?? 'agent',
+          origin: entry.origin ?? 'agent',
         });
         count++;
         if (this.syncManager) {
@@ -360,6 +373,7 @@ export class Vault {
       domain?: string;
       type?: string;
       severity?: string;
+      origin?: 'agent' | 'user';
       limit?: number;
       includeExpired?: boolean;
     },
@@ -378,6 +392,10 @@ export class Vault {
     if (options?.severity) {
       filters.push('e.severity = @severity');
       fp.severity = options.severity;
+    }
+    if (options?.origin) {
+      filters.push('e.origin = @origin');
+      fp.origin = options.origin;
     }
     if (!options?.includeExpired) {
       const now = Math.floor(Date.now() / 1000);
@@ -408,6 +426,7 @@ export class Vault {
     domain?: string;
     type?: string;
     severity?: string;
+    origin?: 'agent' | 'user';
     tags?: string[];
     limit?: number;
     offset?: number;
@@ -426,6 +445,10 @@ export class Vault {
     if (options?.severity) {
       filters.push('severity = @severity');
       params.severity = options.severity;
+    }
+    if (options?.origin) {
+      filters.push('origin = @origin');
+      params.origin = options.origin;
     }
     if (options?.tags?.length) {
       const c = options.tags.map((t, i) => {
@@ -1133,6 +1156,7 @@ function rowToEntry(row: Record<string, unknown>): IntelligenceEntry {
     tags: JSON.parse((row.tags as string) || '[]'),
     appliesTo: JSON.parse((row.applies_to as string) || '[]'),
     tier: (row.tier as IntelligenceEntry['tier']) ?? undefined,
+    origin: (row.origin as IntelligenceEntry['origin']) ?? undefined,
     validFrom: (row.valid_from as number) ?? undefined,
     validUntil: (row.valid_until as number) ?? undefined,
   };
