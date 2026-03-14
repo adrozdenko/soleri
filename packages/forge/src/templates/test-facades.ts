@@ -103,6 +103,12 @@ ${domainDescribes}
       expect(opNames).toContain('vault_import');
       expect(opNames).toContain('capture_knowledge');
       expect(opNames).toContain('intake_ingest_book');
+      // Zettelkasten linking ops
+      expect(opNames).toContain('link_entries');
+      expect(opNames).toContain('get_links');
+      expect(opNames).toContain('traverse');
+      expect(opNames).toContain('suggest_links');
+      expect(opNames).toContain('get_orphans');
     });
 
     it('search should query across all domains', async () => {
