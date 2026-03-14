@@ -9,7 +9,13 @@ import {
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
-import type { AgentConfig, ScaffoldResult, ScaffoldPreview, AgentInfo } from './types.js';
+import type {
+  AgentConfig,
+  SetupTarget,
+  ScaffoldResult,
+  ScaffoldPreview,
+  AgentInfo,
+} from './types.js';
 
 import { generatePackageJson } from './templates/package-json.js';
 import { generateTsconfig } from './templates/tsconfig.js';
@@ -30,18 +36,23 @@ import { generateTelegramConfig } from './templates/telegram-config.js';
 import { generateTelegramAgent } from './templates/telegram-agent.js';
 import { generateTelegramSupervisor } from './templates/telegram-supervisor.js';
 
-function getSetupTarget(config: AgentConfig): 'claude' | 'codex' | 'both' {
+function getSetupTarget(config: AgentConfig): SetupTarget {
   return config.setupTarget ?? 'claude';
 }
 
 function includesClaudeSetup(config: AgentConfig): boolean {
   const target = getSetupTarget(config);
-  return target === 'claude' || target === 'both';
+  return target === 'claude' || target === 'both' || target === 'all';
 }
 
 function includesCodexSetup(config: AgentConfig): boolean {
   const target = getSetupTarget(config);
-  return target === 'codex' || target === 'both';
+  return target === 'codex' || target === 'both' || target === 'all';
+}
+
+function includesOpencodeSetup(config: AgentConfig): boolean {
+  const target = getSetupTarget(config);
+  return target === 'opencode' || target === 'all';
 }
 
 /**
@@ -51,8 +62,13 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
   const agentDir = join(config.outputDir, config.id);
   const claudeSetup = includesClaudeSetup(config);
   const codexSetup = includesCodexSetup(config);
-  const setupLabel =
-    claudeSetup && codexSetup ? 'Claude Code + Codex' : claudeSetup ? 'Claude Code' : 'Codex';
+  const opencodeSetup = includesOpencodeSetup(config);
+  const setupParts = [
+    ...(claudeSetup ? ['Claude Code'] : []),
+    ...(codexSetup ? ['Codex'] : []),
+    ...(opencodeSetup ? ['OpenCode'] : []),
+  ];
+  const setupLabel = setupParts.join(' + ');
 
   const files = [
     { path: 'package.json', description: 'NPM package with MCP SDK, SQLite, Zod dependencies' },
@@ -113,10 +129,20 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     },
   ];
 
-  if (codexSetup) {
+  if (opencodeSetup) {
+    files.push({
+      path: '.opencode.json',
+      description: 'OpenCode MCP server config for connecting to this agent',
+    });
+  }
+
+  if (codexSetup || opencodeSetup) {
+    const hosts = [...(codexSetup ? ['Codex'] : []), ...(opencodeSetup ? ['OpenCode'] : [])].join(
+      ' + ',
+    );
     files.push({
       path: 'AGENTS.md',
-      description: 'Codex project instructions and activation workflow',
+      description: `${hosts} project instructions and activation workflow`,
     });
   }
 
@@ -255,6 +281,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
   }
   const claudeSetup = includesClaudeSetup(config);
   const codexSetup = includesCodexSetup(config);
+  const opencodeSetup = includesOpencodeSetup(config);
   const agentDir = join(config.outputDir, config.id);
   const filesCreated: string[] = [];
 
@@ -312,7 +339,36 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     ['scripts/setup.sh', generateSetupScript(config)],
   ];
 
-  if (codexSetup) {
+  if (opencodeSetup) {
+    projectFiles.push([
+      '.opencode.json',
+      JSON.stringify(
+        {
+          $schema: 'https://opencode.ai/config.json',
+          title: config.name,
+          tui: { theme: 'soleri' },
+          mcpServers: {
+            [config.id]: {
+              type: 'stdio',
+              command: 'node',
+              args: ['dist/index.js'],
+            },
+          },
+          agents: {
+            coder: { model: config.model ?? 'claude-code-sonnet-4' },
+            summarizer: { model: 'claude-code-3.5-haiku' },
+            task: { model: 'claude-code-3.5-haiku' },
+            title: { model: 'claude-code-3.5-haiku' },
+          },
+          contextPaths: ['AGENTS.md'],
+        },
+        null,
+        2,
+      ),
+    ]);
+  }
+
+  if (codexSetup || opencodeSetup) {
     projectFiles.push(['AGENTS.md', generateAgentsMd(config)]);
   }
 
@@ -386,8 +442,22 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     buildError = err instanceof Error ? err.message : String(err);
   }
 
+  // Install OpenCode CLI if needed and not already available
+  const opencodeInstallResult = opencodeSetup ? ensureOpencodeInstalled() : undefined;
+
+  // Create launcher script so typing the agent name starts OpenCode
+  if (opencodeSetup && buildSuccess) {
+    const launcherResult = createOpencodeLauncher(config.id, agentDir);
+    if (launcherResult.created) {
+      // Launcher details added to summary below
+    }
+  }
+
   // Register the agent as an MCP server in selected host configs (only if build succeeded)
-  const mcpRegistrations: Array<{ host: 'Claude Code' | 'Codex'; result: RegistrationResult }> = [];
+  const mcpRegistrations: Array<{
+    host: 'Claude Code' | 'Codex' | 'OpenCode';
+    result: RegistrationResult;
+  }> = [];
   if (claudeSetup) {
     if (buildSuccess) {
       mcpRegistrations.push({
@@ -422,13 +492,30 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
       });
     }
   }
+  if (opencodeSetup) {
+    if (buildSuccess) {
+      mcpRegistrations.push({
+        host: 'OpenCode',
+        result: registerOpencodeMcpServer(config.id, agentDir),
+      });
+    } else {
+      mcpRegistrations.push({
+        host: 'OpenCode',
+        result: {
+          registered: false,
+          path: join(homedir(), '.opencode.json'),
+          error: 'Skipped — build failed',
+        },
+      });
+    }
+  }
 
   const summaryLines = [
     `Created ${config.name} agent at ${agentDir}`,
     `${config.domains.length + 11} facades with ${totalOps} operations`,
     `${config.domains.length} empty knowledge domains ready for capture`,
     `Intelligence layer (Brain) — TF-IDF scoring, auto-tagging, duplicate detection`,
-    `Activation system included — say "Hello, ${config.name}!" to activate`,
+    `Persistent identity — ${config.name} is active from the start`,
     `1 test suite — facades (vault, brain, planner, llm tests provided by @soleri/core)`,
     `${skillFiles.length} built-in skills (TDD, debugging, planning, vault, brain debrief)`,
   ];
@@ -438,6 +525,23 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
   } else {
     summaryLines.push(`Warning: Auto-build failed: ${buildError}`);
     summaryLines.push(`  Run manually: cd ${agentDir} && npm install && npm run build`);
+  }
+
+  if (opencodeInstallResult) {
+    if (opencodeInstallResult.installed) {
+      summaryLines.push(`OpenCode CLI installed (${opencodeInstallResult.method})`);
+    } else if (!opencodeInstallResult.alreadyPresent && opencodeInstallResult.error) {
+      summaryLines.push('Warning: Failed to install OpenCode CLI');
+      summaryLines.push('  Install manually: npm install -g opencode-ai');
+    }
+  }
+
+  // Report launcher status
+  if (opencodeSetup && buildSuccess) {
+    const launcherPath = join('/usr', 'local', 'bin', config.id);
+    if (existsSync(launcherPath)) {
+      summaryLines.push(`Launcher created: type "${config.id}" in terminal to start OpenCode`);
+    }
   }
 
   if (claudeSetup && config.hookPacks?.length) {
@@ -463,7 +567,10 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
   if (codexSetup) {
     nextSteps.push('  Restart Codex');
   }
-  nextSteps.push(`  Say "Hello, ${config.name}!" to activate the persona`);
+  if (opencodeSetup) {
+    nextSteps.push('  Restart OpenCode');
+  }
+  nextSteps.push(`  ${config.name} identity is active from the start — no activation needed`);
   summaryLines.push(...nextSteps);
 
   return {
@@ -609,6 +716,149 @@ args = ["${join(agentDir, 'dist', 'index.js')}"]
     return {
       registered: false,
       path: codexConfigPath,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/**
+ * Create a launcher script at /usr/local/bin/<agentId> that starts OpenCode
+ * in the agent's project directory. Typing the agent name in terminal → OpenCode starts.
+ */
+function createOpencodeLauncher(
+  agentId: string,
+  agentDir: string,
+): { created: boolean; path: string; error?: string } {
+  const launcherPath = join('/usr', 'local', 'bin', agentId);
+  const script = [
+    '#!/usr/bin/env bash',
+    `# Soleri agent launcher — starts OpenCode with ${agentId} MCP agent`,
+    `# Set terminal title to agent name`,
+    `printf '\\033]0;${agentId}\\007'`,
+    `cd "${agentDir}" || exit 1`,
+    'exec opencode "$@"',
+    '',
+  ].join('\n');
+
+  try {
+    writeFileSync(launcherPath, script, { mode: 0o755 });
+    return { created: true, path: launcherPath };
+  } catch {
+    // /usr/local/bin may need sudo — try via agent's scripts/ directory instead
+    const localLauncher = join(agentDir, 'scripts', agentId);
+    try {
+      writeFileSync(localLauncher, script, { mode: 0o755 });
+      // Try to symlink to /usr/local/bin
+      try {
+        const { symlinkSync, unlinkSync } = require('node:fs') as typeof import('node:fs');
+        if (existsSync(launcherPath)) unlinkSync(launcherPath);
+        symlinkSync(localLauncher, launcherPath);
+        return { created: true, path: launcherPath };
+      } catch {
+        return { created: true, path: localLauncher };
+      }
+    } catch (err) {
+      return {
+        created: false,
+        path: launcherPath,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+}
+
+/**
+ * Ensure OpenCode CLI is installed (Soleri fork with title branding support).
+ * Tries `go install` from the fork first, falls back to upstream npm package.
+ */
+function ensureOpencodeInstalled(): {
+  alreadyPresent: boolean;
+  installed: boolean;
+  method?: string;
+  error?: string;
+} {
+  // Check if already available
+  try {
+    execFileSync('opencode', ['--version'], { stdio: 'pipe', timeout: 10_000 });
+    return { alreadyPresent: true, installed: false };
+  } catch {
+    // Not installed — proceed to install
+  }
+
+  // Try Go install from Soleri fork (supports title branding)
+  try {
+    execFileSync('go', ['version'], { stdio: 'pipe', timeout: 5_000 });
+    execFileSync('go', ['install', 'github.com/adrozdenko/opencode@latest'], {
+      stdio: 'pipe',
+      timeout: 120_000,
+    });
+    return {
+      alreadyPresent: false,
+      installed: true,
+      method: 'go install github.com/adrozdenko/opencode@latest',
+    };
+  } catch {
+    // Go not available or install failed — fall back to npm
+  }
+
+  // Fallback: upstream npm package (no title branding)
+  try {
+    execFileSync('npm', ['install', '-g', 'opencode-ai'], {
+      stdio: 'pipe',
+      timeout: 60_000,
+    });
+    return {
+      alreadyPresent: false,
+      installed: true,
+      method: 'npm install -g opencode-ai (upstream — title branding requires Go)',
+    };
+  } catch (err) {
+    return {
+      alreadyPresent: false,
+      installed: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/**
+ * Register the agent as an MCP server in ~/.opencode.json.
+ * Idempotent — updates existing entry if present.
+ */
+function registerOpencodeMcpServer(agentId: string, agentDir: string): RegistrationResult {
+  const opencodeConfigPath = join(homedir(), '.opencode.json');
+
+  try {
+    let config: Record<string, unknown> = {};
+
+    if (existsSync(opencodeConfigPath)) {
+      // Strip single-line comments before parsing (JSONC support)
+      const raw = readFileSync(opencodeConfigPath, 'utf-8');
+      const stripped = raw.replace(/^\s*\/\/.*$/gm, '');
+      try {
+        config = JSON.parse(stripped);
+      } catch {
+        config = {};
+      }
+    }
+
+    if (!config.mcpServers || typeof config.mcpServers !== 'object') {
+      config.mcpServers = {};
+    }
+
+    const servers = config.mcpServers as Record<string, unknown>;
+    servers[agentId] = {
+      type: 'stdio',
+      command: 'node',
+      args: [join(agentDir, 'dist', 'index.js')],
+    };
+
+    writeFileSync(opencodeConfigPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+    return { registered: true, path: opencodeConfigPath };
+  } catch (err) {
+    return {
+      registered: false,
+      path: opencodeConfigPath,
       error: err instanceof Error ? err.message : String(err),
     };
   }

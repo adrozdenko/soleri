@@ -48,3 +48,49 @@ export interface VaultTierInfo {
   connected: boolean;
   entryCount: number;
 }
+
+// =============================================================================
+// ZETTELKASTEN LINKS
+// =============================================================================
+
+/** Typed relationship between two vault entries. */
+export type LinkType = 'supports' | 'contradicts' | 'extends' | 'sequences';
+
+/** A directional, typed link between two vault entries. */
+export interface VaultLink {
+  sourceId: string;
+  targetId: string;
+  linkType: LinkType;
+  note?: string;
+  createdAt: number;
+}
+
+/** Raw SQLite row from vault_links table. */
+export interface VaultLinkRow {
+  source_id: string;
+  target_id: string;
+  link_type: string;
+  note: string | null;
+  created_at: number;
+}
+
+/** Entry enriched with link context for graph traversal results. */
+export interface LinkedEntry {
+  id: string;
+  title: string;
+  type: string;
+  domain: string;
+  linkType: LinkType;
+  linkDirection: 'outgoing' | 'incoming';
+  linkNote?: string;
+}
+
+/** Suggested link candidate from semantic/FTS similarity. */
+export interface LinkSuggestion {
+  entryId: string;
+  title: string;
+  type: string;
+  score: number;
+  suggestedType: LinkType;
+  reason: string;
+}

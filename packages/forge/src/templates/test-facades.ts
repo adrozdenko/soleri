@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { PERSONA } from '../identity/persona.js';
 import { activateAgent, deactivateAgent } from '../activation/activate.js';
-import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker } from '../activation/inject-claude-md.js';
+import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker, injectAgentsMd, injectAgentsMdGlobal, hasAgentMarkerInAgentsMd } from '../activation/inject-claude-md.js';
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
   return {
@@ -317,6 +317,19 @@ ${domainDescribes}
           },
         },
         {
+          name: 'inject_agents_md',
+          description: 'Inject AGENTS.md',
+          auth: 'write',
+          schema: z.object({
+            projectPath: z.string().optional().default('.'),
+            global: z.boolean().optional(),
+          }),
+          handler: async (params) => {
+            if (params.global) return injectAgentsMdGlobal();
+            return injectAgentsMd((params.projectPath as string) ?? '.');
+          },
+        },
+        {
           name: 'setup',
           description: 'Setup status',
           auth: 'read',
@@ -389,6 +402,7 @@ ${domainDescribes}
       expect(allOps).not.toContain('identity');
       expect(allOps).not.toContain('activate');
       expect(allOps).not.toContain('inject_claude_md');
+      expect(allOps).not.toContain('inject_agents_md');
       expect(allOps).not.toContain('setup');
     });
 
@@ -432,6 +446,27 @@ ${domainDescribes}
       try {
         const facade = buildAgentFacade();
         const injectOp = facade.ops.find((o) => o.name === 'inject_claude_md')!;
+        const result = (await injectOp.handler({ projectPath: tempDir })) as {
+          injected: boolean;
+          path: string;
+          action: string;
+        };
+        expect(result.injected).toBe(true);
+        expect(result.action).toBe('created');
+        expect(existsSync(result.path)).toBe(true);
+        const content = readFileSync(result.path, 'utf-8');
+        expect(content).toContain('${config.id}:mode');
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('inject_agents_md should create AGENTS.md in temp dir', async () => {
+      const tempDir = join(tmpdir(), 'forge-inject-agents-test-' + Date.now());
+      mkdirSync(tempDir, { recursive: true });
+      try {
+        const facade = buildAgentFacade();
+        const injectOp = facade.ops.find((o) => o.name === 'inject_agents_md')!;
         const result = (await injectOp.handler({ projectPath: tempDir })) as {
           injected: boolean;
           path: string;

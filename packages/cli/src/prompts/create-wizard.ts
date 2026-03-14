@@ -425,25 +425,110 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
     message: 'Setup target',
     options: [
       {
+        value: 'opencode',
+        label: 'OpenCode',
+        hint: 'OpenCode with Claude Max subscription (default)',
+      },
+      {
         value: 'claude',
         label: 'Claude Code',
-        hint: 'Generate/setup Claude integrations (default)',
+        hint: 'Claude Code CLI integrations',
       },
       {
         value: 'codex',
         label: 'Codex',
-        hint: 'Generate/setup Codex integrations',
+        hint: 'Codex integrations',
       },
       {
-        value: 'both',
-        label: 'Both',
-        hint: 'Generate/setup for Claude Code and Codex',
+        value: 'all',
+        label: 'All',
+        hint: 'OpenCode + Claude Code + Codex',
       },
     ],
-    initialValue: 'claude',
+    initialValue: 'opencode',
   });
 
   if (p.isCancel(setupTarget)) return null;
+
+  // ─── Step 13: Model selection ────────────────────────────
+  p.note(
+    [
+      'Claude Max models are free with a Claude Max subscription.',
+      'API models require provider keys in .opencode.json under "providers".',
+      'You can switch models anytime in OpenCode with ctrl+o.',
+    ].join('\n'),
+    'Model Selection',
+  );
+
+  const model = await p.select({
+    message: 'Primary model (can change anytime with ctrl+o)',
+    options: [
+      // ── Free with Claude Max ──
+      {
+        value: 'claude-code-sonnet-4',
+        label: 'Claude 4 Sonnet (Max)',
+        hint: 'Free — balanced speed + quality (default)',
+      },
+      {
+        value: 'claude-code-opus-4',
+        label: 'Claude 4 Opus (Max)',
+        hint: 'Free — most capable, slower',
+      },
+      {
+        value: 'claude-code-3.5-haiku',
+        label: 'Claude 3.5 Haiku (Max)',
+        hint: 'Free — fastest Claude model',
+      },
+      // ── Anthropic API ──
+      {
+        value: 'claude-4-sonnet',
+        label: 'Claude 4 Sonnet (API)',
+        hint: 'Anthropic API key required',
+      },
+      {
+        value: 'claude-4-opus',
+        label: 'Claude 4 Opus (API)',
+        hint: 'Anthropic API key required',
+      },
+      // ── OpenAI ──
+      {
+        value: 'gpt-4.1',
+        label: 'GPT 4.1',
+        hint: 'OpenAI API key required',
+      },
+      {
+        value: 'o4-mini',
+        label: 'o4-mini',
+        hint: 'OpenAI API key — reasoning model',
+      },
+      // ── Google ──
+      {
+        value: 'gemini-2.5',
+        label: 'Gemini 2.5 Pro',
+        hint: 'Google API key required',
+      },
+      {
+        value: 'gemini-2.5-flash',
+        label: 'Gemini 2.5 Flash',
+        hint: 'Google API key — fast + cheap',
+      },
+      // ── Groq ──
+      {
+        value: 'llama-3.3-70b-versatile',
+        label: 'Llama 3.3 70B (Groq)',
+        hint: 'Groq API key — open source, fast',
+      },
+      // ── xAI ──
+      {
+        value: 'grok-3-beta',
+        label: 'Grok 3',
+        hint: 'xAI API key required',
+      },
+    ],
+    initialValue: 'claude-code-sonnet-4',
+  });
+
+  if (p.isCancel(model)) return null;
 
   return {
     id,
@@ -456,6 +541,7 @@ export async function runCreateWizard(initialName?: string): Promise<AgentConfig
     greeting,
     outputDir,
     skills: selectedSkills,
-    setupTarget: setupTarget as 'claude' | 'codex' | 'both',
+    model: model as string,
+    setupTarget: setupTarget as 'claude' | 'codex' | 'opencode' | 'all',
   };
 }

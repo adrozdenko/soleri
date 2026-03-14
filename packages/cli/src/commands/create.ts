@@ -22,8 +22,8 @@ function parseSetupTarget(value?: string): SetupTarget | undefined {
 }
 
 function includesClaudeSetup(target: SetupTarget | undefined): boolean {
-  const resolved = target ?? 'claude';
-  return resolved === 'claude' || resolved === 'both';
+  const resolved = target ?? 'opencode';
+  return resolved === 'claude' || resolved === 'both' || resolved === 'all';
 }
 
 export function registerCreate(program: Command): void {

@@ -5,7 +5,7 @@ import { homedir } from 'node:os';
 import * as p from '@clack/prompts';
 import { detectAgent } from '../utils/agent-context.js';
 
-type Target = 'claude' | 'codex' | 'both';
+type Target = 'claude' | 'codex' | 'opencode' | 'both' | 'all';
 
 function uninstallClaude(agentId: string): void {
   const configPath = join(homedir(), '.claude.json');
@@ -56,6 +56,35 @@ function uninstallCodex(agentId: string): void {
   p.log.success(`Removed ${agentId} from ~/.codex/config.toml`);
 }
 
+function uninstallOpencode(agentId: string): void {
+  const configPath = join(homedir(), '.opencode.json');
+
+  if (!existsSync(configPath)) {
+    p.log.warn(`~/.opencode.json not found — nothing to remove.`);
+    return;
+  }
+
+  let config: Record<string, unknown>;
+  try {
+    const raw = readFileSync(configPath, 'utf-8');
+    const stripped = raw.replace(/^\s*\/\/.*$/gm, '');
+    config = JSON.parse(stripped);
+  } catch {
+    p.log.error(`Failed to parse ${configPath}.`);
+    process.exit(1);
+  }
+
+  const servers = config.mcpServers as Record<string, unknown> | undefined;
+  if (!servers || !(agentId in servers)) {
+    p.log.warn(`${agentId} not found in ~/.opencode.json — nothing to remove.`);
+    return;
+  }
+
+  delete servers[agentId];
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  p.log.success(`Removed ${agentId} from ~/.opencode.json`);
+}
+
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -64,7 +93,7 @@ export function registerUninstall(program: Command): void {
   program
     .command('uninstall')
     .argument('[dir]', 'Agent directory (defaults to cwd)')
-    .option('--target <target>', 'Registration target: claude, codex, or both', 'claude')
+    .option('--target <target>', 'Registration target: opencode, claude, codex, or all', 'opencode')
     .description('Remove agent MCP server entry from editor config')
     .action(async (dir?: string, opts?: { target?: string }) => {
       const resolvedDir = dir ? resolve(dir) : undefined;
@@ -75,19 +104,24 @@ export function registerUninstall(program: Command): void {
         process.exit(1);
       }
 
-      const target = (opts?.target ?? 'claude') as Target;
+      const target = (opts?.target ?? 'opencode') as Target;
+      const validTargets: Target[] = ['claude', 'codex', 'opencode', 'both', 'all'];
 
-      if (target !== 'claude' && target !== 'codex' && target !== 'both') {
-        p.log.error(`Invalid target "${target}". Use: claude, codex, or both`);
+      if (!validTargets.includes(target)) {
+        p.log.error(`Invalid target "${target}". Use: ${validTargets.join(', ')}`);
         process.exit(1);
       }
 
-      if (target === 'claude' || target === 'both') {
+      if (target === 'claude' || target === 'both' || target === 'all') {
         uninstallClaude(ctx.agentId);
       }
 
-      if (target === 'codex' || target === 'both') {
+      if (target === 'codex' || target === 'both' || target === 'all') {
         uninstallCodex(ctx.agentId);
+      }
+
+      if (target === 'opencode' || target === 'all') {
+        uninstallOpencode(ctx.agentId);
       }
     });
 }

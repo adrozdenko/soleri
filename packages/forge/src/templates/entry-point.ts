@@ -29,7 +29,7 @@ import type { OpDefinition, AgentExtensions } from '@soleri/core';
 import { z } from 'zod';
 import { PERSONA, getPersonaPrompt } from './identity/persona.js';
 import { activateAgent, deactivateAgent } from './activation/activate.js';
-import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker } from './activation/inject-claude-md.js';
+import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker, injectAgentsMd, injectAgentsMdGlobal, hasAgentMarkerInAgentsMd } from './activation/inject-claude-md.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -121,8 +121,23 @@ async function main(): Promise<void> {
       },
     },
     {
+      name: 'inject_agents_md',
+      description: 'Inject agent sections into AGENTS.md — project-level or global (~/.config/opencode/AGENTS.md). For OpenCode and Codex. Idempotent.',
+      auth: 'write',
+      schema: z.object({
+        projectPath: z.string().optional().default('.'),
+        global: z.boolean().optional().describe('If true, inject into ~/.config/opencode/AGENTS.md instead of project-level'),
+      }),
+      handler: async (params) => {
+        if (params.global) {
+          return injectAgentsMdGlobal();
+        }
+        return injectAgentsMd((params.projectPath as string) ?? '.');
+      },
+    },
+    {
       name: 'setup',
-      description: 'Check setup status — CLAUDE.md configured? Vault has entries? What to do next?',
+      description: 'Check setup status — CLAUDE.md configured? AGENTS.md configured? Vault has entries? What to do next?',
       auth: 'read',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
@@ -135,11 +150,18 @@ async function main(): Promise<void> {
 
         const projectClaudeMd = joinPath(projectPath, 'CLAUDE.md');
         const globalClaudeMd = joinPath(homedir(), '.claude', 'CLAUDE.md');
+        const projectAgentsMd = joinPath(projectPath, 'AGENTS.md');
+        const globalAgentsMd = joinPath(homedir(), '.config', 'opencode', 'AGENTS.md');
 
         const projectExists = existsSync(projectClaudeMd);
         const projectHasAgent = hasAgentMarker(projectClaudeMd);
         const globalExists = existsSync(globalClaudeMd);
         const globalHasAgent = hasAgentMarker(globalClaudeMd);
+
+        const agentsMdProjectExists = existsSync(projectAgentsMd);
+        const agentsMdProjectHasAgent = hasAgentMarkerInAgentsMd(projectAgentsMd);
+        const agentsMdGlobalExists = existsSync(globalAgentsMd);
+        const agentsMdGlobalHasAgent = hasAgentMarkerInAgentsMd(globalAgentsMd);
 
         const s = runtime.vault.stats();
 
@@ -148,6 +170,9 @@ async function main(): Promise<void> {
           recommendations.push('No CLAUDE.md configured — run inject_claude_md with global: true for all projects, or without for this project');
         } else if (!globalHasAgent) {
           recommendations.push('Global ~/.claude/CLAUDE.md not configured — run inject_claude_md with global: true to enable in all projects');
+        }
+        if (!agentsMdGlobalHasAgent && !agentsMdProjectHasAgent) {
+          recommendations.push('No AGENTS.md configured — run inject_agents_md for OpenCode/Codex support');
         }
         if (s.totalEntries === 0) {
           recommendations.push('Vault is empty — add intelligence data or capture knowledge via domain facades');
@@ -192,6 +217,10 @@ async function main(): Promise<void> {
           claude_md: {
             project: { exists: projectExists, has_agent_section: projectHasAgent },
             global: { exists: globalExists, has_agent_section: globalHasAgent },
+          },
+          agents_md: {
+            project: { exists: agentsMdProjectExists, has_agent_section: agentsMdProjectHasAgent },
+            global: { exists: agentsMdGlobalExists, has_agent_section: agentsMdGlobalHasAgent },
           },
           vault: { entries: s.totalEntries, domains: Object.keys(s.byDomain) },
           hooks: hookStatus,

@@ -5,7 +5,7 @@ import { homedir } from 'node:os';
 import * as p from '@clack/prompts';
 import { detectAgent } from '../utils/agent-context.js';
 
-type Target = 'claude' | 'codex' | 'both';
+type Target = 'claude' | 'codex' | 'opencode' | 'both' | 'all';
 
 function installClaude(agentId: string, agentDir: string): void {
   const configPath = join(homedir(), '.claude.json');
@@ -62,6 +62,35 @@ function installCodex(agentId: string, agentDir: string): void {
   p.log.success(`Registered ${agentId} in ~/.codex/config.toml`);
 }
 
+function installOpencode(agentId: string, agentDir: string): void {
+  const configPath = join(homedir(), '.opencode.json');
+
+  let config: Record<string, unknown> = {};
+  if (existsSync(configPath)) {
+    try {
+      const raw = readFileSync(configPath, 'utf-8');
+      const stripped = raw.replace(/^\s*\/\/.*$/gm, '');
+      config = JSON.parse(stripped);
+    } catch {
+      config = {};
+    }
+  }
+
+  if (!config.mcpServers || typeof config.mcpServers !== 'object') {
+    config.mcpServers = {};
+  }
+
+  const servers = config.mcpServers as Record<string, unknown>;
+  servers[agentId] = {
+    type: 'stdio',
+    command: 'node',
+    args: [join(agentDir, 'dist', 'index.js')],
+  };
+
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  p.log.success(`Registered ${agentId} in ~/.opencode.json`);
+}
+
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -70,7 +99,7 @@ export function registerInstall(program: Command): void {
   program
     .command('install')
     .argument('[dir]', 'Agent directory (defaults to cwd)')
-    .option('--target <target>', 'Registration target: claude, codex, or both', 'claude')
+    .option('--target <target>', 'Registration target: opencode, claude, codex, or all', 'opencode')
     .description('Register agent as MCP server in editor config')
     .action(async (dir?: string, opts?: { target?: string }) => {
       const resolvedDir = dir ? resolve(dir) : undefined;
@@ -81,19 +110,24 @@ export function registerInstall(program: Command): void {
         process.exit(1);
       }
 
-      const target = (opts?.target ?? 'claude') as Target;
+      const target = (opts?.target ?? 'opencode') as Target;
+      const validTargets: Target[] = ['claude', 'codex', 'opencode', 'both', 'all'];
 
-      if (target !== 'claude' && target !== 'codex' && target !== 'both') {
-        p.log.error(`Invalid target "${target}". Use: claude, codex, or both`);
+      if (!validTargets.includes(target)) {
+        p.log.error(`Invalid target "${target}". Use: ${validTargets.join(', ')}`);
         process.exit(1);
       }
 
-      if (target === 'claude' || target === 'both') {
+      if (target === 'claude' || target === 'both' || target === 'all') {
         installClaude(ctx.agentId, ctx.agentPath);
       }
 
-      if (target === 'codex' || target === 'both') {
+      if (target === 'codex' || target === 'both' || target === 'all') {
         installCodex(ctx.agentId, ctx.agentPath);
+      }
+
+      if (target === 'opencode' || target === 'all') {
+        installOpencode(ctx.agentId, ctx.agentPath);
       }
 
       p.log.info(`Agent ${ctx.agentId} is now available as an MCP server.`);

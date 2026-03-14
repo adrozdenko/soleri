@@ -18,7 +18,7 @@ export type {
   InstallKnowledgeResult,
   AddDomainResult,
 } from './types.js';
-export { AgentConfigSchema, SETUP_TARGETS } from './types.js';
+export { AgentConfigSchema, SETUP_TARGETS, MODEL_PRESETS } from './types.js';
 export { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
 export { generateClaudeMdTemplate } from './templates/claude-md-template.js';
 export { getEngineRulesContent, getEngineMarker } from './templates/shared-rules.js';

@@ -4,8 +4,22 @@ import { z } from 'zod';
 const TONES = ['precise', 'mentor', 'pragmatic'] as const;
 
 /** Where to scaffold host/client integration setup. */
-export const SETUP_TARGETS = ['claude', 'codex', 'both'] as const;
+export const SETUP_TARGETS = ['claude', 'codex', 'opencode', 'both', 'all'] as const;
 export type SetupTarget = (typeof SETUP_TARGETS)[number];
+
+/** Available model presets for agent configuration */
+export const MODEL_PRESETS = [
+  'claude-code-sonnet-4',
+  'claude-code-opus-4',
+  'claude-code-3.7-sonnet',
+  'claude-code-3.5-haiku',
+  'claude-4-sonnet',
+  'claude-4-opus',
+  'gpt-4.1',
+  'gpt-4.1-mini',
+  'gemini-2.5',
+  'gemini-2.5-flash',
+] as const;
 
 /** Agent configuration — everything needed to scaffold */
 export const AgentConfigSchema = z.object({
@@ -31,8 +45,10 @@ export const AgentConfigSchema = z.object({
   hookPacks: z.array(z.string()).optional(),
   /** Skills to include (if omitted, all skills are included for backward compat) */
   skills: z.array(z.string()).optional(),
+  /** Primary model for the coder agent */
+  model: z.string().optional().default('claude-code-sonnet-4'),
   /** AI client setup target: Claude Code, Codex, or both */
-  setupTarget: z.enum(SETUP_TARGETS).optional().default('claude'),
+  setupTarget: z.enum(SETUP_TARGETS).optional().default('opencode'),
   /** Enable Telegram transport scaffolding. Default: false. */
   telegram: z.boolean().optional().default(false),
 });
