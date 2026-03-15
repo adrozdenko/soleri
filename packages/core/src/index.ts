@@ -645,4 +645,13 @@ export type {
   KnowledgeManifest,
   PackSkillDefinition,
   ValidateResult as DomainPackValidateResult,
+  PackRuntime,
+  PackProjectContext,
+  PackCheckContext,
+} from './domain-packs/index.js';
+export {
+  createPackRuntime,
+  resolveToken,
+  listProjectTokens,
+  buildReverseIndex,
 } from './domain-packs/index.js';

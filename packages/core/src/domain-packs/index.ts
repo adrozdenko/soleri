@@ -16,3 +16,12 @@ export { installKnowledge, type KnowledgeInstallResult } from './knowledge-insta
 export { installSkills, type SkillsInstallResult } from './skills-installer.js';
 
 export { injectDomainRules, removeDomainRules } from './inject-rules.js';
+
+export {
+  type PackRuntime,
+  type PackProjectContext,
+  type PackCheckContext,
+  createPackRuntime,
+} from './pack-runtime.js';
+
+export { resolveToken, listProjectTokens, buildReverseIndex } from './token-resolver.js';

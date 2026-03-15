@@ -13,6 +13,7 @@
 
 import { z } from 'zod';
 import type { DomainPack } from '@soleri/core';
+import type { PackRuntime } from '@soleri/core';
 
 // ---------------------------------------------------------------------------
 // In-memory component registry (lightweight store for pack-level ops)
@@ -30,6 +31,12 @@ export interface ComponentEntry {
 }
 
 const registry = new Map<string, ComponentEntry>();
+
+// ---------------------------------------------------------------------------
+// PackRuntime holder — injected via onActivate, enables vault-backed ops
+// ---------------------------------------------------------------------------
+
+let packRuntime: PackRuntime | null = null;
 
 // ---------------------------------------------------------------------------
 // Algorithmic helpers
@@ -142,6 +149,17 @@ const ops = [
       const query = (params.query as string).toLowerCase();
       const tags = params.tags as string[] | undefined;
       const limit = (params.limit as number) ?? 20;
+
+      // When runtime available, search the vault
+      if (packRuntime) {
+        const vaultResults = packRuntime.vault.search(query, {
+          domain: 'component',
+          limit,
+        });
+        return { query, count: vaultResults.length, components: vaultResults, source: 'vault' };
+      }
+
+      // Fallback: in-memory registry
       const results: ComponentEntry[] = [];
 
       for (const entry of registry.values()) {
@@ -168,6 +186,17 @@ const ops = [
     }),
     handler: async (params: Record<string, unknown>) => {
       const id = params.id as string;
+
+      // When runtime available, get from vault
+      if (packRuntime) {
+        const vaultEntry = packRuntime.vault.get(id);
+        if (!vaultEntry) {
+          return { found: false, id, component: null, source: 'vault' };
+        }
+        return { found: true, id, component: vaultEntry, source: 'vault' };
+      }
+
+      // Fallback: in-memory registry
       const entry = registry.get(id);
       if (!entry) {
         return { found: false, id, component: null };
@@ -188,6 +217,19 @@ const ops = [
       const tags = params.tags as string[] | undefined;
       const namePattern = params.namePattern as string | undefined;
       const limit = (params.limit as number) ?? 50;
+
+      // When runtime available, list from vault
+      if (packRuntime) {
+        const vaultEntries = packRuntime.vault.list({ domain: 'component', limit });
+        return {
+          count: vaultEntries.length,
+          total: vaultEntries.length,
+          components: vaultEntries,
+          source: 'vault',
+        };
+      }
+
+      // Fallback: in-memory registry
       const results: ComponentEntry[] = [];
 
       for (const entry of registry.values()) {
@@ -215,6 +257,7 @@ const ops = [
       props: z.array(z.string()).optional(),
       tags: z.array(z.string()).optional(),
       filePath: z.string().optional(),
+      contrastCheckId: z.string().optional(),
     }),
     handler: async (params: Record<string, unknown>) => {
       const name = params.name as string;
@@ -222,6 +265,18 @@ const ops = [
       const props = (params.props as string[]) ?? [];
       const tags = (params.tags as string[]) ?? [];
       const filePath = params.filePath as string | undefined;
+      const contrastCheckId = params.contrastCheckId as string | undefined;
+
+      // Gated creation: if contrastCheckId provided, validate it via runtime
+      if (contrastCheckId) {
+        if (!packRuntime) {
+          return { created: false, reason: 'contrastCheckId requires PackRuntime (not available)' };
+        }
+        const check = packRuntime.validateAndConsume(contrastCheckId, 'contrast');
+        if (!check) {
+          return { created: false, reason: 'Invalid or expired contrastCheckId' };
+        }
+      }
 
       const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const now = new Date().toISOString();
@@ -355,6 +410,9 @@ const pack: DomainPack = {
   version: '1.0.0',
   domains: ['component'],
   ops,
+  onActivate: async (runtime: unknown) => {
+    packRuntime = runtime as PackRuntime;
+  },
   rules: `## Component Lifecycle
 
 1. **Register first** — Every component must be registered in the vault before use.
@@ -369,6 +427,10 @@ export default pack;
 // Export registry utilities for testing
 export function _clearRegistry(): void {
   registry.clear();
+}
+
+export function _setPackRuntime(runtime: PackRuntime | null): void {
+  packRuntime = runtime;
 }
 
 export function _getRegistry(): Map<string, ComponentEntry> {

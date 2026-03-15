@@ -13,12 +13,44 @@
 
 import { z } from 'zod';
 import type { DomainPack } from '@soleri/core';
+import type { PackRuntime } from '@soleri/core';
+import { listProjectTokens, buildReverseIndex } from '@soleri/core';
 import {
   normalizeFigmaTokenName,
   fuzzyMatchToken,
   getContrastRatio,
   getWCAGLevel,
 } from './lib/figma-utils.js';
+
+// ---------------------------------------------------------------------------
+// Runtime holder — populated via onActivate
+// ---------------------------------------------------------------------------
+
+let packRuntime: PackRuntime | null = null;
+
+// ---------------------------------------------------------------------------
+// Multi-strategy component matching helpers
+// ---------------------------------------------------------------------------
+
+/** Extract words from a component name (split on non-alphanumeric). */
+function extractWords(name: string): Set<string> {
+  return new Set(
+    name
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean),
+  );
+}
+
+/** Word overlap coefficient: |intersection| / min(|A|, |B|). */
+function wordOverlap(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let intersection = 0;
+  for (const w of a) {
+    if (b.has(w)) intersection++;
+  }
+  return intersection / Math.min(a.size, b.size);
+}
 
 // ---------------------------------------------------------------------------
 // Figma facade ops (5 algorithmic ops)
@@ -37,11 +69,25 @@ const figmaOps = [
           figmaValue: z.string(),
         }),
       ),
-      tokenMap: z.record(z.string()),
+      tokenMap: z.record(z.string()).optional(),
+      projectId: z.string().optional(),
     }),
     handler: async (params: Record<string, unknown>) => {
       const figmaTokens = params.figmaTokens as Array<{ figmaName: string; figmaValue: string }>;
-      const tokenMap = params.tokenMap as Record<string, string>;
+
+      // Resolve token map: prefer runtime project registry, fall back to param
+      let tokenMap: Record<string, string> = (params.tokenMap as Record<string, string>) ?? {};
+      if (packRuntime && params.projectId) {
+        const project = packRuntime.getProject(params.projectId as string);
+        if (project) {
+          const projectTokens = listProjectTokens(project);
+          const resolved: Record<string, string> = {};
+          for (const t of projectTokens) {
+            resolved[t.token] = t.hex;
+          }
+          tokenMap = resolved;
+        }
+      }
 
       const matched: Array<{
         figmaName: string;
@@ -105,20 +151,39 @@ const figmaOps = [
     auth: 'read' as const,
     schema: z.object({
       colors: z.array(z.string()),
-      tokenMap: z.record(z.string()),
+      tokenMap: z.record(z.string()).optional(),
+      projectId: z.string().optional(),
     }),
     handler: async (params: Record<string, unknown>) => {
       const colors = params.colors as string[];
-      const tokenMap = params.tokenMap as Record<string, string>;
 
-      // Build reverse index: value → token name(s)
+      // Build reverse index: prefer runtime project registry, fall back to param
       const reverseIndex = new Map<string, string[]>();
-      for (const [token, value] of Object.entries(tokenMap)) {
-        const normalized = value.toLowerCase();
-        if (!reverseIndex.has(normalized)) {
-          reverseIndex.set(normalized, []);
+
+      if (packRuntime && params.projectId) {
+        const project = packRuntime.getProject(params.projectId as string);
+        if (project) {
+          const projectReverseIndex = buildReverseIndex(project);
+          for (const [hex, token] of projectReverseIndex) {
+            const normalized = hex.toLowerCase();
+            if (!reverseIndex.has(normalized)) {
+              reverseIndex.set(normalized, []);
+            }
+            reverseIndex.get(normalized)!.push(token);
+          }
         }
-        reverseIndex.get(normalized)!.push(token);
+      }
+
+      // Fall back to flat tokenMap param if no runtime results
+      if (reverseIndex.size === 0) {
+        const tokenMap = (params.tokenMap as Record<string, string>) ?? {};
+        for (const [token, value] of Object.entries(tokenMap)) {
+          const normalized = value.toLowerCase();
+          if (!reverseIndex.has(normalized)) {
+            reverseIndex.set(normalized, []);
+          }
+          reverseIndex.get(normalized)!.push(token);
+        }
       }
 
       const tokenized: Array<{ color: string; tokens: string[] }> = [];
@@ -160,21 +225,67 @@ const figmaOps = [
       const figmaNormalized = new Map(figmaComponents.map((c) => [c.toLowerCase(), c]));
       const codeNormalized = new Map(codeComponents.map((c) => [c.toLowerCase(), c]));
 
-      const matched: Array<{ figmaName: string; codeName: string }> = [];
+      const matched: Array<{ figmaName: string; codeName: string; strategy?: string }> = [];
       const missingInCode: string[] = [];
       const missingInFigma: string[] = [];
 
+      // Track which code components have been matched (to avoid double-matching)
+      const matchedCodeNorms = new Set<string>();
+
       for (const [norm, figmaName] of figmaNormalized) {
+        // Strategy 1: exact case-insensitive match
         const codeName = codeNormalized.get(norm);
         if (codeName) {
-          matched.push({ figmaName, codeName });
-        } else {
-          missingInCode.push(figmaName);
+          matched.push(
+            packRuntime ? { figmaName, codeName, strategy: 'exact' } : { figmaName, codeName },
+          );
+          matchedCodeNorms.add(norm);
+          continue;
         }
+
+        // Strategies 2 & 3 only when runtime available (multi-strategy mode)
+        if (packRuntime) {
+          let found = false;
+
+          // Strategy 2: contains substring
+          for (const [codeNorm, cName] of codeNormalized) {
+            if (matchedCodeNorms.has(codeNorm)) continue;
+            if (codeNorm.includes(norm) || norm.includes(codeNorm)) {
+              matched.push({ figmaName, codeName: cName, strategy: 'contains' });
+              matchedCodeNorms.add(codeNorm);
+              found = true;
+              break;
+            }
+          }
+          if (found) continue;
+
+          // Strategy 3: word overlap coefficient >= 0.5
+          const figmaWords = extractWords(figmaName);
+          let bestOverlap = 0;
+          let bestCodeName: string | null = null;
+          let bestCodeNorm: string | null = null;
+          for (const [codeNorm, cName] of codeNormalized) {
+            if (matchedCodeNorms.has(codeNorm)) continue;
+            const codeWords = extractWords(cName);
+            const overlap = wordOverlap(figmaWords, codeWords);
+            if (overlap > bestOverlap) {
+              bestOverlap = overlap;
+              bestCodeName = cName;
+              bestCodeNorm = codeNorm;
+            }
+          }
+          if (bestOverlap >= 0.5 && bestCodeName && bestCodeNorm) {
+            matched.push({ figmaName, codeName: bestCodeName, strategy: 'word-overlap' });
+            matchedCodeNorms.add(bestCodeNorm);
+            continue;
+          }
+        }
+
+        missingInCode.push(figmaName);
       }
 
       for (const [norm, codeName] of codeNormalized) {
-        if (!figmaNormalized.has(norm)) {
+        if (!figmaNormalized.has(norm) && !matchedCodeNorms.has(norm)) {
           missingInFigma.push(codeName);
         }
       }
@@ -244,7 +355,7 @@ const figmaOps = [
   {
     name: 'handoff_audit',
     description:
-      'Audit component metadata for handoff completeness. Checks for description, documented props, and listed variants.',
+      'Audit component metadata for handoff completeness. When runtime available with figmaTokens, colorPairs, figmaComponents, and codeComponents, returns a composite score (40% token drift, 30% component sync, 30% accessibility). Falls back to doc completeness check.',
     auth: 'read' as const,
     schema: z.object({
       components: z.array(
@@ -255,6 +366,19 @@ const figmaOps = [
           variants: z.array(z.string()).optional(),
         }),
       ),
+      projectId: z.string().optional(),
+      figmaTokens: z.array(z.object({ figmaName: z.string(), figmaValue: z.string() })).optional(),
+      figmaComponents: z.array(z.string()).optional(),
+      codeComponents: z.array(z.string()).optional(),
+      colorPairs: z
+        .array(
+          z.object({
+            foreground: z.string(),
+            background: z.string(),
+            context: z.enum(['text', 'large-text', 'graphics']).optional(),
+          }),
+        )
+        .optional(),
     }),
     handler: async (params: Record<string, unknown>) => {
       const components = params.components as Array<{
@@ -264,6 +388,7 @@ const figmaOps = [
         variants?: string[];
       }>;
 
+      // --- Doc completeness (always computed) ---
       const audits = components.map((comp) => {
         const checks = {
           hasDescription: Boolean(comp.description && comp.description.trim().length > 0),
@@ -292,6 +417,93 @@ const figmaOps = [
           ? Math.round(audits.reduce((sum, a) => sum + a.score, 0) / audits.length)
           : 100;
 
+      // --- Composite scoring when runtime available ---
+      if (packRuntime && params.projectId && params.figmaTokens && params.colorPairs) {
+        const project = packRuntime.getProject(params.projectId as string);
+        if (project) {
+          // Token drift score (weight: 40%)
+          const figmaTokens = params.figmaTokens as Array<{
+            figmaName: string;
+            figmaValue: string;
+          }>;
+          const projectTokens = listProjectTokens(project);
+          const tokenMap: Record<string, string> = {};
+          for (const t of projectTokens) {
+            tokenMap[t.token] = t.hex;
+          }
+          let tokenHealthScore = 100;
+          if (figmaTokens.length > 0) {
+            let matchedCount = 0;
+            for (const ft of figmaTokens) {
+              const match = fuzzyMatchToken(ft.figmaName, tokenMap);
+              if (match && match.value.toLowerCase() === ft.figmaValue.toLowerCase()) {
+                matchedCount++;
+              }
+            }
+            tokenHealthScore = Math.round((matchedCount / figmaTokens.length) * 100);
+          }
+
+          // Component sync score (weight: 30%)
+          const figmaComps = (params.figmaComponents as string[]) ?? [];
+          const codeComps = (params.codeComponents as string[]) ?? [];
+          let syncScore = 100;
+          if (figmaComps.length + codeComps.length > 0) {
+            const figmaNorm = new Map(figmaComps.map((c) => [c.toLowerCase(), c]));
+            const codeNorm = new Map(codeComps.map((c) => [c.toLowerCase(), c]));
+            let syncMatched = 0;
+            for (const [norm] of figmaNorm) {
+              if (codeNorm.has(norm)) syncMatched++;
+            }
+            syncScore = Math.round(
+              ((syncMatched * 2) / (figmaComps.length + codeComps.length)) * 100,
+            );
+          }
+
+          // Accessibility score (weight: 30%)
+          const colorPairs = params.colorPairs as Array<{
+            foreground: string;
+            background: string;
+            context?: string;
+          }>;
+          let a11yScore = 100;
+          if (colorPairs.length > 0) {
+            let passCount = 0;
+            for (const pair of colorPairs) {
+              const ratio = getContrastRatio(pair.foreground, pair.background);
+              const context = pair.context ?? 'text';
+              const minRatio = context === 'text' ? 4.5 : 3.0;
+              if (ratio >= minRatio) passCount++;
+            }
+            a11yScore = Math.round((passCount / colorPairs.length) * 100);
+          }
+
+          const compositeScore = Math.round(
+            tokenHealthScore * 0.4 + syncScore * 0.3 + a11yScore * 0.3,
+          );
+
+          return {
+            total: audits.length,
+            averageScore: avgScore,
+            compositeScore,
+            grade:
+              compositeScore >= 90
+                ? 'A'
+                : compositeScore >= 70
+                  ? 'B'
+                  : compositeScore >= 50
+                    ? 'C'
+                    : 'D',
+            breakdown: {
+              tokenDrift: { score: tokenHealthScore, weight: 0.4 },
+              componentSync: { score: syncScore, weight: 0.3 },
+              accessibility: { score: a11yScore, weight: 0.3 },
+            },
+            audits,
+          };
+        }
+      }
+
+      // --- Fallback: doc completeness only ---
       return {
         total: audits.length,
         averageScore: avgScore,
@@ -311,6 +523,9 @@ const pack: DomainPack = {
   version: '1.0.0',
   domains: ['figma'],
   ops: figmaOps,
+  onActivate: async (runtime: unknown) => {
+    packRuntime = runtime as PackRuntime;
+  },
   rules: `## Figma-to-Code Workflow
 
 1. **Extract** — Pull token data and component lists from Figma (via plugin or API).

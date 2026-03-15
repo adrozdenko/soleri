@@ -97,5 +97,43 @@ export function checkArchitectureBoundary(
     }
   }
 
+  // Services should not import from UI
+  const isServiceFile = /\/(services|api|data|repositories)\//.test(normalizedFrom);
+  const importsUI = /\/(components|ui|views|pages)\//.test(normalizedImport);
+  if (isServiceFile && importsUI) {
+    return {
+      fromPath,
+      importPath,
+      rule: 'Service layer importing from UI layer',
+      severity: 'error',
+    };
+  }
+
+  // Utils should not import from features
+  const isUtilFile = /\/(utils|lib|helpers)\//.test(normalizedFrom);
+  const importsFeature = /\/features\//.test(normalizedImport);
+  if (isUtilFile && importsFeature) {
+    return {
+      fromPath,
+      importPath,
+      rule: 'Utility module importing from feature module',
+      severity: 'error',
+    };
+  }
+
+  // Types should not import from implementation
+  const isTypeFile = /\/(types|interfaces|contracts)\//.test(normalizedFrom);
+  const importsImpl = /\/(services|data|api|repositories|features|components)\//.test(
+    normalizedImport,
+  );
+  if (isTypeFile && importsImpl) {
+    return {
+      fromPath,
+      importPath,
+      rule: 'Type definition importing from implementation module',
+      severity: 'warning',
+    };
+  }
+
   return null;
 }

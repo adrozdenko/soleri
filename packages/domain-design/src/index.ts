@@ -10,7 +10,8 @@
  */
 
 import { z } from 'zod';
-import type { DomainPack } from '@soleri/core';
+import type { DomainPack, PackRuntime } from '@soleri/core';
+import { resolveToken, listProjectTokens } from '@soleri/core';
 import {
   calculateContrastRatio,
   getWCAGLevel,
@@ -20,6 +21,12 @@ import {
 } from './lib/color-science.js';
 import { validateComponentCode } from './lib/code-validator.js';
 import { getData } from './lib/data-loader.js';
+
+// ---------------------------------------------------------------------------
+// Runtime holder — set via onActivate, used by ops for token resolution
+// ---------------------------------------------------------------------------
+
+let packRuntime: PackRuntime | null = null;
 
 // ---------------------------------------------------------------------------
 // Design facade ops (20 ops — 8 algorithmic, 11 data-serving, 1 deferred)
@@ -35,21 +42,62 @@ const designOps = [
       foreground: z.string(),
       background: z.string(),
       context: z.enum(['text', 'large-text', 'graphics']).optional().default('text'),
+      projectId: z.string().optional(),
     }),
     handler: async (params: Record<string, unknown>) => {
-      const fg = params.foreground as string;
-      const bg = params.background as string;
+      const fgInput = params.foreground as string;
+      const bgInput = params.background as string;
       const context = (params.context as string) ?? 'text';
-      const ratio = calculateContrastRatio(fg, bg);
+      const projectId = params.projectId as string | undefined;
+
+      // Resolve tokens to hex if runtime + project available
+      let fgHex = fgInput;
+      let bgHex = bgInput;
+      if (packRuntime && projectId) {
+        const project = packRuntime.getProject(projectId);
+        if (project) {
+          try {
+            fgHex = resolveToken(fgInput, project);
+          } catch {
+            /* use raw */
+          }
+          try {
+            bgHex = resolveToken(bgInput, project);
+          } catch {
+            /* use raw */
+          }
+        }
+      }
+
+      const ratio = calculateContrastRatio(fgHex, bgHex);
       const level = getWCAGLevel(ratio);
       const minRatio = context === 'text' ? 4.5 : 3.0;
+      const passes = ratio >= minRatio;
+
+      // Create checkId for tool chaining if passes and runtime available
+      let checkId: string | undefined;
+      if (passes && packRuntime) {
+        try {
+          checkId = packRuntime.createCheck('contrast', {
+            foreground: fgHex,
+            background: bgHex,
+            ratio: parseFloat(ratio.toFixed(2)),
+            level,
+            context,
+          });
+        } catch {
+          /* session store unavailable */
+        }
+      }
+
       return {
-        foreground: fg,
-        background: bg,
+        foreground: { input: fgInput, resolved: fgHex },
+        background: { input: bgInput, resolved: bgHex },
         ratio: parseFloat(ratio.toFixed(2)),
         wcagLevel: level,
         passes: { normalText: ratio >= 4.5, largeText: ratio >= 3.0, graphics: ratio >= 3.0 },
-        verdict: ratio >= minRatio ? 'PASS' : 'FAIL',
+        verdict: passes ? 'PASS' : 'FAIL',
+        ...(checkId && { _checkId: checkId, _checkExpires: '30 minutes' }),
       };
     },
   },
@@ -60,14 +108,39 @@ const designOps = [
     schema: z.object({
       background: z.string(),
       minLevel: z.enum(['AA', 'AAA']).optional().default('AA'),
+      projectId: z.string().optional(),
     }),
     handler: async (params: Record<string, unknown>) => {
-      const bg = params.background as string;
+      const bgInput = params.background as string;
       const minLevel = (params.minLevel as 'AA' | 'AAA') ?? 'AA';
-      const candidates = Object.entries(COMMON_COLORS).map(([name, hex]) => ({ name, hex }));
-      const accessible = suggestAccessibleColors(bg, candidates, minLevel);
+      const projectId = params.projectId as string | undefined;
+
+      // Resolve background token and get project tokens as candidates
+      let bgHex = bgInput;
+      let candidates = Object.entries(COMMON_COLORS).map(([name, hex]) => ({ name, hex }));
+
+      if (packRuntime && projectId) {
+        const project = packRuntime.getProject(projectId);
+        if (project) {
+          try {
+            bgHex = resolveToken(bgInput, project);
+          } catch {
+            /* use raw */
+          }
+          const projectTokens = listProjectTokens(project);
+          if (projectTokens.length > 0) {
+            candidates = projectTokens.map((t) => ({ name: t.token, hex: t.hex }));
+          }
+        }
+      }
+
+      const accessible = suggestAccessibleColors(bgHex, candidates, minLevel);
       return {
-        background: { hex: bg, category: isLightColor(bg) ? 'light' : 'dark' },
+        background: {
+          input: bgInput,
+          hex: bgHex,
+          category: isLightColor(bgHex) ? 'light' : 'dark',
+        },
         minLevel,
         validForegrounds: accessible.map((c) => ({
           token: c.name,
@@ -589,6 +662,10 @@ const pack: DomainPack = {
 
 Forbidden: \`#hex\`, \`rgb()\`, \`bg-blue-500\`
 `,
+  onActivate: async (runtime: unknown) => {
+    // Store runtime for ops that need token resolution, checkIds, vault search
+    packRuntime = runtime as PackRuntime;
+  },
 };
 
 export default pack;

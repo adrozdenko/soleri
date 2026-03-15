@@ -13,12 +13,19 @@
 
 import { z } from 'zod';
 import type { DomainPack } from '@soleri/core';
+import type { PackRuntime } from '@soleri/core';
 import {
   isDesignFile,
   findHexColors,
   findArbitraryValues,
   checkArchitectureBoundary,
 } from './lib/review-utils.js';
+
+// ---------------------------------------------------------------------------
+// PackRuntime holder — populated via onActivate
+// ---------------------------------------------------------------------------
+
+let packRuntime: PackRuntime | null = null;
 
 // ---------------------------------------------------------------------------
 // Inline knowledge base for search_review_context
@@ -175,6 +182,36 @@ const githubOps = [
               severity: 'warning',
             });
           }
+
+          // Check for !important in CSS
+          if (/!important/.test(line)) {
+            issues.push({
+              file: f.file,
+              line,
+              issue: `!important detected. Avoid !important — fix specificity instead.`,
+              severity: 'warning',
+            });
+          }
+
+          // Check for inline styles
+          if (/style\s*=/.test(line)) {
+            issues.push({
+              file: f.file,
+              line,
+              issue: `Inline style attribute detected. Use CSS classes or Tailwind utilities.`,
+              severity: 'warning',
+            });
+          }
+
+          // Check for missing alt on <img
+          if (/<img\b(?![^>]*\balt\b)[^>]*>/i.test(line)) {
+            issues.push({
+              file: f.file,
+              line,
+              issue: `<img> missing alt attribute. Add alt text for accessibility.`,
+              severity: 'error',
+            });
+          }
         }
       }
 
@@ -255,6 +292,42 @@ const githubOps = [
       const query = (params.query as string).toLowerCase();
       const category = params.category as string | undefined;
 
+      // Try vault search first when runtime is available
+      if (packRuntime) {
+        try {
+          const vaultResults = packRuntime.vault.search(query, {
+            domain: 'code-review',
+            limit: 20,
+          });
+          if (vaultResults.length > 0) {
+            const mapped = vaultResults
+              .filter((r) => !category || r.entry.domain === category || r.entry.type === category)
+              .map((r) => ({
+                id: r.entry.id,
+                category: r.entry.domain ?? r.entry.type ?? 'unknown',
+                pattern: r.entry.title ?? r.entry.id,
+                issue: r.entry.content ?? '',
+                fix: r.entry.content ?? '',
+                severity: (r.entry.severity as 'error' | 'warning') ?? 'warning',
+                source: 'vault' as const,
+                score: r.score,
+              }));
+            if (mapped.length > 0) {
+              return {
+                query,
+                category: category ?? 'all',
+                resultsFound: mapped.length,
+                results: mapped,
+                source: 'vault',
+              };
+            }
+          }
+        } catch {
+          // Vault search failed — fall through to static knowledge base
+        }
+      }
+
+      // Fallback: static knowledge base
       let results = REVIEW_KNOWLEDGE.filter((entry) => {
         const matchesQuery =
           entry.pattern.toLowerCase().includes(query) ||
@@ -280,6 +353,7 @@ const githubOps = [
         category: category ?? 'all',
         resultsFound: results.length,
         results,
+        source: 'static',
       };
     },
   },
@@ -722,14 +796,42 @@ const playwrightOps = [
           REQUIRED_COMPONENT_STATES.length) *
         100;
 
+      // Style-aware validation: check that non-default states differ from default
+      const defaultState = states.find((s) => s.name.toLowerCase() === 'default');
+      const defaultStyles = defaultState?.styles ?? {};
+      const undifferentiatedStates: string[] = [];
+
+      for (const state of states) {
+        const name = state.name.toLowerCase();
+        if (name === 'default') continue;
+        if (!REQUIRED_COMPONENT_STATES.includes(name)) continue;
+
+        // If both have styles defined, check for at least one difference
+        if (
+          state.styles &&
+          Object.keys(state.styles).length > 0 &&
+          Object.keys(defaultStyles).length > 0
+        ) {
+          const hasDifference = Object.keys(state.styles).some(
+            (key) => state.styles![key] !== defaultStyles[key],
+          );
+          if (!hasDifference) {
+            undifferentiatedStates.push(name);
+          }
+        }
+      }
+
+      const hasStyleIssues = undifferentiatedStates.length > 0;
+
       return {
         component,
         requiredStates: REQUIRED_COMPONENT_STATES,
         presentStates: [...presentStates],
         missingStates,
         extraStates,
+        undifferentiatedStates,
         coverage: Math.round(coverage),
-        verdict: missingStates.length === 0 ? 'PASS' : 'FAIL',
+        verdict: missingStates.length === 0 && !hasStyleIssues ? 'PASS' : 'FAIL',
       };
     },
   },
@@ -744,6 +846,9 @@ const pack: DomainPack = {
   version: '1.0.0',
   domains: ['code-review'],
   ops: [...githubOps, ...playwrightOps],
+  onActivate: async (runtime: unknown) => {
+    packRuntime = runtime as PackRuntime;
+  },
   rules: `## Code Review Workflow
 
 1. **Design Token Compliance** — No hardcoded hex colors or arbitrary Tailwind values in design files.
