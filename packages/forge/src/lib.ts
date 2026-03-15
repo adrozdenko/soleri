@@ -24,3 +24,7 @@ export { generateClaudeMdTemplate } from './templates/claude-md-template.js';
 export { getEngineRulesContent, getEngineMarker } from './templates/shared-rules.js';
 export { generateInjectClaudeMd } from './templates/inject-claude-md.js';
 export { generateSkills } from './templates/skills.js';
+export { generateTelegramBot } from './templates/telegram-bot.js';
+export { generateTelegramAgent } from './templates/telegram-agent.js';
+export { generateTelegramConfig } from './templates/telegram-config.js';
+export { generateTelegramSupervisor } from './templates/telegram-supervisor.js';

@@ -19,6 +19,7 @@ import { registerUninstall } from './commands/uninstall.js';
 import { registerPack } from './commands/pack.js';
 import { registerSkills } from './commands/skills.js';
 import { registerAgent } from './commands/agent.js';
+import { registerTelegram } from './commands/telegram.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -78,5 +79,6 @@ registerUninstall(program);
 registerPack(program);
 registerSkills(program);
 registerAgent(program);
+registerTelegram(program);
 
 program.parse();
