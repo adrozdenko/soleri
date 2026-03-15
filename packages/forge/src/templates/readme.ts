@@ -4,6 +4,7 @@ import type { AgentConfig } from '../types.js';
  * Generate a README.md for the scaffolded agent.
  */
 export function generateReadme(config: AgentConfig): string {
+  const skillCount = config.skills?.length ?? 17;
   const setupTarget = config.setupTarget ?? 'claude';
   const claudeSetup = setupTarget === 'claude' || setupTarget === 'both';
   const codexSetup = setupTarget === 'codex' || setupTarget === 'both';
@@ -78,10 +79,10 @@ export function generateReadme(config: AgentConfig): string {
 
   const skillsLead =
     claudeSetup && codexSetup
-      ? `${config.name} ships with 17 structured workflow skills. In Claude Code they are invocable via \`/<skill-name>\`; in Codex they are available via generated AGENTS.md + local skill files.`
+      ? `${config.name} ships with ${skillCount} structured workflow skills. In Claude Code they are invocable via \`/<skill-name>\`; in Codex they are available via generated AGENTS.md + local skill files.`
       : claudeSetup
-        ? `${config.name} ships with 17 structured workflow skills, invocable via \`/<skill-name>\` in Claude Code:`
-        : `${config.name} ships with 17 structured workflow skills, available via generated AGENTS.md + local skill files in Codex:`;
+        ? `${config.name} ships with ${skillCount} structured workflow skills, invocable via \`/<skill-name>\` in Claude Code:`
+        : `${config.name} ships with ${skillCount} structured workflow skills, available via generated AGENTS.md + local skill files in Codex:`;
 
   const skillsInstallNote =
     claudeSetup && codexSetup

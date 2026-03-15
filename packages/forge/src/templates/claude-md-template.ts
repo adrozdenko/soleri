@@ -66,7 +66,7 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     // ─── Session Start ─────────────────────────────────────
     '## Session Start',
     '',
-    `On every new session: ${bt}${toolPrefix}_core op:register params:{ projectPath: "." }${bt}`,
+    `On every new session: ${bt}${toolPrefix}_orchestrate op:register params:{ projectPath: "." }${bt}`,
     '',
   ];
 

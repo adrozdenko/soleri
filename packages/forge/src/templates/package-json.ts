@@ -2,7 +2,7 @@ import type { AgentConfig } from '../types.js';
 
 export function generatePackageJson(config: AgentConfig): string {
   const pkg = {
-    name: `${config.id}-mcp`,
+    name: config.id,
     version: '1.0.0',
     description: config.description,
     type: 'module',
@@ -31,6 +31,9 @@ export function generatePackageJson(config: AgentConfig): string {
       '@soleri/core': '^2.0.0',
       zod: '^3.24.2',
       ...(config.telegram ? { grammy: '^1.35.0' } : {}),
+      ...(config.domainPacks?.length
+        ? Object.fromEntries(config.domainPacks.map((pack) => [pack.package, pack.version ?? '*']))
+        : {}),
     },
     optionalDependencies: {
       '@anthropic-ai/sdk': '^0.39.0',

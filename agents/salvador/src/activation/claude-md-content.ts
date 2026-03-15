@@ -46,7 +46,7 @@ export function getClaudeMdContent(): string {
     '',
     '## Session Start',
     '',
-    'On every new session: `salvador_core op:register params:{ projectPath: "." }`',
+    'On every new session: `salvador_orchestrate op:register params:{ projectPath: "." }`',
     '',
     '## Essential Tools',
     '<!-- salvador:tools -->',

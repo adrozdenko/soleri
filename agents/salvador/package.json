@@ -1,5 +1,5 @@
 {
-  "name": "salvador-mcp",
+  "name": "salvador",
   "version": "1.0.0",
   "description": "Design system advisor with WCAG contrast checking, token validation, component patterns, code review, and Figma integration. Vault-first knowledge, brain-driven recommendations.",
   "type": "module",
@@ -32,6 +32,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@soleri/core": "file:../../packages/core",
+    "@soleri/domain-code-review": "file:../../packages/domain-code-review",
+    "@soleri/domain-component": "file:../../packages/domain-component",
+    "@soleri/domain-design": "file:../../packages/domain-design",
+    "@soleri/domain-figma": "file:../../packages/domain-figma",
     "zod": "^3.24.2"
   },
   "optionalDependencies": {

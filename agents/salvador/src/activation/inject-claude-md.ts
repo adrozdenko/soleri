@@ -29,6 +29,10 @@ function injectBlock(filePath: string, content: string, marker: string): 'create
   if (existing.includes(startMarker)) {
     const startIdx = existing.indexOf(startMarker);
     const endIdx = existing.indexOf(endMarker);
+    if (endIdx !== -1) {
+      const currentBlock = existing.slice(startIdx, endIdx + endMarker.length);
+      if (currentBlock === content.trim()) return 'skipped';
+    }
     if (endIdx === -1) {
       const updated = existing.slice(0, startIdx) + content + '\n' + existing.slice(startIdx + startMarker.length);
       writeFileSync(filePath, updated, 'utf-8');

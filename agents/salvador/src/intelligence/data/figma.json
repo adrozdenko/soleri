@@ -1,5 +1,18 @@
 {
   "domain": "figma",
   "version": "1.0.0",
-  "entries": []
+  "entries": [
+    {
+      "id": "figma-seed",
+      "type": "pattern",
+      "domain": "figma",
+      "title": "figma domain seed",
+      "severity": "suggestion",
+      "description": "Seed entry for the figma domain. Replace or remove once real knowledge is captured.",
+      "tags": [
+        "figma",
+        "seed"
+      ]
+    }
+  ]
 }

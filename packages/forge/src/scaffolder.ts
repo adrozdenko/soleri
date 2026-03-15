@@ -626,7 +626,10 @@ export function listAgents(parentDir: string): AgentInfo[] {
 
     try {
       const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-      if (!pkg.name?.endsWith('-mcp')) continue;
+      // Accept both old format (name-mcp) and new format (name)
+      const hasMcpSuffix = pkg.name?.endsWith('-mcp');
+      const hasIntelligenceDir = existsSync(join(dir, 'src', 'intelligence', 'data'));
+      if (!hasMcpSuffix && !hasIntelligenceDir) continue;
 
       const dataDir = join(dir, 'src', 'intelligence', 'data');
       let domains: string[] = [];
@@ -640,7 +643,7 @@ export function listAgents(parentDir: string): AgentInfo[] {
 
       agents.push({
         id: name,
-        name: pkg.name.replace('-mcp', ''),
+        name: hasMcpSuffix ? pkg.name.replace('-mcp', '') : pkg.name,
         role: pkg.description || '',
         path: dir,
         domains,
@@ -890,7 +893,17 @@ function generateEmptyBundle(domain: string): string {
     {
       domain,
       version: '1.0.0',
-      entries: [],
+      entries: [
+        {
+          id: `${domain}-seed`,
+          type: 'pattern',
+          domain,
+          title: `${domain.replace(/-/g, ' ')} domain seed`,
+          severity: 'suggestion',
+          description: `Seed entry for the ${domain.replace(/-/g, ' ')} domain. Replace or remove once real knowledge is captured.`,
+          tags: [domain, 'seed'],
+        },
+      ],
     },
     null,
     2,

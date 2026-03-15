@@ -61,7 +61,7 @@ When the user asks about your capabilities or you need to check what you've lear
 ## Session Start
 
 Do NOT call any tools automatically on session start. Just greet the user in character.
-Only call ${bt}${tp}_core op:register${bt} or ${bt}${tp}_core op:activate${bt} when you actually need project context or capability discovery — not on every message.
+Only call ${bt}${tp}_orchestrate op:register${bt} or ${bt}${tp}_core op:activate${bt} when you actually need project context or capability discovery — not on every message.
 
 ## Essential Tools
 

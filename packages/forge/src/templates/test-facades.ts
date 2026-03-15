@@ -24,11 +24,14 @@ import {
 import type { AgentRuntime, IntelligenceEntry, OpDefinition, FacadeConfig } from '@soleri/core';
 import { z } from 'zod';
 import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { PERSONA } from '../identity/persona.js';
 import { activateAgent, deactivateAgent } from '../activation/activate.js';
 import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker, injectAgentsMd, injectAgentsMdGlobal, hasAgentMarkerInAgentsMd } from '../activation/inject-claude-md.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
   return {
@@ -312,7 +315,7 @@ ${domainPackDescribes ? `\n${domainPackDescribes}\n` : ''}
           }),
           handler: async (params) => {
             if (params.deactivate) return deactivateAgent();
-            return activateAgent(runtime.vault, (params.projectPath as string) ?? '.', runtime.planner);
+            return activateAgent(runtime, (params.projectPath as string) ?? '.');
           },
         },
         {
@@ -438,10 +441,10 @@ ${domainPackDescribes ? `\n${domainPackDescribes}\n` : ''}
       const activateOp = facade.ops.find((o) => o.name === 'activate')!;
       const result = (await activateOp.handler({ projectPath: '/tmp/nonexistent-test' })) as {
         activated: boolean;
-        persona: { name: string; role: string };
+        origin: { name: string; role: string };
       };
       expect(result.activated).toBe(true);
-      expect(result.persona.name).toBe('${escapeQuotes(config.name)}');
+      expect(result.origin.name).toBe('${escapeQuotes(config.name)}');
     });
 
     it('activate with deactivate flag should return deactivation', async () => {

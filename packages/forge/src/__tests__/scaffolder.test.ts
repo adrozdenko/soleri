@@ -99,7 +99,7 @@ describe('Scaffolder', () => {
       scaffold(testConfig);
       const pkg = JSON.parse(readFileSync(join(tempDir, 'atlas', 'package.json'), 'utf-8'));
 
-      expect(pkg.name).toBe('atlas-mcp');
+      expect(pkg.name).toBe('atlas');
       expect(pkg.type).toBe('module');
       expect(pkg.dependencies['@modelcontextprotocol/sdk']).toBeDefined();
       expect(pkg.dependencies['@soleri/core']).toBe('^2.0.0');
@@ -121,7 +121,7 @@ describe('Scaffolder', () => {
       expect(persona).toContain('Data quality is non-negotiable');
     });
 
-    it('should create empty intelligence data files', () => {
+    it('should create seeded intelligence data files', () => {
       scaffold(testConfig);
       const dataDir = join(tempDir, 'atlas', 'src', 'intelligence', 'data');
       const files = readdirSync(dataDir);
@@ -132,7 +132,9 @@ describe('Scaffolder', () => {
 
       const bundle = JSON.parse(readFileSync(join(dataDir, 'data-pipelines.json'), 'utf-8'));
       expect(bundle.domain).toBe('data-pipelines');
-      expect(bundle.entries).toEqual([]);
+      expect(bundle.entries.length).toBe(1);
+      expect(bundle.entries[0].id).toBe('data-pipelines-seed');
+      expect(bundle.entries[0].tags).toContain('seed');
     });
 
     it('should create entry point using runtime factories from @soleri/core', () => {
