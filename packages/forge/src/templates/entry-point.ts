@@ -1,5 +1,21 @@
 import type { AgentConfig } from '../types.js';
 
+/** Generate vault connection code for linked vaults. */
+function generateVaultConnections(config: AgentConfig): string {
+  if (!config.vaults?.length) return '';
+  const lines = ['', '  // ─── Linked vaults ──────────────────────────────────────────────'];
+  for (const v of config.vaults) {
+    lines.push(
+      `  try { runtime.vaultManager.connect('${v.name}', '${v.path}', ${v.priority ?? 0.5}); } catch { /* already connected or unavailable */ }`,
+    );
+  }
+  lines.push(
+    `  console.error(\`[\${tag}] Connected ${config.vaults.length} linked vault(s): ${config.vaults.map((v) => v.name).join(', ')}\`);`,
+    '',
+  );
+  return lines.join('\n');
+}
+
 /**
  * Generate the main index.ts entry point for the agent.
  *
@@ -38,11 +54,11 @@ async function main(): Promise<void> {
   // ─── Runtime — vault, brain, planner, curator, LLM, key pools ───
   const runtime = createAgentRuntime({
     agentId: '${config.id}',
-    dataDir: join(__dirname, 'intelligence', 'data'),
+    dataDir: join(__dirname, 'intelligence', 'data'),${config.sharedVaultPath ? `\n    sharedVaultPath: '${config.sharedVaultPath}',` : ''}
   });
 
   const tag = PERSONA.name.toLowerCase();
-
+${generateVaultConnections(config)}
   // Seed built-in playbooks (idempotent)
   const seedResult = seedDefaultPlaybooks(runtime.vault);
   if (seedResult.seeded > 0) {

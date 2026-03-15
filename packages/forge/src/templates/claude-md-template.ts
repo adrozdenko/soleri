@@ -32,6 +32,7 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     `**Origin role:** ${config.role}`,
     `**Initial domains:** ${config.domains.join(', ')}`,
     `**Tone:** ${config.tone ?? 'pragmatic'}`,
+    ...(config.sharedVaultPath ? [`**Shared vault:** \`${config.sharedVaultPath}\``] : []),
     '',
     config.description,
     '',

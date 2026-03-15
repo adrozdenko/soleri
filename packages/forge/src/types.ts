@@ -61,6 +61,21 @@ export const AgentConfigSchema = z.object({
       }),
     )
     .optional(),
+  /** Vault connections — link to existing vaults instead of importing knowledge. */
+  vaults: z
+    .array(
+      z.object({
+        /** Display name for this vault connection */
+        name: z.string(),
+        /** Absolute path to the vault SQLite database */
+        path: z.string(),
+        /** Search priority (0-1). Higher = results ranked higher. Default: 0.5 */
+        priority: z.number().min(0).max(1).optional().default(0.5),
+      }),
+    )
+    .optional(),
+  /** @deprecated Use vaults[] instead. Shorthand for a single shared vault at priority 0.6. */
+  sharedVaultPath: z.string().optional(),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
