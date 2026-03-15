@@ -644,5 +644,5 @@ export type {
   DomainPackRef,
   KnowledgeManifest,
   PackSkillDefinition,
-  ValidateResult,
+  ValidateResult as DomainPackValidateResult,
 } from './domain-packs/index.js';

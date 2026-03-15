@@ -99,7 +99,7 @@ function importMarkdownEntries(
     // Skip if canonical entry already exists (immutable = never overwrite)
     if (meta.immutable && vault.get(id)) continue;
 
-    vault.upsert({
+    vault.add({
       id,
       type: 'pattern',
       title: file.replace(/\.md$/, '').replace(/-/g, ' '),
@@ -107,7 +107,7 @@ function importMarkdownEntries(
       severity: 'suggestion',
       tags: [`pack:${meta.source}`, `tier:${meta.tier}`],
       domain: meta.source,
-      origin: meta.origin,
+      origin: meta.origin as 'pack' | 'agent' | 'user',
     });
     imported++;
   }
