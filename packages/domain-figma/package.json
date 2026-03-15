@@ -1,0 +1,28 @@
+{
+  "name": "@soleri/domain-figma",
+  "version": "1.0.0",
+  "description": "Figma design intelligence domain pack for Soleri agents — token drift detection, hardcoded color detection, component sync, accessibility precheck, handoff audit.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^3.24.2"
+  },
+  "peerDependencies": {
+    "@soleri/core": "^2.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "Apache-2.0"
+}

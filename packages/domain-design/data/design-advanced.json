@@ -1,0 +1,226 @@
+{
+  "borderRadius": {
+    "rule": "NEVER hardcoded pixels. ALWAYS tokens.",
+    "tokens": [
+      { "name": "none", "px": 0, "tailwind": "rounded-none", "use": "Sharp edges" },
+      { "name": "xs", "px": 4, "tailwind": "rounded-xs", "use": "Badges, chips" },
+      { "name": "sm", "px": 8, "tailwind": "rounded-sm", "use": "Buttons, inputs" },
+      { "name": "md", "px": 12, "tailwind": "rounded-md", "use": "Nested containers" },
+      { "name": "lg", "px": 16, "tailwind": "rounded-lg", "use": "Medium containers" },
+      { "name": "xl", "px": 20, "tailwind": "rounded-xl", "use": "Cards, dialogs, tables" },
+      { "name": "2xl", "px": 24, "tailwind": "rounded-2xl", "use": "Hero sections" },
+      { "name": "3xl", "px": 32, "tailwind": "rounded-3xl", "use": "Full-width sections" },
+      { "name": "full", "px": 9999, "tailwind": "rounded-full", "use": "Pills, avatars" }
+    ],
+    "nestedFormula": {
+      "rule": "Outer = Inner + Padding",
+      "examples": [
+        { "inner": "xs (4)", "padding": "xs (4)", "outer": "sm (8)" },
+        { "inner": "sm (8)", "padding": "xs (4)", "outer": "md (12)" },
+        { "inner": "sm (8)", "padding": "sm (8)", "outer": "lg (16)" },
+        { "inner": "md (12)", "padding": "sm (8)", "outer": "xl (20)" }
+      ]
+    },
+    "decision": {
+      "pill-avatar": "rounded-full",
+      "badge-chip": "rounded-xs or rounded-sm",
+      "button-input": "rounded-sm",
+      "card-dialog-table": "rounded-xl (20px)",
+      "section-hero": "rounded-2xl or rounded-3xl",
+      "nested": "Apply nested formula"
+    },
+    "perCorner": {
+      "top": "rounded-t-*",
+      "bottom": "rounded-b-*",
+      "left": "rounded-l-*",
+      "right": "rounded-r-*",
+      "topLeft": "rounded-tl-*",
+      "topRight": "rounded-tr-*",
+      "bottomLeft": "rounded-bl-*",
+      "bottomRight": "rounded-br-*"
+    }
+  },
+  "depthLayering": {
+    "formula": "Closer = Lighter (both themes, no exceptions)",
+    "layers": [
+      {
+        "depth": 1,
+        "name": "Elevated",
+        "token": "bg-elevated",
+        "light": { "color": "#FFFEF9", "name": "IVORY[50]" },
+        "dark": { "color": "#ABYSS[400]" },
+        "shadow": "shadow-lg",
+        "use": "Modals, dropdowns, highest elevation"
+      },
+      {
+        "depth": 2,
+        "name": "Card",
+        "token": "bg-elevated",
+        "light": { "color": "#FFFEF9", "name": "IVORY[50]" },
+        "dark": { "color": "#ABYSS[500]" },
+        "shadow": "shadow-md",
+        "use": "Primary cards, content containers"
+      },
+      {
+        "depth": 3,
+        "name": "Surface",
+        "token": "bg-surface",
+        "light": { "color": "#FAF8F3", "name": "IVORY[100]" },
+        "dark": { "color": "#ABYSS[700]" },
+        "shadow": "shadow-sm",
+        "use": "Nested containers, sections"
+      },
+      {
+        "depth": 4,
+        "name": "SurfaceHover",
+        "token": "bg-surfaceHover",
+        "light": { "color": "#E5E2DB", "name": "IVORY[300]" },
+        "dark": { "color": "#ABYSS[600]" },
+        "shadow": null,
+        "use": "Hover states on surface"
+      },
+      {
+        "depth": 5,
+        "name": "Page",
+        "token": "bg-page",
+        "light": { "color": "#D5D2CB", "name": "IVORY[400]" },
+        "dark": { "color": "#ABYSS[900]" },
+        "shadow": null,
+        "use": "Page background"
+      }
+    ],
+    "glassModel": {
+      "principle": "Elements closer to page reveal more of underlying background",
+      "transparency": [
+        { "depth": 1, "light": "bg-white/60", "dark": "bg-black/60", "blur": "8px", "visibility": "Minimal" },
+        { "depth": 2, "light": "bg-white/40", "dark": "bg-black/40", "blur": "4px", "visibility": "Low" },
+        { "depth": 3, "light": "bg-white/20", "dark": "bg-black/20", "blur": "2px", "visibility": "Medium" },
+        { "depth": 4, "light": "bg-white/10", "dark": "bg-black/10", "blur": "1px", "visibility": "High" }
+      ],
+      "borderShadowHierarchy": [
+        { "depth": 4, "glass": "bg-white/10 dark:bg-black/10", "border": "border-2 border-accent", "shadow": null },
+        { "depth": 3, "glass": "bg-white/20 dark:bg-black/20", "border": "border-2 border-accent", "shadow": "shadow-sm" },
+        { "depth": 2, "glass": "bg-white/40 dark:bg-black/40", "border": "border-2 border-accent", "shadow": "shadow-md" },
+        { "depth": 1, "glass": "bg-white/60 dark:bg-black/60", "border": "border-2 border-accent", "shadow": "shadow-lg" }
+      ],
+      "coloredGlass": {
+        "rule": "Colored glass follows same opacity/blur rules. Border uses same color +20% opacity",
+        "formula": "border opacity = background opacity + 20%",
+        "colors": ["warning", "error", "success", "info", "accent"],
+        "examples": [
+          { "depth": 4, "color": "warning", "bg": "bg-warning/10", "border": "border-warning/30" },
+          { "depth": 3, "color": "warning", "bg": "bg-warning/20", "border": "border-warning/40", "shadow": "shadow-sm" },
+          { "depth": 3, "color": "error", "bg": "bg-error/20", "border": "border-error/40", "shadow": "shadow-sm" },
+          { "depth": 2, "color": "success", "bg": "bg-success/40", "border": "border-success/60", "shadow": "shadow-md" },
+          { "depth": 3, "color": "info", "bg": "bg-info/20", "border": "border-info/40", "shadow": "shadow-sm" }
+        ],
+        "codeExamples": {
+          "warningGlass": "className=\"bg-warning/20 backdrop-blur-[2px] border-2 border-warning/40 shadow-sm\"",
+          "errorGlass": "className=\"bg-error/20 backdrop-blur-[2px] border-2 border-error/40 shadow-sm\"",
+          "successGlass": "className=\"bg-success/40 backdrop-blur-[4px] border-2 border-success/60 shadow-md\"",
+          "infoGlass": "className=\"bg-info/20 backdrop-blur-[2px] border-2 border-info/40 shadow-sm\""
+        }
+      },
+      "whenToUse": {
+        "glass": "Over blob background or patterns",
+        "solid": "Over solid surfaces (no transparency benefit)",
+        "border": "Glass gets accent (teal) 2px borders"
+      }
+    },
+    "antiPatterns": [
+      { "pattern": "Page lighter than card", "why": "Inverts depth perception", "fix": "Use bg-page for page" },
+      { "pattern": "Elevated without shadow", "why": "Looks flat despite bg", "fix": "Add shadow-md or shadow-lg" },
+      { "pattern": "Raw colors for layers", "why": "Breaks dark mode", "fix": "Use semantic tokens" },
+      { "pattern": "Skip >2 shade steps", "why": "Jarring contrast", "fix": "Use intermediate layer" },
+      { "pattern": "Nested same-shade no border", "why": "Elements merge", "fix": "Add border or different shade" },
+      { "pattern": "Using bg-white for page", "why": "Wrong in dark mode", "fix": "Use bg-page" },
+      { "pattern": "Using bg-gray-* anywhere", "why": "Not a design system token", "fix": "Find semantic equivalent" }
+    ],
+    "validationChecklist": [
+      "Elevated elements have shadows",
+      "Closer elements are lighter",
+      "No shade skipping >2 steps",
+      "Using semantic tokens only",
+      "Nested same-shade has border",
+      "Glass has dark:bg-black/XX variant",
+      "Works in dark mode"
+    ],
+    "forbidden": "Nested glass effects (avoid double-frosting)"
+  },
+  "containerPatterns": {
+    "decisionTree": {
+      "confirmation": "Dialog",
+      "1-3 fields": "Dialog",
+      "4-7 fields": "Dialog or Sheet",
+      "8-12 fields": "Page",
+      "13+ fields": "Wizard (if logical steps) or Page (if sections)"
+    },
+    "patterns": {
+      "dialog": {
+        "useFor": ["Confirmations", "Simple forms (1-7 fields)", "Password entry", "Quick creation", "<30 sec completion"],
+        "complexity": "Low",
+        "fields": "1-7"
+      },
+      "page": {
+        "useFor": ["Complex forms (8+ fields)", "Primary CRUD", "Data entry with sections", ">1 minute tasks", "Primary workflows"],
+        "complexity": "High",
+        "fields": "8-12"
+      },
+      "wizard": {
+        "useFor": ["Multi-step processes", "Onboarding", "Provisioning", "Natural step divisions", "13+ fields"],
+        "complexity": "Very High",
+        "fields": "13+"
+      },
+      "sheet": {
+        "useFor": ["Preview/detail views", "Mobile interactions", "Filters", "Desktop Dialog → Mobile Sheet"],
+        "complexity": "Medium",
+        "fields": "Variable"
+      }
+    },
+    "uxPrinciples": {
+      "millersLaw": "Forms >7 fields exceed working memory",
+      "modalCost": "Dialogs interrupt user flow - justified only for quick, simple tasks",
+      "cognitiveLoad": {
+        "≤5": "Low - scan and complete",
+        "6-9": "Medium - needs focus",
+        "10+": "High - overwhelm risk"
+      }
+    }
+  },
+  "errorHandling": {
+    "patterns": {
+      "errorBoundary": {
+        "use": "Catch component crashes",
+        "implementation": "Wrap high-risk components",
+        "fallback": "Show error UI, don't crash entire app"
+      },
+      "loadingStates": {
+        "use": "Show during async operations",
+        "patterns": ["Skeleton", "Spinner", "Progress bar"],
+        "rule": ">400ms show loading (Doherty Threshold)"
+      },
+      "emptyStates": {
+        "use": "No data scenarios",
+        "elements": ["Icon", "Title", "Description", "Action (optional)"],
+        "tone": "Encouraging, not apologetic"
+      },
+      "errorStates": {
+        "use": "Operation failed",
+        "elements": ["Error icon", "Clear message", "Corrective action"],
+        "tone": "Helpful, specific (not generic)"
+      }
+    },
+    "defensive": {
+      "nullChecks": "Always check data?.field before rendering",
+      "fallbacks": "Provide defaults for missing data",
+      "tryBatch": "Wrap risky operations in try/catch",
+      "logging": "Log errors for debugging, don't swallow silently"
+    },
+    "loadingPriority": {
+      "<100ms": "Instant - no indicator needed",
+      "100-400ms": "Show subtle loading (opacity, cursor)",
+      ">400ms": "Show spinner or skeleton",
+      ">1s": "Show progress bar with percentage"
+    }
+  }
+}

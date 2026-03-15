@@ -1,0 +1,694 @@
+{
+  "version": "1.0.0",
+  "source": "https://ui.shadcn.com/docs/components",
+  "lastUpdated": "2025-01-12",
+  "totalComponents": 59,
+  "categories": [
+    {
+      "id": "layout",
+      "label": "Layout",
+      "description": "Components for page structure and content organization"
+    },
+    {
+      "id": "forms",
+      "label": "Forms",
+      "description": "Input components for data entry"
+    },
+    {
+      "id": "data-display",
+      "label": "Data Display",
+      "description": "Components for presenting information"
+    },
+    {
+      "id": "feedback",
+      "label": "Feedback",
+      "description": "Components for user feedback and status"
+    },
+    {
+      "id": "overlay",
+      "label": "Overlay",
+      "description": "Modal, dialog, and popup components"
+    },
+    {
+      "id": "navigation",
+      "label": "Navigation",
+      "description": "Components for navigation and menus"
+    },
+    {
+      "id": "typography",
+      "label": "Typography",
+      "description": "Text and typography components"
+    }
+  ],
+  "components": [
+    {
+      "name": "Accordion",
+      "slug": "accordion",
+      "description": "A vertically stacked set of interactive headings that reveal content sections",
+      "radixPrimitive": "@radix-ui/react-accordion",
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add accordion",
+      "dependencies": [],
+      "subComponents": ["AccordionItem", "AccordionTrigger", "AccordionContent"],
+      "features": ["Collapsible sections", "Single or multiple open", "Keyboard navigation"]
+    },
+    {
+      "name": "Alert",
+      "slug": "alert",
+      "description": "Displays a callout for user attention with contextual feedback",
+      "radixPrimitive": null,
+      "category": "feedback",
+      "installCmd": "npx shadcn@latest add alert",
+      "dependencies": [],
+      "subComponents": ["Alert", "AlertTitle", "AlertDescription"],
+      "features": ["Variant styles", "Icon support", "Dismissible option"]
+    },
+    {
+      "name": "Alert Dialog",
+      "slug": "alert-dialog",
+      "description": "A modal dialog that interrupts the user with important content and expects a response",
+      "radixPrimitive": "@radix-ui/react-alert-dialog",
+      "category": "overlay",
+      "installCmd": "npx shadcn@latest add alert-dialog",
+      "dependencies": ["button"],
+      "subComponents": ["AlertDialog", "AlertDialogTrigger", "AlertDialogContent", "AlertDialogHeader", "AlertDialogFooter", "AlertDialogTitle", "AlertDialogDescription", "AlertDialogAction", "AlertDialogCancel"],
+      "features": ["Focus trap", "Escape to close", "Accessible"]
+    },
+    {
+      "name": "Aspect Ratio",
+      "slug": "aspect-ratio",
+      "description": "Displays content within a desired ratio",
+      "radixPrimitive": "@radix-ui/react-aspect-ratio",
+      "category": "layout",
+      "installCmd": "npx shadcn@latest add aspect-ratio",
+      "dependencies": [],
+      "subComponents": ["AspectRatio"],
+      "features": ["Responsive images", "Video embeds", "Custom ratios"]
+    },
+    {
+      "name": "Avatar",
+      "slug": "avatar",
+      "description": "An image element with a fallback for representing the user",
+      "radixPrimitive": "@radix-ui/react-avatar",
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add avatar",
+      "dependencies": [],
+      "subComponents": ["Avatar", "AvatarImage", "AvatarFallback"],
+      "features": ["Image fallback", "Initials display", "Size variants"]
+    },
+    {
+      "name": "Badge",
+      "slug": "badge",
+      "description": "Displays a badge or a component that looks like a badge",
+      "radixPrimitive": null,
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add badge",
+      "dependencies": [],
+      "subComponents": ["Badge"],
+      "features": ["Multiple variants", "Outline style", "Destructive state"]
+    },
+    {
+      "name": "Breadcrumb",
+      "slug": "breadcrumb",
+      "description": "Displays the path to the current resource using a hierarchy of links",
+      "radixPrimitive": null,
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add breadcrumb",
+      "dependencies": [],
+      "subComponents": ["Breadcrumb", "BreadcrumbList", "BreadcrumbItem", "BreadcrumbLink", "BreadcrumbPage", "BreadcrumbSeparator", "BreadcrumbEllipsis"],
+      "features": ["Custom separators", "Responsive collapse", "Accessible navigation"]
+    },
+    {
+      "name": "Button",
+      "slug": "button",
+      "description": "Displays a button or a component that looks like a button",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add button",
+      "dependencies": [],
+      "subComponents": ["Button"],
+      "features": ["Multiple variants", "Size options", "Icon support", "Loading state", "As child pattern"]
+    },
+    {
+      "name": "Button Group",
+      "slug": "button-group",
+      "description": "Groups related buttons together",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add button-group",
+      "dependencies": ["button"],
+      "subComponents": ["ButtonGroup"],
+      "features": ["Horizontal layout", "Connected appearance"]
+    },
+    {
+      "name": "Calendar",
+      "slug": "calendar",
+      "description": "A date field component that allows users to enter and edit date",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add calendar",
+      "dependencies": [],
+      "subComponents": ["Calendar"],
+      "features": ["Date selection", "Range selection", "Disabled dates", "react-day-picker"]
+    },
+    {
+      "name": "Card",
+      "slug": "card",
+      "description": "Displays a card with header, content, and footer",
+      "radixPrimitive": null,
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add card",
+      "dependencies": [],
+      "subComponents": ["Card", "CardHeader", "CardFooter", "CardTitle", "CardDescription", "CardContent"],
+      "features": ["Flexible layout", "Header/footer sections", "Content container"]
+    },
+    {
+      "name": "Carousel",
+      "slug": "carousel",
+      "description": "A carousel with motion and swipe built using Embla",
+      "radixPrimitive": null,
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add carousel",
+      "dependencies": [],
+      "subComponents": ["Carousel", "CarouselContent", "CarouselItem", "CarouselPrevious", "CarouselNext"],
+      "features": ["Swipe gestures", "Autoplay", "Embla Carousel"]
+    },
+    {
+      "name": "Chart",
+      "slug": "chart",
+      "description": "Beautiful charts built using Recharts",
+      "radixPrimitive": null,
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add chart",
+      "dependencies": [],
+      "subComponents": ["ChartContainer", "ChartTooltip", "ChartTooltipContent", "ChartLegend", "ChartLegendContent"],
+      "features": ["Area charts", "Bar charts", "Line charts", "Pie charts", "Recharts integration"]
+    },
+    {
+      "name": "Checkbox",
+      "slug": "checkbox",
+      "description": "A control that allows the user to toggle between checked and not checked",
+      "radixPrimitive": "@radix-ui/react-checkbox",
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add checkbox",
+      "dependencies": [],
+      "subComponents": ["Checkbox"],
+      "features": ["Indeterminate state", "Disabled state", "Form integration"]
+    },
+    {
+      "name": "Collapsible",
+      "slug": "collapsible",
+      "description": "An interactive component which expands/collapses a panel",
+      "radixPrimitive": "@radix-ui/react-collapsible",
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add collapsible",
+      "dependencies": [],
+      "subComponents": ["Collapsible", "CollapsibleTrigger", "CollapsibleContent"],
+      "features": ["Animated expand/collapse", "Controlled state"]
+    },
+    {
+      "name": "Combobox",
+      "slug": "combobox",
+      "description": "Autocomplete input and command palette with a list of suggestions",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add combobox",
+      "dependencies": ["command", "popover"],
+      "subComponents": [],
+      "features": ["Search filtering", "Keyboard navigation", "Custom rendering"]
+    },
+    {
+      "name": "Command",
+      "slug": "command",
+      "description": "Fast, composable, unstyled command menu for React",
+      "radixPrimitive": null,
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add command",
+      "dependencies": ["dialog"],
+      "subComponents": ["Command", "CommandDialog", "CommandInput", "CommandList", "CommandEmpty", "CommandGroup", "CommandItem", "CommandShortcut", "CommandSeparator"],
+      "features": ["Search filtering", "Keyboard shortcuts", "cmdk library"]
+    },
+    {
+      "name": "Context Menu",
+      "slug": "context-menu",
+      "description": "Displays a menu to the user triggered by right-click",
+      "radixPrimitive": "@radix-ui/react-context-menu",
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add context-menu",
+      "dependencies": [],
+      "subComponents": ["ContextMenu", "ContextMenuTrigger", "ContextMenuContent", "ContextMenuItem", "ContextMenuCheckboxItem", "ContextMenuRadioItem", "ContextMenuLabel", "ContextMenuSeparator", "ContextMenuShortcut", "ContextMenuGroup", "ContextMenuSub", "ContextMenuSubContent", "ContextMenuSubTrigger", "ContextMenuRadioGroup"],
+      "features": ["Nested menus", "Checkbox items", "Radio groups", "Keyboard navigation"]
+    },
+    {
+      "name": "Data Table",
+      "slug": "data-table",
+      "description": "Powerful table and datagrids built using TanStack Table",
+      "radixPrimitive": null,
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add table",
+      "dependencies": ["table"],
+      "subComponents": [],
+      "features": ["Sorting", "Filtering", "Pagination", "Row selection", "TanStack Table"]
+    },
+    {
+      "name": "Date Picker",
+      "slug": "date-picker",
+      "description": "A date picker component with range and presets",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add date-picker",
+      "dependencies": ["calendar", "popover"],
+      "subComponents": [],
+      "features": ["Single date", "Date range", "Presets"]
+    },
+    {
+      "name": "Dialog",
+      "slug": "dialog",
+      "description": "A window overlaid on the primary window, rendering content",
+      "radixPrimitive": "@radix-ui/react-dialog",
+      "category": "overlay",
+      "installCmd": "npx shadcn@latest add dialog",
+      "dependencies": [],
+      "subComponents": ["Dialog", "DialogPortal", "DialogOverlay", "DialogTrigger", "DialogClose", "DialogContent", "DialogHeader", "DialogFooter", "DialogTitle", "DialogDescription"],
+      "features": ["Focus trap", "Escape to close", "Backdrop click", "Accessible"]
+    },
+    {
+      "name": "Drawer",
+      "slug": "drawer",
+      "description": "A drawer component for React built on top of Vaul",
+      "radixPrimitive": null,
+      "category": "overlay",
+      "installCmd": "npx shadcn@latest add drawer",
+      "dependencies": [],
+      "subComponents": ["Drawer", "DrawerPortal", "DrawerOverlay", "DrawerTrigger", "DrawerClose", "DrawerContent", "DrawerHeader", "DrawerFooter", "DrawerTitle", "DrawerDescription"],
+      "features": ["Swipe to dismiss", "Snap points", "Vaul library"]
+    },
+    {
+      "name": "Dropdown Menu",
+      "slug": "dropdown-menu",
+      "description": "Displays a menu to the user triggered by a button",
+      "radixPrimitive": "@radix-ui/react-dropdown-menu",
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add dropdown-menu",
+      "dependencies": [],
+      "subComponents": ["DropdownMenu", "DropdownMenuTrigger", "DropdownMenuContent", "DropdownMenuItem", "DropdownMenuCheckboxItem", "DropdownMenuRadioItem", "DropdownMenuLabel", "DropdownMenuSeparator", "DropdownMenuShortcut", "DropdownMenuGroup", "DropdownMenuPortal", "DropdownMenuSub", "DropdownMenuSubContent", "DropdownMenuSubTrigger", "DropdownMenuRadioGroup"],
+      "features": ["Nested menus", "Checkbox items", "Radio groups", "Keyboard navigation"]
+    },
+    {
+      "name": "Empty",
+      "slug": "empty",
+      "description": "Empty state placeholder for when there is no data",
+      "radixPrimitive": null,
+      "category": "feedback",
+      "installCmd": "npx shadcn@latest add empty",
+      "dependencies": [],
+      "subComponents": ["Empty", "EmptyIcon", "EmptyTitle", "EmptyDescription", "EmptyActions"],
+      "features": ["Icon placeholder", "Call to action", "Customizable"]
+    },
+    {
+      "name": "Field",
+      "slug": "field",
+      "description": "Form field wrapper with label, description, and error message",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add field",
+      "dependencies": ["label"],
+      "subComponents": ["Field", "FieldLabel", "FieldDescription", "FieldMessage"],
+      "features": ["Label association", "Error messages", "Description text"]
+    },
+    {
+      "name": "Form",
+      "slug": "form",
+      "description": "Building forms with React Hook Form and Zod",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add form",
+      "dependencies": ["label"],
+      "subComponents": ["Form", "FormField", "FormItem", "FormLabel", "FormControl", "FormDescription", "FormMessage", "useFormField"],
+      "features": ["React Hook Form", "Zod validation", "Accessible errors"]
+    },
+    {
+      "name": "Hover Card",
+      "slug": "hover-card",
+      "description": "For sighted users to preview content available behind a link",
+      "radixPrimitive": "@radix-ui/react-hover-card",
+      "category": "overlay",
+      "installCmd": "npx shadcn@latest add hover-card",
+      "dependencies": [],
+      "subComponents": ["HoverCard", "HoverCardTrigger", "HoverCardContent"],
+      "features": ["Delay open/close", "Side positioning", "Arrow indicator"]
+    },
+    {
+      "name": "Input",
+      "slug": "input",
+      "description": "Displays a form input field or a component that looks like an input",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add input",
+      "dependencies": [],
+      "subComponents": ["Input"],
+      "features": ["Multiple types", "Disabled state", "File input"]
+    },
+    {
+      "name": "Input Group",
+      "slug": "input-group",
+      "description": "Groups input with addons like icons or buttons",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add input-group",
+      "dependencies": ["input"],
+      "subComponents": ["InputGroup", "InputGroupAddon"],
+      "features": ["Prefix/suffix addons", "Icon support"]
+    },
+    {
+      "name": "Input OTP",
+      "slug": "input-otp",
+      "description": "Accessible one-time password component with copy paste functionality",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add input-otp",
+      "dependencies": [],
+      "subComponents": ["InputOTP", "InputOTPGroup", "InputOTPSlot", "InputOTPSeparator"],
+      "features": ["Auto-advance", "Paste support", "input-otp library"]
+    },
+    {
+      "name": "Item",
+      "slug": "item",
+      "description": "A versatile list item component",
+      "radixPrimitive": null,
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add item",
+      "dependencies": [],
+      "subComponents": ["Item", "ItemIcon", "ItemContent", "ItemTitle", "ItemDescription"],
+      "features": ["Icon slot", "Title and description", "Interactive"]
+    },
+    {
+      "name": "Kbd",
+      "slug": "kbd",
+      "description": "Displays keyboard shortcut styling",
+      "radixPrimitive": null,
+      "category": "typography",
+      "installCmd": "npx shadcn@latest add kbd",
+      "dependencies": [],
+      "subComponents": ["Kbd"],
+      "features": ["Keyboard key styling", "Shortcut display"]
+    },
+    {
+      "name": "Label",
+      "slug": "label",
+      "description": "Renders an accessible label associated with controls",
+      "radixPrimitive": "@radix-ui/react-label",
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add label",
+      "dependencies": [],
+      "subComponents": ["Label"],
+      "features": ["Form association", "Required indicator", "Accessible"]
+    },
+    {
+      "name": "Menubar",
+      "slug": "menubar",
+      "description": "A visually persistent menu common in desktop applications",
+      "radixPrimitive": "@radix-ui/react-menubar",
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add menubar",
+      "dependencies": [],
+      "subComponents": ["Menubar", "MenubarMenu", "MenubarTrigger", "MenubarContent", "MenubarItem", "MenubarSeparator", "MenubarLabel", "MenubarCheckboxItem", "MenubarRadioGroup", "MenubarRadioItem", "MenubarPortal", "MenubarSubContent", "MenubarSubTrigger", "MenubarGroup", "MenubarSub", "MenubarShortcut"],
+      "features": ["Multiple menus", "Keyboard navigation", "Nested submenus"]
+    },
+    {
+      "name": "Native Select",
+      "slug": "native-select",
+      "description": "Native HTML select with consistent styling",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add native-select",
+      "dependencies": [],
+      "subComponents": ["NativeSelect"],
+      "features": ["Native behavior", "Mobile optimized"]
+    },
+    {
+      "name": "Navigation Menu",
+      "slug": "navigation-menu",
+      "description": "A collection of links for navigating websites",
+      "radixPrimitive": "@radix-ui/react-navigation-menu",
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add navigation-menu",
+      "dependencies": [],
+      "subComponents": ["NavigationMenu", "NavigationMenuList", "NavigationMenuItem", "NavigationMenuContent", "NavigationMenuTrigger", "NavigationMenuLink", "NavigationMenuIndicator", "NavigationMenuViewport"],
+      "features": ["Mega menu support", "Viewport animation", "Active indicator"]
+    },
+    {
+      "name": "Pagination",
+      "slug": "pagination",
+      "description": "Pagination with page navigation, next and previous links",
+      "radixPrimitive": null,
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add pagination",
+      "dependencies": [],
+      "subComponents": ["Pagination", "PaginationContent", "PaginationItem", "PaginationLink", "PaginationPrevious", "PaginationNext", "PaginationEllipsis"],
+      "features": ["Page numbers", "Prev/next links", "Ellipsis"]
+    },
+    {
+      "name": "Popover",
+      "slug": "popover",
+      "description": "Displays rich content in a portal, triggered by a button",
+      "radixPrimitive": "@radix-ui/react-popover",
+      "category": "overlay",
+      "installCmd": "npx shadcn@latest add popover",
+      "dependencies": [],
+      "subComponents": ["Popover", "PopoverTrigger", "PopoverContent", "PopoverAnchor"],
+      "features": ["Portal rendering", "Side positioning", "Focus management"]
+    },
+    {
+      "name": "Progress",
+      "slug": "progress",
+      "description": "Displays an indicator showing the completion progress of a task",
+      "radixPrimitive": "@radix-ui/react-progress",
+      "category": "feedback",
+      "installCmd": "npx shadcn@latest add progress",
+      "dependencies": [],
+      "subComponents": ["Progress"],
+      "features": ["Determinate progress", "Indeterminate state", "Accessible"]
+    },
+    {
+      "name": "Radio Group",
+      "slug": "radio-group",
+      "description": "A set of checkable buttons where only one can be checked at a time",
+      "radixPrimitive": "@radix-ui/react-radio-group",
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add radio-group",
+      "dependencies": [],
+      "subComponents": ["RadioGroup", "RadioGroupItem"],
+      "features": ["Single selection", "Keyboard navigation", "Form integration"]
+    },
+    {
+      "name": "Resizable",
+      "slug": "resizable",
+      "description": "Accessible resizable panel groups and layouts with keyboard support",
+      "radixPrimitive": null,
+      "category": "layout",
+      "installCmd": "npx shadcn@latest add resizable",
+      "dependencies": [],
+      "subComponents": ["ResizablePanelGroup", "ResizablePanel", "ResizableHandle"],
+      "features": ["Drag to resize", "Keyboard support", "react-resizable-panels"]
+    },
+    {
+      "name": "Scroll Area",
+      "slug": "scroll-area",
+      "description": "Augments native scroll functionality for custom, cross-browser styling",
+      "radixPrimitive": "@radix-ui/react-scroll-area",
+      "category": "layout",
+      "installCmd": "npx shadcn@latest add scroll-area",
+      "dependencies": [],
+      "subComponents": ["ScrollArea", "ScrollBar"],
+      "features": ["Custom scrollbar", "Touch support", "Horizontal/vertical"]
+    },
+    {
+      "name": "Select",
+      "slug": "select",
+      "description": "Displays a list of options for the user to pick from",
+      "radixPrimitive": "@radix-ui/react-select",
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add select",
+      "dependencies": [],
+      "subComponents": ["Select", "SelectGroup", "SelectValue", "SelectTrigger", "SelectContent", "SelectLabel", "SelectItem", "SelectSeparator", "SelectScrollUpButton", "SelectScrollDownButton"],
+      "features": ["Typeahead", "Groups", "Custom positioning"]
+    },
+    {
+      "name": "Separator",
+      "slug": "separator",
+      "description": "Visually or semantically separates content",
+      "radixPrimitive": "@radix-ui/react-separator",
+      "category": "layout",
+      "installCmd": "npx shadcn@latest add separator",
+      "dependencies": [],
+      "subComponents": ["Separator"],
+      "features": ["Horizontal/vertical", "Decorative option"]
+    },
+    {
+      "name": "Sheet",
+      "slug": "sheet",
+      "description": "Extends the Dialog component to display content that complements the main content",
+      "radixPrimitive": "@radix-ui/react-dialog",
+      "category": "overlay",
+      "installCmd": "npx shadcn@latest add sheet",
+      "dependencies": [],
+      "subComponents": ["Sheet", "SheetPortal", "SheetOverlay", "SheetTrigger", "SheetClose", "SheetContent", "SheetHeader", "SheetFooter", "SheetTitle", "SheetDescription"],
+      "features": ["Side positioning", "Slide animation", "Focus trap"]
+    },
+    {
+      "name": "Sidebar",
+      "slug": "sidebar",
+      "description": "A composable, themeable and customizable sidebar component",
+      "radixPrimitive": null,
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add sidebar",
+      "dependencies": ["button", "separator", "sheet", "skeleton", "tooltip"],
+      "subComponents": ["Sidebar", "SidebarContent", "SidebarFooter", "SidebarGroup", "SidebarGroupAction", "SidebarGroupContent", "SidebarGroupLabel", "SidebarHeader", "SidebarInput", "SidebarInset", "SidebarMenu", "SidebarMenuAction", "SidebarMenuBadge", "SidebarMenuButton", "SidebarMenuItem", "SidebarMenuSkeleton", "SidebarMenuSub", "SidebarMenuSubButton", "SidebarMenuSubItem", "SidebarProvider", "SidebarRail", "SidebarSeparator", "SidebarTrigger"],
+      "features": ["Collapsible", "Multiple variants", "Mobile responsive"]
+    },
+    {
+      "name": "Skeleton",
+      "slug": "skeleton",
+      "description": "Use to show a placeholder while content is loading",
+      "radixPrimitive": null,
+      "category": "feedback",
+      "installCmd": "npx shadcn@latest add skeleton",
+      "dependencies": [],
+      "subComponents": ["Skeleton"],
+      "features": ["Pulse animation", "Custom shapes"]
+    },
+    {
+      "name": "Slider",
+      "slug": "slider",
+      "description": "An input where the user selects a value from within a given range",
+      "radixPrimitive": "@radix-ui/react-slider",
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add slider",
+      "dependencies": [],
+      "subComponents": ["Slider"],
+      "features": ["Range support", "Step increments", "Keyboard navigation"]
+    },
+    {
+      "name": "Sonner",
+      "slug": "sonner",
+      "description": "An opinionated toast component for React",
+      "radixPrimitive": null,
+      "category": "feedback",
+      "installCmd": "npx shadcn@latest add sonner",
+      "dependencies": [],
+      "subComponents": ["Toaster"],
+      "features": ["Auto dismiss", "Multiple positions", "Sonner library"]
+    },
+    {
+      "name": "Spinner",
+      "slug": "spinner",
+      "description": "A loading spinner indicator",
+      "radixPrimitive": null,
+      "category": "feedback",
+      "installCmd": "npx shadcn@latest add spinner",
+      "dependencies": [],
+      "subComponents": ["Spinner"],
+      "features": ["Size variants", "Color customization"]
+    },
+    {
+      "name": "Switch",
+      "slug": "switch",
+      "description": "A control that allows the user to toggle between checked and not checked",
+      "radixPrimitive": "@radix-ui/react-switch",
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add switch",
+      "dependencies": [],
+      "subComponents": ["Switch"],
+      "features": ["Toggle state", "Disabled state", "Form integration"]
+    },
+    {
+      "name": "Table",
+      "slug": "table",
+      "description": "A responsive table component",
+      "radixPrimitive": null,
+      "category": "data-display",
+      "installCmd": "npx shadcn@latest add table",
+      "dependencies": [],
+      "subComponents": ["Table", "TableHeader", "TableBody", "TableFooter", "TableHead", "TableRow", "TableCell", "TableCaption"],
+      "features": ["Responsive", "Striped rows", "Sortable headers"]
+    },
+    {
+      "name": "Tabs",
+      "slug": "tabs",
+      "description": "A set of layered sections of content displayed one at a time",
+      "radixPrimitive": "@radix-ui/react-tabs",
+      "category": "navigation",
+      "installCmd": "npx shadcn@latest add tabs",
+      "dependencies": [],
+      "subComponents": ["Tabs", "TabsList", "TabsTrigger", "TabsContent"],
+      "features": ["Keyboard navigation", "Orientation", "Activation modes"]
+    },
+    {
+      "name": "Textarea",
+      "slug": "textarea",
+      "description": "Displays a form textarea or a component that looks like a textarea",
+      "radixPrimitive": null,
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add textarea",
+      "dependencies": [],
+      "subComponents": ["Textarea"],
+      "features": ["Auto-resize", "Character count"]
+    },
+    {
+      "name": "Toast",
+      "slug": "toast",
+      "description": "A succinct message that is displayed temporarily",
+      "radixPrimitive": "@radix-ui/react-toast",
+      "category": "feedback",
+      "installCmd": "npx shadcn@latest add toast",
+      "dependencies": [],
+      "subComponents": ["Toast", "ToastAction", "ToastClose", "ToastDescription", "ToastProvider", "ToastTitle", "ToastViewport", "Toaster"],
+      "features": ["Auto dismiss", "Action buttons", "Swipe to dismiss"]
+    },
+    {
+      "name": "Toggle",
+      "slug": "toggle",
+      "description": "A two-state button that can be either on or off",
+      "radixPrimitive": "@radix-ui/react-toggle",
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add toggle",
+      "dependencies": [],
+      "subComponents": ["Toggle"],
+      "features": ["Pressed state", "Size variants", "Outline style"]
+    },
+    {
+      "name": "Toggle Group",
+      "slug": "toggle-group",
+      "description": "A set of two-state buttons that can be toggled on or off",
+      "radixPrimitive": "@radix-ui/react-toggle-group",
+      "category": "forms",
+      "installCmd": "npx shadcn@latest add toggle-group",
+      "dependencies": [],
+      "subComponents": ["ToggleGroup", "ToggleGroupItem"],
+      "features": ["Single or multiple", "Size variants", "Outline style"]
+    },
+    {
+      "name": "Tooltip",
+      "slug": "tooltip",
+      "description": "A popup that displays information related to an element",
+      "radixPrimitive": "@radix-ui/react-tooltip",
+      "category": "overlay",
+      "installCmd": "npx shadcn@latest add tooltip",
+      "dependencies": [],
+      "subComponents": ["Tooltip", "TooltipTrigger", "TooltipContent", "TooltipProvider"],
+      "features": ["Delay open/close", "Side positioning", "Arrow indicator"]
+    },
+    {
+      "name": "Typography",
+      "slug": "typography",
+      "description": "Styles for headings, paragraphs, lists and more",
+      "radixPrimitive": null,
+      "category": "typography",
+      "installCmd": "npx shadcn@latest add typography",
+      "dependencies": [],
+      "subComponents": [],
+      "features": ["Heading styles", "Paragraph styles", "List styles", "Prose styling"]
+    }
+  ]
+}

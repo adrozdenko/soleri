@@ -1,0 +1,371 @@
+{
+  "metadata": {
+    "title": "Component Stabilization Patterns",
+    "philosophy": "Stability through backwards compatibility. Never break existing consumers.",
+    "description": "Patterns and principles for safely evolving components while maintaining backwards compatibility with existing implementations."
+  },
+  "safeChanges": {
+    "title": "Safe Change Patterns",
+    "description": "Changes that maintain backwards compatibility and can be released without breaking existing consumers.",
+    "patterns": [
+      {
+        "pattern": "Add Optional Props",
+        "riskLevel": "Low",
+        "examples": [
+          "Add optional `loading` prop with default `false`",
+          "Add optional `className` for custom styling",
+          "Add optional callback props (`onFocus`, `onBlur`)"
+        ],
+        "implementationNotes": "Use optional syntax, always provide sensible defaults"
+      },
+      {
+        "pattern": "Add New Variants",
+        "riskLevel": "Low",
+        "examples": [
+          "Add `ghost` variant to existing options",
+          "Add `lg` size to size options",
+          "Add semantic variants (`success`, `warning`)"
+        ],
+        "implementationNotes": "Extend variant configuration without modifying existing values"
+      },
+      {
+        "pattern": "Fix Bugs",
+        "riskLevel": "Low",
+        "examples": [
+          "Fix incorrect ARIA attributes",
+          "Fix focus trap behavior",
+          "Fix contrast ratio issues"
+        ],
+        "implementationNotes": "Document fix in changelog, verify no visual regression"
+      },
+      {
+        "pattern": "Improve Internals",
+        "riskLevel": "Low",
+        "examples": [
+          "Optimize re-render performance",
+          "Improve type definitions",
+          "Add missing ref forwarding"
+        ],
+        "implementationNotes": "Internal changes only, no API surface changes"
+      },
+      {
+        "pattern": "Add Accessibility",
+        "riskLevel": "Low",
+        "examples": [
+          "Add missing ARIA labels",
+          "Improve keyboard navigation",
+          "Add screen reader announcements"
+        ],
+        "implementationNotes": "Additive improvements, don't change existing behavior"
+      }
+    ],
+    "quickReference": [
+      "Add optional props with defaults",
+      "Add new variants to existing options",
+      "Fix bugs (document in changelog)",
+      "Improve internal implementation",
+      "Add accessibility features"
+    ]
+  },
+  "breakingChanges": {
+    "title": "Breaking Changes to Avoid",
+    "description": "Changes that break existing consumers and require careful migration planning.",
+    "highRisk": [
+      {
+        "changeType": "Rename Props",
+        "examples": [
+          "`isDisabled` → `disabled`",
+          "`onClick` → `onPress`",
+          "`variant` → `appearance`"
+        ],
+        "mitigationStrategy": "Deprecate old prop, support both during transition"
+      },
+      {
+        "changeType": "Remove Props",
+        "examples": [
+          "Remove `size` prop entirely",
+          "Remove deprecated variant",
+          "Remove callback prop"
+        ],
+        "mitigationStrategy": "Mark `@deprecated`, maintain for 2 major versions minimum"
+      },
+      {
+        "changeType": "Change Prop Types",
+        "examples": [
+          "`string` → `number`",
+          "`boolean` → `enum`",
+          "`ReactNode` → `string`"
+        ],
+        "mitigationStrategy": "Use union types to support both during transition"
+      },
+      {
+        "changeType": "Remove Exports",
+        "examples": [
+          "Remove component from public API",
+          "Remove sub-component export",
+          "Remove type export"
+        ],
+        "mitigationStrategy": "Re-export from new location, mark `@deprecated`"
+      }
+    ],
+    "mediumRisk": [
+      {
+        "changeType": "Change Default Values",
+        "examples": [
+          "variant default `outline` → `default`",
+          "size default `md` → `sm`"
+        ],
+        "mitigationStrategy": "Document in changelog, provide migration guide"
+      },
+      {
+        "changeType": "Change Children Behavior",
+        "examples": [
+          "Children no longer rendered",
+          "Children type restriction changed",
+          "Children position changed"
+        ],
+        "mitigationStrategy": "Support both patterns during transition"
+      }
+    ],
+    "quickReference": [
+      "Rename props",
+      "Remove props",
+      "Change prop types incompatibly",
+      "Remove exports"
+    ]
+  },
+  "riskAssessment": {
+    "title": "Risk Assessment Framework",
+    "levels": [
+      {
+        "level": "High",
+        "definition": "Changes that WILL break existing consumers",
+        "requiredAction": "Deprecation cycle, migration guide, major version bump"
+      },
+      {
+        "level": "Medium",
+        "definition": "Changes that MAY affect existing behavior",
+        "requiredAction": "Document in changelog, consider feature flag"
+      },
+      {
+        "level": "Low",
+        "definition": "Changes safe for any version",
+        "requiredAction": "Standard review, document in changelog"
+      }
+    ],
+    "decisionTree": [
+      {
+        "question": "Removing anything?",
+        "riskAssessment": "HIGH RISK - Use deprecation cycle"
+      },
+      {
+        "question": "Renaming anything?",
+        "riskAssessment": "HIGH RISK - Support both names"
+      },
+      {
+        "question": "Changing types?",
+        "riskAssessment": "HIGH RISK - Use union types"
+      },
+      {
+        "question": "Changing defaults?",
+        "riskAssessment": "MEDIUM RISK - Document thoroughly"
+      },
+      {
+        "question": "Changing visuals?",
+        "riskAssessment": "MEDIUM RISK - Visual regression test"
+      },
+      {
+        "question": "Adding optional features?",
+        "riskAssessment": "LOW RISK - Standard review"
+      }
+    ],
+    "quickCheck": [
+      { "action": "Removing", "risk": "High" },
+      { "action": "Renaming", "risk": "High" },
+      { "action": "Changing types", "risk": "High" },
+      { "action": "Changing defaults", "risk": "Medium" },
+      { "action": "Changing visuals", "risk": "Medium" },
+      { "action": "Adding optional", "risk": "Low" }
+    ]
+  },
+  "backwardsCompatibility": {
+    "title": "Backwards Compatibility Principles",
+    "principles": [
+      {
+        "name": "Deprecation Before Removal",
+        "description": "Mark deprecated features for minimum 2 major versions before removal.",
+        "documentationPatterns": [
+          "JSDoc: `@deprecated Use 'newProp' instead. Will be removed in v3.0`",
+          "Console warning: `[ComponentName] prop 'oldProp' is deprecated`",
+          "Type annotation: `/** @deprecated */ oldProp?: string`"
+        ]
+      },
+      {
+        "name": "Support Both APIs During Transition",
+        "description": "When renaming props, support both old and new names.",
+        "codePattern": "const resolvedValue = newProp ?? oldProp ?? defaultValue;"
+      },
+      {
+        "name": "Runtime Warnings",
+        "description": "Warn developers using deprecated features in development mode only."
+      },
+      {
+        "name": "Migration Documentation",
+        "description": "Provide clear upgrade paths.",
+        "includes": [
+          "Before/after code examples",
+          "Automated migration tooling if possible",
+          "Changelog entry with migration steps"
+        ]
+      }
+    ]
+  },
+  "migration": {
+    "title": "Migration Guide Pattern",
+    "description": "Standard pattern for prop deprecation.",
+    "steps": [
+      "Add new prop alongside old prop",
+      "Add deprecation annotation to old prop",
+      "Add runtime warning in development mode",
+      "Update internal usage to new prop",
+      "Update documentation with migration notes",
+      "Remove old prop after 2 major versions"
+    ],
+    "interfaceExample": {
+      "description": "Interface with deprecated prop",
+      "code": "interface ComponentProps {\n  /** @deprecated Use 'isLoading' instead */\n  loading?: boolean;\n  isLoading?: boolean;\n}"
+    },
+    "implementationExample": {
+      "description": "Implementation with deprecation warning",
+      "code": "const resolvedLoading = isLoading ?? loading ?? false;\n\nif (loading !== undefined && process.env.NODE_ENV === 'development') {\n  console.warn('[Component] prop \"loading\" is deprecated. Use \"isLoading\" instead.');\n}"
+    },
+    "checklist": [
+      "Add new prop alongside old",
+      "Add `@deprecated` annotation",
+      "Add development warning",
+      "Update internal usage",
+      "Update documentation",
+      "Remove after 2 major versions"
+    ]
+  },
+  "allStatesPattern": {
+    "title": "All-States Documentation Pattern",
+    "description": "Every stabilized component should have comprehensive state documentation.",
+    "requiredSections": [
+      {
+        "section": "Variants",
+        "content": "All variant options displayed side by side"
+      },
+      {
+        "section": "Sizes",
+        "content": "All size options if applicable"
+      },
+      {
+        "section": "States",
+        "content": "Default, hover, focus, disabled, loading, error"
+      },
+      {
+        "section": "Edge Cases",
+        "content": "Long text, empty content, with icons"
+      }
+    ],
+    "guidelines": [
+      "Use consistent grid layout",
+      "Never skip any variant from documentation",
+      "Avoid custom wrapper decorators",
+      "No hardcoded styling overrides"
+    ]
+  },
+  "jsdocRequirements": {
+    "title": "Component Type Annotations",
+    "description": "Document component complexity levels.",
+    "types": [
+      {
+        "type": "Atom",
+        "description": "Basic building block",
+        "testIdGuidance": "Consumer typically provides test ID"
+      },
+      {
+        "type": "Molecule",
+        "description": "Combination of atoms",
+        "testIdGuidance": "List all generated test IDs with patterns"
+      },
+      {
+        "type": "Organism",
+        "description": "Complex feature unit",
+        "testIdGuidance": "List all region and interactive element test IDs"
+      },
+      {
+        "type": "Page",
+        "description": "Full page component",
+        "testIdGuidance": "List all major section test IDs"
+      }
+    ]
+  },
+  "stabilizationChecklist": {
+    "title": "Stabilization Checklist",
+    "codeQuality": [
+      { "check": "Strict typing enabled", "validation": "No `any` types, full prop typing" },
+      { "check": "Props interface exported", "validation": "Public type exports available" },
+      { "check": "Ref forwarding implemented", "validation": "Forward ref pattern used" },
+      { "check": "Variant system clean", "validation": "No ternary chains, declarative variant logic" },
+      { "check": "Design tokens only", "validation": "No hardcoded colors, spacing, or sizes" },
+      { "check": "Accessibility complete", "validation": "ARIA labels, keyboard nav, focus management" }
+    ],
+    "testingRequirements": [
+      { "check": "All-states demonstration exists", "validation": "Shows all variants, sizes, and states" },
+      { "check": "Dark mode coverage if applicable", "validation": "Dark background variations tested" },
+      { "check": "Interaction tests", "validation": "Key interactions covered with automation" },
+      { "check": "Visual regression baseline", "validation": "Snapshot comparison enabled" },
+      { "check": "Accessibility audit", "validation": "Automated a11y testing passes" }
+    ],
+    "variantOptimization": [
+      { "check": "3-5 variants maximum", "validation": "Remove unused or redundant variants" },
+      { "check": "2-3 sizes maximum", "validation": "`sm`, `md`, `lg` only if needed" },
+      { "check": "Semantic variant names", "validation": "`default`, `outline`, `ghost`, `destructive`" },
+      { "check": "Similar variants consolidated", "validation": "Merge subtle differences" }
+    ],
+    "documentation": [
+      { "check": "Component type annotation", "validation": "Complexity level identified" },
+      { "check": "Test ID documentation", "validation": "Test selectors documented for automation" },
+      { "check": "Props documented", "validation": "Each prop has description and examples" },
+      { "check": "Usage examples", "validation": "Typical usage patterns demonstrated" }
+    ]
+  },
+  "stabilizationPriority": {
+    "title": "Stabilization Priority",
+    "tiers": [
+      {
+        "tier": 1,
+        "name": "Foundation",
+        "description": "Components used in every form and interaction",
+        "components": ["Buttons", "Inputs", "Selects", "Checkboxes", "Radio buttons"]
+      },
+      {
+        "tier": 2,
+        "name": "Layout",
+        "description": "Structural components used across pages",
+        "components": ["Cards", "Dialogs", "Sheets", "Tabs", "Accordions"]
+      },
+      {
+        "tier": 3,
+        "name": "Feedback",
+        "description": "User feedback and status indicators",
+        "components": ["Toasts", "Alerts", "Badges", "Progress indicators", "Skeletons"]
+      },
+      {
+        "tier": 4,
+        "name": "Data",
+        "description": "Data display components",
+        "components": ["Tables", "Data grids", "Lists", "Pagination"]
+      }
+    ],
+    "rules": [
+      "Complete each tier before starting the next",
+      "One component at a time per engineer",
+      "Full checklist completion before marking stable",
+      "Version bump after stabilization batch"
+    ],
+    "order": "Foundation → Layout → Feedback → Data"
+  }
+}

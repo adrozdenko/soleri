@@ -5,6 +5,7 @@ import { Command } from 'commander';
 import { registerCreate } from './commands/create.js';
 import { registerList } from './commands/list.js';
 import { registerAddDomain } from './commands/add-domain.js';
+import { registerAddPack } from './commands/add-pack.js';
 import { registerInstallKnowledge } from './commands/install-knowledge.js';
 import { registerDev } from './commands/dev.js';
 import { registerDoctor } from './commands/doctor.js';
@@ -63,6 +64,7 @@ program
 registerCreate(program);
 registerList(program);
 registerAddDomain(program);
+registerAddPack(program);
 registerInstallKnowledge(program);
 registerDev(program);
 registerDoctor(program);

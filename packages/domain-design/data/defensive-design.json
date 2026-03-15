@@ -1,0 +1,213 @@
+{
+  "corePrinciple": {
+    "insight": "Components should be like good waiters: If the kitchen sends out bad food (broken data source), don't drop the plate and run away (crash). Show the customer the problem clearly (error indicator) so they know to talk to the chef (fix their data source).",
+    "goldenRule": "Never crash. Always communicate. Show users exactly what went wrong and where to fix it."
+  },
+  "validationLevel": {
+    "architecture": {
+      "rule": "Defensive validation belongs at the BOUNDARY LAYER - where external data enters your component hierarchy",
+      "layers": [
+        {
+          "layer": "Primitive Components",
+          "role": "Dumb, reusable, no domain knowledge",
+          "hasValidation": false,
+          "action": "Trust props",
+          "analogy": "Kitchen utensils (a knife doesn't check if food is fresh)"
+        },
+        {
+          "layer": "Composite Components",
+          "role": "Combines primitives, still generic",
+          "hasValidation": false,
+          "action": "Trust props",
+          "analogy": "Cooking stations (a grill doesn't validate ingredients)"
+        },
+        {
+          "layer": "Domain Components",
+          "role": "Domain-aware, API boundary",
+          "hasValidation": true,
+          "action": "Validate here",
+          "analogy": "The chef (inspects ingredients before cooking, rejects bad ones)"
+        }
+      ]
+    },
+    "reasons": [
+      "Domain components are the API boundary - where external data enters",
+      "Only domain components know the context - what 'valid status' means",
+      "Primitives should stay simple - no validation bloat",
+      "Error messages need context - domain layer knows the business rules"
+    ],
+    "decisionTree": {
+      "question": "Is this a domain/boundary component?",
+      "no": "Trust props, no validation needed",
+      "yes": {
+        "action": "Validate all external data",
+        "ifValid": "Render normally",
+        "ifInvalid": {
+          "action": "Show error indicator",
+          "questions": [
+            "What field failed?",
+            "What value was received?",
+            "Where to fix it?"
+          ]
+        }
+      }
+    }
+  },
+  "helpers": {
+    "enumValidation": {
+      "name": "isValidEnumValue",
+      "code": "function isValidEnumValue(value: unknown, validValues: string[]): boolean {\n  return typeof value === 'string' && validValues.includes(value);\n}",
+      "example": "[\"critical\", \"high\", \"medium\", \"low\", \"none\"]",
+      "catches": "Invalid enum values, wrong types"
+    },
+    "stringValidation": {
+      "name": "isValidString",
+      "code": "function isValidString(value: unknown): boolean {\n  return typeof value === 'string' && !value.includes('[object');\n}",
+      "catches": "Serialization errors like [object Object]"
+    },
+    "numberValidation": {
+      "name": "isValidNumber",
+      "code": "function isValidNumber(value: unknown): boolean {\n  return typeof value === 'number' &&\n         !Number.isNaN(value) &&\n         Number.isFinite(value);\n}",
+      "catches": "NaN, Infinity, type mismatches"
+    },
+    "dateValidation": {
+      "name": "isValidDate",
+      "code": "function isValidDate(value: unknown): boolean {\n  if (value instanceof Date) {\n    return !Number.isNaN(value.getTime());\n  }\n  if (typeof value === 'string') {\n    const parsed = Date.parse(value);\n    return !Number.isNaN(parsed);\n  }\n  return false;\n}",
+      "catches": "Invalid Date objects, unparseable date strings"
+    },
+    "safeCompare": {
+      "name": "safeCompare",
+      "code": "function safeCompare(a: unknown, b: unknown): number {\n  if (!isValidNumber(a) && !isValidNumber(b)) return 0;\n  if (!isValidNumber(a)) return 1;  // Invalid values sort last\n  if (!isValidNumber(b)) return -1;\n  return a - b;\n}",
+      "use": "Safe sort comparison - invalid values sort last"
+    },
+    "essentialTypeGuards": [
+      { "guard": "typeof x === 'string'", "checks": "Basic string type" },
+      { "guard": "!value.includes('[object')", "checks": "Serialization errors" },
+      { "guard": "!Number.isNaN(value)", "checks": "NaN values" },
+      { "guard": "Number.isFinite(value)", "checks": "Infinity values" },
+      { "guard": "Array.isArray(value)", "checks": "Array type" },
+      { "guard": "value instanceof Date", "checks": "Date object" }
+    ]
+  },
+  "dataError": {
+    "designRequirements": {
+      "container": "Inline display with visual distinction (border, background tint)",
+      "indicator": "Visual marker (pulse animation draws attention)",
+      "tooltip": "Explains what went wrong and where to fix it"
+    },
+    "informationToDisplay": [
+      "What field has invalid data",
+      "What value was received",
+      "Where to fix it (hint: 'Check your data source/adapter')"
+    ],
+    "stylingTokens": [
+      { "token": "border-error", "purpose": "Error border color" },
+      { "token": "bg-error-tint", "purpose": "Light error background" },
+      { "token": "text-error", "purpose": "Error text color" },
+      { "token": "animate-pulse", "purpose": "Visual indicator of problem" }
+    ],
+    "errorMessageGuidelines": {
+      "good": [
+        "Invalid status: 'OPENN' - Check your data adapter",
+        "Expected number, received: '[object Object]'"
+      ],
+      "bad": [
+        "Error",
+        "Invalid data",
+        "Something went wrong"
+      ]
+    },
+    "gracefulDegradationLevels": [
+      {
+        "level": "Show Error Inline",
+        "behavior": "Display error indicator in place of bad data",
+        "when": "Single field invalid"
+      },
+      {
+        "level": "Show Fallback Value",
+        "behavior": "Display safe default with warning",
+        "when": "Non-critical field"
+      },
+      {
+        "level": "Show Error Row",
+        "behavior": "Entire row highlighted as problematic",
+        "when": "Multiple fields invalid"
+      },
+      {
+        "level": "Show Error Boundary",
+        "behavior": "Component-level error state",
+        "when": "Critical failure"
+      }
+    ]
+  },
+  "fieldTypes": {
+    "enum": {
+      "validation": "isValidEnumValue(value, allowedValues)",
+      "errorDisplay": "Show raw value + warning",
+      "example": "Invalid status: 'OPENN'"
+    },
+    "string": {
+      "validation": "isValidString(value)",
+      "errorDisplay": "Show '[object]' + warning",
+      "example": "Expected string, received: [object Object]"
+    },
+    "number": {
+      "validation": "isValidNumber(value)",
+      "errorDisplay": "Show 'NaN' + warning",
+      "example": "Expected number, received: NaN"
+    },
+    "date": {
+      "validation": "isValidDate(value)",
+      "errorDisplay": "Show raw value + warning",
+      "example": "Invalid date: 'not-a-date'"
+    },
+    "array": {
+      "validation": "Array.isArray(value)",
+      "errorDisplay": "Show '[]' + warning",
+      "example": "Expected array, received: object"
+    }
+  },
+  "testing": {
+    "testDataExamples": [
+      { "field": "severity", "wrongValue": "2 (number)", "expectedType": "string" },
+      { "field": "reporter", "wrongValue": "{ name: 'John' } (object)", "expectedType": "string" },
+      { "field": "ageDays", "wrongValue": "NaN", "expectedType": "number" },
+      { "field": "status", "wrongValue": "'OPEN' (wrong case)", "expectedType": "enum value" }
+    ],
+    "expectations": [
+      "Component should NOT crash - no unhandled exceptions",
+      "Component SHOULD show error indicators - clear visual feedback",
+      "Component SHOULD remain interactive - other features still work",
+      "Error state SHOULD be accessible - screen readers can announce issues"
+    ],
+    "sortFilterSafety": "When implementing sort/filter functionality, handle invalid values - invalid values should sort last"
+  },
+  "checklist": [
+    "All external data fields have validation",
+    "Invalid data shows error indicators, not crashes",
+    "Sort/filter callbacks handle invalid values",
+    "Tooltips explain 'Check your data adapter/source'",
+    "Mobile views also validate data",
+    "Tests include malformed data scenarios",
+    "Error states are accessible (ARIA labels)",
+    "Error styling uses semantic tokens",
+    "Validation logic is centralized (reusable helpers)",
+    "Error boundaries catch unexpected failures"
+  ],
+  "quickReference": {
+    "validationDecision": "Domain/boundary component? → YES: Validate → NO: Trust props",
+    "errorStateTokens": {
+      "border": "border-error",
+      "background": "bg-error-tint",
+      "text": "text-error",
+      "animation": "animate-pulse"
+    },
+    "fieldValidation": {
+      "enum": "isValidEnumValue(value, allowedValues)",
+      "string": "isValidString(value)",
+      "number": "isValidNumber(value)",
+      "date": "isValidDate(value)",
+      "array": "Array.isArray(value)"
+    }
+  }
+}

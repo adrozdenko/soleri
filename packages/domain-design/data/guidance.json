@@ -1,0 +1,49 @@
+{
+  "button": {
+    "primary": {
+      "background": "bg-primary-500",
+      "text": "text-white",
+      "hover": "hover:bg-primary-600",
+      "focus": "ring-2 ring-primary-500",
+      "disabled": "disabled:bg-neutral-100 disabled:text-neutral-400"
+    },
+    "secondary": {
+      "background": "bg-neutral-100",
+      "text": "text-neutral-900",
+      "hover": "hover:bg-neutral-200",
+      "focus": "ring-2 ring-neutral-500"
+    }
+  },
+  "card": {
+    "default": {
+      "background": "bg-white",
+      "border": "border border-neutral-200",
+      "shadow": "shadow-sm",
+      "text": "text-neutral-900"
+    },
+    "elevated": {
+      "background": "bg-white",
+      "shadow": "shadow-md",
+      "text": "text-neutral-900"
+    }
+  },
+  "input": {
+    "default": {
+      "background": "bg-white",
+      "border": "border border-neutral-300",
+      "text": "text-neutral-900",
+      "placeholder": "placeholder:text-neutral-500",
+      "focus": "focus:ring-2 focus:ring-primary-500"
+    }
+  },
+  "badge": {
+    "default": {
+      "background": "bg-neutral-100",
+      "text": "text-neutral-700"
+    },
+    "primary": {
+      "background": "bg-primary-100",
+      "text": "text-primary-700"
+    }
+  }
+}

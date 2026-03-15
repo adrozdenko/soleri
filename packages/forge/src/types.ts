@@ -51,6 +51,16 @@ export const AgentConfigSchema = z.object({
   setupTarget: z.enum(SETUP_TARGETS).optional().default('opencode'),
   /** Enable Telegram transport scaffolding. Default: false. */
   telegram: z.boolean().optional().default(false),
+  /** Domain packs — npm packages with custom ops, knowledge, rules, and skills. */
+  domainPacks: z
+    .array(
+      z.object({
+        name: z.string(),
+        package: z.string(),
+        version: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

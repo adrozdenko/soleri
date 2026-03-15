@@ -1,0 +1,189 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "source": "Design System Color Intelligence",
+    "description": "Context-aware color recommendations using design system tokens"
+  },
+
+  "contexts": {
+    "page": {
+      "description": "Main page background",
+      "light": { "bg": "bg-white", "hex": "#FFFFFF" },
+      "dark": { "bg": "bg-primary-900" },
+      "text": {
+        "primary": "text-primary",
+        "secondary": "text-secondary",
+        "muted": "text-muted"
+      }
+    },
+
+    "card": {
+      "description": "Content cards, panels",
+      "depth": 2,
+      "solid": {
+        "light": { "bg": "bg-white", "hex": "#FFFFFF" },
+        "dark": { "bg": "bg-primary-800" }
+      },
+      "border": "border border-neutral-200",
+      "shadow": "shadow-md",
+      "text": {
+        "primary": "text-primary",
+        "secondary": "text-secondary"
+      }
+    },
+
+    "surface": {
+      "description": "Nested containers inside cards",
+      "depth": 3,
+      "solid": {
+        "light": { "bg": "bg-neutral-50" },
+        "dark": { "bg": "bg-neutral-900" }
+      },
+      "border": "border border-neutral-200",
+      "text": {
+        "primary": "text-primary",
+        "secondary": "text-secondary"
+      }
+    },
+
+    "button": {
+      "description": "Interactive button variants",
+      "variants": {
+        "primary": {
+          "bg": "bg-primary-500",
+          "text": "text-white",
+          "hover": "hover:bg-primary-600",
+          "border": "border-transparent"
+        },
+        "secondary": {
+          "bg": "bg-neutral-100",
+          "text": "text-primary-700",
+          "hover": "hover:bg-neutral-200",
+          "border": "border border-neutral-300"
+        },
+        "destructive": {
+          "bg": "bg-red-600",
+          "text": "text-white",
+          "hover": "hover:bg-red-700",
+          "border": "border-transparent"
+        },
+        "outline": {
+          "bg": "bg-transparent",
+          "text": "text-primary-600",
+          "hover": "hover:bg-primary-50",
+          "border": "border border-primary-300"
+        },
+        "ghost": {
+          "bg": "bg-transparent",
+          "text": "text-primary-700",
+          "hover": "hover:bg-primary-50",
+          "border": "border-transparent"
+        }
+      },
+      "states": {
+        "hover": { "modifier": "hover:brightness-95" },
+        "active": { "modifier": "active:scale-[0.98]" },
+        "focus": { "ring": "ring-2 ring-primary-500", "outline": "outline-none" },
+        "disabled": { "bg": "bg-neutral-100", "text": "text-neutral-400", "cursor": "cursor-not-allowed", "opacity": "opacity-50" }
+      }
+    },
+
+    "input": {
+      "description": "Form inputs, selects, textareas",
+      "default": { "bg": "bg-white", "border": "border border-neutral-300", "text": "text-neutral-900" },
+      "placeholder": { "text": "text-neutral-400" },
+      "focus": { "ring": "ring-2 ring-primary-500", "border": "border-primary-500" },
+      "error": { "border": "border-red-500", "ring": "ring-2 ring-red-200", "text": "text-red-600" },
+      "disabled": { "bg": "bg-neutral-50", "text": "text-neutral-400", "cursor": "cursor-not-allowed" }
+    },
+
+    "badge": {
+      "description": "Status badges, tags",
+      "variants": {
+        "default": { "bg": "bg-neutral-100", "text": "text-neutral-700" },
+        "success": { "bg": "bg-green-100", "text": "text-green-700" },
+        "warning": { "bg": "bg-yellow-100", "text": "text-yellow-700" },
+        "error": { "bg": "bg-red-100", "text": "text-red-700" },
+        "info": { "bg": "bg-blue-100", "text": "text-blue-700" },
+        "accent": { "bg": "bg-primary-100", "text": "text-primary-700" }
+      }
+    }
+  },
+
+  "harmony_principles": {
+    "_note": "Rules for combining colors harmoniously",
+
+    "P1_contrast_requirement": {
+      "rule": "Text on backgrounds must meet WCAG AA (4.5:1) minimum",
+      "use": "Always check contrast-matrix.json before applying colors",
+      "tool": "Use byBackground index to find valid foregrounds"
+    },
+
+    "P2_family_contrast": {
+      "rule": "Same color family requires 400+ shade difference",
+      "formula": "If PRIMARY on PRIMARY → require |shade1 - shade2| >= 400",
+      "why": "PRIMARY[500] on PRIMARY[600] has insufficient contrast",
+      "example": {
+        "bad": "PRIMARY[200] on PRIMARY[500] (300 step gap)",
+        "good": "PRIMARY[100] on PRIMARY[900] (800 step gap)"
+      }
+    },
+
+    "P3_semantic_consistency": {
+      "rule": "Use semantic tokens consistently",
+      "formula": "text-primary, text-secondary, text-muted map to appropriate shades",
+      "mapping": {
+        "text-primary": "Darkest readable shade (900 on light, white on dark)",
+        "text-secondary": "Medium contrast shade (600-700 on light, 300 on dark)",
+        "text-muted": "Lower contrast shade (500 on light, 400-500 on dark)"
+      }
+    }
+  },
+
+  "forbidden": [
+    {
+      "pattern": "Same family on itself without 400+ gap",
+      "examples": ["PRIMARY[300] on PRIMARY[500]", "NEUTRAL[400] on NEUTRAL[600]"],
+      "reason": "Insufficient contrast"
+    },
+    {
+      "pattern": "Raw hex colors",
+      "examples": ["#FF0000", "rgb(255,0,0)"],
+      "reason": "Breaks design system, not maintainable"
+    },
+    {
+      "pattern": "Standard Tailwind colors",
+      "examples": ["bg-blue-500", "text-red-600"],
+      "reason": "Not design system tokens"
+    }
+  ],
+
+  "quickReference": {
+    "lightBackgrounds": {
+      "white": {
+        "primary_text": "PRIMARY[900] or NEUTRAL[900]",
+        "secondary_text": "NEUTRAL[600-700]",
+        "muted_text": "NEUTRAL[500]",
+        "links": "PRIMARY[600-700]",
+        "borders": "NEUTRAL[200-300]"
+      }
+    },
+    "darkBackgrounds": {
+      "primary_900": {
+        "primary_text": "white or NEUTRAL[50]",
+        "secondary_text": "NEUTRAL[300]",
+        "muted_text": "NEUTRAL[400]",
+        "links": "SECONDARY[300-400]",
+        "borders": "NEUTRAL[700]"
+      }
+    }
+  },
+
+  "validation_workflow": {
+    "step1": "Identify UI context (card, button, input, etc.)",
+    "step2": "Look up context in color-intelligence.json",
+    "step3": "Use recommended color tokens",
+    "step4": "Verify contrast in contrast-matrix.json",
+    "step5": "Check forbidden list before applying"
+  }
+}

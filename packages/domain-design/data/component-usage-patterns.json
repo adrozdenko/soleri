@@ -1,0 +1,444 @@
+{
+  "source": "component_usage.md",
+  "description": "UX rules for selecting and using UI components correctly",
+  "selectionGuide": {
+    "collectingInput": [
+      {
+        "need": "Short text",
+        "component": "Input",
+        "notes": "Single-line: names, emails, URLs"
+      },
+      {
+        "need": "Long text",
+        "component": "Textarea",
+        "notes": "Comments, descriptions, messages"
+      },
+      {
+        "need": "Single choice (2-3 options)",
+        "component": "Radio",
+        "notes": "Show all options visible"
+      },
+      {
+        "need": "Single choice (4+ options)",
+        "component": "Select",
+        "notes": "Dropdown for many options"
+      },
+      {
+        "need": "Multiple choices",
+        "component": "Checkbox",
+        "notes": "Independent selections"
+      },
+      {
+        "need": "Boolean toggle",
+        "component": "Checkbox or Switch",
+        "notes": "On/off states"
+      },
+      {
+        "need": "Numeric range",
+        "component": "Slider",
+        "notes": "When relative position matters"
+      },
+      {
+        "need": "Date/time",
+        "component": "DatePicker",
+        "notes": "Calendar-based selection"
+      }
+    ],
+    "displayingInformation": [
+      {
+        "need": "Status or category",
+        "component": "Badge",
+        "notes": "1-2 words max"
+      },
+      {
+        "need": "Loading placeholder",
+        "component": "Skeleton",
+        "notes": "Match actual content layout"
+      },
+      {
+        "need": "Grouped content",
+        "component": "Card",
+        "notes": "Products, previews, widgets"
+      },
+      {
+        "need": "Icon + text",
+        "component": "IconText",
+        "notes": "Lists, navigation, features"
+      }
+    ],
+    "creatingHierarchy": [
+      {
+        "need": "Related sections",
+        "component": "Tabs",
+        "notes": "3-7 tabs max"
+      },
+      {
+        "need": "Progressive disclosure",
+        "component": "Accordion",
+        "notes": "FAQs, long forms"
+      },
+      {
+        "need": "Visual separation",
+        "component": "Separator",
+        "notes": "Prefer whitespace first"
+      },
+      {
+        "need": "Content grouping",
+        "component": "Card",
+        "notes": "Visual boundaries"
+      }
+    ],
+    "interruptingFlow": [
+      {
+        "need": "Critical action",
+        "component": "Dialog",
+        "notes": "Requires user response"
+      },
+      {
+        "need": "Supplementary content",
+        "component": "Sheet",
+        "notes": "Filters, settings, details"
+      },
+      {
+        "need": "Brief help text",
+        "component": "Tooltip",
+        "notes": "5-10 words max"
+      }
+    ]
+  },
+  "componentRules": {
+    "dialog": {
+      "whenToUse": [
+        "Critical decisions requiring confirmation",
+        "Forms requiring focus",
+        "Errors requiring acknowledgment",
+        "Workflows that must complete before continuing"
+      ],
+      "whenNotToUse": [
+        "Non-critical information (use Tooltip or inline)",
+        "Complex workflows (use multi-step pattern)"
+      ],
+      "bestPractices": [
+        "Clear heading describing purpose",
+        "Include explicit close action (X button, Cancel)",
+        "Trap focus within modal",
+        "Close on ESC key press",
+        "Prevent body scroll when open",
+        "Position primary action on right"
+      ]
+    },
+    "sheet": {
+      "whenToUse": [
+        "Filter panels",
+        "Settings drawers",
+        "Detail views (inbox message)",
+        "Shopping carts",
+        "Navigation menus"
+      ],
+      "whenNotToUse": [
+        "Critical actions (use Dialog)",
+        "Very wide content"
+      ],
+      "bestPractices": [
+        "Slide in from edge (right for LTR languages)",
+        "Include close button",
+        "Support ESC key to close",
+        "Limit width to 30-50% of viewport",
+        "Use for supplementary, not primary content"
+      ],
+      "availablePositions": ["Left", "Right", "Top", "Bottom"]
+    },
+    "tooltip": {
+      "whenToUse": [
+        "Icon button labels",
+        "Truncated text (show full on hover)",
+        "Help text for form fields",
+        "Keyboard shortcuts",
+        "Supplementary information"
+      ],
+      "whenNotToUse": [
+        "Critical information (must be visible by default)",
+        "Long content (use Popover or Dialog)",
+        "Touch-only interfaces (no hover state)"
+      ],
+      "bestPractices": [
+        "Keep text brief (5-10 words)",
+        "Show on hover with 400ms delay",
+        "Position to avoid obscuring content",
+        "Don't use for clickable content",
+        "Ensure keyboard accessibility"
+      ]
+    },
+    "select": {
+      "whenToUse": [
+        "Choosing one option from 4+ predefined choices",
+        "Filtering or sorting data",
+        "Configuration settings",
+        "Category selection"
+      ],
+      "whenNotToUse": [
+        "2-3 options (use Radio buttons)",
+        "Multiple selections (use Checkbox group)",
+        "Very long lists (use autocomplete/search)"
+      ],
+      "bestPractices": [
+        "Sort options logically",
+        "Use clear, concise option labels",
+        "Provide default/placeholder option",
+        "Group related options with separators",
+        "Support keyboard navigation and search"
+      ]
+    },
+    "radio": {
+      "whenToUse": [
+        "Choosing exactly one option from 2-7 choices",
+        "Binary decisions requiring explicit selection",
+        "Settings where user must make a choice"
+      ],
+      "whenNotToUse": [
+        "More than 7 options (use Select)",
+        "Multiple selections (use Checkbox)",
+        "Yes/no toggle (use Checkbox or Switch)"
+      ],
+      "bestPractices": [
+        "Always show all options simultaneously",
+        "Default to most common/safe choice",
+        "Order options logically",
+        "Keep option labels parallel in structure"
+      ]
+    },
+    "tabs": {
+      "whenToUse": [
+        "Switching between related content sections",
+        "Settings panels with categories",
+        "Dashboard views",
+        "Profile sections"
+      ],
+      "whenNotToUse": [
+        "Primary navigation (use menu)",
+        "Sequential steps (use stepper/wizard)"
+      ],
+      "bestPractices": [
+        "Limit to 3-7 tabs for usability",
+        "Use clear, concise tab labels",
+        "Highlight active tab clearly",
+        "Support keyboard navigation (arrow keys)",
+        "Consider horizontal scrolling for overflow"
+      ]
+    },
+    "accordion": {
+      "whenToUse": [
+        "FAQs",
+        "Progressive disclosure of content",
+        "Settings with many options",
+        "Long forms with logical sections"
+      ],
+      "whenNotToUse": [
+        "Content that should be visible simultaneously",
+        "Short content that fits on screen"
+      ],
+      "bestPractices": [
+        "Use clear heading that describes content",
+        "Indicate expanded/collapsed state with icon",
+        "Animate expand/collapse smoothly",
+        "Support keyboard navigation",
+        "Consider default-open for most important section"
+      ]
+    },
+    "skeleton": {
+      "whenToUse": [
+        "Initial page load",
+        "Loading states for async content",
+        "Progressive content loading",
+        "Optimistic UI patterns"
+      ],
+      "whenNotToUse": [
+        "Very short load times (<200ms)",
+        "When spinner is more appropriate"
+      ],
+      "bestPractices": [
+        "Match layout of actual content",
+        "Use subtle shimmer animation",
+        "Replace with real content atomically",
+        "Match content hierarchy"
+      ]
+    },
+    "badge": {
+      "bestPractices": [
+        "Keep text brief (1-2 words or numbers)",
+        "Use color purposefully (success, warning, error, info)",
+        "Position near related content",
+        "Don't use for primary information",
+        "Ensure sufficient color contrast"
+      ]
+    },
+    "button": {
+      "bestPractices": [
+        "Use action-oriented labels ('Save Changes' not 'Submit')",
+        "Provide visual hierarchy through variants",
+        "Include loading states for async operations",
+        "Minimum touch target 44x44px",
+        "Use icons to reinforce action meaning"
+      ]
+    },
+    "input": {
+      "bestPractices": [
+        "Always pair with Label component",
+        "Placeholder as examples, not instructions",
+        "Show validation errors inline below field",
+        "Use appropriate input types (email, tel, url)",
+        "Add helper text for format requirements"
+      ]
+    }
+  },
+  "composition": {
+    "allowed": [
+      {
+        "parent": "Form",
+        "canContain": ["Label", "Input", "Button"]
+      },
+      {
+        "parent": "Card",
+        "canContain": ["Badge", "IconText", "Separator"]
+      },
+      {
+        "parent": "Dialog",
+        "canContain": ["Form", "Tabs", "Accordion"]
+      },
+      {
+        "parent": "Sheet",
+        "canContain": ["Form", "Accordion"]
+      },
+      {
+        "parent": "Tabs",
+        "canContain": ["Card grid/list content"]
+      }
+    ],
+    "forbidden": [
+      {
+        "pattern": "Dialog inside Dialog",
+        "why": "Creates confusing focus management",
+        "fix": "Use multi-step pattern"
+      },
+      {
+        "pattern": "Sheet inside Sheet",
+        "why": "Overlapping layers are disorienting",
+        "fix": "Use single Sheet with tabs/sections"
+      },
+      {
+        "pattern": "Tooltip inside Tooltip",
+        "why": "Nested hover states are inaccessible",
+        "fix": "Combine into single tooltip"
+      }
+    ]
+  },
+  "responsive": {
+    "breakpoints": [
+      {
+        "device": "Desktop",
+        "approach": "Full-featured layouts with all components visible"
+      },
+      {
+        "device": "Tablet",
+        "approach": "Sheet instead of sidebar, stacked forms"
+      },
+      {
+        "device": "Mobile",
+        "approach": "Dialog/Sheet from bottom, single-column forms, simplified tables"
+      }
+    ],
+    "touchConsiderations": [
+      "Increase touch targets to 44x44px minimum",
+      "Replace hover tooltips with tap/long-press",
+      "Use Sheet instead of Popover for complex interactions",
+      "Simplify nested navigation"
+    ]
+  },
+  "accessibility": {
+    "keyboardNavigation": [
+      "All interactive components must be keyboard accessible",
+      "Support Tab, Enter, Space, Arrow keys, Escape",
+      "Provide visible focus indicators",
+      "Implement proper focus management in overlays"
+    ],
+    "screenReaders": [
+      "Use semantic HTML elements",
+      "Provide ARIA labels for icon-only controls",
+      "Announce state changes (loading, errors, success)",
+      "Use ARIA live regions for dynamic content"
+    ],
+    "colorContrast": [
+      "Meet WCAG AA contrast ratios (4.5:1 text, 3:1 UI)",
+      "Don't rely on color alone for information",
+      "Provide patterns/icons alongside color coding"
+    ]
+  },
+  "quickReference": {
+    "dialogVsSheetVsTooltip": [
+      {
+        "component": "Dialog",
+        "useFor": "Critical actions, confirmations",
+        "interruptive": true,
+        "contentLength": "Short forms, messages"
+      },
+      {
+        "component": "Sheet",
+        "useFor": "Supplementary content, filters",
+        "interruptive": "Partial",
+        "contentLength": "Medium to long content"
+      },
+      {
+        "component": "Tooltip",
+        "useFor": "Brief help text, labels",
+        "interruptive": false,
+        "contentLength": "5-10 words"
+      }
+    ],
+    "radioVsSelectVsCheckbox": [
+      {
+        "component": "Radio",
+        "optionsCount": "2-7",
+        "selectionType": "Single",
+        "visibility": "All visible"
+      },
+      {
+        "component": "Select",
+        "optionsCount": "4+",
+        "selectionType": "Single",
+        "visibility": "Dropdown"
+      },
+      {
+        "component": "Checkbox",
+        "optionsCount": "Any",
+        "selectionType": "Multiple",
+        "visibility": "All visible"
+      }
+    ],
+    "tabsVsAccordion": [
+      {
+        "component": "Tabs",
+        "contentRelationship": "Parallel sections",
+        "visibility": "One at a time",
+        "useCase": "Settings, dashboards"
+      },
+      {
+        "component": "Accordion",
+        "contentRelationship": "Sequential/grouped",
+        "visibility": "Expandable",
+        "useCase": "FAQs, long forms"
+      }
+    ],
+    "bestPracticesSummary": [
+      "Start with native behavior - use semantic HTML",
+      "Prioritize accessibility from day one",
+      "Design for touch - 44px minimum targets",
+      "Validate early - feedback as user completes field",
+      "Use appropriate density - breathing room on mobile",
+      "Maintain consistency - same component for same purpose",
+      "Test with real content - handle edge cases",
+      "Provide feedback - loading, success, error states",
+      "Support keyboard shortcuts for power users",
+      "Document patterns for team consistency"
+    ]
+  }
+}

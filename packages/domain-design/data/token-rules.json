@@ -1,0 +1,104 @@
+{
+  "tokenSelectionPriority": {
+    "rule": "Semantic tokens first. Always prefer tokens that convey meaning.",
+    "priority": [
+      { "rank": 1, "type": "Semantic", "examples": ["text-warning", "bg-error", "border-success"], "when": "Color conveys meaning" },
+      { "rank": 2, "type": "Contextual", "examples": ["text-primary", "bg-surface", "border-default"], "when": "UI structure (text, backgrounds)" },
+      { "rank": 3, "type": "Primitive", "examples": ["text-primary-500", "bg-error-200"], "when": "Only when neither above fits" }
+    ],
+    "whySemantic": [
+      "Self-documenting (code reads as intent)",
+      "Theme-aware (dark mode automatic)",
+      "Consistent (all warnings look the same)",
+      "Maintainable (change once, updates everywhere)"
+    ],
+    "whenPrimitive": [
+      "Decorative elements (no semantic meaning)",
+      "Brand illustrations, custom gradients",
+      "One-off visual effects"
+    ]
+  },
+  "stylingRules": {
+    "prefer": "Tailwind classes over inline styles",
+    "avoidImportant": "Fix specificity at source instead",
+    "troubleshooting": [
+      { "symptom": "Style ignored", "fix": "Increase specificity or Tailwind variant" },
+      { "symptom": "Style overridden", "fix": "Check cascade, use @layer" },
+      { "symptom": "Need !important", "fix": "Refactor competing styles" }
+    ],
+    "exceptions": [
+      "MDX docs: inline styles OK for isolated examples",
+      "Third-party: only when no Tailwind alternative (document why)"
+    ]
+  },
+  "forbidden": [
+    {
+      "pattern": "bg-blue-\\d+",
+      "severity": "error",
+      "reason": "Use semantic bg-primary-* tokens"
+    },
+    {
+      "pattern": "text-red-\\d+",
+      "severity": "error",
+      "reason": "Use semantic text-error-* or text-destructive-* tokens"
+    },
+    {
+      "pattern": "bg-slate-\\d+",
+      "severity": "error",
+      "reason": "Use semantic bg-neutral-* tokens"
+    },
+    {
+      "pattern": "bg-gray-\\d+",
+      "severity": "error",
+      "reason": "Use semantic bg-neutral-* tokens"
+    },
+    {
+      "pattern": "#[0-9a-fA-F]{6}",
+      "severity": "error",
+      "reason": "Hardcoded hex colors bypass theming"
+    },
+    {
+      "pattern": "#[0-9a-fA-F]{3}(?![0-9a-fA-F])",
+      "severity": "error",
+      "reason": "Hardcoded shorthand hex colors bypass theming"
+    },
+    {
+      "pattern": "rgb\\([^)]+\\)",
+      "severity": "error",
+      "reason": "rgb() values bypass theming"
+    },
+    {
+      "pattern": "rgba\\([^)]+\\)",
+      "severity": "warning",
+      "reason": "Use Tailwind opacity modifiers (bg-primary-500/50)"
+    },
+    {
+      "pattern": "hsl\\([^)]+\\)",
+      "severity": "error",
+      "reason": "hsl() values bypass theming"
+    },
+    {
+      "pattern": "hsla\\([^)]+\\)",
+      "severity": "warning",
+      "reason": "Use Tailwind opacity modifiers"
+    }
+  ],
+  "allowed": [
+    "bg-primary-*",
+    "text-primary-*",
+    "bg-secondary-*",
+    "text-secondary-*",
+    "bg-neutral-*",
+    "text-neutral-*",
+    "bg-accent-*",
+    "text-accent-*"
+  ],
+  "recommendations": {
+    "bg-blue-500": "bg-primary-500",
+    "bg-red-500": "bg-error-500",
+    "bg-green-500": "bg-success-500",
+    "#DC0000": "bg-primary-500",
+    "#000000": "bg-neutral-900",
+    "#FFFFFF": "bg-white"
+  }
+}

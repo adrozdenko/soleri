@@ -9,6 +9,7 @@ import type { AgentConfig } from '../types.js';
  */
 export function generateEntryPoint(config: AgentConfig): string {
   const domainsLiteral = JSON.stringify(config.domains);
+  const hasDomainPacks = config.domainPacks && config.domainPacks.length > 0;
 
   return `#!/usr/bin/env node
 
@@ -25,7 +26,7 @@ import {
   seedDefaultPlaybooks,
   wrapWithMiddleware,
 } from '@soleri/core';
-import type { OpDefinition, AgentExtensions } from '@soleri/core';
+import type { OpDefinition, AgentExtensions } from '@soleri/core';${hasDomainPacks ? `\nimport { loadDomainPacksFromConfig } from '@soleri/core';` : ''}
 import { z } from 'zod';
 import { PERSONA, getPersonaPrompt } from './identity/persona.js';
 import { activateAgent, deactivateAgent } from './activation/activate.js';
@@ -238,7 +239,17 @@ async function main(): Promise<void> {
     ops: agentOps,
   };
 
-  const domainFacades = createDomainFacades(runtime, '${config.id}', ${domainsLiteral});
+${
+  hasDomainPacks
+    ? `  // ─── Domain packs ─────────────────────────────────────────────
+  const domainPacks = await loadDomainPacksFromConfig(${JSON.stringify(config.domainPacks)});
+  console.error(\`[\${tag}] Loaded \${domainPacks.length} domain packs\`);
+  for (const pack of domainPacks) {
+    if (pack.onActivate) await pack.onActivate(runtime);
+  }
+`
+    : ''
+}  const domainFacades = createDomainFacades(runtime, '${config.id}', ${domainsLiteral}${hasDomainPacks ? `, domainPacks` : ''});
 
   // ─── User extensions (auto-discovered from src/extensions/) ────
   let extensions: AgentExtensions = {};

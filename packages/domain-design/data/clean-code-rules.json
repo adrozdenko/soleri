@@ -1,0 +1,182 @@
+{
+  "philosophy": {
+    "core": "Code is read far more than it's written. Optimize for the reader, not the writer.",
+    "goal": "Ship code that a junior developer can understand in 30 seconds. If they can't, refactor."
+  },
+  "naming": {
+    "conventions": [
+      { "thing": "Component", "convention": "PascalCase", "example": "UserProfileCard" },
+      { "thing": "Function", "convention": "camelCase, verb-first", "example": "parseSchemaField, formatCurrency" },
+      { "thing": "Constant", "convention": "SCREAMING_SNAKE", "example": "MAX_RETRIES, API_TIMEOUT_MS" },
+      { "thing": "Type/Interface", "convention": "PascalCase", "example": "UserProfile, ApiResponse" },
+      { "thing": "Boolean", "convention": "is/has/should prefix", "example": "isLoading, hasPermission, shouldRetry" }
+    ],
+    "test": "If someone reads this name 6 months from now, will they understand what it does without reading the implementation?",
+    "standard": "Names express intent. No abbreviations. No mental mapping required."
+  },
+  "functions": {
+    "singleResponsibility": "Each function does ONE thing and does it well. If you need 'and' to describe what it does, extract.",
+    "sizeTargets": [
+      { "lines": "<15", "status": "Ideal", "action": "Maintain" },
+      { "lines": "15-25", "status": "Acceptable", "action": "Monitor" },
+      { "lines": "25-35", "status": "Warning", "action": "Consider extraction" },
+      { "lines": ">35", "status": "Critical", "action": "Extract immediately" }
+    ],
+    "extractionTriggers": [
+      { "signal": "Function >30 lines", "action": "Extract helper function" },
+      { "signal": "Repeated calculation", "action": "Extract to memoized variable" },
+      { "signal": "Same logic in 2+ places", "action": "Extract shared utility" },
+      { "signal": "Complex conditional", "action": "Extract to named function" }
+    ],
+    "parameters": [
+      { "count": "0-2", "guidance": "Ideal" },
+      { "count": "3+", "guidance": "Use object parameter" },
+      { "count": "Flag params", "guidance": "Red flag - function likely does multiple things" }
+    ],
+    "standard": "Each function does ONE thing. <20 lines ideal. Extract when >30."
+  },
+  "file-limits": {
+    "limits": [
+      { "fileType": "Component", "maxLines": 300, "actionWhenExceeded": "Extract sub-components" },
+      { "fileType": "Dialog/Modal", "maxLines": 400, "actionWhenExceeded": "Extract content sections" },
+      { "fileType": "Types file", "maxLines": 400, "actionWhenExceeded": "Move utilities to separate file" },
+      { "fileType": "Utils file", "maxLines": 150, "actionWhenExceeded": "Split by domain" }
+    ],
+    "godFileRule": "Any file >500 lines is a God File. Split immediately, no exceptions."
+  },
+  "error-handling": {
+    "rule": "No silent failures - always provide user feedback.",
+    "requirements": [
+      "Visible feedback for both success AND failure",
+      "Structured returns (Result types, Error boundaries, or explicit error states)",
+      "Clear messages - actionable, user-friendly, not technical jargon",
+      "Development logs only - never swallow errors silently in production"
+    ],
+    "pattern": {
+      "description": "Standard try-catch pattern with feedback",
+      "code": "try {\n  // operation\n  showSuccessFeedback()\n} catch (error) {\n  logForDebugging(error)      // For developers\n  showUserFriendlyError()     // For users - NEVER skip this\n}"
+    },
+    "standard": "No silent failures. Users see feedback. Structured error returns."
+  },
+  "constants": {
+    "forbidden": [
+      "Magic numbers (if (count > 5) - what is 5?)",
+      "Hardcoded strings used multiple times"
+    ],
+    "locationRules": [
+      { "type": "App-wide (breakpoints, z-index)", "location": "src/constants/" },
+      { "type": "Module-specific", "location": "module/constants.ts or top of file" },
+      { "type": "Validation rules", "location": "Inside validation function (co-located)" }
+    ]
+  },
+  "anti-patterns": [
+    {
+      "pattern": "Dead code",
+      "problem": "Commented out code, unused variables",
+      "fix": "Remove completely - version control is your backup"
+    },
+    {
+      "pattern": "Duplicated logic",
+      "problem": "Same validation in multiple places",
+      "fix": "Single source of truth utility"
+    },
+    {
+      "pattern": "Repeated calculations",
+      "problem": "Recalculates on every render",
+      "fix": "Memoize appropriately"
+    },
+    {
+      "pattern": "Silent failures",
+      "problem": "Errors logged but user unaware",
+      "fix": "Add UI feedback for all errors"
+    },
+    {
+      "pattern": "Magic numbers",
+      "problem": "Hardcoded values without context",
+      "fix": "Named constants with meaningful names"
+    }
+  ],
+  "documentation": {
+    "doDocument": [
+      "Public component/function purpose",
+      "Design decisions (WHY not how)",
+      "Complex algorithms",
+      "Deprecation warnings",
+      "Non-obvious behavior"
+    ],
+    "dontDocument": [
+      "Implementation details (readable code self-documents)",
+      "What code does (if you need to explain, refactor the code)",
+      "Simple functions",
+      "Obvious behavior"
+    ],
+    "test": "Is this comment explaining WHY (keep it) or WHAT (delete it and make the code clearer instead)?",
+    "standard": "JSDoc for public APIs. Design notes for WHY. No apologetic comments."
+  },
+  "refactoring-checklist": [
+    { "check": "No dead code", "action": "Search for unused imports/functions" },
+    { "check": "No magic numbers", "action": "Grep for hardcoded values" },
+    { "check": "No silent errors", "action": "All catch blocks have UI feedback" },
+    { "check": "Functions <30 lines", "action": "Review function lengths" },
+    { "check": "Files <300 lines", "action": "Check file sizes" },
+    { "check": "Memoized calculations", "action": "No repeated expensive operations in render" },
+    { "check": "Named constants", "action": "Numbers/strings used multiple times are named" },
+    { "check": "Types separated", "action": "Utils for functions, types for shapes" }
+  ],
+  "solid": [
+    {
+      "principle": "Single Responsibility",
+      "letter": "S",
+      "core": "One reason to change",
+      "testQuestion": "Can I describe this without 'and'?"
+    },
+    {
+      "principle": "Open/Closed",
+      "letter": "O",
+      "core": "Open for extension, closed for modification",
+      "testQuestion": "Can I add features without changing existing code?"
+    },
+    {
+      "principle": "Liskov Substitution",
+      "letter": "L",
+      "core": "Subtypes must be substitutable",
+      "testQuestion": "Can I swap implementations without breaking?"
+    },
+    {
+      "principle": "Interface Segregation",
+      "letter": "I",
+      "core": "No client depends on unused methods",
+      "testQuestion": "Does this interface have methods I don't need?"
+    },
+    {
+      "principle": "Dependency Inversion",
+      "letter": "D",
+      "core": "Depend on abstractions, not concretions",
+      "testQuestion": "Am I depending on an interface or implementation?"
+    }
+  ],
+  "threeQuestions": [
+    {
+      "question": "Can a junior dev understand this in 30 seconds?",
+      "ifNo": "Simplify"
+    },
+    {
+      "question": "Am I solving today's problem or imaginary futures?",
+      "ifFuture": "Stop and solve only what's needed"
+    },
+    {
+      "question": "Would deleting this make the system simpler?",
+      "ifYes": "Delete it"
+    }
+  ],
+  "gradingRubric": [
+    { "category": "Naming", "standard": "Names express intent. No abbreviations. No mental mapping required." },
+    { "category": "Function Design", "standard": "Each function does ONE thing. <20 lines ideal. Extract when >30." },
+    { "category": "Comments", "standard": "JSDoc for public APIs. Design notes for WHY. No apologetic comments." },
+    { "category": "Structure", "standard": "Logical top-to-bottom flow. Helpers first, then main component." },
+    { "category": "Error Handling", "standard": "No silent failures. Users see feedback. Structured error returns." },
+    { "category": "Cleanliness", "standard": "No magic numbers. No duplication. No dead code." },
+    { "category": "SOLID", "standard": "Single Responsibility. Open for extension. Clear abstractions." }
+  ],
+  "source": "Uncle Bob's Clean Code, adapted for modern development"
+}

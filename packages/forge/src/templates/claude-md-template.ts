@@ -87,6 +87,16 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     );
   }
 
+  // Domain pack facades (if any)
+  if (config.domainPacks?.length) {
+    mdLines.push('', '**Domain Pack Facades:**', '');
+    for (const ref of config.domainPacks) {
+      mdLines.push(
+        `| ${bt}${ref.name}${bt} (pack: ${bt}${ref.package}${bt}) | *custom ops — see ${bt}admin_tool_list${bt}* |`,
+      );
+    }
+  }
+
   // Engine facades — use actual tool names (standalone facades, NOT _core sub-groups)
   mdLines.push(
     // Vault — knowledge lifecycle, capture, search, management

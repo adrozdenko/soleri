@@ -9,11 +9,17 @@ export function generateFacadesTest(config: AgentConfig): string {
     .map((d) => generateDomainDescribe(config.id, d))
     .join('\n\n');
 
+  const hasDomainPacks = config.domainPacks && config.domainPacks.length > 0;
+  const domainPackDescribes = hasDomainPacks
+    ? config.domainPacks!.map((ref) => generateDomainPackDescribe(config.id, ref)).join('\n\n')
+    : '';
+
   return `import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   createAgentRuntime,
   createSemanticFacades,
   createDomainFacade,
+  createDomainFacades,${hasDomainPacks ? `\n  loadDomainPacksFromConfig,` : ''}
 } from '@soleri/core';
 import type { AgentRuntime, IntelligenceEntry, OpDefinition, FacadeConfig } from '@soleri/core';
 import { z } from 'zod';
@@ -56,7 +62,7 @@ describe('Facades', () => {
   });
 
 ${domainDescribes}
-
+${domainPackDescribes ? `\n${domainPackDescribes}\n` : ''}
   // ─── Semantic Facades ────────────────────────────────────────
   describe('semantic facades', () => {
     function buildSemanticFacades(): FacadeConfig[] {
@@ -581,6 +587,39 @@ function generateDomainDescribe(agentId: string, domain: string): string {
       const result = (await op.handler({ id: '${domain}-rm1' })) as { removed: boolean };
       expect(result.removed).toBe(true);
       expect(runtime.vault.get('${domain}-rm1')).toBeNull();
+    });
+  });`;
+}
+
+function generateDomainPackDescribe(
+  agentId: string,
+  ref: { name: string; package: string; version?: string },
+): string {
+  return `  describe('domain pack: ${ref.name}', () => {
+    it('should load and validate the domain pack', async () => {
+      const packs = await loadDomainPacksFromConfig([${JSON.stringify(ref)}]);
+      expect(packs.length).toBe(1);
+      expect(packs[0].name).toBe('${ref.name}');
+      expect(packs[0].ops.length).toBeGreaterThan(0);
+    });
+
+    it('should register pack ops in domain facades', async () => {
+      const packs = await loadDomainPacksFromConfig([${JSON.stringify(ref)}]);
+      const facades = createDomainFacades(runtime, '${agentId}', ${JSON.stringify([ref.name])}, packs);
+      expect(facades.length).toBeGreaterThanOrEqual(1);
+      // Pack ops should be present
+      const allOps = facades.flatMap(f => f.ops.map(o => o.name));
+      expect(allOps.length).toBeGreaterThan(5); // More than standard 5
+    });
+
+    it('pack custom ops should be callable', async () => {
+      const packs = await loadDomainPacksFromConfig([${JSON.stringify(ref)}]);
+      const facades = createDomainFacades(runtime, '${agentId}', ${JSON.stringify([ref.name])}, packs);
+      const facade = facades[0];
+      // Test first custom op returns without error
+      const firstOp = facade.ops[0];
+      const result = await firstOp.handler({});
+      expect(result).toBeDefined();
     });
   });`;
 }

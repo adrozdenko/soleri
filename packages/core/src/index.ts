@@ -629,3 +629,20 @@ export type {
 // ─── Prompts ───────────────────────────────────────────────────────────
 export { TemplateManager, parseVariables, resolveIncludes } from './prompts/index.js';
 export type { PromptTemplate, TemplateVariable, RenderOptions } from './prompts/index.js';
+
+// ─── Domain Packs ──────────────────────────────────────────────────────
+export {
+  validateDomainPack,
+  SEMANTIC_FACADE_NAMES,
+  loadDomainPack,
+  loadDomainPacksFromConfig,
+  resolveDependencies,
+} from './domain-packs/index.js';
+export type {
+  DomainPack,
+  DomainPackManifest,
+  DomainPackRef,
+  KnowledgeManifest,
+  PackSkillDefinition,
+  ValidateResult,
+} from './domain-packs/index.js';

@@ -1,0 +1,342 @@
+{
+  "deliveryOptions": {
+    "overview": "Choose the delivery approach based on your recipient's environment and maintenance expectations",
+    "decisionTree": {
+      "question1": "Does recipient have a design system?",
+      "noAnswer": "Option 1: Fully Self-Contained",
+      "yesFollowUp": "Does recipient use the same component library?",
+      "yesNoAnswer": "Option 2: Dependency-Free",
+      "yesYesAnswer": "Option 3: Library Compatible"
+    },
+    "options": [
+      {
+        "option": 1,
+        "name": "Fully Self-Contained",
+        "description": "Zero external dependencies, everything inlined",
+        "bestFor": "Recipients with no design system, one-off deliveries, quick prototyping",
+        "includes": [
+          "Component code with all logic",
+          "Inlined utility functions (e.g., cn, cva)",
+          "Hardcoded design tokens (not token references)",
+          "All TypeScript types"
+        ],
+        "useWhen": [
+          "Recipient has no design system",
+          "One-off delivery with no maintenance",
+          "Quick prototyping or demos",
+          "Recipient prefers copy-paste simplicity"
+        ],
+        "pros": ["Zero setup required", "No dependency conflicts", "Immediate use"],
+        "cons": ["No token updates", "Duplicated utilities", "Harder to maintain"]
+      },
+      {
+        "option": 2,
+        "name": "Dependency-Free",
+        "description": "Minimal dependencies, uses standard utility classes",
+        "bestFor": "Recipients who will customize, need maintainability without full system buy-in",
+        "includes": [
+          "Component code",
+          "Standard utility classes only",
+          "Class merging utility (single function)",
+          "Variant management for styling"
+        ],
+        "useWhen": [
+          "Recipient has a CSS framework but different design system",
+          "Need maintainability without full system buy-in",
+          "Component will be customized by recipient"
+        ],
+        "pros": ["Flexible", "Standard utility classes", "Easy to customize"],
+        "cons": ["May not match your design system exactly", "Recipient must style"]
+      },
+      {
+        "option": 3,
+        "name": "Library Compatible",
+        "description": "Full compatibility with existing component patterns",
+        "bestFor": "Recipients already using a component library, long-term maintenance expected",
+        "includes": [
+          "Component following established conventions",
+          "Uses standard utility paths",
+          "Uses standard component imports",
+          "Variant patterns matching library style"
+        ],
+        "useWhen": [
+          "Recipient already uses the same component library",
+          "Component will live in their ui/ folder",
+          "Long-term maintenance expected"
+        ],
+        "pros": ["Seamless integration", "Familiar patterns", "Community support"],
+        "cons": ["Requires library setup", "Must match their conventions"]
+      }
+    ],
+    "deliveryMethods": [
+      {
+        "method": "ZIP Archive",
+        "pros": ["Simple", "No account needed", "Works offline"],
+        "cons": ["No version control", "Manual updates"],
+        "useFor": "One-time deliveries, non-technical recipients"
+      },
+      {
+        "method": "GitHub Gist",
+        "pros": ["Version history", "Easy sharing", "Comments"],
+        "cons": ["Public by default", "No folder structure"],
+        "useFor": "Single file components, public sharing"
+      },
+      {
+        "method": "Private GitHub Repo",
+        "pros": ["Full version control", "CI/CD possible", "Access control"],
+        "cons": ["Requires GitHub account", "More setup"],
+        "useFor": "Ongoing maintenance, team collaboration"
+      },
+      {
+        "method": "NPM Package",
+        "pros": ["Standard distribution", "Versioning", "Easy updates"],
+        "cons": ["Publishing overhead", "Registry management"],
+        "useFor": "Reusable components, multiple consumers"
+      },
+      {
+        "method": "Static Storybook",
+        "pros": ["Visual documentation", "Interactive demos"],
+        "cons": ["Large file size", "No source code"],
+        "useFor": "Design review, stakeholder demos"
+      }
+    ],
+    "recommendations": {
+      "quickShare": "GitHub Gist for single components",
+      "projectDelivery": "ZIP with README for complete packages",
+      "ongoing": "Private repo for maintained relationships",
+      "public": "NPM package for community distribution"
+    }
+  },
+  "prePackaging": {
+    "steps": [
+      {
+        "step": 1,
+        "name": "Dependency Identification",
+        "description": "Map all imports and external dependencies before packaging",
+        "actions": [
+          "List all imports - Scan component file for import statements",
+          "Categorize imports - See categories table",
+          "Create dependency manifest - Document required, bundled, and peer dependencies"
+        ],
+        "importCategories": [
+          { "category": "React", "handling": "Built-in, always available" },
+          { "category": "UI Primitives", "handling": "Must be included in package.json" },
+          { "category": "Internal Utils", "handling": "Must be bundled or documented" },
+          { "category": "Design Tokens", "handling": "Must be resolved or inlined" },
+          { "category": "Sibling Components", "handling": "Must be included or documented" }
+        ],
+        "manifestOutput": {
+          "required": "List of npm packages",
+          "bundled": "List of included utilities",
+          "peerDependencies": ["react", "react-dom", "tailwindcss"]
+        }
+      },
+      {
+        "step": 2,
+        "name": "Variant Auditing",
+        "description": "Ensure only necessary variants are included",
+        "actions": [
+          "List all variants in variant definition",
+          "Identify which are used in delivery scope",
+          "Remove unused variants to reduce complexity",
+          "Document remaining variants with examples"
+        ],
+        "output": [
+          "Variants list with descriptions",
+          "Default values (behavior with no props)",
+          "Code snippets for each variant"
+        ]
+      },
+      {
+        "step": 3,
+        "name": "Import Path Normalization",
+        "description": "Convert internal paths to deliverable format",
+        "pathHandling": [
+          { "deliveryType": "Self-Contained", "handling": "Inline the utility functions" },
+          { "deliveryType": "Dependency-Free", "handling": "Use relative paths (e.g., ./utils) or bundled file" },
+          { "deliveryType": "Library Compatible", "handling": "Keep standard paths (e.g., @/lib/utils)" }
+        ],
+        "commonInternalPaths": [
+          { "path": "@/lib/utils", "contents": "Class merging utility function" },
+          { "path": "@/components/ui/*", "contents": "Sibling UI components" },
+          { "path": "@/lib/tokens", "contents": "Design system tokens" },
+          { "path": "UI primitive imports", "contents": "Primitive components" }
+        ]
+      }
+    ],
+    "packageStructures": {
+      "minimal": {
+        "description": "Single component, minimal setup",
+        "files": [
+          { "file": "ComponentName.tsx", "purpose": "Main component" },
+          { "file": "README.md", "purpose": "Documentation" },
+          { "file": "package.json", "purpose": "Package manifest (if npm)" }
+        ]
+      },
+      "standard": {
+        "description": "Component with utilities and types",
+        "files": [
+          { "file": "ComponentName.tsx", "purpose": "Main component" },
+          { "file": "utils.ts", "purpose": "Utility functions" },
+          { "file": "types.ts", "purpose": "TypeScript interfaces" },
+          { "file": "README.md", "purpose": "Documentation" },
+          { "file": "package.json", "purpose": "Package manifest" }
+        ]
+      },
+      "complete": {
+        "description": "Full component package with stories and tests",
+        "structure": [
+          "src/ComponentName.tsx - Main component",
+          "src/ComponentName.stories.tsx - Storybook stories",
+          "src/ComponentName.test.tsx - Unit tests",
+          "src/index.ts - Public exports",
+          "lib/utils.ts - Utility functions",
+          "lib/types.ts - TypeScript types",
+          "README.md - Documentation",
+          "package.json - Package manifest",
+          "tsconfig.json - TypeScript config"
+        ]
+      }
+    },
+    "essentialFilesByPackageType": [
+      { "type": "Minimal", "requiredFiles": ["Component", "README"] },
+      { "type": "Standard", "requiredFiles": ["Component", "utils", "types", "README", "package.json"] },
+      { "type": "Complete", "requiredFiles": ["Component", "stories", "tests", "utils", "types", "README", "package.json", "tsconfig"] }
+    ]
+  },
+  "tailwindIntegration": {
+    "sourceDirective": {
+      "description": "Modern CSS frameworks use source directives for content scanning",
+      "pattern": "@source \"./src/**/*.{ts,tsx}\"",
+      "placement": "In main CSS file, before import statements",
+      "example": "@source \"./src/**/*.{ts,tsx}\";\n@source \"./node_modules/@your-package/**/*.{ts,tsx}\";\n@import \"tailwindcss\";"
+    },
+    "importOrder": [
+      { "order": 1, "item": "Source directives", "example": "@source \"./src/**/*.{ts,tsx}\";" },
+      { "order": 2, "item": "Framework import", "example": "@import \"tailwindcss\";" },
+      { "order": 3, "item": "Theme/custom tokens", "example": "@theme { --color-primary: #DC0000; }" },
+      { "order": 4, "item": "Component-specific utilities", "example": "Custom CSS rules" }
+    ],
+    "recipientSetupNotes": [
+      "Add source directive pointing to component location",
+      "Ensure CSS framework v4+ is installed",
+      "Custom tokens must be added to theme block"
+    ],
+    "primitiveDependencies": {
+      "workflow": [
+        "Identify primitive imports in component",
+        "Add to package.json dependencies",
+        "Document peer dependencies (react, react-dom required)"
+      ],
+      "commonPackages": [
+        { "component": "Dialog", "package": "@radix-ui/react-dialog" },
+        { "component": "Select", "package": "@radix-ui/react-select" },
+        { "component": "Tabs", "package": "@radix-ui/react-tabs" },
+        { "component": "Tooltip", "package": "@radix-ui/react-tooltip" },
+        { "component": "Accordion", "package": "@radix-ui/react-accordion" },
+        { "component": "Checkbox", "package": "@radix-ui/react-checkbox" },
+        { "component": "RadioGroup", "package": "@radix-ui/react-radio-group" },
+        { "component": "Switch", "package": "@radix-ui/react-switch" },
+        { "component": "Slider", "package": "@radix-ui/react-slider" },
+        { "component": "DropdownMenu", "package": "@radix-ui/react-dropdown-menu" },
+        { "component": "ContextMenu", "package": "@radix-ui/react-context-menu" },
+        { "component": "AlertDialog", "package": "@radix-ui/react-alert-dialog" },
+        { "component": "Popover", "package": "@radix-ui/react-popover" },
+        { "component": "HoverCard", "package": "@radix-ui/react-hover-card" },
+        { "component": "NavigationMenu", "package": "@radix-ui/react-navigation-menu" },
+        { "component": "ScrollArea", "package": "@radix-ui/react-scroll-area" },
+        { "component": "Separator", "package": "@radix-ui/react-separator" },
+        { "component": "Toggle", "package": "@radix-ui/react-toggle" },
+        { "component": "ToggleGroup", "package": "@radix-ui/react-toggle-group" },
+        { "component": "Collapsible", "package": "@radix-ui/react-collapsible" }
+      ],
+      "note": "Always use the latest stable version. Check npm for current versions."
+    }
+  },
+  "commonMistakes": [
+    {
+      "name": "Missing Class Merge Utility",
+      "mistake": "Delivering component without cn utility",
+      "symptom": "ReferenceError: cn is not defined",
+      "fixes": [
+        { "type": "Self-Contained", "fix": "Add inline: export function cn(...inputs) { return twMerge(clsx(inputs)) }" },
+        { "type": "With Deps", "fix": "Add clsx and tailwind-merge to dependencies" },
+        { "type": "Library", "fix": "Ensure recipient has @/lib/utils set up" }
+      ]
+    },
+    {
+      "name": "Broken Import Paths",
+      "mistake": "Using internal path aliases that don't exist in recipient project",
+      "symptom": "Module not found: @/lib/tokens",
+      "fixes": [
+        { "option": 1, "fix": "Convert to relative imports: ./tokens" },
+        { "option": 2, "fix": "Document required path aliases" },
+        { "option": 3, "fix": "Inline the imported values" }
+      ]
+    },
+    {
+      "name": "TypeScript Syntax Issues",
+      "mistake": "Using TypeScript syntax that requires specific config",
+      "examples": ["satisfies keyword (TS 4.9+)", "const assertions (strict mode)", "import type syntax"],
+      "fix": "Document minimum TypeScript version in README"
+    },
+    {
+      "name": "Undocumented Variants",
+      "mistake": "Delivering variants without usage examples",
+      "symptom": "Recipient doesn't know when to use each variant",
+      "fix": "README must include table of variants with descriptions and examples"
+    },
+    {
+      "name": "Missing Peer Dependencies",
+      "mistake": "Not listing react, react-dom as peer dependencies",
+      "symptom": "Duplicate React instances, hooks fail",
+      "fix": "Always add peerDependencies in package.json"
+    },
+    {
+      "name": "Hardcoded Design Tokens",
+      "mistake": "Using design system tokens that recipient doesn't have",
+      "symptom": "Classes like bg-surface don't apply styles",
+      "fixes": [
+        { "option": 1, "fix": "Convert to standard utility classes (e.g., bg-gray-50)" },
+        { "option": 2, "fix": "Include token definitions" },
+        { "option": 3, "fix": "Document required CSS custom properties" }
+      ]
+    }
+  ],
+  "validation": {
+    "preDeliveryChecklist": [
+      { "check": "All imports resolvable", "howToVerify": "Verify no broken path aliases" },
+      { "check": "Dependencies documented", "howToVerify": "package.json has all required deps" },
+      { "check": "TypeScript compiles", "howToVerify": "Run tsc --noEmit on delivered files" },
+      { "check": "Variants documented", "howToVerify": "README includes variant table" },
+      { "check": "Usage example provided", "howToVerify": "README has copy-paste code snippet" },
+      { "check": "Styling works standalone", "howToVerify": "Test in fresh project" }
+    ],
+    "recipientSetupChecklist": [
+      { "step": 1, "action": "Install listed dependencies" },
+      { "step": 2, "action": "Add source directive (CSS framework v4)" },
+      { "step": 3, "action": "Configure path aliases if needed" },
+      { "step": 4, "action": "Import component" },
+      { "step": 5, "action": "Verify renders correctly" }
+    ],
+    "quickChecks": [
+      "Imports resolve without errors",
+      "No hardcoded internal path aliases",
+      "Dependencies listed in package.json",
+      "Peer dependencies documented",
+      "README has usage example",
+      "Variants table included",
+      "TypeScript compiles cleanly"
+    ],
+    "recipientQuickSetup": "# 1. Install dependencies\nnpm install [listed-dependencies]\n\n# 2. Add source directive to CSS (v4+)\n# @source \"./path/to/component/**/*.{ts,tsx}\";\n\n# 3. Import and use\nimport { ComponentName } from './ComponentName'",
+    "readmeTemplateSections": [
+      { "section": "Installation", "content": "npm install command or copy instructions" },
+      { "section": "Dependencies", "content": "Table of required packages with versions" },
+      { "section": "Setup", "content": "Path aliases, CSS config, etc." },
+      { "section": "Usage", "content": "Import statement and basic example" },
+      { "section": "Props", "content": "Table of all props with types and defaults" },
+      { "section": "Variants", "content": "Table of variants with descriptions and examples" },
+      { "section": "Examples", "content": "Code snippets for common use cases" }
+    ]
+  }
+}

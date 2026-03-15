@@ -1,13 +1,18 @@
 /**
- * Domain facade factory — creates the standard 5-op domain facade pattern.
+ * Domain facade factory — creates domain facades with optional pack support.
  *
- * Every domain gets: get_patterns, search, get_entry, capture, remove.
- * This replaces per-domain generated facade files.
+ * Without packs: every domain gets the standard 5 ops (get_patterns, search,
+ * get_entry, capture, remove).
+ *
+ * With packs: pack ops are PRIMARY, standard 5 ops are FALLBACK for any op
+ * name not defined by the pack. Pack standalone facades are registered as
+ * additional MCP tools.
  */
 
 import { z } from 'zod';
 import type { FacadeConfig, OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import type { DomainPack } from '../domain-packs/types.js';
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -200,16 +205,77 @@ export function createDomainFacade(
 }
 
 /**
- * Create domain facades for all domains.
+ * Create domain facades for all domains, with optional pack support.
+ *
+ * When packs are provided:
+ * - For each domain, check if any pack claims it via pack.domains[]
+ * - If a pack claims the domain: pack ops are PRIMARY, standard 5 ops are
+ *   FALLBACK (only for op names not defined by the pack)
+ * - Pack standalone facades (pack.facades[]) are registered as additional
+ *   MCP tools with agentId prefix
+ * - Domains not claimed by any pack get the standard 5 ops (OCP)
+ *
+ * When packs is undefined or empty: identical to previous behavior.
  *
  * @param runtime - The agent runtime
  * @param agentId - Agent identifier
  * @param domains - Array of domain names
+ * @param packs - Optional array of loaded domain packs
  */
 export function createDomainFacades(
   runtime: AgentRuntime,
   agentId: string,
   domains: string[],
+  packs?: DomainPack[],
 ): FacadeConfig[] {
-  return domains.map((d) => createDomainFacade(runtime, agentId, d));
+  // Build a map: domain name → pack that claims it
+  const packByDomain = new Map<string, DomainPack>();
+  if (packs) {
+    for (const pack of packs) {
+      for (const domain of pack.domains) {
+        packByDomain.set(domain, pack);
+      }
+    }
+  }
+
+  // Create domain facades (with pack merge when applicable)
+  const domainFacades = domains.map((domain) => {
+    const pack = packByDomain.get(domain);
+    if (!pack) {
+      // No pack claims this domain — standard 5-op facade (OCP)
+      return createDomainFacade(runtime, agentId, domain);
+    }
+
+    // Pack claims this domain — merge ops
+    const standardFacade = createDomainFacade(runtime, agentId, domain);
+    const packOpNames = new Set(pack.ops.map((op) => op.name));
+
+    // Pack ops are primary; standard ops are fallback for unclaimed names
+    const mergedOps: OpDefinition[] = [
+      ...pack.ops,
+      ...standardFacade.ops.filter((op) => !packOpNames.has(op.name)),
+    ];
+
+    return {
+      ...standardFacade,
+      ops: mergedOps,
+    };
+  });
+
+  // Collect standalone facades from packs (prefixed with agentId)
+  const standaloneFacades: FacadeConfig[] = [];
+  if (packs) {
+    for (const pack of packs) {
+      if (pack.facades) {
+        for (const facade of pack.facades) {
+          standaloneFacades.push({
+            ...facade,
+            name: `${agentId}_${facade.name}`,
+          });
+        }
+      }
+    }
+  }
+
+  return [...domainFacades, ...standaloneFacades];
 }
