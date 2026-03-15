@@ -18,6 +18,30 @@ import type {
   MorphResult,
 } from './types.js';
 
+// ─── Token Stemming ─────────────────────────────────────────────────
+// Lightweight suffix stripping for intent matching.
+// Handles: "crashes" → "crash", "deploying" → "deploy", "broken" → "broke",
+// "issues" → "issue", "building" → "build", "optimizing" → "optimize"
+
+function stemToken(token: string): string {
+  if (token.length < 4) return token;
+  // Order matters — check longer suffixes first
+  if (token.endsWith('ying')) return token.slice(0, -4) + 'y'; // deploying → deploy
+  if (token.endsWith('izing')) return token.slice(0, -3) + 'e'; // optimizing → optimize
+  if (token.endsWith('ating')) return token.slice(0, -3) + 'e'; // creating → create
+  if (token.endsWith('ting')) return token.slice(0, -4) + 't'; // getting → get (approx)
+  if (token.endsWith('ning')) return token.slice(0, -4) + 'n'; // planning → plan (approx)
+  if (token.endsWith('ing')) return token.slice(0, -3); // fixing → fix, building → build
+  if (token.endsWith('ies')) return token.slice(0, -3) + 'y'; // queries → query
+  if (token.endsWith('shes')) return token.slice(0, -2); // crashes → crash
+  if (token.endsWith('ches')) return token.slice(0, -2); // searches → search
+  if (token.endsWith('ses')) return token.slice(0, -2); // releases → releas (close enough)
+  if (token.endsWith('es') && token.length > 4) return token.slice(0, -1); // issues → issue
+  if (token.endsWith('ed') && token.length > 4) return token.slice(0, -2); // fixed → fix
+  if (token.endsWith('s') && !token.endsWith('ss') && token.length > 3) return token.slice(0, -1); // bugs → bug
+  return token;
+}
+
 // ─── Default Mode Definitions ───────────────────────────────────────
 
 const DEFAULT_MODES: ModeConfig[] = [
@@ -33,7 +57,23 @@ const DEFAULT_MODES: ModeConfig[] = [
     intent: 'fix',
     description: 'Fixing bugs, errors, and broken behavior',
     behaviorRules: ['Identify root cause first', 'Verify fix with tests', 'Check for regressions'],
-    keywords: ['fix', 'bug', 'broken', 'error', 'crash', 'issue', 'debug', 'repair', 'janky'],
+    keywords: [
+      'fix',
+      'bug',
+      'broken',
+      'error',
+      'crash',
+      'issue',
+      'debug',
+      'repair',
+      'janky',
+      'fail',
+      'wrong',
+      'stuck',
+      'regression',
+      'fault',
+      'defect',
+    ],
   },
   {
     mode: 'VALIDATE-MODE',
@@ -152,7 +192,11 @@ export class IntentRouter {
   // ─── Intent Classification ──────────────────────────────────────────
 
   routeIntent(prompt: string): IntentClassification {
-    const tokens = new Set(prompt.toLowerCase().split(/\s+/).filter(Boolean));
+    const rawTokens = prompt.toLowerCase().split(/\s+/).filter(Boolean);
+    // Stem tokens: strip common suffixes for fuzzy matching
+    // "crashes" → "crash", "broken" stays "broken", "deploying" → "deploy"
+    const stemmed = rawTokens.map((t) => stemToken(t));
+    const tokens = new Set([...rawTokens, ...stemmed]);
     const modes = this.getModes();
 
     let bestMode: ModeConfig | null = null;

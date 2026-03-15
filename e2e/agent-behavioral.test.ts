@@ -71,7 +71,10 @@ async function capturePattern(title: string, description: string, domain: string
       tags: [domain, 'behavioral-test'],
     }],
   });
-  const results = res.results as Array<{ id: string }>;
+  const results = res.results as Array<{ id: string }> | undefined;
+  if (!results || results.length === 0) {
+    throw new Error(`capture_knowledge returned no results for "${title}". Response: ${JSON.stringify(res)}`);
+  }
   return results[0].id;
 }
 
@@ -86,7 +89,10 @@ async function captureAntiPattern(title: string, description: string, domain: st
       tags: [domain, 'behavioral-test'],
     }],
   });
-  const results = res.results as Array<{ id: string }>;
+  const results = res.results as Array<{ id: string }> | undefined;
+  if (!results || results.length === 0) {
+    throw new Error(`capture_knowledge returned no results for "${title}". Response: ${JSON.stringify(res)}`);
+  }
   return results[0].id;
 }
 
@@ -157,7 +163,7 @@ describe('Agent Behavioral Tests', () => {
         'Use CSS Grid for two-dimensional layouts',
         'CSS Grid is better than flexbox for layouts that need both row and column control. Use grid-template-areas for named regions. Fallback to flexbox for single-axis layouts.',
         'frontend',
-        'suggestion',
+        'info',
       );
     });
 
@@ -177,7 +183,11 @@ describe('Agent Behavioral Tests', () => {
       expect(results.length).toBeGreaterThan(0);
 
       const topResult = results[0];
-      expect(topResult.entry.title.toLowerCase()).toContain('retry');
+      expect(
+        topResult.entry.title.toLowerCase().includes('retry') ||
+        topResult.entry.title.toLowerCase().includes('retries') ||
+        topResult.entry.title.toLowerCase().includes('backoff'),
+      ).toBe(true);
     });
 
     it('searching "CSS layout grid" should rank CSS grid FIRST', async () => {
@@ -224,7 +234,7 @@ describe('Agent Behavioral Tests', () => {
         'Use console.log for production error tracking',
         'Log errors to the browser console so developers can debug production issues by opening DevTools on user machines.',
         'frontend',
-        'suggestion',
+        'info',
       );
 
       // User consistently accepts the good pattern

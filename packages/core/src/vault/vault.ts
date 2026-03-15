@@ -422,14 +422,30 @@ export class Vault {
       fp.now = now;
     }
     const wc = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
+
+    // Build FTS5 query: use OR between terms for broader matching,
+    // with title column boosted 3x for relevance ranking.
+    // FTS5 BM25 with default AND degrades with more entries because
+    // fewer documents match ALL terms simultaneously.
+    const ftsQuery = buildFtsQuery(query);
+
     try {
       const rows = this.provider.all<Record<string, unknown>>(
-        `SELECT e.*, -rank as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score DESC LIMIT @limit`,
-        { query, limit, ...fp },
+        `SELECT e.*, bm25(entries_fts, 5.0, 10.0, 3.0, 1.0, 2.0) as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score ASC LIMIT @limit`,
+        { query: ftsQuery, limit, ...fp },
       );
       return rows.map(rowToSearchResult);
     } catch {
-      return [];
+      // Fallback: try original query if FTS5 syntax fails
+      try {
+        const rows = this.provider.all<Record<string, unknown>>(
+          `SELECT e.*, -rank as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score DESC LIMIT @limit`,
+          { query, limit, ...fp },
+        );
+        return rows.map(rowToSearchResult);
+      } catch {
+        return [];
+      }
     }
   }
 
@@ -1181,7 +1197,36 @@ function rowToEntry(row: Record<string, unknown>): IntelligenceEntry {
 }
 
 function rowToSearchResult(row: Record<string, unknown>): SearchResult {
-  return { entry: rowToEntry(row), score: row.score as number };
+  // bm25() returns negative scores (lower = better), normalize to positive
+  const rawScore = row.score as number;
+  const score = rawScore < 0 ? -rawScore : rawScore;
+  return { entry: rowToEntry(row), score };
+}
+
+/**
+ * Build an FTS5 query from natural language input.
+ *
+ * Converts "React render performance memo" to:
+ *   {title}: (react OR render OR performance OR memo) OR (react OR render OR performance OR memo)
+ *
+ * Uses OR matching (not AND) so results include partial matches.
+ * FTS5 BM25 ranks documents with more matching terms higher.
+ * Title column is boosted via bm25() weights in the SQL query.
+ */
+function buildFtsQuery(query: string): string {
+  const terms = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2)
+    .map((t) => t.replace(/[^a-z0-9]/g, ''))
+    .filter(Boolean);
+
+  if (terms.length === 0) return query;
+  if (terms.length === 1) return terms[0];
+
+  // Use OR to match any term — BM25 ranks by how many terms match
+  const orTerms = terms.join(' OR ');
+  return orTerms;
 }
 
 function rowToMemory(row: Record<string, unknown>): Memory {
