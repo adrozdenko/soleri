@@ -198,6 +198,8 @@ const designOps = [
     'recommend_style',
     'recommend_palette',
     'recommend_typography',
+    'recommend_design_system',
+    'get_stack_guidelines',
   ].map((name) => ({
     name,
     description: `Get ${name.replace(/^(get_|recommend_)/, '').replace(/_/g, ' ')} from design intelligence.`,
@@ -230,7 +232,11 @@ const designOps = [
                           ? 'designFoundations'
                           : key === 'palette'
                             ? 'colorIntelligence'
-                            : 'designFoundations';
+                            : key === 'design_system'
+                              ? 'designFoundations'
+                              : key === 'stack_guidelines'
+                                ? 'stackGuidelines'
+                                : 'designFoundations';
       const data = getData(dataKey, {});
       return { source: name, data, query: params.query, topic: params.topic };
     },

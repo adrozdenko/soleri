@@ -111,9 +111,12 @@ describe('DomainPack Manifest', () => {
     expect(pack.domains).toContain('design');
   });
 
-  it('should have design ops (20 total)', () => {
-    // 6 algorithmic + 11 data-serving = 17 (3 recommend + deferred generate_image excluded in this count)
-    expect(pack.ops.length).toBeGreaterThanOrEqual(17);
+  it('should have design ops (19 total)', () => {
+    // 6 algorithmic + 13 data-serving = 19 (generate_image deferred)
+    expect(pack.ops.length).toBe(19);
+    const opNames = pack.ops.map((o) => o.name);
+    expect(opNames).toContain('recommend_design_system');
+    expect(opNames).toContain('get_stack_guidelines');
   });
 
   it('should have design_rules facade', () => {

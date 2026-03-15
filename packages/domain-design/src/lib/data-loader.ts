@@ -47,6 +47,7 @@ export function getDesignData(): Record<string, unknown> {
     operationalExpertise: loadJson('operational-expertise.json', {}),
     shadcnIntelligence: loadJson('shadcn-intelligence.json', {}),
     workflowPatterns: loadJson('workflow-patterns.json', {}),
+    stackGuidelines: loadJson('stack-guidelines.json', {}),
   };
 
   return cache;
