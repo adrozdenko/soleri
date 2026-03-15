@@ -666,7 +666,7 @@ export type {
   SkippedStep,
   OrchestrationPlan,
   OrchestrationContext,
-  StepResult,
+  StepResult as FlowStepResult,
   ExecutionResult,
   GateVerdict,
 } from './flows/index.js';

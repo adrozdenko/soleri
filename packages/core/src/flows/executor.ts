@@ -75,7 +75,7 @@ export class FlowExecutor {
               toolResults[toolName] = {
                 tool: toolName,
                 status: 'error',
-                error: err instanceof Error ? err.message : String(err),
+                error: _err instanceof Error ? _err.message : String(_err),
               };
             }
             toolsCalled.push(toolName);

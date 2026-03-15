@@ -1,57 +1,180 @@
 /**
- * Orchestration operations — compose planning + brain + vault into high-level workflows.
+ * Orchestration operations — flow-engine-driven workflows.
  *
- * These ops are convenience wrappers that sequence multiple module calls:
- *   - orchestrate_plan: brain-informed plan creation
- *   - orchestrate_execute: start plan + brain session together
- *   - orchestrate_complete: finish plan + brain session + extract knowledge
+ * These ops wire the YAML flow engine into the facade layer:
+ *   - orchestrate_plan: intent detection + buildPlan from flow engine
+ *   - orchestrate_execute: FlowExecutor dispatches steps to facade ops
+ *   - orchestrate_complete: runEpilogue captures knowledge + session
  *   - orchestrate_status: combined status across all modules
  *   - orchestrate_quick_capture: one-call knowledge capture without full planning
  */
 
 import { z } from 'zod';
-import type { OpDefinition } from '../facades/types.js';
+import type { OpDefinition, FacadeConfig } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import { buildPlan } from '../flows/plan-builder.js';
+import { FlowExecutor } from '../flows/executor.js';
+import { createDispatcher } from '../flows/dispatch-registry.js';
+import { runEpilogue } from '../flows/epilogue.js';
+import type { OrchestrationPlan, ExecutionResult } from '../flows/types.js';
+
+// ---------------------------------------------------------------------------
+// Intent detection — keyword-based mapping from prompt to intent
+// ---------------------------------------------------------------------------
+
+const INTENT_KEYWORDS: [RegExp, string][] = [
+  [/\b(fix|bug|broken|error|crash|issue)\b/i, 'FIX'],
+  [/\b(review|audit|check|inspect)\b/i, 'REVIEW'],
+  [/\b(build|create|add|new|implement|scaffold)\b/i, 'BUILD'],
+  [/\b(plan|architect|design-system|roadmap)\b/i, 'PLAN'],
+  [/\b(enhance|improve|refactor|optimize)\b/i, 'ENHANCE'],
+  [/\b(explore|research|investigate|spike)\b/i, 'EXPLORE'],
+  [/\b(deploy|ship|release|publish)\b/i, 'DELIVER'],
+  [/\b(design|palette|theme|color|typography)\b/i, 'DESIGN'],
+];
+
+function detectIntent(prompt: string): string {
+  for (const [pattern, intent] of INTENT_KEYWORDS) {
+    if (pattern.test(prompt)) return intent;
+  }
+  return 'BUILD'; // default
+}
+
+// ---------------------------------------------------------------------------
+// In-memory plan store
+// ---------------------------------------------------------------------------
+
+interface PlanEntry {
+  plan: OrchestrationPlan;
+  executionResult?: ExecutionResult;
+  createdAt: number;
+}
+
+const planStore = new Map<string, PlanEntry>();
+
+// ---------------------------------------------------------------------------
+// Helper: create a runtime-backed dispatcher
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a dispatch function that routes tool names to runtime modules.
+ * If facades are provided, uses the full dispatch registry.
+ * Otherwise, falls back to a simple runtime-based dispatcher.
+ */
+function buildDispatch(
+  agentId: string,
+  runtime: AgentRuntime,
+  facades?: FacadeConfig[],
+) {
+  if (facades && facades.length > 0) {
+    return createDispatcher(agentId, facades);
+  }
+
+  // Fallback: runtime-based dispatch for known tool patterns
+  return async (
+    toolName: string,
+    params: Record<string, unknown>,
+  ): Promise<{ tool: string; status: string; data?: unknown; error?: string }> => {
+    try {
+      // Handle well-known epilogue tools directly via runtime
+      if (toolName === 'capture_knowledge' || toolName.endsWith('_capture_knowledge')) {
+        const title = (params.title as string) ?? 'Flow execution';
+        const description = (params.content as string) ?? (params.description as string) ?? '';
+        const tags = (params.tags as string[]) ?? ['workflow'];
+        runtime.vault.add({
+          id: `flow-${Date.now()}`,
+          title,
+          description,
+          type: 'pattern',
+          domain: 'workflow',
+          severity: 'suggestion',
+          tags,
+        });
+        return { tool: toolName, status: 'ok', data: { title } };
+      }
+
+      if (toolName === 'session_capture' || toolName.endsWith('_session_capture')) {
+        // Session capture is best-effort
+        return { tool: toolName, status: 'ok', data: { sessionId: 'flow-session' } };
+      }
+
+      // For other tools: mark as unregistered (graceful degradation)
+      return { tool: toolName, status: 'unregistered' };
+    } catch (err) {
+      return {
+        tool: toolName,
+        status: 'error',
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Op factory
+// ---------------------------------------------------------------------------
 
 /**
  * Create the 5 orchestration operations for an agent runtime.
+ * Optionally accepts facades for full dispatch capability.
  */
-export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
+export function createOrchestrateOps(
+  runtime: AgentRuntime,
+  facades?: FacadeConfig[],
+): OpDefinition[] {
   const { planner, brainIntelligence, vault } = runtime;
+  const agentId = runtime.config.agentId;
 
   return [
     // ─── orchestrate_plan ─────────────────────────────────────────
     {
       name: 'orchestrate_plan',
       description:
-        'Create a brain-informed plan with recommendations from pattern strengths. ' +
-        'Fetches relevant brain recommendations for the domain/task, then creates a plan ' +
-        'with those recommendations injected as decisions.',
+        'Create a flow-engine-driven plan. Detects intent from the prompt, ' +
+        'loads the matching YAML flow, probes runtime capabilities, and builds ' +
+        'a pruned orchestration plan with gate-guarded steps.',
       auth: 'write',
       schema: z.object({
-        objective: z.string().describe('What the plan aims to achieve'),
-        scope: z.string().describe('Boundaries of the work'),
+        prompt: z
+          .string()
+          .describe('Natural language description of what to do'),
+        projectPath: z
+          .string()
+          .optional()
+          .default('.')
+          .describe('Project root path'),
+        // Legacy params — still accepted for backward compat
+        objective: z
+          .string()
+          .optional()
+          .describe('(Legacy) Plan objective — use prompt instead'),
+        scope: z
+          .string()
+          .optional()
+          .describe('(Legacy) Plan scope'),
         domain: z
           .string()
           .optional()
-          .describe('Domain for brain recommendations (e.g. "component", "styling")'),
+          .describe('Domain hint for brain recommendations'),
         tasks: z
           .array(z.object({ title: z.string(), description: z.string() }))
           .optional()
           .describe('Optional pre-defined tasks'),
       }),
       handler: async (params) => {
-        const objective = params.objective as string;
-        const scope = params.scope as string;
+        const prompt = (params.prompt as string) ?? (params.objective as string) ?? '';
+        const projectPath = (params.projectPath as string) ?? '.';
         const domain = params.domain as string | undefined;
-        const tasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];
 
-        // Get brain recommendations — graceful degradation if no data
+        // 1. Detect intent from prompt
+        const intent = detectIntent(prompt);
+
+        // 2. Get brain recommendations — graceful degradation
         let recommendations: Array<{ pattern: string; strength: number }> = [];
         try {
           const raw = brainIntelligence.recommend({
             domain,
-            task: objective,
+            task: prompt,
             limit: 5,
           });
           recommendations = raw.map((r) => ({
@@ -59,36 +182,63 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
             strength: r.strength,
           }));
         } catch {
-          // Brain has no data yet — proceed without recommendations
+          // Brain has no data yet
         }
 
-        // Fallback: if brain returned nothing, pull from vault
+        // Fallback to vault if brain empty
         if (recommendations.length === 0) {
           try {
-            const vaultResults = vault.search(objective, { domain, limit: 5 });
+            const vaultResults = vault.search(prompt, { domain, limit: 5 });
             recommendations = vaultResults.map((r) => ({
               pattern: r.entry.title,
               strength: 50,
             }));
           } catch {
-            // Vault search failed — proceed without recommendations
+            // Vault search failed
           }
         }
 
-        // Build decisions from recommendations
+        // 3. Build flow-engine plan
+        const plan = await buildPlan(intent, agentId, projectPath, runtime, prompt);
+
+        // 4. Store in planStore
+        planStore.set(plan.planId, { plan, createdAt: Date.now() });
+
+        // 5. Also create a planner plan for lifecycle tracking (backward compat)
         const decisions = recommendations.map(
           (r) => `Brain pattern: ${r.pattern} (strength: ${r.strength.toFixed(1)})`,
         );
+        const tasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];
 
-        // Create plan with recommendations as context
-        const plan = planner.create({
-          objective,
-          scope,
-          decisions,
-          tasks,
-        });
+        let legacyPlan;
+        try {
+          legacyPlan = planner.create({
+            objective: prompt,
+            scope: (params.scope as string) ?? `${intent} workflow`,
+            decisions,
+            tasks,
+          });
+        } catch {
+          // Planner creation failed — flow plan still valid
+        }
 
-        return { plan, recommendations };
+        return {
+          plan: legacyPlan ?? {
+            id: plan.planId,
+            objective: prompt,
+            decisions,
+          },
+          recommendations,
+          flow: {
+            planId: plan.planId,
+            intent: plan.intent,
+            flowId: plan.flowId,
+            stepsCount: plan.steps.length,
+            skippedCount: plan.skipped.length,
+            warnings: plan.warnings,
+            estimatedTools: plan.estimatedTools,
+          },
+        };
       },
     },
 
@@ -96,11 +246,11 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'orchestrate_execute',
       description:
-        'Start plan execution and open a brain session to track the work. ' +
-        'The plan must be in "approved" status. Returns both the updated plan and session ID.',
+        'Execute a flow-engine plan. Dispatches each step to its facade ops, ' +
+        'evaluates gates, and tracks execution with a brain session.',
       auth: 'write',
       schema: z.object({
-        planId: z.string().describe('ID of the approved plan to start executing'),
+        planId: z.string().describe('ID of the plan to execute (flow planId or legacy planId)'),
         domain: z.string().optional().describe('Domain for brain session tracking'),
         context: z.string().optional().describe('Additional context for the brain session'),
       }),
@@ -109,10 +259,41 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
         const domain = params.domain as string | undefined;
         const context = params.context as string | undefined;
 
-        // Start plan execution
-        const plan = planner.startExecution(planId);
+        // Look up flow plan
+        const entry = planStore.get(planId);
 
-        // Start brain session linked to this plan
+        if (entry) {
+          // Flow-engine execution path
+          const dispatch = buildDispatch(agentId, runtime, facades);
+          const executor = new FlowExecutor(dispatch);
+          const executionResult = await executor.execute(entry.plan);
+
+          // Store result
+          entry.executionResult = executionResult;
+
+          // Start brain session
+          const session = brainIntelligence.lifecycle({
+            action: 'start',
+            domain,
+            context,
+            planId,
+          });
+
+          return {
+            plan: { id: planId, status: 'executing' },
+            session,
+            execution: {
+              status: executionResult.status,
+              stepsCompleted: executionResult.stepsCompleted,
+              totalSteps: executionResult.totalSteps,
+              toolsCalled: executionResult.toolsCalled,
+              durationMs: executionResult.durationMs,
+            },
+          };
+        }
+
+        // Legacy path: no flow plan found, use planner directly
+        const plan = planner.startExecution(planId);
         const session = brainIntelligence.lifecycle({
           action: 'start',
           domain,
@@ -128,9 +309,8 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'orchestrate_complete',
       description:
-        'Complete plan execution, end brain session, and extract knowledge. ' +
-        'Performs three steps: marks plan completed, ends the brain session with outcome, ' +
-        'and runs knowledge extraction on the session.',
+        'Complete plan execution, run epilogue (knowledge capture + session capture), ' +
+        'end brain session, and clean up.',
       auth: 'write',
       schema: z.object({
         planId: z.string().describe('ID of the executing plan to complete'),
@@ -150,10 +330,10 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
         const toolsUsed = (params.toolsUsed as string[]) ?? [];
         const filesModified = (params.filesModified as string[]) ?? [];
 
-        // Complete the plan
+        // Complete the planner plan (legacy lifecycle)
         const plan = planner.complete(planId);
 
-        // End brain session with outcome
+        // End brain session
         const session = brainIntelligence.lifecycle({
           action: 'end',
           sessionId,
@@ -163,15 +343,36 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
           filesModified,
         });
 
-        // Extract knowledge from the session — graceful if nothing to extract
+        // Extract knowledge
         let extraction = null;
         try {
           extraction = brainIntelligence.extractKnowledge(sessionId);
         } catch {
-          // Session may not have enough signal for extraction — that's OK
+          // Not enough signal
         }
 
-        return { plan, session, extraction };
+        // Run flow-engine epilogue if we have a flow plan
+        let epilogueResult = null;
+        const entry = planStore.get(planId);
+        if (entry) {
+          try {
+            const dispatch = buildDispatch(agentId, runtime, facades);
+            const summary = `${outcome}: ${entry.plan.summary}. Tools: ${toolsUsed.join(', ') || 'none'}. Files: ${filesModified.join(', ') || 'none'}.`;
+            epilogueResult = await runEpilogue(
+              dispatch,
+              entry.plan.context.probes,
+              entry.plan.context.projectPath,
+              summary,
+            );
+          } catch {
+            // Epilogue is best-effort
+          }
+
+          // Clean up plan store
+          planStore.delete(planId);
+        }
+
+        return { plan, session, extraction, epilogue: epilogueResult };
       },
     },
 
@@ -180,7 +381,7 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
       name: 'orchestrate_status',
       description:
         'Get combined orchestration status: active plans, brain session context, ' +
-        'vault stats, and recent brain recommendations.',
+        'vault stats, recent brain recommendations, and flow plan store.',
       auth: 'read',
       schema: z.object({
         domain: z.string().optional().describe('Filter recommendations by domain'),
@@ -193,22 +394,13 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
         const domain = params.domain as string | undefined;
         const sessionLimit = (params.sessionLimit as number) ?? 5;
 
-        // Active plans
         const activePlans = planner.getActive();
-
-        // Brain session context
         const sessionContext = brainIntelligence.getSessionContext(sessionLimit);
-
-        // Vault stats
         const vaultStats = vault.stats();
 
-        // Recent recommendations — graceful degradation
         let recommendations: Array<{ pattern: string; strength: number }> = [];
         try {
-          const raw = brainIntelligence.recommend({
-            domain,
-            limit: 5,
-          });
+          const raw = brainIntelligence.recommend({ domain, limit: 5 });
           recommendations = raw.map((r) => ({
             pattern: r.pattern,
             strength: r.strength,
@@ -217,8 +409,17 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
           // No recommendations available
         }
 
-        // Brain intelligence stats
         const brainStats = brainIntelligence.getStats();
+
+        // Include flow plan store info
+        const flowPlans = Array.from(planStore.entries()).map(([id, e]) => ({
+          planId: id,
+          intent: e.plan.intent,
+          flowId: e.plan.flowId,
+          stepsCount: e.plan.steps.length,
+          hasResult: !!e.executionResult,
+          createdAt: e.createdAt,
+        }));
 
         return {
           activePlans,
@@ -226,6 +427,7 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
           vaultStats,
           recommendations,
           brainStats,
+          flowPlans,
         };
       },
     },
@@ -255,7 +457,6 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
         const filesModified = (params.filesModified as string[]) ?? [];
         const outcome = (params.outcome as string) ?? 'completed';
 
-        // Start session
         const startedSession = brainIntelligence.lifecycle({
           action: 'start',
           domain,
@@ -264,7 +465,6 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
           filesModified,
         });
 
-        // End session immediately with outcome
         const endedSession = brainIntelligence.lifecycle({
           action: 'end',
           sessionId: startedSession.id,
@@ -273,18 +473,14 @@ export function createOrchestrateOps(runtime: AgentRuntime): OpDefinition[] {
           planOutcome: outcome,
         });
 
-        // Extract knowledge — graceful if nothing to extract
         let extraction = null;
         try {
           extraction = brainIntelligence.extractKnowledge(startedSession.id);
         } catch {
-          // Not enough signal — that's fine
+          // Not enough signal
         }
 
-        return {
-          session: endedSession,
-          extraction,
-        };
+        return { session: endedSession, extraction };
       },
     },
   ];

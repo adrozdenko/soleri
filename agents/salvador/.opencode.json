@@ -1,0 +1,33 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "title": "Salvador",
+  "tui": {
+    "theme": "soleri"
+  },
+  "mcpServers": {
+    "salvador": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "dist/index.js"
+      ]
+    }
+  },
+  "agents": {
+    "coder": {
+      "model": "claude-code-sonnet-4"
+    },
+    "summarizer": {
+      "model": "claude-code-3.5-haiku"
+    },
+    "task": {
+      "model": "claude-code-3.5-haiku"
+    },
+    "title": {
+      "model": "claude-code-3.5-haiku"
+    }
+  },
+  "contextPaths": [
+    "AGENTS.md"
+  ]
+}
