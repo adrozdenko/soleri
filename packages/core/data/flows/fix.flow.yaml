@@ -1,0 +1,83 @@
+# Fix Issue Flow
+# Orchestrates bug fixing with anti-pattern awareness and validation.
+
+id: FIX-flow
+name: Fix Issue
+description: >
+  Issue fix workflow: search for known anti-patterns, gather error patterns
+  in parallel, then validate the fix.
+version: "1.0.0"
+
+triggers:
+  modes:
+    - FIX
+    - bug-fix
+  contexts:
+    - bug
+    - error
+    - regression
+  min-confidence: MEDIUM
+
+steps:
+  - id: search-anti-patterns
+    name: Search Anti-Patterns
+    description: Search vault for known anti-patterns related to the reported issue.
+    chains:
+      - vault-search-antipatterns
+      - memory-search
+    output:
+      - anti-patterns
+      - memory-hits
+
+  - id: get-error-patterns
+    name: Get Error Patterns
+    description: Gather error patterns and brain insights in parallel.
+    chains:
+      - error-pattern-search
+      - brain-recommend
+    parallel: true
+    output:
+      - error-patterns
+      - brain-recommendations
+
+  - id: validate
+    name: Validate Fix
+    description: Validate the fix against design rules and run relevant checks.
+    chains:
+      - validate-component
+      - validate-tokens
+    output:
+      - validation-score
+    gate:
+      type: SCORE
+      min: 70
+      grade-thresholds:
+        A: 95
+        B: 80
+        C: 70
+      on-false:
+        action: BRANCH
+        goto: search-anti-patterns
+        message: "Fix validation below threshold. Re-examine anti-patterns."
+
+scoring:
+  weights:
+    anti-pattern-search: 0.25
+    error-patterns: 0.25
+    validation: 0.50
+  formula: "weighted-sum"
+
+on-error:
+  default:
+    action: STOP
+    message: "Fix flow encountered an error."
+    recovery: "Retry from the failed step."
+  max-retries: 2
+
+metadata:
+  author: soleri
+  domain: bug-fix
+  tags:
+    - fix
+    - bug
+    - anti-pattern

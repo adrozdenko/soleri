@@ -1,0 +1,118 @@
+# Build Component Flow
+# Orchestrates component creation with vault-first knowledge and validation gates.
+
+id: BUILD-flow
+name: Build Component
+description: >
+  Full component build workflow: search vault for patterns, check for duplicates,
+  gather architecture guidance, get component workflow, then validate the result.
+version: "1.0.0"
+
+triggers:
+  modes:
+    - BUILD
+    - component-build
+  contexts:
+    - component
+    - feature
+    - ui
+  min-confidence: MEDIUM
+
+steps:
+  - id: search-vault
+    name: Search Vault Patterns
+    description: Search vault for existing patterns, anti-patterns, and prior art related to the build target.
+    chains:
+      - vault-search
+      - memory-search
+    output:
+      - vault-patterns
+      - memory-hits
+
+  - id: check-duplicates
+    name: Check for Duplicates
+    description: Verify that a similar component does not already exist before building.
+    chains:
+      - component-search
+    output:
+      - duplicate-check-result
+    gate:
+      type: GATE
+      condition: "count == 0"
+      on-false:
+        action: STOP
+        message: "Duplicate component detected. Review existing component before building a new one."
+
+  - id: get-design-recommendation
+    name: Get Design Recommendation
+    description: Query design intelligence for style, palette, and typography guidance before building.
+    chains:
+      - recommend-design-system
+    output:
+      - design-recommendation
+
+  - id: get-architecture
+    name: Get Architecture Guidance
+    description: Fetch architecture patterns and brain recommendations in parallel.
+    chains:
+      - architecture-search
+      - brain-recommend
+    parallel: true
+    output:
+      - architecture-patterns
+      - brain-recommendations
+
+  - id: get-workflow
+    name: Get Component Workflow
+    description: Retrieve the component build workflow from the design system.
+    chains:
+      - component-workflow
+    output:
+      - workflow-steps
+
+  - id: validate
+    name: Validate Component
+    description: Run design system validation and score the output quality.
+    chains:
+      - validate-component
+      - validate-tokens
+    output:
+      - validation-score
+    gate:
+      type: SCORE
+      min: 80
+      grade-thresholds:
+        A: 95
+        B: 85
+        C: 75
+      on-false:
+        action: BRANCH
+        goto: get-workflow
+        message: "Validation score below threshold. Re-run workflow."
+
+scoring:
+  weights:
+    vault-search: 0.15
+    duplicate-check: 0.10
+    architecture: 0.15
+    workflow: 0.20
+    validation: 0.40
+  formula: "weighted-sum"
+
+on-error:
+  default:
+    action: STOP
+    message: "Build flow encountered an error."
+    recovery: "Retry from the failed step."
+  max-retries: 2
+  escalation:
+    action: STOP
+    message: "Build flow failed after retries. Escalate to user."
+
+metadata:
+  author: soleri
+  domain: component-build
+  tags:
+    - build
+    - component
+    - vault-first

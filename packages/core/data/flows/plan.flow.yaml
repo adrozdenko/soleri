@@ -1,0 +1,80 @@
+# Plan Feature Flow
+# Orchestrates feature planning with vault-first knowledge and checkpoint gate.
+
+id: PLAN-flow
+name: Plan Feature
+description: >
+  Feature planning workflow: search vault for prior art, brainstorm design
+  approaches, then create a structured plan with a checkpoint gate for approval.
+version: "1.0.0"
+
+triggers:
+  modes:
+    - PLAN
+    - plan-iteration
+  contexts:
+    - feature
+    - architecture
+    - design
+  min-confidence: MEDIUM
+
+steps:
+  - id: search-vault
+    name: Search Vault Knowledge
+    description: Search vault for patterns, anti-patterns, and previous plans related to the feature.
+    chains:
+      - vault-search
+      - memory-search
+    output:
+      - vault-patterns
+      - memory-hits
+
+  - id: brainstorm
+    name: Brainstorm Approaches
+    description: Generate design approaches informed by vault knowledge and brain recommendations.
+    chains:
+      - brain-recommend
+      - architecture-search
+    output:
+      - brainstorm-options
+      - architecture-guidance
+
+  - id: create-plan
+    name: Create Plan
+    description: Produce a structured implementation plan and present it for approval.
+    chains:
+      - plan-create
+    output:
+      - plan-document
+      - plan-grade
+    gate:
+      type: CHECKPOINT
+      condition: "grade >= 'B'"
+      save:
+        - plan-document
+        - vault-patterns
+      on-false:
+        action: BRANCH
+        goto: brainstorm
+        message: "Plan did not meet quality threshold. Re-brainstorm."
+
+scoring:
+  weights:
+    vault-search: 0.20
+    brainstorm: 0.30
+    plan-creation: 0.50
+  formula: "weighted-sum"
+
+on-error:
+  default:
+    action: STOP
+    message: "Planning flow encountered an error."
+  max-retries: 1
+
+metadata:
+  author: soleri
+  domain: planning
+  tags:
+    - plan
+    - architecture
+    - vault-first

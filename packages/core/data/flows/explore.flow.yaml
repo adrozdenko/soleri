@@ -1,0 +1,76 @@
+# Explore Knowledge Flow
+# Orchestrates knowledge exploration across vault, memory, brain, and playbooks.
+
+id: EXPLORE-flow
+name: Explore Knowledge
+description: >
+  Knowledge exploration workflow: search vault patterns, cross-project memory,
+  brain pattern strengths, and playbooks to surface all relevant knowledge.
+version: "1.0.0"
+
+triggers:
+  modes:
+    - EXPLORE
+    - research
+  contexts:
+    - knowledge
+    - learning
+    - discovery
+  min-confidence: LOW
+
+steps:
+  - id: search-vault
+    name: Search Vault Patterns
+    description: Search vault for patterns, anti-patterns, and domain knowledge.
+    chains:
+      - vault-search
+    output:
+      - vault-patterns
+
+  - id: search-memory
+    name: Search Cross-Project Memory
+    description: Search memory for cross-project knowledge and historical context.
+    chains:
+      - memory-search
+    output:
+      - memory-hits
+
+  - id: check-brain
+    name: Check Brain Patterns
+    description: Query brain for pattern strengths and recommendations.
+    chains:
+      - brain-strengths
+      - brain-recommend
+    output:
+      - brain-patterns
+      - brain-recommendations
+
+  - id: check-playbooks
+    name: Check Playbooks
+    description: Search playbooks for operational runbooks and guides.
+    chains:
+      - playbook-search
+    output:
+      - playbook-results
+
+scoring:
+  weights:
+    vault-search: 0.30
+    memory-search: 0.25
+    brain-check: 0.25
+    playbook-check: 0.20
+  formula: "weighted-sum"
+
+on-error:
+  default:
+    action: CONTINUE
+    message: "Exploration step failed; continuing with remaining sources."
+  max-retries: 1
+
+metadata:
+  author: soleri
+  domain: knowledge
+  tags:
+    - explore
+    - knowledge
+    - research

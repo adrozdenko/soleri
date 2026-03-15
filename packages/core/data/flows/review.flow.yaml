@@ -1,0 +1,82 @@
+# Code Review Flow
+# Orchestrates thorough code review with parallel checks and reporting.
+
+id: REVIEW-flow
+name: Code Review
+description: >
+  Code review workflow: validate component code, check design rules and
+  accessibility in parallel, then produce a consolidated review report.
+version: "1.0.0"
+
+triggers:
+  modes:
+    - REVIEW
+    - code-review
+  contexts:
+    - pull-request
+    - code-quality
+    - review
+  min-confidence: MEDIUM
+
+steps:
+  - id: validate-code
+    name: Validate Component Code
+    description: Run component validation against the design system.
+    chains:
+      - validate-component
+      - validate-tokens
+    output:
+      - code-validation-result
+
+  - id: check-rules
+    name: Check Design Rules
+    description: Check code against design rules and vault patterns in parallel.
+    chains:
+      - design-rules-check
+      - vault-search
+    parallel: true
+    output:
+      - rules-violations
+      - vault-patterns
+
+  - id: check-accessibility
+    name: Check Accessibility
+    description: Run contrast and accessibility checks in parallel.
+    chains:
+      - contrast-check
+      - accessibility-audit
+    parallel: true
+    output:
+      - contrast-results
+      - accessibility-results
+
+  - id: report
+    name: Generate Review Report
+    description: Consolidate all review results into a final report.
+    chains:
+      - review-report
+    output:
+      - review-summary
+      - review-grade
+
+scoring:
+  weights:
+    code-validation: 0.30
+    rules-check: 0.25
+    accessibility: 0.25
+    report: 0.20
+  formula: "weighted-sum"
+
+on-error:
+  default:
+    action: CONTINUE
+    message: "Review step failed; continuing with remaining checks."
+  max-retries: 1
+
+metadata:
+  author: soleri
+  domain: code-review
+  tags:
+    - review
+    - quality
+    - accessibility

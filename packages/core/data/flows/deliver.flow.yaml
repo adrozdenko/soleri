@@ -1,0 +1,102 @@
+# Deliver Feature Flow
+# Orchestrates delivery with validation, testing, performance, and delivery workflow.
+
+id: DELIVER-flow
+name: Deliver Feature
+description: >
+  Feature delivery workflow: validate code quality, check test coverage,
+  assess performance, then execute the delivery workflow.
+version: "1.0.0"
+
+triggers:
+  modes:
+    - DELIVER
+    - ship
+  contexts:
+    - deploy
+    - release
+    - ship
+  min-confidence: HIGH
+
+steps:
+  - id: validate-code
+    name: Validate Code Quality
+    description: Run full code validation against design system rules and token usage.
+    chains:
+      - validate-component
+      - validate-tokens
+      - design-rules-check
+    output:
+      - code-validation-result
+    gate:
+      type: GATE
+      condition: "pass == true"
+      on-false:
+        action: STOP
+        message: "Code validation failed. Fix issues before delivery."
+
+  - id: check-testing
+    name: Check Test Coverage
+    description: Verify that adequate tests exist and pass.
+    chains:
+      - test-coverage-check
+    output:
+      - test-results
+    gate:
+      type: GATE
+      condition: "coverage >= 80"
+      on-false:
+        action: STOP
+        message: "Test coverage below threshold. Add tests before delivery."
+
+  - id: check-performance
+    name: Check Performance
+    description: Assess performance metrics against established baselines.
+    chains:
+      - performance-audit
+    output:
+      - performance-results
+
+  - id: delivery-workflow
+    name: Execute Delivery Workflow
+    description: Run the delivery checklist and finalize for release.
+    chains:
+      - delivery-checklist
+    output:
+      - delivery-status
+      - delivery-grade
+    gate:
+      type: SCORE
+      min: 85
+      grade-thresholds:
+        A: 95
+        B: 85
+        C: 75
+      on-false:
+        action: STOP
+        message: "Delivery score below threshold. Address issues before shipping."
+
+scoring:
+  weights:
+    code-validation: 0.30
+    testing: 0.25
+    performance: 0.20
+    delivery: 0.25
+  formula: "weighted-sum"
+
+on-error:
+  default:
+    action: STOP
+    message: "Delivery flow encountered an error. Do not proceed."
+  max-retries: 1
+  escalation:
+    action: STOP
+    message: "Delivery flow failed. Manual review required."
+
+metadata:
+  author: soleri
+  domain: delivery
+  tags:
+    - deliver
+    - ship
+    - release

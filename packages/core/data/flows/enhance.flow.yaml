@@ -1,0 +1,83 @@
+# Enhance Feature Flow
+# Orchestrates feature improvement with vault knowledge and validation.
+
+id: ENHANCE-flow
+name: Enhance Feature
+description: >
+  Feature enhancement workflow: search vault for improvement patterns,
+  gather architecture guidance, then validate the enhancement.
+version: "1.0.0"
+
+triggers:
+  modes:
+    - IMPROVE
+    - enhance
+  contexts:
+    - performance
+    - refactor
+    - improvement
+  min-confidence: MEDIUM
+
+steps:
+  - id: search-vault
+    name: Search Vault Patterns
+    description: Search vault for enhancement patterns, best practices, and previous improvements.
+    chains:
+      - vault-search
+      - memory-search
+    output:
+      - vault-patterns
+      - memory-hits
+
+  - id: get-architecture
+    name: Get Architecture Guidance
+    description: Fetch architecture guidance and brain recommendations for the enhancement.
+    chains:
+      - architecture-search
+      - brain-recommend
+    parallel: true
+    output:
+      - architecture-patterns
+      - brain-recommendations
+
+  - id: validate
+    name: Validate Enhancement
+    description: Validate the enhanced code against design rules and quality standards.
+    chains:
+      - validate-component
+      - validate-tokens
+    output:
+      - validation-score
+    gate:
+      type: SCORE
+      min: 75
+      grade-thresholds:
+        A: 95
+        B: 85
+        C: 75
+      on-false:
+        action: BRANCH
+        goto: get-architecture
+        message: "Enhancement validation below threshold. Revisit architecture guidance."
+
+scoring:
+  weights:
+    vault-search: 0.20
+    architecture: 0.30
+    validation: 0.50
+  formula: "weighted-sum"
+
+on-error:
+  default:
+    action: STOP
+    message: "Enhancement flow encountered an error."
+    recovery: "Retry from the failed step."
+  max-retries: 2
+
+metadata:
+  author: soleri
+  domain: enhancement
+  tags:
+    - enhance
+    - improve
+    - refactor

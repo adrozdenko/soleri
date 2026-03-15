@@ -655,3 +655,32 @@ export {
   listProjectTokens,
   buildReverseIndex,
 } from './domain-packs/index.js';
+
+// ─── Flow Engine ───────────────────────────────────────────────────────
+export type {
+  Flow,
+  FlowStep,
+  ProbeName,
+  ProbeResults,
+  PlanStep,
+  SkippedStep,
+  OrchestrationPlan,
+  OrchestrationContext,
+  StepResult,
+  ExecutionResult,
+  GateVerdict,
+} from './flows/index.js';
+export {
+  loadFlowById,
+  loadAllFlows,
+  runProbes,
+  INTENT_TO_FLOW,
+  chainToToolName,
+  buildPlan,
+  pruneSteps,
+  evaluateGate,
+  evaluateCondition,
+  FlowExecutor,
+  createDispatcher,
+  runEpilogue,
+} from './flows/index.js';
