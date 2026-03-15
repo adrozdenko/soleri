@@ -133,7 +133,7 @@ describe('Salvador Agent Smoke Test', () => {
   it('design_patterns facade should be registered', () => {
     const patternsFacade = allFacades.find((f) => f.name.includes('design_patterns'));
     expect(patternsFacade).toBeDefined();
-    expect(patternsFacade!.ops.length).toBe(8);
+    expect(patternsFacade!.ops.length).toBe(10);
   });
 
   // --- Component pack ops ---
