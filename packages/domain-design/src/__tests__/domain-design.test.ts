@@ -111,12 +111,13 @@ describe('DomainPack Manifest', () => {
     expect(pack.domains).toContain('design');
   });
 
-  it('should have design ops (19 total)', () => {
-    // 6 algorithmic + 13 data-serving = 19 (generate_image deferred)
-    expect(pack.ops.length).toBe(19);
+  it('should have design ops (20 total)', () => {
+    // 6 algorithmic + 13 data-serving + 1 LLM-dependent = 20
+    expect(pack.ops.length).toBe(20);
     const opNames = pack.ops.map((o) => o.name);
     expect(opNames).toContain('recommend_design_system');
     expect(opNames).toContain('get_stack_guidelines');
+    expect(opNames).toContain('generate_image');
   });
 
   it('should have design_rules facade', () => {
@@ -129,7 +130,7 @@ describe('DomainPack Manifest', () => {
   it('should have design_patterns facade', () => {
     const patterns = pack.facades!.find((f) => f.name === 'design_patterns');
     expect(patterns).toBeDefined();
-    expect(patterns!.ops.length).toBe(8); // 1 algorithmic + 7 data-serving
+    expect(patterns!.ops.length).toBe(10); // 1 algorithmic + 7 data-serving + 2 orchestration packs
   });
 
   it('should have knowledge manifest with tiers', () => {
@@ -201,5 +202,56 @@ describe('DomainPack Manifest', () => {
     const result = (await op.handler({ topic: 'naming' })) as { source: string; data: unknown };
     expect(result.source).toBe('get_clean_code_rules');
     expect(result.data).toBeDefined();
+  });
+
+  it('generate_image op should fail gracefully without API key', async () => {
+    const op = pack.ops.find((o) => o.name === 'generate_image')!;
+    // Without GOOGLE_API_KEY set, should return graceful error
+    const origKey = process.env.GOOGLE_API_KEY;
+    const origGemini = process.env.GEMINI_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    try {
+      const result = (await op.handler({ prompt: 'a blue cat' })) as {
+        success: boolean;
+        error: string;
+      };
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('API_KEY');
+    } finally {
+      if (origKey) process.env.GOOGLE_API_KEY = origKey;
+      if (origGemini) process.env.GEMINI_API_KEY = origGemini;
+    }
+  });
+
+  it('fix pack should return structured checklist', async () => {
+    const patternsF = pack.facades!.find((f) => f.name === 'design_patterns')!;
+    const op = patternsF.ops.find((o) => o.name === 'fix')!;
+    const result = (await op.handler({ prompt: 'button hover broken' })) as {
+      success: boolean;
+      pack: string;
+      steps: Array<{ order: number; tool: string }>;
+    };
+    expect(result.success).toBe(true);
+    expect(result.pack).toBe('fix');
+    expect(result.steps.length).toBe(4);
+    expect(result.steps[0].tool).toBe('route_intent');
+    expect(result.steps[3].tool).toBe('validate_component_code');
+  });
+
+  it('theme pack should return structured checklist', async () => {
+    const patternsF = pack.facades!.find((f) => f.name === 'design_patterns')!;
+    const op = patternsF.ops.find((o) => o.name === 'theme')!;
+    const result = (await op.handler({ background: '#FFFFFF' })) as {
+      success: boolean;
+      pack: string;
+      steps: Array<{ order: number; tool: string }>;
+      context: { background: string };
+    };
+    expect(result.success).toBe(true);
+    expect(result.pack).toBe('theme');
+    expect(result.steps.length).toBe(4);
+    expect(result.steps[0].tool).toBe('get_color_pairs');
+    expect(result.context.background).toBe('#FFFFFF');
   });
 });

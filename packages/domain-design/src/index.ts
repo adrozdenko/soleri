@@ -241,6 +241,99 @@ const designOps = [
       return { source: name, data, query: params.query, topic: params.topic };
     },
   })),
+  // --- generate_image (LLM-dependent, uses runtime.llmClient if available) ---
+  {
+    name: 'generate_image',
+    description:
+      'Generate an image using an LLM image model. Requires a configured LLM API key (Google Gemini or OpenRouter).',
+    auth: 'write' as const,
+    schema: z.object({
+      prompt: z.string(),
+      model: z.enum(['flash', 'pro', 'imagen']).optional().default('flash'),
+      aspectRatio: z.string().optional(),
+      outputPath: z.string().optional(),
+    }),
+    handler: async (params: Record<string, unknown>) => {
+      const prompt = params.prompt as string;
+      const model = (params.model as string) ?? 'flash';
+      const outputPath = params.outputPath as string | undefined;
+
+      // Model name mapping
+      const modelMap: Record<string, string> = {
+        flash: 'gemini-2.5-flash-preview-image-generation',
+        pro: 'gemini-2.5-pro-preview-image-generation',
+        imagen: 'imagen-4.0-generate-preview',
+      };
+      const modelId = modelMap[model] ?? modelMap.flash;
+
+      // Try Google Gemini API via env key
+      const apiKey = process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return {
+          success: false,
+          error:
+            'No GOOGLE_API_KEY or GEMINI_API_KEY found in environment. Set one to enable image generation.',
+          hint: 'export GOOGLE_API_KEY=your-key',
+        };
+      }
+
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+          }),
+          signal: AbortSignal.timeout(60_000),
+        });
+
+        if (!response.ok) {
+          const errBody = await response.text();
+          return {
+            success: false,
+            error: `API error ${response.status}: ${errBody.slice(0, 200)}`,
+          };
+        }
+
+        const data = (await response.json()) as {
+          candidates?: Array<{
+            content?: {
+              parts?: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
+            };
+          }>;
+        };
+
+        const parts = data.candidates?.[0]?.content?.parts ?? [];
+        const imagePart = parts.find((p) => p.inlineData);
+        const textPart = parts.find((p) => p.text);
+
+        if (!imagePart?.inlineData) {
+          return { success: false, error: 'No image in response', description: textPart?.text };
+        }
+
+        const ext = imagePart.inlineData.mimeType.includes('png') ? 'png' : 'jpg';
+        const filePath = outputPath ?? `/tmp/soleri_image_${Date.now()}.${ext}`;
+
+        const { writeFileSync, mkdirSync } = await import('node:fs');
+        const { dirname } = await import('node:path');
+        mkdirSync(dirname(filePath), { recursive: true });
+        writeFileSync(filePath, Buffer.from(imagePart.inlineData.data, 'base64'));
+
+        return {
+          success: true,
+          imagePath: filePath,
+          sizeBytes: Buffer.from(imagePart.inlineData.data, 'base64').length,
+          model: modelId,
+          provider: 'google',
+          description: textPart?.text,
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : String(err) };
+      }
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -368,6 +461,97 @@ const designPatternsOps = [
       },
     };
   }),
+  // --- Orchestration packs (pure JSON checklists) ---
+  {
+    name: 'fix',
+    description:
+      'Generate a structured fix checklist — returns sequential tool steps for diagnosing and fixing a design issue.',
+    auth: 'read' as const,
+    schema: z.object({
+      prompt: z.string(),
+      projectPath: z.string().optional(),
+    }),
+    handler: async (params: Record<string, unknown>) => {
+      const prompt = params.prompt as string;
+      return {
+        success: true,
+        pack: 'fix',
+        message: `Fix pack for: ${prompt}`,
+        steps: [
+          {
+            order: 1,
+            tool: 'route_intent',
+            description: 'Detect fix intent and select recovery flow',
+            suggestedParams: { prompt, intent: 'FIX' },
+          },
+          {
+            order: 2,
+            tool: 'get_error_handling_patterns',
+            description: 'Get error handling patterns for the fix',
+            suggestedParams: { topic: 'recovery' },
+          },
+          {
+            order: 3,
+            tool: 'get_defensive_design_rules',
+            description: 'Get defensive design rules to prevent regressions',
+            suggestedParams: {},
+          },
+          {
+            order: 4,
+            tool: 'validate_component_code',
+            description: 'Validate the fix against design system rules',
+            suggestedParams: {},
+          },
+        ],
+        context: { prompt, intent: 'FIX' },
+      };
+    },
+  },
+  {
+    name: 'theme',
+    description:
+      'Generate a structured theming checklist — returns sequential tool steps for creating or auditing a theme.',
+    auth: 'read' as const,
+    schema: z.object({
+      projectPath: z.string().optional(),
+      background: z.string().optional(),
+    }),
+    handler: async (params: Record<string, unknown>) => {
+      const background = params.background as string | undefined;
+      return {
+        success: true,
+        pack: 'theme',
+        message: 'Theme pack — follow these steps to build or audit a theme.',
+        steps: [
+          {
+            order: 1,
+            tool: 'get_color_pairs',
+            description: 'Get valid color pair recommendations',
+            suggestedParams: background ? { background } : {},
+          },
+          {
+            order: 2,
+            tool: 'get_dark_mode_colors',
+            description: 'Get dark mode color mappings',
+            suggestedParams: {},
+          },
+          {
+            order: 3,
+            tool: 'check_contrast',
+            description: 'Validate contrast ratios meet WCAG',
+            suggestedParams: {},
+          },
+          {
+            order: 4,
+            tool: 'get_depth_layering',
+            description: 'Get depth/elevation guidance for theme',
+            suggestedParams: {},
+          },
+        ],
+        context: { background },
+      };
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
