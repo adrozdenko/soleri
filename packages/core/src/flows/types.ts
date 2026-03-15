@@ -52,6 +52,8 @@ export const flowStepSchema = z.object({
   parallel: z.boolean().optional(),
   output: z.array(z.string()).optional(),
   gate: gateSchema.optional(),
+  /** Capability IDs required by this step (v2) */
+  needs: z.array(z.string()).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -91,6 +93,13 @@ export const flowSchema = z.object({
           message: z.string().optional(),
         })
         .optional(),
+    })
+    .optional(),
+  /** Strategy when a step's capability requirement is not satisfied */
+  onMissingCapability: z
+    .object({
+      default: z.enum(['skip-with-warning', 'fail', 'ask-user']).default('skip-with-warning'),
+      blocking: z.array(z.string()).optional().default([]),
     })
     .optional(),
   metadata: z

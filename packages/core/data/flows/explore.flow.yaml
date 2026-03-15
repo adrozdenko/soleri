@@ -8,6 +8,10 @@ description: >
   brain pattern strengths, and playbooks to surface all relevant knowledge.
 version: "1.0.0"
 
+on-missing-capability:
+  default: skip-with-warning
+  blocking: [vault.search]
+
 triggers:
   modes:
     - EXPLORE
@@ -22,6 +26,7 @@ steps:
   - id: search-vault
     name: Search Vault Patterns
     description: Search vault for patterns, anti-patterns, and domain knowledge.
+    needs: [vault.search]
     chains:
       - vault-search
     output:
@@ -30,6 +35,7 @@ steps:
   - id: search-memory
     name: Search Cross-Project Memory
     description: Search memory for cross-project knowledge and historical context.
+    needs: [memory.search]
     chains:
       - memory-search
     output:
@@ -38,6 +44,7 @@ steps:
   - id: check-brain
     name: Check Brain Patterns
     description: Query brain for pattern strengths and recommendations.
+    needs: [brain.strengths, brain.recommend]
     chains:
       - brain-strengths
       - brain-recommend
@@ -48,6 +55,7 @@ steps:
   - id: check-playbooks
     name: Check Playbooks
     description: Search playbooks for operational runbooks and guides.
+    needs: [vault.playbook]
     chains:
       - playbook-search
     output:

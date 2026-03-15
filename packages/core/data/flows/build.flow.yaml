@@ -8,6 +8,10 @@ description: >
   gather architecture guidance, get component workflow, then validate the result.
 version: "1.0.0"
 
+on-missing-capability:
+  default: skip-with-warning
+  blocking: [vault.search]
+
 triggers:
   modes:
     - BUILD
@@ -22,6 +26,7 @@ steps:
   - id: search-vault
     name: Search Vault Patterns
     description: Search vault for existing patterns, anti-patterns, and prior art related to the build target.
+    needs: [vault.search, memory.search]
     chains:
       - vault-search
       - memory-search
@@ -32,6 +37,7 @@ steps:
   - id: check-duplicates
     name: Check for Duplicates
     description: Verify that a similar component does not already exist before building.
+    needs: [component.search]
     chains:
       - component-search
     output:
@@ -46,6 +52,7 @@ steps:
   - id: get-design-recommendation
     name: Get Design Recommendation
     description: Query design intelligence for style, palette, and typography guidance before building.
+    needs: [design.recommend]
     chains:
       - recommend-design-system
     output:
@@ -54,6 +61,7 @@ steps:
   - id: get-architecture
     name: Get Architecture Guidance
     description: Fetch architecture patterns and brain recommendations in parallel.
+    needs: [architecture.search, brain.recommend]
     chains:
       - architecture-search
       - brain-recommend
@@ -65,6 +73,7 @@ steps:
   - id: get-workflow
     name: Get Component Workflow
     description: Retrieve the component build workflow from the design system.
+    needs: [component.workflow]
     chains:
       - component-workflow
     output:
@@ -73,6 +82,7 @@ steps:
   - id: validate
     name: Validate Component
     description: Run design system validation and score the output quality.
+    needs: [component.validate, token.check]
     chains:
       - validate-component
       - validate-tokens

@@ -656,6 +656,9 @@ export {
   buildReverseIndex,
 } from './domain-packs/index.js';
 
+// ─── Capabilities ───────────────────────────────────────────────────────
+export * from './capabilities/index.js';
+
 // ─── Flow Engine ───────────────────────────────────────────────────────
 export type {
   Flow,

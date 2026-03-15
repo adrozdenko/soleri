@@ -8,6 +8,10 @@ description: >
   approaches, then create a structured plan with a checkpoint gate for approval.
 version: "1.0.0"
 
+on-missing-capability:
+  default: skip-with-warning
+  blocking: [vault.search]
+
 triggers:
   modes:
     - PLAN
@@ -22,6 +26,7 @@ steps:
   - id: search-vault
     name: Search Vault Knowledge
     description: Search vault for patterns, anti-patterns, and previous plans related to the feature.
+    needs: [vault.search, memory.search]
     chains:
       - vault-search
       - memory-search
@@ -32,6 +37,7 @@ steps:
   - id: brainstorm
     name: Brainstorm Approaches
     description: Generate design approaches informed by vault knowledge and brain recommendations.
+    needs: [brain.recommend, architecture.search]
     chains:
       - brain-recommend
       - architecture-search
@@ -42,6 +48,7 @@ steps:
   - id: create-plan
     name: Create Plan
     description: Produce a structured implementation plan and present it for approval.
+    needs: [plan.create]
     chains:
       - plan-create
     output:

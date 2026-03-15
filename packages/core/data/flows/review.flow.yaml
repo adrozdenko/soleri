@@ -8,6 +8,10 @@ description: >
   accessibility in parallel, then produce a consolidated review report.
 version: "1.0.0"
 
+on-missing-capability:
+  default: skip-with-warning
+  blocking: [vault.search]
+
 triggers:
   modes:
     - REVIEW
@@ -22,6 +26,7 @@ steps:
   - id: validate-code
     name: Validate Component Code
     description: Run component validation against the design system.
+    needs: [component.validate, token.check]
     chains:
       - validate-component
       - validate-tokens
@@ -31,6 +36,7 @@ steps:
   - id: check-rules
     name: Check Design Rules
     description: Check code against design rules and vault patterns in parallel.
+    needs: [design.rules, vault.search]
     chains:
       - design-rules-check
       - vault-search
@@ -42,6 +48,7 @@ steps:
   - id: check-accessibility
     name: Check Accessibility
     description: Run contrast and accessibility checks in parallel.
+    needs: [color.validate, a11y.audit]
     chains:
       - contrast-check
       - accessibility-audit
@@ -53,6 +60,7 @@ steps:
   - id: report
     name: Generate Review Report
     description: Consolidate all review results into a final report.
+    needs: [review.report]
     chains:
       - review-report
     output:

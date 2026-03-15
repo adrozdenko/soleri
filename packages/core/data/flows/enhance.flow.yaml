@@ -8,6 +8,10 @@ description: >
   gather architecture guidance, then validate the enhancement.
 version: "1.0.0"
 
+on-missing-capability:
+  default: skip-with-warning
+  blocking: [vault.search]
+
 triggers:
   modes:
     - IMPROVE
@@ -22,6 +26,7 @@ steps:
   - id: search-vault
     name: Search Vault Patterns
     description: Search vault for enhancement patterns, best practices, and previous improvements.
+    needs: [vault.search, memory.search]
     chains:
       - vault-search
       - memory-search
@@ -32,6 +37,7 @@ steps:
   - id: get-architecture
     name: Get Architecture Guidance
     description: Fetch architecture guidance and brain recommendations for the enhancement.
+    needs: [architecture.search, brain.recommend]
     chains:
       - architecture-search
       - brain-recommend
@@ -43,6 +49,7 @@ steps:
   - id: validate
     name: Validate Enhancement
     description: Validate the enhanced code against design rules and quality standards.
+    needs: [component.validate, token.check]
     chains:
       - validate-component
       - validate-tokens

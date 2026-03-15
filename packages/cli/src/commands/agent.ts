@@ -6,7 +6,7 @@
  */
 
 import { join } from 'node:path';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
@@ -263,6 +263,177 @@ export function registerAgent(program: Command): void {
 
       p.log.info('Template diff is available after `soleri agent update --check`.');
       p.log.info('Full template comparison will be added in a future release.');
+    });
+
+  // ─── capabilities ──────────────────────────────────────────
+  agent
+    .command('capabilities')
+    .description('List all capabilities declared by installed packs')
+    .action(() => {
+      const ctx = detectAgent();
+      if (!ctx) {
+        p.log.error('No agent project detected in current directory.');
+        process.exit(1);
+        return;
+      }
+
+      const lockfilePath = join(ctx.agentPath, 'soleri.lock');
+      const lockfile = new PackLockfile(lockfilePath);
+      const packs = lockfile.list();
+
+      if (packs.length === 0) {
+        console.log('\n  No packs installed.\n');
+        return;
+      }
+
+      let totalCapabilities = 0;
+      let packsWithCaps = 0;
+
+      for (const pack of packs) {
+        // Read soleri-pack.json from the installed pack directory
+        const manifestPath = join(pack.directory, 'soleri-pack.json');
+        if (!existsSync(manifestPath)) continue;
+
+        let manifest: { capabilities?: Array<{ id: string; description: string }> };
+        try {
+          manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+        } catch {
+          continue;
+        }
+
+        const caps = manifest.capabilities ?? [];
+        if (caps.length === 0) continue;
+
+        packsWithCaps++;
+        totalCapabilities += caps.length;
+
+        console.log(`\n  ${pack.id} (${caps.length}):`);
+        // Group by domain (first segment of capability ID)
+        const grouped = new Map<string, string[]>();
+        for (const cap of caps) {
+          const domain = cap.id.split('.')[0];
+          const list = grouped.get(domain) ?? [];
+          list.push(cap.id);
+          grouped.set(domain, list);
+        }
+        for (const [, ids] of grouped) {
+          console.log(`    ${ids.join(', ')}`);
+        }
+      }
+
+      if (totalCapabilities === 0) {
+        console.log('\n  No capabilities declared by any installed pack.\n');
+      } else {
+        console.log(
+          `\n  Total: ${totalCapabilities} capabilities across ${packsWithCaps} pack(s)\n`,
+        );
+      }
+    });
+
+  // ─── validate ──────────────────────────────────────────────
+  agent
+    .command('validate')
+    .description('Validate flow capability requirements against installed packs')
+    .action(() => {
+      const ctx = detectAgent();
+      if (!ctx) {
+        p.log.error('No agent project detected in current directory.');
+        process.exit(1);
+        return;
+      }
+
+      // Collect all capability IDs from installed packs
+      const lockfilePath = join(ctx.agentPath, 'soleri.lock');
+      const lockfile = new PackLockfile(lockfilePath);
+      const packs = lockfile.list();
+      const installedCapabilities = new Set<string>();
+
+      for (const pack of packs) {
+        const manifestPath = join(pack.directory, 'soleri-pack.json');
+        if (!existsSync(manifestPath)) continue;
+
+        let manifest: { capabilities?: Array<{ id: string }> };
+        try {
+          manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+        } catch {
+          continue;
+        }
+
+        for (const cap of manifest.capabilities ?? []) {
+          installedCapabilities.add(cap.id);
+        }
+      }
+
+      // Load flow YAML files from the agent's data/flows/ directory
+      const flowsDir = join(ctx.agentPath, 'data', 'flows');
+      if (!existsSync(flowsDir)) {
+        console.log('\n  No data/flows/ directory found.\n');
+        return;
+      }
+
+      const flowFiles = readdirSync(flowsDir).filter((f: string) => f.endsWith('.flow.yaml'));
+
+      if (flowFiles.length === 0) {
+        console.log('\n  No flow files found in data/flows/.\n');
+        return;
+      }
+
+      let fullyAvailable = 0;
+      let degradedCount = 0;
+
+      console.log('');
+
+      for (const file of flowFiles) {
+        const content = readFileSync(join(flowsDir, file), 'utf-8');
+        // Simple YAML parsing for needs: fields
+        const needed = new Set<string>();
+        const lines = content.split('\n');
+        let inNeeds = false;
+        for (const line of lines) {
+          if (/^\s+needs:\s*$/.test(line)) {
+            inNeeds = true;
+            continue;
+          }
+          if (inNeeds) {
+            const match = line.match(/^\s+-\s+(.+)$/);
+            if (match) {
+              needed.add(match[1].trim().replace(/^['"]|['"]$/g, ''));
+            } else {
+              inNeeds = false;
+            }
+          }
+          // Inline array format: needs: [a, b, c]
+          const inlineMatch = line.match(/^\s+needs:\s*\[([^\]]+)\]/);
+          if (inlineMatch) {
+            for (const cap of inlineMatch[1].split(',')) {
+              needed.add(cap.trim().replace(/^['"]|['"]$/g, ''));
+            }
+          }
+        }
+
+        // Extract flow id from file content
+        const idMatch = content.match(/^id:\s*(.+)$/m);
+        const flowName = idMatch ? idMatch[1].trim() : file.replace('.flow.yaml', '');
+
+        if (needed.size === 0) {
+          console.log(`  ${flowName}:  (no capabilities declared)`);
+          continue;
+        }
+
+        const missing = [...needed].filter((cap) => !installedCapabilities.has(cap));
+
+        if (missing.length === 0) {
+          console.log(`  ${flowName}:  \u2713 all ${needed.size} capabilities available`);
+          fullyAvailable++;
+        } else {
+          console.log(`  ${flowName}:  \u26A0 ${missing.length} missing (${missing.join(', ')})`);
+          degradedCount++;
+        }
+      }
+
+      console.log(
+        `\n  ${flowFiles.length} flows checked: ${fullyAvailable} fully satisfied, ${degradedCount} degraded\n`,
+      );
     });
 }
 

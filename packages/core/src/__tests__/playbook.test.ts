@@ -189,7 +189,7 @@ describe('playbook_create op', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
+    ops = createSemanticFacades(runtime, 'test').flatMap((f) => f.ops);
   });
 
   afterEach(() => {
@@ -300,7 +300,7 @@ describe('playbook_match op', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
+    ops = createSemanticFacades(runtime, 'test').flatMap((f) => f.ops);
   });
 
   afterEach(() => {
@@ -356,7 +356,7 @@ describe('playbook_seed op', () => {
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
     });
-    ops = createSemanticFacades(runtime, 'test').flatMap(f => f.ops);
+    ops = createSemanticFacades(runtime, 'test').flatMap((f) => f.ops);
   });
 
   afterEach(() => {
@@ -371,7 +371,7 @@ describe('playbook_seed op', () => {
       errors: number;
     };
 
-    expect(result.seeded).toBe(6);
+    expect(result.seeded).toBe(7);
     expect(result.skipped).toBe(0);
     expect(result.errors).toBe(0);
   });
@@ -384,6 +384,6 @@ describe('playbook_seed op', () => {
     };
 
     expect(result.seeded).toBe(0);
-    expect(result.skipped).toBe(6);
+    expect(result.skipped).toBe(7);
   });
 });

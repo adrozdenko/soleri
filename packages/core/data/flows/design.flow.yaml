@@ -9,6 +9,10 @@ description: >
   (style + palette + typography + landing pattern + anti-patterns).
 version: "1.0.0"
 
+on-missing-capability:
+  default: skip-with-warning
+  blocking: [vault.search]
+
 triggers:
   modes:
     - DESIGN
@@ -25,6 +29,7 @@ steps:
   - id: search-vault-design
     name: Search Vault Design Patterns
     description: Search vault for existing design patterns, decisions, and anti-patterns related to the request.
+    needs: [vault.search, memory.search]
     chains:
       - vault-search
       - memory-search
@@ -35,6 +40,7 @@ steps:
   - id: search-cognee-design
     name: Search Cognee Design Knowledge
     description: Query the Cognee knowledge graph for curated design intelligence.
+    needs: [cognee.search]
     chains:
       - cognee-design-search
     output:
@@ -45,6 +51,7 @@ steps:
     description: >
       Generate a full design system recommendation: UI style, color palette,
       font pairing, landing page pattern, and anti-patterns to avoid.
+    needs: [design.recommend, design.style, design.palette, design.typography]
     chains:
       - recommend-design-system
       - recommend-style
@@ -60,6 +67,7 @@ steps:
   - id: get-stack-guidelines
     name: Get Stack Guidelines
     description: Retrieve implementation guidelines for the target tech stack.
+    needs: [stack.guidelines]
     chains:
       - get-stack-guidelines
     output:
@@ -68,6 +76,7 @@ steps:
   - id: brain-recommend
     name: Brain Recommendations
     description: Check brain for proven design patterns from previous sessions.
+    needs: [brain.recommend]
     chains:
       - brain-recommend
     output:

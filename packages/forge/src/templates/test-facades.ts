@@ -512,6 +512,73 @@ ${domainPackDescribes ? `\n${domainPackDescribes}\n` : ''}
       expect(result.recommendations.length).toBeGreaterThan(0);
     });
   });
+
+  // ─── Capability Registry ───────────────────────────────────
+  describe('Capability Registry', () => {
+    it('should register and resolve capabilities', () => {
+      const { CapabilityRegistry } = require('@soleri/core');
+      const registry = new CapabilityRegistry();
+
+      // Register a test capability
+      const handlers = new Map();
+      handlers.set('test.hello', async () => ({ success: true, data: {}, produced: ['greeting'] }));
+      registry.registerPack(
+        'test-pack',
+        [{ id: 'test.hello', description: 'Test', provides: ['greeting'], requires: [] }],
+        handlers,
+      );
+
+      expect(registry.has('test.hello')).toBe(true);
+      expect(registry.has('test.missing')).toBe(false);
+
+      const resolved = registry.resolve('test.hello');
+      expect(resolved.available).toBe(true);
+    });
+
+    it('should track multiple capabilities from one pack', () => {
+      const { CapabilityRegistry } = require('@soleri/core');
+      const registry = new CapabilityRegistry();
+
+      const handlers = new Map();
+      handlers.set('test.alpha', async () => ({ success: true, data: {}, produced: ['a'] }));
+      handlers.set('test.beta', async () => ({ success: true, data: {}, produced: ['b'] }));
+      registry.registerPack(
+        'multi-pack',
+        [
+          { id: 'test.alpha', description: 'Alpha', provides: ['a'], requires: [] },
+          { id: 'test.beta', description: 'Beta', provides: ['b'], requires: [] },
+        ],
+        handlers,
+      );
+
+      expect(registry.size).toBe(2);
+      expect(registry.has('test.alpha')).toBe(true);
+      expect(registry.has('test.beta')).toBe(true);
+    });
+
+    it('should report missing capabilities in flow validation', () => {
+      const { CapabilityRegistry } = require('@soleri/core');
+      const registry = new CapabilityRegistry();
+
+      const handlers = new Map();
+      handlers.set('vault.search', async () => ({ success: true, data: {}, produced: ['results'] }));
+      registry.registerPack(
+        'core',
+        [{ id: 'vault.search', description: 'Search vault', provides: ['results'], requires: [] }],
+        handlers,
+      );
+
+      const flow = {
+        steps: [
+          { needs: ['vault.search', 'color.validate'] },
+        ],
+      };
+      const validation = registry.validateFlow(flow);
+      expect(validation.valid).toBe(false);
+      expect(validation.available).toContain('vault.search');
+      expect(validation.missing).toContain('color.validate');
+    });
+  });
 });
 `;
 }

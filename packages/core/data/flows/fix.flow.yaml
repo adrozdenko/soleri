@@ -8,6 +8,10 @@ description: >
   in parallel, then validate the fix.
 version: "1.0.0"
 
+on-missing-capability:
+  default: skip-with-warning
+  blocking: [vault.search]
+
 triggers:
   modes:
     - FIX
@@ -22,6 +26,7 @@ steps:
   - id: search-anti-patterns
     name: Search Anti-Patterns
     description: Search vault for known anti-patterns related to the reported issue.
+    needs: [vault.search, memory.search]
     chains:
       - vault-search-antipatterns
       - memory-search
@@ -32,6 +37,7 @@ steps:
   - id: get-error-patterns
     name: Get Error Patterns
     description: Gather error patterns and brain insights in parallel.
+    needs: [debug.patterns, brain.recommend]
     chains:
       - error-pattern-search
       - brain-recommend
@@ -43,6 +49,7 @@ steps:
   - id: validate
     name: Validate Fix
     description: Validate the fix against design rules and run relevant checks.
+    needs: [component.validate, token.check]
     chains:
       - validate-component
       - validate-tokens

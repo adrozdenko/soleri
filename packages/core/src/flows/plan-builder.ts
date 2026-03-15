@@ -15,6 +15,8 @@ import type {
 import { loadFlowById } from './loader.js';
 import { runProbes } from './probes.js';
 import { detectContext, applyContextOverrides } from './context-router.js';
+import { chainToCapability } from '../capabilities/index.js';
+import type { CapabilityRegistry } from '../capabilities/index.js';
 
 // ---------------------------------------------------------------------------
 // Intent → Flow mapping
@@ -61,14 +63,54 @@ export function chainToRequires(chain: string): ProbeName | undefined {
 
 /**
  * Convert flow steps into plan steps.
+ *
+ * Resolution order for capability IDs:
+ * 1. If the step has `needs:` (v2), use those capability IDs directly
+ * 2. If the step only has `chains:` (v1), map via chainToCapability()
+ * 3. chainToToolName() is still used for tool dispatch (fallback path)
+ *
+ * When an optional `registry` is provided, each resolved capability is
+ * validated. Unavailable capabilities are recorded in the step's
+ * `unavailableCapabilities` list (informational — pruning is separate).
  */
-export function flowStepsToPlanSteps(flow: Flow, agentId: string): PlanStep[] {
+export function flowStepsToPlanSteps(
+  flow: Flow,
+  agentId: string,
+  registry?: CapabilityRegistry,
+): PlanStep[] {
   return flow.steps.map((step) => {
+    // Tool names for dispatch fallback (always computed from chains)
     const tools = (step.chains ?? []).map((c) => chainToToolName(c, agentId));
+
+    // Resolve capability IDs: prefer needs (v2), fall back to chains (v1)
+    const capabilityIds: string[] = [];
+    if (step.needs && step.needs.length > 0) {
+      capabilityIds.push(...step.needs);
+    } else if (step.chains) {
+      for (const chain of step.chains) {
+        const capId = chainToCapability(chain);
+        if (capId && !capabilityIds.includes(capId)) {
+          capabilityIds.push(capId);
+        }
+      }
+    }
+
+    // Probe-level requires (existing behavior, derived from chains)
     const requires: ProbeName[] = [];
     for (const chain of step.chains ?? []) {
       const req = chainToRequires(chain);
       if (req && !requires.includes(req)) requires.push(req);
+    }
+
+    // Validate capabilities against registry if provided
+    const unavailableCapabilities: string[] = [];
+    if (registry) {
+      for (const capId of capabilityIds) {
+        const resolved = registry.resolve(capId);
+        if (!resolved.available) {
+          unavailableCapabilities.push(capId);
+        }
+      }
     }
 
     const planStep: PlanStep = {
@@ -79,6 +121,15 @@ export function flowStepsToPlanSteps(flow: Flow, agentId: string): PlanStep[] {
       requires,
       status: 'pending',
     };
+
+    // Attach capability metadata (non-breaking additions)
+    if (capabilityIds.length > 0) {
+      (planStep as PlanStep & { capabilities?: string[] }).capabilities = capabilityIds;
+    }
+    if (unavailableCapabilities.length > 0) {
+      (planStep as PlanStep & { unavailableCapabilities?: string[] }).unavailableCapabilities =
+        unavailableCapabilities;
+    }
 
     if (step.gate) {
       const gate = step.gate;

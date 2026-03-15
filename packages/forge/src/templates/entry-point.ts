@@ -41,8 +41,10 @@ import {
   registerAllFacades,
   seedDefaultPlaybooks,
   wrapWithMiddleware,
+  CapabilityRegistry,
+  loadAllFlows,
 } from '@soleri/core';
-import type { OpDefinition, AgentExtensions } from '@soleri/core';${hasDomainPacks ? `\nimport { loadDomainPacksFromConfig } from '@soleri/core';` : ''}
+import type { OpDefinition, AgentExtensions } from '@soleri/core';${hasDomainPacks ? `\nimport { loadDomainPacksFromConfig, createPackRuntime } from '@soleri/core';` : ''}
 import { z } from 'zod';
 import { PERSONA, getPersonaPrompt } from './identity/persona.js';
 import { activateAgent, deactivateAgent } from './activation/activate.js';
@@ -263,6 +265,32 @@ ${
   for (const pack of domainPacks) {
     if (pack.onActivate) await pack.onActivate(runtime);
   }
+
+  // ─── Capability Registry ─────────────────────────────────────
+  const capabilityRegistry = new CapabilityRegistry();
+  const packRuntime = createPackRuntime(runtime);
+
+  // Register domain pack capabilities
+  for (const pack of domainPacks) {
+    if (pack.capabilities) {
+      const handlers = pack.capabilities(packRuntime);
+      // Use pack manifest capabilities if available, otherwise derive from handler keys
+      const definitions = (pack as Record<string, unknown>).manifest
+        ? ((pack as Record<string, unknown>).manifest as { capabilities?: Array<{ id: string; description: string; provides: string[]; requires: string[] }> }).capabilities ?? []
+        : [...handlers.keys()].map(id => ({ id, description: id, provides: [], requires: [] }));
+      capabilityRegistry.registerPack(pack.name, definitions, handlers, 50);
+    }
+  }
+
+  // Validate flows against installed capabilities
+  const flows = loadAllFlows();
+  for (const flow of flows) {
+    const validation = capabilityRegistry.validateFlow(flow);
+    if (validation.missing.length > 0) {
+      console.error(\`[\${tag}] Flow \${flow.id}: \${validation.missing.length} capabilities degraded (\${validation.missing.join(', ')})\`);
+    }
+  }
+  console.error(\`[\${tag}] Capability registry: \${capabilityRegistry.size} capabilities from \${capabilityRegistry.packCount} pack(s)\`);
 `
     : ''
 }  const domainFacades = createDomainFacades(runtime, '${config.id}', ${domainsLiteral}${hasDomainPacks ? `, domainPacks` : ''});

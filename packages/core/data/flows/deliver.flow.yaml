@@ -8,6 +8,10 @@ description: >
   assess performance, then execute the delivery workflow.
 version: "1.0.0"
 
+on-missing-capability:
+  default: skip-with-warning
+  blocking: [vault.search]
+
 triggers:
   modes:
     - DELIVER
@@ -22,6 +26,7 @@ steps:
   - id: validate-code
     name: Validate Code Quality
     description: Run full code validation against design system rules and token usage.
+    needs: [component.validate, token.check, design.rules]
     chains:
       - validate-component
       - validate-tokens
@@ -38,6 +43,7 @@ steps:
   - id: check-testing
     name: Check Test Coverage
     description: Verify that adequate tests exist and pass.
+    needs: [test.coverage]
     chains:
       - test-coverage-check
     output:
@@ -52,6 +58,7 @@ steps:
   - id: check-performance
     name: Check Performance
     description: Assess performance metrics against established baselines.
+    needs: [perf.audit]
     chains:
       - performance-audit
     output:
@@ -60,6 +67,7 @@ steps:
   - id: delivery-workflow
     name: Execute Delivery Workflow
     description: Run the delivery checklist and finalize for release.
+    needs: [deliver.checklist]
     chains:
       - delivery-checklist
     output:

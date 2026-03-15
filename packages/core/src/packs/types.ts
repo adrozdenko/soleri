@@ -34,6 +34,25 @@ export const packManifestSchema = z.object({
   engine: z.string().optional(),
   /** Pack dependencies (other pack IDs) */
   dependencies: z.array(z.string()).optional().default([]),
+  /** Capability declarations — what this pack can do and what it needs */
+  capabilities: z
+    .array(
+      z.object({
+        id: z
+          .string()
+          .regex(
+            /^[a-z][a-z0-9]*\.[a-z][a-z0-9]*$/,
+            'Capability ID must be domain.action format (e.g., color.validate)',
+          ),
+        description: z.string().min(1),
+        provides: z.array(z.string()),
+        requires: z.array(z.string()),
+        depends: z.array(z.string()).optional().default([]),
+        knowledge: z.array(z.string()).optional().default([]),
+      }),
+    )
+    .optional()
+    .default([]),
   /** Facade definitions (same as plugin manifest) */
   facades: z
     .array(

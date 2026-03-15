@@ -14,6 +14,7 @@
 import { z } from 'zod';
 import type { OpDefinition, FacadeConfig } from '../facades/types.js';
 import type { AgentRuntime } from '../runtime/types.js';
+import type { PackRuntime } from './pack-runtime.js';
 
 // ---------------------------------------------------------------------------
 // Reserved names — packs cannot claim these as facade names
@@ -84,6 +85,10 @@ export interface DomainPack {
   rules?: string;
   /** Skills to install into the agent's skills directory. */
   skills?: PackSkillDefinition[];
+  /** Capability handler factory — returns handlers for declared capabilities */
+  capabilities?: (
+    runtime: PackRuntime,
+  ) => Map<string, import('../capabilities/types.js').CapabilityHandler>;
   /** Other packs this pack depends on (by name). */
   requires?: string[];
   /** Called after pack is installed (one-time setup). */
