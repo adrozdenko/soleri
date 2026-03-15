@@ -35,6 +35,7 @@ import { generateTelegramBot } from './templates/telegram-bot.js';
 import { generateTelegramConfig } from './templates/telegram-config.js';
 import { generateTelegramAgent } from './templates/telegram-agent.js';
 import { generateTelegramSupervisor } from './templates/telegram-supervisor.js';
+import { detectInstalledDomainPacks } from './utils/detect-domain-packs.js';
 
 function getSetupTarget(config: AgentConfig): SetupTarget {
   return config.setupTarget ?? 'claude';
@@ -59,6 +60,14 @@ function includesOpencodeSetup(config: AgentConfig): boolean {
  * Preview what scaffold will create without writing anything.
  */
 export function previewScaffold(config: AgentConfig): ScaffoldPreview {
+  // Auto-detect domain packs if not explicitly configured
+  if (!config.domainPacks || config.domainPacks.length === 0) {
+    const detected = detectInstalledDomainPacks(config.outputDir);
+    if (detected.length > 0) {
+      config = { ...config, domainPacks: detected };
+    }
+  }
+
   const agentDir = join(config.outputDir, config.id);
   const claudeSetup = includesClaudeSetup(config);
   const codexSetup = includesCodexSetup(config);
@@ -279,6 +288,18 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
       greeting: `Hello! I'm ${config.name}, your AI assistant for ${config.role}.`,
     };
   }
+
+  // Auto-detect domain packs if not explicitly configured
+  if (!config.domainPacks || config.domainPacks.length === 0) {
+    const detected = detectInstalledDomainPacks(config.outputDir);
+    if (detected.length > 0) {
+      config = { ...config, domainPacks: detected };
+      console.error(
+        `[forge] Auto-detected ${detected.length} domain pack(s): ${detected.map((d) => d.package).join(', ')}`,
+      );
+    }
+  }
+
   const claudeSetup = includesClaudeSetup(config);
   const codexSetup = includesCodexSetup(config);
   const opencodeSetup = includesOpencodeSetup(config);

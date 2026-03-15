@@ -14,6 +14,7 @@ import type {
 } from './types.js';
 import { loadFlowById } from './loader.js';
 import { runProbes } from './probes.js';
+import { detectContext, applyContextOverrides } from './context-router.js';
 
 // ---------------------------------------------------------------------------
 // Intent → Flow mapping
@@ -150,7 +151,16 @@ export async function buildPlan(
   const warnings: string[] = [];
 
   if (flow) {
-    const allSteps = flowStepsToPlanSteps(flow, agentId);
+    let allSteps = flowStepsToPlanSteps(flow, agentId);
+
+    // Context-sensitive chain routing: detect what's being built/fixed/reviewed
+    // and apply chain overrides (inject, skip, substitute) before pruning.
+    const entities = { components: [] as string[], actions: [] as string[] };
+    const contexts = prompt ? detectContext(prompt, entities) : [];
+    if (contexts.length > 0) {
+      allSteps = applyContextOverrides(allSteps, contexts, flowId, agentId);
+    }
+
     const pruneResult = pruneSteps(allSteps, probes);
     steps = pruneResult.kept;
     skipped = pruneResult.skipped;

@@ -431,6 +431,150 @@ describe('FlowExecutor', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Context Router
+// ---------------------------------------------------------------------------
+
+import { detectContext, applyContextOverrides } from '../flows/context-router.js';
+import { flowStepsToPlanSteps } from '../flows/plan-builder.js';
+
+describe('detectContext', () => {
+  const emptyEntities = { components: [], actions: [] };
+
+  it('should find "small-component" context for button prompts', () => {
+    const contexts = detectContext('Build a submit button', emptyEntities);
+    expect(contexts).toContain('small-component');
+  });
+
+  it('should find "large-component" context for dashboard prompts', () => {
+    const contexts = detectContext('Create a dashboard layout', emptyEntities);
+    expect(contexts).toContain('large-component');
+  });
+
+  it('should find "form-component" context for input prompts', () => {
+    const contexts = detectContext('Build a select dropdown input', emptyEntities);
+    expect(contexts).toContain('form-component');
+  });
+
+  it('should find "container-component" context for modal prompts', () => {
+    const contexts = detectContext('Build a confirmation dialog', emptyEntities);
+    expect(contexts).toContain('container-component');
+  });
+
+  it('should find "design-fix" context for styling fix prompts', () => {
+    const contexts = detectContext('Fix the color tokens in the header', emptyEntities);
+    expect(contexts).toContain('design-fix');
+  });
+
+  it('should find "a11y-fix" context for accessibility fix prompts', () => {
+    const contexts = detectContext('Fix accessibility issues with ARIA labels', emptyEntities);
+    expect(contexts).toContain('a11y-fix');
+  });
+
+  it('should find "pr-review" context for pull request prompts', () => {
+    const contexts = detectContext('Review this PR diff', emptyEntities);
+    expect(contexts).toContain('pr-review');
+  });
+
+  it('should find "architecture-review" context for architecture prompts', () => {
+    const contexts = detectContext('Review the import structure', emptyEntities);
+    expect(contexts).toContain('architecture-review');
+  });
+
+  it('should return empty array for generic prompts', () => {
+    const contexts = detectContext('Do something useful', emptyEntities);
+    expect(contexts).toHaveLength(0);
+  });
+
+  it('should detect multiple contexts when prompt matches several', () => {
+    const contexts = detectContext(
+      'Build a form with input fields and a submit button',
+      emptyEntities,
+    );
+    expect(contexts).toContain('small-component');
+    expect(contexts).toContain('form-component');
+  });
+
+  it('should also match entity content', () => {
+    const contexts = detectContext('Build this', { components: ['Button'], actions: [] });
+    expect(contexts).toContain('small-component');
+  });
+});
+
+describe('applyContextOverrides', () => {
+  const agentId = 'test';
+
+  function loadBuildSteps(): PlanStep[] {
+    const flow = loadFlowById('BUILD-flow', FLOWS_DIR);
+    return flowStepsToPlanSteps(flow!, agentId);
+  }
+
+  function loadFixSteps(): PlanStep[] {
+    const flow = loadFlowById('FIX-flow', FLOWS_DIR);
+    return flowStepsToPlanSteps(flow!, agentId);
+  }
+
+  it('should skip get-architecture for small-component context', () => {
+    const steps = loadBuildSteps();
+    const result = applyContextOverrides(steps, ['small-component'], 'BUILD-flow', agentId);
+    const ids = result.map((s) => s.id);
+    expect(ids).not.toContain('get-architecture');
+  });
+
+  it('should inject button-semantics-check before validate for small-component', () => {
+    const steps = loadBuildSteps();
+    const result = applyContextOverrides(steps, ['small-component'], 'BUILD-flow', agentId);
+    const ids = result.map((s) => s.id);
+    expect(ids).toContain('ctx-before-validate');
+    const injected = result.find((s) => s.id === 'ctx-before-validate');
+    expect(injected!.tools).toContain('test_button_semantics_check');
+  });
+
+  it('should inject responsive-patterns before validate for large-component', () => {
+    const steps = loadBuildSteps();
+    const result = applyContextOverrides(steps, ['large-component'], 'BUILD-flow', agentId);
+    const ids = result.map((s) => s.id);
+    const beforeIdx = ids.indexOf('ctx-before-validate');
+    const validateIdx = ids.indexOf('validate');
+    expect(beforeIdx).toBeGreaterThan(-1);
+    expect(beforeIdx).toBeLessThan(validateIdx);
+    const injected = result.find((s) => s.id === 'ctx-before-validate');
+    expect(injected!.tools).toContain('test_responsive_patterns');
+  });
+
+  it('should inject performance-check after validate for large-component', () => {
+    const steps = loadBuildSteps();
+    const result = applyContextOverrides(steps, ['large-component'], 'BUILD-flow', agentId);
+    const ids = result.map((s) => s.id);
+    const afterIdx = ids.indexOf('ctx-after-validate');
+    const validateIdx = ids.indexOf('validate');
+    expect(afterIdx).toBeGreaterThan(validateIdx);
+    const injected = result.find((s) => s.id === 'ctx-after-validate');
+    expect(injected!.tools).toContain('test_performance_check');
+  });
+
+  it('should inject contrast-check and token-validation for design-fix context', () => {
+    const steps = loadFixSteps();
+    const result = applyContextOverrides(steps, ['design-fix'], 'FIX-flow', agentId);
+    const injected = result.find((s) => s.id === 'ctx-before-validate');
+    expect(injected).toBeDefined();
+    expect(injected!.tools).toContain('test_contrast_check');
+    expect(injected!.tools).toContain('test_token_validation');
+  });
+
+  it('should return steps unchanged for unknown flow', () => {
+    const steps = loadBuildSteps();
+    const result = applyContextOverrides(steps, ['small-component'], 'UNKNOWN-flow', agentId);
+    expect(result).toEqual(steps);
+  });
+
+  it('should return steps unchanged for empty contexts', () => {
+    const steps = loadBuildSteps();
+    const result = applyContextOverrides(steps, [], 'BUILD-flow', agentId);
+    expect(result).toEqual(steps);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Context Probes
 // ---------------------------------------------------------------------------
 
