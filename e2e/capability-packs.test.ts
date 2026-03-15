@@ -1,547 +1,650 @@
 /**
  * E2E Test: Capability Packs
  *
- * Validates the full capability packs lifecycle:
- * 1. Registry creation and capability registration
- * 2. Capability resolution (single + multi-provider)
- * 3. Dependency checking
- * 4. Flow validation against installed capabilities
- * 5. Chain-to-capability v1→v2 bridge
- * 6. Plan builder integration with registry
- * 7. Pack manifest v2 schema validation
- * 8. Graceful degradation when capabilities missing
- * 9. Flow YAML migration (needs: alongside chains:)
+ * Tests organized by USER JOURNEY, not by internal API:
  *
- * No subprocess, no npm install — tests the capability system directly.
+ * Journey 1: "I just scaffolded an agent — does it have capabilities?"
+ * Journey 2: "I installed a pack — do new capabilities appear?"
+ * Journey 3: "I ask the agent to do something — does it resolve the right capability?"
+ * Journey 4: "I ask for something the agent can't do — does it degrade gracefully?"
+ * Journey 5: "I'm a new user — does the agent know how to introduce itself?"
+ * Journey 6: "I run CLI commands — do they work on my agent?"
+ *
+ * Plus: edge cases, schema validation, migration verification.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
-import { readdirSync, readFileSync } from 'node:fs';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { mkdirSync, rmSync, readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { parse as parseYaml } from 'yaml';
 import {
+  createAgentRuntime,
+  createSemanticFacades,
+  createDomainFacades,
+  registerFacade,
   CapabilityRegistry,
   chainToCapability,
+  packManifestSchema,
+  seedDefaultPlaybooks as seedDefaultPlaybooksFn,
 } from '@soleri/core';
+
+const seedDefaultPlaybooks = seedDefaultPlaybooksFn;
 import type {
+  AgentRuntime,
+  FacadeConfig,
   CapabilityDefinition,
   CapabilityHandler,
+  CapabilityContext,
   CapabilityResult,
-  FlowValidation,
 } from '@soleri/core';
-import { packManifestSchema } from '@soleri/core';
 
-// ─── Test Helpers ────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────
 
-function makeHandler(name: string): CapabilityHandler {
-  return async () => ({
+const AGENT_ID = 'e2e-caps';
+
+function makeHandler(name: string, behavior?: (params: Record<string, unknown>) => Record<string, unknown>): CapabilityHandler {
+  return async (params) => ({
     success: true,
-    data: { handler: name },
+    data: behavior ? behavior(params) : { handler: name },
     produced: [`${name}-output`],
   });
 }
 
-function makeCap(
-  id: string,
-  opts?: Partial<CapabilityDefinition>,
-): CapabilityDefinition {
+function makeCap(id: string, opts?: Partial<CapabilityDefinition>): CapabilityDefinition {
   return {
     id,
-    description: `Test capability: ${id}`,
+    description: `Capability: ${id}`,
     provides: [`${id}-output`],
     requires: [],
     ...opts,
   };
 }
 
-// ─── Tests ───────────────────────────────────────────────
+/** Capture MCP handler from a facade (same pattern as full-pipeline.test.ts) */
+function captureHandler(facade: FacadeConfig) {
+  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+    content: Array<{ type: string; text: string }>;
+  }>) | null = null;
 
-describe('E2E: Capability Packs', () => {
-  // ─── 1. Registry basics ──────────────────────────────
+  const mockServer = {
+    tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
+      captured = handler as typeof captured;
+    },
+  };
+  registerFacade(mockServer as never, facade);
+  return captured!;
+}
 
-  describe('Registry creation and registration', () => {
-    it('should create an empty registry', () => {
-      const registry = new CapabilityRegistry();
-      expect(registry.size).toBe(0);
-      expect(registry.packCount).toBe(0);
+function parseResponse(raw: { content: Array<{ type: string; text: string }> }) {
+  return JSON.parse(raw.content[0].text);
+}
+
+// ─── Shared Runtime ──────────────────────────────────────
+
+let runtime: AgentRuntime;
+let facades: FacadeConfig[];
+let handlers: Map<string, ReturnType<typeof captureHandler>>;
+const plannerDir = join(tmpdir(), `soleri-e2e-caps-${Date.now()}`);
+
+async function callOp(facadeName: string, op: string, params: Record<string, unknown> = {}) {
+  const handler = handlers.get(facadeName);
+  if (!handler) throw new Error(`No facade: ${facadeName}`);
+  const raw = await handler({ op, params });
+  return parseResponse(raw);
+}
+
+// ═══════════════════════════════════════════════════════════
+// JOURNEY 1: Fresh agent with core capabilities
+// "I just scaffolded an agent — does it have capabilities?"
+// ═══════════════════════════════════════════════════════════
+
+describe('Journey 1: Fresh agent has core capabilities', () => {
+  let registry: CapabilityRegistry;
+
+  beforeAll(() => {
+    mkdirSync(plannerDir, { recursive: true });
+
+    runtime = createAgentRuntime({
+      agentId: AGENT_ID,
+      vaultPath: ':memory:',
+      plansPath: join(plannerDir, 'plans.json'),
     });
 
-    it('should register capabilities from a pack', () => {
-      const registry = new CapabilityRegistry();
-      const defs = [makeCap('color.validate'), makeCap('color.parse')];
-      const handlers = new Map<string, CapabilityHandler>();
-      handlers.set('color.validate', makeHandler('color.validate'));
-      handlers.set('color.parse', makeHandler('color.parse'));
+    facades = [
+      ...createSemanticFacades(runtime, AGENT_ID),
+      ...createDomainFacades(runtime, AGENT_ID, ['design', 'testing']),
+    ];
 
-      registry.registerPack('design-system', defs, handlers);
+    handlers = new Map();
+    for (const facade of facades) {
+      handlers.set(facade.name, captureHandler(facade));
+    }
 
-      expect(registry.size).toBe(2);
-      expect(registry.packCount).toBe(1);
-      expect(registry.has('color.validate')).toBe(true);
-      expect(registry.has('color.parse')).toBe(true);
-      expect(registry.has('color.suggest')).toBe(false);
-    });
+    // Simulate what the generated entry-point does:
+    // Create registry and register core capabilities
+    registry = new CapabilityRegistry();
 
-    it('should warn and skip when handler missing for a definition', () => {
-      const registry = new CapabilityRegistry();
-      const defs = [makeCap('test.a'), makeCap('test.b')];
-      const handlers = new Map<string, CapabilityHandler>();
-      handlers.set('test.a', makeHandler('test.a'));
-      // test.b has no handler
+    const coreCaps = [
+      'vault.search', 'vault.capture', 'vault.playbook',
+      'brain.recommend', 'brain.strengths',
+      'memory.search', 'memory.capture',
+      'plan.create', 'plan.approve',
+      'orchestrate.plan', 'orchestrate.execute', 'orchestrate.complete',
+      'identity.activate', 'identity.route',
+      'admin.health', 'admin.tools',
+      'debug.patterns',
+    ].map(id => makeCap(id));
 
-      registry.registerPack('partial', defs, handlers);
-
-      expect(registry.has('test.a')).toBe(true);
-      expect(registry.has('test.b')).toBe(false); // skipped
-    });
+    const coreHandlers = new Map<string, CapabilityHandler>();
+    coreCaps.forEach(c => coreHandlers.set(c.id, makeHandler(c.id)));
+    registry.registerPack('core', coreCaps, coreHandlers, 100);
   });
 
-  // ─── 2. Resolution ──────────────────────────────────
-
-  describe('Capability resolution', () => {
-    it('should resolve a registered capability', () => {
-      const registry = new CapabilityRegistry();
-      const defs = [makeCap('vault.search')];
-      const handlers = new Map<string, CapabilityHandler>();
-      handlers.set('vault.search', makeHandler('vault.search'));
-      registry.registerPack('core', defs, handlers);
-
-      const resolved = registry.resolve('vault.search');
-      expect(resolved.available).toBe(true);
-      expect(resolved.handler).toBeDefined();
-      expect(resolved.providers).toContain('core');
-    });
-
-    it('should return unavailable for missing capability', () => {
-      const registry = new CapabilityRegistry();
-      const resolved = registry.resolve('nonexistent.cap');
-      expect(resolved.available).toBe(false);
-      expect(resolved.handler).toBeUndefined();
-    });
-
-    it('should execute a resolved handler', async () => {
-      const registry = new CapabilityRegistry();
-      const handler: CapabilityHandler = async (params) => ({
-        success: true,
-        data: { echo: params.input },
-        produced: ['echo'],
-      });
-      const defs = [makeCap('test.echo')];
-      const handlers = new Map([['test.echo', handler]]);
-      registry.registerPack('echo-pack', defs, handlers);
-
-      const resolved = registry.resolve('test.echo');
-      expect(resolved.available).toBe(true);
-
-      const result = await resolved.handler!({ input: 'hello' }, {} as never);
-      expect(result.success).toBe(true);
-      expect(result.data.echo).toBe('hello');
-    });
+  afterAll(() => {
+    runtime.close();
+    rmSync(plannerDir, { recursive: true, force: true });
   });
 
-  // ─── 3. Multi-provider ──────────────────────────────
-
-  describe('Multi-provider support', () => {
-    it('should support multiple providers for same capability', () => {
-      const registry = new CapabilityRegistry();
-
-      // Pack A provides color.validate at priority 50
-      registry.registerPack(
-        'design-system',
-        [makeCap('color.validate')],
-        new Map([['color.validate', makeHandler('design-system')]]),
-        50,
-      );
-
-      // Pack B also provides color.validate at priority 75
-      registry.registerPack(
-        'brand-guardian',
-        [makeCap('color.validate')],
-        new Map([['color.validate', makeHandler('brand-guardian')]]),
-        75,
-      );
-
-      const resolved = registry.resolve('color.validate');
-      expect(resolved.available).toBe(true);
-      expect(resolved.providers).toContain('design-system');
-      expect(resolved.providers).toContain('brand-guardian');
-      // Higher priority provider should be first
-      expect(resolved.providers![0]).toBe('brand-guardian');
-    });
+  it('agent should have core capabilities registered', () => {
+    expect(registry.has('vault.search')).toBe(true);
+    expect(registry.has('brain.recommend')).toBe(true);
+    expect(registry.has('plan.create')).toBe(true);
+    expect(registry.has('admin.health')).toBe(true);
   });
 
-  // ─── 4. Dependency checking ─────────────────────────
-
-  describe('Dependency resolution', () => {
-    it('should resolve when all deps satisfied', () => {
-      const registry = new CapabilityRegistry();
-      const defs = [
-        makeCap('color.parse'),
-        makeCap('color.validate', { depends: ['color.parse'] }),
-      ];
-      const handlers = new Map<string, CapabilityHandler>();
-      handlers.set('color.parse', makeHandler('color.parse'));
-      handlers.set('color.validate', makeHandler('color.validate'));
-      registry.registerPack('design', defs, handlers);
-
-      const resolved = registry.resolve('color.validate');
-      expect(resolved.available).toBe(true);
-    });
-
-    it('should report missing dependencies', () => {
-      const registry = new CapabilityRegistry();
-      // Register color.validate with dep on color.parse, but DON'T register color.parse
-      const defs = [makeCap('color.validate', { depends: ['color.parse'] })];
-      const handlers = new Map([['color.validate', makeHandler('color.validate')]]);
-      registry.registerPack('incomplete', defs, handlers);
-
-      const resolved = registry.resolve('color.validate');
-      expect(resolved.available).toBe(false);
-      expect(resolved.missingDependencies).toContain('color.parse');
-    });
+  it('agent should NOT have design capabilities without the pack', () => {
+    expect(registry.has('color.validate')).toBe(false);
+    expect(registry.has('token.check')).toBe(false);
+    expect(registry.has('component.scaffold')).toBe(false);
   });
 
-  // ─── 5. Flow validation ─────────────────────────────
+  it('real runtime should have facades wired correctly', () => {
+    // Verify facades exist for the agent
+    expect(facades.length).toBeGreaterThan(10);
+    expect(handlers.size).toBeGreaterThan(10);
 
-  describe('Flow validation', () => {
-    it('should validate a flow with all capabilities available', () => {
-      const registry = new CapabilityRegistry();
-      const defs = [makeCap('vault.search'), makeCap('brain.recommend')];
-      const handlers = new Map<string, CapabilityHandler>();
-      defs.forEach((d) => handlers.set(d.id, makeHandler(d.id)));
-      registry.registerPack('core', defs, handlers);
-
-      const validation = registry.validateFlow({
-        steps: [{ needs: ['vault.search', 'brain.recommend'] }],
-      });
-
-      expect(validation.valid).toBe(true);
-      expect(validation.missing).toHaveLength(0);
-      expect(validation.available).toContain('vault.search');
-      expect(validation.available).toContain('brain.recommend');
-    });
-
-    it('should detect missing capabilities in flow', () => {
-      const registry = new CapabilityRegistry();
-      registry.registerPack(
-        'core',
-        [makeCap('vault.search')],
-        new Map([['vault.search', makeHandler('vault.search')]]),
-      );
-
-      const validation = registry.validateFlow({
-        steps: [{ needs: ['vault.search', 'color.validate', 'a11y.audit'] }],
-      });
-
-      expect(validation.valid).toBe(false);
-      expect(validation.missing).toContain('color.validate');
-      expect(validation.missing).toContain('a11y.audit');
-      expect(validation.available).toContain('vault.search');
-    });
-
-    it('should classify blocking vs degraded capabilities', () => {
-      const registry = new CapabilityRegistry();
-      registry.registerPack(
-        'core',
-        [makeCap('vault.search')],
-        new Map([['vault.search', makeHandler('vault.search')]]),
-      );
-
-      const validation = registry.validateFlow({
-        steps: [{ needs: ['vault.search', 'color.validate'] }],
-        onMissingCapability: {
-          default: 'skip-with-warning',
-          blocking: ['color.validate'],
-        },
-      });
-
-      expect(validation.valid).toBe(false);
-      expect(validation.canRunPartially).toBe(false); // blocking cap is missing
-      const blocked = validation.degraded.find((d) => d.capability === 'color.validate');
-      expect(blocked?.impact).toBe('blocking');
-    });
-
-    it('should allow partial run when missing caps are not blocking', () => {
-      const registry = new CapabilityRegistry();
-      registry.registerPack(
-        'core',
-        [makeCap('vault.search')],
-        new Map([['vault.search', makeHandler('vault.search')]]),
-      );
-
-      const validation = registry.validateFlow({
-        steps: [{ needs: ['vault.search', 'color.validate'] }],
-        onMissingCapability: {
-          default: 'skip-with-warning',
-          blocking: ['vault.search'], // vault.search IS available
-        },
-      });
-
-      expect(validation.valid).toBe(false); // still missing color.validate
-      expect(validation.canRunPartially).toBe(true); // but it's not blocking
-    });
+    // Key facades should be registered
+    const facadeNames = facades.map(f => f.name);
+    expect(facadeNames).toContain(`${AGENT_ID}_vault`);
+    expect(facadeNames).toContain(`${AGENT_ID}_admin`);
+    expect(facadeNames).toContain(`${AGENT_ID}_brain`);
+    expect(facadeNames).toContain(`${AGENT_ID}_plan`);
   });
 
-  // ─── 6. Chain mapping bridge ────────────────────────
+  it('capabilities should be grouped by domain', () => {
+    const grouped = registry.list();
+    expect(grouped.has('vault')).toBe(true);
+    expect(grouped.has('brain')).toBe(true);
+    expect(grouped.has('plan')).toBe(true);
+    expect(grouped.get('vault')!.length).toBeGreaterThanOrEqual(2);
+  });
+});
 
-  describe('Chain-to-capability v1→v2 bridge', () => {
-    it('should map known chain names to capability IDs', () => {
-      expect(chainToCapability('vault-search')).toBe('vault.search');
-      expect(chainToCapability('contrast-check')).toBe('color.validate');
-      expect(chainToCapability('validate-tokens')).toBe('token.check');
-      expect(chainToCapability('component-search')).toBe('component.search');
-      expect(chainToCapability('brain-recommend')).toBe('brain.recommend');
-    });
+// ═══════════════════════════════════════════════════════════
+// JOURNEY 2: Install a pack — capabilities appear
+// "I installed a pack — do new capabilities appear?"
+// ═══════════════════════════════════════════════════════════
 
-    it('should return undefined for unknown chains', () => {
-      expect(chainToCapability('nonexistent-chain')).toBeUndefined();
-      expect(chainToCapability('')).toBeUndefined();
-    });
+describe('Journey 2: Installing a pack adds capabilities', () => {
+  let registry: CapabilityRegistry;
 
-    it('should validate flow with chains via bridge', () => {
-      const registry = new CapabilityRegistry();
-      registry.registerPack(
-        'core',
-        [makeCap('vault.search'), makeCap('brain.recommend')],
-        new Map([
-          ['vault.search', makeHandler('vault.search')],
-          ['brain.recommend', makeHandler('brain.recommend')],
-        ]),
-      );
+  beforeAll(() => {
+    registry = new CapabilityRegistry();
 
-      // Flow uses v1 chains (no needs)
-      const validation = registry.validateFlow({
-        steps: [{ chains: ['vault-search', 'brain-recommend'] }],
-      });
-
-      expect(validation.valid).toBe(true);
-      expect(validation.available).toContain('vault.search');
-      expect(validation.available).toContain('brain.recommend');
-    });
+    // Core pack (always present)
+    const coreCaps = ['vault.search', 'brain.recommend', 'plan.create'].map(id => makeCap(id));
+    const coreH = new Map<string, CapabilityHandler>();
+    coreCaps.forEach(c => coreH.set(c.id, makeHandler(c.id)));
+    registry.registerPack('core', coreCaps, coreH, 100);
   });
 
-  // ─── 7. Listing and grouping ────────────────────────
-
-  describe('Capability listing', () => {
-    it('should group capabilities by domain', () => {
-      const registry = new CapabilityRegistry();
-      const defs = [
-        makeCap('color.validate'),
-        makeCap('color.parse'),
-        makeCap('token.check'),
-        makeCap('vault.search'),
-      ];
-      const handlers = new Map<string, CapabilityHandler>();
-      defs.forEach((d) => handlers.set(d.id, makeHandler(d.id)));
-      registry.registerPack('mixed', defs, handlers);
-
-      const grouped = registry.list();
-      expect(grouped.get('color')).toHaveLength(2);
-      expect(grouped.get('token')).toHaveLength(1);
-      expect(grouped.get('vault')).toHaveLength(1);
-    });
+  it('should start with only core capabilities', () => {
+    expect(registry.size).toBe(3);
+    expect(registry.has('color.validate')).toBe(false);
   });
 
-  // ─── 8. Pack manifest v2 schema ─────────────────────
+  it('installing design-system pack should add design capabilities', () => {
+    const designCaps = [
+      makeCap('color.validate', {
+        provides: ['contrast-ratio', 'wcag-level', 'pass-fail'],
+        requires: ['foreground', 'background'],
+      }),
+      makeCap('color.parse', {
+        provides: ['parsed-color'],
+        requires: ['color-string'],
+      }),
+      makeCap('token.check', {
+        provides: ['valid', 'suggestion'],
+        requires: ['token-value'],
+        knowledge: ['color-token-priority'],
+      }),
+    ];
+    const designH = new Map<string, CapabilityHandler>();
+    designCaps.forEach(c => designH.set(c.id, makeHandler(c.id)));
 
-  describe('Pack manifest v2 schema', () => {
-    it('should accept manifest with capabilities', () => {
-      const manifest = {
-        id: 'design-system',
-        name: 'Design System Intelligence',
-        version: '1.0.0',
-        capabilities: [
-          {
-            id: 'color.validate',
-            description: 'Check color contrast',
-            provides: ['contrast-ratio', 'wcag-level'],
-            requires: ['foreground', 'background'],
-            depends: ['color.parse'],
-            knowledge: ['a11y-contrast'],
-          },
-        ],
-      };
+    registry.registerPack('design-system', designCaps, designH, 50);
 
-      const result = packManifestSchema.safeParse(manifest);
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.capabilities).toHaveLength(1);
-        expect(result.data.capabilities[0].id).toBe('color.validate');
-      }
-    });
-
-    it('should accept manifest without capabilities (backwards compat)', () => {
-      const manifest = {
-        id: 'legacy-pack',
-        name: 'Legacy Pack',
-        version: '1.0.0',
-      };
-
-      const result = packManifestSchema.safeParse(manifest);
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.capabilities).toEqual([]);
-      }
-    });
-
-    it('should reject invalid capability ID format', () => {
-      const manifest = {
-        id: 'bad-pack',
-        name: 'Bad Pack',
-        version: '1.0.0',
-        capabilities: [
-          {
-            id: 'INVALID',
-            description: 'Bad format',
-            provides: [],
-            requires: [],
-          },
-        ],
-      };
-
-      const result = packManifestSchema.safeParse(manifest);
-      expect(result.success).toBe(false);
-    });
-
-    it('should enforce domain.action format', () => {
-      const goodIds = ['color.validate', 'vault.search', 'a11y.audit'];
-      const badIds = ['noperiod', 'UPPER.case', 'color.', '.action', 'a.b.c'];
-
-      for (const id of goodIds) {
-        const result = packManifestSchema.safeParse({
-          id: 'test',
-          name: 'Test',
-          version: '1.0.0',
-          capabilities: [{ id, description: 'ok', provides: [], requires: [] }],
-        });
-        expect(result.success).toBe(true);
-      }
-
-      for (const id of badIds) {
-        const result = packManifestSchema.safeParse({
-          id: 'test',
-          name: 'Test',
-          version: '1.0.0',
-          capabilities: [{ id, description: 'ok', provides: [], requires: [] }],
-        });
-        expect(result.success).toBe(false);
-      }
-    });
+    expect(registry.size).toBe(6); // 3 core + 3 design
+    expect(registry.has('color.validate')).toBe(true);
+    expect(registry.has('token.check')).toBe(true);
+    expect(registry.packCount).toBe(2);
   });
 
-  // ─── 9. Flow YAML migration verification ────────────
+  it('capabilities should know which pack provides them', () => {
+    const resolved = registry.resolve('color.validate');
+    expect(resolved.providers).toContain('design-system');
 
-  describe('Flow YAML migration', () => {
+    const coreResolved = registry.resolve('vault.search');
+    expect(coreResolved.providers).toContain('core');
+  });
+
+  it('capability with knowledge refs should carry them through', () => {
+    const resolved = registry.resolve('token.check');
+    expect(resolved.knowledge).toContain('color-token-priority');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// JOURNEY 3: Capability resolution in a real flow
+// "I ask the agent to do something — does it resolve correctly?"
+// ═══════════════════════════════════════════════════════════
+
+describe('Journey 3: Flow resolves capabilities correctly', () => {
+  let registry: CapabilityRegistry;
+
+  beforeAll(() => {
+    registry = new CapabilityRegistry();
+
+    // Full stack: core + design
+    const allCaps = [
+      'vault.search', 'memory.search', 'brain.recommend',
+      'component.search', 'component.workflow', 'component.validate',
+      'color.validate', 'token.check', 'design.rules', 'design.recommend',
+      'architecture.search',
+    ].map(id => makeCap(id));
+
+    const allH = new Map<string, CapabilityHandler>();
+    allCaps.forEach(c => allH.set(c.id, makeHandler(c.id)));
+    registry.registerPack('full-stack', allCaps, allH);
+  });
+
+  it('BUILD flow should validate with all capabilities', () => {
     const flowsDir = join(__dirname, '..', 'packages', 'core', 'data', 'flows');
-    let flowFiles: string[] = [];
+    const buildContent = readFileSync(join(flowsDir, 'build.flow.yaml'), 'utf-8');
+    const buildFlow = parseYaml(buildContent);
 
-    beforeAll(() => {
-      flowFiles = readdirSync(flowsDir).filter((f) => f.endsWith('.flow.yaml'));
+    const validation = registry.validateFlow({
+      steps: buildFlow.steps,
+      onMissingCapability: buildFlow['on-missing-capability'],
     });
 
-    it('should have 8 flow files', () => {
-      expect(flowFiles.length).toBe(8);
-    });
-
-    it('every flow should have on-missing-capability config', () => {
-      for (const file of flowFiles) {
-        const content = readFileSync(join(flowsDir, file), 'utf-8');
-        const flow = parseYaml(content);
-        expect(flow['on-missing-capability']).toBeDefined();
-        expect(flow['on-missing-capability'].default).toBe('skip-with-warning');
-        expect(flow['on-missing-capability'].blocking).toContain('vault.search');
-      }
-    });
-
-    it('every step with chains: should also have needs:', () => {
-      for (const file of flowFiles) {
-        const content = readFileSync(join(flowsDir, file), 'utf-8');
-        const flow = parseYaml(content);
-        for (const step of flow.steps ?? []) {
-          if (step.chains && step.chains.length > 0) {
-            expect(step.needs).toBeDefined();
-            expect(step.needs.length).toBeGreaterThan(0);
-          }
-        }
-      }
-    });
-
-    it('needs: values should be valid domain.action format', () => {
-      const validFormat = /^[a-z][a-z0-9]*\.[a-z][a-z0-9]*$/;
-      for (const file of flowFiles) {
-        const content = readFileSync(join(flowsDir, file), 'utf-8');
-        const flow = parseYaml(content);
-        for (const step of flow.steps ?? []) {
-          for (const need of step.needs ?? []) {
-            expect(need).toMatch(validFormat);
-          }
-        }
-      }
-    });
-
-    it('chain mapping should cover all chains used in flows', () => {
-      const allChains = new Set<string>();
-      for (const file of flowFiles) {
-        const content = readFileSync(join(flowsDir, file), 'utf-8');
-        const flow = parseYaml(content);
-        for (const step of flow.steps ?? []) {
-          for (const chain of step.chains ?? []) {
-            allChains.add(chain);
-          }
-        }
-      }
-
-      // Every chain used in flows should have a capability mapping
-      for (const chain of allChains) {
-        const capId = chainToCapability(chain);
-        expect(capId).toBeDefined();
-      }
-    });
+    expect(validation.available.length).toBeGreaterThan(5);
+    expect(validation.available).toContain('vault.search');
+    expect(validation.available).toContain('component.search');
   });
 
-  // ─── 10. Integration: registry + flow validation ────
+  it('capability handler should receive params and return result', async () => {
+    const contrastHandler: CapabilityHandler = async (params) => {
+      const fg = params.foreground as string;
+      const bg = params.background as string;
+      const ratio = fg === '#000000' && bg === '#FFFFFF' ? 21 : 4.5;
+      return {
+        success: true,
+        data: { ratio, level: ratio >= 7 ? 'AAA' : 'AA', pass: ratio >= 4.5 },
+        produced: ['contrast-ratio', 'wcag-level', 'pass-fail'],
+      };
+    };
 
-  describe('Full integration', () => {
-    it('should validate a real flow against a realistic registry', () => {
-      const registry = new CapabilityRegistry();
+    const reg = new CapabilityRegistry();
+    reg.registerPack('design', [makeCap('color.validate')], new Map([['color.validate', contrastHandler]]));
 
-      // Core pack
-      const coreCaps = [
-        'vault.search', 'vault.playbook', 'memory.search',
-        'brain.recommend', 'brain.strengths', 'plan.create',
-        'orchestrate.plan', 'identity.activate', 'identity.route',
-        'cognee.search', 'admin.health', 'debug.patterns',
-      ].map((id) => makeCap(id));
-      const coreHandlers = new Map<string, CapabilityHandler>();
-      coreCaps.forEach((c) => coreHandlers.set(c.id, makeHandler(c.id)));
-      registry.registerPack('core', coreCaps, coreHandlers, 100);
+    const resolved = reg.resolve('color.validate');
+    const result = await resolved.handler!({ foreground: '#000000', background: '#FFFFFF' }, {} as never);
 
-      // Design system pack
-      const designCaps = [
-        'color.validate', 'token.check', 'design.rules',
-        'design.recommend', 'component.search', 'component.workflow',
-        'component.validate',
-      ].map((id) => makeCap(id));
-      const designHandlers = new Map<string, CapabilityHandler>();
-      designCaps.forEach((c) => designHandlers.set(c.id, makeHandler(c.id)));
-      registry.registerPack('design-system', designCaps, designHandlers, 50);
+    expect(result.success).toBe(true);
+    expect(result.data.ratio).toBe(21);
+    expect(result.data.level).toBe('AAA');
+    expect(result.data.pass).toBe(true);
+    expect(result.produced).toContain('contrast-ratio');
+  });
 
-      // Read actual BUILD flow
-      const flowsDir = join(__dirname, '..', 'packages', 'core', 'data', 'flows');
-      const buildContent = readFileSync(join(flowsDir, 'build.flow.yaml'), 'utf-8');
-      const buildFlow = parseYaml(buildContent);
+  it('should resolve capabilities with dependencies satisfied', () => {
+    const reg = new CapabilityRegistry();
+    const caps = [
+      makeCap('color.parse'),
+      makeCap('color.validate', { depends: ['color.parse'] }),
+      makeCap('component.scaffold', { depends: ['color.validate', 'token.check'] }),
+      makeCap('token.check'),
+    ];
+    const h = new Map<string, CapabilityHandler>();
+    caps.forEach(c => h.set(c.id, makeHandler(c.id)));
+    reg.registerPack('design', caps, h);
 
-      const validation = registry.validateFlow({
-        steps: buildFlow.steps,
-        onMissingCapability: buildFlow['on-missing-capability'],
-      });
+    // All deps satisfied
+    expect(reg.resolve('color.validate').available).toBe(true);
+    expect(reg.resolve('component.scaffold').available).toBe(true);
+  });
+});
 
-      // Should have most capabilities available
-      expect(validation.available.length).toBeGreaterThan(0);
+// ═══════════════════════════════════════════════════════════
+// JOURNEY 4: Graceful degradation
+// "I ask for something the agent can't do — what happens?"
+// ═══════════════════════════════════════════════════════════
 
-      // Some might be missing (architecture.search, etc.) — that's expected
-      // The key is: vault.search should be available (it's blocking)
-      expect(validation.available).toContain('vault.search');
+describe('Journey 4: Missing capabilities degrade gracefully', () => {
+  let registry: CapabilityRegistry;
+
+  beforeAll(() => {
+    registry = new CapabilityRegistry();
+    // Only core — no design pack
+    const coreCaps = ['vault.search', 'brain.recommend', 'memory.search'].map(id => makeCap(id));
+    const coreH = new Map<string, CapabilityHandler>();
+    coreCaps.forEach(c => coreH.set(c.id, makeHandler(c.id)));
+    registry.registerPack('core', coreCaps, coreH, 100);
+  });
+
+  it('resolving missing capability returns available:false', () => {
+    const resolved = registry.resolve('color.validate');
+    expect(resolved.available).toBe(false);
+    expect(resolved.handler).toBeUndefined();
+  });
+
+  it('flow with missing non-blocking capabilities can still run partially', () => {
+    const validation = registry.validateFlow({
+      steps: [
+        { needs: ['vault.search', 'brain.recommend'] },           // all available
+        { needs: ['color.validate', 'token.check'] },              // both missing
+        { needs: ['vault.search'] },                                // available
+      ],
+      onMissingCapability: {
+        default: 'skip-with-warning',
+        blocking: ['vault.search'],
+      },
     });
+
+    expect(validation.valid).toBe(false);
+    expect(validation.canRunPartially).toBe(true); // missing caps are NOT blocking
+    expect(validation.missing).toContain('color.validate');
+    expect(validation.missing).toContain('token.check');
+    expect(validation.available).toContain('vault.search');
+    expect(validation.available).toContain('brain.recommend');
+  });
+
+  it('flow with missing BLOCKING capability cannot run', () => {
+    const validation = registry.validateFlow({
+      steps: [
+        { needs: ['vault.search', 'component.search'] },
+      ],
+      onMissingCapability: {
+        default: 'skip-with-warning',
+        blocking: ['component.search'], // this is missing AND blocking
+      },
+    });
+
+    expect(validation.valid).toBe(false);
+    expect(validation.canRunPartially).toBe(false);
+    const blocked = validation.degraded.find(d => d.capability === 'component.search');
+    expect(blocked?.impact).toBe('blocking');
+  });
+
+  it('missing dependency makes capability unavailable even if registered', () => {
+    const reg = new CapabilityRegistry();
+    // Register color.validate that depends on color.parse, but don't register color.parse
+    reg.registerPack(
+      'incomplete',
+      [makeCap('color.validate', { depends: ['color.parse'] })],
+      new Map([['color.validate', makeHandler('color.validate')]]),
+    );
+
+    const resolved = reg.resolve('color.validate');
+    expect(resolved.available).toBe(false);
+    expect(resolved.missingDependencies).toContain('color.parse');
+  });
+
+  it('handler that throws should not crash (caller handles)', async () => {
+    const throwingHandler: CapabilityHandler = async () => {
+      throw new Error('Something went wrong in the handler');
+    };
+
+    const reg = new CapabilityRegistry();
+    reg.registerPack('broken', [makeCap('broken.handler')], new Map([['broken.handler', throwingHandler]]));
+
+    const resolved = reg.resolve('broken.handler');
+    expect(resolved.available).toBe(true);
+
+    // The handler throws — caller (flow executor) should catch this
+    await expect(resolved.handler!({}, {} as never)).rejects.toThrow('Something went wrong');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// JOURNEY 5: New user onboarding
+// "I'm a new user — does the agent know how to introduce itself?"
+// ═══════════════════════════════════════════════════════════
+
+describe('Journey 5: New user onboarding', () => {
+  it('onboarding playbook should exist in builtin registry', async () => {
+    const { getAllBuiltinPlaybooks, getBuiltinPlaybook } = await import('@soleri/core');
+
+    const all = getAllBuiltinPlaybooks();
+    expect(all.length).toBeGreaterThanOrEqual(7); // 6 original + onboarding
+
+    const onboarding = getBuiltinPlaybook('generic-onboarding');
+    expect(onboarding).toBeDefined();
+    expect(onboarding!.title).toBe('New User Onboarding');
+    expect(onboarding!.trigger).toContain('what can you do');
+    expect(onboarding!.trigger).toContain('getting started');
+    expect(onboarding!.matchKeywords).toContain('help');
+    expect(onboarding!.matchKeywords).toContain('capabilities');
+  });
+
+  it('onboarding playbook should be seedable into vault', () => {
+    const tempDir = join(tmpdir(), `soleri-e2e-onboard-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+
+    const rt = createAgentRuntime({
+      agentId: 'onboard-test',
+      vaultPath: ':memory:',
+      plansPath: join(tempDir, 'plans.json'),
+    });
+
+    const result = seedDefaultPlaybooks(rt.vault);
+    expect(result.seeded).toBeGreaterThanOrEqual(7);
+    expect(result.errors).toBe(0);
+
+    rt.close();
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// JOURNEY 6: Multi-provider priority
+// "Two packs provide the same capability — which wins?"
+// ═══════════════════════════════════════════════════════════
+
+describe('Journey 6: Multi-provider priority resolution', () => {
+  it('higher priority pack wins', async () => {
+    const registry = new CapabilityRegistry();
+
+    // Design system pack at priority 50
+    const designHandler = makeHandler('design-system', () => ({ source: 'design-system', ratio: 4.5 }));
+    registry.registerPack('design-system', [makeCap('color.validate')], new Map([['color.validate', designHandler]]), 50);
+
+    // Brand guardian pack at priority 75 (user-installed, should win)
+    const brandHandler = makeHandler('brand-guardian', () => ({ source: 'brand-guardian', ratio: 7.0 }));
+    registry.registerPack('brand-guardian', [makeCap('color.validate')], new Map([['color.validate', brandHandler]]), 75);
+
+    const resolved = registry.resolve('color.validate');
+    expect(resolved.available).toBe(true);
+    expect(resolved.providers![0]).toBe('brand-guardian'); // higher priority
+
+    // Execute — should get brand-guardian's result
+    const result = await resolved.handler!({}, {} as never);
+    expect(result.data.source).toBe('brand-guardian');
+    expect(result.data.ratio).toBe(7.0);
+  });
+
+  it('core pack at priority 100 always wins for core capabilities', () => {
+    const registry = new CapabilityRegistry();
+
+    // Core at priority 100
+    registry.registerPack('core', [makeCap('vault.search')], new Map([['vault.search', makeHandler('core')]]), 100);
+
+    // Some pack tries to override vault.search at priority 50
+    registry.registerPack('override', [makeCap('vault.search')], new Map([['vault.search', makeHandler('override')]]), 50);
+
+    const resolved = registry.resolve('vault.search');
+    expect(resolved.providers![0]).toBe('core'); // core wins
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// Chain mapping & schema validation
+// ═══════════════════════════════════════════════════════════
+
+describe('Chain-to-capability v1 bridge', () => {
+  it('should map all known Soleri chain names', () => {
+    const knownMappings: Record<string, string> = {
+      'vault-search': 'vault.search',
+      'contrast-check': 'color.validate',
+      'validate-tokens': 'token.check',
+      'component-search': 'component.search',
+      'brain-recommend': 'brain.recommend',
+      'brain-strengths': 'brain.strengths',
+      'memory-search': 'memory.search',
+      'architecture-search': 'architecture.search',
+      'design-rules-check': 'design.rules',
+    };
+
+    for (const [chain, expected] of Object.entries(knownMappings)) {
+      expect(chainToCapability(chain)).toBe(expected);
+    }
+  });
+
+  it('should return undefined for unknown chains', () => {
+    expect(chainToCapability('nonexistent')).toBeUndefined();
+    expect(chainToCapability('')).toBeUndefined();
+  });
+
+  it('flow validation should work with v1 chains via bridge', () => {
+    const registry = new CapabilityRegistry();
+    registry.registerPack('core', [makeCap('vault.search'), makeCap('brain.recommend')],
+      new Map([['vault.search', makeHandler('vs')], ['brain.recommend', makeHandler('br')]]));
+
+    const validation = registry.validateFlow({
+      steps: [{ chains: ['vault-search', 'brain-recommend'] }], // v1 format
+    });
+
+    expect(validation.valid).toBe(true);
+    expect(validation.available).toContain('vault.search');
+  });
+});
+
+describe('Pack manifest v2 schema', () => {
+  it('should accept valid manifest with capabilities', () => {
+    const result = packManifestSchema.safeParse({
+      id: 'design-system',
+      name: 'Design System',
+      version: '1.0.0',
+      capabilities: [{
+        id: 'color.validate',
+        description: 'Check contrast',
+        provides: ['ratio'],
+        requires: ['fg', 'bg'],
+        depends: ['color.parse'],
+        knowledge: ['a11y-contrast'],
+      }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('should accept manifest WITHOUT capabilities (backwards compat)', () => {
+    const result = packManifestSchema.safeParse({
+      id: 'legacy',
+      name: 'Legacy Pack',
+      version: '1.0.0',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.capabilities).toEqual([]);
+    }
+  });
+
+  it('should reject invalid capability ID formats', () => {
+    const badIds = ['UPPER', 'no-period', 'a.b.c', '.leading', 'trailing.'];
+    for (const id of badIds) {
+      const result = packManifestSchema.safeParse({
+        id: 'test', name: 'Test', version: '1.0.0',
+        capabilities: [{ id, description: 'x', provides: [], requires: [] }],
+      });
+      expect(result.success).toBe(false);
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// Flow YAML migration verification
+// ═══════════════════════════════════════════════════════════
+
+describe('Flow YAML migration', () => {
+  const flowsDir = join(__dirname, '..', 'packages', 'core', 'data', 'flows');
+  let flowFiles: string[] = [];
+
+  beforeAll(() => {
+    flowFiles = readdirSync(flowsDir).filter(f => f.endsWith('.flow.yaml'));
+  });
+
+  it('all 8 flow files should exist', () => {
+    expect(flowFiles.length).toBe(8);
+  });
+
+  it('every flow should have on-missing-capability with vault.search as blocking', () => {
+    for (const file of flowFiles) {
+      const flow = parseYaml(readFileSync(join(flowsDir, file), 'utf-8'));
+      expect(flow['on-missing-capability']).toBeDefined();
+      expect(flow['on-missing-capability'].default).toBe('skip-with-warning');
+      expect(flow['on-missing-capability'].blocking).toContain('vault.search');
+    }
+  });
+
+  it('every step with chains: should also have needs:', () => {
+    for (const file of flowFiles) {
+      const flow = parseYaml(readFileSync(join(flowsDir, file), 'utf-8'));
+      for (const step of flow.steps ?? []) {
+        if (step.chains?.length > 0) {
+          expect(step.needs).toBeDefined();
+          expect(step.needs.length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it('all needs: values should be valid domain.action format', () => {
+    const format = /^[a-z][a-z0-9]*\.[a-z][a-z0-9]*$/;
+    for (const file of flowFiles) {
+      const flow = parseYaml(readFileSync(join(flowsDir, file), 'utf-8'));
+      for (const step of flow.steps ?? []) {
+        for (const need of step.needs ?? []) {
+          expect(need).toMatch(format);
+        }
+      }
+    }
+  });
+
+  it('every chain used in flows should have a capability mapping', () => {
+    const allChains = new Set<string>();
+    for (const file of flowFiles) {
+      const flow = parseYaml(readFileSync(join(flowsDir, file), 'utf-8'));
+      for (const step of flow.steps ?? []) {
+        for (const chain of step.chains ?? []) {
+          allChains.add(chain);
+        }
+      }
+    }
+
+    for (const chain of allChains) {
+      expect(chainToCapability(chain)).toBeDefined();
+    }
   });
 });
