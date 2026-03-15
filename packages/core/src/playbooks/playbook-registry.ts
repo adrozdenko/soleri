@@ -23,6 +23,7 @@ import { codeReviewPlaybook } from './generic/code-review.js';
 import { subagentExecutionPlaybook } from './generic/subagent-execution.js';
 import { systematicDebuggingPlaybook } from './generic/systematic-debugging.js';
 import { verificationPlaybook } from './generic/verification.js';
+import { onboardingPlaybook } from './generic/onboarding.js';
 
 // =============================================================================
 // SCORING WEIGHTS
@@ -49,6 +50,7 @@ const BUILTIN_PLAYBOOKS: PlaybookDefinition[] = [
   subagentExecutionPlaybook,
   systematicDebuggingPlaybook,
   verificationPlaybook,
+  onboardingPlaybook,
 ];
 
 /**
