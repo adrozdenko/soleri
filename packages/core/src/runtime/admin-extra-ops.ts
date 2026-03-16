@@ -240,7 +240,7 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'Status of all runtime modules — check each is initialized.',
       auth: 'read',
       handler: async () => {
-        const cogneeStatus = cognee.getStatus();
+        const cogneeStatus = cognee?.getStatus() ?? null;
         const llmAvailable = runtime.llmClient.isAvailable();
         const loopStatus = runtime.loop.getStatus();
 
@@ -292,11 +292,13 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
           // Brain rebuild failed — graceful degradation
         }
 
-        try {
-          cognee.resetPendingCognify();
-          cleared.push('cognee');
-        } catch {
-          // Cognee reset failed — graceful degradation
+        if (cognee) {
+          try {
+            cognee.resetPendingCognify();
+            cleared.push('cognee');
+          } catch {
+            // Cognee reset failed — graceful degradation
+          }
         }
 
         try {
@@ -798,10 +800,14 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
         }
 
         // Cognee
-        const cogneeStatus = cognee.getStatus();
+        const cogneeStatus = cognee?.getStatus() ?? null;
         checks.cognee = {
           ok: cogneeStatus?.available ?? false,
-          detail: cogneeStatus?.available ? 'Connected' : 'Not available (optional)',
+          detail: cognee
+            ? cogneeStatus?.available
+              ? 'Connected'
+              : 'Not available (optional)'
+            : 'Disabled',
         };
 
         // LLM keys

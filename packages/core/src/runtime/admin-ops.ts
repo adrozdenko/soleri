@@ -51,7 +51,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'read',
       handler: async () => {
         const vaultStats = vault.stats();
-        const cogneeStatus = cognee.getStatus();
+        const cogneeStatus = cognee?.getStatus() ?? null;
         const llmAvailable = llmClient.isAvailable();
         const brainStats = brain.getStats();
         const curatorStatus = curator.getStatus();
@@ -183,10 +183,10 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
 
         // Reset cognee health cache by checking health again (no direct reset method)
         // The next isAvailable check will need a fresh health probe
-        const cogneeHealth = await cognee.healthCheck().catch(() => null);
+        const cogneeHealth = cognee ? await cognee.healthCheck().catch(() => null) : null;
 
         return {
-          cleared: ['brain_vocabulary', 'cognee_health_cache'],
+          cleared: ['brain_vocabulary', ...(cognee ? ['cognee_health_cache'] : [])],
           brainVocabularySize: brain.getStats().vocabularySize,
           cogneeAvailable: cogneeHealth?.available ?? false,
         };
@@ -252,7 +252,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
 
         // 4. Cognee availability
         try {
-          const cogneeStatus = cognee.getStatus();
+          const cogneeStatus = cognee?.getStatus() ?? null;
           if (cogneeStatus?.available) {
             checks.push({
               name: 'cognee',

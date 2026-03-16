@@ -483,8 +483,10 @@ function readAgentConfig(agentPath: string, agentId: string): AgentConfig | null
     greeting,
     outputDir: agentPath,
     hookPacks,
+    model: pkg.soleri?.model ?? 'claude-code-sonnet-4',
     setupTarget: pkg.soleri?.setupTarget ?? 'claude',
-    telegram: false,
+    telegram: pkg.soleri?.telegram ?? false,
+    cognee: pkg.soleri?.cognee ?? false,
   };
 }
 

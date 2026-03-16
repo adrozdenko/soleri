@@ -48,6 +48,8 @@ export interface AgentRuntimeConfig {
   logLevel?: LogLevel;
   /** Path to shared global vault. Default: ~/.soleri/vault.db */
   sharedVaultPath?: string;
+  /** Enable Cognee vector search integration. Default: false (opt-in). */
+  cognee?: boolean;
 }
 
 /**
@@ -63,7 +65,8 @@ export interface AgentRuntime {
   planner: Planner;
   curator: Curator;
   governance: Governance;
-  cognee: CogneeClient;
+  /** Cognee vector search client. Null when Cognee integration is disabled. */
+  cognee: CogneeClient | null;
   loop: LoopManager;
   identityManager: IdentityManager;
   intentRouter: IntentRouter;
@@ -72,7 +75,8 @@ export interface AgentRuntime {
   telemetry: Telemetry;
   projectRegistry: ProjectRegistry;
   templateManager: TemplateManager;
-  syncManager: CogneeSyncManager;
+  /** Cognee sync manager. Null when Cognee integration is disabled. */
+  syncManager: CogneeSyncManager | null;
   intakePipeline: IntakePipeline;
   /** Mutable auth policy — controls facade dispatch enforcement. */
   authPolicy: AuthPolicy;

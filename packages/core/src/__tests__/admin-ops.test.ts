@@ -181,7 +181,8 @@ describe('createAdminOps', () => {
       setup();
       const result = (await findOp('admin_reset_cache').handler({})) as Record<string, unknown>;
 
-      expect(result.cleared).toEqual(['brain_vocabulary', 'cognee_health_cache']);
+      // When cognee is disabled (default), only brain vocabulary is cleared
+      expect(result.cleared).toContain('brain_vocabulary');
       expect(typeof (result as { brainVocabularySize: number }).brainVocabularySize).toBe('number');
       expect(typeof (result as { cogneeAvailable: boolean }).cogneeAvailable).toBe('boolean');
     });

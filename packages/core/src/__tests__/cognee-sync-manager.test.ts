@@ -28,6 +28,7 @@ describe('CogneeSyncManager', () => {
       agentId: 'test-sync-mgr',
       vaultPath: ':memory:',
       plansPath: join(plannerDir, 'plans.json'),
+      cognee: true,
     });
   });
 

@@ -11,7 +11,9 @@ import type { CogneeSearchType } from '../../cognee/types.js';
 import { createCogneeSyncOps } from '../cognee-sync-ops.js';
 
 export function createCogneeFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { cognee, vault, syncManager } = runtime;
+  // Only called when runtime.cognee is non-null (guarded in createSemanticFacades)
+  const cognee = runtime.cognee!;
+  const { vault, syncManager } = runtime;
 
   return [
     // ─── Cognee (inline from core-ops.ts) ───────────────────────

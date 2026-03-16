@@ -51,6 +51,8 @@ export const AgentConfigSchema = z.object({
   setupTarget: z.enum(SETUP_TARGETS).optional().default('opencode'),
   /** Enable Telegram transport scaffolding. Default: false. */
   telegram: z.boolean().optional().default(false),
+  /** Enable Cognee vector search integration. Default: false. */
+  cognee: z.boolean().optional().default(false),
   /** Domain packs — npm packages with custom ops, knowledge, rules, and skills. */
   domainPacks: z
     .array(

@@ -22,7 +22,7 @@ import { createAgencyFacadeOps } from './agency-facade.js';
 import { createChatFacadeOps } from './chat-facade.js';
 
 export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
-  return [
+  const facades: FacadeConfig[] = [
     {
       name: `${agentId}_vault`,
       description: 'Knowledge management — search, CRUD, import/export, intake, archival.',
@@ -70,11 +70,6 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       ops: createControlFacadeOps(runtime),
     },
     {
-      name: `${agentId}_cognee`,
-      description: 'Knowledge graph — Cognee search, sync, export, graph stats.',
-      ops: createCogneeFacadeOps(runtime),
-    },
-    {
       name: `${agentId}_context`,
       description: 'Context analysis — entity extraction, knowledge retrieval, confidence scoring.',
       ops: createContextFacadeOps(runtime),
@@ -92,4 +87,15 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       ops: createChatFacadeOps(runtime),
     },
   ];
+
+  // Cognee facade — only registered when Cognee integration is enabled
+  if (runtime.cognee) {
+    facades.push({
+      name: `${agentId}_cognee`,
+      description: 'Knowledge graph — Cognee search, sync, export, graph stats.',
+      ops: createCogneeFacadeOps(runtime),
+    });
+  }
+
+  return facades;
 }

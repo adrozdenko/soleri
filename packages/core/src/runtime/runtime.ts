@@ -85,21 +85,24 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Planner — multi-step task tracking
   const planner = new Planner(plansPath);
 
-  // Cognee — vector search client (graceful degradation if Cognee is down)
-  const cogneePartial: Partial<import('../cognee/types.js').CogneeConfig> = { dataset: agentId };
-  if (process.env.COGNEE_BASE_URL) cogneePartial.baseUrl = process.env.COGNEE_BASE_URL;
-  if (process.env.COGNEE_API_TOKEN) cogneePartial.apiToken = process.env.COGNEE_API_TOKEN;
-  if (process.env.COGNEE_DATASET) cogneePartial.dataset = process.env.COGNEE_DATASET;
-  const cognee = new CogneeClient(cogneePartial);
+  // Cognee — vector search client (opt-in, graceful degradation if Cognee is down)
+  let cognee: CogneeClient | null = null;
+  if (config.cognee) {
+    const cogneePartial: Partial<import('../cognee/types.js').CogneeConfig> = { dataset: agentId };
+    if (process.env.COGNEE_BASE_URL) cogneePartial.baseUrl = process.env.COGNEE_BASE_URL;
+    if (process.env.COGNEE_API_TOKEN) cogneePartial.apiToken = process.env.COGNEE_API_TOKEN;
+    if (process.env.COGNEE_DATASET) cogneePartial.dataset = process.env.COGNEE_DATASET;
+    cognee = new CogneeClient(cogneePartial);
+  }
 
   // Brain — intelligence layer (TF-IDF scoring, auto-tagging, dedup)
-  const brain = new Brain(vault, cognee);
+  const brain = new Brain(vault, cognee ?? undefined);
 
   // Brain Intelligence — pattern strengths, session knowledge, intelligence pipeline
   const brainIntelligence = new BrainIntelligence(vault, brain);
 
   // Curator — vault self-maintenance (dedup, contradictions, grooming, health)
-  const curator = new Curator(vault, cognee);
+  const curator = new Curator(vault, cognee ?? undefined);
 
   // Governance — policy engine + proposal tracker for gated knowledge capture
   const governance = new Governance(vault);
@@ -132,13 +135,16 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const anthropicKeyPool = new KeyPool(keyPoolFiles.anthropic);
   const llmClient = new LLMClient(openaiKeyPool, anthropicKeyPool, agentId);
 
-  // Cognee Sync Manager — queue-based dirty tracking with offline resilience
-  const syncManager = new CogneeSyncManager(
-    vault.getProvider(),
-    cognee,
-    cogneePartial.dataset ?? agentId,
-  );
-  vault.setSyncManager(syncManager);
+  // Cognee Sync Manager — queue-based dirty tracking with offline resilience (only when Cognee enabled)
+  let syncManager: CogneeSyncManager | null = null;
+  if (cognee) {
+    syncManager = new CogneeSyncManager(
+      vault.getProvider(),
+      cognee,
+      process.env.COGNEE_DATASET ?? agentId,
+    );
+    vault.setSyncManager(syncManager);
+  }
 
   // Intake Pipeline — PDF/book ingestion with LLM classification
   const intakePipeline = new IntakePipeline(vault.getProvider(), vault, llmClient);
@@ -168,7 +174,10 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const health = new HealthRegistry();
   health.register('vault', 'healthy');
   health.register('brain', 'healthy');
-  health.register('cognee', cognee.getStatus()?.available ? 'healthy' : 'degraded');
+  health.register(
+    'cognee',
+    cognee ? (cognee.getStatus()?.available ? 'healthy' : 'degraded') : 'down',
+  );
   health.register(
     'llm',
     llmClient.isAvailable().openai || llmClient.isAvailable().anthropic ? 'healthy' : 'degraded',
@@ -221,8 +230,8 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     knowledgeReview,
     createdAt: Date.now(),
     close: () => {
-      syncManager.close();
-      cognee.resetPendingCognify();
+      syncManager?.close();
+      cognee?.resetPendingCognify();
       vaultManager.close();
     },
   };

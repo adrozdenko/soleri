@@ -392,7 +392,7 @@ describe('createAdminExtraOps', () => {
       const result = (await findOp('admin_gc').handler({})) as { cleared: string[] };
 
       expect(result.cleared).toContain('brain');
-      expect(result.cleared).toContain('cognee');
+      // cognee is only cleared when enabled (opt-in)
       expect(result.cleared).toContain('telemetry');
     });
 
