@@ -127,7 +127,7 @@ function installLauncher(agentId: string, agentDir: string): void {
     '#!/bin/bash',
     `# ${agentId} — Soleri second brain launcher`,
     `# Type "${agentId}" from any directory to open OpenCode with this agent`,
-    `exec opencode --config ${opencodeConfig}`,
+    `exec opencode -c ${agentDir}`,
     '',
   ].join('\n');
 
