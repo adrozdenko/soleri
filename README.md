@@ -12,40 +12,39 @@
 
 ---
 
-Every AI session starts from zero. You explain your conventions, your architecture, your preferences — and then the session ends and it's all gone. You do it again tomorrow. And the day after that. The assistant never gets better, never remembers, never grows.
+Every AI session starts from zero. You explain your conventions, your architecture, your preferences — and then the session ends and it's all gone. You do it again tomorrow. And the day after that.
 
-**We believe AI assistants should compound knowledge, not lose it.**
+**Your expertise should compound — not evaporate.**
 
-Soleri is the open-source engine that makes that real.
+Soleri is an open-source second brain builder. It gives your AI assistant persistent memory, structured knowledge, and intelligence that grows with every session.
 
 ## How It Works
 
-An agent is a **folder**. No TypeScript, no build step, no `npm install`.
+Your second brain is a **folder**. No TypeScript, no build step, no `npm install`.
 
 ```
-my-agent/
-├── agent.yaml          # who am I, what do I know
-├── instructions/       # behavioral rules (auto-composed into CLAUDE.md)
-├── workflows/          # step-by-step playbooks
-├── knowledge/          # domain intelligence bundles
+my-brain/
+├── agent.yaml          # what do I know
+├── instructions/       # how I think
+├── workflows/          # how I work
+├── knowledge/          # what I've learned
 └── .mcp.json           # connects to Soleri Knowledge Engine
 ```
 
-Claude Code reads the folder natively. The **Knowledge Engine** provides persistent memory — a vault that remembers, a brain that learns, and memory that carries across every project and conversation. The more you use it, the sharper it gets.
+Claude Code reads the folder natively. The **Knowledge Engine** provides the infrastructure — a vault that remembers, a brain that learns what works, and memory that carries across every project and conversation. The more you use it, the smarter it gets.
 
 ## What You Get
 
 **Platform:** macOS and Linux. Windows users need [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
 
 ```bash
-npx @soleri/cli create my-agent        # Scaffold a file-tree agent (~3 seconds)
-npx @soleri/cli install                # Register MCP server in your editor
-npx @soleri/cli dev                    # Start engine + watch for file changes
-npx @soleri/cli doctor                 # Check system health
-npx @soleri/cli list                   # Show agents in current directory
+npx @soleri/cli create my-brain       # Build your second brain (~3 seconds)
+npx @soleri/cli install               # Connect to your editor
+npx @soleri/cli dev                   # Start learning
+npx @soleri/cli doctor                # Check system health
 ```
 
-Your agent is ready to use the moment it's created. No build step needed.
+Your second brain is ready the moment it's created. No build step needed.
 
 ### The Engine
 

@@ -2,7 +2,7 @@
   "name": "soleri-monorepo",
   "version": "4.0.0",
   "private": true,
-  "description": "An open-source framework for building AI assistants that learn, remember, and grow with you.",
+  "description": "Open-source second brain builder. Persistent memory, structured knowledge, and intelligence that compounds with every session.",
   "keywords": [
     "ai",
     "assistant",
