@@ -13,20 +13,20 @@ const content: Record<Locale, HowItWorksContent> = {
       'Vault, brain, and transport layers run on a single engine. One process, zero lock-in \u2014 swap transports, plug in knowledge, switch providers.',
     archLayers: [
       {
-        name: 'Agent',
-        desc: "Your agent's config \u2014 <code>agent.yaml</code> defines identity, voice, domain wiring. Create in one command, customize anytime.",
+        name: 'Agent Folder',
+        desc: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code reads them natively. No TypeScript, no build step.',
       },
       {
-        name: 'Domains',
-        desc: "Pluggable knowledge domains. The engine loads relevant domains based on your agent's vault structure.",
+        name: 'Domain Packs',
+        desc: 'Pluggable expertise modules. Add design system science, code review, or custom domains without changing the agent folder.',
       },
       {
-        name: 'Engine',
-        desc: 'Single MCP server process. Vault (knowledge), Brain (learning), Memory (context), Planning (workflows). Your agent runs on it. Updates via <code>npm update</code>.',
+        name: 'Knowledge Engine',
+        desc: 'Single MCP server (<code>@soleri/core</code>). Vault, Brain, Curator, Planner, Memory. Persistent state and learning. All agents share one engine.',
       },
       {
         name: 'Transports',
-        desc: 'Protocol adapters isolated from core: <code>mcp.ts</code> ships now, <code>rest.ts</code> and <code>lsp.ts</code> plug in for VS Code, Cursor, Zed, and custom dashboards. Adding a transport = one adapter file.',
+        desc: 'MCP (stdio) for Claude Code and Cursor. HTTP/SSE for dashboards. WebSocket for streaming. Telegram for conversational access.',
       },
     ],
     vault: {
@@ -109,17 +109,17 @@ const content: Record<Locale, HowItWorksContent> = {
     },
     transport: {
       title: 'Not locked to any editor',
-      text: "Your knowledge shouldn't be trapped in one tool. The core engine has zero protocol dependencies. Transport adapters are separate files \u2014 swap or add them without touching the engine.",
-      keyPoint: 'Core has zero protocol deps.',
-      code: `<span class="key">engine/transports/</span>  <span class="cmt"># one file per protocol</span>
-\u251C\u2500\u2500 <span class="ok">mcp.ts</span>         <span class="cmt"># Claude Code, Cursor \u2014 ships now</span>
-\u251C\u2500\u2500 rest.ts        <span class="cmt"># dashboards, custom APIs</span>
-\u2514\u2500\u2500 lsp.ts         <span class="cmt"># VS Code, Cursor, Zed extensions</span>
+      text: "Your knowledge shouldn't be trapped in one tool. The Knowledge Engine runs as a single MCP server. Multiple transports connect to it \u2014 no lock-in.",
+      keyPoint: 'One engine, many transports.',
+      code: `<span class="key">my-agent/</span>           <span class="cmt"># your agent folder</span>
+\u251C\u2500\u2500 <span class="ok">agent.yaml</span>       <span class="cmt"># identity + config</span>
+\u251C\u2500\u2500 <span class="key">instructions/</span>    <span class="cmt"># behavioral rules</span>
+\u2514\u2500\u2500 .mcp.json        <span class="cmt"># connects to engine</span>
 
-<span class="key">engine/core/</span>        <span class="cmt"># zero transport imports</span>
-\u251C\u2500\u2500 vault.ts
-\u251C\u2500\u2500 brain.ts
-\u2514\u2500\u2500 memory.ts`,
+<span class="key">@soleri/core</span>        <span class="cmt"># Knowledge Engine</span>
+\u251C\u2500\u2500 <span class="ok">MCP (stdio)</span>    <span class="cmt"># Claude Code, Cursor</span>
+\u251C\u2500\u2500 HTTP/SSE       <span class="cmt"># dashboards, APIs</span>
+\u2514\u2500\u2500 WebSocket      <span class="cmt"># streaming, Telegram</span>`,
     },
     llm: {
       title: 'Runs without API keys',

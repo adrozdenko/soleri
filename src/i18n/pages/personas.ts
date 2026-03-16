@@ -14,38 +14,34 @@ const content: Record<Locale, PersonasContent> = {
 
     // Section 1: Create and configure
     section1Title: 'Create and configure',
-    section1Code1: `<span class="cmt"># Create your agent</span>
+    section1Code1: `<span class="cmt"># Create a file-tree agent (~3 seconds)</span>
 <span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="ok">?</span> Connect an existing vault, or start fresh?
-  <span class="val">\u203A Start fresh</span>
+<span class="ok">\u2713</span> Created agent.yaml
+<span class="ok">\u2713</span> Generated instructions/, workflows/, knowledge/
+<span class="ok">\u2713</span> Auto-composed CLAUDE.md
+<span class="ok">\u2713</span> Ready \u2014 no build step needed
 
-<span class="ok">\u2713</span> Created agent config
-<span class="ok">\u2713</span> Initialized vault           <span class="val">starter knowledge: 34 patterns</span>
-<span class="ok">\u2713</span> Scanned project              <span class="val">React + TypeScript detected</span>
-<span class="ok">\u2713</span> Auto-captured                <span class="val">12 codebase patterns</span>
-<span class="ok">\u2713</span> Vault ready                  <span class="val">46 entries, vectorized</span>
-
-<span class="cmt">Agent "my-agent" is ready.</span>`,
-    section1Code2: `<span class="cmt"># Generated agent.yaml</span>
-<span class="key">name:</span> <span class="val">my-agent</span>
-<span class="key">voice:</span> <span class="val">direct, technical, thorough</span>
+<span class="cmt">Run: soleri install && soleri dev</span>`,
+    section1Code2: `<span class="cmt"># agent.yaml \u2014 single source of truth</span>
+<span class="key">id:</span> <span class="val">my-agent</span>
+<span class="key">name:</span> <span class="val">My Agent</span>
+<span class="key">role:</span> <span class="val">Full-Stack Development Advisor</span>
 <span class="key">domains:</span> <span class="val">[frontend, backend, infrastructure]</span>
-<span class="key">vault:</span>
-  <span class="key">backends:</span>
-    - <span class="key">type:</span> <span class="val">local</span>          <span class="cmt"># ~/.soleri/vaults/my-agent</span>
-    - <span class="key">type:</span> <span class="val">git</span>            <span class="cmt"># optional team vault</span>
-      <span class="key">uri:</span>  <span class="val">git@github.com:team/vault.git</span>
-  <span class="key">vectorize:</span> <span class="val">true</span>
-  <span class="key">graph:</span> <span class="val">cognee</span>
-<span class="key">brain:</span>
-  <span class="key">auto_capture:</span> <span class="val">true</span>
-  <span class="key">min_confidence:</span> <span class="val">0.7</span>`,
-    section1ContentTitle: 'Configuration as code',
+<span class="key">principles:</span>
+  - <span class="val">Vault is the single source of truth</span>
+  - <span class="val">Test before shipping</span>
+<span class="key">tone:</span> <span class="val">pragmatic</span>
+<span class="key">engine:</span>
+  <span class="key">cognee:</span> <span class="val">true</span>     <span class="cmt"># optional vector search</span>
+<span class="key">vaults:</span>
+  - <span class="key">name:</span> <span class="val">team</span>
+    <span class="key">path:</span> <span class="val">~/.soleri/vault.db</span>`,
+    section1ContentTitle: 'Folder = agent',
     section1ContentP1:
-      'The <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> command generates an <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code> with sensible defaults. It initializes a vault with starter knowledge, scans your project for patterns, and vectorizes everything.',
+      'The <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> command generates a folder with <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, instructions, workflows, and knowledge bundles. No TypeScript, no build step \u2014 Claude Code reads the folder natively.',
     section1ContentP2:
-      'Voice, domains, vault backends, and brain settings — all declarative, all version-controlled.',
+      'Identity, domains, principles, engine config \u2014 all in one YAML file, version-controlled.',
     section1KeyPoint: 'One vault. All your knowledge. No coordination overhead.',
 
     // Section 2: Structured vault

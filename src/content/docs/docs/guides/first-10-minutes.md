@@ -10,32 +10,30 @@ By the end of this tutorial, you'll have an agent that knows things, learns from
 Open your terminal and run:
 
 ```bash
-npm create soleri my-agent
+npx @soleri/cli create my-agent
 ```
 
 The wizard will ask you a few things — pick a name, describe what your agent does, choose some knowledge areas. Don't overthink it, you can change everything later.
 
-Once it's done, build it:
+Your agent is a folder — ready instantly, no build step:
 
-```bash
-cd my-agent
-npm install
-npm run build
+```
+my-agent/
+├── agent.yaml          # Identity + config
+├── instructions/       # Behavioral rules
+├── workflows/          # Step-by-step playbooks
+├── knowledge/          # Domain intelligence
+└── .mcp.json           # Connects to engine
 ```
 
 ## Step 2: Connect to Claude Code
 
-Add your agent to `.mcp.json` in your project root:
+Register and start the engine:
 
-```json
-{
-  "mcpServers": {
-    "my-agent": {
-      "command": "node",
-      "args": ["./my-agent/dist/index.js"]
-    }
-  }
-}
+```bash
+cd my-agent
+soleri install           # Register MCP server
+soleri dev               # Start engine + watch files
 ```
 
 Restart Claude Code. Your agent is now running.
@@ -83,9 +81,9 @@ It remembered. Not because it has a conversation history — because the knowled
 
 ## How it works under the hood
 
-Your agent is an MCP tool server — it exposes tools that Claude Code can call. When you said "capture this pattern," Claude Code called the agent's `capture_knowledge` tool. When you searched, it called `search_intelligent`.
+Your agent folder contains instructions that Claude Code reads natively. The Knowledge Engine (running via `.mcp.json`) provides tools that Claude Code can call. When you said "capture this pattern," Claude Code called the engine's `capture_knowledge` tool. When you searched, it called `search_intelligent`.
 
-The agent doesn't proactively surface knowledge on its own. Instead, Claude Code decides when to call the agent's search tools based on your conversation. When you ask about API errors, Claude Code recognizes this is relevant to your knowledge base and calls the search tool. The agent returns ranked results, and Claude Code uses them in its response.
+The agent doesn't proactively surface knowledge on its own. Instead, Claude Code decides when to call the engine's search tools based on your conversation. When you ask about API errors, Claude Code recognizes this is relevant to your knowledge base and calls the search tool. The engine returns ranked results, and Claude Code uses them in its response.
 
 This is why the vault is powerful — it's not a passive document. It's a searchable, ranked knowledge store that Claude Code consults whenever your conversation touches a relevant topic.
 
@@ -102,4 +100,4 @@ This is the foundation. Now that you've seen the basics, learn the workflow that
 
 ---
 
-_Next: [The Development Workflow](/docs/guides/workflow/) — the five-step rhythm for working with your agent: Search → Plan → Work → Capture → Complete. Then dive into [Building a Knowledge Base](/docs/guides/knowledge-base/) to learn what to capture and how to organize it._
+_Next: [The Development Workflow](/docs/guides/workflow/) — the five-step rhythm for working with your agent: Search, Plan, Work, Capture, Complete. Then dive into [Building a Knowledge Base](/docs/guides/knowledge-base/) to learn what to capture and how to organize it._

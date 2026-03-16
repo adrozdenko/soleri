@@ -193,10 +193,10 @@ npx @soleri/cli extend <subcommand>
 
 | Subcommand       | Description                                      |
 | ---------------- | ------------------------------------------------ |
-| `init`           | Initialize `src/extensions/` directory            |
-| `add-op <name>`  | Scaffold a custom op (snake_case, e.g. `summarize_pr`) |
-| `add-facade <name>` | Scaffold a custom facade (kebab-case, e.g. `github`) |
-| `add-middleware <name>` | Scaffold a middleware (kebab-case, e.g. `audit-logger`) |
+| `init`           | Initialize extensions (legacy TypeScript agents only) |
+| `add-op <name>`  | Scaffold a custom op (legacy TypeScript agents only)  |
+| `add-facade <name>` | Scaffold a custom facade (legacy TypeScript agents only) |
+| `add-middleware <name>` | Scaffold a middleware (legacy TypeScript agents only) |
 
 **Examples:**
 

@@ -172,17 +172,16 @@ npx @soleri/cli upgrade --check
 npx @soleri/cli upgrade
 ```
 
-### Upgrade @soleri/core
+### Upgrade the Knowledge Engine
 
-In your agent's directory:
+The engine is updated independently of your agent folder:
 
 ```bash
-npm update @soleri/core
-npm run build
-npm test
+npm update @soleri/core -g    # Update engine globally
+soleri dev                     # Restart with new engine
 ```
 
-Core upgrades are backward-compatible within the same major version. Your agent's custom code, persona, and vault data are preserved.
+Engine upgrades are backward-compatible within the same major version. Your agent folder, vault data, and all customizations are preserved.
 
 ## Governance policies
 
