@@ -433,29 +433,25 @@ describe('Knowledge Traceability', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Step 8: RECOMMEND (brain-informed suggestions)', () => {
-    it('KNOWN BUG: brain_recommend should surface accepted security patterns but returns unrelated playbooks', async () => {
-      // After 3 positive feedbacks on JWT pattern, brain_recommend for security
-      // SHOULD return that pattern. Currently returns seeded playbooks instead.
-      // This indicates brain_recommend does not factor feedback acceptance into
-      // domain-filtered recommendations.
+    it('brain_recommend for security should surface accepted security patterns', async () => {
       const res = await op('brain', 'brain_recommend', {
         domain: 'security',
         task: 'securing REST API endpoints',
       });
 
-      const recs = (Array.isArray(res) ? res : res.recommendations ?? []) as Array<{ id: string; title: string; strength: number }>;
+      const recs = (Array.isArray(res) ? res : res.recommendations ?? []) as Array<{ pattern: string; domain: string; strength: number }>;
 
-      // Recommendations should exist
       expect(Array.isArray(recs)).toBe(true);
+      expect(recs.length).toBeGreaterThan(0);
 
-      // TODO: When fixed, uncomment this assertion:
-      // const securityRec = recs.find(r =>
-      //   r.title?.toLowerCase().includes('jwt') ||
-      //   r.title?.toLowerCase().includes('token') ||
-      //   r.id === state.knowledgeId,
-      // );
-      // expect(securityRec).toBeDefined();
-      // expect(securityRec!.strength).toBeGreaterThan(0);
+      // After 3 positive feedbacks, JWT pattern should be among recommendations
+      const securityRec = recs.find(r =>
+        r.pattern?.toLowerCase().includes('jwt') ||
+        r.pattern?.toLowerCase().includes('token') ||
+        r.pattern?.toLowerCase().includes('validate'),
+      );
+      expect(securityRec).toBeDefined();
+      expect(securityRec!.strength).toBeGreaterThan(0);
     });
 
     it('brain_recommend for unrelated domain should NOT include JWT pattern', async () => {
@@ -595,23 +591,22 @@ describe('Knowledge Traceability', () => {
       expect(connected.some(c => c.id === state.relatedId)).toBe(true);
     });
 
-    it('KNOWN BUG: brain recommend in recall should surface patterns from feedback history', async () => {
-      // Same issue as Step 8: brain_recommend returns playbooks instead of
-      // security patterns that received positive feedback.
+    it('brain recommend in recall should surface patterns from feedback history', async () => {
       const res = await op('brain', 'brain_recommend', {
         domain: 'security',
         task: 'API endpoint protection',
       });
 
-      const recs = (Array.isArray(res) ? res : res.recommendations ?? []) as Array<{ id: string; title: string }>;
+      const recs = (Array.isArray(res) ? res : res.recommendations ?? []) as Array<{ pattern: string; domain: string; strength: number }>;
       expect(Array.isArray(recs)).toBe(true);
+      expect(recs.length).toBeGreaterThan(0);
 
-      // TODO: When fixed, uncomment:
-      // const securityRec = recs.find(r =>
-      //   r.id === state.knowledgeId ||
-      //   r.title?.toLowerCase().includes('jwt'),
-      // );
-      // expect(securityRec).toBeDefined();
+      const securityRec = recs.find(r =>
+        r.pattern?.toLowerCase().includes('jwt') ||
+        r.pattern?.toLowerCase().includes('validate') ||
+        r.pattern?.toLowerCase().includes('auth'),
+      );
+      expect(securityRec).toBeDefined();
     });
 
     it('creating a new plan for related work should benefit from existing knowledge', async () => {

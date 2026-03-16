@@ -497,11 +497,30 @@ export class BrainIntelligence {
     limit?: number;
   }): PatternStrength[] {
     const limit = context.limit ?? 5;
-    const strengths = this.getStrengths({
+
+    // Try domain-filtered first, fall back to all domains if too few results
+    let strengths = this.getStrengths({
       domain: context.domain,
-      minStrength: 30,
+      minStrength: 20, // lowered from 30 — small corpus needs lower threshold
       limit: limit * 3,
     });
+
+    // If domain-filtered returns too few, try without domain filter
+    // This handles cases where domain was stored as 'unknown' due to
+    // vault.get() returning null during computeStrengths
+    if (strengths.length < limit && context.domain) {
+      const allStrengths = this.getStrengths({
+        minStrength: 20,
+        limit: limit * 5,
+      });
+      // Include domain-matching AND entries where domain lookup failed
+      const additional = allStrengths.filter(
+        (s) =>
+          !strengths.some((existing) => existing.pattern === s.pattern) &&
+          (s.domain === context.domain || s.domain === 'unknown'),
+      );
+      strengths = [...strengths, ...additional];
+    }
 
     // If task context provided, boost patterns with matching terms
     if (context.task) {
