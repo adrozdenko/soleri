@@ -85,7 +85,9 @@
     "getenv",
     "libvips",
     "venv",
-    "lockfiles"
+    "lockfiles",
+    "filetree",
+    "opencode"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [

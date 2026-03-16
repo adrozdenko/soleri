@@ -1,0 +1,5 @@
+tools:
+  - soleri_vault op:search_intelligent
+  - soleri_vault op:capture_knowledge
+  - soleri_planner op:create_plan
+  - soleri_brain op:recommend

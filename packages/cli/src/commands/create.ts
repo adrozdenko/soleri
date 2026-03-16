@@ -8,6 +8,7 @@ import {
   AgentConfigSchema,
   SETUP_TARGETS,
   type SetupTarget,
+  scaffoldFileTree,
 } from '@soleri/forge/lib';
 import { runCreateWizard } from '../prompts/create-wizard.js';
 import { listPacks } from '../hook-packs/registry.js';
@@ -36,9 +37,20 @@ export function registerCreate(program: Command): void {
       `Setup target: ${SETUP_TARGETS.join(', ')} (default: claude)`,
     )
     .option('-y, --yes', 'Skip confirmation prompts (use with --config for fully non-interactive)')
+    .option('--filetree', 'Create a file-tree agent (v7 — no TypeScript, no build step)')
+    .option('--legacy', 'Create a legacy TypeScript agent (v6 — requires npm install + build)')
     .description('Create a new Soleri agent')
     .action(
-      async (name?: string, opts?: { config?: string; yes?: boolean; setupTarget?: string }) => {
+      async (
+        name?: string,
+        opts?: {
+          config?: string;
+          yes?: boolean;
+          setupTarget?: string;
+          filetree?: boolean;
+          legacy?: boolean;
+        },
+      ) => {
         try {
           let config;
 
@@ -81,6 +93,69 @@ export function registerCreate(program: Command): void {
           if (setupTarget) {
             config = { ...config, setupTarget };
           }
+          // ─── File-tree agent (v7) ──────────────────────────────
+          // Default to filetree unless --legacy is explicitly passed
+          const useFileTree = opts?.filetree || !opts?.legacy;
+
+          if (useFileTree) {
+            // Convert to AgentYaml format
+            const agentYamlInput = {
+              id: config.id,
+              name: config.name,
+              role: config.role,
+              description: config.description,
+              domains: config.domains,
+              principles: config.principles,
+              tone: config.tone,
+              greeting: config.greeting,
+              setup: {
+                target: config.setupTarget,
+                model: config.model,
+              },
+              engine: {
+                cognee: config.cognee,
+              },
+              vaults: config.vaults,
+              packs: config.domainPacks?.map((dp) => ({
+                name: dp.name,
+                package: dp.package,
+                version: dp.version,
+              })),
+            };
+
+            const outputDir = config.outputDir ?? process.cwd();
+            const nonInteractive = !!(opts?.yes || opts?.config);
+
+            if (!nonInteractive) {
+              p.log.info(
+                `Will create file-tree agent "${config.name}" in ${outputDir}/${config.id}`,
+              );
+              p.log.info(`Domains: ${config.domains.join(', ')}`);
+              p.log.info('No build step — agent is ready to use immediately.');
+
+              const confirmed = await p.confirm({ message: 'Create agent?' });
+              if (p.isCancel(confirmed) || !confirmed) {
+                p.outro('Cancelled.');
+                return;
+              }
+            }
+
+            const s = p.spinner();
+            s.start('Creating file-tree agent...');
+            const result = scaffoldFileTree(agentYamlInput, outputDir);
+            s.stop(result.success ? 'Agent created!' : 'Creation failed');
+
+            if (!result.success) {
+              p.log.error(result.summary);
+              process.exit(1);
+            }
+
+            p.note(result.summary, 'Next steps');
+            p.outro('Done!');
+            return;
+          }
+
+          // ─── Legacy TypeScript agent (v6) ─────────────────────
           const claudeSetup = includesClaudeSetup(config.setupTarget);
 
           const nonInteractive = !!(opts?.yes || opts?.config);
@@ -98,9 +173,9 @@ export function registerCreate(program: Command): void {
             const available = listPacks().map((pk) => pk.name);
             const unknown = selectedPacks.filter((pk) => !available.includes(pk));
             if (unknown.length > 0) {
-              for (const name of unknown) {
+              for (const packName of unknown) {
                 p.log.warn(
-                  `Unknown hook pack "${name}" — skipping. Available: ${available.join(', ')}`,
+                  `Unknown hook pack "${packName}" — skipping. Available: ${available.join(', ')}`,
                 );
               }
               selectedPacks = selectedPacks.filter((pk) => available.includes(pk));

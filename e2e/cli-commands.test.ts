@@ -86,15 +86,27 @@ describe('E2E: cli-commands', () => {
   });
 
   it('should have created the agent directory with expected files', () => {
-    // The agent dir could be e2e-cli-agent-mcp or e2e-cli-agent depending on scaffold
+    // The agent dir could be e2e-cli-agent-mcp (legacy) or e2e-cli-agent (file-tree) depending on scaffold
     const dir = existsSync(agentDir) ? agentDir : join(tempDir, 'e2e-cli-agent');
     if (!existsSync(dir)) return; // Skip if create failed
 
     agentDir = dir;
-    expect(existsSync(join(dir, 'package.json'))).toBe(true);
-    expect(existsSync(join(dir, 'src/index.ts'))).toBe(true);
-    expect(existsSync(join(dir, 'src/intelligence/data/testing.json'))).toBe(true);
-    expect(existsSync(join(dir, 'src/intelligence/data/quality.json'))).toBe(true);
+
+    // Support both file-tree (v7) and legacy (v6) output
+    const isFileTree = existsSync(join(dir, 'agent.yaml'));
+    if (isFileTree) {
+      expect(existsSync(join(dir, 'agent.yaml'))).toBe(true);
+      expect(existsSync(join(dir, '.mcp.json'))).toBe(true);
+      expect(existsSync(join(dir, 'CLAUDE.md'))).toBe(true);
+      expect(existsSync(join(dir, 'instructions'))).toBe(true);
+      expect(existsSync(join(dir, 'knowledge/testing.json'))).toBe(true);
+      expect(existsSync(join(dir, 'knowledge/quality.json'))).toBe(true);
+    } else {
+      expect(existsSync(join(dir, 'package.json'))).toBe(true);
+      expect(existsSync(join(dir, 'src/index.ts'))).toBe(true);
+      expect(existsSync(join(dir, 'src/intelligence/data/testing.json'))).toBe(true);
+      expect(existsSync(join(dir, 'src/intelligence/data/quality.json'))).toBe(true);
+    }
   });
 
   it('should reject invalid config file', () => {

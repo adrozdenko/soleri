@@ -7,7 +7,26 @@ import { detectAgent } from '../utils/agent-context.js';
 
 type Target = 'claude' | 'codex' | 'opencode' | 'both' | 'all';
 
-function installClaude(agentId: string, agentDir: string): void {
+/** MCP server entry for file-tree agents (uses npx @soleri/engine) */
+function fileTreeMcpEntry(agentDir: string): Record<string, unknown> {
+  return {
+    type: 'stdio',
+    command: 'npx',
+    args: ['@soleri/engine', '--agent', join(agentDir, 'agent.yaml')],
+  };
+}
+
+/** MCP server entry for legacy TypeScript agents (uses node dist/index.js) */
+function legacyMcpEntry(agentDir: string): Record<string, unknown> {
+  return {
+    type: 'stdio',
+    command: 'node',
+    args: [join(agentDir, 'dist', 'index.js')],
+    env: {},
+  };
+}
+
+function installClaude(agentId: string, agentDir: string, isFileTree: boolean): void {
   const configPath = join(homedir(), '.claude.json');
   let config: Record<string, unknown> = {};
 
@@ -24,18 +43,15 @@ function installClaude(agentId: string, agentDir: string): void {
     config.mcpServers = {};
   }
 
-  (config.mcpServers as Record<string, unknown>)[agentId] = {
-    type: 'stdio',
-    command: 'node',
-    args: [join(agentDir, 'dist', 'index.js')],
-    env: {},
-  };
+  (config.mcpServers as Record<string, unknown>)[agentId] = isFileTree
+    ? fileTreeMcpEntry(agentDir)
+    : legacyMcpEntry(agentDir);
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
   p.log.success(`Registered ${agentId} in ~/.claude.json`);
 }
 
-function installCodex(agentId: string, agentDir: string): void {
+function installCodex(agentId: string, agentDir: string, isFileTree: boolean): void {
   const codexDir = join(homedir(), '.codex');
   const configPath = join(codexDir, 'config.toml');
 
@@ -53,8 +69,14 @@ function installCodex(agentId: string, agentDir: string): void {
   const sectionRegex = new RegExp(`\\[mcp_servers\\.${escapeRegExp(agentId)}\\][^\\[]*`, 's');
   content = content.replace(sectionRegex, '').trim();
 
-  const entryPoint = join(agentDir, 'dist', 'index.js');
-  const section = `\n\n${sectionHeader}\ncommand = "node"\nargs = ["${entryPoint}"]\n`;
+  let section: string;
+  if (isFileTree) {
+    const agentYamlPath = join(agentDir, 'agent.yaml');
+    section = `\n\n${sectionHeader}\ncommand = "npx"\nargs = ["@soleri/engine", "--agent", "${agentYamlPath}"]\n`;
+  } else {
+    const entryPoint = join(agentDir, 'dist', 'index.js');
+    section = `\n\n${sectionHeader}\ncommand = "node"\nargs = ["${entryPoint}"]\n`;
+  }
 
   content = content + section;
 
@@ -62,7 +84,7 @@ function installCodex(agentId: string, agentDir: string): void {
   p.log.success(`Registered ${agentId} in ~/.codex/config.toml`);
 }
 
-function installOpencode(agentId: string, agentDir: string): void {
+function installOpencode(agentId: string, agentDir: string, isFileTree: boolean): void {
   const configPath = join(homedir(), '.opencode.json');
 
   let config: Record<string, unknown> = {};
@@ -81,11 +103,9 @@ function installOpencode(agentId: string, agentDir: string): void {
   }
 
   const servers = config.mcpServers as Record<string, unknown>;
-  servers[agentId] = {
-    type: 'stdio',
-    command: 'node',
-    args: [join(agentDir, 'dist', 'index.js')],
-  };
+  servers[agentId] = isFileTree
+    ? fileTreeMcpEntry(agentDir)
+    : { type: 'stdio', command: 'node', args: [join(agentDir, 'dist', 'index.js')] };
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
   p.log.success(`Registered ${agentId} in ~/.opencode.json`);
@@ -112,22 +132,27 @@ export function registerInstall(program: Command): void {
 
       const target = (opts?.target ?? 'opencode') as Target;
       const validTargets: Target[] = ['claude', 'codex', 'opencode', 'both', 'all'];
+      const isFileTree = ctx.format === 'filetree';
 
       if (!validTargets.includes(target)) {
         p.log.error(`Invalid target "${target}". Use: ${validTargets.join(', ')}`);
         process.exit(1);
       }
 
+      if (isFileTree) {
+        p.log.info(`Detected file-tree agent (v7) — registering via @soleri/engine`);
+      }
+
       if (target === 'claude' || target === 'both' || target === 'all') {
-        installClaude(ctx.agentId, ctx.agentPath);
+        installClaude(ctx.agentId, ctx.agentPath, isFileTree);
       }
 
       if (target === 'codex' || target === 'both' || target === 'all') {
-        installCodex(ctx.agentId, ctx.agentPath);
+        installCodex(ctx.agentId, ctx.agentPath, isFileTree);
       }
 
       if (target === 'opencode' || target === 'all') {
-        installOpencode(ctx.agentId, ctx.agentPath);
+        installOpencode(ctx.agentId, ctx.agentPath, isFileTree);
       }
 
       p.log.info(`Agent ${ctx.agentId} is now available as an MCP server.`);

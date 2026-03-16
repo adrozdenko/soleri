@@ -1,0 +1,16 @@
+gates:
+  - phase: brainstorming
+    requirement: Requirements are clear and user has approved the approach
+    check: user-approval
+
+  - phase: pre-execution
+    requirement: Plan created via orchestrator and approved by user
+    check: plan-approved
+
+  - phase: post-task
+    requirement: All tests pass and code compiles
+    check: tests-pass
+
+  - phase: completion
+    requirement: Knowledge captured to vault with links
+    check: knowledge-captured

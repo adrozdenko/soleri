@@ -1,0 +1,8 @@
+gates:
+  - phase: post-task
+    requirement: Design system compliance validated
+    check: design-rule-checks
+
+  - phase: completion
+    requirement: All blocking issues addressed
+    check: issues-resolved

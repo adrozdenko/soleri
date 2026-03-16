@@ -1,0 +1,16 @@
+gates:
+  - phase: brainstorming
+    requirement: Component API defined and approach approved
+    check: user-approval
+
+  - phase: post-task
+    requirement: Token compliance validated
+    check: token-compliance
+
+  - phase: post-task
+    requirement: All contrast ratios meet WCAG AA
+    check: contrast-check
+
+  - phase: completion
+    requirement: Storybook coverage for all visual states
+    check: storybook-coverage

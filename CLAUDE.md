@@ -1,30 +1,32 @@
 # Soleri — Project Instructions
 
-## Core Principle: Salvador is the Reference
+## Architecture: Two-Layer Split (v7)
 
-Salvador MCP is the reference implementation for Soleri. Every engine-level feature in Salvador should exist in every Soleri-generated agent.
+Soleri uses a **file-tree agent architecture**. Agents are folders, not TypeScript projects.
 
-### Development Strategy: Consult → Evaluate → Port or Improve
+### Layer 1: File Tree (Agent Definition)
+- `agent.yaml` — identity, domains, principles, engine config
+- `instructions/` — behavioral rules (composed into CLAUDE.md)
+- `workflows/` — playbooks as folders with prompt.md + gates.yaml + tools.yaml
+- `knowledge/` — domain intelligence bundles (JSON)
+- `skills/` — SKILL.md files
+- `.mcp.json` — points to Soleri Knowledge Engine
+- `CLAUDE.md` — **auto-generated**, never edit manually
 
-Salvador is the **reference implementation, not gospel**. It works and it's battle-tested, but it was AI-generated — the internals haven't been deeply audited for optimality. Every feature port is an opportunity to validate and improve.
+### Layer 2: Knowledge Engine (@soleri/core)
+- Vault, brain, curator, planner, memory, learning — the persistent state
+- Single MCP server that all file-tree agents connect to
+- Direct tool registration via `registerEngine()` (no facade factory)
+- Domain packs provide additional ops
 
-**For every Soleri feature, follow this sequence:**
+### Key Principle
+The file tree is the **shell**. The knowledge engine is the **brain**.
+Claude Code reads the folder natively. The engine provides persistence and learning.
+No TypeScript generation. No build step. No `npm install` for agent definitions.
 
-1. **Consult Salvador first** — Before writing any code, read the Salvador implementation.
-   - Find the relevant source: `~/projects/salvador-mcp/src/` (code) or `docs/vault/patterns/` (vault patterns)
-   - Read the actual handler/module, not just the facade registration
-   - Understand the data flow end-to-end, not just the public API
-2. **Evaluate critically** — Salvador's code works, but ask:
-   - Is this over-engineered? Could it be simpler?
-   - Are there edge cases it misses?
-   - Is the abstraction level right, or did it abstract too early?
-   - Would this pattern make sense for a generic agent, or is it Salvador-specific?
-   - Are there performance issues hidden by small-scale usage?
-3. **Port or improve** — Three outcomes:
-   - **Port directly** — the code is solid, copy and adapt to `@soleri/core` conventions
-   - **Port with improvements** — the approach is right but the implementation can be cleaner/faster/simpler
-   - **Rewrite** — the approach itself is suboptimal; design a better one informed by what Salvador taught us
-4. **Document the delta** — If you improve or rewrite, note what changed and why. This feeds back into Salvador's own improvement.
+### Reference Agent
+Salvador at `agents/salvador-filetree/` is the reference file-tree agent.
+Old Salvador MCP (`~/projects/salvador-mcp`) is retired.
 
 **Key Salvador source locations:**
 
@@ -45,54 +47,47 @@ Salvador is the **reference implementation, not gospel**. It works and it's batt
 1. **Generated agents = Salvador-grade** — A scaffolded agent must ship with the same capabilities as Salvador (minus domain-specific design system intelligence). Curator, brain intelligence pipeline, loops, orchestration, identity, governance — these are all engine features, not Salvador-specific.
 2. **Consult Salvador vault docs first** — Before building any feature, read the Salvador wiki documentation in `docs/vault/patterns/` and `docs/vault/patterns/`. These describe exactly how each feature works, what ops it exposes, and how it integrates.
 
-### The 4-File Rule
+### Adding Engine Features
 
-Every new core feature requires changes in all 4 template files:
+New engine features go in `@soleri/core`. The engine exposes ops via `registerEngine()`:
 
-| File                                           | What to add                                    |
-| ---------------------------------------------- | ---------------------------------------------- |
-| `packages/core/src/`                           | Implementation (new module or extend existing) |
-| `packages/core/src/facades/facade-factory.ts`  | Register new facade if adding one               |
-| `packages/forge/src/templates/test-facades.ts` | Tests for every new op                         |
-| `packages/forge/src/templates/entry-point.ts`  | Initialization if the feature needs setup      |
+| File | Purpose |
+|------|---------|
+| `packages/core/src/` | Implementation (new module or extend existing) |
+| `packages/core/src/engine/register-engine.ts` | Register new module tool if adding one |
+| `packages/core/src/runtime/facades/*-facade.ts` | Op definitions (handler + schema + auth) |
 
-If any of the 4 are missed, the generated agent ships incomplete.
+### CLAUDE.md Composition
 
-### CLAUDE.md Split Injection Architecture
+CLAUDE.md is **auto-generated** by `composeClaudeMd()` from the file tree:
 
-Generated agents inject TWO separate blocks into CLAUDE.md:
-
-| Block | Marker | Content | Injected |
-|-------|--------|---------|----------|
-| **Engine rules** | `<!-- soleri:engine-rules -->` | Shared behavioral rules (vault-first, planning, output formatting, clean commits, etc.) — prefix-free `op:name` syntax | Once globally, skipped if already present |
-| **Agent block** | `<!-- agent-id:mode -->` | Lightweight: identity, activation, facade table mapping `op:name` → `agentId_core op:name` | Per agent |
+1. Agent identity (from `agent.yaml`)
+2. Engine rules (from `instructions/_engine.md` — auto-generated)
+3. User instructions (from `instructions/*.md` — sorted alphabetically)
+4. Tools table (from engine registration)
+5. Workflow index (from `workflows/`)
+6. Skills index (from `skills/`)
 
 **Key files:**
 
 | File | Purpose |
 |------|---------|
-| `packages/forge/src/templates/shared-rules.ts` | Engine rules content — agent-agnostic, `op:name` syntax |
-| `packages/forge/src/templates/claude-md-template.ts` | Generates `claude-md-content.ts` — exports agent block + engine rules |
-| `packages/forge/src/templates/inject-claude-md.ts` | Generates `inject-claude-md.ts` — dual-marker injection logic |
+| `packages/forge/src/templates/shared-rules.ts` | Engine rules content |
+| `packages/forge/src/compose-claude-md.ts` | Composition algorithm |
+| `packages/forge/src/agent-schema.ts` | `agent.yaml` Zod schema |
 
-**When adding engine-level behavioral rules:** Add to `shared-rules.ts` (not the agent template). These apply to all agents.
-
-**When adding agent-specific content:** Add to `claude-md-template.ts` (identity, activation, facade table, hook packs).
-
-**Updating existing agents:** `soleri agent refresh` regenerates both `claude-md-content.ts` and `inject-claude-md.ts` from latest forge templates.
-
-### Feature Gap
-
-Generated agents now ship with 209+ ops across 13+ semantic facades (vault, plan, brain, memory, admin, curator, loop, orchestrate, control, cognee, governance, figma, github) plus domain facades. Salvador has 181+ ops across 14 facades. The op gap is closed; remaining work is domain-specific intelligence (design system, color science).
+**When adding engine-level rules:** Edit `shared-rules.ts`, then `soleri dev` auto-regenerates.
+**When adding agent-specific rules:** Create a new `.md` file in the agent's `instructions/` folder.
 
 ### Package Architecture
 
-| Package         | Role                                                         | Key files                       |
-| --------------- | ------------------------------------------------------------ | ------------------------------- |
-| `@soleri/core`  | Engine — vault, brain, planner, cognee, LLM utils, facades   | `packages/core/src/`            |
-| `@soleri/forge` | Scaffold — generates agent projects from config              | `packages/forge/src/templates/` |
-| `@soleri/cli`   | Developer CLI — create, list, add-domain, dev, doctor, hooks, agent (status/update/refresh/diff) | `packages/cli/src/`             |
-| `create-soleri` | npm create shorthand                                         | `packages/create-soleri/`       |
+| Package | Role | Key files |
+|---------|------|-----------|
+| `@soleri/core` | Knowledge Engine — vault, brain, planner, cognee, LLM, `registerEngine()` | `packages/core/src/` |
+| `@soleri/forge` | Scaffold — generates file-tree agents from config | `packages/forge/src/scaffold-filetree.ts` |
+| `@soleri/cli` | Developer CLI — create, install, dev, doctor, hooks | `packages/cli/src/` |
+| `create-soleri` | npm create shorthand | `packages/create-soleri/` |
+| `@soleri/domain-*` | Domain packs (design, component, figma, code-review) | `packages/domain-*/` |
 
 ### Testing Protocol
 

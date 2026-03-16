@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v7.0.0 — 2026-03-16 — File-Tree Architecture
+
+### Breaking Changes
+
+- **Agents are folders, not TypeScript projects.** `soleri create` now generates a file-tree agent (agent.yaml + instructions/ + workflows/ + knowledge/) instead of a TypeScript project. Use `--legacy` for old behavior.
+- **No build step required.** File-tree agents are ready to use immediately after scaffolding.
+- **Old Salvador MCP retired.** The reference agent is now `agents/salvador-filetree/`.
+
+### Added
+
+- **`registerEngine()`** — Direct MCP tool registration replacing the facade factory. Grouped tools (`soleri_vault op:search`) with O(1) op lookup via Map instead of linear array scan.
+- **Engine binary** (`soleri-engine`) — Standalone MCP server that reads `agent.yaml` and boots the knowledge engine. Entry point for all file-tree agents.
+- **`AgentYamlSchema`** — Zod schema for `agent.yaml`, the single source of truth for agent identity and configuration.
+- **`scaffoldFileTree()`** — Generates folder-tree agents in ~3 seconds (vs ~40s for TypeScript scaffolding).
+- **`composeClaudeMd()`** — Auto-generates CLAUDE.md from agent.yaml + instructions/ + workflows/ + skills/. Never manually edited.
+- **`createCoreOps()`** — Generates agent-specific ops (health, identity, activate, register, setup) from agent.yaml config at engine startup.
+- **File-tree agent detection** — CLI commands (create, install, dev, list, doctor) detect and support both file-tree and legacy agents.
+- **`soleri dev` for file-tree agents** — Starts the knowledge engine AND watches files for changes, auto-regenerating CLAUDE.md.
+- **`soleri install` for file-tree agents** — Registers `@soleri/engine` (not `node dist/index.js`) in editor MCP configs.
+- **Salvador file-tree agent** — Full port of Salvador to file-tree format: 23 skills, 6 workflows, 4 knowledge bundles, 477-line auto-generated CLAUDE.md.
+- **Minimal example agent** — `examples/minimal-agent/` demonstrating the file-tree format.
+- **Architecture spec** — `docs/architecture/file-tree-agent-format.md` defining the folder structure, agent.yaml schema, and CLAUDE.md composition algorithm.
+- **E2E test for file-tree flow** — Full pipeline test: scaffold → boot engine → MCP connect → call ops → verify responses (10 tests).
+
+### Architecture
+
+The engine is now two cleanly separated layers:
+
+1. **File Tree (shell)** — agent.yaml, instructions/, workflows/, knowledge/. The model reads these natively.
+2. **Knowledge Engine (brain)** — vault, brain, curator, planner, memory. Persistent state and learning via `@soleri/core`.
+
+### Migration
+
+- Existing TypeScript agents continue to work with `--legacy` flag
+- To convert: create `agent.yaml` from your persona.ts, move playbooks to `workflows/`, move intelligence data to `knowledge/`
+- The knowledge engine is backward-compatible — same vault schema, same ops
+
+---
+
 ## @soleri/core@2.11.0 — 2026-03-11
 
 ### Added

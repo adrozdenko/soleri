@@ -503,6 +503,15 @@ export {
 } from './runtime/deprecation.js';
 export type { DeprecationInfo } from './runtime/deprecation.js';
 
+// ─── Engine (v7 — direct registration, replaces facade factory) ───────
+export { registerEngine } from './engine/register-engine.js';
+export type {
+  EngineRegistrationOptions,
+  EngineRegistrationResult,
+} from './engine/register-engine.js';
+export { captureOps, executeOp } from './engine/test-helpers.js';
+export type { CapturedOp } from './engine/test-helpers.js';
+
 // ─── Migrations ────────────────────────────────────────────────────────
 export { MigrationRunner } from './migrations/index.js';
 export type { Migration, MigrationResult, MigrationState } from './migrations/index.js';

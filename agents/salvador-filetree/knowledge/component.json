@@ -1,0 +1,18 @@
+{
+  "domain": "component",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "component-seed",
+      "type": "pattern",
+      "domain": "component",
+      "title": "component domain seed",
+      "severity": "suggestion",
+      "description": "Seed entry for the component domain. Replace or remove once real knowledge is captured.",
+      "tags": [
+        "component",
+        "seed"
+      ]
+    }
+  ]
+}

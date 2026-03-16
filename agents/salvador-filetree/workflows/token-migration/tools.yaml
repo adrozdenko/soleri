@@ -1,0 +1,6 @@
+tools:
+  - soleri_design op:validate_component_code
+  - soleri_design op:validate_token
+  - soleri_design op:check_contrast
+  - soleri_vault op:search_intelligent
+  - soleri_vault op:capture_knowledge

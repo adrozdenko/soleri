@@ -1,0 +1,12 @@
+gates:
+  - phase: pre-execution
+    requirement: Root cause identified and fix plan approved
+    check: plan-approved
+
+  - phase: post-task
+    requirement: Regression test passes and no new failures
+    check: tests-pass
+
+  - phase: completion
+    requirement: Anti-pattern captured if applicable
+    check: knowledge-captured

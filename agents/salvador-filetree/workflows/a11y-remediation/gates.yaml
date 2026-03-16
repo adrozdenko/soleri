@@ -1,0 +1,8 @@
+gates:
+  - phase: post-task
+    requirement: All contrast pairs validated per WCAG AA
+    check: a11y-contrast
+
+  - phase: completion
+    requirement: Zero critical or major accessibility violations
+    check: a11y-audit

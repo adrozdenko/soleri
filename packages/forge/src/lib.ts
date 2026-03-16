@@ -19,6 +19,14 @@ export type {
   AddDomainResult,
 } from './types.js';
 export { AgentConfigSchema, SETUP_TARGETS, MODEL_PRESETS } from './types.js';
+
+// ─── v7 File-Tree Agent ──────────────────────────────────────────────
+export { scaffoldFileTree } from './scaffold-filetree.js';
+export type { FileTreeScaffoldResult } from './scaffold-filetree.js';
+export { AgentYamlSchema, TONES } from './agent-schema.js';
+export type { AgentYaml, AgentYamlInput } from './agent-schema.js';
+export { composeClaudeMd } from './compose-claude-md.js';
+export type { ComposedClaudeMd, ToolEntry } from './compose-claude-md.js';
 export { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
 export { generateClaudeMdTemplate } from './templates/claude-md-template.js';
 export { getEngineRulesContent, getEngineMarker } from './templates/shared-rules.js';
@@ -28,3 +36,4 @@ export { generateTelegramBot } from './templates/telegram-bot.js';
 export { generateTelegramAgent } from './templates/telegram-agent.js';
 export { generateTelegramConfig } from './templates/telegram-config.js';
 export { generateTelegramSupervisor } from './templates/telegram-supervisor.js';
+export { generateEntryPoint } from './templates/entry-point.js';

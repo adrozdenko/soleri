@@ -24,6 +24,9 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "soleri-engine": "dist/engine/bin/soleri-engine.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

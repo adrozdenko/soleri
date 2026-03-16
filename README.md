@@ -20,26 +20,32 @@ Soleri is the open-source engine that makes that real.
 
 ## How It Works
 
-Soleri gives agents persistent infrastructure — a **vault** that remembers, a **brain** that learns, and **memory** that carries across every project and conversation. Knowledge flows through a lifecycle: **capture** from real sessions → **store** with domain classification → **strengthen** through confidence scoring → **compound** by surfacing what works first.
+An agent is a **folder**. No TypeScript, no build step, no `npm install`.
 
-Instead of one generic assistant, you build specialized **agents** — each with its own voice, expertise, and growing knowledge base — all running on a shared engine. The more you use them, the sharper they get.
+```
+my-agent/
+├── agent.yaml          # who am I, what do I know
+├── instructions/       # behavioral rules (auto-composed into CLAUDE.md)
+├── workflows/          # step-by-step playbooks
+├── knowledge/          # domain intelligence bundles
+└── .mcp.json           # connects to Soleri Knowledge Engine
+```
+
+Claude Code reads the folder natively. The **Knowledge Engine** provides persistent memory — a vault that remembers, a brain that learns, and memory that carries across every project and conversation. The more you use it, the sharper it gets.
 
 ## What You Get
 
 **Platform:** macOS and Linux. Windows users need [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
 
 ```bash
-npm create soleri my-agent              # Quickest way — npm create shorthand
-npx @soleri/cli create my-agent        # Interactive wizard — scaffold a new agent
-npx @soleri/cli list                   # Show agents in current directory
-npx @soleri/cli add-domain security    # Add a knowledge domain to your agent
-npx @soleri/cli dev                    # Run agent locally in dev mode
+npx @soleri/cli create my-agent        # Scaffold a file-tree agent (~3 seconds)
+npx @soleri/cli install                # Register MCP server in your editor
+npx @soleri/cli dev                    # Start engine + watch for file changes
 npx @soleri/cli doctor                 # Check system health
-npx @soleri/cli hooks add claude-code  # Install editor hooks
-npx @soleri/cli hooks add-pack full   # Install quality gate hooks
+npx @soleri/cli list                   # Show agents in current directory
 ```
 
-Your agent ships with a complete architecture and auto-captures patterns from your sessions.
+Your agent is ready to use the moment it's created. No build step needed.
 
 ### The Engine
 
@@ -51,47 +57,36 @@ Your agent ships with a complete architecture and auto-captures patterns from yo
 
 **Playbooks** — Multi-step validated procedures stored in the vault. Token migrations, component setup, contrast audits — each step includes validation criteria so the agent can execute and verify autonomously.
 
-### Your Agent
-
-Soleri is an agent forge. You create specialized agents — each with its own persona, domain expertise, and growing vault — all running on a shared engine.
-
-```bash
-npm create soleri my-agent   # Forge a new agent
-```
-
-Give it a name, a domain, a voice. It ships with starter knowledge and learns from every session.
-
 ### Architecture
+
+Two layers, cleanly separated:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Agents         yours · your team's · community          │
+│  Agent Folder     agent.yaml · instructions/ · workflows/ │
+│  (the shell)      knowledge/ · skills/ · CLAUDE.md (auto) │
 ├─────────────────────────────────────────────────────────┤
-│  Domains        design · security · architecture · ...  │
+│  Knowledge Engine vault · brain · curator · planner       │
+│  (the brain)      memory · learning · domain packs        │
 ├─────────────────────────────────────────────────────────┤
-│  Engine         @soleri/core (vault · brain · planner)  │
-├─────────────────────────────────────────────────────────┤
-│  Scaffold       @soleri/forge (config-driven templates) │
-├─────────────────────────────────────────────────────────┤
-│  Transports     MCP · HTTP/SSE · WebSocket · LSP · Telegram │
+│  Transports       MCP · HTTP/SSE · WebSocket · Telegram   │
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Engine (`@soleri/core`)** — Shared infrastructure for all agents. Vault (SQLite + FTS5), Brain (hybrid TF-IDF + optional Cognee vector search), Planner (state machine), LLM utilities (circuit breaker, key pool, retry), and facade system. Pure logic, zero protocol dependencies.
-- **Scaffold (`@soleri/forge`)** — Generates config-driven agent projects that import from `@soleri/core`. Creates persona, activation, LLM client, and domain facades — the agent-specific parts.
-- **Transports** — MCP for Claude Code and Cursor, HTTP/SSE for REST APIs, WebSocket for bidirectional streaming, LSP for editor-native integration, and Telegram for conversational access.
-- **Domains** — Pluggable expertise modules (frontend, backend, cross-cutting, and custom).
-- **Vault Backends** — Three-tier model: agent vault (personal), project vault (team conventions), team vault (shared across all projects). Local filesystem, git sync, or remote API.
-- **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys for local vault search, pattern matching, and brain tracking. Optional Cognee integration adds vector embeddings and knowledge graph when available.
+- **Agent Folder** — Plain files (YAML, Markdown, JSON). Claude Code reads them natively. No code generation, no compilation.
+- **Knowledge Engine (`@soleri/core`)** — Persistent state for all agents. Vault (SQLite + FTS5), Brain (hybrid TF-IDF + optional Cognee vector search), Planner (state machine), Curator (dedup, grooming), and cross-project memory.
+- **Domain Packs** — Pluggable expertise modules (`@soleri/domain-design`, `@soleri/domain-component`, etc.). Add capabilities without code changes.
+- **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys. Optional Cognee integration adds vector embeddings and knowledge graph.
 
 ### Packages
 
-| Package                                   | Version | Description                                                                                       |
-| ----------------------------------------- | ------- | ------------------------------------------------------------------------------------------------- |
-| [`@soleri/core`](packages/core)           | 2.11.0  | Shared engine — Vault, Brain, Planner, Curator, Transports, Plugins, Packs, Intelligence, Cognee   |
-| [`@soleri/forge`](packages/forge)         | 5.12.0  | Agent scaffolder — generates config-driven MCP agents with Telegram support and 17 built-in skills  |
-| [`@soleri/cli`](packages/cli)             | 1.10.0  | Developer CLI — create, skills, packs, telemetry, archetypes, hook packs, Obsidian sync             |
-| [`create-soleri`](packages/create-soleri) | 1.1.0   | `npm create soleri` shorthand — delegates to `@soleri/cli`                                         |
+| Package | Description |
+|---------|-------------|
+| [`@soleri/core`](packages/core) | Knowledge Engine — vault, brain, planner, curator, `registerEngine()`, engine binary |
+| [`@soleri/forge`](packages/forge) | Agent scaffolder — generates file-tree agents from config |
+| [`@soleri/cli`](packages/cli) | Developer CLI — create, install, dev, doctor, packs, hooks |
+| [`create-soleri`](packages/create-soleri) | `npm create soleri` shorthand |
+| [`@soleri/domain-*`](packages/) | Domain packs — design, component, figma, code-review |
 
 ### Knowledge Packs
 
@@ -116,10 +111,10 @@ npx @soleri/cli install-knowledge ./bundles/react-patterns
 
 ```bash
 npm test                # Unit tests (core, forge, CLI)
-npm run test:e2e        # E2E tests (124 tests across 10 files)
+npm run test:e2e        # E2E tests (800+ tests across 26 files)
 ```
 
-The E2E suite covers the full stack: scaffold pipeline, all 13+ engine facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, HTTP/WebSocket transports, and generated agent quality validation.
+The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), scaffold pipeline, all engine modules, over-the-wire MCP transport, data persistence, concurrency, CLI commands, and domain pack validation.
 
 ## Contributing
 

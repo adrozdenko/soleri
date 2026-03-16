@@ -1,0 +1,8 @@
+gates:
+  - phase: pre-execution
+    requirement: Migration plan created and approved
+    check: migration-plan
+
+  - phase: completion
+    requirement: Zero hardcoded colors and zero visual regressions
+    check: zero-regressions
