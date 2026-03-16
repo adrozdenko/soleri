@@ -1,6 +1,6 @@
 {
   "name": "@soleri/domain-code-review",
-  "version": "1.0.0",
+  "version": "7.0.0",
   "description": "Code review intelligence domain pack for Soleri agents — PR design review, architecture checks, accessibility audits, visual change classification.",
   "type": "module",
   "main": "dist/index.js",
@@ -19,7 +19,7 @@
     "zod": "^3.24.2"
   },
   "peerDependencies": {
-    "@soleri/core": "^2.0.0"
+    "@soleri/core": ">=2.0.0"
   },
   "files": [
     "dist"

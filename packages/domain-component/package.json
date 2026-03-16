@@ -1,6 +1,6 @@
 {
   "name": "@soleri/domain-component",
-  "version": "1.0.0",
+  "version": "7.0.0",
   "description": "Component registry lifecycle domain pack for Soleri agents — search, create, drift detection, dependency analysis, sync status.",
   "type": "module",
   "main": "dist/index.js",
@@ -19,7 +19,7 @@
     "zod": "^3.24.2"
   },
   "peerDependencies": {
-    "@soleri/core": "^2.0.0"
+    "@soleri/core": ">=2.0.0"
   },
   "files": [
     "dist"
