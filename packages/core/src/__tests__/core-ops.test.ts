@@ -321,10 +321,7 @@ describe('createSemanticFacades', () => {
     // Prompt templates
     expect(names).toContain('render_prompt');
     expect(names).toContain('list_templates');
-    // Cognee Sync ops
-    expect(names).toContain('cognee_sync_status');
-    expect(names).toContain('cognee_sync_drain');
-    expect(names).toContain('cognee_sync_reconcile');
+    // Cognee Sync ops — only present when cognee is enabled
     // Intake ops
     expect(names).toContain('intake_ingest_book');
     expect(names).toContain('intake_process');

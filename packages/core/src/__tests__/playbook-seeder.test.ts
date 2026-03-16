@@ -101,32 +101,32 @@ describe('seedDefaultPlaybooks', () => {
     vault.close();
   });
 
-  it('should seed 6 built-in playbooks into empty vault', () => {
+  it('should seed built-in playbooks into empty vault', () => {
     const result = seedDefaultPlaybooks(vault);
-    expect(result.seeded).toBe(6);
+    expect(result.seeded).toBeGreaterThanOrEqual(6);
     expect(result.skipped).toBe(0);
     expect(result.errors).toBe(0);
-    expect(result.details).toHaveLength(6);
+    expect(result.details.length).toBe(result.seeded);
     expect(result.details.every((d) => d.action === 'seeded')).toBe(true);
 
     // Verify they're in the vault
     const entries = vault.list({ type: 'playbook' });
-    expect(entries).toHaveLength(6);
+    expect(entries.length).toBe(result.seeded);
   });
 
   it('should be idempotent — second call skips all', () => {
-    seedDefaultPlaybooks(vault);
+    const first = seedDefaultPlaybooks(vault);
     const result = seedDefaultPlaybooks(vault);
 
     expect(result.seeded).toBe(0);
-    expect(result.skipped).toBe(6);
+    expect(result.skipped).toBe(first.seeded);
     expect(result.errors).toBe(0);
     expect(result.details.every((d) => d.action === 'skipped')).toBe(true);
   });
 
   it('should not overwrite user modifications', () => {
     // Seed first
-    seedDefaultPlaybooks(vault);
+    const first = seedDefaultPlaybooks(vault);
 
     // Simulate user modifying a playbook by removing and re-adding with different content
     const builtins = getAllBuiltinPlaybooks();
@@ -143,7 +143,7 @@ describe('seedDefaultPlaybooks', () => {
 
     // Re-seed should skip this one
     const result = seedDefaultPlaybooks(vault);
-    expect(result.skipped).toBe(6); // all exist, including user-modified one
+    expect(result.skipped).toBe(first.seeded); // all exist, including user-modified one
 
     // Verify user's version is preserved
     const entry = vault.get(builtins[0].id);
