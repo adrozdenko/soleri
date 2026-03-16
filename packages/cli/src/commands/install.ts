@@ -85,7 +85,14 @@ function installCodex(agentId: string, agentDir: string, isFileTree: boolean): v
 }
 
 function installOpencode(agentId: string, agentDir: string, isFileTree: boolean): void {
-  const configPath = join(homedir(), '.opencode.json');
+  // OpenCode uses ~/.config/opencode/opencode.json (not ~/.opencode.json)
+  // Config uses "mcp" (not "mcpServers"), type "local" (not "stdio"), command as array
+  const configDir = join(homedir(), '.config', 'opencode');
+  const configPath = join(configDir, 'opencode.json');
+
+  if (!existsSync(configDir)) {
+    mkdirSync(configDir, { recursive: true });
+  }
 
   let config: Record<string, unknown> = {};
   if (existsSync(configPath)) {
@@ -98,17 +105,40 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
     }
   }
 
-  if (!config.mcpServers || typeof config.mcpServers !== 'object') {
-    config.mcpServers = {};
+  if (!config.mcp || typeof config.mcp !== 'object') {
+    config.mcp = {};
   }
 
-  const servers = config.mcpServers as Record<string, unknown>;
-  servers[agentId] = isFileTree
-    ? fileTreeMcpEntry(agentDir)
-    : { type: 'stdio', command: 'node', args: [join(agentDir, 'dist', 'index.js')] };
+  const servers = config.mcp as Record<string, unknown>;
+  if (isFileTree) {
+    servers[agentId] = {
+      type: 'local',
+      command: [
+        'node',
+        join(
+          agentDir,
+          '..',
+          'soleri',
+          'packages',
+          'core',
+          'dist',
+          'engine',
+          'bin',
+          'soleri-engine.js',
+        ),
+        '--agent',
+        join(agentDir, 'agent.yaml'),
+      ],
+    };
+  } else {
+    servers[agentId] = {
+      type: 'local',
+      command: ['node', join(agentDir, 'dist', 'index.js')],
+    };
+  }
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
-  p.log.success(`Registered ${agentId} in ~/.opencode.json`);
+  p.log.success(`Registered ${agentId} in ~/.config/opencode/opencode.json`);
 }
 
 function escapeRegExp(s: string): string {
