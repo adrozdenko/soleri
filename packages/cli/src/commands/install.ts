@@ -115,6 +115,33 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/**
+ * Create a global launcher script so the agent can be invoked by name from any directory.
+ * e.g., typing `ernesto` opens OpenCode with that agent's config in the current directory.
+ */
+function installLauncher(agentId: string, agentDir: string): void {
+  const binPath = join('/usr/local/bin', agentId);
+  const opencodeConfig = join(agentDir, '.opencode.json');
+
+  const script = [
+    '#!/bin/bash',
+    `# ${agentId} — Soleri second brain launcher`,
+    `# Type "${agentId}" from any directory to open OpenCode with this agent`,
+    `exec opencode --config ${opencodeConfig}`,
+    '',
+  ].join('\n');
+
+  try {
+    writeFileSync(binPath, script, { mode: 0o755 });
+    p.log.success(`Launcher created: type "${agentId}" from any directory to start`);
+  } catch {
+    p.log.warn(`Could not create launcher at ${binPath} (may need sudo)`);
+    p.log.info(
+      `To create manually: sudo bash -c 'echo "#!/bin/bash\\nexec opencode --config ${opencodeConfig}" > ${binPath} && chmod +x ${binPath}'`,
+    );
+  }
+}
+
 export function registerInstall(program: Command): void {
   program
     .command('install')
@@ -154,6 +181,9 @@ export function registerInstall(program: Command): void {
       if (target === 'opencode' || target === 'all') {
         installOpencode(ctx.agentId, ctx.agentPath, isFileTree);
       }
+
+      // Create global launcher script
+      installLauncher(ctx.agentId, ctx.agentPath);
 
       p.log.info(`Agent ${ctx.agentId} is now available as an MCP server.`);
     });
