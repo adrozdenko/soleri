@@ -9,6 +9,12 @@ dist/
 coverage/
 .wrangler/
 .salvador/
+
+# Screenshots and temp files (don't commit to production)
+*.png
+inspect-ops.ts
+components.json
+tailwind.config.ts
 docs/vault/*
 !docs/vault/README.md
 !docs/vault/_schema.md
