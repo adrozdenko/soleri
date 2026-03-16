@@ -163,39 +163,34 @@ const content: Record<Locale, PersonasContent> = {
     // Section 1
     section1Title:
       '\u0421\u0442\u0432\u043E\u0440\u0456\u0442\u044C \u0456 \u043D\u0430\u043B\u0430\u0448\u0442\u0443\u0439\u0442\u0435',
-    section1Code1: `<span class="cmt"># \u0421\u0442\u0432\u043E\u0440\u0456\u0442\u044C \u0441\u0432\u043E\u0433\u043E \u0430\u0433\u0435\u043D\u0442\u0430</span>
+    section1Code1: `<span class="cmt"># Створіть файловий агент (~3 секунди)</span>
 <span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="ok">?</span> \u041F\u0456\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u0438 \u043D\u0430\u044F\u0432\u043D\u0435 \u0441\u0445\u043E\u0432\u0438\u0449\u0435 \u0447\u0438 \u043F\u043E\u0447\u0430\u0442\u0438 \u0437 \u043D\u0443\u043B\u044F?
-  <span class="val">\u203A \u041F\u043E\u0447\u0430\u0442\u0438 \u0437 \u043D\u0443\u043B\u044F</span>
+<span class="ok">\u2713</span> Створено agent.yaml
+<span class="ok">\u2713</span> Згенеровано instructions/, workflows/, knowledge/
+<span class="ok">\u2713</span> Автоматично зібрано CLAUDE.md
+<span class="ok">\u2713</span> Готово \u2014 без етапу збірки
 
-<span class="ok">\u2713</span> \u0421\u0442\u0432\u043E\u0440\u0435\u043D\u043E \u043A\u043E\u043D\u0444\u0456\u0433\u0443\u0440\u0430\u0446\u0456\u044E \u0430\u0433\u0435\u043D\u0442\u0430
-<span class="ok">\u2713</span> \u0406\u043D\u0456\u0446\u0456\u0430\u043B\u0456\u0437\u043E\u0432\u0430\u043D\u043E \u0441\u0445\u043E\u0432\u0438\u0449\u0435           <span class="val">\u043F\u043E\u0447\u0430\u0442\u043A\u043E\u0432\u0456 \u0437\u043D\u0430\u043D\u043D\u044F: 34 \u043F\u0430\u0442\u0435\u0440\u043D\u0438</span>
-<span class="ok">\u2713</span> \u041F\u0440\u043E\u0441\u043A\u0430\u043D\u043E\u0432\u0430\u043D\u043E \u043F\u0440\u043E\u0454\u043A\u0442              <span class="val">\u0432\u0438\u044F\u0432\u043B\u0435\u043D\u043E React + TypeScript</span>
-<span class="ok">\u2713</span> \u0410\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u043D\u043E \u0437\u0456\u0431\u0440\u0430\u043D\u043E              <span class="val">12 \u043F\u0430\u0442\u0435\u0440\u043D\u0456\u0432 \u043A\u043E\u0434\u043E\u0432\u043E\u0457 \u0431\u0430\u0437\u0438</span>
-<span class="ok">\u2713</span> \u0421\u0445\u043E\u0432\u0438\u0449\u0435 \u0433\u043E\u0442\u043E\u0432\u0435                   <span class="val">46 \u0437\u0430\u043F\u0438\u0441\u0456\u0432, \u0432\u0435\u043A\u0442\u043E\u0440\u0438\u0437\u043E\u0432\u0430\u043D\u043E</span>
-
-<span class="cmt">\u0410\u0433\u0435\u043D\u0442 "my-agent" \u0433\u043E\u0442\u043E\u0432\u0438\u0439.</span>`,
-    section1Code2: `<span class="cmt"># \u0417\u0433\u0435\u043D\u0435\u0440\u043E\u0432\u0430\u043D\u043E agent.yaml</span>
-<span class="key">name:</span> <span class="val">my-agent</span>
-<span class="key">voice:</span> <span class="val">direct, technical, thorough</span>
+<span class="cmt">Запустіть: soleri install && soleri dev</span>`,
+    section1Code2: `<span class="cmt"># agent.yaml \u2014 єдине джерело правди</span>
+<span class="key">id:</span> <span class="val">my-agent</span>
+<span class="key">name:</span> <span class="val">My Agent</span>
+<span class="key">role:</span> <span class="val">Full-Stack Development Advisor</span>
 <span class="key">domains:</span> <span class="val">[frontend, backend, infrastructure]</span>
-<span class="key">vault:</span>
-  <span class="key">backends:</span>
-    - <span class="key">type:</span> <span class="val">local</span>          <span class="cmt"># ~/.soleri/vaults/my-agent</span>
-    - <span class="key">type:</span> <span class="val">git</span>            <span class="cmt"># optional team vault</span>
-      <span class="key">uri:</span>  <span class="val">git@github.com:team/vault.git</span>
-  <span class="key">vectorize:</span> <span class="val">true</span>
-  <span class="key">graph:</span> <span class="val">cognee</span>
-<span class="key">brain:</span>
-  <span class="key">auto_capture:</span> <span class="val">true</span>
-  <span class="key">min_confidence:</span> <span class="val">0.7</span>`,
-    section1ContentTitle:
-      '\u041A\u043E\u043D\u0444\u0456\u0433\u0443\u0440\u0430\u0446\u0456\u044F \u044F\u043A \u043A\u043E\u0434',
+<span class="key">principles:</span>
+  - <span class="val">Vault is the single source of truth</span>
+  - <span class="val">Test before shipping</span>
+<span class="key">tone:</span> <span class="val">pragmatic</span>
+<span class="key">engine:</span>
+  <span class="key">cognee:</span> <span class="val">true</span>     <span class="cmt"># опціональний векторний пошук</span>
+<span class="key">vaults:</span>
+  - <span class="key">name:</span> <span class="val">team</span>
+    <span class="key">path:</span> <span class="val">~/.soleri/vault.db</span>`,
+    section1ContentTitle: 'Тека = агент',
     section1ContentP1:
-      '\u041A\u043E\u043C\u0430\u043D\u0434\u0430 <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> \u0433\u0435\u043D\u0435\u0440\u0443\u0454 <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code> \u0456\u0437 \u0440\u043E\u0437\u0443\u043C\u043D\u0438\u043C\u0438 \u0437\u043D\u0430\u0447\u0435\u043D\u043D\u044F\u043C\u0438 \u0437\u0430 \u0437\u0430\u043C\u043E\u0432\u0447\u0443\u0432\u0430\u043D\u043D\u044F\u043C. \u0412\u043E\u043D\u0430 \u0456\u043D\u0456\u0446\u0456\u0430\u043B\u0456\u0437\u0443\u0454 \u0441\u0445\u043E\u0432\u0438\u0449\u0435 \u0437 \u043F\u043E\u0447\u0430\u0442\u043A\u043E\u0432\u0438\u043C\u0438 \u0437\u043D\u0430\u043D\u043D\u044F\u043C\u0438, \u0441\u043A\u0430\u043D\u0443\u0454 \u0432\u0430\u0448 \u043F\u0440\u043E\u0454\u043A\u0442 \u043D\u0430 \u043D\u0430\u044F\u0432\u043D\u0456\u0441\u0442\u044C \u043F\u0430\u0442\u0435\u0440\u043D\u0456\u0432 \u0456 \u0432\u0435\u043A\u0442\u043E\u0440\u0438\u0437\u0443\u0454 \u0432\u0441\u0435.',
+      'Команда <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> генерує теку з <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, інструкціями, робочими процесами та знаннями. Без TypeScript, без збірки \u2014 Claude Code читає теку напряму.',
     section1ContentP2:
-      '\u0413\u043E\u043B\u043E\u0441, \u0434\u043E\u043C\u0435\u043D\u0438, \u0431\u0435\u043A\u0435\u043D\u0434\u0438 \u0441\u0445\u043E\u0432\u0438\u0449\u0430 \u0442\u0430 \u043D\u0430\u043B\u0430\u0448\u0442\u0443\u0432\u0430\u043D\u043D\u044F \u043C\u043E\u0437\u043A\u0443 \u2014 \u0443\u0441\u0435 \u0434\u0435\u043A\u043B\u0430\u0440\u0430\u0442\u0438\u0432\u043D\u0435, \u0443\u0441\u0435 \u043F\u0456\u0434 \u043A\u043E\u043D\u0442\u0440\u043E\u043B\u0435\u043C \u0432\u0435\u0440\u0441\u0456\u0439.',
+      'Ідентичність, домени, принципи, конфігурація рушія \u2014 все в одному YAML-файлі, під контролем версій.',
     section1KeyPoint:
       '\u0404\u0434\u0438\u043D\u0435 \u0441\u0445\u043E\u0432\u0438\u0449\u0435. \u0423\u0441\u0456 \u0432\u0430\u0448\u0456 \u0437\u043D\u0430\u043D\u043D\u044F. \u0416\u043E\u0434\u043D\u0438\u0445 \u043D\u0430\u043A\u043B\u0430\u0434\u043D\u0438\u0445 \u0432\u0438\u0442\u0440\u0430\u0442 \u043D\u0430 \u043A\u043E\u043E\u0440\u0434\u0438\u043D\u0430\u0446\u0456\u044E.',
 
@@ -332,38 +327,34 @@ const content: Record<Locale, PersonasContent> = {
 
     // Section 1
     section1Title: 'Crea e configura',
-    section1Code1: `<span class="cmt"># Create your agent</span>
+    section1Code1: `<span class="cmt"># Crea un agente file-tree (~3 secondi)</span>
 <span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="ok">?</span> Connect an existing vault, or start fresh?
-  <span class="val">\u203A Start fresh</span>
+<span class="ok">\u2713</span> Creato agent.yaml
+<span class="ok">\u2713</span> Generati instructions/, workflows/, knowledge/
+<span class="ok">\u2713</span> CLAUDE.md composto automaticamente
+<span class="ok">\u2713</span> Pronto \u2014 nessun passaggio di build
 
-<span class="ok">\u2713</span> Created agent config
-<span class="ok">\u2713</span> Initialized vault           <span class="val">starter knowledge: 34 patterns</span>
-<span class="ok">\u2713</span> Scanned project              <span class="val">React + TypeScript detected</span>
-<span class="ok">\u2713</span> Auto-captured                <span class="val">12 codebase patterns</span>
-<span class="ok">\u2713</span> Vault ready                  <span class="val">46 entries, vectorized</span>
-
-<span class="cmt">Agent "my-agent" is ready.</span>`,
-    section1Code2: `<span class="cmt"># Generated agent.yaml</span>
-<span class="key">name:</span> <span class="val">my-agent</span>
-<span class="key">voice:</span> <span class="val">direct, technical, thorough</span>
+<span class="cmt">Esegui: soleri install && soleri dev</span>`,
+    section1Code2: `<span class="cmt"># agent.yaml \u2014 unica fonte di verità</span>
+<span class="key">id:</span> <span class="val">my-agent</span>
+<span class="key">name:</span> <span class="val">My Agent</span>
+<span class="key">role:</span> <span class="val">Full-Stack Development Advisor</span>
 <span class="key">domains:</span> <span class="val">[frontend, backend, infrastructure]</span>
-<span class="key">vault:</span>
-  <span class="key">backends:</span>
-    - <span class="key">type:</span> <span class="val">local</span>          <span class="cmt"># ~/.soleri/vaults/my-agent</span>
-    - <span class="key">type:</span> <span class="val">git</span>            <span class="cmt"># optional team vault</span>
-      <span class="key">uri:</span>  <span class="val">git@github.com:team/vault.git</span>
-  <span class="key">vectorize:</span> <span class="val">true</span>
-  <span class="key">graph:</span> <span class="val">cognee</span>
-<span class="key">brain:</span>
-  <span class="key">auto_capture:</span> <span class="val">true</span>
-  <span class="key">min_confidence:</span> <span class="val">0.7</span>`,
-    section1ContentTitle: 'Configurazione come codice',
+<span class="key">principles:</span>
+  - <span class="val">Vault is the single source of truth</span>
+  - <span class="val">Test before shipping</span>
+<span class="key">tone:</span> <span class="val">pragmatic</span>
+<span class="key">engine:</span>
+  <span class="key">cognee:</span> <span class="val">true</span>     <span class="cmt"># ricerca vettoriale opzionale</span>
+<span class="key">vaults:</span>
+  - <span class="key">name:</span> <span class="val">team</span>
+    <span class="key">path:</span> <span class="val">~/.soleri/vault.db</span>`,
+    section1ContentTitle: 'Cartella = agente',
     section1ContentP1:
-      'Il comando <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> genera un <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code> con impostazioni predefinite sensate. Inizializza un vault con conoscenza iniziale, analizza il tuo progetto alla ricerca di pattern e vettorializza tutto.',
+      'Il comando <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> genera una cartella con <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, istruzioni, workflow e conoscenza. Niente TypeScript, nessun build \u2014 Claude Code legge la cartella nativamente.',
     section1ContentP2:
-      'Voce, domini, backend del vault e impostazioni del brain — tutto dichiarativo, tutto sotto controllo versione.',
+      'Identità, domini, principi, configurazione motore \u2014 tutto in un unico file YAML, sotto controllo versione.',
     section1KeyPoint: 'Un vault. Tutta la tua conoscenza. Nessun overhead di coordinamento.',
 
     // Section 2

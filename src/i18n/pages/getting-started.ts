@@ -175,12 +175,12 @@ const content: Record<Locale, GettingStartedContent> = {
       {
         title: 'Встановіть',
         text: 'Один глобальний пакет npm. І все.',
-        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g soleri</span>`,
+        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g @soleri/cli</span>`,
         isInstallCmd: true,
       },
       {
         title: 'Створіть свого агента',
-        text: 'Керований майстер проведе вас через кожний крок — оберіть архетип, назвіть агента, виберіть домени, принципи, навички та тон. Більшість кроків — це стрілки та Enter.',
+        text: 'Керований майстер проведе вас через кожний крок — оберіть архетип, назвіть агента, виберіть домени, принципи та тон. Ваш агент — це тека, готова одразу.',
         code: `<span class="prompt">$</span> <span class="cmd">soleri create</span>
 
 <span class="cmt">◆ Який тип агента?     Security Auditor</span>
@@ -189,39 +189,35 @@ const content: Record<Locale, GettingStartedContent> = {
 <span class="cmt">◆ Домени:              security, code-review</span>
 <span class="cmt">◆ Принципи:            Security first, Zero trust...</span>
 <span class="cmt">◆ Тон:                 Precise</span>
-<span class="cmt">◆ Навички:             5 базових + 5 обраних</span>
-<span class="cmt">◆ Привітання:          Авто</span>
 
-<span class="ok">✓</span> Створено               <span class="val">16 файлів, 2 фасади, 66 операцій</span>
-<span class="ok">✓</span> Зібрано                <span class="val">npm install + npm run build</span>
-<span class="ok">✓</span> MCP зареєстровано      <span class="cmt">~/.claude.json</span>
-<span class="ok">✓</span> 10 навичок встановлено <span class="cmt">TDD, дебагінг, планування, сховище</span>
+<span class="ok">✓</span> Створено agent.yaml
+<span class="ok">✓</span> Згенеровано instructions/, workflows/, knowledge/
+<span class="ok">✓</span> Автоматично зібрано CLAUDE.md
+<span class="ok">✓</span> Готово — без етапу збірки
 
-<span class="cmt">Перезапустіть Claude Code, потім скажіть "Hello, Sentinel!"</span>`,
+<span class="cmt">Запустіть: soleri install && soleri dev</span>`,
         isInstallCmd: false,
       },
       {
         title: 'Активуйте та розвивайте',
-        text: 'Привітайтеся в Claude Code. Ваш агент активується, захоплює знання під час роботи та стає розумнішим з часом. Додавайте домени, встановлюйте пакети знань або дозвольте мозку вчитися з ваших сесій.',
-        code: `<span class="cmt"># В Claude Code — активуйте персону</span>
-<span class="prompt">></span> <span class="cmd">Hello, My Agent!</span>
+        text: 'Зареєструйте рушій, привітайтеся в Claude Code. Ваш агент активується, захоплює знання під час роботи та стає розумнішим з часом.',
+        code: `<span class="cmt"># Зареєструйте та запустіть рушій</span>
+<span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># реєстрація MCP-сервера</span>
+<span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># запуск рушія + спостереження за файлами</span>
 
-<span class="ok">✓</span> Персону активовано     <span class="val">My Agent — Радник з фронтенд-архітектури</span>
-<span class="ok">✓</span> Сховище готове          <span class="val">порожнє — зростатиме під час роботи</span>
-<span class="ok">✓</span> Мозок працює           <span class="val">увімкнено — захоплює патерни з сесій</span>
+<span class="cmt"># В Claude Code — активуйте персону</span>
+<span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
 
-<span class="cmt"># Додайте нові домени будь-коли</span>
-<span class="prompt">$</span> <span class="cmd">soleri add-domain</span> <span class="arg">performance</span>
-
-<span class="ok">✓</span> Створено домен         <span class="val">performance</span>
-<span class="ok">✓</span> Агента перезібрано
+<span class="ok">✓</span> Персону активовано     <span class="val">Sentinel — Security Auditor</span>
+<span class="ok">✓</span> Сховище готове          <span class="val">зростатиме під час роботи</span>
+<span class="ok">✓</span> Мозок працює           <span class="val">навчається з кожної сесії</span>
 
 <span class="cmt"># Перевірте стан</span>
 <span class="prompt">$</span> <span class="cmd">soleri doctor</span>
 
 <span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
-<span class="ok">✓</span> Агент       <span class="val">зібрано, зареєстровано</span>
-<span class="ok">✓</span> Хук-пакети  <span class="val">a11y, clean-commits, typescript-safety</span>`,
+<span class="ok">✓</span> Агент       <span class="val">файлова тека, зареєстровано</span>
+<span class="ok">✓</span> Рушій       <span class="val">підключено, 326 операцій</span>`,
         isInstallCmd: false,
       },
     ],
@@ -341,12 +337,12 @@ const content: Record<Locale, GettingStartedContent> = {
       {
         title: 'Installa',
         text: 'Un solo pacchetto global npm. Tutto qui.',
-        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g soleri</span>`,
+        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g @soleri/cli</span>`,
         isInstallCmd: true,
       },
       {
         title: 'Crea il tuo agente',
-        text: 'Il wizard guidato ti accompagna passo dopo passo — scegli un archetipo, dai un nome al tuo agente, seleziona domini, principi, skill e tono. La maggior parte dei passi sono solo frecce e Invio.',
+        text: 'Il wizard guidato ti accompagna passo dopo passo — scegli un archetipo, dai un nome al tuo agente, seleziona domini, principi e tono. Il tuo agente è una cartella, pronta all\'istante.',
         code: `<span class="prompt">$</span> <span class="cmd">soleri create</span>
 
 <span class="cmt">◆ Tipo di agente?      Security Auditor</span>
@@ -355,39 +351,35 @@ const content: Record<Locale, GettingStartedContent> = {
 <span class="cmt">◆ Domini:              security, code-review</span>
 <span class="cmt">◆ Principi:            Security first, Zero trust...</span>
 <span class="cmt">◆ Tono:                Precise</span>
-<span class="cmt">◆ Skill:               5 core + 5 selezionate</span>
-<span class="cmt">◆ Saluto:              Auto</span>
 
-<span class="ok">✓</span> Creato                 <span class="val">16 file, 2 facciate, 66 operazioni</span>
-<span class="ok">✓</span> Compilato              <span class="val">npm install + npm run build</span>
-<span class="ok">✓</span> MCP registrato         <span class="cmt">~/.claude.json</span>
-<span class="ok">✓</span> 10 skill installate    <span class="cmt">TDD, debugging, pianificazione, vault</span>
+<span class="ok">✓</span> Creato agent.yaml
+<span class="ok">✓</span> Generati instructions/, workflows/, knowledge/
+<span class="ok">✓</span> CLAUDE.md composto automaticamente
+<span class="ok">✓</span> Pronto — nessun passaggio di build
 
-<span class="cmt">Riavvia Claude Code, poi di' "Hello, Sentinel!"</span>`,
+<span class="cmt">Esegui: soleri install && soleri dev</span>`,
         isInstallCmd: false,
       },
       {
         title: 'Attiva e fai crescere',
-        text: 'Saluta in Claude Code. Il tuo agente si attiva, cattura conoscenza mentre lavori e diventa più intelligente nel tempo. Aggiungi domini, installa pacchetti di conoscenza o lascia che il cervello impari dalle tue sessioni.',
-        code: `<span class="cmt"># In Claude Code — attiva la persona</span>
-<span class="prompt">></span> <span class="cmd">Hello, My Agent!</span>
+        text: 'Registra il motore, saluta in Claude Code. Il tuo agente si attiva, cattura conoscenza mentre lavori e diventa più intelligente nel tempo.',
+        code: `<span class="cmt"># Registra e avvia il motore</span>
+<span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># registra server MCP</span>
+<span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># avvia motore + osserva file</span>
 
-<span class="ok">✓</span> Persona attivata       <span class="val">My Agent — Consulente architettura frontend</span>
-<span class="ok">✓</span> Vault pronto           <span class="val">vuoto — crescerà mentre lavori</span>
-<span class="ok">✓</span> Cervello attivo        <span class="val">abilitato — cattura pattern dalle sessioni</span>
+<span class="cmt"># In Claude Code — attiva la persona</span>
+<span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
 
-<span class="cmt"># Aggiungi nuovi domini in qualsiasi momento</span>
-<span class="prompt">$</span> <span class="cmd">soleri add-domain</span> <span class="arg">performance</span>
-
-<span class="ok">✓</span> Dominio creato         <span class="val">performance</span>
-<span class="ok">✓</span> Agente ricompilato
+<span class="ok">✓</span> Persona attivata       <span class="val">Sentinel — Security Auditor</span>
+<span class="ok">✓</span> Vault pronto           <span class="val">cresce mentre lavori</span>
+<span class="ok">✓</span> Cervello attivo        <span class="val">impara da ogni sessione</span>
 
 <span class="cmt"># Verifica che tutto funzioni</span>
 <span class="prompt">$</span> <span class="cmd">soleri doctor</span>
 
 <span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
-<span class="ok">✓</span> Agente      <span class="val">compilato, registrato</span>
-<span class="ok">✓</span> Hook pack   <span class="val">a11y, clean-commits, typescript-safety</span>`,
+<span class="ok">✓</span> Agente      <span class="val">file-tree, registrato</span>
+<span class="ok">✓</span> Motore      <span class="val">connesso, 326 operazioni</span>`,
         isInstallCmd: false,
       },
     ],
