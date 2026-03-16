@@ -1,7 +1,9 @@
 ---
 title: Your Agent — Quick Reference
-description: A concise reference for vault, brain, memory, playbooks, orchestration, and all 13 facades — with links to detailed guides.
+description: A concise reference for vault, brain, memory, playbooks, orchestration, and the Knowledge Engine — with links to detailed guides.
 ---
+
+Your agent is a **folder** (`agent.yaml` + `instructions/` + `workflows/` + `knowledge/`). The **Knowledge Engine** (`@soleri/core`) provides all the persistent infrastructure below. Edit your agent's files — the engine handles the rest.
 
 This page is your cheat sheet. For detailed explanations, see the linked deep dives.
 

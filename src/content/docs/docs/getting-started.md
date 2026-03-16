@@ -11,10 +11,10 @@ description: Install Soleri, create your first agent, and connect it to Claude C
 
 ## Create Your Agent
 
-One command to scaffold a fully functional agent:
+One command to scaffold a file-tree agent:
 
 ```bash
-npm create soleri my-agent
+npx @soleri/cli create my-agent
 ```
 
 The interactive wizard asks for:
@@ -24,63 +24,62 @@ The interactive wizard asks for:
 | **Agent name**    | Your agent's identity (e.g., "sentinel", "architect")          |
 | **Role**          | One-line description of what it does                           |
 | **Domains**       | Knowledge areas — `frontend`, `backend`, `security`, or custom |
-| **Persona voice** | How the agent communicates — professional, casual, technical   |
+| **Tone**          | How the agent communicates — precise, mentor, pragmatic        |
 
-This generates a complete project:
+This generates a folder — no TypeScript, no build step:
 
 ```
 my-agent/
-├── src/
-│   ├── index.ts              # MCP server entry point
-│   ├── identity/persona.ts   # Agent personality
-│   ├── activation/           # Claude Code integration
-│   ├── extensions/           # Your custom ops, facades, middleware
-│   └── intelligence/data/    # Starter knowledge
-├── skills/                    # 17 built-in skills
-├── scripts/setup.sh           # One-command install + register
-├── package.json
-├── tsconfig.json
-└── vitest.config.ts
+├── agent.yaml              # Identity + engine config
+├── .mcp.json               # Connects to Knowledge Engine
+├── CLAUDE.md               # Auto-generated (never edit)
+├── instructions/           # Behavioral rules
+│   ├── _engine.md          # Engine rules (auto-generated)
+│   └── domain.md           # Your domain-specific rules
+├── workflows/              # Step-by-step playbooks
+│   ├── feature-dev/
+│   ├── bug-fix/
+│   └── code-review/
+├── knowledge/              # Domain intelligence bundles
+├── skills/                 # SKILL.md files
+└── hooks/                  # Claude Code hooks
 ```
 
-## Build and Run
+Your agent is ready to use immediately. No `npm install`, no `npm run build`.
+
+## Register and Start
 
 ```bash
 cd my-agent
-npm install
-npm run build
+soleri install              # Register MCP server in your editor
+soleri dev                  # Start engine + watch for file changes
 ```
 
-Test that it works:
-
-```bash
-npm test
-```
-
-For the full Soleri test suite (unit + E2E integration), see [Testing](/docs/guides/testing/).
+`soleri install` registers the Soleri Knowledge Engine in your editor's MCP config. `soleri dev` starts the engine and watches your agent folder — CLAUDE.md is regenerated automatically when you edit `agent.yaml` or `instructions/`.
 
 ## Connect to Claude Code
 
-Add your agent to Claude Code's MCP configuration. Create or edit `.mcp.json` in your project root:
+After running `soleri install`, restart Claude Code. Your agent is available as a tool. The `.mcp.json` in your agent folder looks like:
 
 ```json
 {
   "mcpServers": {
-    "my-agent": {
-      "command": "node",
-      "args": ["./my-agent/dist/index.js"]
+    "soleri-engine": {
+      "command": "npx",
+      "args": ["@soleri/engine", "--agent", "./agent.yaml"]
     }
   }
 }
 ```
-
-Restart Claude Code. Your agent is now available as a tool.
 
 ## First Conversation
 
 Once connected, try these in Claude Code:
 
 ```
+# Activate the persona
+"Hello, My Agent!"
+
 # Search your agent's knowledge
 "Search for patterns about error handling"
 
@@ -93,15 +92,16 @@ Once connected, try these in Claude Code:
 
 Your agent starts with starter knowledge and learns from every session.
 
-## Development Mode
+## Customize Your Agent
 
-For active development with auto-rebuild:
+Edit files directly — no rebuild needed:
 
-```bash
-npx @soleri/cli dev
-```
+- **Add rules:** Create a new `.md` file in `instructions/`
+- **Add workflows:** Create a new folder in `workflows/` with `prompt.md` + `gates.yaml`
+- **Add knowledge:** Drop a JSON bundle in `knowledge/`
+- **Change identity:** Edit `agent.yaml`
 
-This watches for changes and restarts the MCP server automatically.
+Run `soleri dev` and CLAUDE.md regenerates automatically on save.
 
 ## Health Check
 
@@ -111,11 +111,9 @@ If something isn't working:
 npx @soleri/cli doctor
 ```
 
-Reports Node version, npm status, agent context, vault health, and CLAUDE.md status.
+Reports Node version, npm status, agent context, vault health, and engine connectivity.
 
 ## What's Next
 
-- **[The Development Workflow](/docs/guides/workflow/)** — learn the five-step rhythm: Search → Plan → Work → Capture → Complete
+- **[The Development Workflow](/docs/guides/workflow/)** — learn the five-step rhythm: Search, Plan, Work, Capture, Complete
 - **[Your First 10 Minutes](/docs/guides/first-10-minutes/)** — a hands-on tutorial to see your agent in action
-- **[Your Agent](/docs/your-agent/)** — reference for vault, brain, memory, and playbooks
-- **[Security & Privacy](/docs/guides/security/)** — your data stays local, zero network calls by default

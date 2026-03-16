@@ -14,12 +14,12 @@ const content: Record<Locale, GettingStartedContent> = {
       {
         title: 'Install',
         text: "One global npm package. That's it.",
-        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g soleri</span>`,
+        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g @soleri/cli</span>`,
         isInstallCmd: true,
       },
       {
         title: 'Create your agent',
-        text: 'The guided wizard walks you through each step — pick an archetype, name your agent, select domains, principles, skills, and tone. Most steps are just arrow keys and Enter.',
+        text: 'The guided wizard walks you through each step — pick an archetype, name your agent, select domains, principles, and tone. Your agent is a folder, ready instantly.',
         code: `<span class="prompt">$</span> <span class="cmd">soleri create</span>
 
 <span class="cmt">◆ What kind of agent?   Security Auditor</span>
@@ -28,39 +28,35 @@ const content: Record<Locale, GettingStartedContent> = {
 <span class="cmt">◆ Domains:              security, code-review</span>
 <span class="cmt">◆ Principles:           Security first, Zero trust...</span>
 <span class="cmt">◆ Tone:                 Precise</span>
-<span class="cmt">◆ Skills:               5 core + 5 selected</span>
-<span class="cmt">◆ Greeting:             Auto</span>
 
-<span class="ok">✓</span> Scaffolded             <span class="val">16 files, 2 facades, 66 ops</span>
-<span class="ok">✓</span> Built                  <span class="val">npm install + npm run build</span>
-<span class="ok">✓</span> MCP registered         <span class="cmt">~/.claude.json</span>
-<span class="ok">✓</span> 10 skills installed    <span class="cmt">TDD, debugging, planning, vault</span>
+<span class="ok">✓</span> Created agent.yaml
+<span class="ok">✓</span> Generated instructions/, workflows/, knowledge/
+<span class="ok">✓</span> Auto-composed CLAUDE.md
+<span class="ok">✓</span> Ready — no build step needed
 
-<span class="cmt">Restart Claude Code, then say "Hello, Sentinel!"</span>`,
+<span class="cmt">Run: soleri install && soleri dev</span>`,
         isInstallCmd: false,
       },
       {
         title: 'Activate and grow',
-        text: 'Say hello in Claude Code. Your agent activates, captures knowledge as you work, and gets smarter over time. Add domains, install knowledge packs, or let the brain learn from your sessions.',
-        code: `<span class="cmt"># In Claude Code — activate the persona</span>
-<span class="prompt">></span> <span class="cmd">Hello, My Agent!</span>
+        text: 'Register the engine, say hello in Claude Code. Your agent activates, captures knowledge as you work, and gets smarter over time.',
+        code: `<span class="cmt"># Register and start the engine</span>
+<span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># register MCP server</span>
+<span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># start engine + watch files</span>
 
-<span class="ok">✓</span> Persona activated      <span class="val">My Agent — Frontend architecture advisor</span>
-<span class="ok">✓</span> Vault ready            <span class="val">empty — will grow as you work</span>
-<span class="ok">✓</span> Brain tracking         <span class="val">enabled — captures patterns from sessions</span>
+<span class="cmt"># In Claude Code — activate the persona</span>
+<span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
 
-<span class="cmt"># Add more domains any time</span>
-<span class="prompt">$</span> <span class="cmd">soleri add-domain</span> <span class="arg">performance</span>
-
-<span class="ok">✓</span> Created domain         <span class="val">performance</span>
-<span class="ok">✓</span> Rebuilt agent
+<span class="ok">✓</span> Persona activated      <span class="val">Sentinel — Security Auditor</span>
+<span class="ok">✓</span> Vault ready            <span class="val">grows as you work</span>
+<span class="ok">✓</span> Brain tracking         <span class="val">learns from every session</span>
 
 <span class="cmt"># Check everything is healthy</span>
 <span class="prompt">$</span> <span class="cmd">soleri doctor</span>
 
 <span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
-<span class="ok">✓</span> Agent       <span class="val">built, registered</span>
-<span class="ok">✓</span> Hook packs  <span class="val">a11y, clean-commits, typescript-safety</span>`,
+<span class="ok">✓</span> Agent       <span class="val">file-tree, registered</span>
+<span class="ok">✓</span> Engine      <span class="val">connected, 326 ops</span>`,
         isInstallCmd: false,
       },
     ],

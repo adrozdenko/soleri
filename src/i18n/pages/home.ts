@@ -59,16 +59,15 @@ const content: Record<Locale, HomeContent> = {
   team/design-standards  <span class="val">v2.1.0</span>  <span class="cmt">shared vault</span>`,
       },
       {
-        title: 'Transport &amp; LLM agnostic',
-        text: 'Pure TypeScript core. Protocol adapters are separate files. Swap transports without touching the engine.',
-        code: `<span class="key">engine/core/</span>        <span class="cmt"># zero protocol deps</span>
-├── vault.ts
-├── brain.ts
-└── memory.ts
-<span class="key">engine/transports/</span>  <span class="cmt"># swap without touching core</span>
-├── <span class="ok">mcp.ts</span>         <span class="cmt"># ships now</span>
-├── rest.ts        <span class="cmt"># dashboards, APIs</span>
-└── lsp.ts         <span class="cmt"># VS Code, Cursor, Zed</span>`,
+        title: 'File tree = agent',
+        text: 'An agent is a folder. No TypeScript, no build step. Claude Code reads it natively. The engine provides persistence and learning.',
+        code: `<span class="key">my-agent/</span>           <span class="cmt"># the agent IS the folder</span>
+├── <span class="ok">agent.yaml</span>       <span class="cmt"># identity + config</span>
+├── <span class="key">instructions/</span>    <span class="cmt"># behavioral rules</span>
+├── <span class="key">workflows/</span>       <span class="cmt"># step-by-step playbooks</span>
+├── <span class="key">knowledge/</span>       <span class="cmt"># domain intelligence</span>
+├── <span class="key">skills/</span>          <span class="cmt"># SKILL.md files</span>
+└── .mcp.json        <span class="cmt"># connects to engine</span>`,
       },
       {
         title: 'Cold start, not blank slate',
@@ -109,38 +108,39 @@ const content: Record<Locale, HomeContent> = {
       },
     ],
     terminalTitle: 'Terminal',
-    terminalCode: `<span class="comment"># Install and create</span>
-<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g soleri</span>
+    terminalCode: `<span class="comment"># Create a file-tree agent (~3 seconds)</span>
 <span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="comment">  ✓ Created agent config</span>
-<span class="comment">  ✓ Connected vault (starter knowledge: 34 patterns)</span>
-<span class="comment">  ✓ Scanned project: React + TypeScript</span>
-<span class="comment">  ✓ Auto-captured 12 codebase patterns</span>
-<span class="comment">  ✓ Vault ready — 46 entries, vectorized, graph-connected</span>
+<span class="comment">  ✓ Created agent.yaml</span>
+<span class="comment">  ✓ Generated instructions/, workflows/, knowledge/</span>
+<span class="comment">  ✓ Auto-composed CLAUDE.md</span>
+<span class="comment">  ✓ Ready to use — no build step needed</span>
+
+<span class="comment"># Register and start developing</span>
+<span class="prompt">$</span> <span class="cmd">soleri install</span>            <span class="comment"># register MCP server</span>
+<span class="prompt">$</span> <span class="cmd">soleri dev</span>                <span class="comment"># start engine + watch files</span>
 
 <span class="comment"># Feed it more knowledge</span>
-<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>`,
-    archTitle: 'Layered like living systems',
+<span class="prompt">$</span> <span class="cmd">soleri pack</span> <span class="arg">install community/react-patterns</span>`,
+    archTitle: 'Two layers, cleanly separated',
     archSubtitle:
-      'Each layer grows independently. Swap transports, plug in knowledge, customize your agent — the engine stays the same.',
+      'The agent folder is the shell. The knowledge engine is the brain. They evolve independently.',
     layers: [
       {
-        label: 'Agents',
-        text: "Your agent's config (<code>agent.yaml</code>): identity, voice, domain wiring. Create in one command, customize anytime.",
+        label: 'Agent Folder',
+        text: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code reads them natively. No TypeScript, no build step.',
       },
       {
-        label: 'Domains',
-        text: "Pluggable knowledge domains. The engine loads relevant domains based on your agent's vault structure.",
+        label: 'Domain Packs',
+        text: 'Pluggable expertise modules. Add design system science, code review, or custom domains without changing the agent folder.',
       },
       {
-        label: 'Engine',
-        text: 'Single MCP server process. Vault (knowledge), Brain (learning), Memory (context), Planning (workflows). Your agent runs on it. Updates via <code>npm update</code>.',
+        label: 'Knowledge Engine',
+        text: 'Single MCP server (<code>@soleri/core</code>). Vault, Brain, Curator, Planner, Memory. Persistent state and learning. All agents share one engine.',
       },
       {
         label: 'Transports',
-        text: 'Protocol adapters isolated from core: <code>mcp.ts</code> ships now, <code>rest.ts</code> and <code>lsp.ts</code> ready for VS Code, Cursor, Zed, and custom dashboards. Adding a transport = one adapter file.',
+        text: 'MCP (stdio) for Claude Code and Cursor. HTTP/SSE for dashboards. WebSocket for streaming. Telegram for conversational access.',
       },
     ],
   },
