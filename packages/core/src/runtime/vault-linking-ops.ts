@@ -43,21 +43,40 @@ export function createVaultLinkingOps(runtime: AgentRuntime): OpDefinition[] {
         note: z.string().optional().describe('Optional context for the link'),
       }),
       handler: async (params) => {
+        const sourceId = params.sourceId as string;
+        const targetId = params.targetId as string;
+
+        // Validate both entries exist to prevent dangling links
+        const provider = vault.getProvider();
+        const sourceExists = provider.get<{ id: string }>('SELECT id FROM entries WHERE id = ?', [
+          sourceId,
+        ]);
+        const targetExists = provider.get<{ id: string }>('SELECT id FROM entries WHERE id = ?', [
+          targetId,
+        ]);
+
+        if (!sourceExists || !targetExists) {
+          const missing = [];
+          if (!sourceExists) missing.push(`source '${sourceId}'`);
+          if (!targetExists) missing.push(`target '${targetId}'`);
+          throw new Error(`Entry not found: ${missing.join(' and ')}`);
+        }
+
         linkManager.addLink(
-          params.sourceId as string,
-          params.targetId as string,
+          sourceId,
+          targetId,
           params.linkType as 'supports' | 'contradicts' | 'extends' | 'sequences',
           params.note as string | undefined,
         );
         return {
           success: true,
           link: {
-            sourceId: params.sourceId,
-            targetId: params.targetId,
+            sourceId,
+            targetId,
             linkType: params.linkType,
             note: params.note,
           },
-          sourceLinkCount: linkManager.getLinkCount(params.sourceId as string),
+          sourceLinkCount: linkManager.getLinkCount(sourceId),
         };
       },
     },

@@ -482,18 +482,18 @@ describe('E2E: vault-zettelkasten', () => {
       expect(typeof data.totalSuggestions).toBe('number');
       expect(Array.isArray(data.suggestions)).toBe(true);
 
-      // If FTS5 finds suggestions, validate their shape and scores
-      if (data.totalSuggestions > 0) {
-        const suggestedIds = data.suggestions.map(s => s.entryId);
-        // Related React entries should be among suggestions when found
-        const hasRelated = suggestedIds.includes(stateId) || suggestedIds.includes(perfId);
-        expect(hasRelated).toBe(true);
+      // Three related React entries were captured — suggestions must exist
+      expect(data.totalSuggestions).toBeGreaterThan(0);
 
-        for (const suggestion of data.suggestions) {
-          expect(suggestion.score).toBeGreaterThan(0);
-          expect(suggestion.suggestedType).toBeDefined();
-          expect(suggestion.title).toBeDefined();
-        }
+      const suggestedIds = data.suggestions.map(s => s.entryId);
+      // Related React entries should be among suggestions
+      const hasRelated = suggestedIds.includes(stateId) || suggestedIds.includes(perfId);
+      expect(hasRelated).toBe(true);
+
+      for (const suggestion of data.suggestions) {
+        expect(suggestion.score).toBeGreaterThan(0);
+        expect(suggestion.suggestedType).toBeDefined();
+        expect(suggestion.title).toBeDefined();
       }
     });
 
@@ -603,16 +603,15 @@ describe('E2E: vault-zettelkasten', () => {
     });
 
     it('link_entries with non-existent source should handle gracefully', async () => {
-      // SQLite FK constraint may or may not fire depending on PRAGMA foreign_keys
-      // Either way it should not throw an unhandled exception
       const res = await callOp(vaultFacade, 'link_entries', {
         sourceId: 'nonexistent-entry-id-12345',
         targetId: 'also-nonexistent-67890',
         linkType: 'supports',
       });
-      // The op may succeed (INSERT OR REPLACE) or fail gracefully
-      // Key assertion: no unhandled crash — success or structured error
-      expect(typeof res.success).toBe('boolean');
+      // Linking non-existent entries fails — either via explicit validation
+      // ("Entry not found") or via SQLite FK constraint enforcement.
+      expect(res.success).toBe(false);
+      expect(res.error).toBeDefined();
     });
 
     it('duplicate link should be idempotent (INSERT OR REPLACE)', async () => {

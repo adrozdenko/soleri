@@ -416,15 +416,19 @@ describe('Knowledge Traceability', () => {
     it('brain_strengths should show JWT pattern with non-zero strength', async () => {
       const res = await op('brain', 'brain_strengths', { domain: 'security' });
 
-      const patterns = (res.patterns ?? res) as Array<{ id: string; title: string; strength: number }>;
+      const patterns = (res.patterns ?? res) as Array<{ id: string; title: string; strength: number; pattern?: string }>;
 
-      if (Array.isArray(patterns) && patterns.length > 0) {
-        const jwtPattern = patterns.find(p => p.id === state.knowledgeId);
-        if (jwtPattern) {
-          expect(jwtPattern.strength).toBeGreaterThan(0);
-          expect(jwtPattern.title).toContain('JWT');
-        }
-      }
+      expect(Array.isArray(patterns)).toBe(true);
+      expect(patterns.length).toBeGreaterThan(0);
+
+      // Find by pattern field (brain_strengths returns pattern titles, not raw IDs)
+      const jwtPattern = patterns.find(p =>
+        p.id === state.knowledgeId ||
+        p.pattern?.toLowerCase().includes('jwt') ||
+        p.title?.toLowerCase().includes('jwt'),
+      );
+      expect(jwtPattern).toBeDefined();
+      expect(jwtPattern!.strength).toBeGreaterThan(0);
     });
   });
 

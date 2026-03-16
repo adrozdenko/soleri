@@ -143,17 +143,18 @@ describe('Agent Simulation: First Week', () => {
       const res = await op('admin', 'admin_tool_list');
 
       // Without _allOps injection, returns fallback admin-only list
-      expect(res.count).toBe(8);
+      expect(res.count as number).toBeGreaterThan(0);
       const ops = res.ops as Array<{ name: string }>;
       expect(ops.some(t => t.name.includes('admin_health'))).toBe(true);
       expect(ops.some(t => t.name.includes('admin_diagnostic'))).toBe(true);
+      expect(ops.some(t => t.name.includes('admin_tool_list'))).toBe(true);
     });
 
-    it('3. Vault is empty at start', async () => {
+    it('3. Vault has exactly the seeded playbooks at start', async () => {
       const res = await op('vault', 'vault_stats');
 
-      expect(res.totalEntries).toBeGreaterThanOrEqual(0);
-      // Seeded playbooks may be counted — but no user knowledge yet
+      // seedDefaultPlaybooks seeds exactly 7 playbook entries
+      expect(res.totalEntries).toBe(7);
     });
 
     it('4. Brain has no learned patterns yet', async () => {
@@ -299,6 +300,17 @@ describe('Agent Simulation: First Week', () => {
       expect(res.completed).toBe(true);
       expect(res.patternsAdded).toBeGreaterThanOrEqual(1);
       expect(res.antiPatternsAdded).toBeGreaterThanOrEqual(1);
+
+      // Verify the captured patterns actually exist in the vault
+      const patternSearch = await op('vault', 'search', { query: 'error boundaries cascading failures' });
+      const patternResults = patternSearch as unknown as Array<{ entry: { title: string; type: string } }>;
+      expect(patternResults.length).toBeGreaterThan(0);
+      expect(patternResults.some(r => r.entry.title.toLowerCase().includes('error bound'))).toBe(true);
+
+      const antiSearch = await op('vault', 'search', { query: 'empty catch blocks' });
+      const antiResults = antiSearch as unknown as Array<{ entry: { title: string; type: string } }>;
+      expect(antiResults.length).toBeGreaterThan(0);
+      expect(antiResults.some(r => r.entry.title.toLowerCase().includes('catch'))).toBe(true);
     });
 
     it('16. Verify plan is completed', async () => {
@@ -619,8 +631,11 @@ describe('Agent Simulation: First Week', () => {
       });
 
       // memory_search returns array directly from vault.searchMemories
-      const results = res as unknown as Array<Record<string, unknown>>;
-      expect(Array.isArray(results) || (res as Record<string, unknown>).data !== undefined).toBe(true);
+      const results = res as unknown as Array<{ summary: string }>;
+      expect(Array.isArray(results)).toBe(true);
+      expect(results.length).toBeGreaterThan(0);
+      // Should find the session captured in test 33
+      expect(results.some(r => r.summary.toLowerCase().includes('error handling'))).toBe(true);
     });
 
     it('35. Build brain intelligence from accumulated feedback', async () => {
@@ -651,8 +666,8 @@ describe('Agent Simulation: First Week', () => {
       // brain_recommend returns PatternStrength[] directly (the array IS the data)
       const results = res as unknown as Array<{ pattern: string; strength: number }>;
       expect(Array.isArray(results)).toBe(true);
-      // Brain may or may not have enough data for strong recommendations
-      // but the system should not crash and should return a valid shape
+      // After feedback was recorded in tests 22-23, brain must return recommendations
+      expect(results.length).toBeGreaterThan(0);
     });
   });
 

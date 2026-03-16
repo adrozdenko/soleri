@@ -300,13 +300,12 @@ describe('System Quality Tests', () => {
       const plan = res.plan as Record<string, unknown>;
       expect(plan.id).toBeDefined();
       // Decisions are populated from recommendations (line 208-210 of orchestrate-ops.ts)
-      if (plan.decisions) {
-        const decisions = plan.decisions as string[];
-        expect(decisions.length).toBeGreaterThan(0);
-        // Each decision is prefixed with "Brain pattern: ..."
-        const hasBrainPrefix = decisions.some(d => d.startsWith('Brain pattern:'));
-        expect(hasBrainPrefix).toBe(true);
-      }
+      expect(plan.decisions).toBeDefined();
+      const decisions = plan.decisions as string[];
+      expect(decisions.length).toBeGreaterThan(0);
+      // Each decision is prefixed with "Brain pattern: ..."
+      const hasBrainPrefix = decisions.some(d => d.startsWith('Brain pattern:'));
+      expect(hasBrainPrefix).toBe(true);
     });
 
     it('1.5 Capture new caching knowledge', async () => {
@@ -499,16 +498,17 @@ describe('System Quality Tests', () => {
       const strengths = res as unknown as Array<{ pattern: string; strength: number; domain?: string }>;
       expect(Array.isArray(strengths)).toBe(true);
 
-      if (strengths.length >= 2) {
-        // Should be sorted descending by strength
-        for (let i = 1; i < strengths.length; i++) {
-          expect(strengths[i - 1].strength).toBeGreaterThanOrEqual(strengths[i].strength);
-        }
+      // After 17 feedback entries, there must be at least 2 patterns with computed strengths
+      expect(strengths.length).toBeGreaterThanOrEqual(2);
 
-        // Strength values should NOT all be identical (they differ by feedback signals)
-        const uniqueStrengths = new Set(strengths.map(s => s.strength));
-        expect(uniqueStrengths.size).toBeGreaterThan(1);
+      // Should be sorted descending by strength
+      for (let i = 1; i < strengths.length; i++) {
+        expect(strengths[i - 1].strength).toBeGreaterThanOrEqual(strengths[i].strength);
       }
+
+      // Strength values should NOT all be identical (they differ by feedback signals)
+      const uniqueStrengths = new Set(strengths.map(s => s.strength));
+      expect(uniqueStrengths.size).toBeGreaterThan(1);
     });
 
     it('2.9 brain_recommend for frontend ranks accepted patterns high', async () => {
@@ -518,10 +518,18 @@ describe('System Quality Tests', () => {
         limit: 10,
       });
 
-      const results = res as unknown as Array<{ pattern: string; strength: number }>;
+      const results = res as unknown as Array<{ pattern: string; strength: number; domain?: string }>;
       expect(Array.isArray(results)).toBe(true);
-      // With feedback data, should return recommendations
-      // Frontend patterns were accepted 5 times, should rank high
+      // With 5 frontend feedback entries, must return recommendations
+      expect(results.length).toBeGreaterThan(0);
+      // At least one recommendation should be from the frontend domain
+      const hasFrontend = results.some(r =>
+        r.pattern?.toLowerCase().includes('component') ||
+        r.pattern?.toLowerCase().includes('rendering') ||
+        r.pattern?.toLowerCase().includes('frontend') ||
+        r.domain === 'frontend',
+      );
+      expect(hasFrontend).toBe(true);
     });
 
     it('2.10 brain_recommend for security ranks accepted patterns', async () => {
@@ -531,8 +539,19 @@ describe('System Quality Tests', () => {
         limit: 10,
       });
 
-      const results = res as unknown as Array<{ pattern: string; strength: number }>;
+      const results = res as unknown as Array<{ pattern: string; strength: number; domain?: string }>;
       expect(Array.isArray(results)).toBe(true);
+      // With 3 security feedback entries, must return recommendations
+      expect(results.length).toBeGreaterThan(0);
+      // At least one recommendation should be from the security domain
+      const hasSecurity = results.some(r =>
+        r.pattern?.toLowerCase().includes('security') ||
+        r.pattern?.toLowerCase().includes('csrf') ||
+        r.pattern?.toLowerCase().includes('xss') ||
+        r.pattern?.toLowerCase().includes('encryption') ||
+        r.domain === 'security',
+      );
+      expect(hasSecurity).toBe(true);
     });
 
     it('2.11 brain_stats reflects all accumulated feedback', async () => {
@@ -712,8 +731,8 @@ describe('System Quality Tests', () => {
       expect(arr.length).toBeGreaterThan(0);
 
       const domains = new Set(arr.map(r => r.entry.domain));
-      // Should find results from at least monitoring and/or devops and/or infrastructure
-      expect(domains.size).toBeGreaterThanOrEqual(1);
+      // "monitoring alerting health-check" spans multiple domains (monitoring, devops, infrastructure)
+      expect(domains.size).toBeGreaterThanOrEqual(2);
     });
 
     it('4.5 Porter stemmer handles related word forms', async () => {

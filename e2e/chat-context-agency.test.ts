@@ -304,9 +304,18 @@ describe('E2E: chat-context-agency', () => {
         prompt: 'Fix the Button component in src/components/Button.tsx using TypeScript',
       });
       expect(res.success).toBe(true);
-      const data = res.data as { files?: string[]; technologies?: string[]; actions?: string[] };
-      // Should detect at least some entities
+      // ContextEngine.extractEntities returns { entities, byType }
+      // where byType keys are EntityType: 'file' | 'function' | 'domain' | 'action' | 'technology' | 'pattern'
+      const data = res.data as {
+        entities: Array<{ type: string; value: string; confidence: number }>;
+        byType: Record<string, Array<{ type: string; value: string; confidence: number }>>;
+      };
       expect(data).toBeDefined();
+      expect(data.entities.length).toBeGreaterThan(0);
+      // Should detect file path, action (fix), and technology (typescript)
+      const types = new Set(data.entities.map(e => e.type));
+      const hasRelevantEntity = types.has('file') || types.has('action') || types.has('technology');
+      expect(hasRelevantEntity).toBe(true);
     });
 
     it('should retrieve knowledge for a query', async () => {
@@ -366,6 +375,8 @@ describe('E2E: chat-context-agency', () => {
         domain: 'frontend',
       });
       expect(frontendRes.success).toBe(true);
+      const frontendData = frontendRes.data as { results?: Array<{ domain?: string }> } | Array<{ domain?: string }>;
+      const frontendResults = Array.isArray(frontendData) ? frontendData : (frontendData.results ?? []);
 
       // Search with backend domain filter — should get fewer/no React-related results
       const backendRes = await callOp(`${AGENT_ID}_context`, 'context_retrieve_knowledge', {
@@ -373,6 +384,11 @@ describe('E2E: chat-context-agency', () => {
         domain: 'backend',
       });
       expect(backendRes.success).toBe(true);
+      const backendData = backendRes.data as { results?: Array<{ domain?: string }> } | Array<{ domain?: string }>;
+      const backendResults = Array.isArray(backendData) ? backendData : (backendData.results ?? []);
+
+      // Frontend search should return more results than backend for a React query
+      expect(frontendResults.length).toBeGreaterThanOrEqual(backendResults.length);
     });
   });
 
@@ -448,6 +464,13 @@ describe('E2E: chat-context-agency', () => {
         confidence: 0.3,
       });
       expect(res.success).toBe(true);
+      // generateClarification returns { question, reason, options? } or { clarificationNeeded: false }
+      // "fix it" has action "fix" but only 2 words (no target), so confidence < 0.3 triggers clarification
+      const data = res.data as { question?: string; reason?: string; options?: string[]; clarificationNeeded?: boolean };
+      const hasClarification = !!data.question || data.clarificationNeeded === false;
+      // With "fix it" at confidence 0.3: has action ("fix") but no target (2 words < 4),
+      // so it returns a clarification question
+      expect(hasClarification).toBe(true);
     });
 
     it('should not generate clarification for confident prompt', async () => {
@@ -456,6 +479,9 @@ describe('E2E: chat-context-agency', () => {
         confidence: 0.95,
       });
       expect(res.success).toBe(true);
+      // Confidence >= 0.7 returns null -> { clarificationNeeded: false }
+      const data = res.data as { clarificationNeeded?: boolean };
+      expect(data.clarificationNeeded).toBe(false);
     });
 
     it('should disable agency mode', async () => {
@@ -562,8 +588,8 @@ describe('E2E: chat-context-agency', () => {
       const res = await callOp(`${AGENT_ID}_control`, 'route_intent', {
         prompt: '',
       });
-      // Should either succeed with a default or return a graceful error
-      expect(typeof res.success).toBe('boolean');
+      // Empty prompt should still succeed with a default classification
+      expect(res.success).toBe(true);
     });
 
     it('should morph to a different operational mode', async () => {
@@ -787,8 +813,9 @@ describe('E2E: chat-context-agency', () => {
       const res = await callOp(`${AGENT_ID}_control`, 'morph', {
         mode: 'DOES-NOT-EXIST-MODE',
       });
-      // Should either succeed (modes are flexible) or return a clear error — not crash
-      expect(typeof res.success).toBe('boolean');
+      // Morphing to a non-existent mode throws "Unknown mode" — modes are stored in
+      // agent_modes table and only valid pre-defined modes are accepted.
+      expect(res.success).toBe(false);
     });
 
     it('pack: validate non-existent directory should return validation error', async () => {

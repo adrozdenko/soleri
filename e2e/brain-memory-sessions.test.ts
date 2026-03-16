@@ -213,43 +213,40 @@ describe('E2E: brain-memory-sessions', () => {
       expect(rebuildData.rebuilt).toBe(true);
       expect(rebuildData.vocabularySize).toBeGreaterThan(0);
 
-      // Record feedback on multiple entries
+      // Record feedback on multiple entries — vault was just seeded, search must return results
       const searchResults = await callOp(vault(), 'search', { query: 'component composition' });
       const compResults = searchResults.data as Array<{ entry: { id: string } }>;
-      if (compResults.length > 0) {
-        await callOp(brain(), 'brain_feedback', {
-          query: 'component composition',
-          entryId: compResults[0].entry.id,
-          action: 'accepted',
-          source: 'recommendation',
-          confidence: 0.9,
-        });
-      }
+      expect(compResults.length).toBeGreaterThan(0);
+      await callOp(brain(), 'brain_feedback', {
+        query: 'component composition',
+        entryId: compResults[0].entry.id,
+        action: 'accepted',
+        source: 'recommendation',
+        confidence: 0.9,
+      });
 
       const errorResults = await callOp(vault(), 'search', { query: 'error handling middleware' });
       const errResults = errorResults.data as Array<{ entry: { id: string } }>;
-      if (errResults.length > 0) {
-        await callOp(brain(), 'brain_feedback', {
-          query: 'error handling',
-          entryId: errResults[0].entry.id,
-          action: 'accepted',
-          source: 'tool-execution',
-          confidence: 0.75,
-        });
-      }
+      expect(errResults.length).toBeGreaterThan(0);
+      await callOp(brain(), 'brain_feedback', {
+        query: 'error handling',
+        entryId: errResults[0].entry.id,
+        action: 'accepted',
+        source: 'tool-execution',
+        confidence: 0.75,
+      });
 
       const dbResults = await callOp(vault(), 'search', { query: 'database connection pooling' });
       const poolResults = dbResults.data as Array<{ entry: { id: string } }>;
-      if (poolResults.length > 0) {
-        await callOp(brain(), 'brain_feedback', {
-          query: 'database pooling',
-          entryId: poolResults[0].entry.id,
-          action: 'dismissed',
-          source: 'search',
-          confidence: 0.4,
-          reason: 'Not relevant to current serverless architecture',
-        });
-      }
+      expect(poolResults.length).toBeGreaterThan(0);
+      await callOp(brain(), 'brain_feedback', {
+        query: 'database pooling',
+        entryId: poolResults[0].entry.id,
+        action: 'dismissed',
+        source: 'search',
+        confidence: 0.4,
+        reason: 'Not relevant to current serverless architecture',
+      });
     });
 
     it('build_intelligence should process accumulated data', async () => {
@@ -665,9 +662,8 @@ describe('E2E: brain-memory-sessions', () => {
         entryId: 'non-existent-entry-id-12345',
         action: 'accepted',
       });
-      // Should succeed (feedback recorded regardless of entry existence)
-      // or fail gracefully
-      expect(typeof res.success).toBe('boolean');
+      // Feedback is recorded regardless of whether the entry exists in vault
+      expect(res.success).toBe(true);
     });
 
     it('record_feedback (legacy op) with basic params should work', async () => {
@@ -685,8 +681,8 @@ describe('E2E: brain-memory-sessions', () => {
       const res = await callOp(memory(), 'memory_search', {
         query: '',
       });
-      // Should succeed with empty or all results, not crash
-      expect(typeof res.success).toBe('boolean');
+      // Empty query should succeed and return results (empty or all)
+      expect(res.success).toBe(true);
     });
 
     it('session_capture with minimal summary should succeed', async () => {
@@ -773,15 +769,18 @@ describe('E2E: brain-memory-sessions', () => {
         action: 'end',
         sessionId: 'never-started-session',
       });
-      // Should either fail gracefully or succeed with error info
-      expect(typeof res.success).toBe('boolean');
+      // Ending a session that was never started fails — the session doesn't exist,
+      // so getSession returns null and the code throws. This is correct behavior.
+      expect(res.success).toBe(false);
     });
 
     it('brain_extract_knowledge on non-existent session should handle gracefully', async () => {
       const res = await callOp(brain(), 'brain_extract_knowledge', {
         sessionId: 'non-existent-session-for-extraction',
       });
-      expect(typeof res.success).toBe('boolean');
+      // Extracting from non-existent session throws "Session not found".
+      // This is correct behavior — you can't extract knowledge from nothing.
+      expect(res.success).toBe(false);
     });
 
     it('memory_deduplicate should run without errors on clean data', async () => {
@@ -918,10 +917,10 @@ describe('E2E: brain-memory-sessions', () => {
       const rebuildRes = await callOp(brain(), 'rebuild_vocabulary', {});
       expect(rebuildRes.success).toBe(true);
 
-      const buildRes = await callOp(brain(), 'build_intelligence', {});
-      // build_intelligence may return success:false if not enough data — that's OK
-      // The key is it doesn't crash
-      expect(typeof buildRes.success).toBe('boolean');
+      const buildRes = await callOp(brain(), 'brain_build_intelligence', {});
+      // After seeding 6 patterns and recording 4+ feedback entries,
+      // build_intelligence should succeed
+      expect(buildRes.success).toBe(true);
     });
 
     // Step 5: Brain should now recommend error patterns for similar context
@@ -937,11 +936,14 @@ describe('E2E: brain-memory-sessions', () => {
     });
 
     // Step 6: Simulate a second search cycle — brain-informed
-    it('second search should work without crashing', async () => {
+    it('second search should return relevant patterns', async () => {
       const searchRes = await callOp(vault(), 'search', {
         query: 'retry backoff error',
       });
       expect(searchRes.success).toBe(true);
+      const results = searchRes.data as Array<{ entry: { title: string } }> | undefined;
+      expect(Array.isArray(results)).toBe(true);
+      expect(results!.length).toBeGreaterThan(0);
     });
 
     // Step 7: Record feedback on second cycle — compound learning
@@ -974,10 +976,9 @@ describe('E2E: brain-memory-sessions', () => {
       const stats = await callOp(brain(), 'brain_stats', {});
       expect(stats.success).toBe(true);
 
-      // Should have non-zero feedback data
-      const data = stats as Record<string, unknown>;
-      // The brain has processed feedback — stats should reflect this
-      expect(data.success).toBe(true);
+      const data = stats.data as { feedbackCount: number };
+      // After multiple feedback entries across cycles, feedbackCount must be >= expected
+      expect(data.feedbackCount).toBeGreaterThanOrEqual(5);
     });
 
     // Step 10: Verify the anti-pattern was captured and is searchable
@@ -986,7 +987,14 @@ describe('E2E: brain-memory-sessions', () => {
         query: 'catch blocks empty error',
       });
       expect(searchRes.success).toBe(true);
-      // Search completed without error — anti-patterns are searchable
+      const results = searchRes.data as Array<{ entry: { title: string } }>;
+      expect(Array.isArray(results)).toBe(true);
+      expect(results.length).toBeGreaterThan(0);
+      // Should find the "Catch-All Error Swallowing" anti-pattern
+      const hasCatchEntry = results.some(r =>
+        r.entry.title.toLowerCase().includes('catch'),
+      );
+      expect(hasCatchEntry).toBe(true);
     });
 
     // Step 11: Third cycle — the compound effect
@@ -1018,17 +1026,31 @@ describe('E2E: brain-memory-sessions', () => {
       const strengths = await callOp(brain(), 'brain_strengths', {});
       expect(strengths.success).toBe(true);
 
-      // After 3 cycles of feedback, the brain should have pattern data
-      const data = strengths as Record<string, unknown>;
-      expect(data.success).toBe(true);
+      const data = strengths.data as Array<{ pattern?: string; strength?: number }>;
+      expect(Array.isArray(data)).toBe(true);
+      expect(data.length).toBeGreaterThan(0);
+
+      // Strengths should be sorted descending
+      for (let i = 1; i < data.length; i++) {
+        expect(data[i - 1].strength).toBeGreaterThanOrEqual(data[i].strength!);
+      }
     });
 
     // Step 13: Memory should contain the full journey
     it('memory should contain searchable record of the learning journey', async () => {
       const memRes = await callOp(memory(), 'memory_search', {
-        query: 'error handling patterns learning',
+        query: 'error handling patterns',
       });
       expect(memRes.success).toBe(true);
+      const results = memRes.data as Array<{ summary: string }>;
+      expect(Array.isArray(results)).toBe(true);
+      expect(results.length).toBeGreaterThan(0);
+      // Should find the session captured in Step 8
+      const hasSession = results.some(r =>
+        r.summary.toLowerCase().includes('error') ||
+        r.summary.toLowerCase().includes('pattern'),
+      );
+      expect(hasSession).toBe(true);
     });
   });
 });

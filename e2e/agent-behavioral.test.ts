@@ -248,6 +248,7 @@ describe('Agent Behavioral Tests', () => {
 
       // Build intelligence from feedback
       await op('brain', 'rebuild_vocabulary');
+      await op('brain', 'brain_build_intelligence');
     });
 
     it('brain should have recorded all feedback', async () => {
@@ -258,21 +259,22 @@ describe('Agent Behavioral Tests', () => {
     it('accepted pattern should have higher strength than dismissed pattern', async () => {
       const allStrengths = await op('brain', 'brain_strengths', {});
 
-      const patterns = (allStrengths.patterns ?? allStrengths) as Array<{ id: string; strength: number }>;
+      // brain_strengths returns PatternStrength[] with { pattern (title), domain, strength, ... }
+      const patterns = (Array.isArray(allStrengths) ? allStrengths : allStrengths.patterns ?? []) as Array<{ pattern: string; strength: number }>;
 
-      if (Array.isArray(patterns) && patterns.length > 0) {
-        const goodStrength = patterns.find(p => p.id === goodPatternId);
-        const badStrength = patterns.find(p => p.id === badPatternId);
+      expect(Array.isArray(patterns)).toBe(true);
+      expect(patterns.length).toBeGreaterThan(0);
 
-        // The consistently accepted pattern should be stronger
-        if (goodStrength && badStrength) {
-          expect(goodStrength.strength).toBeGreaterThan(badStrength.strength);
-        }
-        // If only good has strength data, that is also correct
-        if (goodStrength && !badStrength) {
-          expect(goodStrength.strength).toBeGreaterThan(0);
-        }
-      }
+      // Match by pattern title (PatternStrength uses entry title as the pattern key)
+      const goodStrength = patterns.find(p => p.pattern === 'Always validate user input on the server');
+      const badStrength = patterns.find(p => p.pattern === 'Use console.log for production error tracking');
+
+      // After 3 accepts and 2 dismissals, both patterns must appear in strengths
+      expect(goodStrength).toBeDefined();
+      expect(badStrength).toBeDefined();
+
+      // The consistently accepted pattern should be stronger
+      expect(goodStrength!.strength).toBeGreaterThan(badStrength!.strength);
     });
 
     it('brain recommend for security should surface validated pattern', async () => {
@@ -281,18 +283,17 @@ describe('Agent Behavioral Tests', () => {
         task: 'securing API endpoints',
       });
 
-      const recs = (Array.isArray(recommendations) ? recommendations : recommendations.recommendations ?? []) as Array<{ id: string }>;
+      // brain_recommend returns PatternStrength[] with { pattern (title), domain, strength, ... }
+      const recs = (Array.isArray(recommendations) ? recommendations : recommendations.recommendations ?? []) as Array<{ pattern: string }>;
 
-      if (recs.length > 0) {
-        const hasGoodPattern = recs.some(r => r.id === goodPatternId);
-        const hasBadPattern = recs.some(r => r.id === badPatternId);
+      expect(recs.length).toBeGreaterThan(0);
 
-        // Good pattern should be recommended; bad pattern should NOT
-        if (hasGoodPattern || hasBadPattern) {
-          expect(hasGoodPattern).toBe(true);
-          expect(hasBadPattern).toBe(false);
-        }
-      }
+      const hasGoodPattern = recs.some(r => r.pattern === 'Always validate user input on the server');
+      const hasBadPattern = recs.some(r => r.pattern === 'Use console.log for production error tracking');
+
+      // Good pattern should be recommended; bad pattern should NOT
+      expect(hasGoodPattern).toBe(true);
+      expect(hasBadPattern).toBe(false);
     });
   });
 

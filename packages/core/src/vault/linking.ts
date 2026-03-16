@@ -206,9 +206,49 @@ export class LinkManager {
       }>('SELECT title, description, type, tags FROM entries WHERE id = ?', [entryId]);
       if (!entry) return [];
 
-      // Build FTS query from entry content
-      const queryTerms = `${entry.title} ${entry.description}`.replace(/[^\w\s]/g, ' ').trim();
-      if (!queryTerms) return [];
+      // Build FTS query from entry content — extract significant keywords only.
+      // FTS5 MATCH chokes on long raw text; use top keywords joined with OR.
+      const rawWords = `${entry.title} ${entry.description}`
+        .replace(/[^\w\s]/g, ' ')
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 2);
+      // Deduplicate and take top 10 most significant words (skip common stop words)
+      const stopWords = new Set([
+        'the',
+        'and',
+        'for',
+        'with',
+        'from',
+        'this',
+        'that',
+        'are',
+        'was',
+        'not',
+        'but',
+        'have',
+        'has',
+        'use',
+        'can',
+        'will',
+        'all',
+        'each',
+        'than',
+        'its',
+        'more',
+        'when',
+        'into',
+        'also',
+        'any',
+        'may',
+        'only',
+        'should',
+        'which',
+      ]);
+      const unique = [...new Set(rawWords)].filter((w) => !stopWords.has(w));
+      const keywords = unique.slice(0, 10);
+      if (keywords.length === 0) return [];
+      const queryTerms = keywords.join(' OR ');
 
       // FTS5 match with BM25 ranking
       const matches = this.provider.all<{
@@ -220,7 +260,7 @@ export class LinkManager {
       }>(
         `SELECT e.id, e.title, e.type, e.domain, rank
          FROM entries_fts fts
-         JOIN entries e ON e.id = fts.id
+         JOIN entries e ON e.rowid = fts.rowid
          WHERE entries_fts MATCH ?
          ORDER BY rank
          LIMIT ?`,

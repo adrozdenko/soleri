@@ -400,17 +400,12 @@ describe('E2E: planning-orchestration', () => {
         filesModified: [],
       });
 
-      // orchestrate_complete calls planner.complete() which will fail because
-      // plan is already completed. The op should handle this gracefully.
-      // Let's check what actually happens — it may error or succeed.
-      // If it errors, that's an expected limitation.
-      if (res.success) {
-        const data = res.data as { session: unknown };
-        expect(data.session).toBeDefined();
-      } else {
-        // Expected: planner.complete() throws on already-completed plan
-        expect(res.error).toContain('Invalid transition');
-      }
+      // orchestrate_complete on an already-completed plan should fail with
+      // an Invalid transition error — planner.complete() cannot transition
+      // from 'completed' to 'completed'. This is the correct behavior:
+      // the lifecycle was already finalized by plan_reconcile.
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Invalid transition');
     });
   });
 
