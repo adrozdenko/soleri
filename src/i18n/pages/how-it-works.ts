@@ -144,20 +144,20 @@ const content: Record<Locale, HowItWorksContent> = {
       '\u0428\u0430\u0440\u0438 \u0441\u0445\u043E\u0432\u0438\u0449\u0430, \u043C\u043E\u0437\u043A\u0443 \u0442\u0430 \u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0443 \u043F\u0440\u0430\u0446\u044E\u044E\u0442\u044C \u043D\u0430 \u043E\u0434\u043D\u043E\u043C\u0443 \u0440\u0443\u0448\u0456\u0457. \u041E\u0434\u0438\u043D \u043F\u0440\u043E\u0446\u0435\u0441, \u043D\u0443\u043B\u044C \u0437\u0430\u043B\u0435\u0436\u043D\u043E\u0441\u0442\u0435\u0439 \u2014 \u0437\u0430\u043C\u0456\u043D\u0438 \u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0438, \u043F\u0456\u0434\u043A\u043B\u044E\u0447\u0430\u0439 \u0437\u043D\u0430\u043D\u043D\u044F, \u0437\u043C\u0456\u043D\u044E\u0439 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0456\u0432.',
     archLayers: [
       {
-        name: '\u0410\u0433\u0435\u043D\u0442',
-        desc: '\u041A\u043E\u043D\u0444\u0456\u0433\u0443\u0440\u0430\u0446\u0456\u044F \u0442\u0432\u043E\u0433\u043E \u0430\u0433\u0435\u043D\u0442\u0430 \u2014 <code>agent.yaml</code> \u0432\u0438\u0437\u043D\u0430\u0447\u0430\u0454 \u0456\u0434\u0435\u043D\u0442\u0438\u0447\u043D\u0456\u0441\u0442\u044C, \u0433\u043E\u043B\u043E\u0441, \u0434\u043E\u043C\u0435\u043D\u0438. \u0421\u0442\u0432\u043E\u0440\u0456\u0442\u044C \u043E\u0434\u043D\u0456\u0454\u044E \u043A\u043E\u043C\u0430\u043D\u0434\u043E\u044E, \u043D\u0430\u043B\u0430\u0448\u0442\u043E\u0432\u0443\u0439\u0442\u0435 \u0432 \u0431\u0443\u0434\u044C-\u044F\u043A\u0438\u0439 \u0447\u0430\u0441.',
+        name: 'Тека агента',
+        desc: 'Прості файли: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code читає їх напряму. Без TypeScript, без збірки.',
       },
       {
-        name: '\u0414\u043E\u043C\u0435\u043D\u0438',
-        desc: '\u041F\u0456\u0434\u043A\u043B\u044E\u0447\u0443\u0432\u0430\u043D\u0456 \u0434\u043E\u043C\u0435\u043D\u0438 \u0437\u043D\u0430\u043D\u044C. \u0420\u0443\u0448\u0456\u0439 \u0437\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0443\u0454 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u043D\u0456 \u0434\u043E\u043C\u0435\u043D\u0438 \u0437\u0430 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u043E\u044E \u0441\u0445\u043E\u0432\u0438\u0449\u0430 \u0442\u0432\u043E\u0433\u043E \u0430\u0433\u0435\u043D\u0442\u0430.',
+        name: 'Доменні пакети',
+        desc: 'Підключувані модулі експертизи. Додавай дизайн-системи, код-рев\'ю або власні домени без зміни теки агента.',
       },
       {
-        name: '\u0420\u0443\u0448\u0456\u0439',
-        desc: '\u041E\u0434\u0438\u043D \u043F\u0440\u043E\u0446\u0435\u0441 \u0441\u0435\u0440\u0432\u0435\u0440\u0430 MCP. \u0421\u0445\u043E\u0432\u0438\u0449\u0435 (\u0437\u043D\u0430\u043D\u043D\u044F), \u043C\u043E\u0437\u043E\u043A (\u043D\u0430\u0432\u0447\u0430\u043D\u043D\u044F), \u043F\u0430\u043C\u2019\u044F\u0442\u044C (\u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442), \u043F\u043B\u0430\u043D\u0443\u0432\u0430\u043D\u043D\u044F (\u0440\u043E\u0431\u043E\u0447\u0456 \u043F\u0440\u043E\u0446\u0435\u0441\u0438). \u0422\u0432\u0456\u0439 \u0430\u0433\u0435\u043D\u0442 \u043F\u0440\u0430\u0446\u044E\u0454 \u043D\u0430 \u043D\u044C\u043E\u043C\u0443. \u041E\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F \u0447\u0435\u0440\u0435\u0437 <code>npm update</code>.',
+        name: 'Рушій знань',
+        desc: 'Один MCP-сервер (<code>@soleri/core</code>). Сховище, Brain, Куратор, Планувальник, Пам\'ять. Персистентний стан та навчання.',
       },
       {
-        name: '\u0422\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0438',
-        desc: '\u0410\u0434\u0430\u043F\u0442\u0435\u0440\u0438 \u043F\u0440\u043E\u0442\u043E\u043A\u043E\u043B\u0456\u0432 \u0456\u0437\u043E\u043B\u044C\u043E\u0432\u0430\u043D\u0456 \u0432\u0456\u0434 \u044F\u0434\u0440\u0430: <code>mcp.ts</code> \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0438\u0439 \u0437\u0430\u0440\u0430\u0437, <code>rest.ts</code> \u0456 <code>lsp.ts</code> \u043F\u0456\u0434\u043A\u043B\u044E\u0447\u0430\u044E\u0442\u044C\u0441\u044F \u0434\u043B\u044F VS Code, Cursor, Zed \u0456 \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0446\u044C\u043A\u0438\u0445 \u043F\u0430\u043D\u0435\u043B\u0435\u0439. \u0414\u043E\u0434\u0430\u0432\u0430\u043D\u043D\u044F \u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0443 = \u043E\u0434\u0438\u043D \u0444\u0430\u0439\u043B \u0430\u0434\u0430\u043F\u0442\u0435\u0440\u0430.',
+        name: 'Транспорти',
+        desc: 'MCP (stdio) для Claude Code та Cursor. HTTP/SSE для дашбордів. WebSocket для стримінгу. Telegram для розмовного доступу.',
       },
     ],
     vault: {
@@ -245,20 +245,18 @@ const content: Record<Locale, HowItWorksContent> = {
 <span class="key">status:</span> <span class="ok">\u043D\u0430\u043A\u043E\u043F\u0438\u0447\u0443\u0454\u0442\u044C\u0441\u044F</span>      <span class="cmt"># \u0437\u2019\u044F\u0432\u043B\u044F\u0454\u0442\u044C\u0441\u044F \u043F\u0435\u0440\u0448\u0438\u043C \u0443 \u043F\u043E\u0448\u0443\u043A\u0443</span>`,
     },
     transport: {
-      title:
-        '\u041D\u0435 \u043F\u0440\u0438\u0432\u2019\u044F\u0437\u0430\u043D\u043E \u0434\u043E \u0436\u043E\u0434\u043D\u043E\u0433\u043E \u0440\u0435\u0434\u0430\u043A\u0442\u043E\u0440\u0430',
-      text: '\u0422\u0432\u043E\u0457 \u0437\u043D\u0430\u043D\u043D\u044F \u043D\u0435 \u043C\u0430\u044E\u0442\u044C \u0431\u0443\u0442\u0438 \u0437\u0430\u043C\u043A\u043D\u0435\u043D\u0456 \u0432 \u043E\u0434\u043D\u043E\u043C\u0443 \u0456\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u0456. \u042F\u0434\u0440\u043E \u0440\u0443\u0448\u0456\u044F \u043D\u0435 \u043C\u0430\u0454 \u0437\u0430\u043B\u0435\u0436\u043D\u043E\u0441\u0442\u0435\u0439 \u0432\u0456\u0434 \u043F\u0440\u043E\u0442\u043E\u043A\u043E\u043B\u0456\u0432. \u0410\u0434\u0430\u043F\u0442\u0435\u0440\u0438 \u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0443 \u2014 \u0446\u0435 \u043E\u043A\u0440\u0435\u043C\u0456 \u0444\u0430\u0439\u043B\u0438 \u2014 \u0437\u043C\u0456\u043D\u044E\u0439 \u0430\u0431\u043E \u0434\u043E\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0457\u0445, \u043D\u0435 \u0442\u043E\u0440\u043A\u0430\u044E\u0447\u0438\u0441\u044C \u044F\u0434\u0440\u0430.',
-      keyPoint:
-        '\u042F\u0434\u0440\u043E \u043D\u0435 \u043C\u0430\u0454 \u0437\u0430\u043B\u0435\u0436\u043D\u043E\u0441\u0442\u0435\u0439 \u0432\u0456\u0434 \u043F\u0440\u043E\u0442\u043E\u043A\u043E\u043B\u0456\u0432.',
-      code: `<span class="key">engine/transports/</span>  <span class="cmt"># \u043E\u0434\u0438\u043D \u0444\u0430\u0439\u043B \u043D\u0430 \u043F\u0440\u043E\u0442\u043E\u043A\u043E\u043B</span>
-\u251C\u2500\u2500 <span class="ok">mcp.ts</span>         <span class="cmt"># Claude Code, Cursor \u2014 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0456 \u0437\u0430\u0440\u0430\u0437</span>
-\u251C\u2500\u2500 rest.ts        <span class="cmt"># \u043F\u0430\u043D\u0435\u043B\u0456, \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0446\u044C\u043A\u0456 API</span>
-\u2514\u2500\u2500 lsp.ts         <span class="cmt"># \u0440\u043E\u0437\u0448\u0438\u0440\u0435\u043D\u043D\u044F \u0434\u043B\u044F VS Code, Cursor, Zed</span>
+      title: 'Не прив\u2019язано до жодного редактора',
+      text: 'Твої знання не мають бути замкнені в одному інструменті. Рушій знань працює як єдиний MCP-сервер. Різні транспорти підключаються до нього.',
+      keyPoint: 'Один рушій, багато транспортів.',
+      code: `<span class="key">my-agent/</span>           <span class="cmt"># тека твого агента</span>
+├── <span class="ok">agent.yaml</span>       <span class="cmt"># ідентичність + конфіг</span>
+├── <span class="key">instructions/</span>    <span class="cmt"># правила поведінки</span>
+└── .mcp.json        <span class="cmt"># підключення до рушія</span>
 
-<span class="key">engine/core/</span>        <span class="cmt"># \u0436\u043E\u0434\u043D\u0438\u0445 \u0456\u043C\u043F\u043E\u0440\u0442\u0456\u0432 \u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0443</span>
-\u251C\u2500\u2500 vault.ts
-\u251C\u2500\u2500 brain.ts
-\u2514\u2500\u2500 memory.ts`,
+<span class="key">@soleri/core</span>        <span class="cmt"># Рушій знань</span>
+├── <span class="ok">MCP (stdio)</span>    <span class="cmt"># Claude Code, Cursor</span>
+├── HTTP/SSE       <span class="cmt"># дашборди, API</span>
+└── WebSocket      <span class="cmt"># стримінг, Telegram</span>`,
     },
     llm: {
       title:
@@ -283,20 +281,20 @@ const content: Record<Locale, HowItWorksContent> = {
       'Livelli di Vault, cervello e trasporto funzionano su un unico motore. Un processo, zero lock-in \u2014 cambia trasporti, aggiungi conoscenza, scegli il provider.',
     archLayers: [
       {
-        name: 'Agente',
-        desc: 'La configurazione del tuo agente \u2014 <code>agent.yaml</code> definisce identit\u00E0, voce, collegamenti di dominio. Crea in un comando, personalizza in qualsiasi momento.',
+        name: 'Cartella agente',
+        desc: 'File semplici: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code li legge nativamente. Niente TypeScript, nessun build.',
       },
       {
-        name: 'Domini',
-        desc: 'Domini di conoscenza integrabili. Il motore carica i domini pertinenti in base alla struttura del Vault del tuo agente.',
+        name: 'Pacchetti dominio',
+        desc: "Moduli di competenza collegabili. Aggiungi design system, code review o domini personalizzati senza modificare la cartella dell'agente.",
       },
       {
-        name: 'Motore',
-        desc: 'Singolo processo server MCP. Vault (conoscenza), Cervello (apprendimento), Memoria (contesto), Pianificazione (flussi di lavoro). Il tuo agente ci gira sopra. Aggiornamenti tramite <code>npm update</code>.',
+        name: 'Motore di conoscenza',
+        desc: 'Un unico server MCP (<code>@soleri/core</code>). Vault, Cervello, Curatore, Pianificatore, Memoria. Stato persistente e apprendimento.',
       },
       {
         name: 'Trasporti',
-        desc: 'Adattatori di protocollo isolati dal nucleo: <code>mcp.ts</code> \u00E8 disponibile ora, <code>rest.ts</code> e <code>lsp.ts</code> si integrano per VS Code, Cursor, Zed e dashboard personalizzate. Aggiungi un trasporto = un file adattatore.',
+        desc: 'MCP (stdio) per Claude Code e Cursor. HTTP/SSE per dashboard. WebSocket per streaming. Telegram per accesso conversazionale.',
       },
     ],
     vault: {
@@ -380,17 +378,17 @@ const content: Record<Locale, HowItWorksContent> = {
     },
     transport: {
       title: 'Non sei vincolato a nessun editor',
-      text: 'La tua conoscenza non dovrebbe essere intrappolata in un solo strumento. Il motore centrale non ha dipendenze di protocollo. Gli adattatori di trasporto sono file separati \u2014 cambiali o aggiungili senza toccare il motore.',
-      keyPoint: 'Il nucleo ha zero dipendenze di protocollo.',
-      code: `<span class="key">engine/transports/</span>  <span class="cmt"># un file per protocollo</span>
-\u251C\u2500\u2500 <span class="ok">mcp.ts</span>         <span class="cmt"># Claude Code, Cursor \u2014 disponibile ora</span>
-\u251C\u2500\u2500 rest.ts        <span class="cmt"># dashboard, API personalizzate</span>
-\u2514\u2500\u2500 lsp.ts         <span class="cmt"># estensioni per VS Code, Cursor, Zed</span>
+      text: 'La tua conoscenza non dovrebbe essere intrappolata in un solo strumento. Il Motore di conoscenza funziona come un unico server MCP. Diversi trasporti si collegano ad esso.',
+      keyPoint: 'Un motore, molti trasporti.',
+      code: `<span class="key">my-agent/</span>           <span class="cmt"># la cartella del tuo agente</span>
+├── <span class="ok">agent.yaml</span>       <span class="cmt"># identità + configurazione</span>
+├── <span class="key">instructions/</span>    <span class="cmt"># regole comportamentali</span>
+└── .mcp.json        <span class="cmt"># connessione al motore</span>
 
-<span class="key">engine/core/</span>        <span class="cmt"># zero importazioni di trasporto</span>
-\u251C\u2500\u2500 vault.ts
-\u251C\u2500\u2500 brain.ts
-\u2514\u2500\u2500 memory.ts`,
+<span class="key">@soleri/core</span>        <span class="cmt"># Motore di conoscenza</span>
+├── <span class="ok">MCP (stdio)</span>    <span class="cmt"># Claude Code, Cursor</span>
+├── HTTP/SSE       <span class="cmt"># dashboard, API</span>
+└── WebSocket      <span class="cmt"># streaming, Telegram</span>`,
     },
     llm: {
       title: 'Funziona senza chiavi API',

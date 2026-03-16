@@ -201,16 +201,15 @@ const content: Record<Locale, HomeContent> = {
   team/design-standards  <span class="val">v2.1.0</span>  <span class="cmt">спільне сховище</span>`,
       },
       {
-        title: 'Незалежний від транспорту та LLM',
-        text: 'Чисте ядро TypeScript. Адаптери протоколів — окремі файли. Працює без API-ключів.',
-        code: `<span class="key">engine/core/</span>        <span class="cmt"># zero protocol deps</span>
-├── vault.ts
-├── brain.ts
-└── memory.ts
-<span class="key">engine/transports/</span>  <span class="cmt"># swap without touching core</span>
-├── <span class="ok">mcp.ts</span>         <span class="cmt"># ships now</span>
-├── rest.ts        <span class="cmt"># dashboards, APIs</span>
-└── lsp.ts         <span class="cmt"># VS Code, Cursor, Zed</span>`,
+        title: 'Тека = агент',
+        text: 'Агент — це тека. Без TypeScript, без збірки. Claude Code читає файли напряму. Рушій забезпечує збереження та навчання.',
+        code: `<span class="key">my-agent/</span>           <span class="cmt"># агент — це тека</span>
+├── <span class="ok">agent.yaml</span>       <span class="cmt"># ідентичність + конфіг</span>
+├── <span class="key">instructions/</span>    <span class="cmt"># правила поведінки</span>
+├── <span class="key">workflows/</span>       <span class="cmt"># покрокові плейбуки</span>
+├── <span class="key">knowledge/</span>       <span class="cmt"># доменні знання</span>
+├── <span class="key">skills/</span>          <span class="cmt"># файли SKILL.md</span>
+└── .mcp.json        <span class="cmt"># підключення до рушія</span>`,
       },
       {
         title: 'Холодний старт, а не з нуля',
@@ -256,38 +255,39 @@ const content: Record<Locale, HomeContent> = {
       },
     ],
     terminalTitle: 'Термінал',
-    terminalCode: `<span class="comment"># Встановлення та створення</span>
-<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g soleri</span>
+    terminalCode: `<span class="comment"># Створення файлового агента (~3 секунди)</span>
 <span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="comment">  ✓ Створено конфіг агента</span>
-<span class="comment">  ✓ Під'єднано Сховище (стартові знання: 34 патерни)</span>
-<span class="comment">  ✓ Проскановано проєкт: React + TypeScript</span>
-<span class="comment">  ✓ Автоматично зафіксовано 12 патернів кодової бази</span>
-<span class="comment">  ✓ Сховище готове — 46 записів, векторизовано, з'єднано графом</span>
+<span class="comment">  ✓ Створено agent.yaml</span>
+<span class="comment">  ✓ Згенеровано instructions/, workflows/, knowledge/</span>
+<span class="comment">  ✓ Автоматично зібрано CLAUDE.md</span>
+<span class="comment">  ✓ Готово — без етапу збірки</span>
+
+<span class="comment"># Реєстрація та старт розробки</span>
+<span class="prompt">$</span> <span class="cmd">soleri install</span>            <span class="comment"># реєстрація MCP-сервера</span>
+<span class="prompt">$</span> <span class="cmd">soleri dev</span>                <span class="comment"># запуск рушія + спостереження за файлами</span>
 
 <span class="comment"># Додайте ще знань</span>
-<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>`,
-    archTitle: 'Багатошаровий, як живі системи',
+<span class="prompt">$</span> <span class="cmd">soleri pack</span> <span class="arg">install community/react-patterns</span>`,
+    archTitle: 'Два шари, чітко розділені',
     archSubtitle:
-      'Кожен шар зростає незалежно. Заміни транспорти, підключай знання, налаштовуй агента — рушій лишається тим самим.',
+      'Тека агента — це оболонка. Рушій знань — це мозок. Вони розвиваються незалежно.',
     layers: [
       {
-        label: 'Агенти',
-        text: "Конфіг твого агента (<code>agent.yaml</code>): ідентичність, голос, прив'язка доменів. Створи однією командою, налаштовуй будь-коли.",
+        label: 'Тека агента',
+        text: 'Прості файли: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code читає їх напряму. Без TypeScript, без збірки.',
       },
       {
-        label: 'Домени',
-        text: 'Підключувані домени знань. Рушій завантажує відповідні домени за структурою сховища твого агента.',
+        label: 'Доменні пакети',
+        text: 'Підключувані модулі експертизи. Додавай дизайн-системи, код-рев\'ю або власні домени без зміни теки агента.',
       },
       {
-        label: 'Рушій',
-        text: 'Один процес сервера MCP. Сховище (знання), Brain (навчання), Memory (контекст), Planning (робочі процеси). Твій агент працює на ньому. Оновлюй через <code>npm update</code>.',
+        label: 'Рушій знань',
+        text: 'Один MCP-сервер (<code>@soleri/core</code>). Сховище, Brain, Куратор, Планувальник, Пам\'ять. Персистентний стан та навчання. Усі агенти використовують один рушій.',
       },
       {
         label: 'Транспорти',
-        text: 'Адаптери протоколів ізольовані від ядра: <code>mcp.ts</code> постачається вже зараз, <code>rest.ts</code> і <code>lsp.ts</code> готові для VS Code, Cursor, Zed і кастомних дашбордів. Додати транспорт = один файл адаптера.',
+        text: 'MCP (stdio) для Claude Code та Cursor. HTTP/SSE для дашбордів. WebSocket для стримінгу. Telegram для розмовного доступу.',
       },
     ],
   },
@@ -345,16 +345,15 @@ const content: Record<Locale, HomeContent> = {
   team/design-standards  <span class="val">v2.1.0</span>  <span class="cmt">vault condiviso</span>`,
       },
       {
-        title: 'Indipendente da trasporti e LLM',
-        text: 'Core in TypeScript puro. Gli adattatori di protocollo sono file separati. Cambia trasporti senza toccare il motore.',
-        code: `<span class="key">engine/core/</span>        <span class="cmt"># zero dipendenze di protocollo</span>
-├── vault.ts
-├── brain.ts
-└── memory.ts
-<span class="key">engine/transports/</span>  <span class="cmt"># sostituisci senza toccare il core</span>
-├── <span class="ok">mcp.ts</span>         <span class="cmt"># disponibile ora</span>
-├── rest.ts        <span class="cmt"># dashboard, API</span>
-└── lsp.ts         <span class="cmt"># VS Code, Cursor, Zed</span>`,
+        title: 'Cartella = agente',
+        text: "Un agente è una cartella. Niente TypeScript, nessun passaggio di build. Claude Code la legge nativamente. Il motore fornisce persistenza e apprendimento.",
+        code: `<span class="key">my-agent/</span>           <span class="cmt"># l'agente È la cartella</span>
+├── <span class="ok">agent.yaml</span>       <span class="cmt"># identità + configurazione</span>
+├── <span class="key">instructions/</span>    <span class="cmt"># regole comportamentali</span>
+├── <span class="key">workflows/</span>       <span class="cmt"># playbook passo-passo</span>
+├── <span class="key">knowledge/</span>       <span class="cmt"># intelligenza di dominio</span>
+├── <span class="key">skills/</span>          <span class="cmt"># file SKILL.md</span>
+└── .mcp.json        <span class="cmt"># connessione al motore</span>`,
       },
       {
         title: 'Avvio a freddo, non una lavagna vuota',
@@ -405,38 +404,39 @@ const content: Record<Locale, HomeContent> = {
       },
     ],
     terminalTitle: 'Terminale',
-    terminalCode: `<span class="comment"># Installa e crea</span>
-<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g soleri</span>
+    terminalCode: `<span class="comment"># Crea un agente file-tree (~3 secondi)</span>
 <span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
 
-<span class="comment">  ✓ Configurazione agente creata</span>
-<span class="comment">  ✓ Vault connesso (conoscenza iniziale: 34 pattern)</span>
-<span class="comment">  ✓ Progetto scansionato: React + TypeScript</span>
-<span class="comment">  ✓ Acquisiti automaticamente 12 pattern dal codice</span>
-<span class="comment">  ✓ Vault pronto — 46 voci, vettorializzate, connesse graficamente</span>
+<span class="comment">  ✓ Creato agent.yaml</span>
+<span class="comment">  ✓ Generati instructions/, workflows/, knowledge/</span>
+<span class="comment">  ✓ CLAUDE.md composto automaticamente</span>
+<span class="comment">  ✓ Pronto — nessun passaggio di build</span>
+
+<span class="comment"># Registra e inizia a sviluppare</span>
+<span class="prompt">$</span> <span class="cmd">soleri install</span>            <span class="comment"># registra server MCP</span>
+<span class="prompt">$</span> <span class="cmd">soleri dev</span>                <span class="comment"># avvia motore + osserva file</span>
 
 <span class="comment"># Alimentalo con più conoscenza</span>
-<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/vault.git</span>`,
-    archTitle: 'Stratificato come un sistema vivente',
+<span class="prompt">$</span> <span class="cmd">soleri pack</span> <span class="arg">install community/react-patterns</span>`,
+    archTitle: 'Due livelli, nettamente separati',
     archSubtitle:
-      'Ogni livello cresce indipendentemente. Sostituisci trasporti, inserisci conoscenza, personalizza il tuo agente — il motore rimane lo stesso.',
+      "La cartella dell'agente è il guscio. Il motore di conoscenza è il cervello. Evolvono indipendentemente.",
     layers: [
       {
-        label: 'Agenti',
-        text: 'La configurazione del tuo agente (<code>agent.yaml</code>): identità, voce, collegamento dei domini. Crea con un comando, personalizza in qualsiasi momento.',
+        label: 'Cartella agente',
+        text: 'File semplici: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code li legge nativamente. Niente TypeScript, nessun build.',
       },
       {
-        label: 'Domini',
-        text: 'Domini di conoscenza modulari. Il motore carica i domini rilevanti in base alla struttura del vault del tuo agente.',
+        label: 'Pacchetti dominio',
+        text: "Moduli di competenza collegabili. Aggiungi design system, code review o domini personalizzati senza modificare la cartella dell'agente.",
       },
       {
-        label: 'Motore',
-        text: 'Un unico processo MCP server. Vault (conoscenza), Cervello (apprendimento), Memoria (contesto), Pianificazione (flussi di lavoro). Il tuo agente ci gira sopra. Si aggiorna con <code>npm update</code>.',
+        label: 'Motore di conoscenza',
+        text: 'Un unico server MCP (<code>@soleri/core</code>). Vault, Cervello, Curatore, Pianificatore, Memoria. Stato persistente e apprendimento. Tutti gli agenti condividono un motore.',
       },
       {
         label: 'Trasporti',
-        text: 'Adattatori di protocollo isolati dal core: <code>mcp.ts</code> disponibile ora, <code>rest.ts</code> e <code>lsp.ts</code> pronti per VS Code, Cursor, Zed e dashboard personalizzate. Aggiungi un trasporto = un file adattatore.',
+        text: 'MCP (stdio) per Claude Code e Cursor. HTTP/SSE per dashboard. WebSocket per streaming. Telegram per accesso conversazionale.',
       },
     ],
   },
