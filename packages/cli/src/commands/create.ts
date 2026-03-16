@@ -22,7 +22,7 @@ function parseSetupTarget(value?: string): SetupTarget | undefined {
   return undefined;
 }
 
-function includesClaudeSetup(target: SetupTarget | undefined): boolean {
+function includesClaudeSetup(target: SetupTarget | string | undefined): boolean {
   const resolved = target ?? 'opencode';
   return resolved === 'claude' || resolved === 'both' || resolved === 'all';
 }
@@ -99,6 +99,9 @@ export function registerCreate(program: Command): void {
 
           if (useFileTree) {
             // Convert to AgentYaml format
+            // Cast to Record to access fields that may exist on the parsed config
+            // but aren't in the strict AgentConfig type (model, cognee, vaults, domainPacks)
+            const raw = config as Record<string, unknown>;
             const agentYamlInput = {
               id: config.id,
               name: config.name,
@@ -110,13 +113,19 @@ export function registerCreate(program: Command): void {
               greeting: config.greeting,
               setup: {
                 target: config.setupTarget,
-                model: config.model,
+                model: (raw.model as string) ?? 'claude-code-sonnet-4',
               },
               engine: {
-                cognee: config.cognee,
+                cognee: (raw.cognee as boolean) ?? false,
               },
-              vaults: config.vaults,
-              packs: config.domainPacks?.map((dp) => ({
+              vaults: raw.vaults as
+                | Array<{ name: string; path: string; priority?: number }>
+                | undefined,
+              packs: (
+                raw.domainPacks as
+                  | Array<{ name: string; package: string; version?: string }>
+                  | undefined
+              )?.map((dp) => ({
                 name: dp.name,
                 package: dp.package,
                 version: dp.version,
