@@ -254,6 +254,22 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
   };
   writeFile(agentDir, '.mcp.json', JSON.stringify(mcpJson, null, 2) + '\n', filesCreated);
 
+  // ─── 3b. Write .opencode.json ──────────────────────────────
+  const opencodeJson = {
+    $schema: 'https://opencode.ai/config.json',
+    title: config.name,
+    tui: { theme: 'soleri' },
+    mcpServers: {
+      'soleri-engine': {
+        type: 'stdio',
+        command: 'npx',
+        args: ['@soleri/engine', '--agent', './agent.yaml'],
+      },
+    },
+    contextPaths: ['CLAUDE.md'],
+  };
+  writeFile(agentDir, '.opencode.json', JSON.stringify(opencodeJson, null, 2) + '\n', filesCreated);
+
   // ─── 4. Write .gitignore ────────────────────────────────────
   writeFile(
     agentDir,

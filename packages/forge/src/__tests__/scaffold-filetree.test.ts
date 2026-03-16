@@ -43,6 +43,7 @@ describe('scaffoldFileTree', () => {
     // Core files exist
     expect(existsSync(join(result.agentDir, 'agent.yaml'))).toBe(true);
     expect(existsSync(join(result.agentDir, '.mcp.json'))).toBe(true);
+    expect(existsSync(join(result.agentDir, '.opencode.json'))).toBe(true);
     expect(existsSync(join(result.agentDir, '.gitignore'))).toBe(true);
     expect(existsSync(join(result.agentDir, 'CLAUDE.md'))).toBe(true);
 
@@ -101,6 +102,20 @@ describe('scaffoldFileTree', () => {
     expect(parsed.mcpServers['soleri-engine'].command).toBe('npx');
     expect(parsed.mcpServers['soleri-engine'].args).toContain('@soleri/engine');
     expect(parsed.mcpServers['soleri-engine'].args).toContain('./agent.yaml');
+  });
+
+  it('generates valid .opencode.json for OpenCode', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const content = readFileSync(join(result.agentDir, '.opencode.json'), 'utf-8');
+    const parsed = JSON.parse(content);
+
+    expect(parsed.title).toBe('Test Agent');
+    expect(parsed.mcpServers['soleri-engine']).toBeDefined();
+    expect(parsed.mcpServers['soleri-engine'].type).toBe('stdio');
+    expect(parsed.mcpServers['soleri-engine'].args).toContain('@soleri/engine');
+    expect(parsed.contextPaths).toContain('CLAUDE.md');
   });
 
   it('generates engine rules in instructions/_engine.md', () => {
