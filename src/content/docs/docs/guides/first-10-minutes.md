@@ -26,7 +26,7 @@ my-agent/
 └── .mcp.json           # Connects to engine
 ```
 
-## Step 2: Connect to Claude Code
+## Step 2: Connect to your AI editor
 
 Register and start the engine:
 
@@ -36,7 +36,7 @@ soleri install           # Register MCP server
 soleri dev               # Start engine + watch files
 ```
 
-Restart Claude Code. Your agent is now running.
+Restart your AI editor. Your agent is now running.
 
 ## Step 3: Ask it something
 
@@ -71,7 +71,7 @@ Your pattern shows up right away. The more patterns you capture, the smarter sea
 
 ## Step 6: Close and reopen
 
-Here's where it clicks. Close Claude Code completely. Open it again. Ask the same question:
+Here's where it clicks. Close your AI editor completely. Open it again. Ask the same question:
 
 > **You:** "What do we know about API errors?"
 >
@@ -81,11 +81,11 @@ It remembered. Not because it has a conversation history — because the knowled
 
 ## How it works under the hood
 
-Your agent folder contains instructions that Claude Code reads natively. The Knowledge Engine (running via `.mcp.json`) provides tools that Claude Code can call. When you said "capture this pattern," Claude Code called the engine's `capture_knowledge` tool. When you searched, it called `search_intelligent`.
+Your agent folder contains instructions that your AI editor reads natively. The Knowledge Engine (running via `.mcp.json`) provides tools that your AI editor can call. When you said "capture this pattern," your AI editor called the engine's `capture_knowledge` tool. When you searched, it called `search_intelligent`.
 
-The agent doesn't proactively surface knowledge on its own. Instead, Claude Code decides when to call the engine's search tools based on your conversation. When you ask about API errors, Claude Code recognizes this is relevant to your knowledge base and calls the search tool. The engine returns ranked results, and Claude Code uses them in its response.
+The agent doesn't proactively surface knowledge on its own. Instead, your AI editor decides when to call the engine's search tools based on your conversation. When you ask about API errors, your AI editor recognizes this is relevant to your knowledge base and calls the search tool. The engine returns ranked results, and your AI editor uses them in its response.
 
-This is why the vault is powerful — it's not a passive document. It's a searchable, ranked knowledge store that Claude Code consults whenever your conversation touches a relevant topic.
+This is why the vault is powerful — it's not a passive document. It's a searchable, ranked knowledge store that your AI editor consults whenever your conversation touches a relevant topic.
 
 ## What just happened
 

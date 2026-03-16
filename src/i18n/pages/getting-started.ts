@@ -39,12 +39,12 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Start learning',
-        text: 'Connect the engine, say hello in Claude Code. Your second brain activates, captures knowledge as you work, and gets smarter over time.',
+        text: 'Connect the engine, say hello in your editor. Your second brain activates, captures knowledge as you work, and gets smarter over time.',
         code: `<span class="cmt"># Register and start the engine</span>
 <span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># register MCP server</span>
 <span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># start engine + watch files</span>
 
-<span class="cmt"># In Claude Code — activate the persona</span>
+<span class="cmt"># In your editor — activate the persona</span>
 <span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
 
 <span class="ok">✓</span> Persona activated      <span class="val">Sentinel — Security Auditor</span>
@@ -200,12 +200,12 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Активуйте та розвивайте',
-        text: 'Зареєструйте рушій, привітайтеся в Claude Code. Ваш агент активується, захоплює знання під час роботи та стає розумнішим з часом.',
+        text: 'Зареєструйте рушій, привітайтеся в your editor. Ваш агент активується, захоплює знання під час роботи та стає розумнішим з часом.',
         code: `<span class="cmt"># Зареєструйте та запустіть рушій</span>
 <span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># реєстрація MCP-сервера</span>
 <span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># запуск рушія + спостереження за файлами</span>
 
-<span class="cmt"># В Claude Code — активуйте персону</span>
+<span class="cmt"># В your editor — активуйте персону</span>
 <span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
 
 <span class="ok">✓</span> Персону активовано     <span class="val">Sentinel — Security Auditor</span>
@@ -362,12 +362,12 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Attiva e fai crescere',
-        text: 'Registra il motore, saluta in Claude Code. Il tuo agente si attiva, cattura conoscenza mentre lavori e diventa più intelligente nel tempo.',
+        text: 'Registra il motore, saluta in your editor. Il tuo agente si attiva, cattura conoscenza mentre lavori e diventa più intelligente nel tempo.',
         code: `<span class="cmt"># Registra e avvia il motore</span>
 <span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># registra server MCP</span>
 <span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># avvia motore + osserva file</span>
 
-<span class="cmt"># In Claude Code — attiva la persona</span>
+<span class="cmt"># In your editor — attiva la persona</span>
 <span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
 
 <span class="ok">✓</span> Persona attivata       <span class="val">Sentinel — Security Auditor</span>

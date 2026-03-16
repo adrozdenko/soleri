@@ -9,7 +9,7 @@ Soleri agents communicate through **transports** — the layer between your agen
 
 | Transport | Protocol | Use case | Client |
 |-----------|----------|----------|--------|
-| **stdio** | MCP over stdin/stdout | Claude Code, Cursor | AI editors |
+| **stdio** | MCP over stdin/stdout | your AI editor, Cursor | AI editors |
 | **HTTP/SSE** | REST + Server-Sent Events | Web dashboards, REST APIs | Any HTTP client |
 | **WebSocket** | Bidirectional streaming | Real-time apps, Telegram bots | WebSocket clients |
 | **LSP** | Language Server Protocol | VS Code, Neovim | Editor extensions |
@@ -194,14 +194,14 @@ limiter.clear();          // Reset all clients
 
 | Scenario | Transport | Why |
 |----------|-----------|-----|
-| Claude Code / Cursor | stdio | Native MCP support, zero config |
+| your AI editor / Cursor | stdio | Native MCP support, zero config |
 | Web dashboard | HTTP/SSE | Standard REST, SSE for live updates |
 | Telegram bot | WebSocket | Bidirectional, persistent connections |
 | VS Code extension | LSP | Editor-native integration |
 | Multiple clients | HTTP or WebSocket | Session management + rate limiting |
 | Internal microservice | HTTP | Standard API patterns |
 
-You can run multiple transports simultaneously — the same agent instance can serve stdio for Claude Code and HTTP for a web dashboard.
+You can run multiple transports simultaneously — the same agent instance can serve stdio for your AI editor and HTTP for a web dashboard.
 
 ---
 

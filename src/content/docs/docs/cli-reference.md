@@ -213,13 +213,13 @@ See [Extending Your Agent](/docs/extending/) for full documentation.
 
 ### install
 
-Register your agent as an MCP server in Claude Code.
+Register your agent as an MCP server in your AI editor.
 
 ```bash
 npx @soleri/cli install
 ```
 
-Adds the agent to `~/.claude.json` so Claude Code discovers it on startup. Run from inside your agent directory.
+Adds the agent to `~/.claude.json` so your AI editor discovers it on startup. Run from inside your agent directory.
 
 ---
 

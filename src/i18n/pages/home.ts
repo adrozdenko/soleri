@@ -60,7 +60,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         title: 'A folder is all you need',
-        text: 'Your second brain is a folder. Plain files. No build step. Claude Code reads it natively. The engine handles memory, learning, and intelligence.',
+        text: 'Your second brain is a folder. Plain files. No build step. Your AI editor reads it natively. The engine handles memory, learning, and intelligence.',
         code: `<span class="key">my-brain/</span>            <span class="cmt"># your second brain</span>
 ├── <span class="ok">agent.yaml</span>        <span class="cmt"># what do I know</span>
 ├── <span class="key">instructions/</span>     <span class="cmt"># how I think</span>
@@ -127,7 +127,7 @@ const content: Record<Locale, HomeContent> = {
     layers: [
       {
         label: 'Agent Folder',
-        text: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code reads them natively. No TypeScript, no build step.',
+        text: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Your AI editor reads them natively. No TypeScript, no build step.',
       },
       {
         label: 'Domain Packs',
@@ -139,7 +139,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         label: 'Transports',
-        text: 'MCP (stdio) for Claude Code and Cursor. HTTP/SSE for dashboards. WebSocket for streaming. Telegram for conversational access.',
+        text: 'MCP (stdio) for any AI coding editor. HTTP/SSE for dashboards. WebSocket for streaming. Telegram for conversational access.',
       },
     ],
   },
@@ -201,7 +201,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         title: 'Тека = агент',
-        text: 'Агент — це тека. Без TypeScript, без збірки. Claude Code читає файли напряму. Рушій забезпечує збереження та навчання.',
+        text: 'Агент — це тека. Без TypeScript, без збірки. Ваш AI-редактор читає їх напряму. Рушій забезпечує збереження та навчання.',
         code: `<span class="key">my-agent/</span>           <span class="cmt"># агент — це тека</span>
 ├── <span class="ok">agent.yaml</span>       <span class="cmt"># ідентичність + конфіг</span>
 ├── <span class="key">instructions/</span>    <span class="cmt"># правила поведінки</span>
@@ -274,7 +274,7 @@ const content: Record<Locale, HomeContent> = {
     layers: [
       {
         label: 'Тека агента',
-        text: 'Прості файли: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code читає їх напряму. Без TypeScript, без збірки.',
+        text: 'Прості файли: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Ваш AI-редактор читає їх напряму. Без TypeScript, без збірки.',
       },
       {
         label: 'Доменні пакети',
@@ -286,7 +286,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         label: 'Транспорти',
-        text: 'MCP (stdio) для Claude Code та Cursor. HTTP/SSE для дашбордів. WebSocket для стримінгу. Telegram для розмовного доступу.',
+        text: 'MCP (stdio) для будь-якого AI-редактора. HTTP/SSE для дашбордів. WebSocket для стримінгу. Telegram для розмовного доступу.',
       },
     ],
   },
@@ -345,7 +345,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         title: 'Cartella = agente',
-        text: "Un agente è una cartella. Niente TypeScript, nessun passaggio di build. Claude Code la legge nativamente. Il motore fornisce persistenza e apprendimento.",
+        text: "Un agente è una cartella. Niente TypeScript, nessun passaggio di build. Il tuo editor AI lo legge nativamente. Il motore fornisce persistenza e apprendimento.",
         code: `<span class="key">my-agent/</span>           <span class="cmt"># l'agente È la cartella</span>
 ├── <span class="ok">agent.yaml</span>       <span class="cmt"># identità + configurazione</span>
 ├── <span class="key">instructions/</span>    <span class="cmt"># regole comportamentali</span>
@@ -423,7 +423,7 @@ const content: Record<Locale, HomeContent> = {
     layers: [
       {
         label: 'Cartella agente',
-        text: 'File semplici: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code li legge nativamente. Niente TypeScript, nessun build.',
+        text: 'File semplici: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Il tuo editor AI li legge nativamente. Niente TypeScript, nessun build.',
       },
       {
         label: 'Pacchetti dominio',
@@ -435,7 +435,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         label: 'Trasporti',
-        text: 'MCP (stdio) per Claude Code e Cursor. HTTP/SSE per dashboard. WebSocket per streaming. Telegram per accesso conversazionale.',
+        text: 'MCP (stdio) per qualsiasi editor AI. HTTP/SSE per dashboard. WebSocket per streaming. Telegram per accesso conversazionale.',
       },
     ],
   },

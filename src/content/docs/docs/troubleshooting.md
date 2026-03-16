@@ -3,13 +3,13 @@ title: Troubleshooting
 description: Common issues and solutions for Soleri agents.
 ---
 
-## Agent not appearing in Claude Code
+## Agent not appearing in your AI editor
 
-You connected your agent but Claude Code doesn't see it.
+You connected your agent but your AI editor doesn't see it.
 
 - **Check `.mcp.json` path** — must point to the built `dist/index.js`
 - **Run `npm run build` first** — the agent must be compiled
-- **Restart Claude Code** — MCP servers are loaded at startup
+- **Restart your AI editor** — MCP servers are loaded at startup
 - **Run `npx @soleri/cli doctor`** for a full diagnostic
 
 ## Searches return no results
@@ -23,7 +23,7 @@ Your vault has entries but search returns empty.
 
 ## Knowledge not persisting between sessions
 
-Captured patterns disappear after restarting Claude Code.
+Captured patterns disappear after restarting your AI editor.
 
 - Verify the agent's data directory exists and is writable
 - Check that `vault.db` exists in your agent's data directory

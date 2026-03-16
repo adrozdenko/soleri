@@ -23,7 +23,7 @@ With a Soleri agent, knowledge has a permanent home. When you discover something
 
 This changes your workflow in three ways:
 
-**1. You stop repeating yourself.** Capture a pattern once. The agent knows it forever. Next time Claude Code encounters a related question, it calls the agent's search tool and gets your answer — with context, severity, and examples.
+**1. You stop repeating yourself.** Capture a pattern once. The agent knows it forever. Next time your AI editor encounters a related question, it calls the agent's search tool and gets your answer — with context, severity, and examples.
 
 **2. Plans get smarter over time.** The first time you plan a database migration, the agent has nothing to suggest. The tenth time, it has patterns from nine previous migrations — what worked, what didn't, what you always forget. Brain recommendations inject this experience directly into new plans.
 
@@ -81,7 +81,7 @@ One sentence is enough. You can always enrich it later. The important thing is t
 
 ## What this is not
 
-Your agent is not a replacement for documentation, code comments, or team communication. It's a complementary layer — a searchable, ranked knowledge store that Claude Code consults during your work.
+Your agent is not a replacement for documentation, code comments, or team communication. It's a complementary layer — a searchable, ranked knowledge store that your AI editor consults during your work.
 
 The agent doesn't proactively interrupt you. It doesn't enforce rules. It surfaces knowledge when asked, and it improves its recommendations based on what actually proves useful. You stay in control.
 

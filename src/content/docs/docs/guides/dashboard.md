@@ -11,7 +11,7 @@ This time he's using a Soleri agent.
 npm create soleri platform-brain
 ```
 
-He names it **platform-brain**, picks `backend` and `security` as domains, and connects it to Claude Code. Two minutes.
+He names it **platform-brain**, picks `backend` and `security` as domains, and connects it to your AI editor. Two minutes.
 
 ## Day 1 — First Decisions
 

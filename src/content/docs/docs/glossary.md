@@ -101,7 +101,7 @@ An iterative validation cycle (do &rarr; validate &rarr; fix &rarr; repeat) that
 
 ### MCP (Model Context Protocol)
 
-The protocol that connects your agent to Claude Code. Your agent registers tools over MCP; Claude Code calls them based on your conversation.
+The protocol that connects your agent to your AI editor. Your agent registers tools over MCP; your AI editor calls them based on your conversation.
 
 ### MCP Bridge
 
@@ -141,7 +141,7 @@ Term Frequency–Inverse Document Frequency. A text ranking algorithm that weigh
 
 ### Transport
 
-The communication layer between your agent and its clients. Soleri supports four transports: **stdio** (MCP for Claude Code), **HTTP/SSE** (REST APIs with Server-Sent Events), **WebSocket** (bidirectional streaming), and **LSP** (Language Server Protocol for editors). See [Transports](/docs/guides/transports/).
+The communication layer between your agent and its clients. Soleri supports four transports: **stdio** (MCP for your AI editor), **HTTP/SSE** (REST APIs with Server-Sent Events), **WebSocket** (bidirectional streaming), and **LSP** (Language Server Protocol for editors). See [Transports](/docs/guides/transports/).
 
 ### Vault
 

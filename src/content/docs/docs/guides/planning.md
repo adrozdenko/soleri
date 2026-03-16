@@ -68,7 +68,7 @@ As the agent works through the plan, each task moves from pending to in-progress
 > - Update client code — pending
 > - Add deprecation headers — pending
 
-Plans persist across sessions. If you close Claude Code and come back tomorrow, the agent knows exactly where you left off.
+Plans persist across sessions. If you close your AI editor and come back tomorrow, the agent knows exactly where you left off.
 
 ## Step 4: Reconciliation
 

@@ -81,7 +81,7 @@ See how your knowledge base is growing:
 
 ## How knowledge comes back to you
 
-Capturing is only half the story. Here's what happens when you search — or when Claude Code searches on your behalf.
+Capturing is only half the story. Here's what happens when you search — or when your AI editor searches on your behalf.
 
 Your agent uses a multi-signal ranking system. When you search for "security patterns," the agent doesn't just do a keyword match. It combines:
 
@@ -90,7 +90,7 @@ Your agent uses a multi-signal ranking system. When you search for "security pat
 - **Domain match** — entries in the matching domain get a boost
 - **Usage history** — patterns you've referenced before rank higher over time
 
-This is why severity and domains matter — they're not just labels. They directly affect which results surface first when you or Claude Code search.
+This is why severity and domains matter — they're not just labels. They directly affect which results surface first when you or your AI editor search.
 
 The agent also has a brain — an intelligence layer that tracks pattern usage across sessions. Every time a pattern is used in a plan or referenced in a review, its strength increases. A pattern with high strength gets recommended proactively when the agent creates plans for related work.
 

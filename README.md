@@ -31,7 +31,7 @@ my-brain/
 └── .mcp.json           # connects to Soleri Knowledge Engine
 ```
 
-Claude Code reads the folder natively. The **Knowledge Engine** provides the infrastructure — a vault that remembers, a brain that learns what works, and memory that carries across every project and conversation. The more you use it, the smarter it gets.
+your AI editor reads the folder natively. The **Knowledge Engine** provides the infrastructure — a vault that remembers, a brain that learns what works, and memory that carries across every project and conversation. The more you use it, the smarter it gets.
 
 ## What You Get
 
@@ -72,7 +72,7 @@ Two layers, cleanly separated:
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Agent Folder** — Plain files (YAML, Markdown, JSON). Claude Code reads them natively. No code generation, no compilation.
+- **Agent Folder** — Plain files (YAML, Markdown, JSON). your AI editor reads them natively. No code generation, no compilation.
 - **Knowledge Engine (`@soleri/core`)** — Persistent state for all agents. Vault (SQLite + FTS5), Brain (hybrid TF-IDF + optional Cognee vector search), Planner (state machine), Curator (dedup, grooming), and cross-project memory.
 - **Domain Packs** — Pluggable expertise modules (`@soleri/domain-design`, `@soleri/domain-component`, etc.). Add capabilities without code changes.
 - **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys. Optional Cognee integration adds vector embeddings and knowledge graph.

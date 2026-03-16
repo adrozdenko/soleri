@@ -39,7 +39,7 @@ const content: Record<Locale, PersonasContent> = {
     <span class="key">path:</span> <span class="val">~/.soleri/vault.db</span>`,
     section1ContentTitle: 'Folder = agent',
     section1ContentP1:
-      'The <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> command generates a folder with <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, instructions, workflows, and knowledge bundles. No TypeScript, no build step \u2014 Claude Code reads the folder natively.',
+      'The <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> command generates a folder with <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, instructions, workflows, and knowledge bundles. No TypeScript, no build step \u2014 your AI editor reads the folder natively.',
     section1ContentP2:
       'Identity, domains, principles, engine config \u2014 all in one YAML file, version-controlled.',
     section1KeyPoint: 'One vault. All your knowledge. No coordination overhead.',
@@ -186,7 +186,7 @@ const content: Record<Locale, PersonasContent> = {
     <span class="key">path:</span> <span class="val">~/.soleri/vault.db</span>`,
     section1ContentTitle: 'Тека = агент',
     section1ContentP1:
-      'Команда <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> генерує теку з <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, інструкціями, робочими процесами та знаннями. Без TypeScript, без збірки \u2014 Claude Code читає теку напряму.',
+      'Команда <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> генерує теку з <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, інструкціями, робочими процесами та знаннями. Без TypeScript, без збірки \u2014 ваш AI-редактор читає теку напряму.',
     section1ContentP2:
       'Ідентичність, домени, принципи, конфігурація рушія \u2014 все в одному YAML-файлі, під контролем версій.',
     section1KeyPoint:
@@ -350,7 +350,7 @@ const content: Record<Locale, PersonasContent> = {
     <span class="key">path:</span> <span class="val">~/.soleri/vault.db</span>`,
     section1ContentTitle: 'Cartella = agente',
     section1ContentP1:
-      'Il comando <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> genera una cartella con <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, istruzioni, workflow e conoscenza. Niente TypeScript, nessun build \u2014 Claude Code legge la cartella nativamente.',
+      'Il comando <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">create</code> genera una cartella con <code style="font-family:\'JetBrains Mono\',monospace; font-size:12px; padding:2px 6px; border-radius:4px; background:rgba(35,157,195,0.08); color:var(--foreground-strong);">agent.yaml</code>, istruzioni, workflow e conoscenza. Niente TypeScript, nessun build \u2014 il tuo editor AI legge la cartella nativamente.',
     section1ContentP2:
       'Identità, domini, principi, configurazione motore \u2014 tutto in un unico file YAML, sotto controllo versione.',
     section1KeyPoint: 'Un vault. Tutta la tua conoscenza. Nessun overhead di coordinamento.',

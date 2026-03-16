@@ -26,9 +26,9 @@ These are regular files on your filesystem. You can back them up, version-contro
 
 ## The agent can only respond to tool calls
 
-Your agent doesn't have autonomous access to your system. It's an MCP tool server — it sits and waits for Claude Code to call its tools. It cannot:
+Your agent doesn't have autonomous access to your system. It's an MCP tool server — it sits and waits for your AI editor to call its tools. It cannot:
 
-- Read files on your machine (unless Claude Code passes file content to a tool)
+- Read files on your machine (unless your AI editor passes file content to a tool)
 - Execute commands or scripts
 - Make network requests (unless you configure external integrations)
 - Access other applications or processes
@@ -57,7 +57,7 @@ The governance system protects your vault from growing without bounds:
 - **Duplicate detection** — prevents the same knowledge from being captured twice
 - **Decay scanning** — identifies and flags unused entries
 
-This means a long Claude Code session that captures 50 patterns won't silently fill your vault with noise. The governance layer evaluates each capture and may reject, defer, or merge entries that don't meet quality thresholds.
+This means a long your AI editor session that captures 50 patterns won't silently fill your vault with noise. The governance layer evaluates each capture and may reject, defer, or merge entries that don't meet quality thresholds.
 
 ## What happens when you share the agent
 

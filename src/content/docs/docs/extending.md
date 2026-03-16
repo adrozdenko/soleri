@@ -118,7 +118,7 @@ skills/
     SKILL.md
 ```
 
-Skills follow standard Claude Code SKILL.md format with YAML frontmatter.
+Skills follow the standard SKILL.md format with YAML frontmatter.
 
 ## What NOT to edit
 

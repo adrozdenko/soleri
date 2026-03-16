@@ -78,10 +78,10 @@ Your agent just ran a code review using your team's exact standards. Not generic
 
 When you ask the agent to review code, here's what actually happens:
 
-1. **Claude Code calls the agent's search tool** with your code context as the query
+1. **your AI editor calls the agent's search tool** with your code context as the query
 2. **The agent searches your vault** — patterns, anti-patterns, and rules that match the code you're reviewing
 3. **Results come back ranked** — critical issues first, then warnings, then suggestions
-4. **Claude Code applies those results** to your specific code, pointing out violations
+4. **your AI editor applies those results** to your specific code, pointing out violations
 
 The agent doesn't have opinions of its own. It checks your code against your rules — the ones you captured because they matter to your project. This is why building a good knowledge base makes reviews better over time. More patterns in the vault means more things the agent can catch.
 

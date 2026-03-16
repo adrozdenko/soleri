@@ -1,12 +1,12 @@
 ---
 title: Getting Started
-description: Install Soleri, create your first agent, and connect it to Claude Code in under 5 minutes.
+description: Install Soleri, create your first agent, and connect it to your AI editor in under 5 minutes.
 ---
 
 ## Prerequisites
 
 - **Node.js 18+** — check with `node -v`
-- **Claude Code** or **Cursor** — your AI-powered editor
+- **An MCP-compatible AI editor** — OpenCode, Claude Code, Cursor, or similar
 - **npm** — ships with Node.js
 
 ## Create Your Agent
@@ -42,7 +42,7 @@ my-agent/
 │   └── code-review/
 ├── knowledge/              # Domain intelligence bundles
 ├── skills/                 # SKILL.md files
-└── hooks/                  # Claude Code hooks
+└── hooks/                  # your AI editor hooks
 ```
 
 Your agent is ready to use immediately. No `npm install`, no `npm run build`.
@@ -57,9 +57,9 @@ soleri dev                  # Start engine + watch for file changes
 
 `soleri install` registers the Soleri Knowledge Engine in your editor's MCP config. `soleri dev` starts the engine and watches your agent folder — CLAUDE.md is regenerated automatically when you edit `agent.yaml` or `instructions/`.
 
-## Connect to Claude Code
+## Connect to your AI editor
 
-After running `soleri install`, restart Claude Code. Your agent is available as a tool. The `.mcp.json` in your agent folder looks like:
+After running `soleri install`, restart your AI editor. Your agent is available as a tool. The `.mcp.json` in your agent folder looks like:
 
 ```json
 {
@@ -74,7 +74,7 @@ After running `soleri install`, restart Claude Code. Your agent is available as 
 
 ## First Conversation
 
-Once connected, try these in Claude Code:
+Once connected, try these in your AI editor:
 
 ```
 # Activate the persona

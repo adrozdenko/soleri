@@ -91,7 +91,7 @@ This installs all available hooks:
 ### Editor integration
 
 ```bash
-npx @soleri/cli hooks add claude-code    # Claude Code
+npx @soleri/cli hooks add claude-code    # Claude Code hooks
 npx @soleri/cli hooks add cursor         # Cursor
 npx @soleri/cli hooks add vscode         # VS Code
 ```

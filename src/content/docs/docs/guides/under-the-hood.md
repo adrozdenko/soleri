@@ -3,15 +3,15 @@ title: 'Under the Hood'
 description: 'How the vault, brain, and memory actually work — no magic, just smart engineering.'
 ---
 
-Your Soleri agent is an MCP tool server. It runs locally, stores everything in files on your machine, and exposes tools that Claude Code calls when needed. This page explains how each piece works so you can trust what's happening.
+Your Soleri agent is an MCP tool server. It runs locally, stores everything in files on your machine, and exposes tools that your AI editor calls when needed. This page explains how each piece works so you can trust what's happening.
 
 ## Your agent is a tool server
 
-When Claude Code starts, it launches your agent as a child process. The agent registers its tools — search, capture, plan, and 160+ others — over the Model Context Protocol (MCP).
+When your AI editor starts, it launches your agent as a child process. The agent registers its tools — search, capture, plan, and 160+ others — over the Model Context Protocol (MCP).
 
-Claude Code decides when to call these tools based on your conversation. When you ask "what do we know about error handling?", Claude Code recognizes this as a knowledge question and calls the agent's `search_intelligent` tool. The agent returns ranked results, and Claude Code uses them in its response.
+your AI editor decides when to call these tools based on your conversation. When you ask "what do we know about error handling?", your AI editor recognizes this as a knowledge question and calls the agent's `search_intelligent` tool. The agent returns ranked results, and your AI editor uses them in its response.
 
-The agent never acts on its own. It responds to tool calls from Claude Code — nothing more.
+The agent never acts on its own. It responds to tool calls from your AI editor — nothing more.
 
 ## The vault
 
@@ -28,7 +28,7 @@ The vault file lives in your agent's data directory. It's a regular SQLite file 
 
 ### How search works
 
-When Claude Code calls the search tool, the agent doesn't just do a keyword match. It combines six signals into a single relevance score:
+When your AI editor calls the search tool, the agent doesn't just do a keyword match. It combines six signals into a single relevance score:
 
 | Signal | What it measures |
 |--------|-----------------|
@@ -92,7 +92,7 @@ Everything your agent knows persists in files:
 - **Plans** — JSON file with plan history and reconciliation reports
 - **Config** — your agent's identity, domains, and settings
 
-When you close Claude Code and open it again, nothing is lost. The agent loads its state from these files and picks up exactly where it left off.
+When you close your AI editor and open it again, nothing is lost. The agent loads its state from these files and picks up exactly where it left off.
 
 ### Cross-project knowledge
 

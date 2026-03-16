@@ -145,7 +145,7 @@ Entity extraction, knowledge retrieval, and context analysis. Analyzes prompts t
 
 ## Transports
 
-Four ways to connect: **stdio** (Claude Code), **HTTP/SSE** (web), **WebSocket** (real-time), **LSP** (editors). _[Guide →](/docs/guides/transports/)_
+Four ways to connect: **stdio** (your AI editor), **HTTP/SSE** (web), **WebSocket** (real-time), **LSP** (editors). _[Guide →](/docs/guides/transports/)_
 
 ## All 13 Facades
 

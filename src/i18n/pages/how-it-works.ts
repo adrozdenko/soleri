@@ -14,7 +14,7 @@ const content: Record<Locale, HowItWorksContent> = {
     archLayers: [
       {
         name: 'Agent Folder',
-        desc: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code reads them natively. No TypeScript, no build step.',
+        desc: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Your AI editor reads them natively. No TypeScript, no build step.',
       },
       {
         name: 'Domain Packs',
@@ -26,7 +26,7 @@ const content: Record<Locale, HowItWorksContent> = {
       },
       {
         name: 'Transports',
-        desc: 'MCP (stdio) for Claude Code and Cursor. HTTP/SSE for dashboards. WebSocket for streaming. Telegram for conversational access.',
+        desc: 'MCP (stdio) for any AI coding editor. HTTP/SSE for dashboards. WebSocket for streaming. Telegram for conversational access.',
       },
     ],
     vault: {
@@ -117,7 +117,7 @@ const content: Record<Locale, HowItWorksContent> = {
 \u2514\u2500\u2500 .mcp.json        <span class="cmt"># connects to engine</span>
 
 <span class="key">@soleri/core</span>        <span class="cmt"># Knowledge Engine</span>
-\u251C\u2500\u2500 <span class="ok">MCP (stdio)</span>    <span class="cmt"># Claude Code, Cursor</span>
+\u251C\u2500\u2500 <span class="ok">MCP (stdio)</span>    <span class="cmt"># any MCP-compatible editor</span>
 \u251C\u2500\u2500 HTTP/SSE       <span class="cmt"># dashboards, APIs</span>
 \u2514\u2500\u2500 WebSocket      <span class="cmt"># streaming, Telegram</span>`,
     },
@@ -143,7 +143,7 @@ const content: Record<Locale, HowItWorksContent> = {
     archLayers: [
       {
         name: 'Тека агента',
-        desc: 'Прості файли: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code читає їх напряму. Без TypeScript, без збірки.',
+        desc: 'Прості файли: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Ваш AI-редактор читає їх напряму. Без TypeScript, без збірки.',
       },
       {
         name: 'Доменні пакети',
@@ -155,7 +155,7 @@ const content: Record<Locale, HowItWorksContent> = {
       },
       {
         name: 'Транспорти',
-        desc: 'MCP (stdio) для Claude Code та Cursor. HTTP/SSE для дашбордів. WebSocket для стримінгу. Telegram для розмовного доступу.',
+        desc: 'MCP (stdio) для будь-якого AI-редактора. HTTP/SSE для дашбордів. WebSocket для стримінгу. Telegram для розмовного доступу.',
       },
     ],
     vault: {
@@ -252,7 +252,7 @@ const content: Record<Locale, HowItWorksContent> = {
 └── .mcp.json        <span class="cmt"># підключення до рушія</span>
 
 <span class="key">@soleri/core</span>        <span class="cmt"># Рушій знань</span>
-├── <span class="ok">MCP (stdio)</span>    <span class="cmt"># Claude Code, Cursor</span>
+├── <span class="ok">MCP (stdio)</span>    <span class="cmt"># any MCP-compatible editor</span>
 ├── HTTP/SSE       <span class="cmt"># дашборди, API</span>
 └── WebSocket      <span class="cmt"># стримінг, Telegram</span>`,
     },
@@ -280,7 +280,7 @@ const content: Record<Locale, HowItWorksContent> = {
     archLayers: [
       {
         name: 'Cartella agente',
-        desc: 'File semplici: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Claude Code li legge nativamente. Niente TypeScript, nessun build.',
+        desc: 'File semplici: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Il tuo editor AI li legge nativamente. Niente TypeScript, nessun build.',
       },
       {
         name: 'Pacchetti dominio',
@@ -292,7 +292,7 @@ const content: Record<Locale, HowItWorksContent> = {
       },
       {
         name: 'Trasporti',
-        desc: 'MCP (stdio) per Claude Code e Cursor. HTTP/SSE per dashboard. WebSocket per streaming. Telegram per accesso conversazionale.',
+        desc: 'MCP (stdio) per qualsiasi editor AI. HTTP/SSE per dashboard. WebSocket per streaming. Telegram per accesso conversazionale.',
       },
     ],
     vault: {
@@ -384,7 +384,7 @@ const content: Record<Locale, HowItWorksContent> = {
 └── .mcp.json        <span class="cmt"># connessione al motore</span>
 
 <span class="key">@soleri/core</span>        <span class="cmt"># Motore di conoscenza</span>
-├── <span class="ok">MCP (stdio)</span>    <span class="cmt"># Claude Code, Cursor</span>
+├── <span class="ok">MCP (stdio)</span>    <span class="cmt"># any MCP-compatible editor</span>
 ├── HTTP/SSE       <span class="cmt"># dashboard, API</span>
 └── WebSocket      <span class="cmt"># streaming, Telegram</span>`,
     },
