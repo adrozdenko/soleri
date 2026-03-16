@@ -6,9 +6,9 @@ const content: Record<Locale, GettingStartedContent> = {
   en: {
     title: 'Getting Started - Soleri',
     description:
-      'From zero to a learning system in five minutes. Install Soleri, create your first agent, and start compounding knowledge.',
-    eyebrow: 'From zero to a learning system in five minutes',
-    heroTitle: 'Your first agent starts smart. It only gets smarter.',
+      'From zero to a second brain in five minutes. Install Soleri, build your first brain, and start compounding knowledge.',
+    eyebrow: 'From zero to a second brain in five minutes',
+    heroTitle: 'Your second brain starts smart. It only gets smarter.',
     heroSubtitle: 'Three steps. No configuration files to write. No API keys required.',
     steps: [
       {
@@ -18,8 +18,8 @@ const content: Record<Locale, GettingStartedContent> = {
         isInstallCmd: true,
       },
       {
-        title: 'Create your agent',
-        text: 'The guided wizard walks you through each step — pick an archetype, name your agent, select domains, principles, and tone. Your agent is a folder, ready instantly.',
+        title: 'Build your second brain',
+        text: 'The guided wizard walks you through each step — pick a focus, name it, select domains, principles, and tone. Your second brain is a folder, ready instantly.',
         code: `<span class="prompt">$</span> <span class="cmd">soleri create</span>
 
 <span class="cmt">◆ What kind of agent?   Security Auditor</span>
@@ -38,8 +38,8 @@ const content: Record<Locale, GettingStartedContent> = {
         isInstallCmd: false,
       },
       {
-        title: 'Activate and grow',
-        text: 'Register the engine, say hello in Claude Code. Your agent activates, captures knowledge as you work, and gets smarter over time.',
+        title: 'Start learning',
+        text: 'Connect the engine, say hello in Claude Code. Your second brain activates, captures knowledge as you work, and gets smarter over time.',
         code: `<span class="cmt"># Register and start the engine</span>
 <span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># register MCP server</span>
 <span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># start engine + watch files</span>
@@ -167,9 +167,9 @@ const content: Record<Locale, GettingStartedContent> = {
   uk: {
     title: 'Початок роботи - Soleri',
     description:
-      "Від нуля до навчальної системи за п'ять хвилин. Встановіть Soleri, створіть першого агента та починайте накопичувати знання.",
-    eyebrow: "Від нуля до навчальної системи за п'ять хвилин",
-    heroTitle: 'Ваш перший агент починає розумним. Далі стає лише розумнішим.',
+      "Від нуля до другого мозку за п'ять хвилин. Встановіть Soleri, побудуйте свій перший мозок та починайте накопичувати знання.",
+    eyebrow: "Від нуля до другого мозку за п'ять хвилин",
+    heroTitle: 'Ваш другий мозок починає розумним. Далі стає лише розумнішим.',
     heroSubtitle: 'Три кроки. Жодних файлів конфігурації. Жодних API-ключів.',
     steps: [
       {
@@ -329,8 +329,8 @@ const content: Record<Locale, GettingStartedContent> = {
     title: 'Inizia - Soleri',
     description:
       'Da zero a un sistema di apprendimento in cinque minuti. Installa Soleri, crea il tuo primo agente e inizia ad accumulare conoscenza.',
-    eyebrow: 'Da zero a un sistema di apprendimento in cinque minuti',
-    heroTitle: 'Il tuo primo agente parte intelligente. Diventa solo più intelligente.',
+    eyebrow: 'Da zero a un secondo cervello in cinque minuti',
+    heroTitle: 'Il tuo secondo cervello parte intelligente. Diventa solo più intelligente.',
     heroSubtitle:
       'Tre passaggi. Nessun file di configurazione da scrivere. Nessuna chiave API richiesta.',
     steps: [

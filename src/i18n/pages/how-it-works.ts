@@ -6,11 +6,11 @@ const content: Record<Locale, HowItWorksContent> = {
   en: {
     title: 'How It Works - Soleri',
     description:
-      "Most assistants forget everything between sessions. Soleri's vault, brain, and transport architecture makes knowledge compound instead.",
-    eyebrow: 'Most assistants forget everything between sessions',
-    heroTitle: "Knowledge should compound. Here's how.",
+      "Your expertise evaporates between sessions. Soleri builds a second brain that remembers, learns, and compounds knowledge over time.",
+    eyebrow: 'Your expertise evaporates between sessions',
+    heroTitle: "How your second brain works.",
     heroSubtitle:
-      'Vault, brain, and transport layers run on a single engine. One process, zero lock-in \u2014 swap transports, plug in knowledge, switch providers.',
+      'A vault for long-term memory, a brain that learns what works, and intelligence that compounds across every session and project.',
     archLayers: [
       {
         name: 'Agent Folder',
@@ -135,13 +135,11 @@ const content: Record<Locale, HowItWorksContent> = {
   uk: {
     title: '\u042F\u043A \u0446\u0435 \u043F\u0440\u0430\u0446\u044E\u0454 - Soleri',
     description:
-      '\u0411\u0456\u043B\u044C\u0448\u0456\u0441\u0442\u044C \u043F\u043E\u043C\u0456\u0447\u043D\u0438\u043A\u0456\u0432 \u0437\u0430\u0431\u0443\u0432\u0430\u044E\u0442\u044C \u0432\u0441\u0435 \u043C\u0456\u0436 \u0441\u0435\u0441\u0456\u044F\u043C\u0438. \u0410\u0440\u0445\u0456\u0442\u0435\u043A\u0442\u0443\u0440\u0430 \u0441\u0445\u043E\u0432\u0438\u0449\u0430, \u043C\u043E\u0437\u043A\u0443 \u0442\u0430 \u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0443 Soleri \u0440\u043E\u0431\u0438\u0442\u044C \u0437\u043D\u0430\u043D\u043D\u044F \u043D\u0430\u043A\u043E\u043F\u0438\u0447\u0443\u0432\u0430\u043B\u044C\u043D\u0438\u043C\u0438.',
-    eyebrow:
-      '\u0411\u0456\u043B\u044C\u0448\u0456\u0441\u0442\u044C \u043F\u043E\u043C\u0456\u0447\u043D\u0438\u043A\u0456\u0432 \u0437\u0430\u0431\u0443\u0432\u0430\u044E\u0442\u044C \u0432\u0441\u0435 \u043C\u0456\u0436 \u0441\u0435\u0441\u0456\u044F\u043C\u0438',
-    heroTitle:
-      '\u0417\u043D\u0430\u043D\u043D\u044F \u043C\u0430\u044E\u0442\u044C \u043D\u0430\u043A\u043E\u043F\u0438\u0447\u0443\u0432\u0430\u0442\u0438\u0441\u044F. \u041E\u0441\u044C \u044F\u043A.',
+      'Твоя експертиза випаровується між сесіями. Soleri будує другий мозок, який пам\'ятає, навчається і накопичує знання з часом.',
+    eyebrow: 'Твоя експертиза випаровується між сесіями',
+    heroTitle: 'Як працює твій другий мозок.',
     heroSubtitle:
-      '\u0428\u0430\u0440\u0438 \u0441\u0445\u043E\u0432\u0438\u0449\u0430, \u043C\u043E\u0437\u043A\u0443 \u0442\u0430 \u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0443 \u043F\u0440\u0430\u0446\u044E\u044E\u0442\u044C \u043D\u0430 \u043E\u0434\u043D\u043E\u043C\u0443 \u0440\u0443\u0448\u0456\u0457. \u041E\u0434\u0438\u043D \u043F\u0440\u043E\u0446\u0435\u0441, \u043D\u0443\u043B\u044C \u0437\u0430\u043B\u0435\u0436\u043D\u043E\u0441\u0442\u0435\u0439 \u2014 \u0437\u0430\u043C\u0456\u043D\u0438 \u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442\u0438, \u043F\u0456\u0434\u043A\u043B\u044E\u0447\u0430\u0439 \u0437\u043D\u0430\u043D\u043D\u044F, \u0437\u043C\u0456\u043D\u044E\u0439 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0456\u0432.',
+      'Сховище для довготривалої пам\'яті, мозок, що навчається тому, що працює, та інтелект, що накопичується з кожною сесією та проєктом.',
     archLayers: [
       {
         name: 'Тека агента',
@@ -276,7 +274,7 @@ const content: Record<Locale, HowItWorksContent> = {
     description:
       "La maggior parte degli assistenti dimentica tutto tra una sessione e l'altra. L'architettura Vault, Cervello e Trasporti di Soleri fa sì che la conoscenza si accumuli.",
     eyebrow: 'La maggior parte degli assistenti dimentica tutto tra le sessioni',
-    heroTitle: 'La conoscenza dovrebbe accumularsi. Ecco come.',
+    heroTitle: 'Come funziona il tuo secondo cervello.',
     heroSubtitle:
       'Livelli di Vault, cervello e trasporto funzionano su un unico motore. Un processo, zero lock-in \u2014 cambia trasporti, aggiungi conoscenza, scegli il provider.',
     archLayers: [

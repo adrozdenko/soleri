@@ -4,13 +4,13 @@ export const personasContent = (locale: Locale) => content[locale];
 
 const content: Record<Locale, PersonasContent> = {
   en: {
-    title: 'Your Agent - Soleri',
+    title: 'Your Second Brain - Soleri',
     description:
-      "Flat files and keyword search don't scale. Soleri gives your agent a domain-separated, graph-connected vault that compounds intelligence over time.",
-    heroEyebrow: "Flat files and keyword search don't scale",
-    heroTitle: "Your agent's intelligence should compound. Knowledge soup doesn't.",
+      "Build a second brain that compounds intelligence over time. Domain-separated knowledge, graph-connected, and always learning.",
+    heroEyebrow: 'Your expertise deserves a permanent home',
+    heroTitle: "Your second brain should compound intelligence. Scattered notes don't.",
     heroSubtitle:
-      'One vault, domain-separated, vectorized, and graph-connected. Knowledge that organizes itself and stays sharp.',
+      'One vault, domain-separated, vectorized, and graph-connected. Knowledge that organizes itself and grows sharper with every session.',
 
     // Section 1: Create and configure
     section1Title: 'Create and configure',
@@ -150,15 +150,13 @@ const content: Record<Locale, PersonasContent> = {
   },
 
   uk: {
-    title: '\u0422\u0432\u0456\u0439 \u0430\u0433\u0435\u043D\u0442 \u2014 Soleri',
+    title: 'Твій другий мозок — Soleri',
     description:
-      '\u041F\u043B\u0430\u0441\u043A\u0456 \u0444\u0430\u0439\u043B\u0438 \u0442\u0430 \u043F\u043E\u0448\u0443\u043A \u0437\u0430 \u043A\u043B\u044E\u0447\u043E\u0432\u0438\u043C\u0438 \u0441\u043B\u043E\u0432\u0430\u043C\u0438 \u043D\u0435 \u043C\u0430\u0441\u0448\u0442\u0430\u0431\u0443\u044E\u0442\u044C\u0441\u044F. Soleri \u0434\u0430\u0454 \u0432\u0430\u0448\u043E\u043C\u0443 \u0430\u0433\u0435\u043D\u0442\u0443 \u0434\u043E\u043C\u0435\u043D\u043D\u043E-\u0440\u043E\u0437\u0434\u0456\u043B\u0435\u043D\u0435, \u0433\u0440\u0430\u0444\u043E\u043C \u0437\u2019\u0454\u0434\u043D\u0430\u043D\u0435 \u0441\u0445\u043E\u0432\u0438\u0449\u0435, \u0449\u043E \u043D\u0430\u043A\u043E\u043F\u0438\u0447\u0443\u0454 \u0456\u043D\u0442\u0435\u043B\u0435\u043A\u0442 \u0437 \u0447\u0430\u0441\u043E\u043C.',
-    heroEyebrow:
-      '\u041F\u043B\u0430\u0441\u043A\u0456 \u0444\u0430\u0439\u043B\u0438 \u0442\u0430 \u043F\u043E\u0448\u0443\u043A \u0437\u0430 \u043A\u043B\u044E\u0447\u043E\u0432\u0438\u043C\u0438 \u0441\u043B\u043E\u0432\u0430\u043C\u0438 \u043D\u0435 \u043C\u0430\u0441\u0448\u0442\u0430\u0431\u0443\u044E\u0442\u044C\u0441\u044F',
-    heroTitle:
-      '\u0406\u043D\u0442\u0435\u043B\u0435\u043A\u0442 \u0442\u0432\u043E\u0433\u043E \u0430\u0433\u0435\u043D\u0442\u0430 \u043C\u0430\u0454 \u043D\u0430\u043A\u043E\u043F\u0438\u0447\u0443\u0432\u0430\u0442\u0438\u0441\u044F. \u041A\u0430\u0448\u0430 \u0437\u0456 \u0437\u043D\u0430\u043D\u044C \u2014 \u043D\u0456.',
+      'Побудуй другий мозок, що накопичує інтелект з часом. Знання, розділені за доменами, з\'єднані графом та завжди навчаються.',
+    heroEyebrow: 'Твоя експертиза заслуговує на постійний дім',
+    heroTitle: 'Твій другий мозок має накопичувати інтелект. Розкидані нотатки — ні.',
     heroSubtitle:
-      '\u0404\u0434\u0438\u043D\u0435 \u0441\u0445\u043E\u0432\u0438\u0449\u0435, \u0440\u043E\u0437\u0434\u0456\u043B\u0435\u043D\u0435 \u0437\u0430 \u0434\u043E\u043C\u0435\u043D\u0430\u043C\u0438, \u0432\u0435\u043A\u0442\u043E\u0440\u0438\u0437\u043E\u0432\u0430\u043D\u0435 \u0442\u0430 \u0437\u2019\u0454\u0434\u043D\u0430\u043D\u0435 \u0433\u0440\u0430\u0444\u043E\u043C. \u0417\u043D\u0430\u043D\u043D\u044F, \u044F\u043A\u0456 \u0441\u0430\u043C\u043E\u043E\u0440\u0433\u0430\u043D\u0456\u0437\u043E\u0432\u0443\u044E\u0442\u044C\u0441\u044F \u0439 \u0437\u0430\u043B\u0438\u0448\u0430\u044E\u0442\u044C\u0441\u044F \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u0438\u043C\u0438.',
+      'Єдине сховище, розділене за доменами, векторизоване та з\'єднане графом. Знання, які самоорганізуються та стають гострішими з кожною сесією.',
 
     // Section 1
     section1Title:
@@ -321,7 +319,7 @@ const content: Record<Locale, PersonasContent> = {
     description:
       'I file piatti e la ricerca per parole chiave non scalano. Soleri d\u00E0 al tuo agente un vault separato per dominio e connesso tramite grafo che accumula intelligenza nel tempo.',
     heroEyebrow: 'I file piatti e la ricerca per parole chiave non scalano',
-    heroTitle: "L'intelligenza del tuo agente dovrebbe accumularsi. L'accumulo disordinato no.",
+    heroTitle: "Il tuo secondo cervello dovrebbe accumulare intelligenza. Gli appunti sparsi no.",
     heroSubtitle:
       'Un Vault unico, separato per dominio, vettorializzato e connesso a grafo. Conoscenza che si organizza da sola e resta sempre aggiornata.',
 
