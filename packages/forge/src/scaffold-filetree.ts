@@ -265,7 +265,7 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
       },
     },
   };
-  writeFile(agentDir, '.opencode.json', JSON.stringify(opencodeJson, null, 2) + '\n', filesCreated);
+  writeFile(agentDir, 'opencode.json', JSON.stringify(opencodeJson, null, 2) + '\n', filesCreated);
 
   // ─── 4. Write .gitignore ────────────────────────────────────
   writeFile(
