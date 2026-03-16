@@ -55,7 +55,7 @@ const EngineConfigSchema = z.object({
 /** Client setup configuration */
 const SetupConfigSchema = z.object({
   /** Target client for MCP registration */
-  target: z.enum(SETUP_TARGETS).optional().default('opencode'),
+  target: z.enum(SETUP_TARGETS).optional().default('claude'),
   /** Primary model for the client */
   model: z.string().optional().default('claude-code-sonnet-4'),
 });

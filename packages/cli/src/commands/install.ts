@@ -147,17 +147,16 @@ function escapeRegExp(s: string): string {
 
 /**
  * Create a global launcher script so the agent can be invoked by name from any directory.
- * e.g., typing `ernesto` opens OpenCode with that agent's config in the current directory.
+ * e.g., typing `ernesto` opens Claude Code with that agent's MCP config.
  */
 function installLauncher(agentId: string, agentDir: string): void {
   const binPath = join('/usr/local/bin', agentId);
-  const opencodeConfig = join(agentDir, '.opencode.json');
 
   const script = [
     '#!/bin/bash',
     `# ${agentId} — Soleri second brain launcher`,
-    `# Type "${agentId}" from any directory to open OpenCode with this agent`,
-    `exec opencode -c ${agentDir}`,
+    `# Type "${agentId}" from any directory to open Claude Code with this agent`,
+    `exec claude --mcp-config ${join(agentDir, '.mcp.json')}`,
     '',
   ].join('\n');
 
@@ -167,7 +166,7 @@ function installLauncher(agentId: string, agentDir: string): void {
   } catch {
     p.log.warn(`Could not create launcher at ${binPath} (may need sudo)`);
     p.log.info(
-      `To create manually: sudo bash -c 'echo "#!/bin/bash\\nexec opencode --config ${opencodeConfig}" > ${binPath} && chmod +x ${binPath}'`,
+      `To create manually: sudo bash -c 'cat > ${binPath} << "EOF"\\n#!/bin/bash\\nexec claude --mcp-config ${join(agentDir, '.mcp.json')}\\nEOF' && chmod +x ${binPath}`,
     );
   }
 }
@@ -176,7 +175,7 @@ export function registerInstall(program: Command): void {
   program
     .command('install')
     .argument('[dir]', 'Agent directory (defaults to cwd)')
-    .option('--target <target>', 'Registration target: opencode, claude, codex, or all', 'opencode')
+    .option('--target <target>', 'Registration target: claude, opencode, codex, or all', 'claude')
     .description('Register agent as MCP server in editor config')
     .action(async (dir?: string, opts?: { target?: string }) => {
       const resolvedDir = dir ? resolve(dir) : undefined;
@@ -187,7 +186,7 @@ export function registerInstall(program: Command): void {
         process.exit(1);
       }
 
-      const target = (opts?.target ?? 'opencode') as Target;
+      const target = (opts?.target ?? 'claude') as Target;
       const validTargets: Target[] = ['claude', 'codex', 'opencode', 'both', 'all'];
       const isFileTree = ctx.format === 'filetree';
 

@@ -48,7 +48,7 @@ export const AgentConfigSchema = z.object({
   /** Primary model for the coder agent */
   model: z.string().optional().default('claude-code-sonnet-4'),
   /** AI client setup target: Claude Code, Codex, or both */
-  setupTarget: z.enum(SETUP_TARGETS).optional().default('opencode'),
+  setupTarget: z.enum(SETUP_TARGETS).optional().default('claude'),
   /** Enable Telegram transport scaffolding. Default: false. */
   telegram: z.boolean().optional().default(false),
   /** Enable Cognee vector search integration. Default: false. */
