@@ -96,34 +96,21 @@ jobs:
         run: npm run deadcode:knip
 
   website:
-    name: Validate Website
+    name: Validate Website Content
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate HTML files exist
+      - name: Validate i18n content files exist
         run: |
-          for lang in en uk it; do
-            for page in index.html how-it-works.html getting-started.html personas.html teams.html; do
-              test -f "website/$lang/$page" || { echo "Missing website/$lang/$page"; exit 1; }
-            done
+          for file in home getting-started how-it-works personas teams; do
+            test -f "src/i18n/pages/${file}.ts" || { echo "Missing src/i18n/pages/${file}.ts"; exit 1; }
           done
-          test -f website/index.html || { echo "Missing website/index.html"; exit 1; }
-          test -f website/soleri-base.css || { echo "Missing website/soleri-base.css"; exit 1; }
-          echo "All expected files present."
+          echo "All i18n content files present."
 
-      - name: Check for broken internal links
+      - name: Validate docs exist
         run: |
-          errors=0
-          for file in website/en/*.html website/uk/*.html website/it/*.html; do
-            dir=$(dirname "$file")
-            grep -oP 'href="\K[^"]+\.html' "$file" 2>/dev/null | while read -r link; do
-              [[ "$link" == http* ]] && continue
-              target="$dir/$link"
-              if [ ! -f "$target" ]; then
-                echo "Broken link in $file: $link -> $target"
-                errors=$((errors + 1))
-              fi
-            done
+          for file in getting-started your-agent capabilities extending cli-reference; do
+            test -f "src/content/docs/docs/${file}.md" || { echo "Missing docs/${file}.md"; exit 1; }
           done
-          [ "$errors" -eq 0 ] && echo "No broken internal links found."
+          echo "All doc files present."
