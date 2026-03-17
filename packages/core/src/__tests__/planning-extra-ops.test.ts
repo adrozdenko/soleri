@@ -34,8 +34,8 @@ describe('createPlanningExtraOps', () => {
     return op;
   }
 
-  it('should return 22 ops', () => {
-    expect(ops.length).toBe(22);
+  it('should return 23 ops', () => {
+    expect(ops.length).toBe(23);
   });
 
   it('should have all expected op names', () => {

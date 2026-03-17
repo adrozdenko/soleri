@@ -13,6 +13,7 @@ import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import type { DriftItem, TaskEvidence } from '../planning/planner.js';
+import { collectGitEvidence } from '../planning/evidence-collector.js';
 import { matchPlaybooks, type PlaybookMatchResult } from '../playbooks/index.js';
 import { entryToPlaybookDefinition } from '../playbooks/index.js';
 
@@ -708,6 +709,38 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
             params.planId as string,
             params.taskId as string,
             vault,
+          );
+        } catch (err) {
+          return { error: (err as Error).message };
+        }
+      },
+    },
+
+    // ─── Evidence-Based Reconciliation (#206) ─────────────────────
+    {
+      name: 'plan_reconcile_with_evidence',
+      description:
+        'Cross-reference plan tasks against git diff to produce an evidence-based drift report. ' +
+        'Shows which tasks have matching file changes, which are missing, and what unplanned work was done.',
+      auth: 'read',
+      schema: z.object({
+        planId: z.string().describe('Plan ID to verify against git'),
+        projectPath: z.string().describe('Project root (must be a git repo)'),
+        baseBranch: z
+          .string()
+          .optional()
+          .default('main')
+          .describe('Branch to diff against (default: main)'),
+      }),
+      handler: async (params) => {
+        try {
+          const plan = planner.get(params.planId as string);
+          if (!plan) return { error: `Plan not found: ${params.planId}` };
+
+          return collectGitEvidence(
+            plan,
+            params.projectPath as string,
+            params.baseBranch as string,
           );
         } catch (err) {
           return { error: (err as Error).message };
