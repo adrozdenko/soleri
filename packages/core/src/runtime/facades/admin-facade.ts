@@ -9,6 +9,7 @@ import type { AgentRuntime } from '../types.js';
 import { createAdminOps } from '../admin-ops.js';
 import { createAdminExtraOps } from '../admin-extra-ops.js';
 import { createAdminSetupOps } from '../admin-setup-ops.js';
+import { createSessionBriefingOps } from '../session-briefing.js';
 import { createPluginOps } from '../plugin-ops.js';
 import { createPackOps } from '../pack-ops.js';
 import { createTelemetryOps } from '../telemetry-ops.js';
@@ -102,6 +103,7 @@ export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     ...createAdminOps(runtime),
     ...createAdminExtraOps(runtime),
     ...createAdminSetupOps(runtime),
+    ...createSessionBriefingOps(runtime),
   ];
 
   // Plugin ops must mutate the same live op array that MCP dispatch reads.
