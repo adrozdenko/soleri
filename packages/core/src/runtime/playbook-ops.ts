@@ -88,7 +88,7 @@ export function createPlaybookOps(runtime: AgentRuntime): OpDefinition[] {
           validation?: string;
         }>;
 
-        const steps = rawSteps.map((s, i) => ({ ...s, order: i + 1 }));
+        const steps = rawSteps.map((s, i) => Object.assign({}, s, { order: i + 1 }));
         const id =
           (params.id as string | undefined) ??
           `playbook-${domain}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;

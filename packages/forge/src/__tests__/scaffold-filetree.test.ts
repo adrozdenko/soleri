@@ -43,7 +43,7 @@ describe('scaffoldFileTree', () => {
     // Core files exist
     expect(existsSync(join(result.agentDir, 'agent.yaml'))).toBe(true);
     expect(existsSync(join(result.agentDir, '.mcp.json'))).toBe(true);
-    expect(existsSync(join(result.agentDir, '.opencode.json'))).toBe(true);
+    expect(existsSync(join(result.agentDir, 'opencode.json'))).toBe(true);
     expect(existsSync(join(result.agentDir, '.gitignore'))).toBe(true);
     expect(existsSync(join(result.agentDir, 'CLAUDE.md'))).toBe(true);
 
@@ -104,18 +104,17 @@ describe('scaffoldFileTree', () => {
     expect(parsed.mcpServers['soleri-engine'].args).toContain('./agent.yaml');
   });
 
-  it('generates valid .opencode.json for OpenCode', () => {
+  it('generates valid opencode.json for OpenCode', () => {
     const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
     expect(result.success).toBe(true);
 
-    const content = readFileSync(join(result.agentDir, '.opencode.json'), 'utf-8');
+    const content = readFileSync(join(result.agentDir, 'opencode.json'), 'utf-8');
     const parsed = JSON.parse(content);
 
-    expect(parsed.title).toBe('Test Agent');
-    expect(parsed.mcpServers['soleri-engine']).toBeDefined();
-    expect(parsed.mcpServers['soleri-engine'].type).toBe('stdio');
-    expect(parsed.mcpServers['soleri-engine'].args).toContain('@soleri/engine');
-    expect(parsed.contextPaths).toContain('CLAUDE.md');
+    expect(parsed.$schema).toBe('https://opencode.ai/config.json');
+    expect(parsed.mcp['soleri-engine']).toBeDefined();
+    expect(parsed.mcp['soleri-engine'].type).toBe('local');
+    expect(parsed.instructions).toContain('CLAUDE.md');
   });
 
   it('generates engine rules in instructions/_engine.md', () => {
@@ -223,7 +222,7 @@ describe('scaffoldFileTree', () => {
 
     // tone: pragmatic is the default — should NOT appear
     expect(content).not.toContain('tone:');
-    // setup.target: opencode is the default — should NOT appear
+    // setup.target: claude is the default — should NOT appear
     expect(content).not.toContain('target:');
     // engine.learning: true is the default — should NOT appear
     expect(content).not.toContain('learning:');
@@ -234,7 +233,7 @@ describe('scaffoldFileTree', () => {
       {
         ...MINIMAL_CONFIG,
         tone: 'precise',
-        setup: { target: 'claude', model: 'claude-code-opus-4' },
+        setup: { target: 'opencode', model: 'claude-code-opus-4' },
         engine: { cognee: true },
       },
       tempDir,
@@ -245,7 +244,7 @@ describe('scaffoldFileTree', () => {
     const parsed = parseYaml(content);
 
     expect(parsed.tone).toBe('precise');
-    expect(parsed.setup.target).toBe('claude');
+    expect(parsed.setup.target).toBe('opencode');
     expect(parsed.setup.model).toBe('claude-code-opus-4');
     expect(parsed.engine.cognee).toBe(true);
   });

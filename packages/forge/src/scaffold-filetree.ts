@@ -407,8 +407,7 @@ function buildAgentYaml(config: AgentYaml): Record<string, unknown> {
 
   // Setup — only include non-defaults
   const setup: Record<string, unknown> = {};
-  if (config.setup?.target && config.setup.target !== 'opencode')
-    setup.target = config.setup.target;
+  if (config.setup?.target && config.setup.target !== 'claude') setup.target = config.setup.target;
   if (config.setup?.model && config.setup.model !== 'claude-code-sonnet-4')
     setup.model = config.setup.model;
   if (Object.keys(setup).length > 0) yaml.setup = setup;

@@ -710,7 +710,7 @@ export class Vault {
     }
     return {
       total: rows.length,
-      buckets: bucketDefs.map((b, i) => ({ ...b, count: counts[i] })),
+      buckets: bucketDefs.map((b, i) => Object.assign({}, b, { count: counts[i] })),
       oldestTimestamp: oldest,
       newestTimestamp: newest,
     };
