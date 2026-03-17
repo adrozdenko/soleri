@@ -8,7 +8,7 @@ import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 
 export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { brain, brainIntelligence, llmClient, keyPool, governance } = runtime;
+  const { brain, brainIntelligence, llmClient, keyPool, governance, learningRadar } = runtime;
 
   return [
     // ─── Brain (inline from core-ops.ts) ────────────────────────
@@ -385,6 +385,110 @@ export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           since: params.since as string | undefined,
           all: params.all as boolean | undefined,
         });
+      },
+    },
+
+    // ─── Learning Radar (#208) ────────────────────────────────────
+    {
+      name: 'radar_analyze',
+      description:
+        'Analyze a learning signal (correction, search miss, workaround, etc.). ' +
+        'High confidence auto-captures silently. Medium queues for review. Low logs only.',
+      auth: 'write',
+      schema: z.object({
+        type: z.enum([
+          'correction',
+          'search_miss',
+          'explicit_capture',
+          'pattern_success',
+          'workaround',
+          'repeated_question',
+        ]),
+        title: z.string().describe('Short title for the detected pattern'),
+        description: z.string().describe('What was learned and why it matters'),
+        suggestedType: z.enum(['pattern', 'anti-pattern']).optional(),
+        confidence: z
+          .number()
+          .optional()
+          .describe('Override confidence (0-1). Default inferred from signal type.'),
+        sourceQuery: z.string().optional().describe('Original query that triggered this signal'),
+        context: z.string().optional().describe('Additional context'),
+      }),
+      handler: async (params) => {
+        return learningRadar.analyze({
+          type: params.type as
+            | 'correction'
+            | 'search_miss'
+            | 'explicit_capture'
+            | 'pattern_success'
+            | 'workaround'
+            | 'repeated_question',
+          title: params.title as string,
+          description: params.description as string,
+          suggestedType: params.suggestedType as 'pattern' | 'anti-pattern' | undefined,
+          confidence: params.confidence as number | undefined,
+          sourceQuery: params.sourceQuery as string | undefined,
+          context: params.context as string | undefined,
+        });
+      },
+    },
+    {
+      name: 'radar_candidates',
+      description: 'Get pending radar candidates queued for end-of-session review.',
+      auth: 'read',
+      schema: z.object({
+        limit: z.number().optional().default(20),
+      }),
+      handler: async (params) => {
+        return learningRadar.getCandidates(params.limit as number);
+      },
+    },
+    {
+      name: 'radar_approve',
+      description: 'Approve a pending radar candidate — captures it to vault.',
+      auth: 'write',
+      schema: z.object({
+        candidateId: z.number().describe('Radar candidate ID to approve'),
+      }),
+      handler: async (params) => {
+        return learningRadar.approve(params.candidateId as number);
+      },
+    },
+    {
+      name: 'radar_dismiss',
+      description: 'Dismiss a pending radar candidate — marks it as not worth capturing.',
+      auth: 'write',
+      schema: z.object({
+        candidateId: z.number().describe('Radar candidate ID to dismiss'),
+      }),
+      handler: async (params) => {
+        return learningRadar.dismiss(params.candidateId as number);
+      },
+    },
+    {
+      name: 'radar_flush',
+      description:
+        'Auto-capture all pending candidates above a confidence threshold. ' +
+        'Use at end-of-session to batch-capture high-quality candidates.',
+      auth: 'write',
+      schema: z.object({
+        minConfidence: z
+          .number()
+          .optional()
+          .default(0.8)
+          .describe('Minimum confidence to auto-capture (default 0.8)'),
+      }),
+      handler: async (params) => {
+        return learningRadar.flush(params.minConfidence as number);
+      },
+    },
+    {
+      name: 'radar_stats',
+      description:
+        'Get learning radar statistics — analyzed, captured, queued, dismissed, knowledge gaps.',
+      auth: 'read',
+      handler: async () => {
+        return learningRadar.getStats();
       },
     },
   ];

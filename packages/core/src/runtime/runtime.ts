@@ -40,6 +40,7 @@ import { ContextEngine } from '../context/context-engine.js';
 import { AgencyManager } from '../agency/agency-manager.js';
 import { KnowledgeReview } from '../vault/knowledge-review.js';
 import { LinkManager } from '../vault/linking.js';
+import { LearningRadar } from '../brain/learning-radar.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -235,6 +236,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     agencyManager,
     knowledgeReview,
     linkManager,
+    learningRadar: new LearningRadar(vault, brain),
     createdAt: Date.now(),
     close: () => {
       syncManager?.close();

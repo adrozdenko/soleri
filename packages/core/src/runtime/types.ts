@@ -29,6 +29,7 @@ import type { ContextEngine } from '../context/context-engine.js';
 import type { AgencyManager } from '../agency/agency-manager.js';
 import type { KnowledgeReview } from '../vault/knowledge-review.js';
 import type { LinkManager } from '../vault/linking.js';
+import type { LearningRadar } from '../brain/learning-radar.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -105,6 +106,8 @@ export interface AgentRuntime {
   knowledgeReview: KnowledgeReview;
   /** Link manager — Zettelkasten bidirectional linking with auto-link on ingestion. */
   linkManager: LinkManager;
+  /** Learning radar — automatic pattern detection from session signals. */
+  learningRadar: LearningRadar;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */
