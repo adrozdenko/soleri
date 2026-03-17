@@ -43,6 +43,7 @@ import { KnowledgeReview } from '../vault/knowledge-review.js';
 import { LinkManager } from '../vault/linking.js';
 import { LearningRadar } from '../brain/learning-radar.js';
 import { KnowledgeSynthesizer } from '../brain/knowledge-synthesizer.js';
+import { ChainRunner } from '../flows/chain-runner.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -242,6 +243,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     linkManager,
     learningRadar: new LearningRadar(vault, brain),
     knowledgeSynthesizer: new KnowledgeSynthesizer(brain, llmClient),
+    chainRunner: new ChainRunner(vault.getProvider()),
     createdAt: Date.now(),
     close: () => {
       syncManager?.close();
