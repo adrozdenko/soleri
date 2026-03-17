@@ -8,7 +8,15 @@ import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 
 export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { brain, brainIntelligence, llmClient, keyPool, governance, learningRadar } = runtime;
+  const {
+    brain,
+    brainIntelligence,
+    llmClient,
+    keyPool,
+    governance,
+    learningRadar,
+    knowledgeSynthesizer,
+  } = runtime;
 
   return [
     // ─── Brain (inline from core-ops.ts) ────────────────────────
@@ -489,6 +497,35 @@ export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'read',
       handler: async () => {
         return learningRadar.getStats();
+      },
+    },
+
+    // ─── Knowledge Synthesis (#207) ───────────────────────────────
+    {
+      name: 'synthesize',
+      description:
+        'Synthesize vault knowledge into structured content. Searches vault for relevant entries, ' +
+        'then uses LLM to produce a brief, outline, talking points, or post draft. ' +
+        'Includes source attribution, coverage score, and knowledge gap detection.',
+      auth: 'read',
+      schema: z.object({
+        query: z.string().describe('Topic to synthesize knowledge about'),
+        format: z
+          .enum(['brief', 'outline', 'talking-points', 'post-draft'])
+          .describe('Output format'),
+        maxEntries: z.number().optional().default(10).describe('Max vault entries to consult'),
+        audience: z
+          .enum(['technical', 'executive', 'general'])
+          .optional()
+          .default('general')
+          .describe('Target audience for tone and language'),
+      }),
+      handler: async (params) => {
+        return knowledgeSynthesizer.synthesize(params.query as string, {
+          format: params.format as 'brief' | 'outline' | 'talking-points' | 'post-draft',
+          maxEntries: params.maxEntries as number,
+          audience: params.audience as 'technical' | 'executive' | 'general',
+        });
       },
     },
   ];

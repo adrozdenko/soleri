@@ -42,6 +42,7 @@ import { AgencyManager } from '../agency/agency-manager.js';
 import { KnowledgeReview } from '../vault/knowledge-review.js';
 import { LinkManager } from '../vault/linking.js';
 import { LearningRadar } from '../brain/learning-radar.js';
+import { KnowledgeSynthesizer } from '../brain/knowledge-synthesizer.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -240,6 +241,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     knowledgeReview,
     linkManager,
     learningRadar: new LearningRadar(vault, brain),
+    knowledgeSynthesizer: new KnowledgeSynthesizer(brain, llmClient),
     createdAt: Date.now(),
     close: () => {
       syncManager?.close();

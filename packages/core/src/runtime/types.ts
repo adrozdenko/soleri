@@ -31,6 +31,7 @@ import type { KnowledgeReview } from '../vault/knowledge-review.js';
 import type { LinkManager } from '../vault/linking.js';
 import type { LearningRadar } from '../brain/learning-radar.js';
 import type { TextIngester } from '../intake/text-ingester.js';
+import type { KnowledgeSynthesizer } from '../brain/knowledge-synthesizer.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -111,6 +112,8 @@ export interface AgentRuntime {
   learningRadar: LearningRadar;
   /** Text ingester — ingest articles, transcripts, and plain text into vault. */
   textIngester: TextIngester;
+  /** Knowledge synthesizer — turn vault knowledge into briefs, outlines, posts. */
+  knowledgeSynthesizer: KnowledgeSynthesizer;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */
