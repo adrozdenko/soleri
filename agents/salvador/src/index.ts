@@ -232,7 +232,7 @@ async function main(): Promise<void> {
   };
 
   // ─── Domain packs ─────────────────────────────────────────────
-  const domainPacks = await loadDomainPacksFromConfig([{"name":"design","package":"@soleri/domain-design"},{"name":"component","package":"@soleri/domain-component"},{"name":"figma","package":"@soleri/domain-figma"},{"name":"code-review","package":"@soleri/domain-code-review"}]);
+  const domainPacks = await loadDomainPacksFromConfig([{"name":"design","package":"@soleri/domain-design"},{"name":"component","package":"@soleri/domain-component"},{"name":"design-qa","package":"@soleri/domain-design-qa"},{"name":"code-review","package":"@soleri/domain-code-review"}]);
   console.error(`[${tag}] Loaded ${domainPacks.length} domain packs`);
   for (const pack of domainPacks) {
     if (pack.onActivate) await pack.onActivate(runtime);

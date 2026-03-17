@@ -1,10 +1,10 @@
 /**
- * @soleri/domain-figma — Figma design intelligence domain pack.
+ * @soleri/domain-design-qa — Design QA domain pack.
  *
- * 5 ops for processing pre-extracted Figma data:
- * - detect_token_drift: Compare Figma tokens against a token map
+ * 5 ops for design quality assurance:
+ * - detect_token_drift: Compare design tokens against a token map
  * - detect_hardcoded_colors: Find hex colors without token mappings
- * - sync_components: Match Figma components with code components
+ * - sync_components: Match design components with code components
  * - accessibility_precheck: WCAG contrast check on color pairs
  * - handoff_audit: Audit component metadata completeness
  *
@@ -16,11 +16,11 @@ import type { DomainPack } from '@soleri/core';
 import type { PackRuntime } from '@soleri/core';
 import { listProjectTokens, buildReverseIndex } from '@soleri/core';
 import {
-  normalizeFigmaTokenName,
+  normalizeTokenName,
   fuzzyMatchToken,
   getContrastRatio,
   getWCAGLevel,
-} from './lib/figma-utils.js';
+} from './lib/design-qa-utils.js';
 
 // ---------------------------------------------------------------------------
 // Runtime holder — populated via onActivate
@@ -53,27 +53,27 @@ function wordOverlap(a: Set<string>, b: Set<string>): number {
 }
 
 // ---------------------------------------------------------------------------
-// Figma facade ops (5 algorithmic ops)
+// Design QA ops (5 algorithmic ops)
 // ---------------------------------------------------------------------------
 
-const figmaOps = [
+const designQaOps = [
   {
     name: 'detect_token_drift',
     description:
-      'Compare Figma token objects against a token map. Normalizes Figma naming and fuzzy matches. Returns matched/unmatched/drifted lists.',
+      'Compare design token objects against a token map. Normalizes naming and fuzzy matches. Returns matched/unmatched/drifted lists.',
     auth: 'read' as const,
     schema: z.object({
-      figmaTokens: z.array(
+      tokens: z.array(
         z.object({
-          figmaName: z.string(),
-          figmaValue: z.string(),
+          name: z.string(),
+          value: z.string(),
         }),
       ),
       tokenMap: z.record(z.string()).optional(),
       projectId: z.string().optional(),
     }),
     handler: async (params: Record<string, unknown>) => {
-      const figmaTokens = params.figmaTokens as Array<{ figmaName: string; figmaValue: string }>;
+      const tokens = params.tokens as Array<{ name: string; value: string }>;
 
       // Resolve token map: prefer runtime project registry, fall back to param
       let tokenMap: Record<string, string> = (params.tokenMap as Record<string, string>) ?? {};
@@ -90,42 +90,41 @@ const figmaOps = [
       }
 
       const matched: Array<{
-        figmaName: string;
-        figmaValue: string;
+        name: string;
+        value: string;
         token: string;
         tokenValue: string;
         confidence: string;
       }> = [];
       const drifted: Array<{
-        figmaName: string;
-        figmaValue: string;
+        name: string;
+        value: string;
         token: string;
         tokenValue: string;
         confidence: string;
       }> = [];
-      const unmatched: Array<{ figmaName: string; figmaValue: string; normalizedName: string }> =
-        [];
+      const unmatched: Array<{ name: string; value: string; normalizedName: string }> = [];
 
-      for (const ft of figmaTokens) {
-        const match = fuzzyMatchToken(ft.figmaName, tokenMap);
+      for (const ft of tokens) {
+        const match = fuzzyMatchToken(ft.name, tokenMap);
         if (!match) {
           unmatched.push({
-            figmaName: ft.figmaName,
-            figmaValue: ft.figmaValue,
-            normalizedName: normalizeFigmaTokenName(ft.figmaName),
+            name: ft.name,
+            value: ft.value,
+            normalizedName: normalizeTokenName(ft.name),
           });
-        } else if (match.value.toLowerCase() === ft.figmaValue.toLowerCase()) {
+        } else if (match.value.toLowerCase() === ft.value.toLowerCase()) {
           matched.push({
-            figmaName: ft.figmaName,
-            figmaValue: ft.figmaValue,
+            name: ft.name,
+            value: ft.value,
             token: match.token,
             tokenValue: match.value,
             confidence: match.confidence,
           });
         } else {
           drifted.push({
-            figmaName: ft.figmaName,
-            figmaValue: ft.figmaValue,
+            name: ft.name,
+            value: ft.value,
             token: match.token,
             tokenValue: match.value,
             confidence: match.confidence,
@@ -134,12 +133,11 @@ const figmaOps = [
       }
 
       return {
-        total: figmaTokens.length,
+        total: tokens.length,
         matched: { count: matched.length, items: matched },
         drifted: { count: drifted.length, items: drifted },
         unmatched: { count: unmatched.length, items: unmatched },
-        healthScore:
-          figmaTokens.length > 0 ? Math.round((matched.length / figmaTokens.length) * 100) : 100,
+        healthScore: tokens.length > 0 ? Math.round((matched.length / tokens.length) * 100) : 100,
       };
     },
   },
@@ -147,7 +145,7 @@ const figmaOps = [
   {
     name: 'detect_hardcoded_colors',
     description:
-      'Take an array of hex colors found in a Figma file and reverse-index against a token map. Returns which colors have tokens and which are hardcoded.',
+      'Take an array of hex colors and reverse-index against a token map. Returns which colors have tokens and which are hardcoded.',
     auth: 'read' as const,
     schema: z.object({
       colors: z.array(z.string()),
@@ -212,32 +210,32 @@ const figmaOps = [
   {
     name: 'sync_components',
     description:
-      'Match Figma components against code components by name. Returns sync status: matched, missing-in-code, missing-in-figma.',
+      'Match design components against code components by name. Returns sync status: matched, missing-in-code, missing-in-design.',
     auth: 'read' as const,
     schema: z.object({
-      figmaComponents: z.array(z.string()),
+      designComponents: z.array(z.string()),
       codeComponents: z.array(z.string()),
     }),
     handler: async (params: Record<string, unknown>) => {
-      const figmaComponents = params.figmaComponents as string[];
+      const designComponents = params.designComponents as string[];
       const codeComponents = params.codeComponents as string[];
 
-      const figmaNormalized = new Map(figmaComponents.map((c) => [c.toLowerCase(), c]));
+      const designNormalized = new Map(designComponents.map((c) => [c.toLowerCase(), c]));
       const codeNormalized = new Map(codeComponents.map((c) => [c.toLowerCase(), c]));
 
-      const matched: Array<{ figmaName: string; codeName: string; strategy?: string }> = [];
+      const matched: Array<{ designName: string; codeName: string; strategy?: string }> = [];
       const missingInCode: string[] = [];
-      const missingInFigma: string[] = [];
+      const missingInDesign: string[] = [];
 
       // Track which code components have been matched (to avoid double-matching)
       const matchedCodeNorms = new Set<string>();
 
-      for (const [norm, figmaName] of figmaNormalized) {
+      for (const [norm, designName] of designNormalized) {
         // Strategy 1: exact case-insensitive match
         const codeName = codeNormalized.get(norm);
         if (codeName) {
           matched.push(
-            packRuntime ? { figmaName, codeName, strategy: 'exact' } : { figmaName, codeName },
+            packRuntime ? { designName, codeName, strategy: 'exact' } : { designName, codeName },
           );
           matchedCodeNorms.add(norm);
           continue;
@@ -251,7 +249,7 @@ const figmaOps = [
           for (const [codeNorm, cName] of codeNormalized) {
             if (matchedCodeNorms.has(codeNorm)) continue;
             if (codeNorm.includes(norm) || norm.includes(codeNorm)) {
-              matched.push({ figmaName, codeName: cName, strategy: 'contains' });
+              matched.push({ designName, codeName: cName, strategy: 'contains' });
               matchedCodeNorms.add(codeNorm);
               found = true;
               break;
@@ -260,14 +258,14 @@ const figmaOps = [
           if (found) continue;
 
           // Strategy 3: word overlap coefficient >= 0.5
-          const figmaWords = extractWords(figmaName);
+          const designWords = extractWords(designName);
           let bestOverlap = 0;
           let bestCodeName: string | null = null;
           let bestCodeNorm: string | null = null;
           for (const [codeNorm, cName] of codeNormalized) {
             if (matchedCodeNorms.has(codeNorm)) continue;
             const codeWords = extractWords(cName);
-            const overlap = wordOverlap(figmaWords, codeWords);
+            const overlap = wordOverlap(designWords, codeWords);
             if (overlap > bestOverlap) {
               bestOverlap = overlap;
               bestCodeName = cName;
@@ -275,29 +273,29 @@ const figmaOps = [
             }
           }
           if (bestOverlap >= 0.5 && bestCodeName && bestCodeNorm) {
-            matched.push({ figmaName, codeName: bestCodeName, strategy: 'word-overlap' });
+            matched.push({ designName, codeName: bestCodeName, strategy: 'word-overlap' });
             matchedCodeNorms.add(bestCodeNorm);
             continue;
           }
         }
 
-        missingInCode.push(figmaName);
+        missingInCode.push(designName);
       }
 
       for (const [norm, codeName] of codeNormalized) {
-        if (!figmaNormalized.has(norm) && !matchedCodeNorms.has(norm)) {
-          missingInFigma.push(codeName);
+        if (!designNormalized.has(norm) && !matchedCodeNorms.has(norm)) {
+          missingInDesign.push(codeName);
         }
       }
 
       return {
         matched: { count: matched.length, items: matched },
         missingInCode: { count: missingInCode.length, items: missingInCode },
-        missingInFigma: { count: missingInFigma.length, items: missingInFigma },
+        missingInDesign: { count: missingInDesign.length, items: missingInDesign },
         syncScore:
-          figmaComponents.length + codeComponents.length > 0
+          designComponents.length + codeComponents.length > 0
             ? Math.round(
-                ((matched.length * 2) / (figmaComponents.length + codeComponents.length)) * 100,
+                ((matched.length * 2) / (designComponents.length + codeComponents.length)) * 100,
               )
             : 100,
       };
@@ -355,7 +353,7 @@ const figmaOps = [
   {
     name: 'handoff_audit',
     description:
-      'Audit component metadata for handoff completeness. When runtime available with figmaTokens, colorPairs, figmaComponents, and codeComponents, returns a composite score (40% token drift, 30% component sync, 30% accessibility). Falls back to doc completeness check.',
+      'Audit component metadata for handoff completeness. When runtime available with tokens, colorPairs, designComponents, and codeComponents, returns a composite score (40% token drift, 30% component sync, 30% accessibility). Falls back to doc completeness check.',
     auth: 'read' as const,
     schema: z.object({
       components: z.array(
@@ -367,8 +365,8 @@ const figmaOps = [
         }),
       ),
       projectId: z.string().optional(),
-      figmaTokens: z.array(z.object({ figmaName: z.string(), figmaValue: z.string() })).optional(),
-      figmaComponents: z.array(z.string()).optional(),
+      tokens: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
+      designComponents: z.array(z.string()).optional(),
       codeComponents: z.array(z.string()).optional(),
       colorPairs: z
         .array(
@@ -418,13 +416,13 @@ const figmaOps = [
           : 100;
 
       // --- Composite scoring when runtime available ---
-      if (packRuntime && params.projectId && params.figmaTokens && params.colorPairs) {
+      if (packRuntime && params.projectId && params.tokens && params.colorPairs) {
         const project = packRuntime.getProject(params.projectId as string);
         if (project) {
           // Token drift score (weight: 40%)
-          const figmaTokens = params.figmaTokens as Array<{
-            figmaName: string;
-            figmaValue: string;
+          const tokens = params.tokens as Array<{
+            name: string;
+            value: string;
           }>;
           const projectTokens = listProjectTokens(project);
           const tokenMap: Record<string, string> = {};
@@ -432,30 +430,30 @@ const figmaOps = [
             tokenMap[t.token] = t.hex;
           }
           let tokenHealthScore = 100;
-          if (figmaTokens.length > 0) {
+          if (tokens.length > 0) {
             let matchedCount = 0;
-            for (const ft of figmaTokens) {
-              const match = fuzzyMatchToken(ft.figmaName, tokenMap);
-              if (match && match.value.toLowerCase() === ft.figmaValue.toLowerCase()) {
+            for (const ft of tokens) {
+              const match = fuzzyMatchToken(ft.name, tokenMap);
+              if (match && match.value.toLowerCase() === ft.value.toLowerCase()) {
                 matchedCount++;
               }
             }
-            tokenHealthScore = Math.round((matchedCount / figmaTokens.length) * 100);
+            tokenHealthScore = Math.round((matchedCount / tokens.length) * 100);
           }
 
           // Component sync score (weight: 30%)
-          const figmaComps = (params.figmaComponents as string[]) ?? [];
+          const designComps = (params.designComponents as string[]) ?? [];
           const codeComps = (params.codeComponents as string[]) ?? [];
           let syncScore = 100;
-          if (figmaComps.length + codeComps.length > 0) {
-            const figmaNorm = new Map(figmaComps.map((c) => [c.toLowerCase(), c]));
+          if (designComps.length + codeComps.length > 0) {
+            const designNorm = new Map(designComps.map((c) => [c.toLowerCase(), c]));
             const codeNorm = new Map(codeComps.map((c) => [c.toLowerCase(), c]));
             let syncMatched = 0;
-            for (const [norm] of figmaNorm) {
+            for (const [norm] of designNorm) {
               if (codeNorm.has(norm)) syncMatched++;
             }
             syncScore = Math.round(
-              ((syncMatched * 2) / (figmaComps.length + codeComps.length)) * 100,
+              ((syncMatched * 2) / (designComps.length + codeComps.length)) * 100,
             );
           }
 
@@ -519,23 +517,23 @@ const figmaOps = [
 // ---------------------------------------------------------------------------
 
 const pack: DomainPack = {
-  name: 'figma',
+  name: 'design-qa',
   version: '1.0.0',
-  domains: ['figma'],
-  ops: figmaOps,
+  domains: ['design-qa'],
+  ops: designQaOps,
   onActivate: async (runtime: unknown) => {
     packRuntime = runtime as PackRuntime;
   },
-  rules: `## Figma-to-Code Workflow
+  rules: `## Design QA Workflow
 
-1. **Extract** — Pull token data and component lists from Figma (via plugin or API).
-2. **Detect drift** — Run \`detect_token_drift\` to find mismatches between Figma tokens and code tokens.
+1. **Extract** — Pull token data and component lists from your design source (Figma, Storybook, style dictionary, etc.).
+2. **Detect drift** — Run \`detect_token_drift\` to find mismatches between design tokens and code tokens.
 3. **Find hardcoded colors** — Run \`detect_hardcoded_colors\` to identify colors not backed by tokens.
-4. **Sync components** — Run \`sync_components\` to find components missing in either Figma or code.
+4. **Sync components** — Run \`sync_components\` to find components missing in either design or code.
 5. **Accessibility precheck** — Run \`accessibility_precheck\` on all color pairs before handoff.
 6. **Handoff audit** — Run \`handoff_audit\` to verify component documentation completeness.
 
-All ops process pre-extracted data — no Figma API calls required.
+All ops process pre-extracted data — no external API calls required.
 `,
 };
 
@@ -543,10 +541,10 @@ export default pack;
 
 // Re-export utilities for direct use
 export {
-  normalizeFigmaTokenName,
+  normalizeTokenName,
   fuzzyMatchToken,
   parseHex,
   getLuminance,
   getContrastRatio,
   getWCAGLevel,
-} from './lib/figma-utils.js';
+} from './lib/design-qa-utils.js';

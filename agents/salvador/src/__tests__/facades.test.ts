@@ -401,17 +401,17 @@ describe('Facades', () => {
     });
   });
 
-  describe('domain pack: figma', () => {
+  describe('domain pack: design-qa', () => {
     it('should load and validate the domain pack', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"figma","package":"@soleri/domain-figma"}]);
+      const packs = await loadDomainPacksFromConfig([{"name":"design-qa","package":"@soleri/domain-design-qa"}]);
       expect(packs.length).toBe(1);
-      expect(packs[0].name).toBe('figma');
+      expect(packs[0].name).toBe('design-qa');
       expect(packs[0].ops.length).toBeGreaterThan(0);
     });
 
     it('should register pack ops in domain facades', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"figma","package":"@soleri/domain-figma"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["figma"], packs);
+      const packs = await loadDomainPacksFromConfig([{"name":"design-qa","package":"@soleri/domain-design-qa"}]);
+      const facades = createDomainFacades(runtime, 'salvador', ["design-qa"], packs);
       expect(facades.length).toBeGreaterThanOrEqual(1);
       // Pack ops should be present
       const allOps = facades.flatMap(f => f.ops.map(o => o.name));
@@ -419,8 +419,8 @@ describe('Facades', () => {
     });
 
     it('pack custom ops should be callable', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"figma","package":"@soleri/domain-figma"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["figma"], packs);
+      const packs = await loadDomainPacksFromConfig([{"name":"design-qa","package":"@soleri/domain-design-qa"}]);
+      const facades = createDomainFacades(runtime, 'salvador', ["design-qa"], packs);
       const facade = facades[0];
       // Test first custom op returns without error
       const firstOp = facade.ops[0];

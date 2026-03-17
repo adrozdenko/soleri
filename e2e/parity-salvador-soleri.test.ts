@@ -9,7 +9,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createAgentRuntime, createDomainFacades, type AgentRuntime, type FacadeConfig } from '@soleri/core';
 import designPack from '../packages/domain-design/src/index.js';
 import componentPack from '../packages/domain-component/src/index.js';
-import figmaPack from '../packages/domain-figma/src/index.js';
+import designQaPack from '../packages/domain-design-qa/src/index.js';
 import codeReviewPack from '../packages/domain-code-review/src/index.js';
 
 let runtime: AgentRuntime;
@@ -25,7 +25,7 @@ function findOp(facadeName: string, opName: string) {
 
 beforeAll(() => {
   runtime = createAgentRuntime({ agentId: 'parity-test', vaultPath: ':memory:' });
-  const packs = [designPack, componentPack, figmaPack, codeReviewPack];
+  const packs = [designPack, componentPack, designQaPack, codeReviewPack];
   const allDomains = [...new Set(['design', ...packs.flatMap((p) => p.domains)])];
   facades = createDomainFacades(runtime, 'parity-test', allDomains, packs);
 });
@@ -295,12 +295,12 @@ describe('Parity: design_rules data serving', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 10. Figma accessibility_precheck — WCAG batch check
+// 10. Design QA accessibility_precheck — WCAG batch check
 // ---------------------------------------------------------------------------
 
-describe('Parity: figma accessibility_precheck', () => {
+describe('Parity: design-qa accessibility_precheck', () => {
   it('should batch-check contrast for multiple pairs', async () => {
-    const op = findOp('figma', 'accessibility_precheck');
+    const op = findOp('design_qa', 'accessibility_precheck');
     const result = (await op.handler({
       colorPairs: [
         { foreground: '#000000', background: '#FFFFFF' },  // 21:1 → pass

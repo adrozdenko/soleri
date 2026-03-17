@@ -1,5 +1,5 @@
 /**
- * Figma intelligence utilities — token normalization, fuzzy matching, WCAG contrast.
+ * Design QA utilities — token normalization, fuzzy matching, WCAG contrast.
  *
  * All functions are pure and algorithmic — no external API calls.
  */
@@ -9,12 +9,12 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Normalize a Figma token name to a CSS-friendly format.
+ * Normalize a design token name to a CSS-friendly format.
  * "Primary/500" → "primary-500"
  * "Neutral / Light / 100" → "neutral-light-100"
  * "Brand.Primary.Main" → "brand-primary-main"
  */
-export function normalizeFigmaTokenName(name: string): string {
+export function normalizeTokenName(name: string): string {
   return name
     .replace(/\s*[/.]\s*/g, '-') // Replace / and . (with optional whitespace) with -
     .replace(/\s+/g, '-') // Replace remaining whitespace with -
@@ -28,19 +28,19 @@ export function normalizeFigmaTokenName(name: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Find the best matching token from a token map for a given Figma name.
+ * Find the best matching token from a token map for a given token name.
  * Returns the matching token key, or null if no match is close enough.
  *
  * Matching strategy:
  * 1. Exact match (normalized)
- * 2. Contains match (normalized figma name is substring of token or vice versa)
+ * 2. Contains match (normalized name is substring of token or vice versa)
  * 3. Levenshtein distance <= 3
  */
 export function fuzzyMatchToken(
-  figmaName: string,
+  tokenName: string,
   tokenMap: Record<string, string>,
 ): { token: string; value: string; confidence: 'exact' | 'contains' | 'fuzzy' } | null {
-  const normalized = normalizeFigmaTokenName(figmaName);
+  const normalized = normalizeTokenName(tokenName);
   const entries = Object.entries(tokenMap);
 
   // 1. Exact match

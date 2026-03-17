@@ -16,7 +16,7 @@ import {
 } from '@soleri/core';
 import designPack from '../packages/domain-design/src/index.js';
 import componentPack, { _clearRegistry } from '../packages/domain-component/src/index.js';
-import figmaPack from '../packages/domain-figma/src/index.js';
+import designQaPack from '../packages/domain-design-qa/src/index.js';
 import codeReviewPack from '../packages/domain-code-review/src/index.js';
 import { loadAllFlows, buildPlan, detectContext } from '../packages/core/src/flows/index.js';
 
@@ -43,7 +43,7 @@ function findOp(facadeName: string, opName: string) {
 
 beforeAll(() => {
   runtime = createAgentRuntime({ agentId: 'comprehensive-test', vaultPath: ':memory:' });
-  const packs = [designPack, componentPack, figmaPack, codeReviewPack];
+  const packs = [designPack, componentPack, designQaPack, codeReviewPack];
   const allDomains = [...new Set(['design', ...packs.flatMap((p) => p.domains)])];
   facades = createDomainFacades(runtime, 'comprehensive-test', allDomains, packs);
 });
@@ -834,17 +834,17 @@ describe('Component: sync_status', () => {
 });
 
 // =========================================================================
-// FIGMA PACK — 5 ops
+// DESIGN QA PACK — 5 ops
 // =========================================================================
 
-describe('Figma: detect_token_drift', () => {
+describe('Design QA: detect_token_drift', () => {
   it('detects matching, drifted, and unknown tokens', async () => {
-    const op = findOp('figma', 'detect_token_drift');
+    const op = findOp('design_qa', 'detect_token_drift');
     const result = (await op.handler({
-      figmaTokens: [
-        { figmaName: 'primary', figmaValue: '#3B82F6' },
-        { figmaName: 'secondary', figmaValue: '#FF0000' },
-        { figmaName: 'unknown-token', figmaValue: '#ABCDEF' },
+      tokens: [
+        { name: 'primary', value: '#3B82F6' },
+        { name: 'secondary', value: '#FF0000' },
+        { name: 'unknown-token', value: '#ABCDEF' },
       ],
       tokenMap: {
         primary: '#3B82F6',
@@ -853,7 +853,7 @@ describe('Figma: detect_token_drift', () => {
     })) as {
       total: number;
       matched: { count: number };
-      drifted: { count: number; items: Array<{ figmaValue: string; tokenValue: string }> };
+      drifted: { count: number; items: Array<{ value: string; tokenValue: string }> };
       unmatched: { count: number };
       healthScore: number;
     };
@@ -861,17 +861,17 @@ describe('Figma: detect_token_drift', () => {
     expect(result.total).toBe(3);
     expect(result.matched.count).toBe(1);
     expect(result.drifted.count).toBe(1);
-    expect(result.drifted.items[0].figmaValue).toBe('#FF0000');
+    expect(result.drifted.items[0].value).toBe('#FF0000');
     expect(result.drifted.items[0].tokenValue).toBe('#6366F1');
     expect(result.unmatched.count).toBe(1);
     expect(result.healthScore).toBeLessThan(100);
   });
 
   it('all tokens match → healthScore 100', async () => {
-    const op = findOp('figma', 'detect_token_drift');
+    const op = findOp('design_qa', 'detect_token_drift');
     const result = (await op.handler({
-      figmaTokens: [
-        { figmaName: 'bg-primary', figmaValue: '#000' },
+      tokens: [
+        { name: 'bg-primary', value: '#000' },
       ],
       tokenMap: { 'bg-primary': '#000' },
     })) as { healthScore: number };
@@ -879,9 +879,9 @@ describe('Figma: detect_token_drift', () => {
   });
 });
 
-describe('Figma: detect_hardcoded_colors', () => {
+describe('Design QA: detect_hardcoded_colors', () => {
   it('separates tokenized from hardcoded colors', async () => {
-    const op = findOp('figma', 'detect_hardcoded_colors');
+    const op = findOp('design_qa', 'detect_hardcoded_colors');
     const result = (await op.handler({
       colors: ['#3B82F6', '#FF0000', '#6366F1', '#ABCDEF'],
       tokenMap: {
@@ -902,29 +902,29 @@ describe('Figma: detect_hardcoded_colors', () => {
   });
 });
 
-describe('Figma: sync_components', () => {
-  it('identifies matched, missing-in-code, and missing-in-figma', async () => {
-    const op = findOp('figma', 'sync_components');
+describe('Design QA: sync_components', () => {
+  it('identifies matched, missing-in-code, and missing-in-design', async () => {
+    const op = findOp('design_qa', 'sync_components');
     const result = (await op.handler({
-      figmaComponents: ['Button', 'Card', 'Modal', 'FigmaOnly'],
+      designComponents: ['Button', 'Card', 'Modal', 'DesignOnly'],
       codeComponents: ['Button', 'Card', 'Sidebar', 'CodeOnly'],
     })) as {
-      matched: { count: number; items: Array<{ figmaName: string; codeName: string }> };
+      matched: { count: number; items: Array<{ designName: string; codeName: string }> };
       missingInCode: { count: number; items: string[] };
-      missingInFigma: { count: number; items: string[] };
+      missingInDesign: { count: number; items: string[] };
       syncScore: number;
     };
 
     expect(result.matched.count).toBe(2); // Button, Card
-    expect(result.missingInCode.count).toBe(2); // Modal, FigmaOnly
-    expect(result.missingInFigma.count).toBe(2); // Sidebar, CodeOnly
+    expect(result.missingInCode.count).toBe(2); // Modal, DesignOnly
+    expect(result.missingInDesign.count).toBe(2); // Sidebar, CodeOnly
     expect(result.syncScore).toBe(50); // 2*2 / (4+4) * 100 = 50
   });
 });
 
-describe('Figma: accessibility_precheck', () => {
+describe('Design QA: accessibility_precheck', () => {
   it('batch-checks 5+ color pairs', async () => {
-    const op = findOp('figma', 'accessibility_precheck');
+    const op = findOp('design_qa', 'accessibility_precheck');
     const result = (await op.handler({
       colorPairs: [
         { foreground: '#000000', background: '#FFFFFF' },           // 21:1 pass
@@ -952,9 +952,9 @@ describe('Figma: accessibility_precheck', () => {
   });
 });
 
-describe('Figma: handoff_audit', () => {
+describe('Design QA: handoff_audit', () => {
   it('audits complete component metadata', async () => {
-    const op = findOp('figma', 'handoff_audit');
+    const op = findOp('design_qa', 'handoff_audit');
     const result = (await op.handler({
       components: [
         {
@@ -978,7 +978,7 @@ describe('Figma: handoff_audit', () => {
   });
 
   it('detects incomplete metadata', async () => {
-    const op = findOp('figma', 'handoff_audit');
+    const op = findOp('design_qa', 'handoff_audit');
     const result = (await op.handler({
       components: [
         { name: 'Card' },                                    // missing everything

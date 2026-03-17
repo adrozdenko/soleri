@@ -2,12 +2,12 @@ import { it, expect } from 'vitest';
 import { createAgentRuntime, createSemanticFacades, createDomainFacades } from '@soleri/core';
 import designPack from '../packages/domain-design/src/index.js';
 import componentPack from '../packages/domain-component/src/index.js';
-import figmaPack from '../packages/domain-figma/src/index.js';
+import designQaPack from '../packages/domain-design-qa/src/index.js';
 import codeReviewPack from '../packages/domain-code-review/src/index.js';
 
 it('debug facade names', () => {
   const runtime = createAgentRuntime({ agentId: 'test', vaultPath: ':memory:' });
-  const packs = [designPack, componentPack, figmaPack, codeReviewPack];
+  const packs = [designPack, componentPack, designQaPack, codeReviewPack];
   console.log('\n=== PACK INFO ===');
   for (const p of packs) {
     console.log(`  ${p.name}: domains=${JSON.stringify(p.domains)}, ops=${p.ops.length}, facades=${p.facades?.length ?? 0}`);

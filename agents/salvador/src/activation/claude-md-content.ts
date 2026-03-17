@@ -63,7 +63,7 @@ export function getClaudeMdContent(): string {
     '',
     '| `design` (pack: `@soleri/domain-design`) | *custom ops — see `admin_tool_list`* |',
     '| `component` (pack: `@soleri/domain-component`) | *custom ops — see `admin_tool_list`* |',
-    '| `figma` (pack: `@soleri/domain-figma`) | *custom ops — see `admin_tool_list`* |',
+    '| `design-qa` (pack: `@soleri/domain-design-qa`) | *custom ops — see `admin_tool_list`* |',
     '| `code-review` (pack: `@soleri/domain-code-review`) | *custom ops — see `admin_tool_list`* |',
     '| `salvador_vault` | `search_intelligent`, `capture_knowledge`, `capture_quick`, `search_feedback` |',
     '| `salvador_vault` (keeper) | `knowledge_audit`, `knowledge_health`, `knowledge_merge`, `knowledge_reorganize` |',

@@ -19,7 +19,7 @@ import { tmpdir } from 'node:os';
 // Import all 4 domain packs (from source — packages not built yet)
 import designPack from '../packages/domain-design/src/index.js';
 import componentPack from '../packages/domain-component/src/index.js';
-import figmaPack from '../packages/domain-figma/src/index.js';
+import designQaPack from '../packages/domain-design-qa/src/index.js';
 import codeReviewPack from '../packages/domain-code-review/src/index.js';
 
 const TEST_DIR = join(tmpdir(), 'soleri-smoke-salvador-' + Date.now());
@@ -61,7 +61,7 @@ describe('Salvador Agent Smoke Test', () => {
       vaultPath: ':memory:',
     });
 
-    const packs = [designPack, componentPack, figmaPack, codeReviewPack];
+    const packs = [designPack, componentPack, designQaPack, codeReviewPack];
 
     const semanticFacades = createSemanticFacades(runtime, AGENT_ID);
     // Collect all domains from packs + explicit domains
@@ -156,19 +156,19 @@ describe('Salvador Agent Smoke Test', () => {
     expect(result.external.length).toBeGreaterThanOrEqual(1);
   });
 
-  // --- Figma pack ops ---
+  // --- Design QA pack ops ---
 
-  it('figma pack should be registered', () => {
-    const figmaFacade = allFacades.find((f) => f.name.includes('figma'));
-    expect(figmaFacade).toBeDefined();
-    const opNames = figmaFacade!.ops.map((o) => o.name);
+  it('design-qa pack should be registered', () => {
+    const designQaFacade = allFacades.find((f) => f.name.includes('design_qa'));
+    expect(designQaFacade).toBeDefined();
+    const opNames = designQaFacade!.ops.map((o) => o.name);
     expect(opNames).toContain('detect_token_drift');
     expect(opNames).toContain('accessibility_precheck');
   });
 
   it('accessibility_precheck should check contrast pairs', async () => {
-    const figmaFacade = allFacades.find((f) => f.name.includes('figma'));
-    const op = figmaFacade!.ops.find((o) => o.name === 'accessibility_precheck')!;
+    const designQaFacade = allFacades.find((f) => f.name.includes('design_qa'));
+    const op = designQaFacade!.ops.find((o) => o.name === 'accessibility_precheck')!;
     const result = (await op.handler({
       colorPairs: [
         { foreground: '#000000', background: '#FFFFFF' },

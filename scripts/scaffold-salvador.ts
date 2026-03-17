@@ -7,7 +7,7 @@ const raw = {
   role: 'Design System Intelligence',
   description:
     'Design system advisor with WCAG contrast checking, token validation, component patterns, code review, and Figma integration. Vault-first knowledge, brain-driven recommendations.',
-  domains: ['design', 'component', 'figma', 'code-review'],
+  domains: ['design', 'component', 'design-qa', 'code-review'],
   principles: [
     'Consistency over novelty',
     'Accessible by default',
@@ -21,7 +21,7 @@ const raw = {
   domainPacks: [
     { name: 'design', package: '@soleri/domain-design' },
     { name: 'component', package: '@soleri/domain-component' },
-    { name: 'figma', package: '@soleri/domain-figma' },
+    { name: 'design-qa', package: '@soleri/domain-design-qa' },
     { name: 'code-review', package: '@soleri/domain-code-review' },
   ],
   vaults: [

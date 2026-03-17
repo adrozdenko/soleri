@@ -1,37 +1,37 @@
 import { describe, it, expect } from 'vitest';
 import pack from '../index.js';
 import {
-  normalizeFigmaTokenName,
+  normalizeTokenName,
   fuzzyMatchToken,
   getContrastRatio,
   getWCAGLevel,
   parseHex,
   getLuminance,
-} from '../lib/figma-utils.js';
+} from '../lib/design-qa-utils.js';
 
 // ---------------------------------------------------------------------------
 // Token Name Normalization
 // ---------------------------------------------------------------------------
 
-describe('normalizeFigmaTokenName', () => {
+describe('normalizeTokenName', () => {
   it('should convert slash-separated names', () => {
-    expect(normalizeFigmaTokenName('Primary/500')).toBe('primary-500');
+    expect(normalizeTokenName('Primary/500')).toBe('primary-500');
   });
 
   it('should convert dot-separated names', () => {
-    expect(normalizeFigmaTokenName('Brand.Primary.Main')).toBe('brand-primary-main');
+    expect(normalizeTokenName('Brand.Primary.Main')).toBe('brand-primary-main');
   });
 
   it('should handle whitespace around separators', () => {
-    expect(normalizeFigmaTokenName('Neutral / Light / 100')).toBe('neutral-light-100');
+    expect(normalizeTokenName('Neutral / Light / 100')).toBe('neutral-light-100');
   });
 
   it('should collapse multiple dashes', () => {
-    expect(normalizeFigmaTokenName('Foo//Bar')).toBe('foo-bar');
+    expect(normalizeTokenName('Foo//Bar')).toBe('foo-bar');
   });
 
   it('should lowercase the result', () => {
-    expect(normalizeFigmaTokenName('BRAND')).toBe('brand');
+    expect(normalizeTokenName('BRAND')).toBe('brand');
   });
 });
 
@@ -122,9 +122,9 @@ describe('WCAG Contrast', () => {
 
 describe('DomainPack Manifest', () => {
   it('should export a valid DomainPack', () => {
-    expect(pack.name).toBe('figma');
+    expect(pack.name).toBe('design-qa');
     expect(pack.version).toBe('1.0.0');
-    expect(pack.domains).toContain('figma');
+    expect(pack.domains).toContain('design-qa');
   });
 
   it('should have 5 ops', () => {
@@ -142,7 +142,7 @@ describe('DomainPack Manifest', () => {
 
   it('should have CLAUDE.md rules', () => {
     expect(pack.rules).toBeDefined();
-    expect(pack.rules).toContain('Figma-to-Code');
+    expect(pack.rules).toContain('Design QA');
     expect(pack.rules).toContain('detect_token_drift');
   });
 });
@@ -156,7 +156,7 @@ describe('detect_token_drift op', () => {
 
   it('should find matched tokens', async () => {
     const result = (await op.handler({
-      figmaTokens: [{ figmaName: 'Primary/500', figmaValue: '#3B82F6' }],
+      tokens: [{ name: 'Primary/500', value: '#3B82F6' }],
       tokenMap: { 'primary-500': '#3B82F6' },
     })) as { matched: { count: number }; drifted: { count: number }; unmatched: { count: number } };
 
@@ -167,7 +167,7 @@ describe('detect_token_drift op', () => {
 
   it('should detect drifted tokens', async () => {
     const result = (await op.handler({
-      figmaTokens: [{ figmaName: 'Primary/500', figmaValue: '#FF0000' }],
+      tokens: [{ name: 'Primary/500', value: '#FF0000' }],
       tokenMap: { 'primary-500': '#3B82F6' },
     })) as { matched: { count: number }; drifted: { count: number }; unmatched: { count: number } };
 
@@ -177,7 +177,7 @@ describe('detect_token_drift op', () => {
 
   it('should detect unmatched tokens', async () => {
     const result = (await op.handler({
-      figmaTokens: [{ figmaName: 'Custom/Unknown', figmaValue: '#123456' }],
+      tokens: [{ name: 'Custom/Unknown', value: '#123456' }],
       tokenMap: { 'primary-500': '#3B82F6' },
     })) as { unmatched: { count: number }; healthScore: number };
 
@@ -187,7 +187,7 @@ describe('detect_token_drift op', () => {
 
   it('should return 100 health score for empty input', async () => {
     const result = (await op.handler({
-      figmaTokens: [],
+      tokens: [],
       tokenMap: {},
     })) as { healthScore: number };
 
@@ -240,18 +240,18 @@ describe('sync_components op', () => {
 
   it('should match components by name (case-insensitive)', async () => {
     const result = (await op.handler({
-      figmaComponents: ['Button', 'Card'],
+      designComponents: ['Button', 'Card'],
       codeComponents: ['button', 'Card', 'Modal'],
     })) as {
       matched: { count: number };
       missingInCode: { count: number; items: string[] };
-      missingInFigma: { count: number; items: string[] };
+      missingInDesign: { count: number; items: string[] };
     };
 
     expect(result.matched.count).toBe(2);
     expect(result.missingInCode.count).toBe(0);
-    expect(result.missingInFigma.count).toBe(1);
-    expect(result.missingInFigma.items).toContain('Modal');
+    expect(result.missingInDesign.count).toBe(1);
+    expect(result.missingInDesign.items).toContain('Modal');
   });
 });
 
@@ -282,7 +282,6 @@ describe('accessibility_precheck op', () => {
   });
 
   it('should use relaxed threshold for large-text context', async () => {
-    // Find a pair that passes 3:1 but fails 4.5:1
     const result = (await op.handler({
       colorPairs: [{ foreground: '#767676', background: '#FFFFFF', context: 'large-text' }],
     })) as { results: Array<{ ratio: number; passes: boolean }> };
