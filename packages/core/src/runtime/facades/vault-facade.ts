@@ -16,7 +16,7 @@ import { createVaultLinkingOps } from '../vault-linking-ops.js';
 import { ObsidianSync } from '../../vault/obsidian-sync.js';
 
 export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, intakePipeline, vaultManager } = runtime;
+  const { vault, brain, intakePipeline, textIngester, vaultManager } = runtime;
 
   return [
     // ─── Search / Vault (inline from core-ops.ts) ───────────────
@@ -501,7 +501,7 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     // ─── Satellite ops ───────────────────────────────────────────
     ...createVaultExtraOps(runtime),
     ...createCaptureOps(runtime),
-    ...createIntakeOps(intakePipeline),
+    ...createIntakeOps(intakePipeline, textIngester),
     ...createVaultSharingOps(runtime),
     ...createVaultLinkingOps(runtime),
   ];

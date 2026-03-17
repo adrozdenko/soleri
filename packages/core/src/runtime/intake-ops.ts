@@ -1,19 +1,24 @@
 /**
- * Intake operations — 4 ops for book/PDF ingestion.
+ * Intake operations — 7 ops for book/PDF and text/URL ingestion.
  *
- * Ops: intake_ingest_book, intake_process, intake_status, intake_preview.
+ * Ops: intake_ingest_book, intake_process, intake_status, intake_preview,
+ *       ingest_url, ingest_text, ingest_batch.
  */
 
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { IntakePipeline } from '../intake/intake-pipeline.js';
+import type { TextIngester, IngestSource } from '../intake/text-ingester.js';
 
 /**
- * Create the 4 intake operations.
+ * Create the 7 intake operations.
  *
- * The pipeline is optional — when null, all ops return a graceful error.
+ * The pipeline and textIngester are optional — when null, affected ops return a graceful error.
  */
-export function createIntakeOps(pipeline: IntakePipeline | null): OpDefinition[] {
+export function createIntakeOps(
+  pipeline: IntakePipeline | null,
+  textIngester?: TextIngester | null,
+): OpDefinition[] {
   return [
     // ─── Ingest Book ──────────────────────────────────────────────
     {
@@ -120,6 +125,103 @@ export function createIntakeOps(pipeline: IntakePipeline | null): OpDefinition[]
           pageEnd: number;
         };
         return pipeline.preview({ pdfPath, title, domain }, pageStart, pageEnd);
+      },
+    },
+
+    // ─── URL Ingestion (#203) ──────────────────────────────────────
+    {
+      name: 'ingest_url',
+      description:
+        'Fetch a URL, extract text, classify into knowledge items via LLM, dedup against vault, and store. ' +
+        'Returns count of ingested entries and duplicates skipped.',
+      auth: 'write',
+      schema: z.object({
+        url: z.string().describe('URL to fetch and ingest'),
+        domain: z.string().optional().describe('Knowledge domain (default: general)'),
+        tags: z.array(z.string()).optional().describe('Additional tags for all extracted entries'),
+      }),
+      handler: async (params) => {
+        if (!textIngester) return { error: 'Text ingester not configured (LLM client required)' };
+        return textIngester.ingestUrl(params.url as string, {
+          domain: params.domain as string | undefined,
+          tags: params.tags as string[] | undefined,
+        });
+      },
+    },
+
+    // ─── Text/Transcript Ingestion (#203) ──────────────────────────
+    {
+      name: 'ingest_text',
+      description:
+        'Ingest raw text (article, transcript, notes) — classify via LLM, dedup, and store. ' +
+        'Use for transcripts, copied articles, meeting notes, etc.',
+      auth: 'write',
+      schema: z.object({
+        text: z.string().describe('The text content to ingest'),
+        title: z.string().describe('Title for the source material'),
+        sourceType: z
+          .enum(['article', 'transcript', 'notes', 'documentation'])
+          .optional()
+          .default('notes')
+          .describe('Type of source material'),
+        url: z.string().optional().describe('Source URL if available'),
+        author: z.string().optional().describe('Author of the source material'),
+        domain: z.string().optional().describe('Knowledge domain (default: general)'),
+        tags: z.array(z.string()).optional().describe('Additional tags'),
+      }),
+      handler: async (params) => {
+        if (!textIngester) return { error: 'Text ingester not configured (LLM client required)' };
+        const source: IngestSource = {
+          type: params.sourceType as 'article' | 'transcript' | 'notes' | 'documentation',
+          title: params.title as string,
+          url: params.url as string | undefined,
+          author: params.author as string | undefined,
+        };
+        return textIngester.ingestText(params.text as string, source, {
+          domain: params.domain as string | undefined,
+          tags: params.tags as string[] | undefined,
+        });
+      },
+    },
+
+    // ─── Batch Ingestion (#203) ────────────────────────────────────
+    {
+      name: 'ingest_batch',
+      description:
+        'Ingest multiple text items in one call. Each item has its own source metadata. Processed sequentially.',
+      auth: 'write',
+      schema: z.object({
+        items: z
+          .array(
+            z.object({
+              text: z.string(),
+              title: z.string(),
+              sourceType: z.enum(['article', 'transcript', 'notes', 'documentation']).optional(),
+              url: z.string().optional(),
+              author: z.string().optional(),
+              domain: z.string().optional(),
+              tags: z.array(z.string()).optional(),
+            }),
+          )
+          .min(1)
+          .describe('Array of items to ingest'),
+      }),
+      handler: async (params) => {
+        if (!textIngester) return { error: 'Text ingester not configured (LLM client required)' };
+        const items = (params.items as Array<Record<string, unknown>>).map((item) => ({
+          text: item.text as string,
+          source: {
+            type: (item.sourceType as string | undefined) ?? 'notes',
+            title: item.title as string,
+            url: item.url as string | undefined,
+            author: item.author as string | undefined,
+          } as IngestSource,
+          opts: {
+            domain: item.domain as string | undefined,
+            tags: item.tags as string[] | undefined,
+          },
+        }));
+        return textIngester.ingestBatch(items);
       },
     },
   ];

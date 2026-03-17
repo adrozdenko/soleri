@@ -23,6 +23,7 @@ import { loadIntelligenceData } from '../intelligence/loader.js';
 import { LLMClient } from '../llm/llm-client.js';
 import { CogneeSyncManager } from '../cognee/sync-manager.js';
 import { IntakePipeline } from '../intake/intake-pipeline.js';
+import { TextIngester } from '../intake/text-ingester.js';
 import { Telemetry } from '../telemetry/telemetry.js';
 import { ProjectRegistry } from '../project/project-registry.js';
 import { TemplateManager } from '../prompts/template-manager.js';
@@ -155,6 +156,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
 
   // Intake Pipeline — PDF/book ingestion with LLM classification
   const intakePipeline = new IntakePipeline(vault.getProvider(), vault, llmClient);
+  const textIngester = new TextIngester(vault, llmClient);
 
   // Playbook Executor — in-memory step-by-step workflow sessions
   const playbookExecutor = new PlaybookExecutor();
@@ -224,6 +226,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     templateManager,
     syncManager,
     intakePipeline,
+    textIngester,
     authPolicy: { mode: 'permissive', callerLevel: 'admin' },
     flags: new FeatureFlags(join(agentHome, 'flags.json')),
     health,

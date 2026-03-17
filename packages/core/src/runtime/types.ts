@@ -30,6 +30,7 @@ import type { AgencyManager } from '../agency/agency-manager.js';
 import type { KnowledgeReview } from '../vault/knowledge-review.js';
 import type { LinkManager } from '../vault/linking.js';
 import type { LearningRadar } from '../brain/learning-radar.js';
+import type { TextIngester } from '../intake/text-ingester.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -108,6 +109,8 @@ export interface AgentRuntime {
   linkManager: LinkManager;
   /** Learning radar — automatic pattern detection from session signals. */
   learningRadar: LearningRadar;
+  /** Text ingester — ingest articles, transcripts, and plain text into vault. */
+  textIngester: TextIngester;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */
