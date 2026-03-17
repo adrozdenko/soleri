@@ -28,6 +28,7 @@ import type { VaultBranching } from '../vault/vault-branching.js';
 import type { ContextEngine } from '../context/context-engine.js';
 import type { AgencyManager } from '../agency/agency-manager.js';
 import type { KnowledgeReview } from '../vault/knowledge-review.js';
+import type { LinkManager } from '../vault/linking.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -100,6 +101,8 @@ export interface AgentRuntime {
   agencyManager: AgencyManager;
   /** Knowledge review — team review workflows (submit/approve/reject). */
   knowledgeReview: KnowledgeReview;
+  /** Link manager — Zettelkasten bidirectional linking with auto-link on ingestion. */
+  linkManager: LinkManager;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

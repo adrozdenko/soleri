@@ -2,6 +2,7 @@ import type { PersistenceProvider } from '../persistence/types.js';
 import { SQLitePersistenceProvider } from '../persistence/sqlite-provider.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import { computeContentHash } from './content-hash.js';
+import type { LinkManager } from './linking.js';
 
 export interface SearchResult {
   entry: IntelligenceEntry;
@@ -42,6 +43,10 @@ export class Vault {
   private provider: PersistenceProvider;
   private sqliteProvider: SQLitePersistenceProvider | null;
   private syncManager: import('../cognee/sync-manager.js').CogneeSyncManager | null = null;
+  private linkManager: LinkManager | null = null;
+  private autoLinkEnabled = true;
+  /** Minimum number of FTS5 suggestions to auto-link. Top N are linked. */
+  private autoLinkMaxLinks = 3;
 
   /**
    * Create a Vault with a PersistenceProvider or a SQLite path (backward compat).
@@ -65,6 +70,28 @@ export class Vault {
 
   setSyncManager(mgr: import('../cognee/sync-manager.js').CogneeSyncManager): void {
     this.syncManager = mgr;
+  }
+
+  setLinkManager(mgr: LinkManager, opts?: { enabled?: boolean; maxLinks?: number }): void {
+    this.linkManager = mgr;
+    if (opts?.enabled !== undefined) this.autoLinkEnabled = opts.enabled;
+    if (opts?.maxLinks !== undefined) this.autoLinkMaxLinks = opts.maxLinks;
+  }
+
+  /**
+   * Auto-link a newly added entry using FTS5 suggestions.
+   * Called after seed() for each entry. Creates links for top N suggestions.
+   */
+  private autoLink(entryId: string): void {
+    if (!this.linkManager || !this.autoLinkEnabled) return;
+    try {
+      const suggestions = this.linkManager.suggestLinks(entryId, this.autoLinkMaxLinks);
+      for (const s of suggestions) {
+        this.linkManager.addLink(entryId, s.entryId, s.suggestedType, `auto: ${s.reason}`);
+      }
+    } catch {
+      // Auto-linking is best-effort — never block ingestion
+    }
   }
 
   /** Backward-compatible factory. */
@@ -337,6 +364,13 @@ export class Vault {
         count++;
         if (this.syncManager) {
           this.syncManager.enqueue('ingest', entry.id, entry);
+        }
+      }
+      // Auto-link after all entries are inserted (so they can link to each other).
+      // Skip for large batches (>100) — use relink_vault for bulk imports.
+      if (entries.length <= 100) {
+        for (const entry of entries) {
+          this.autoLink(entry.id);
         }
       }
       return count;

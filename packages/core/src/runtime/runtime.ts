@@ -39,6 +39,7 @@ import { VaultBranching } from '../vault/vault-branching.js';
 import { ContextEngine } from '../context/context-engine.js';
 import { AgencyManager } from '../agency/agency-manager.js';
 import { KnowledgeReview } from '../vault/knowledge-review.js';
+import { LinkManager } from '../vault/linking.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -96,7 +97,8 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   }
 
   // Brain — intelligence layer (TF-IDF scoring, auto-tagging, dedup)
-  const brain = new Brain(vault, cognee ?? undefined);
+  // Pass vaultManager so intelligentSearch queries all connected sources (not just agent tier)
+  const brain = new Brain(vault, cognee ?? undefined, vaultManager);
 
   // Brain Intelligence — pattern strengths, session knowledge, intelligence pipeline
   const brainIntelligence = new BrainIntelligence(vault, brain);
@@ -145,6 +147,10 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     );
     vault.setSyncManager(syncManager);
   }
+
+  // Link Manager — Zettelkasten auto-linking on vault ingestion
+  const linkManager = new LinkManager(vault.getProvider());
+  vault.setLinkManager(linkManager, { enabled: true, maxLinks: 3 });
 
   // Intake Pipeline — PDF/book ingestion with LLM classification
   const intakePipeline = new IntakePipeline(vault.getProvider(), vault, llmClient);
@@ -228,6 +234,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     contextEngine,
     agencyManager,
     knowledgeReview,
+    linkManager,
     createdAt: Date.now(),
     close: () => {
       syncManager?.close();

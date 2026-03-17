@@ -11,7 +11,6 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
-import { LinkManager } from '../vault/linking.js';
 
 const EVAL_SYSTEM_PROMPT = `You evaluate pairs of knowledge entries to determine if they should be linked in a Zettelkasten vault. For EACH pair, decide:
 - If meaningfully related → return { "link": true, "type": "<type>", "note": "<1 sentence why>" }
@@ -26,8 +25,7 @@ Link types:
 Rules: Same category alone is NOT enough. Be selective. Return a JSON array.`;
 
 export function createVaultLinkingOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault } = runtime;
-  const linkManager = new LinkManager(vault.getProvider());
+  const { vault, linkManager } = runtime;
 
   return [
     {

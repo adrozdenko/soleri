@@ -1,5 +1,6 @@
 import type { Vault } from '../vault/vault.js';
 import type { SearchResult } from '../vault/vault.js';
+import type { VaultManager } from '../vault/vault-manager.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import { computeContentHash } from '../vault/content-hash.js';
 import {
@@ -59,12 +60,14 @@ const RECENCY_HALF_LIFE_DAYS = 365;
 
 export class Brain {
   private vault: Vault;
+  private vaultManager: VaultManager | undefined;
   private cognee: CogneeClient | undefined;
   private vocabulary: Map<string, number> = new Map();
   private weights: ScoringWeights = { ...DEFAULT_WEIGHTS };
 
-  constructor(vault: Vault, cognee?: CogneeClient) {
+  constructor(vault: Vault, cognee?: CogneeClient, vaultManager?: VaultManager) {
     this.vault = vault;
+    this.vaultManager = vaultManager;
     this.cognee = cognee;
     this.rebuildVocabulary();
     this.recomputeWeights();
@@ -72,12 +75,31 @@ export class Brain {
 
   async intelligentSearch(query: string, options?: SearchOptions): Promise<RankedResult[]> {
     const limit = options?.limit ?? 10;
-    const rawResults = this.vault.search(query, {
-      domain: options?.domain,
-      type: options?.type,
-      severity: options?.severity,
-      limit: Math.max(limit * 3, 30),
-    });
+    const fetchLimit = Math.max(limit * 3, 30);
+
+    // Use VaultManager when available to search across all connected sources
+    // (agent tier + shared vault + dynamically connected external vaults).
+    // Falls back to single vault search when no manager is present.
+    let rawResults: SearchResult[];
+    if (this.vaultManager) {
+      rawResults = this.vaultManager.search(query, fetchLimit);
+      // Apply domain/type/severity filters that VaultManager.search() doesn't support
+      if (options?.domain || options?.type || options?.severity) {
+        rawResults = rawResults.filter((r) => {
+          if (options.domain && r.entry.domain !== options.domain) return false;
+          if (options.type && r.entry.type !== options.type) return false;
+          if (options.severity && r.entry.severity !== options.severity) return false;
+          return true;
+        });
+      }
+    } else {
+      rawResults = this.vault.search(query, {
+        domain: options?.domain,
+        type: options?.type,
+        severity: options?.severity,
+        limit: fetchLimit,
+      });
+    }
 
     // Cognee vector search (parallel, with timeout fallback)
     let cogneeScoreMap: Map<string, number> = new Map();
@@ -426,7 +448,43 @@ export class Brain {
   }
 
   rebuildVocabulary(): void {
-    const entries = this.vault.list({ limit: 100000 });
+    // Collect entries from all connected sources when VaultManager is available
+    let entries: IntelligenceEntry[];
+    if (this.vaultManager) {
+      const seen = new Set<string>();
+      entries = [];
+      // Gather entries from all tier vaults and connected sources via manager
+      for (const tierInfo of this.vaultManager.listTiers()) {
+        if (!tierInfo.connected) continue;
+        try {
+          const tierVault = this.vaultManager.getTier(tierInfo.tier);
+          for (const e of tierVault.list({ limit: 100000 })) {
+            if (!seen.has(e.id)) {
+              seen.add(e.id);
+              entries.push(e);
+            }
+          }
+        } catch {
+          /* tier not connected */
+        }
+      }
+      for (const { name } of this.vaultManager.listConnected()) {
+        const cv = this.vaultManager.getConnected(name);
+        if (!cv) continue;
+        try {
+          for (const e of cv.vault.list({ limit: 100000 })) {
+            if (!seen.has(e.id)) {
+              seen.add(e.id);
+              entries.push(e);
+            }
+          }
+        } catch {
+          /* source not accessible */
+        }
+      }
+    } else {
+      entries = this.vault.list({ limit: 100000 });
+    }
     const docCount = entries.length;
     if (docCount === 0) {
       this.vocabulary.clear();
