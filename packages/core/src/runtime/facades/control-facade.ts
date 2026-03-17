@@ -275,5 +275,50 @@ export function createControlFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         return governance.getDashboard(params.projectPath as string);
       },
     },
+
+    // ─── Routing Feedback (#209) ──────────────────────────────────
+    {
+      name: 'routing_feedback',
+      description:
+        'Record whether intent routing was correct. Call after a session to track accuracy. ' +
+        'Set correction=true if the human had to override the detected intent.',
+      auth: 'write',
+      schema: z.object({
+        initialIntent: z.string().describe('The intent that was originally detected'),
+        actualIntent: z.string().describe('The intent that the session actually turned out to be'),
+        confidence: z.number().describe('Original confidence score from route_intent'),
+        correction: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('True if human had to correct the routing'),
+        routingLogId: z.number().optional().describe('ID from agent_routing_log for linking'),
+      }),
+      handler: async (params) => {
+        return intentRouter.recordRoutingFeedback({
+          initialIntent: params.initialIntent as string,
+          actualIntent: params.actualIntent as string,
+          confidence: params.confidence as number,
+          correction: params.correction as boolean,
+          routingLogId: params.routingLogId as number | undefined,
+        });
+      },
+    },
+    {
+      name: 'routing_accuracy',
+      description:
+        'Get routing accuracy report — overall accuracy, common misroutes, confidence calibration per bucket (high/medium/low).',
+      auth: 'read',
+      schema: z.object({
+        periodDays: z
+          .number()
+          .optional()
+          .default(30)
+          .describe('Look-back period in days (default: 30)'),
+      }),
+      handler: async (params) => {
+        return intentRouter.getRoutingAccuracy(params.periodDays as number);
+      },
+    },
   ];
 }

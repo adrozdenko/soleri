@@ -16,6 +16,7 @@ import type {
   IntentClassification,
   ModeConfig,
   MorphResult,
+  RoutingAccuracyReport,
 } from './types.js';
 
 // ─── Token Stemming ─────────────────────────────────────────────────
@@ -168,6 +169,16 @@ export class IntentRouter {
         matched_keywords TEXT NOT NULL DEFAULT '[]',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS routing_feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        routing_log_id INTEGER,
+        initial_intent TEXT NOT NULL,
+        actual_intent TEXT NOT NULL,
+        correction INTEGER NOT NULL DEFAULT 0,
+        confidence REAL NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
   }
 
@@ -312,6 +323,102 @@ export class IntentRouter {
     if (result.changes === 0) {
       throw new Error(`Unknown mode: ${mode}`);
     }
+  }
+
+  // ─── Routing Feedback ─────────────────────────────────────────────
+
+  recordRoutingFeedback(input: {
+    routingLogId?: number;
+    initialIntent: string;
+    actualIntent: string;
+    confidence: number;
+    correction: boolean;
+  }): { recorded: boolean; id: number } {
+    const result = this.provider.run(
+      `INSERT INTO routing_feedback (routing_log_id, initial_intent, actual_intent, correction, confidence)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        input.routingLogId ?? null,
+        input.initialIntent,
+        input.actualIntent,
+        input.correction ? 1 : 0,
+        input.confidence,
+      ],
+    );
+    return { recorded: true, id: Number(result.lastInsertRowid) };
+  }
+
+  getRoutingAccuracy(periodDays: number = 30): RoutingAccuracyReport {
+    const cutoff = new Date(Date.now() - periodDays * 86400000).toISOString();
+
+    const total = this.provider.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM routing_feedback WHERE created_at >= ?',
+      [cutoff],
+    )!.count;
+
+    const correct = this.provider.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM routing_feedback WHERE initial_intent = actual_intent AND created_at >= ?',
+      [cutoff],
+    )!.count;
+
+    const corrections = this.provider.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM routing_feedback WHERE correction = 1 AND created_at >= ?',
+      [cutoff],
+    )!.count;
+
+    // Common misroutes
+    const misrouteRows = this.provider.all<{
+      from_intent: string;
+      to_intent: string;
+      count: number;
+    }>(
+      `SELECT initial_intent as from_intent, actual_intent as to_intent, COUNT(*) as count
+       FROM routing_feedback
+       WHERE initial_intent != actual_intent AND created_at >= ?
+       GROUP BY initial_intent, actual_intent
+       ORDER BY count DESC
+       LIMIT 10`,
+      [cutoff],
+    );
+
+    // Confidence calibration: group by confidence bucket and check accuracy per bucket
+    const calibrationRows = this.provider.all<{ bucket: string; total: number; correct: number }>(
+      `SELECT
+         CASE
+           WHEN confidence >= 0.8 THEN 'high'
+           WHEN confidence >= 0.4 THEN 'medium'
+           ELSE 'low'
+         END as bucket,
+         COUNT(*) as total,
+         SUM(CASE WHEN initial_intent = actual_intent THEN 1 ELSE 0 END) as correct
+       FROM routing_feedback
+       WHERE created_at >= ?
+       GROUP BY bucket`,
+      [cutoff],
+    );
+
+    const calibration: Record<string, { total: number; correct: number; accuracy: number }> = {};
+    for (const row of calibrationRows) {
+      calibration[row.bucket] = {
+        total: row.total,
+        correct: row.correct,
+        accuracy: row.total > 0 ? Math.round((row.correct / row.total) * 100) : 0,
+      };
+    }
+
+    return {
+      periodDays,
+      total,
+      correct,
+      accuracy: total > 0 ? Math.round((correct / total) * 100) : 100,
+      corrections,
+      commonMisroutes: misrouteRows.map((r) => ({
+        from: r.from_intent,
+        to: r.to_intent,
+        count: r.count,
+      })),
+      confidenceCalibration: calibration,
+    };
   }
 
   // ─── Analytics ──────────────────────────────────────────────────────

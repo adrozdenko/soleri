@@ -100,3 +100,13 @@ export interface MorphResult {
   currentMode: OperationalMode;
   behaviorRules: string[];
 }
+
+export interface RoutingAccuracyReport {
+  periodDays: number;
+  total: number;
+  correct: number;
+  accuracy: number;
+  corrections: number;
+  commonMisroutes: Array<{ from: string; to: string; count: number }>;
+  confidenceCalibration: Record<string, { total: number; correct: number; accuracy: number }>;
+}
