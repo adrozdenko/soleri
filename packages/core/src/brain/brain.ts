@@ -15,6 +15,7 @@ import type {
   ScoringWeights,
   ScoreBreakdown,
   RankedResult,
+  ScanResult,
   SearchOptions,
   CaptureResult,
   BrainStats,
@@ -232,6 +233,49 @@ export class Brain {
     }
 
     return ranked.slice(0, limit);
+  }
+
+  /**
+   * Two-pass retrieval — Pass 1: Scan.
+   * Returns lightweight results (title, score, snippet) without full entry bodies.
+   * Use `loadEntries()` for Pass 2 to fetch full content for selected entries.
+   */
+  async scanSearch(query: string, options?: Omit<SearchOptions, 'mode'>): Promise<ScanResult[]> {
+    const fullResults = await this.intelligentSearch(query, { ...options, mode: 'full' });
+    return fullResults.map((r) => ({
+      id: r.entry.id,
+      title: r.entry.title,
+      score: r.score,
+      type: r.entry.type,
+      domain: r.entry.domain,
+      severity: r.entry.severity,
+      tags: r.entry.tags,
+      snippet: r.entry.description.slice(0, 120) + (r.entry.description.length > 120 ? '...' : ''),
+      tokenEstimate: this.estimateTokens(r.entry),
+    }));
+  }
+
+  /**
+   * Two-pass retrieval — Pass 2: Load.
+   * Returns full entries for specific IDs (from a previous scan).
+   */
+  loadEntries(ids: string[]): IntelligenceEntry[] {
+    const results: IntelligenceEntry[] = [];
+    for (const id of ids) {
+      const entry = this.vault.get(id);
+      if (entry) results.push(entry);
+    }
+    return results;
+  }
+
+  /** Rough token estimate for an entry (chars / 4). */
+  private estimateTokens(entry: IntelligenceEntry): number {
+    let chars = entry.title.length + entry.description.length;
+    if (entry.context) chars += entry.context.length;
+    if (entry.example) chars += entry.example.length;
+    if (entry.counterExample) chars += entry.counterExample.length;
+    if (entry.why) chars += entry.why.length;
+    return Math.ceil(chars / 4);
   }
 
   enrichAndCapture(

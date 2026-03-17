@@ -23,7 +23,7 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'search',
       description:
-        'Search across all knowledge domains. Results ranked by TF-IDF + severity + recency + tag overlap + domain match.',
+        'Search knowledge. mode:"scan" returns lightweight results (titles + scores + snippets) for two-pass retrieval. mode:"full" (default) returns complete entries.',
       auth: 'read',
       schema: z.object({
         query: z.string(),
@@ -32,15 +32,38 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         severity: z.enum(['critical', 'warning', 'suggestion']).optional(),
         tags: z.array(z.string()).optional(),
         limit: z.number().optional(),
+        mode: z
+          .enum(['full', 'scan'])
+          .optional()
+          .default('full')
+          .describe(
+            'full = complete entries, scan = lightweight titles + scores for two-pass retrieval',
+          ),
       }),
       handler: async (params) => {
-        return brain.intelligentSearch(params.query as string, {
+        const opts = {
           domain: params.domain as string | undefined,
           type: params.type as string | undefined,
           severity: params.severity as string | undefined,
           tags: params.tags as string[] | undefined,
           limit: (params.limit as number) ?? 10,
-        });
+        };
+        if (params.mode === 'scan') {
+          return brain.scanSearch(params.query as string, opts);
+        }
+        return brain.intelligentSearch(params.query as string, opts);
+      },
+    },
+    {
+      name: 'load_entries',
+      description:
+        'Two-pass retrieval — Pass 2: Load full entries by IDs (from a previous scan search).',
+      auth: 'read',
+      schema: z.object({
+        ids: z.array(z.string()).min(1).describe('Entry IDs from a previous scan search'),
+      }),
+      handler: async (params) => {
+        return brain.loadEntries(params.ids as string[]);
       },
     },
     {

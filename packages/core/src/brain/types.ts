@@ -33,6 +33,22 @@ export interface SearchOptions {
   severity?: string;
   limit?: number;
   tags?: string[];
+  /** 'full' returns RankedResult[] with complete entries (default). 'scan' returns ScanResult[] — lightweight titles + scores for two-pass retrieval. */
+  mode?: 'full' | 'scan';
+}
+
+/** Lightweight search result for scan mode — titles + scores without full entry body. */
+export interface ScanResult {
+  id: string;
+  title: string;
+  score: number;
+  type: string;
+  domain: string;
+  severity: string;
+  tags: string[];
+  snippet: string;
+  /** Estimated tokens if this entry were loaded in full. */
+  tokenEstimate: number;
 }
 
 export interface CaptureResult {
