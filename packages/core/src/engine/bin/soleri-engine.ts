@@ -75,6 +75,7 @@ async function main(): Promise<void> {
   const runtime = createAgentRuntime({
     agentId,
     vaultPath,
+    agentDir,
     cognee: (engineConfig.cognee as boolean) ?? false,
   });
 

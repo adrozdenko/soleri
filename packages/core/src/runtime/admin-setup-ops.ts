@@ -32,6 +32,7 @@ import {
   removeSections,
   injectAtPosition,
   buildInjectionContent,
+  injectEngineRulesBlock,
 } from './claude-md-helpers.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -290,13 +291,23 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
         const filePath = targetPath ?? join(projectPath, 'CLAUDE.md');
         const existingContent = existsSync(filePath) ? readFileSync(filePath, 'utf-8') : '';
 
+        // Inject engine rules if this is a global injection and agentDir is available
+        let contentWithEngineRules = existingContent;
+        if (isGlobal && config.agentDir) {
+          const enginePath = join(config.agentDir, 'instructions', '_engine.md');
+          if (existsSync(enginePath)) {
+            const engineRulesContent = readFileSync(enginePath, 'utf-8');
+            contentWithEngineRules = injectEngineRulesBlock(existingContent, engineRulesContent);
+          }
+        }
+
         // Build injection content
         const injectionContent = buildInjectionContent(config, { includeIntegration });
 
         // Check if already injected
-        if (hasSections(existingContent, config.agentId)) {
+        if (hasSections(contentWithEngineRules, config.agentId)) {
           // Update existing sections
-          const stripped = removeSections(existingContent, config.agentId);
+          const stripped = removeSections(contentWithEngineRules, config.agentId);
           const updated = injectAtPosition(stripped, injectionContent, position);
 
           if (dryRun) {
@@ -310,8 +321,8 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
 
         // New injection
         let result: string;
-        if (existingContent) {
-          result = injectAtPosition(existingContent, injectionContent, position);
+        if (contentWithEngineRules) {
+          result = injectAtPosition(contentWithEngineRules, injectionContent, position);
         } else {
           // Create new file with title
           const projectName = projectPath.split('/').pop() ?? 'Project';

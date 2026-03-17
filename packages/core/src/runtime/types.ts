@@ -51,6 +51,8 @@ export interface AgentRuntimeConfig {
   sharedVaultPath?: string;
   /** Enable Cognee vector search integration. Default: false (opt-in). */
   cognee?: boolean;
+  /** Path to the agent's root directory (containing agent.yaml, instructions/, etc.). Optional — set by engine binary. */
+  agentDir?: string;
 }
 
 /**

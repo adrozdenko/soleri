@@ -190,6 +190,34 @@ export function buildInjectionContent(
   return wrapInMarkers(config.agentId, sections.join('\n\n'));
 }
 
+// ─── Engine Rules ────────────────────────────────────────────────────
+
+const ENGINE_RULES_START = '<!-- soleri:engine-rules -->';
+const ENGINE_RULES_END = '<!-- /soleri:engine-rules -->';
+
+/**
+ * Check if engine rules are present in content.
+ */
+export function hasEngineRules(content: string): boolean {
+  return content.includes(ENGINE_RULES_START) && content.includes(ENGINE_RULES_END);
+}
+
+/**
+ * Inject or update engine rules in content.
+ */
+export function injectEngineRulesBlock(content: string, engineRulesContent: string): string {
+  if (hasEngineRules(content)) {
+    // Replace existing
+    const startIdx = content.indexOf(ENGINE_RULES_START);
+    const endIdx = content.indexOf(ENGINE_RULES_END);
+    const before = content.slice(0, startIdx);
+    const after = content.slice(endIdx + ENGINE_RULES_END.length);
+    return before + engineRulesContent + after;
+  }
+  // Append
+  return content.trimEnd() + '\n\n' + engineRulesContent + '\n';
+}
+
 /**
  * Extract facade summaries from an ops array (for tools table generation).
  */
