@@ -31,7 +31,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@soleri/cli": "^1.4.0"
+    "@soleri/cli": "^8.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
