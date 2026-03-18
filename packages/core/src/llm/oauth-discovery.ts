@@ -43,24 +43,6 @@ export function discoverAnthropicToken(): string | null {
   return token;
 }
 
-/**
- * Clear the cached token (for testing or rotation).
- */
-export function resetTokenCache(): void {
-  cachedToken = null;
-  cacheTimestamp = 0;
-}
-
-/**
- * Get discovery source info (for diagnostics).
- */
-export function getTokenSource(): string {
-  if (process.env.ANTHROPIC_API_KEY) return 'env:ANTHROPIC_API_KEY';
-  if (tryCredentialsFile()) return 'file:credentials';
-  if (tryPlatformKeychain()) return `keychain:${platform()}`;
-  return 'none';
-}
-
 // ─── Discovery Methods ───────────────────────────────────────────────
 
 function tryEnvVar(): string | null {

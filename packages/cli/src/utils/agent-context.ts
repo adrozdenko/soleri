@@ -65,11 +65,3 @@ export function detectAgent(dir?: string): AgentContext | null {
     return null;
   }
 }
-
-/**
- * Detect a file-tree agent specifically (agent.yaml only).
- */
-export function detectFileTreeAgent(dir?: string): AgentContext | null {
-  const ctx = detectAgent(dir);
-  return ctx?.format === 'filetree' ? ctx : null;
-}

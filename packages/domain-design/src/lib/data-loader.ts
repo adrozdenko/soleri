@@ -21,7 +21,7 @@ function loadJson<T>(filename: string, fallback: T): T {
   }
 }
 
-export function getDesignData(): Record<string, unknown> {
+function getDesignData(): Record<string, unknown> {
   if (cache) return cache;
 
   cache = {
