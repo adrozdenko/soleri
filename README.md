@@ -90,6 +90,17 @@ Two layers, cleanly separated:
 - **Domain Packs** — Pluggable expertise modules (`@soleri/domain-design`, `@soleri/domain-component`, etc.). Add capabilities without code changes.
 - **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys. Optional Cognee integration adds vector embeddings and knowledge graph.
 
+### Persistence
+
+Soleri uses **SQLite** (via [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)) as its sole storage engine. This is a deliberate architectural choice:
+
+- **FTS5** for full-text search with BM25 ranking — no external search service needed
+- **WAL mode** for concurrent reads during writes
+- **Zero ops** — no database server to provision, no connection strings to manage
+- **Tested at scale** — 10K vault entries with sub-50ms FTS search (see `vault-scaling.test.ts`)
+
+The `PersistenceProvider` interface exists for future extensibility, but SQLite is the only implemented and tested backend.
+
 ### Packages
 
 | Package | Description |

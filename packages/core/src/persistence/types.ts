@@ -35,7 +35,7 @@ export interface PersistenceProvider {
   transaction<T>(fn: () => T): T;
 
   /** Identifies the backend engine. */
-  readonly backend: 'sqlite' | 'postgres';
+  readonly backend: 'sqlite';
 
   /** Full-text search abstraction. */
   ftsSearch<T = Record<string, unknown>>(
@@ -52,12 +52,8 @@ export interface PersistenceProvider {
 }
 
 export interface PersistenceConfig {
-  type: 'sqlite' | 'postgres';
+  type: 'sqlite';
   path: string;
-  /** PostgreSQL connection string. */
-  connectionString?: string;
-  /** PostgreSQL pool size. */
-  poolSize?: number;
 }
 
 export interface FtsSearchOptions {

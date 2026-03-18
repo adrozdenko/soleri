@@ -541,7 +541,6 @@ export type {
 
 // ─── Persistence ───────────────────────────────────────────────────────
 export { SQLitePersistenceProvider } from './persistence/index.js';
-export { PostgresPersistenceProvider, translateSql } from './persistence/index.js';
 export type {
   PersistenceProvider,
   PersistenceParams,
