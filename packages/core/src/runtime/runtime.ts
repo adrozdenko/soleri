@@ -46,6 +46,8 @@ import { KnowledgeSynthesizer } from '../brain/knowledge-synthesizer.js';
 import { ChainRunner } from '../flows/chain-runner.js';
 import { JobQueue } from '../queue/job-queue.js';
 import { PipelineRunner } from '../queue/pipeline-runner.js';
+import { evaluateQuality } from '../curator/quality-gate.js';
+import { classifyEntry } from '../curator/classifier.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -276,6 +278,16 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
           return { linked: suggestions.length };
         }
         return { skipped: true, reason: 'link manager not available' };
+      });
+      pr.registerHandler('quality-gate', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        return evaluateQuality(entry, llmClient);
+      });
+      pr.registerHandler('classify', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        return classifyEntry(entry, llmClient);
       });
       return pr;
     })(),
