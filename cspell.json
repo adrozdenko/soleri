@@ -78,6 +78,7 @@
     "falkordb",
     "chunker",
     "clippy",
+    "zettelkasten",
     "mypy",
     "pyproject",
     "pipenv",
