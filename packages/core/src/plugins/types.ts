@@ -1,9 +1,12 @@
 /**
  * Plugin System — Types & Manifest Schema
  *
- * A plugin is a directory containing a `soleri-plugin.json` manifest
- * and optionally additional intelligence data. Plugins register
- * OpDefinition[] (facades) dynamically without re-scaffolding.
+ * @deprecated Prefer knowledge packs (`soleri-pack.json`) over plugins (`soleri-plugin.json`).
+ * Knowledge packs are a superset of plugins — they support facades, vault entries, skills,
+ * hooks, and capability declarations. Plugins only support facades and intelligence entries.
+ *
+ * This module is maintained for backwards compatibility. New extensions should use
+ * the pack system in `../packs/`. See docs/architecture/extension-tiers.md.
  */
 
 import { z } from 'zod';

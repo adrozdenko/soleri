@@ -87,7 +87,7 @@ Two layers, cleanly separated:
 
 - **Agent Folder** — Plain files (YAML, Markdown, JSON). your AI editor reads them natively. No code generation, no compilation.
 - **Knowledge Engine (`@soleri/core`)** — Persistent state for all agents. Vault (SQLite + FTS5), Brain (hybrid TF-IDF + optional Cognee vector search), Planner (state machine), Curator (dedup, grooming), and cross-project memory.
-- **Domain Packs** — Pluggable expertise modules (`@soleri/domain-design`, `@soleri/domain-component`, etc.). Add capabilities without code changes.
+- **Extensions** — Two tiers: **Domain Packs** (npm packages like `@soleri/domain-design`) for published intelligence, and **Local Packs** (project directories with `soleri-pack.json`) for project-specific knowledge, skills, and hooks. All extensions receive a narrowed `PackRuntime` (vault + projects + session checks).
 - **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys. Optional Cognee integration adds vector embeddings and knowledge graph.
 
 ### Persistence
