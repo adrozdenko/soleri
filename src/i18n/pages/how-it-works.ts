@@ -6,136 +6,129 @@ const content: Record<Locale, HowItWorksContent> = {
   en: {
     title: 'How It Works - Soleri',
     description:
-      "Your expertise evaporates between sessions. Soleri builds a second brain that remembers, learns, and compounds knowledge over time.",
-    eyebrow: 'Your expertise evaporates between sessions',
-    heroTitle: "How your second brain works.",
+      'Soleri pairs a file-tree agent with a persistent knowledge engine so your assistant can keep context across sessions and projects.',
+    eyebrow: 'A file-tree agent with a persistent knowledge engine',
+    heroTitle: 'How Soleri stays useful after day one.',
     heroSubtitle:
-      'A vault for long-term memory, a brain that learns what works, and intelligence that compounds across every session and project.',
+      'The folder is the shell. The engine is the brain. Vaults, playbooks, and linked projects give the agent context it can reuse instead of relearn.',
     archLayers: [
       {
         name: 'Agent Folder',
-        desc: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Your AI editor reads them natively. No TypeScript, no build step.',
-      },
-      {
-        name: 'Domain Packs',
-        desc: 'Pluggable expertise modules. Add design system science, code review, or custom domains without changing the agent folder.',
+        desc: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Your editor reads them directly. No generated TypeScript, no build step.',
       },
       {
         name: 'Knowledge Engine',
-        desc: 'Single MCP server (<code>@soleri/core</code>). Vault, Brain, Curator, Planner, Memory, Agency, Learning Radar. 270+ ops. Persistent state, learning, and proactive suggestions. Auto-discovers Claude Code OAuth for free Anthropic API.',
+        desc: 'A persistent engine keeps the vault, playbooks, session briefings, and learning state available across sessions.',
+      },
+      {
+        name: 'Connected Vaults',
+        desc: 'Keep personal knowledge local and connect shared project or team vaults only where they add value.',
       },
       {
         name: 'Transports',
-        desc: 'MCP (stdio) for any AI coding editor. HTTP/SSE for dashboards. WebSocket for streaming. Telegram for conversational access.',
+        desc: 'MCP is the default path for coding editors. HTTP/SSE and WebSocket transports are available in core for other integrations.',
       },
     ],
     vault: {
-      title: 'Knowledge that compounds',
-      text: "Without a vault, every session starts from scratch. Soleri stores every pattern, anti-pattern, and decision in a searchable vault. Ask a question \u2014 get your team's answer, not a generic one.",
-      keyPoint: 'Patterns, anti-patterns, and session memories \u2014 all searchable.',
-      code1: `<span class="cmt"># Vault entry structure</span>
-<span class="key">id:</span> <span class="val">pattern-semantic-tokens</span>
-<span class="key">type:</span> <span class="val">pattern</span>
-<span class="key">content:</span> <span class="val">Always use semantic tokens</span>
-<span class="key">context:</span>
-  <span class="key">domain:</span> <span class="val">design-systems</span>
-  <span class="key">confidence:</span> <span class="val">0.94</span>
-  <span class="key">sessions:</span> <span class="val">12</span>
-<span class="key">tags:</span> <span class="val">[tokens, css, tailwind]</span>`,
-      code2: `<span class="cmt"># Two-pass search: scan first, load what matters</span>
-<span class="prompt">op:</span> <span class="cmd">search</span> <span class="arg">{ query: "button styling", mode: "scan" }</span>
+      title: 'A searchable vault, not a pile of notes',
+      text: 'Patterns, rules, and playbooks live in the vault. Search can scan lightly first, then load full entries only when they are actually relevant.',
+      keyPoint: 'Store what matters. Load only what matters right now.',
+      code1: `<span class="cmt"># Example vault entry</span>
+<span class="key">id:</span> <span class="val">api-error-format</span>
+<span class="key">type:</span> <span class="val">rule</span>
+<span class="key">domain:</span> <span class="val">backend</span>
+<span class="key">title:</span> <span class="val">Consistent API error shape</span>
+<span class="key">description:</span> <span class="val">Return { error, code, details } for user-facing failures</span>
+<span class="key">tags:</span> <span class="val">[api, errors, backend]</span>`,
+      code2: `<span class="cmt"># Two-pass retrieval</span>
+<span class="prompt">op:</span> <span class="cmd">search</span> <span class="arg">{ query: "release checklist", mode: "scan" }</span>
 
-<span class="ok">3 matches (scan — titles + scores only):</span>
-  <span class="val">pattern-semantic-tokens</span>  <span class="cmt">score: 0.94</span>  <span class="cmt">~120 tokens</span>
-  <span class="val">pattern-button-sizes</span>    <span class="cmt">score: 0.87</span>  <span class="cmt">~85 tokens</span>
-  <span class="val">anti-pattern-inline</span>     <span class="cmt">score: 0.91</span>  <span class="cmt">~60 tokens</span>
+<span class="ok">2 matches:</span>
+  <span class="val">playbook-release-checklist</span>  <span class="cmt">score: 0.93</span>
+  <span class="val">rule-api-error-format</span>       <span class="cmt">score: 0.81</span>
 
-<span class="prompt">op:</span> <span class="cmd">load_entries</span> <span class="arg">{ ids: ["pattern-semantic-tokens"] }</span>
-<span class="ok">✓ Full entry loaded — 60-80% context saved</span>`,
+<span class="prompt">op:</span> <span class="cmd">load_entries</span> <span class="arg">{ ids: ["playbook-release-checklist"] }</span>
+<span class="ok">✓</span> Loaded the full playbook only after the scan`,
     },
     brain: {
-      title: 'Gets sharper with every session',
-      text: "Manual knowledge curation doesn't scale. The Learning Radar detects patterns from your corrections, search misses, and workarounds — captures silently or queues for review. Confidence grows automatically.",
-      keyPoint: 'Learning Radar: ambient detection, no manual tagging.',
-      code: `<span class="cmt"># Brain strengths output</span>
-<span class="prompt">$</span> <span class="cmd">soleri brain</span> <span class="arg">strengths</span>
+      title: 'Recommendations improve with use',
+      text: 'The brain tracks feedback, pattern strength, and recent sessions. That lets Soleri brief the agent at session start and rank what has actually worked for you.',
+      keyPoint: 'Feedback, strengths, and session briefings are first-class ops.',
+      code: `<span class="cmt"># Start a session with context</span>
+<span class="prompt">op:</span> <span class="cmd">session_briefing</span> <span class="arg">{}</span>
 
-<span class="ok">Top patterns (last 7 days):</span>
-  semantic-tokens    <span class="val">strength: 94</span>  <span class="cmt">12 sessions</span>
-  component-structure <span class="val">strength: 87</span>  <span class="cmt">8 sessions</span>
-  error-boundaries   <span class="val">strength: 82</span>  <span class="cmt">6 sessions</span>
-  a11y-focus-rings   <span class="val">strength: 78</span>  <span class="cmt">5 sessions</span>
-  zustand-patterns   <span class="val">strength: 71</span>  <span class="cmt">4 sessions</span>`,
+<span class="ok">recent_captures:</span> 3
+<span class="ok">active_plans:</span> 1
+<span class="ok">recommendations:</span>
+  semantic-tokens       <span class="cmt">strength: 94</span>
+  api-error-format      <span class="cmt">strength: 87</span>
+
+<span class="prompt">op:</span> <span class="cmd">brain_strengths</span> <span class="arg">{ limit: 3 }</span>`,
     },
     lifecycle: {
-      title: 'Knowledge that grows \u2014 and stays sharp',
-      text: 'Patterns flow through a four-step lifecycle. The engine watches your work, captures what sticks, and compounds it over time.',
-      keyPoint: "Your vault doesn't decay \u2014 it sharpens. The brain tracks what works.",
+      title: 'Knowledge can be captured, reviewed, and reused',
+      text: 'Some knowledge is added directly. Some comes from feedback, proposals, or the radar queue. The goal is not to store everything; it is to keep what keeps helping.',
+      keyPoint: 'Soleri supports both explicit capture and review-driven learning.',
       steps: [
         {
           label: 'Capture',
-          desc: 'Engine notices repeated corrections, suggests patterns',
+          desc: 'Add a rule, pattern, or playbook directly when it is clearly useful',
           color: 'amber' as const,
         },
         {
-          label: 'Store',
-          desc: 'Patterns, anti-patterns, session memories enter the vault',
+          label: 'Review',
+          desc: 'Use governance or radar queues when the signal needs human confirmation',
           color: 'teal' as const,
         },
         {
-          label: 'Strengthen',
-          desc: 'Confidence scores track how often patterns succeed',
+          label: 'Apply',
+          desc: 'Search, match, and reuse the entry in future sessions or linked projects',
           color: 'green' as const,
         },
         {
-          label: 'Compound',
-          desc: 'High-confidence patterns surface first, weak ones flagged',
+          label: 'Strengthen',
+          desc: 'Feedback and usage increase confidence in the patterns that keep working',
           color: 'amber' as const,
         },
       ],
-      code1: `<span class="cmt"># Session 3 \u2014 engine notices a pattern</span>
-<span class="warn">!</span> You've corrected <span class="val">bg-blue-500</span> \u2192 <span class="ok">bg-primary</span> 3 times.
-  Capture as pattern? <span class="key">[y/n]</span>
-
-<span class="prompt">$</span> <span class="cmd">y</span>
-
-<span class="ok">\u2713</span> Captured: <span class="val">semantic-token-enforcement</span>
-<span class="ok">\u2713</span> Confidence: <span class="val">0.85</span> <span class="cmt">(will increase with use)</span>`,
-      code2: `<span class="cmt"># Vault entry with lifecycle metadata</span>
-<span class="key">id:</span> <span class="val">pattern-semantic-token-enforcement</span>
-<span class="key">type:</span> <span class="val">pattern</span>
-<span class="key">content:</span> <span class="val">Replace raw Tailwind colors with semantic tokens</span>
-<span class="key">confidence:</span> <span class="val">0.91</span>           <span class="cmt"># strengthened over 8 sessions</span>
-<span class="key">sessions:</span> <span class="val">8</span>
-<span class="key">last_applied:</span> <span class="val">2 hours ago</span>
-<span class="key">status:</span> <span class="ok">compounding</span>      <span class="cmt"># surfaces first in search</span>`,
+      code1: `<span class="cmt"># Explicit capture</span>
+<span class="prompt">op:</span> <span class="cmd">capture_enriched</span> <span class="arg">{
+  title: "Route-level error boundaries",
+  description: "Use route-level boundaries for dashboard pages",
+  type: "pattern",
+  domain: "frontend"
+}</span>`,
+      code2: `<span class="cmt"># Review and strengthen</span>
+<span class="prompt">op:</span> <span class="cmd">radar_candidates</span> <span class="arg">{}</span>
+<span class="prompt">op:</span> <span class="cmd">brain_feedback</span> <span class="arg">{
+  query: "dashboard error handling",
+  entryId: "route-level-error-boundaries",
+  action: "accepted"
+}</span>`,
     },
     transport: {
-      title: 'Not locked to any editor',
-      text: "Your knowledge shouldn't be trapped in one tool. The Knowledge Engine runs as a single MCP server. Multiple transports connect to it \u2014 no lock-in.",
-      keyPoint: 'One engine, many transports.',
+      title: 'The same brain can serve multiple clients',
+      text: 'MCP is the default path for coding editors. The core also exposes HTTP/SSE and WebSocket transports for dashboards, APIs, or streaming integrations.',
+      keyPoint: 'Editor-friendly by default, without locking the engine to one client.',
       code: `<span class="key">my-agent/</span>           <span class="cmt"># your agent folder</span>
 \u251C\u2500\u2500 <span class="ok">agent.yaml</span>       <span class="cmt"># identity + config</span>
-\u251C\u2500\u2500 <span class="key">instructions/</span>    <span class="cmt"># behavioral rules</span>
-\u2514\u2500\u2500 .mcp.json        <span class="cmt"># connects to engine</span>
+\u251C\u2500\u2500 <span class="key">instructions/</span>    <span class="cmt"># rules and behavior</span>
+\u2514\u2500\u2500 .mcp.json        <span class="cmt"># engine connection</span>
 
-<span class="key">@soleri/core</span>        <span class="cmt"># Knowledge Engine</span>
-\u251C\u2500\u2500 <span class="ok">MCP (stdio)</span>    <span class="cmt"># any MCP-compatible editor</span>
-\u251C\u2500\u2500 HTTP/SSE       <span class="cmt"># dashboards, APIs</span>
-\u2514\u2500\u2500 WebSocket      <span class="cmt"># streaming, Telegram</span>`,
+<span class="key">@soleri/core</span>        <span class="cmt"># knowledge engine</span>
+\u251C\u2500\u2500 <span class="ok">MCP (stdio)</span>    <span class="cmt"># coding editors</span>
+\u251C\u2500\u2500 HTTP/SSE       <span class="cmt"># APIs, dashboards</span>
+\u2514\u2500\u2500 WebSocket      <span class="cmt"># streaming integrations</span>`,
     },
     llm: {
-      title: 'Works with Claude Code out of the box',
-      text: "Core features (vault, search, brain) work offline. For LLM-powered features (quality gate, synthesis, classification), the engine auto-discovers your Claude Code OAuth token — no API key setup needed. macOS and Linux supported.",
-      keyPoint: 'Free Anthropic API via Claude Code. No keys to configure.',
-      code: `<span class="cmt"># No configuration needed — auto-discovered</span>
-<span class="ok">✓</span> OAuth token found via Claude Code
-<span class="ok">✓</span> Anthropic API available (free with subscription)
-<span class="ok">✓</span> Model routing: Haiku for routine, Sonnet for reasoning
+      title: 'LLM features stay optional',
+      text: 'Vault search and core persistence work without extra model setup. On supported setups, Soleri can auto-discover a Claude Code token for LLM-powered features such as synthesis and enrichment.',
+      keyPoint: 'Core knowledge features first. LLM-powered helpers when available.',
+      code: `<span class="cmt"># Provider status</span>
+<span class="prompt">op:</span> <span class="cmd">llm_status</span> <span class="arg">{}</span>
 
-<span class="cmt"># Or bring your own key:</span>
-<span class="key">ANTHROPIC_API_KEY=</span><span class="val">sk-ant-...</span>
-<span class="key">OPENAI_API_KEY=</span><span class="val">sk-...</span>`,
+<span class="ok">anthropic:</span> available when Claude Code token is present
+<span class="ok">openai:</span> available when API key is configured`,
     },
   },
   uk: {

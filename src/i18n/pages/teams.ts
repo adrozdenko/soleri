@@ -102,146 +102,141 @@ const content: Record<Locale, TeamsContent> = {
     meta: {
       title: 'Teams & Ops - Soleri',
       description:
-        "Tribal knowledge doesn't scale. Soleri connects team vaults, knowledge packs, and playbooks so codified knowledge compounds across projects.",
+        'Give each teammate a personal agent while sharing project and team knowledge through linked vaults, playbooks, and packs.',
     },
     hero: {
-      eyebrow: "Tribal knowledge doesn't scale. Codified knowledge does.",
-      title: "When knowledge lives in people's heads, it leaves with them.",
+      eyebrow: 'Personal agents, shared knowledge when it helps.',
+      title: 'Give each teammate one agent, not a custom stack.',
       subtitle:
-        'Connected vaults, knowledge packs, and playbooks turn team expertise into compounding infrastructure.',
+        'Soleri keeps personal context local, lets you connect shared vaults and projects when needed, and makes reusable knowledge easier to ship.',
     },
     vaults: {
-      sectionTitle: 'Connect once, share everything',
-      heading: 'Three-tier vault model',
+      sectionTitle: 'Share knowledge without flattening everything',
+      heading: 'Personal vaults with optional shared sources',
       description:
-        'When projects hoard knowledge independently, teams re-learn the same lessons every time. The three-tier model fixes this: your agent keeps domain-organized knowledge in its vault. A shared project vault holds cross-cutting conventions. Connect a team vault to share across projects.',
-      keyPoint: 'Search priority: agent vault \u2192 project vault \u2192 team vault.',
+        'Each agent keeps its own context. When a project or team needs shared standards, connect extra vault sources and control their priority instead of forcing one global brain on everyone.',
+      keyPoint: 'Keep personal context local; plug shared sources in where they help.',
       flowSteps: [
         {
           num: '1',
           color: 'amber',
-          text: 'Agent vault \u2014 frontend, backend, cross-cutting domains',
+          text: 'Personal vault \u2014 your preferences, notes, and recurring fixes',
         },
-        { num: '2', color: 'teal', text: 'Project vault \u2014 team conventions, decisions' },
-        { num: '3', color: 'green', text: 'Team vault \u2014 shared across all projects' },
+        { num: '2', color: 'teal', text: 'Project source \u2014 local rules and shared playbooks' },
+        { num: '3', color: 'green', text: 'Team source \u2014 standards reused across repos' },
       ],
-      code1Comment: '# Connect a team vault',
-      code1Output: `<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">connect git@github.com:team/design-vault.git</span>
+      code1Comment: '# Connect a shared source',
+      code1Output: `<span class="prompt">op:</span> <span class="cmd">vault_connect_source</span> <span class="arg">{
+  name: "team-standards",
+  path: "/vaults/team-standards.db",
+  priority: 0.6
+}</span>
 
-<span class="ok">\u2713</span> Connected team vault      <span class="val">142 entries</span>
-<span class="ok">\u2713</span> Merged search index
-<span class="ok">\u2713</span> Priority: agent \u2192 project \u2192 team`,
-      code2Comment: '# Promote a pattern to the team vault',
-      code2Output: `<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">promote pattern-semantic-tokens \\
-  --target team</span>
+<span class="ok">\u2713</span> connected: <span class="val">team-standards</span>
+<span class="ok">\u2713</span> priority: <span class="val">0.6</span>`,
+      code2Comment: '# Inspect connected sources',
+      code2Output: `<span class="prompt">op:</span> <span class="cmd">vault_list_sources</span> <span class="arg">{}</span>
 
-<span class="ok">\u2713</span> Promoted to team vault
-<span class="ok">\u2713</span> Available to all team members`,
+<span class="ok">sources:</span>
+  team-standards   <span class="cmt">priority: 0.6</span>
+  release-playbooks <span class="cmt">priority: 0.5</span>`,
     },
     crossProject: {
-      sectionTitle: 'Patterns compound across projects',
-      heading: 'Link projects, share patterns',
+      sectionTitle: 'Share context across repos',
+      heading: 'Link projects instead of copying rules by hand',
       description:
-        'Link projects as related, parent/child, or fork. When you search your vault, linked projects are included automatically with weighted relevance.',
-      keyPoint: 'Patterns learned in project A are available in project B.',
-      code1Comment: '# Link related projects',
-      code1Output: `<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">link /project-a /project-b \\
-  --type related</span>
+        'Register related repos, link them, and search across project memories when the work overlaps. Promote proven entries to the global pool when they should surface everywhere.',
+      keyPoint: 'Cross-project memory works through explicit links, not vague magic.',
+      code1Comment: '# Link two related projects',
+      code1Output: `<span class="prompt">op:</span> <span class="cmd">project_link</span> <span class="arg">{
+  sourceId: "web-app",
+  targetId: "design-system",
+  linkType: "related"
+}</span>
 
-<span class="ok">\u2713</span> Projects linked (bidirectional)
-<span class="ok">\u2713</span> Cross-project search enabled`,
-      code2Comment: '# agent.yaml \u2014 vault config',
-      code2Yaml: `<span class="key">vault:</span>
-  <span class="key">backends:</span>
-    - <span class="key">type:</span> <span class="val">local</span>
-      <span class="key">path:</span> <span class="val">~/.soleri/vaults/my-agent</span>
-    - <span class="key">type:</span> <span class="val">git</span>
-      <span class="key">uri:</span>  <span class="val">git@github.com:team/vault.git</span>
-      <span class="key">sync:</span> <span class="val">on-start</span>
-      <span class="key">push:</span> <span class="val">on-promote</span>`,
+<span class="ok">\u2713</span> linked: <span class="val">web-app \u2192 design-system</span>`,
+      code2Comment: '# Search across linked project memory',
+      code2Yaml: `<span class="prompt">op:</span> <span class="cmd">memory_cross_project_search</span> <span class="arg">{
+  query: "release checklist",
+  projectPath: "/workspace/web-app",
+  limit: 5
+}</span>
+
+<span class="ok">current:</span> 2
+<span class="ok">global:</span> 1
+<span class="ok">linked:</span> 3`,
     },
     packs: {
-      sectionTitle: 'Install expertise in one command',
-      heading: 'Three tiers of knowledge packs',
+      sectionTitle: 'Ship reusable knowledge',
+      heading: 'Packs add shared capability without cloning every agent',
       description:
-        'Packs are npm packages you snap into any agent. They add patterns, anti-patterns, and domain rules to your vault instantly.',
-      tableHeaders: ['Tier', 'Source', 'Price'],
+        'Use packs for reusable knowledge, skills, hooks, or domain-specific logic. The CLI supports built-in, local, and npm-sourced packs.',
+      tableHeaders: ['Type', 'Source', 'Typical use'],
       rows: [
-        { tierLabel: 'Starter', tierClass: 'free', source: 'Ships with each agent', price: 'Free' },
-        { tierLabel: 'Community', tierClass: 'free', source: 'npm registry', price: 'Free' },
-        { tierLabel: 'Premium', tierClass: 'paid', source: 'Subscription', price: 'Paid' },
+        { tierLabel: 'Built-in', tierClass: 'free', source: 'Installed with the agent', price: 'Default playbooks and core setup' },
+        { tierLabel: 'Local', tierClass: 'free', source: 'Path on disk', price: 'Team standards or private experiments' },
+        { tierLabel: 'npm', tierClass: 'paid', source: 'Registry package', price: 'Versioned reusable packs' },
       ],
-      code1Comment: '# Install a community pack',
-      code1Output: `<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">install community/react-patterns</span>
+      code1Comment: '# List installed packs',
+      code1Output: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli pack list</span>
 
-<span class="ok">\u2713</span> Installed react-patterns  <span class="val">v0.3.0</span>
-<span class="ok">\u2713</span> Added 28 patterns to vault
-<span class="ok">\u2713</span> Added 6 anti-patterns`,
-      code2Comment: '# Sync premium packs',
-      code2Output: `<span class="prompt">$</span> <span class="cmd">soleri packs</span> <span class="arg">sync</span>
+<span class="ok">2 pack(s) installed:</span>
+  team-standards@0.2.0  <span class="cmt">knowledge</span>
+  review-hooks@1.1.0    <span class="cmt">hooks</span>`,
+      code2Comment: '# Install from a team path',
+      code2Output: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli pack install</span> <span class="arg">../team-standards</span>
 
-<span class="ok">\u2713</span> enterprise/compliance    <span class="val">v2.3.1</span>  <span class="cmt">updated</span>
-<span class="ok">\u2713</span> enterprise/perf-audit    <span class="val">v1.8.0</span>  <span class="cmt">up to date</span>
-  enterprise/security-pro  <span class="val">v3.0.0</span>  <span class="warn">major update</span>`,
+<span class="ok">\u2713</span> Installed team-standards@0.2.0 <span class="cmt">(knowledge)</span>
+<span class="ok">\u2713</span> Contents: 18 vault entries, 2 skills`,
     },
     playbooks: {
-      sectionTitle: "Codify your team's workflows",
-      heading: 'Patterns tell you what. Playbooks tell you how.',
+      sectionTitle: 'Turn routines into repeatable workflows',
+      heading: 'Playbooks capture the steps, gates, and expected outcome',
       description1:
-        'Playbooks are validated multi-step procedures stored in your vault. They capture the full workflow \u2014 not just a rule, but the sequence, the expected outcomes, and the validation criteria.',
+        'Playbooks are structured workflows. They are how a team turns recurring work into something the agent can match, start, and step through consistently.',
       description2:
-        "Examples: migrating tokens across a codebase, setting up a new component from scratch, debugging a contrast failure. Each step includes what to check and when you're done.",
+        'Examples: code review, debugging, release checks, or onboarding. You keep the process, the validation gates, and the next step in one place.',
       keyPoint: 'Repeatable workflows, not tribal knowledge.',
-      code1Comment: '# List available playbooks',
-      code1Output: `<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">list-playbooks --category design</span>
+      code1Comment: '# Match a playbook for a task',
+      code1Output: `<span class="prompt">op:</span> <span class="cmd">playbook_match</span> <span class="arg">{
+  intent: "REVIEW",
+  text: "Review a React PR for accessibility regressions"
+}</span>
 
-<span class="ok">Found 4 playbooks:</span>
-  <span class="val">design:component-setup</span>     <span class="cmt">7 steps</span>
-  <span class="val">design:token-migration</span>     <span class="cmt">5 steps</span>
-  <span class="val">design:contrast-audit</span>      <span class="cmt">4 steps</span>
-  <span class="val">design:theme-scaffolding</span>   <span class="cmt">6 steps</span>`,
-      code2Comment: '# Playbook structure',
-      code2Yaml: `<span class="key">id:</span> <span class="val">design:component-setup</span>
+<span class="ok">\u2713</span> matched: <span class="val">code-review</span>`,
+      code2Comment: '# Structured playbook data',
+      code2Yaml: `<span class="key">id:</span> <span class="val">release-checklist</span>
 <span class="key">type:</span> <span class="val">playbook</span>
 <span class="key">steps:</span>
-  - <span class="key">name:</span> <span class="val">Scaffold component files</span>
-    <span class="key">run:</span>  <span class="val">soleri create component $name</span>
-    <span class="key">validate:</span> <span class="val">files exist, exports present</span>
-  - <span class="key">name:</span> <span class="val">Apply token system</span>
-    <span class="key">run:</span>  <span class="val">soleri validate --fix</span>
-    <span class="key">validate:</span> <span class="val">token score >= 95</span>
-  - <span class="key">name:</span> <span class="val">Check accessibility</span>
-    <span class="key">run:</span>  <span class="val">soleri check-contrast</span>
-    <span class="key">validate:</span> <span class="val">all PASS</span>`,
-      code3Comment: '# Run a playbook',
-      code3Output: `<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">run-playbook design:component-setup \\
-  --name UserCard</span>
+  - <span class="key">name:</span> <span class="val">Run verification</span>
+    <span class="key">validate:</span> <span class="val">tests pass</span>
+  - <span class="key">name:</span> <span class="val">Review rollout notes</span>
+    <span class="key">validate:</span> <span class="val">changes documented</span>
+  - <span class="key">name:</span> <span class="val">Confirm deploy gate</span>
+    <span class="key">validate:</span> <span class="val">all checks green</span>`,
+      code3Comment: '# Start execution',
+      code3Output: `<span class="prompt">op:</span> <span class="cmd">playbook_start</span> <span class="arg">{ playbookId: "code-review" }</span>
 
-<span class="ok">Step 1/7:</span> Scaffold component files    <span class="ok">\u2713</span>
-<span class="ok">Step 2/7:</span> Apply token system          <span class="ok">\u2713</span>
-<span class="ok">Step 3/7:</span> Check accessibility         <span class="ok">\u2713</span>
-  <span class="cmt">... 4 more steps</span>`,
+<span class="ok">sessionId:</span> <span class="val">pbk_42</span>
+<span class="ok">step 1:</span> gather changed files
+<span class="ok">gates:</span> review scope, acceptance criteria`,
     },
     updates: {
-      sectionTitle: 'Four channels, zero breakage',
+      sectionTitle: 'Keep the shared core maintainable',
       tableHeaders: ['Layer', 'Update command', 'Scope'],
       rows: [
-        { layer: 'Engine', command: 'npm update soleri', scope: 'All agents' },
-        { layer: 'Domains', command: 'npm update @soleri/*', scope: 'Per domain' },
-        { layer: 'Agent', command: 'soleri update', scope: 'Config merge' },
-        { layer: 'Packs', command: 'soleri packs sync', scope: 'Per pack' },
+        { layer: 'CLI', command: 'npx @soleri/cli upgrade --check', scope: 'Check the installed CLI version' },
+        { layer: 'Packs', command: 'npx @soleri/cli pack outdated', scope: 'See npm pack updates' },
+        { layer: 'Packs', command: 'npx @soleri/cli pack update', scope: 'Update npm-sourced packs' },
+        { layer: 'Editor setup', command: 'npx @soleri/cli install --target all', scope: 'Refresh MCP registration across clients' },
       ],
-      footnote: 'Vault knowledge is never auto-updated \u2014 you own it.',
-      codeComment: '# Health check',
-      codeOutput: `<span class="prompt">$</span> <span class="cmd">soleri</span> <span class="arg">doctor</span>
+      footnote: 'Your vault data stays yours; tool and pack updates do not rewrite it for you.',
+      codeComment: '# Check and apply pack updates',
+      codeOutput: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli pack outdated</span>
+  review-rules  <span class="val">1.1.0 \u2192 1.2.0</span>
 
-<span class="ok">\u2713</span> Engine          <span class="val">v1.2.0</span>  <span class="cmt">up to date</span>
-<span class="ok">\u2713</span> domain-design   <span class="val">v0.8.0</span>  <span class="cmt">up to date</span>
-<span class="ok">\u2713</span> domain-security <span class="val">v0.6.0</span>  <span class="cmt">up to date</span>
-<span class="warn">!</span> domain-arch     <span class="val">v0.4.0</span>  <span class="warn">update available</span>
-<span class="ok">\u2713</span> my-agent        <span class="val">config ok</span>
-<span class="ok">\u2713</span> Vault           <span class="val">284 entries, healthy</span>
-<span class="ok">\u2713</span> Brain           <span class="val">12 patterns tracked</span>`,
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli pack update</span>
+<span class="ok">\u2713</span> Updated 1 pack(s)`,
     },
     telegram: {
       sectionTitle: 'Manage your infrastructure from a chat',
