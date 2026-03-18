@@ -71,10 +71,33 @@ const STOP_PATTERNS = new Set([
   'out-of-the-box',
 ]);
 
-// ─── Confidence Thresholds ──────────────────────────────────────────
+// ─── Scoring Constants (tunable) ────────────────────────────────────
 
+/** Confidence thresholds for discrete levels. */
 const HIGH_CONFIDENCE = 0.75;
 const MEDIUM_CONFIDENCE = 0.45;
+
+/** Weights for knowledge item multi-signal scoring. */
+const KNOWLEDGE_WEIGHTS = {
+  /** Base FTS/vector score weight. */
+  baseScore: 0.4,
+  /** Title keyword overlap weight. */
+  titleMatch: 0.25,
+  /** Tag overlap weight. */
+  tagOverlap: 0.2,
+  /** Intent/domain alignment weight. */
+  intentBoost: 0.15,
+};
+
+/** Weights for confidence computation. */
+const CONFIDENCE_WEIGHTS = {
+  entitySignalPerEntity: 0.08,
+  entitySignalMax: 0.4,
+  actionSignal: 0.2,
+  knowledgeSignalMultiplier: 0.3,
+  sourceDiversityPerExtra: 0.05,
+  sourceDiversityMax: 0.1,
+};
 
 // ─── Class ──────────────────────────────────────────────────────────
 
@@ -120,7 +143,13 @@ export class ContextEngine {
         if (seen.has(key)) continue;
         if (type === 'pattern' && STOP_PATTERNS.has(value)) continue;
         seen.add(key);
-        entities.push({ type, value, confidence });
+        entities.push({
+          type,
+          value,
+          confidence,
+          start: match.index,
+          end: match.index + match[0].length,
+        });
       }
     }
 
@@ -147,15 +176,31 @@ export class ContextEngine {
         domain,
         limit: this.config.vaultSearchLimit,
       });
-      // Normalize FTS5 -rank scores to 0-1 range
+      // Normalize FTS5 -rank scores to 0-1 range, then apply multi-signal scoring
       const maxScore = vaultResults.length > 0 ? Math.max(...vaultResults.map((r) => r.score)) : 1;
+      const promptTokens = new Set(
+        prompt
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((t) => t.length >= 3),
+      );
       for (const r of vaultResults) {
+        const baseScore = maxScore > 0 ? r.score / maxScore : 0.5;
+        const enrichedScore = scoreKnowledgeItem(
+          baseScore,
+          r.entry.title,
+          r.entry.tags,
+          promptTokens,
+          domain,
+          r.entry.domain,
+        );
         items.push({
           id: r.entry.id,
           title: r.entry.title,
-          score: maxScore > 0 ? r.score / maxScore : 0.5,
+          score: enrichedScore,
           source: 'vault',
           domain: r.entry.domain,
+          tags: r.entry.tags,
         });
         vaultHits++;
       }
@@ -252,25 +297,29 @@ export class ContextEngine {
   ): number {
     let score = 0;
 
-    // Entity signal (0-0.4): more entities = clearer prompt
+    // Entity signal: more entities = clearer prompt
     const entityCount = entities.entities.length;
-    const entitySignal = Math.min(0.4, entityCount * 0.08);
-    score += entitySignal;
+    score += Math.min(
+      CONFIDENCE_WEIGHTS.entitySignalMax,
+      entityCount * CONFIDENCE_WEIGHTS.entitySignalPerEntity,
+    );
 
-    // Action signal (0-0.2): explicit actions boost confidence
+    // Action signal: explicit actions boost confidence
     const actions = entities.byType.action ?? [];
-    if (actions.length > 0) score += 0.2;
+    if (actions.length > 0) score += CONFIDENCE_WEIGHTS.actionSignal;
 
-    // Knowledge signal (0-0.3): relevant knowledge found
+    // Knowledge signal: relevant knowledge found
     if (knowledge.items.length > 0) {
-      const topScore = knowledge.items[0].score;
-      score += topScore * 0.3;
+      score += knowledge.items[0].score * CONFIDENCE_WEIGHTS.knowledgeSignalMultiplier;
     }
 
-    // Source diversity bonus (0-0.1): multiple sources = more confident
+    // Source diversity bonus: multiple sources = more confident
     const sources = new Set(knowledge.items.map((i) => i.source));
-    if (sources.size >= 2) score += 0.05;
-    if (sources.size >= 3) score += 0.05;
+    const diversityBonus = Math.min(
+      CONFIDENCE_WEIGHTS.sourceDiversityMax,
+      Math.max(0, sources.size - 1) * CONFIDENCE_WEIGHTS.sourceDiversityPerExtra,
+    );
+    score += diversityBonus;
 
     return Math.min(1, score);
   }
@@ -299,4 +348,54 @@ export class ContextEngine {
 
     return [...domains];
   }
+}
+
+// ─── Multi-Signal Knowledge Scoring ─────────────────────────────────
+
+/**
+ * Score a knowledge item using multiple signals:
+ * - baseScore: FTS5 rank or vector similarity (0-1)
+ * - titleMatch: keyword overlap between prompt and entry title
+ * - tagOverlap: how many prompt tokens appear in entry tags
+ * - intentBoost: domain alignment between query domain and entry domain
+ */
+function scoreKnowledgeItem(
+  baseScore: number,
+  title: string,
+  tags: string[],
+  promptTokens: Set<string>,
+  queryDomain: string | undefined,
+  entryDomain: string | undefined,
+): number {
+  // Title match: fraction of prompt tokens found in title
+  const titleTokens = new Set(
+    title
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((t) => t.length >= 3),
+  );
+  let titleOverlap = 0;
+  for (const t of promptTokens) {
+    if (titleTokens.has(t)) titleOverlap++;
+  }
+  const titleMatch = promptTokens.size > 0 ? titleOverlap / promptTokens.size : 0;
+
+  // Tag overlap: fraction of tags that match prompt tokens
+  const lowerTags = tags.map((t) => t.toLowerCase());
+  let tagHits = 0;
+  for (const tag of lowerTags) {
+    if (promptTokens.has(tag)) tagHits++;
+  }
+  const tagOverlap = lowerTags.length > 0 ? tagHits / lowerTags.length : 0;
+
+  // Intent boost: 1.0 if domains match, 0.0 otherwise
+  const intentBoost = queryDomain && entryDomain && queryDomain === entryDomain ? 1.0 : 0.0;
+
+  return Math.min(
+    1.0,
+    baseScore * KNOWLEDGE_WEIGHTS.baseScore +
+      titleMatch * KNOWLEDGE_WEIGHTS.titleMatch +
+      tagOverlap * KNOWLEDGE_WEIGHTS.tagOverlap +
+      intentBoost * KNOWLEDGE_WEIGHTS.intentBoost,
+  );
 }

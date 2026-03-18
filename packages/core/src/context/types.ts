@@ -10,6 +10,10 @@ export interface ExtractedEntity {
   type: EntityType;
   value: string;
   confidence: number;
+  /** Start offset in the original prompt. */
+  start?: number;
+  /** End offset in the original prompt. */
+  end?: number;
 }
 
 export interface EntityExtractionResult {
@@ -25,6 +29,7 @@ export interface KnowledgeItem {
   score: number;
   source: 'vault' | 'cognee' | 'brain';
   domain?: string;
+  tags?: string[];
 }
 
 export interface KnowledgeRetrievalResult {
