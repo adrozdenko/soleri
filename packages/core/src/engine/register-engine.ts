@@ -75,7 +75,8 @@ interface ModuleDef {
   condition?: (runtime: AgentRuntime) => boolean;
 }
 
-const ENGINE_MODULES: ModuleDef[] = [
+/** @internal Exported for drift testing — do not use outside engine */
+export const ENGINE_MODULES: ModuleDef[] = [
   {
     suffix: 'vault',
     description: 'Knowledge management — search, CRUD, import/export, intake, archival.',
