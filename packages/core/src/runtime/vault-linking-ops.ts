@@ -328,13 +328,11 @@ export function createVaultLinkingOps(runtime: AgentRuntime): OpDefinition[] {
 
           try {
             const result = await llmClient.complete({
-              provider: llmClient.isAvailable().anthropic ? 'anthropic' : 'openai',
-              model: llmClient.isAvailable().anthropic ? 'claude-sonnet-4-20250514' : 'gpt-4o-mini',
               systemPrompt: EVAL_SYSTEM_PROMPT,
               userPrompt: pairsText,
               maxTokens: 2000,
-              caller: 'relink_vault',
-              task: 'link-evaluation',
+              caller: 'vault-linking',
+              task: 'evaluate-links',
             });
             llmCalls++;
 

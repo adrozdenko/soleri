@@ -60,8 +60,6 @@ export async function classifyChunk(
 ): Promise<ClassifiedItem[]> {
   try {
     const result = await llm.complete({
-      provider: 'openai',
-      model: 'gpt-4o-mini',
       systemPrompt: CLASSIFICATION_PROMPT,
       userPrompt: chunkText,
       maxTokens: 4096,

@@ -160,6 +160,8 @@ interface AnthropicClient {
   };
 }
 
+type ResolvedLLMOptions = LLMCallOptions & { model: string; provider: 'openai' | 'anthropic' };
+
 export class LLMClient {
   private openaiKeyPool: KeyPool;
   private anthropicKeyPool: KeyPool;
@@ -181,11 +183,15 @@ export class LLMClient {
 
   async complete(options: LLMCallOptions): Promise<LLMCallResult> {
     const routed = this.router.resolve(options.caller, options.task, options.model);
-    const resolvedOptions = { ...options, model: routed.model, provider: routed.provider };
+    const resolved: ResolvedLLMOptions = {
+      ...options,
+      model: options.model ?? routed.model,
+      provider: options.provider ?? routed.provider,
+    };
 
-    return resolvedOptions.provider === 'anthropic'
-      ? this.callAnthropic(resolvedOptions)
-      : this.callOpenAI(resolvedOptions);
+    return resolved.provider === 'anthropic'
+      ? this.callAnthropic(resolved)
+      : this.callOpenAI(resolved);
   }
 
   isAvailable(): { openai: boolean; anthropic: boolean } {
@@ -203,7 +209,7 @@ export class LLMClient {
   // OPENAI
   // ===========================================================================
 
-  private async callOpenAI(options: LLMCallOptions): Promise<LLMCallResult> {
+  private async callOpenAI(options: ResolvedLLMOptions): Promise<LLMCallResult> {
     const keyPool = this.openaiKeyPool.hasKeys ? this.openaiKeyPool : null;
 
     if (!keyPool) {
@@ -275,7 +281,7 @@ export class LLMClient {
   // ANTHROPIC
   // ===========================================================================
 
-  private async callAnthropic(options: LLMCallOptions): Promise<LLMCallResult> {
+  private async callAnthropic(options: ResolvedLLMOptions): Promise<LLMCallResult> {
     const client = await this.getAnthropicClient();
     if (!client) {
       throw new LLMError('Anthropic API key not configured', { retryable: false });

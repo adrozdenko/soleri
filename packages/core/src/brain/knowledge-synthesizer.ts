@@ -114,8 +114,6 @@ export class KnowledgeSynthesizer {
     let llmOutput: string;
     try {
       const result = await this.llm.complete({
-        provider: 'openai',
-        model: 'gpt-4o-mini',
         systemPrompt,
         userPrompt,
         temperature: 0.3,
