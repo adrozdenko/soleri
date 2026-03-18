@@ -19,6 +19,7 @@ import { LoopManager } from '../loop/loop-manager.js';
 import { IdentityManager } from '../control/identity-manager.js';
 import { IntentRouter } from '../control/intent-router.js';
 import { KeyPool, loadKeyPoolConfig } from '../llm/key-pool.js';
+import { discoverAnthropicToken } from '../llm/oauth-discovery.js';
 import { loadIntelligenceData } from '../intelligence/loader.js';
 import { LLMClient } from '../llm/llm-client.js';
 import { CogneeSyncManager } from '../cognee/sync-manager.js';
@@ -140,9 +141,15 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   }
 
   // LLM key pools and client
+  // Try OAuth token discovery for Anthropic (Claude Code subscription → free API access)
   const keyPoolFiles = loadKeyPoolConfig(agentId);
+  const oauthToken = discoverAnthropicToken();
+  const anthropicConfig = keyPoolFiles.anthropic;
+  if (oauthToken && anthropicConfig.keys.length === 0) {
+    anthropicConfig.keys.push(oauthToken);
+  }
   const openaiKeyPool = new KeyPool(keyPoolFiles.openai);
-  const anthropicKeyPool = new KeyPool(keyPoolFiles.anthropic);
+  const anthropicKeyPool = new KeyPool(anthropicConfig);
   const llmClient = new LLMClient(openaiKeyPool, anthropicKeyPool, agentId);
 
   // Cognee Sync Manager — queue-based dirty tracking with offline resilience (only when Cognee enabled)
