@@ -401,6 +401,47 @@ export function createVaultLinkingOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
     {
+      name: 'backfill_links',
+      description:
+        'Generate Zettelkasten links for orphan entries using FTS5 suggestions. One-time backfill for vaults with entries but no links.',
+      auth: 'write',
+      schema: z.object({
+        threshold: z.coerce
+          .number()
+          .min(0)
+          .max(1)
+          .default(0.7)
+          .describe('Min suggestion score to create link (default: 0.7)'),
+        maxLinks: z.coerce
+          .number()
+          .int()
+          .min(1)
+          .max(10)
+          .default(3)
+          .describe('Max links per entry (default: 3)'),
+        dryRun: z.boolean().optional().default(false).describe('Preview without creating links'),
+        batchSize: z.coerce
+          .number()
+          .int()
+          .min(1)
+          .max(200)
+          .default(50)
+          .describe('Entries per batch (default: 50)'),
+      }),
+      handler: async (params) => {
+        const result = linkManager.backfillLinks({
+          threshold: params.threshold as number,
+          maxLinks: params.maxLinks as number,
+          dryRun: params.dryRun as boolean,
+          batchSize: params.batchSize as number,
+        });
+        return {
+          ...result,
+          ...(result.preview ? { previewSample: result.preview.slice(0, 20) } : {}),
+        };
+      },
+    },
+    {
       name: 'link_stats',
       description:
         'Get Zettelkasten graph statistics: total links, by type, most connected, orphan count.',

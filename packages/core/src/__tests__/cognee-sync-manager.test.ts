@@ -90,10 +90,12 @@ describe('CogneeSyncManager', () => {
 
   it('drain should return 0 when Cognee is unavailable', async () => {
     runtime.vault.seed([testEntry]);
-    // In test env, Cognee is always unavailable (no server running)
-    const processed = await runtime.syncManager.drain();
-    expect(processed).toBe(0);
-  });
+    // In test env, Cognee is always unavailable (no server running).
+    // ensureHealthy does a real network call with 5s timeout, so allow extra time.
+    const result = await runtime.syncManager.drain();
+    expect(result.processed).toBe(0);
+    expect(result.reason).toBe('cognee_unavailable');
+  }, 15_000);
 
   it('contentHash should be deterministic', () => {
     const hash1 = CogneeSyncManager.contentHash(testEntry);

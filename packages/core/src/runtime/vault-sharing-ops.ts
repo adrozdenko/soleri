@@ -13,7 +13,12 @@ import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import { detectScope, type ScopeInput } from '../vault/scope-detector.js';
 import { GitVaultSync, type GitVaultSyncConfig } from '../vault/git-vault-sync.js';
-import type { IntelligenceEntry, IntelligenceBundle } from '../intelligence/types.js';
+import type {
+  IntelligenceEntry,
+  IntelligenceBundle,
+  IntelligenceBundleLink,
+} from '../intelligence/types.js';
+import { LinkManager } from '../vault/linking.js';
 
 export function createVaultSharingOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, knowledgeReview } = runtime;
@@ -147,10 +152,38 @@ export function createVaultSharingOps(runtime: AgentRuntime): OpDefinition[] {
           byDomain.get(d)!.push(entry);
         }
 
+        // Collect links for exported entries (Zettelkasten edge export)
+        const entryIds = new Set(entries.map((e) => e.id));
+        const linkManager = new LinkManager(vault.getProvider());
+        const allLinks = linkManager.getAllLinksForEntries([...entryIds]);
+        // Only include links where BOTH endpoints are in the export set
+        const exportLinks = allLinks.filter(
+          (l) => entryIds.has(l.sourceId) && entryIds.has(l.targetId),
+        );
+
+        // Build a domain→links map (group by source entry's domain)
+        const entryDomainMap = new Map(entries.map((e) => [e.id, e.domain]));
+        const linksByDomain = new Map<string, IntelligenceBundleLink[]>();
+        for (const link of exportLinks) {
+          const linkDomain = entryDomainMap.get(link.sourceId) ?? 'unknown';
+          if (!linksByDomain.has(linkDomain)) linksByDomain.set(linkDomain, []);
+          linksByDomain.get(linkDomain)!.push({
+            sourceId: link.sourceId,
+            targetId: link.targetId,
+            linkType: link.linkType,
+            note: link.note,
+          });
+        }
+
         const version = (params.version as string) ?? '1.0.0';
         const bundles: IntelligenceBundle[] = [];
         for (const [d, domainEntries] of byDomain) {
-          bundles.push({ domain: d, version, entries: domainEntries });
+          bundles.push({
+            domain: d,
+            version,
+            entries: domainEntries,
+            links: linksByDomain.get(d) ?? [],
+          });
         }
 
         return {
@@ -158,6 +191,7 @@ export function createVaultSharingOps(runtime: AgentRuntime): OpDefinition[] {
           version,
           bundles,
           totalEntries: entries.length,
+          totalLinks: exportLinks.length,
           domains: [...byDomain.keys()],
         };
       },
@@ -187,10 +221,17 @@ export function createVaultSharingOps(runtime: AgentRuntime): OpDefinition[] {
           domain: string;
           version: string;
           entries: IntelligenceEntry[];
+          links?: IntelligenceBundleLink[];
         }>;
         const forceTier = params.tier as 'agent' | 'project' | 'team' | undefined;
         let imported = 0;
         let duplicates = 0;
+        let linksCreated = 0;
+        let linksSkipped = 0;
+
+        // Track ID remapping: bundle entry ID → actual vault entry ID
+        const idRemap = new Map<string, string>();
+        const linkManager = new LinkManager(vault.getProvider());
 
         for (const bundle of bundles) {
           const entries = bundle.entries.map((e) => ({
@@ -198,13 +239,31 @@ export function createVaultSharingOps(runtime: AgentRuntime): OpDefinition[] {
             tier: forceTier ?? e.tier ?? 'project',
           }));
           const results = vault.seedDedup(entries);
-          for (const r of results) {
+          for (let i = 0; i < results.length; i++) {
+            const r = results[i];
+            const originalId = bundle.entries[i].id;
+            // For duplicates, map to the existing vault entry; for inserts, keep original ID
+            idRemap.set(originalId, r.existingId ?? r.id);
             if (r.action === 'inserted') imported++;
             else duplicates++;
           }
+
+          // Import links if present
+          if (bundle.links && bundle.links.length > 0) {
+            for (const link of bundle.links) {
+              const sourceId = idRemap.get(link.sourceId);
+              const targetId = idRemap.get(link.targetId);
+              if (sourceId && targetId) {
+                linkManager.addLink(sourceId, targetId, link.linkType, link.note);
+                linksCreated++;
+              } else {
+                linksSkipped++;
+              }
+            }
+          }
         }
 
-        return { imported, duplicates, total: imported + duplicates };
+        return { imported, duplicates, linksCreated, linksSkipped, total: imported + duplicates };
       },
     },
 

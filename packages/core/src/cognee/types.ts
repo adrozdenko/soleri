@@ -53,10 +53,36 @@ export interface CogneeStatus {
   error?: string;
 }
 
+export type AddErrorCode = 'AUTH_FAILED' | 'COGNEE_ERROR' | 'NETWORK_ERROR' | 'UNAVAILABLE';
+
 export interface CogneeAddResult {
   added: number;
+  error?: string;
+  code?: AddErrorCode;
 }
 
 export interface CogneeCognifyResult {
   status: string;
+}
+
+// ─── Drain Result Types ──────────────────────────────────────────
+
+export type DrainStopReason =
+  | 'cognee_unavailable'
+  | 'auth_failed'
+  | 'queue_empty'
+  | 'partial_failure';
+
+export interface DrainResult {
+  processed: number;
+  reason?: DrainStopReason;
+  errors?: string[];
+}
+
+export interface DrainAllResult {
+  totalProcessed: number;
+  totalFailed: number;
+  batches: number;
+  durationMs: number;
+  reason?: DrainStopReason;
 }

@@ -1,5 +1,9 @@
 // ─── Intelligence ────────────────────────────────────────────────────
-export type { IntelligenceEntry, IntelligenceBundle } from './intelligence/types.js';
+export type {
+  IntelligenceEntry,
+  IntelligenceBundle,
+  IntelligenceBundleLink,
+} from './intelligence/types.js';
 export { loadIntelligenceData, loadPacks } from './intelligence/loader.js';
 
 // ─── Vault ───────────────────────────────────────────────────────────
@@ -258,11 +262,21 @@ export type {
   CogneeStatus,
   CogneeAddResult,
   CogneeCognifyResult,
+  AddErrorCode,
+  DrainResult,
+  DrainAllResult,
+  DrainStopReason,
 } from './cognee/types.js';
 
 // ─── Cognee Sync ──────────────────────────────────────────────────────
 export { CogneeSyncManager } from './cognee/sync-manager.js';
-export type { SyncOp, SyncStatus, SyncQueueItem, SyncManagerStats } from './cognee/sync-manager.js';
+export type {
+  SyncOp,
+  SyncStatus,
+  SyncQueueItem,
+  SyncManagerStats,
+  SyncManagerConfig,
+} from './cognee/sync-manager.js';
 
 // ─── Intake Pipeline ──────────────────────────────────────────────────
 export { IntakePipeline } from './intake/intake-pipeline.js';

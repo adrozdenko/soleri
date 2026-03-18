@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v8.2.0 — 2026-03-19 — Cognee Sync Reliability & Zettelkasten Link Export
+
+### Bug Fixes
+
+- **Auth retry on 401** — `addEntries()` now retries with fresh token when Cognee returns 401 instead of silently returning `{ added: 0 }`. Fixes JWT expiry causing entire sync queue to fail. (#243)
+- **Health cache stale-lock** — `drain()` refreshes the health cache before checking availability. Previously, drains after the 60s TTL silently returned 0. (#243)
+- **Structured drain errors** — `drain()` returns `DrainResult` with `reason` field (`cognee_unavailable`, `auth_failed`, `queue_empty`, `partial_failure`) instead of bare `0`. MCP responses include actionable `hint` per failure code. (#243)
+- **Auth error propagation** — `ensureAuth()` failures now surface as `{ code: 'AUTH_FAILED', error: '...' }` instead of being swallowed by `.catch(() => null)`. (#243)
+
+### Features
+
+- **`drainAll()` method** — Loops drain until queue empty with progress callback, `AbortSignal` cancellation, and `forceCognify` option. Exposed as `cognee_sync_drain_all` MCP op. Eliminates need for rapid-fire external drain calls. (#243)
+- **Configurable batch size** — `SyncManagerConfig` with `batchSize` (default 50) and `maxRetries` (default 3). Agents with large vaults can tune throughput.
+- **`forceCognify` parameter** — Both `drain()` and `drainAll()` accept `forceCognify` to trigger graph building immediately instead of relying on the 30s debounce timer.
+- **`ensureHealthy()` on CogneeClient** — Refreshes stale health cache and returns current status in one call.
+- **Zettelkasten link export** — `IntelligenceBundle` now includes optional `links` array. `vault_export_pack` exports links where both endpoints are in the export set. `vault_import_pack` remaps IDs and creates links on import. New agents inherit the full knowledge graph, not just orphaned entries.
+- **Auto-link on capture** — `capture_knowledge` now auto-creates links for ALL captured entries (not just first) above 0.7 confidence threshold, max 3 per entry. Response includes `autoLinkedCount`.
+- **`backfill_links` op** — One-time Zettelkasten backfill for existing vaults: processes orphan entries, generates links via FTS5 suggestions above configurable threshold. Supports dry-run preview and progress callbacks.
+- **`getAllLinksForEntries()` on LinkManager** — Bulk query for links involving a set of entry IDs. Used by pack export.
+
+### Breaking Changes
+
+- `drain()` return type changed from `number` to `DrainResult` (`{ processed, reason?, errors? }`). Callers checking `if (drain() === 0)` must update to `if (result.processed === 0)`.
+- `CogneeAddResult` now includes optional `error` and `code` fields.
+- `CogneeSyncManager` constructor accepts optional 4th argument `SyncManagerConfig`.
+
+### Types
+
+- New: `DrainResult`, `DrainAllResult`, `DrainStopReason`, `AddErrorCode`, `SyncManagerConfig`, `IntelligenceBundleLink`
+
+---
+
 ## v8.1.0 — 2026-03-19 — Architectural Consolidation & OSS Readiness
 
 ### Architectural Cleanup (Milestone: Contract Fragmentation Cleanup — 6/6 closed)

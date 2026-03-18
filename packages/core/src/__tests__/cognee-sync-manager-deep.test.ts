@@ -51,6 +51,7 @@ function makeMockCognee(
       return available;
     },
     healthCheck: vi.fn().mockResolvedValue({ available, url: 'http://mock:8000', latencyMs: 1 }),
+    ensureHealthy: vi.fn().mockResolvedValue({ available, url: 'http://mock:8000', latencyMs: 1 }),
     addEntries: vi.fn().mockImplementation(async () => {
       if (overrides.addShouldFail) throw new Error('Cognee ingest failed');
       return overrides.addResult ?? { added: 1 };
@@ -181,8 +182,8 @@ describe('CogneeSyncManager — deep coverage', () => {
       );
       syncMgr.enqueue('ingest', entry.id, entry);
 
-      const processed = await syncMgr.drain();
-      expect(processed).toBe(1);
+      const drainResult = await syncMgr.drain();
+      expect(drainResult.processed).toBe(1);
 
       // Verify addEntries was called
       expect(mockCognee.addEntries).toHaveBeenCalledTimes(1);
@@ -214,8 +215,8 @@ describe('CogneeSyncManager — deep coverage', () => {
       );
       syncMgr.enqueue('delete', entry.id);
 
-      const processed = await syncMgr.drain();
-      expect(processed).toBe(1);
+      const drainResult = await syncMgr.drain();
+      expect(drainResult.processed).toBe(1);
 
       // Verify ingested hash was cleared
       const row = runtime.vault
@@ -242,9 +243,9 @@ describe('CogneeSyncManager — deep coverage', () => {
       // Delete the entry from vault before drain runs
       runtime.vault.remove(entry.id);
 
-      const processed = await syncMgr.drain();
+      const drainResult = await syncMgr.drain();
       // Should still process (mark as completed since entry is gone)
-      expect(processed).toBeGreaterThanOrEqual(1);
+      expect(drainResult.processed).toBeGreaterThanOrEqual(1);
 
       // addEntries should NOT have been called (entry doesn't exist)
       // The drain reads from entries table — if entry is gone, it skips
@@ -257,8 +258,8 @@ describe('CogneeSyncManager — deep coverage', () => {
         mockCognee,
         'test-dataset',
       );
-      const processed = await syncMgr.drain();
-      expect(processed).toBe(0);
+      const drainResult = await syncMgr.drain();
+      expect(drainResult.processed).toBe(0);
     });
 
     it('should return 0 when Cognee is unavailable', async () => {
@@ -273,8 +274,8 @@ describe('CogneeSyncManager — deep coverage', () => {
       );
       syncMgr.enqueue('ingest', entry.id, entry);
 
-      const processed = await syncMgr.drain();
-      expect(processed).toBe(0);
+      const drainResult = await syncMgr.drain();
+      expect(drainResult.processed).toBe(0);
 
       // Queue item should still be pending
       const stats = syncMgr.getStats();
@@ -493,6 +494,9 @@ describe('CogneeSyncManager — deep coverage', () => {
         healthCheck: vi
           .fn()
           .mockImplementation(async () => ({ available: isAvailable, url: 'mock', latencyMs: 1 })),
+        ensureHealthy: vi
+          .fn()
+          .mockImplementation(async () => ({ available: isAvailable, url: 'mock', latencyMs: 1 })),
         addEntries: vi.fn().mockResolvedValue({ added: 1 }),
         deleteEntries: vi.fn().mockResolvedValue({ deleted: 1 }),
         cognify: vi.fn().mockResolvedValue({ status: 'ok' }),
@@ -530,6 +534,7 @@ describe('CogneeSyncManager — deep coverage', () => {
           return isAvailable;
         },
         healthCheck: vi.fn().mockResolvedValue({ available: true, url: 'mock', latencyMs: 1 }),
+        ensureHealthy: vi.fn().mockResolvedValue({ available: true, url: 'mock', latencyMs: 1 }),
         addEntries: vi.fn().mockResolvedValue({ added: 1 }),
         deleteEntries: vi.fn(),
         cognify: vi.fn(),
@@ -626,9 +631,9 @@ describe('CogneeSyncManager — deep coverage', () => {
       // Drain processes MAX_BATCH=10 at a time
       let totalProcessed = 0;
       for (let i = 0; i < 10; i++) {
-        const processed = await syncMgr.drain();
-        totalProcessed += processed;
-        if (processed === 0) break;
+        const drainResult = await syncMgr.drain();
+        totalProcessed += drainResult.processed;
+        if (drainResult.processed === 0) break;
       }
 
       expect(totalProcessed).toBe(50);

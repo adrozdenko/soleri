@@ -101,42 +101,83 @@ export class CogneeClient {
     }
   }
 
+  /**
+   * Refresh health cache if stale, then return current status.
+   * Use this before operations that need a fresh availability check.
+   */
+  async ensureHealthy(): Promise<CogneeStatus> {
+    if (!this.isAvailable) {
+      return this.healthCheck();
+    }
+    return this.healthCache!.status;
+  }
+
   // ─── Ingest ────────────────────────────────────────────────────
 
   async addEntries(entries: IntelligenceEntry[]): Promise<CogneeAddResult> {
-    if (!this.isAvailable || entries.length === 0) return { added: 0 };
+    if (entries.length === 0) return { added: 0 };
+    if (!this.isAvailable)
+      return { added: 0, code: 'UNAVAILABLE', error: 'Cognee health check not passing' };
 
-    try {
-      const token = await this.ensureAuth().catch(() => null);
-
-      // Cognee /add expects multipart/form-data with files + datasetName
+    const attempt = async (token: string | null): Promise<Response> => {
       const formData = new FormData();
       formData.append('datasetName', this.config.dataset);
-
       for (const entry of entries) {
         const text = this.serializeEntry(entry);
         const blob = new Blob([text], { type: 'text/plain' });
         formData.append('data', blob, `${entry.id}.txt`);
       }
-
       const headers: Record<string, string> = {};
       if (token) headers.Authorization = `Bearer ${token}`;
-
-      const res = await globalThis.fetch(`${this.config.baseUrl}/api/v1/add`, {
+      return globalThis.fetch(`${this.config.baseUrl}/api/v1/add`, {
         method: 'POST',
         headers,
         body: formData,
         signal: AbortSignal.timeout(this.config.timeoutMs),
       });
+    };
 
-      if (!res.ok) return { added: 0 };
+    try {
+      let token: string | null;
+      try {
+        token = await this.ensureAuth();
+      } catch (authErr) {
+        return {
+          added: 0,
+          code: 'AUTH_FAILED',
+          error: authErr instanceof Error ? authErr.message : String(authErr),
+        };
+      }
 
-      // Schedule debounced cognify (multiple rapid ingests coalesce)
+      let res = await attempt(token);
+
+      // Retry once on 401 — token may have expired
+      if (res.status === 401) {
+        this.accessToken = null; // force re-auth
+        try {
+          token = await this.ensureAuth();
+        } catch (authErr) {
+          return {
+            added: 0,
+            code: 'AUTH_FAILED',
+            error: `Re-auth failed after 401: ${authErr instanceof Error ? authErr.message : String(authErr)}`,
+          };
+        }
+        res = await attempt(token);
+      }
+
+      if (!res.ok) {
+        return { added: 0, code: 'COGNEE_ERROR', error: `HTTP ${res.status}` };
+      }
+
       this.scheduleCognify(this.config.dataset);
-
       return { added: entries.length };
-    } catch {
-      return { added: 0 };
+    } catch (err) {
+      return {
+        added: 0,
+        code: 'NETWORK_ERROR',
+        error: err instanceof Error ? err.message : String(err),
+      };
     }
   }
 

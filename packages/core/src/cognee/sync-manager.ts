@@ -1,9 +1,30 @@
 /**
  * CogneeSyncManager — queued, resilient sync between the Vault SQLite DB and Cognee.
  *
- * Maintains a persistent queue (`cognee_sync_queue`) so that ingestions, updates,
- * and deletions survive process restarts. Drain is idempotent and retry-safe.
- * Health-flip detection auto-drains when Cognee comes back online.
+ * ## Architecture
+ *
+ * Two independent mechanisms:
+ *
+ * 1. **Drain** — pushes vault entries to Cognee via `addEntries()` API.
+ *    Batch size: configurable (default 50). Retries: configurable (default 3) per item.
+ *    Returns a `DrainResult` with `processed` count and `reason` when 0.
+ *
+ * 2. **Cognify** — triggers Cognee's graph building after data ingestion.
+ *    Debounced: 30s sliding window (configurable). Multiple `addEntries()` calls
+ *    coalesce into one `cognify()` call. This is intentional — cognify is expensive.
+ *
+ * These are INDEPENDENT. Drain can succeed while cognify is still debounced.
+ * A drain returning `{ processed: 0 }` always includes a `reason` field explaining why.
+ * It does NOT mean cognify was skipped or debounced.
+ *
+ * For bulk operations, use `drainAll({ forceCognify: true })` to trigger cognify
+ * after each batch instead of relying on the debounce timer.
+ *
+ * ## Queue State Machine
+ *
+ * `pending` → `processing` → `completed` (success)
+ * `pending` → `processing` → `pending`   (retry on error, attempts < maxRetries)
+ * `pending` → `processing` → `failed`    (max retries exceeded)
  *
  * Ported from Salvador MCP's battle-tested cognee-sync module.
  */
@@ -12,6 +33,7 @@ import { createHash } from 'node:crypto';
 import type { PersistenceProvider } from '../persistence/types.js';
 import type { CogneeClient } from './client.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import type { DrainResult, DrainAllResult, DrainStopReason } from './types.js';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -40,10 +62,17 @@ export interface SyncManagerStats {
   lastDrainAt: number | null;
 }
 
-// ─── Constants ──────────────────────────────────────────────────────
+export interface SyncManagerConfig {
+  /** Max items per drain batch (default: 50) */
+  batchSize?: number;
+  /** Max retry attempts per item before marking failed (default: 3) */
+  maxRetries?: number;
+}
 
-const MAX_BATCH = 10;
-const MAX_RETRIES = 3;
+// ─── Defaults ────────────────────────────────────────────────────────
+
+const DEFAULT_BATCH_SIZE = 50;
+const DEFAULT_MAX_RETRIES = 3;
 
 // ─── CogneeSyncManager ─────────────────────────────────────────────
 
@@ -51,14 +80,23 @@ export class CogneeSyncManager {
   private db: PersistenceProvider;
   private cognee: CogneeClient;
   private dataset: string;
+  private batchSize: number;
+  private maxRetries: number;
   private lastDrainAt: number | null = null;
   private drainTimer: ReturnType<typeof setInterval> | null = null;
   private wasAvailable: boolean = false;
 
-  constructor(db: PersistenceProvider, cognee: CogneeClient, dataset: string) {
+  constructor(
+    db: PersistenceProvider,
+    cognee: CogneeClient,
+    dataset: string,
+    config?: SyncManagerConfig,
+  ) {
     this.db = db;
     this.cognee = cognee;
     this.dataset = dataset;
+    this.batchSize = config?.batchSize ?? DEFAULT_BATCH_SIZE;
+    this.maxRetries = config?.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.initSchema();
     this.wasAvailable = cognee.isAvailable;
   }
@@ -140,26 +178,43 @@ export class CogneeSyncManager {
   // ─── Drain ────────────────────────────────────────────────────
 
   /**
-   * Process up to MAX_BATCH pending items from the queue.
-   * Returns the number of items successfully processed.
+   * Process up to `batchSize` pending items from the queue.
    *
-   * If Cognee is not available, returns 0 without touching the queue.
+   * Always returns a `DrainResult` with a `reason` when processed=0:
+   * - `cognee_unavailable`: health check failed
+   * - `auth_failed`: Cognee authentication failed (breaks batch early)
+   * - `queue_empty`: no pending items
+   * - `partial_failure`: some items failed within the batch
+   *
+   * @param opts.forceCognify  If true, trigger cognify synchronously after the batch
+   *                           instead of relying on the debounce timer. Useful for bulk ops.
    */
-  async drain(): Promise<number> {
-    if (!this.cognee.isAvailable) return 0;
+  async drain(opts?: { forceCognify?: boolean }): Promise<DrainResult> {
+    // Refresh health cache if stale, then check availability
+    const health = await this.cognee.ensureHealthy();
+    if (!health.available) {
+      return {
+        processed: 0,
+        reason: 'cognee_unavailable',
+        errors: [health.error ?? 'Health check failed'],
+      };
+    }
 
-    // Claim a batch: move pending → processing
+    // Claim a batch: select pending items
     const items = this.db.all<Record<string, unknown>>(
       `SELECT * FROM cognee_sync_queue
        WHERE status = 'pending' AND dataset = @dataset
        ORDER BY created_at ASC
        LIMIT @limit`,
-      { dataset: this.dataset, limit: MAX_BATCH },
+      { dataset: this.dataset, limit: this.batchSize },
     );
 
-    if (items.length === 0) return 0;
+    if (items.length === 0) {
+      return { processed: 0, reason: 'queue_empty' };
+    }
 
     let processed = 0;
+    const errors: string[] = [];
 
     for (const raw of items) {
       const item = rowToQueueItem(raw);
@@ -181,8 +236,18 @@ export class CogneeSyncManager {
           }
 
           const result = await this.cognee.addEntries([entry]);
+
+          // Break early on auth failure — don't waste retries on all remaining items
+          if (result.code === 'AUTH_FAILED') {
+            this.revertToRetryOrFail(item, result.error ?? 'Auth failed');
+            errors.push(`Auth failed for ${item.entryId}: ${result.error}`);
+            return { processed, reason: 'auth_failed', errors };
+          }
+
           if (result.added === 0) {
-            throw new Error('Cognee addEntries returned 0 added');
+            throw new Error(
+              `Cognee addEntries returned 0: ${result.error ?? 'unknown'} (code: ${result.code ?? 'none'})`,
+            );
           }
 
           // Update the ingested hash on the entries table
@@ -195,11 +260,7 @@ export class CogneeSyncManager {
           this.markCompleted(item.id);
           processed++;
         } else if (item.op === 'delete') {
-          // deleteEntries may not exist yet — graceful degradation
-          const client = this.cognee as unknown as Record<string, unknown>;
-          if (typeof client.deleteEntries === 'function') {
-            await (client.deleteEntries as (ids: string[]) => Promise<unknown>)([item.entryId]);
-          }
+          await this.cognee.deleteEntries([item.entryId]);
           // Clear the ingested hash (entry may already be gone from entries table)
           this.db.run(`UPDATE entries SET cognee_ingested_hash = NULL WHERE id = @id`, {
             id: item.entryId,
@@ -209,24 +270,81 @@ export class CogneeSyncManager {
         }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        const attempts = item.attempts + 1; // Already incremented above
-        if (attempts >= MAX_RETRIES) {
-          this.db.run(
-            `UPDATE cognee_sync_queue SET status = 'failed', error = @error, processed_at = unixepoch() WHERE id = @id`,
-            { id: item.id, error: errorMsg },
-          );
-        } else {
-          // Back to pending for retry
-          this.db.run(
-            `UPDATE cognee_sync_queue SET status = 'pending', error = @error WHERE id = @id`,
-            { id: item.id, error: errorMsg },
-          );
-        }
+        errors.push(`${item.entryId}: ${errorMsg}`);
+        this.revertToRetryOrFail(item, errorMsg);
       }
     }
 
     this.lastDrainAt = Math.floor(Date.now() / 1000);
-    return processed;
+
+    // Force cognify if requested (bypasses debounce timer)
+    if (opts?.forceCognify && processed > 0) {
+      await this.cognee.cognify(this.dataset);
+    }
+
+    const reason: DrainStopReason | undefined = errors.length > 0 ? 'partial_failure' : undefined;
+    return { processed, reason, errors: errors.length > 0 ? errors : undefined };
+  }
+
+  // ─── Drain All ──────────────────────────────────────────────────
+
+  /**
+   * Drain the entire queue in a loop until empty or unrecoverable error.
+   *
+   * @param opts.forceCognify   Trigger cognify after each batch (default: false)
+   * @param opts.abortSignal    Cancel the drain loop externally
+   * @param opts.onProgress     Called after each batch with current stats
+   */
+  async drainAll(opts?: {
+    forceCognify?: boolean;
+    abortSignal?: AbortSignal;
+    onProgress?: (stats: {
+      processed: number;
+      remaining: number;
+      failed: number;
+      batch: number;
+    }) => void;
+  }): Promise<DrainAllResult> {
+    const start = Date.now();
+    let totalProcessed = 0;
+    let totalFailed = 0;
+    let batches = 0;
+    let lastReason: DrainStopReason | undefined;
+
+    while (true) {
+      if (opts?.abortSignal?.aborted) break;
+
+      const result = await this.drain({ forceCognify: opts?.forceCognify });
+
+      if (result.processed === 0) {
+        lastReason = result.reason;
+        // queue_empty is the normal exit; other reasons are errors
+        break;
+      }
+
+      totalProcessed += result.processed;
+      batches++;
+
+      if (result.errors) {
+        totalFailed += result.errors.length;
+      }
+
+      const stats = this.getStats();
+      opts?.onProgress?.({
+        processed: totalProcessed,
+        remaining: stats.pending,
+        failed: totalFailed,
+        batch: batches,
+      });
+    }
+
+    return {
+      totalProcessed,
+      totalFailed,
+      batches,
+      durationMs: Date.now() - start,
+      reason: lastReason,
+    };
   }
 
   // ─── Reconciliation ───────────────────────────────────────────
@@ -335,6 +453,24 @@ export class CogneeSyncManager {
       `UPDATE cognee_sync_queue SET status = 'completed', processed_at = unixepoch() WHERE id = @id`,
       { id },
     );
+  }
+
+  /**
+   * Revert a queue item to pending (for retry) or mark as failed (max retries exceeded).
+   */
+  private revertToRetryOrFail(item: SyncQueueItem, errorMsg: string): void {
+    const attempts = item.attempts + 1; // Already incremented in the processing step
+    if (attempts >= this.maxRetries) {
+      this.db.run(
+        `UPDATE cognee_sync_queue SET status = 'failed', error = @error, processed_at = unixepoch() WHERE id = @id`,
+        { id: item.id, error: errorMsg },
+      );
+    } else {
+      this.db.run(
+        `UPDATE cognee_sync_queue SET status = 'pending', error = @error WHERE id = @id`,
+        { id: item.id, error: errorMsg },
+      );
+    }
   }
 
   /**

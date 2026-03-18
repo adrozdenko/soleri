@@ -228,34 +228,52 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
           }
         }
 
-        // Auto-suggest links for captured entries (Zettelkasten enrichment)
-        let suggestedLinks: Array<{
+        // Auto-link captured entries (Zettelkasten enrichment)
+        // Creates links for suggestions above threshold; returns remaining as suggestions
+        const AUTO_LINK_THRESHOLD = 0.7;
+        const AUTO_LINK_MAX = 3;
+        let autoLinkedCount = 0;
+        const suggestedLinks: Array<{
           entryId: string;
           title: string;
           suggestedType: string;
           score: number;
+          autoLinked: boolean;
         }> = [];
         try {
           if (captured > 0) {
-            const firstCaptured = results.find((r) => r.action === 'capture');
-            if (firstCaptured) {
-              const { LinkManager } = await import('../vault/linking.js');
-              const lm = new LinkManager(vault.getProvider());
-              const suggestions = lm.suggestLinks(firstCaptured.id, 3);
-              suggestedLinks = suggestions
-                .filter(
-                  (s) => s.entryId !== firstCaptured.id && !s.entryId.endsWith(firstCaptured.id),
-                )
-                .map((s) => ({
+            const { LinkManager } = await import('../vault/linking.js');
+            const lm = new LinkManager(vault.getProvider());
+
+            // Process ALL captured entries, not just the first
+            const capturedEntries = results.filter((r) => r.action === 'capture');
+            for (const capturedEntry of capturedEntries) {
+              const suggestions = lm.suggestLinks(capturedEntry.id, AUTO_LINK_MAX + 2);
+              const filtered = suggestions.filter(
+                (s) => s.entryId !== capturedEntry.id && !s.entryId.endsWith(capturedEntry.id),
+              );
+
+              let linkedForThisEntry = 0;
+              for (const s of filtered) {
+                const aboveThreshold = s.score >= AUTO_LINK_THRESHOLD;
+                const canAutoLink = aboveThreshold && linkedForThisEntry < AUTO_LINK_MAX;
+                if (canAutoLink) {
+                  lm.addLink(capturedEntry.id, s.entryId, s.suggestedType);
+                  linkedForThisEntry++;
+                  autoLinkedCount++;
+                }
+                suggestedLinks.push({
                   entryId: s.entryId,
                   title: s.title,
                   suggestedType: s.suggestedType,
                   score: s.score,
-                }));
+                  autoLinked: canAutoLink,
+                });
+              }
             }
           }
         } catch {
-          /* never break capture for suggestions */
+          /* never break capture for linking failures */
         }
 
         return {
@@ -263,6 +281,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
           proposed,
           rejected,
           duplicated,
+          autoLinkedCount,
           results,
           ...(suggestedLinks.length > 0 ? { suggestedLinks } : {}),
         };

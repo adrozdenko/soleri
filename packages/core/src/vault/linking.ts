@@ -170,6 +170,28 @@ export class LinkManager {
   }
 
   // ===========================================================================
+  // BULK QUERIES
+  // ===========================================================================
+
+  /**
+   * Get all links where either source or target is in the given ID set.
+   * Used for pack export — to find links within an export set.
+   */
+  getAllLinksForEntries(entryIds: string[]): VaultLink[] {
+    if (entryIds.length === 0) return [];
+    try {
+      const placeholders = entryIds.map(() => '?').join(',');
+      const rows = this.provider.all<VaultLinkRow>(
+        `SELECT * FROM vault_links WHERE source_id IN (${placeholders}) OR target_id IN (${placeholders})`,
+        [...entryIds, ...entryIds],
+      );
+      return rows.map(rowToVaultLink);
+    } catch {
+      return [];
+    }
+  }
+
+  // ===========================================================================
   // ORPHAN DETECTION
   // ===========================================================================
 
@@ -290,6 +312,78 @@ export class LinkManager {
     } catch {
       return [];
     }
+  }
+
+  // ===========================================================================
+  // BACKFILL — one-time link generation for existing entries
+  // ===========================================================================
+
+  /**
+   * Generate links for orphan entries using FTS5 suggestions.
+   * Processes orphans in batches and creates links above the threshold.
+   *
+   * @param opts.threshold    Minimum suggestion score to auto-create link (default: 0.7)
+   * @param opts.maxLinks     Max links per entry (default: 3)
+   * @param opts.dryRun       Preview without creating links (default: false)
+   * @param opts.batchSize    Entries per batch (default: 50)
+   * @param opts.onProgress   Progress callback
+   * @returns Stats: processed, linksCreated, durationMs
+   */
+  backfillLinks(opts?: {
+    threshold?: number;
+    maxLinks?: number;
+    dryRun?: boolean;
+    batchSize?: number;
+    onProgress?: (stats: { processed: number; total: number; linksCreated: number }) => void;
+  }): {
+    processed: number;
+    linksCreated: number;
+    durationMs: number;
+    preview?: Array<{ sourceId: string; targetId: string; linkType: string; score: number }>;
+  } {
+    const threshold = opts?.threshold ?? 0.7;
+    const maxLinks = opts?.maxLinks ?? 3;
+    const dryRun = opts?.dryRun ?? false;
+    const batchSize = opts?.batchSize ?? 50;
+    const start = Date.now();
+
+    const orphans = this.getOrphans(10000);
+    let processed = 0;
+    let linksCreated = 0;
+    const preview: Array<{ sourceId: string; targetId: string; linkType: string; score: number }> =
+      [];
+
+    for (let i = 0; i < orphans.length; i += batchSize) {
+      const batch = orphans.slice(i, i + batchSize);
+      for (const entry of batch) {
+        const suggestions = this.suggestLinks(entry.id, maxLinks + 2);
+        const qualifying = suggestions.filter((s) => s.score >= threshold).slice(0, maxLinks);
+
+        for (const s of qualifying) {
+          if (dryRun) {
+            preview.push({
+              sourceId: entry.id,
+              targetId: s.entryId,
+              linkType: s.suggestedType,
+              score: s.score,
+            });
+          } else {
+            this.addLink(entry.id, s.entryId, s.suggestedType);
+          }
+          linksCreated++;
+        }
+        processed++;
+      }
+
+      opts?.onProgress?.({ processed, total: orphans.length, linksCreated });
+    }
+
+    return {
+      processed,
+      linksCreated,
+      durationMs: Date.now() - start,
+      ...(dryRun ? { preview } : {}),
+    };
   }
 
   // ===========================================================================

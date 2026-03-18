@@ -17,8 +17,16 @@ export interface IntelligenceEntry {
   validUntil?: number; // unix epoch — when entry expires (null = never)
 }
 
+export interface IntelligenceBundleLink {
+  sourceId: string;
+  targetId: string;
+  linkType: 'supports' | 'contradicts' | 'extends' | 'sequences';
+  note?: string;
+}
+
 export interface IntelligenceBundle {
   domain: string;
   version: string;
   entries: IntelligenceEntry[];
+  links?: IntelligenceBundleLink[];
 }

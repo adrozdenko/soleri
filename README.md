@@ -48,7 +48,7 @@ Your second brain is ready the moment it's created. No build step needed.
 
 ### The Engine
 
-**Vault** — Domain-separated knowledge store. Patterns, anti-patterns, workflows, and architecture decisions organized by domain (frontend, backend, cross-cutting), vectorized with [Cognee](https://github.com/topoteretes/cognee) for semantic search and graph-connected for cross-domain discovery. Self-maintaining: deduplication, decay detection, and confidence tracking happen automatically.
+**Vault** — Domain-separated knowledge store. Patterns, anti-patterns, workflows, and architecture decisions organized by domain (frontend, backend, cross-cutting), vectorized with [Cognee](https://github.com/topoteretes/cognee) for semantic search and graph-connected for cross-domain discovery. Self-maintaining: deduplication, decay detection, and confidence tracking happen automatically. Knowledge packs export and import with Zettelkasten links — new agents inherit the full knowledge graph, not just orphaned entries.
 
 **Brain** — Learning loop that captures intelligence from real sessions. Hybrid search combines SQLite FTS5 with optional Cognee vector embeddings for 6-dimension scoring. Tracks pattern strength with confidence scores, surfaces high-confidence patterns first, and operates on a rolling window. No manual tagging — capture is automatic.
 
