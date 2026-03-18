@@ -31,6 +31,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./module-manifest": {
+      "types": "./dist/engine/module-manifest.d.ts",
+      "import": "./dist/engine/module-manifest.js"
     }
   },
   "publishConfig": {
