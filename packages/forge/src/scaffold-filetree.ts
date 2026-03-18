@@ -7,8 +7,9 @@
  * Replaces the old scaffold() that generated TypeScript projects.
  */
 
-import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, writeFileSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { stringify as yamlStringify } from 'yaml';
 import type { AgentYaml, AgentYamlInput } from './agent-schema.js';
 import { AgentYamlSchema } from './agent-schema.js';
@@ -307,12 +308,16 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
     writeFile(agentDir, `workflows/${wf.name}/tools.yaml`, wf.tools, filesCreated);
   }
 
-  // ─── 8. Write empty knowledge bundle ────────────────────────
+  // ─── 8. Write knowledge bundles (seed from starter packs if available) ──
+  const starterPacksDir = resolveStarterPacksDir();
+  let totalSeeded = 0;
+
   for (const domain of config.domains) {
+    const starterEntries = loadStarterEntries(starterPacksDir, domain);
     const bundle = {
       domain,
       version: '1.0.0',
-      entries: [],
+      entries: starterEntries,
     };
     writeFile(
       agentDir,
@@ -320,6 +325,7 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
       JSON.stringify(bundle, null, 2) + '\n',
       filesCreated,
     );
+    totalSeeded += starterEntries.length;
   }
 
   // ─── 9. Generate CLAUDE.md ──────────────────────────────────
@@ -332,6 +338,7 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
     '',
     `  Files: ${filesCreated.length}`,
     `  Domains: ${config.domains.join(', ')}`,
+    `  Knowledge: ${totalSeeded} starter entries seeded`,
     `  Workflows: ${BUILTIN_WORKFLOWS.map((w) => w.name).join(', ')}`,
     '',
     'Next steps:',
@@ -418,4 +425,68 @@ function buildAgentYaml(config: AgentYaml): Record<string, unknown> {
   }
 
   return yaml;
+}
+
+// ─── Starter Pack Helpers ────────────────────────────────────────────
+
+/** Domain aliases — map agent domains to starter pack directories. */
+const DOMAIN_TO_STARTER: Record<string, string> = {
+  // design starter
+  frontend: 'design',
+  design: 'design',
+  'ui-design': 'design',
+  accessibility: 'design',
+  styling: 'design',
+  react: 'design',
+  'component-patterns': 'design',
+  'responsive-design': 'design',
+  // security starter
+  security: 'security',
+  auth: 'security',
+  authentication: 'security',
+  // architecture starter
+  architecture: 'architecture',
+  'api-design': 'architecture',
+  database: 'architecture',
+  backend: 'architecture',
+  infrastructure: 'architecture',
+};
+
+function resolveStarterPacksDir(): string | null {
+  // Try repo-relative path (monorepo development)
+  const forgeDir = dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    join(forgeDir, '..', '..', '..', 'knowledge-packs', 'starter'),
+    join(forgeDir, '..', '..', 'knowledge-packs', 'starter'),
+  ];
+  for (const dir of candidates) {
+    if (existsSync(dir)) return dir;
+  }
+  return null;
+}
+
+function loadStarterEntries(starterDir: string | null, domain: string): unknown[] {
+  if (!starterDir) return [];
+
+  const packName = DOMAIN_TO_STARTER[domain];
+  if (!packName) return [];
+
+  const vaultDir = join(starterDir, packName, 'vault');
+  if (!existsSync(vaultDir)) return [];
+
+  const entries: unknown[] = [];
+  try {
+    const files = readdirSync(vaultDir).filter((f: string) => f.endsWith('.json'));
+    for (const file of files) {
+      const data = JSON.parse(readFileSync(join(vaultDir, file), 'utf-8'));
+      if (Array.isArray(data)) {
+        entries.push(...data);
+      } else if (data.entries && Array.isArray(data.entries)) {
+        entries.push(...data.entries);
+      }
+    }
+  } catch {
+    // Starter pack unavailable — return empty
+  }
+  return entries;
 }

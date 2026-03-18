@@ -117,6 +117,14 @@ async function main(): Promise<void> {
   // 6. Seed default playbooks
   seedDefaultPlaybooks(runtime.vault);
 
+  // Log vault stats for first-run visibility
+  const vaultStats = runtime.vault.stats();
+  console.error(
+    `${tag} Vault: ${vaultStats.totalEntries} entries (${Object.entries(vaultStats.byType ?? {})
+      .map(([t, n]) => `${n} ${t}`)
+      .join(', ')})`,
+  );
+
   // 7. Load domain packs
   const packs = (config.packs ?? []) as Array<{ name: string; package: string; version?: string }>;
   const loadedPacks: Array<{ name: string; facades?: Array<{ name: string; ops: unknown[] }> }> =
