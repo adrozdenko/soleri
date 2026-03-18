@@ -58,8 +58,7 @@ export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       }),
       handler: async (params) => {
         return llmClient.complete({
-          provider: 'openai',
-          model: (params.model as string) ?? '',
+          model: (params.model as string) || undefined,
           systemPrompt: params.systemPrompt as string,
           userPrompt: params.userPrompt as string,
           temperature: params.temperature as number | undefined,

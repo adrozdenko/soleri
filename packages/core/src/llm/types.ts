@@ -43,8 +43,10 @@ export class LLMError extends Error {
 }
 
 export interface LLMCallOptions {
-  provider: 'openai' | 'anthropic';
-  model: string;
+  /** Provider override. If omitted, the model router selects based on caller/task. */
+  provider?: 'openai' | 'anthropic';
+  /** Model override. If omitted, the model router selects based on caller/task. */
+  model?: string;
   systemPrompt: string;
   userPrompt: string;
   temperature?: number;

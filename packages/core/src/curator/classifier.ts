@@ -58,8 +58,6 @@ export async function classifyEntry(
 
   try {
     const result = await llm.complete({
-      provider: 'openai',
-      model: 'gpt-4o-mini',
       systemPrompt: 'You are a knowledge classifier. Respond only with JSON.',
       userPrompt: prompt,
       temperature: 0.1,
