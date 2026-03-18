@@ -25,13 +25,41 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 // =============================================================================
 
 function loadRoutingConfig(agentId: string): RoutingConfig {
-  // Default task→model routing: cheap models for routine, powerful for reasoning
+  // Default task→model routing: cheap models for routine, powerful for reasoning.
+  // Anthropic routes use extended thinking for quality decisions when available.
+  // Agents can override via ~/.{agentId}/model-routing.json.
   const defaultRoutes: RouteEntry[] = [
+    // OpenAI routes (default — works without Anthropic key)
     { caller: 'quality-gate', task: 'evaluate', model: 'gpt-4o', provider: 'openai' },
     { caller: 'classifier', task: 'classify', model: 'gpt-4o-mini', provider: 'openai' },
     { caller: 'knowledge-synthesizer', task: 'synthesize', model: 'gpt-4o', provider: 'openai' },
     { caller: 'content-classifier', model: 'gpt-4o-mini', provider: 'openai' },
     { caller: 'vault-linking', task: 'evaluate-links', model: 'gpt-4o-mini', provider: 'openai' },
+    // Anthropic routes (higher quality when key available — extended thinking capable)
+    {
+      caller: 'quality-gate-anthropic',
+      task: 'evaluate',
+      model: 'claude-sonnet-4-20250514',
+      provider: 'anthropic',
+    },
+    {
+      caller: 'contradiction-evaluator',
+      task: 'evaluate',
+      model: 'claude-sonnet-4-20250514',
+      provider: 'anthropic',
+    },
+    {
+      caller: 'knowledge-synthesizer-anthropic',
+      task: 'synthesize',
+      model: 'claude-sonnet-4-20250514',
+      provider: 'anthropic',
+    },
+    {
+      caller: 'classifier-anthropic',
+      task: 'classify',
+      model: 'claude-haiku-4-5-20251001',
+      provider: 'anthropic',
+    },
   ];
 
   const defaultConfig: RoutingConfig = {
