@@ -2,10 +2,10 @@ import type { Locale } from './types';
 
 export const ui: Record<Locale, Record<string, string>> = {
   en: {
-    'site.title': 'Soleri - Build a second brain that remembers everything and gets smarter over time',
+    'site.title': 'Soleri - One agent that remembers how you work',
     'site.description':
-      'Soleri is an open-source second brain builder for AI agents. 270+ ops, persistent vault, learning radar, and intelligence that compounds. Works with Claude Code out of the box.',
-    'brand.meta': 'Open-source second brain for AI agents',
+      'Open-source memory and shared knowledge for AI coding agents. One agent, multiple domains, linked vaults, playbooks, and learning that compounds over time.',
+    'brand.meta': 'One agent. Shared knowledge. Open source.',
     'nav.how': 'How it works',
     'nav.agent': 'Your Agent',
     'nav.teams': 'Teams',
@@ -13,16 +13,16 @@ export const ui: Record<Locale, Record<string, string>> = {
     'nav.community': 'Community',
     'nav.docs': 'Docs',
     'nav.start': 'Get started',
-    'hero.eyebrow': 'Open source · v8.0',
+    'hero.eyebrow': 'Open source · one agent, many domains',
     'hero.img.alt':
       'Solarpunk cityscape with organic architecture, lush green vegetation, solar panels, and golden sunlight streaming through glass domes',
     'hero.btn.github': 'Explore on GitHub',
     'hero.btn.how': 'See how it works',
-    'cta.title': 'Start building.',
-    'cta.text': 'Open source. Apache 2.0.',
+    'cta.title': 'Start with one agent.',
+    'cta.text': 'Keep it personal. Share knowledge when it helps.',
     'cta.btn.github': 'Explore on GitHub',
     'cta.btn.start': 'Get started',
-    'footer.tagline': 'Soleri — Open-source second brain for AI agents',
+    'footer.tagline': 'Soleri — Personal agents with shared knowledge',
     'footer.copyright': '© 2026 Drozd&Co',
     'named.after':
       'Named after <a href="https://en.wikipedia.org/wiki/Paolo_Soleri" target="_blank" rel="noreferrer">Paolo Soleri</a>, the architect who believed structures should be alive, adaptive, and evolving.',
@@ -90,10 +90,7 @@ export function getNavLinks(locale: Locale) {
 
   return [
     { href: `${prefix}how-it-works.html`, label: t(locale, 'nav.how') },
-    { href: `${prefix}personas.html`, label: t(locale, 'nav.agent') },
     { href: `${prefix}teams.html`, label: t(locale, 'nav.teams') },
-    { href: `${prefix}articles.html`, label: t(locale, 'nav.articles') },
-    { href: `${prefix}community.html`, label: t(locale, 'nav.community') },
     { href: '/docs/', label: t(locale, 'nav.docs') },
     { href: `${prefix}getting-started.html`, label: t(locale, 'nav.start') },
   ];

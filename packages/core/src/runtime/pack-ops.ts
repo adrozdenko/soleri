@@ -8,6 +8,16 @@ import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 
+export type HotRegisterTool = (toolName: string, description: string, ops: OpDefinition[]) => void;
+
+/** Mutable slot — set after engine registration to enable hot reload. */
+let _hotRegister: HotRegisterTool | null = null;
+
+/** Set the hot-register callback after registerEngine() completes. */
+export function setHotRegister(fn: HotRegisterTool): void {
+  _hotRegister = fn;
+}
+
 export function createPackOps(runtime: AgentRuntime): OpDefinition[] {
   const { packInstaller } = runtime;
 
@@ -36,7 +46,22 @@ export function createPackOps(runtime: AgentRuntime): OpDefinition[] {
         packDir: z.string().describe('Path to the knowledge pack directory.'),
       }),
       handler: async (params) => {
-        return packInstaller.install(params.packDir as string, runtime);
+        const result = await packInstaller.install(params.packDir as string, runtime);
+        // Hot register facades as MCP tools if callback available
+        if (_hotRegister && result.installed && result.facades > 0) {
+          const plugin = runtime.pluginRegistry.get(result.id);
+          if (plugin?.facades) {
+            for (const facade of plugin.facades) {
+              _hotRegister(
+                `${runtime.config.agentId}_${facade.name}`,
+                facade.description,
+                facade.ops,
+              );
+            }
+          }
+          (result as unknown as Record<string, unknown>).hotReloaded = true;
+        }
+        return result;
       },
     },
 

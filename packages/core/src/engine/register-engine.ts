@@ -60,6 +60,12 @@ export interface EngineRegistrationResult {
   tools: string[];
   /** Total op count across all tools */
   totalOps: number;
+  /**
+   * Register a new MCP tool at runtime (hot reload).
+   * Call this after installing a pack or activating a plugin post-boot.
+   * Automatically notifies connected clients via sendToolListChanged().
+   */
+  registerTool: (toolName: string, description: string, ops: OpDefinition[]) => void;
 }
 
 // ─── Module Definition ────────────────────────────────────────────────
@@ -234,7 +240,19 @@ export function registerEngine(
     }
   }
 
-  return { tools: registeredTools, totalOps };
+  const registerTool = (toolName: string, description: string, ops: OpDefinition[]) => {
+    registerModuleTool(server, toolName, description, ops, authPolicy);
+    registeredTools.push(toolName);
+    totalOps += ops.length;
+    // Notify connected clients that tool list changed
+    try {
+      (server as unknown as { sendToolListChanged?: () => void }).sendToolListChanged?.();
+    } catch {
+      // Server may not support notifications yet — safe to ignore
+    }
+  };
+
+  return { tools: registeredTools, totalOps, registerTool };
 }
 
 // ─── Tool Registration (No Factory) ──────────────────────────────────

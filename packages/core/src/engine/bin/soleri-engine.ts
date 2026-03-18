@@ -189,7 +189,7 @@ async function main(): Promise<void> {
   }));
 
   // 12. Register all engine tools
-  const { tools, totalOps } = registerEngine(server, runtime, {
+  const { tools, totalOps, registerTool } = registerEngine(server, runtime, {
     agentId,
     coreOps,
     domains: identity.domains,
@@ -205,6 +205,10 @@ async function main(): Promise<void> {
   });
 
   console.error(`${tag} Registered ${tools.length} tools (${totalOps} ops)`);
+
+  // Enable hot reload for post-boot pack/plugin installation
+  const { setHotRegister } = await import('../../runtime/pack-ops.js');
+  setHotRegister(registerTool);
 
   // 13. Connect stdio transport
   const transport = new StdioServerTransport();
