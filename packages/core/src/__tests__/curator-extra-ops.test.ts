@@ -26,9 +26,9 @@ describe('createCuratorExtraOps', () => {
     ops = createCuratorExtraOps(runtime);
   }
 
-  it('should return 5 ops', () => {
+  it('should return 9 ops', () => {
     setup();
-    expect(ops).toHaveLength(5);
+    expect(ops).toHaveLength(9);
     const names = ops.map((o) => o.name);
     expect(names).toEqual([
       'curator_entry_history',
@@ -36,6 +36,10 @@ describe('createCuratorExtraOps', () => {
       'curator_queue_stats',
       'curator_enrich',
       'curator_hybrid_contradictions',
+      'curator_pipeline_status',
+      'curator_enqueue_pipeline',
+      'curator_schedule_start',
+      'curator_schedule_stop',
     ]);
   });
 

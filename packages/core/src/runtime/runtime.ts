@@ -44,6 +44,8 @@ import { LinkManager } from '../vault/linking.js';
 import { LearningRadar } from '../brain/learning-radar.js';
 import { KnowledgeSynthesizer } from '../brain/knowledge-synthesizer.js';
 import { ChainRunner } from '../flows/chain-runner.js';
+import { JobQueue } from '../queue/job-queue.js';
+import { PipelineRunner } from '../queue/pipeline-runner.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 
 /**
@@ -244,6 +246,39 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     learningRadar: new LearningRadar(vault, brain),
     knowledgeSynthesizer: new KnowledgeSynthesizer(brain, llmClient),
     chainRunner: new ChainRunner(vault.getProvider()),
+    jobQueue: new JobQueue(vault.getProvider()),
+    pipelineRunner: (() => {
+      const jq = new JobQueue(vault.getProvider());
+      const pr = new PipelineRunner(jq);
+      // Register default job handlers for curator pipeline
+      pr.registerHandler('tag-normalize', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        const result = curator.normalizeTag(entry.tags[0] ?? '');
+        return result;
+      });
+      pr.registerHandler('dedup-check', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        return curator.detectDuplicates(entry.id);
+      });
+      pr.registerHandler('auto-link', async (job) => {
+        if (linkManager) {
+          const suggestions = linkManager.suggestLinks(job.entryId ?? '', 3);
+          for (const s of suggestions) {
+            linkManager.addLink(
+              job.entryId ?? '',
+              s.entryId,
+              s.suggestedType,
+              `pipeline: ${s.reason}`,
+            );
+          }
+          return { linked: suggestions.length };
+        }
+        return { skipped: true, reason: 'link manager not available' };
+      });
+      return pr;
+    })(),
     createdAt: Date.now(),
     close: () => {
       syncManager?.close();

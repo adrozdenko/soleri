@@ -1,7 +1,8 @@
 /**
- * Extra curator operations — 5 ops that extend the 8 base curator ops in core-ops.ts.
+ * Extra curator operations — 8 ops that extend the 8 base curator ops in core-ops.ts.
  *
- * Groups: entry history (2), queue stats (1), metadata enrichment (1), hybrid detection (1).
+ * Groups: entry history (2), queue stats (1), metadata enrichment (1), hybrid detection (1),
+ *         pipeline status (1), schedule start (1), schedule stop (1).
  */
 
 import { z } from 'zod';
@@ -9,7 +10,8 @@ import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 
 export function createCuratorExtraOps(runtime: AgentRuntime): OpDefinition[] {
-  const { curator } = runtime;
+  const { curator, jobQueue, pipelineRunner } = runtime;
+  let consolidationInterval: ReturnType<typeof setInterval> | null = null;
 
   return [
     // ─── Entry History ──────────────────────────────────────────────
@@ -79,6 +81,87 @@ export function createCuratorExtraOps(runtime: AgentRuntime): OpDefinition[] {
       }),
       handler: async (params) => {
         return curator.detectContradictionsHybrid(params.threshold as number | undefined);
+      },
+    },
+
+    // ─── Pipeline & Scheduling (#210) ────────────────────────────────
+    {
+      name: 'curator_pipeline_status',
+      description:
+        'Get job queue and pipeline runner status — pending/running/completed/failed counts, runner state, tick count.',
+      auth: 'read',
+      handler: async () => {
+        return {
+          queue: jobQueue.getStats(),
+          runner: pipelineRunner.getStatus(),
+        };
+      },
+    },
+    {
+      name: 'curator_enqueue_pipeline',
+      description:
+        'Enqueue a processing pipeline for a vault entry — tag-normalize → dedup-check → auto-link. ' +
+        'Jobs execute in DAG order via the background pipeline runner.',
+      auth: 'write',
+      schema: z.object({
+        entryId: z.string().describe('Vault entry ID to process'),
+      }),
+      handler: async (params) => {
+        const entryId = params.entryId as string;
+        const pipelineId = `pipe-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const step1 = jobQueue.enqueue('tag-normalize', { entryId, pipelineId });
+        const step2 = jobQueue.enqueue('dedup-check', { entryId, pipelineId, dependsOn: [step1] });
+        const step3 = jobQueue.enqueue('auto-link', { entryId, pipelineId, dependsOn: [step2] });
+        return { pipelineId, jobs: [step1, step2, step3] };
+      },
+    },
+    {
+      name: 'curator_schedule_start',
+      description:
+        'Start periodic consolidation — runs curator.consolidate() at the specified interval. ' +
+        'Also starts the pipeline runner for background job processing.',
+      auth: 'write',
+      schema: z.object({
+        intervalMinutes: z
+          .number()
+          .optional()
+          .default(60)
+          .describe('Consolidation interval in minutes (default: 60)'),
+      }),
+      handler: async (params) => {
+        const intervalMs = (params.intervalMinutes as number) * 60 * 1000;
+
+        // Start pipeline runner
+        pipelineRunner.start();
+
+        // Start consolidation scheduler
+        if (consolidationInterval) clearInterval(consolidationInterval);
+        consolidationInterval = setInterval(() => {
+          try {
+            curator.consolidate();
+          } catch {
+            /* best-effort */
+          }
+        }, intervalMs);
+
+        return {
+          started: true,
+          pipelineRunner: pipelineRunner.getStatus(),
+          consolidationIntervalMs: intervalMs,
+        };
+      },
+    },
+    {
+      name: 'curator_schedule_stop',
+      description: 'Stop periodic consolidation and pipeline runner.',
+      auth: 'write',
+      handler: async () => {
+        pipelineRunner.stop();
+        if (consolidationInterval) {
+          clearInterval(consolidationInterval);
+          consolidationInterval = null;
+        }
+        return { stopped: true };
       },
     },
   ];

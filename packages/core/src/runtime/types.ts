@@ -33,6 +33,8 @@ import type { LearningRadar } from '../brain/learning-radar.js';
 import type { TextIngester } from '../intake/text-ingester.js';
 import type { KnowledgeSynthesizer } from '../brain/knowledge-synthesizer.js';
 import type { ChainRunner } from '../flows/chain-runner.js';
+import type { JobQueue } from '../queue/job-queue.js';
+import type { PipelineRunner } from '../queue/pipeline-runner.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -117,6 +119,10 @@ export interface AgentRuntime {
   knowledgeSynthesizer: KnowledgeSynthesizer;
   /** Chain runner — composable multi-step workflows with data flow and gates. */
   chainRunner: ChainRunner;
+  /** Job queue — SQLite-backed async job processing with DAG dependencies. */
+  jobQueue: JobQueue;
+  /** Pipeline runner — background polling loop for job execution. */
+  pipelineRunner: PipelineRunner;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */
