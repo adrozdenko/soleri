@@ -30,6 +30,16 @@ export interface Memory {
   topics: string[];
   filesModified: string[];
   toolsUsed: string[];
+  /** What the user was trying to accomplish. */
+  intent: string | null;
+  /** Key decisions made and their rationale. */
+  decisions: string[];
+  /** Where things stand at capture time. */
+  currentState: string | null;
+  /** What should happen next session. */
+  nextSteps: string[];
+  /** Vault entries that informed this session. */
+  vaultEntriesReferenced: string[];
   createdAt: number;
   archivedAt: number | null;
 }
@@ -167,7 +177,23 @@ export class Vault {
       CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
         id, context, summary, topics,
         content='memories', content_rowid='rowid', tokenize='porter unicode61'
-      );
+      );`);
+
+    // Add new columns if they don't exist (backward-compatible migration)
+    const memCols = this.provider
+      .all<{ name: string }>(`PRAGMA table_info(memories)`)
+      .map((r) => r.name);
+    if (!memCols.includes('intent')) {
+      this.provider.execSql(`
+        ALTER TABLE memories ADD COLUMN intent TEXT;
+        ALTER TABLE memories ADD COLUMN decisions TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE memories ADD COLUMN current_state TEXT;
+        ALTER TABLE memories ADD COLUMN next_steps TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE memories ADD COLUMN vault_entries_referenced TEXT NOT NULL DEFAULT '[]';
+      `);
+    }
+
+    this.provider.execSql(`
       CREATE TRIGGER IF NOT EXISTS memories_ai AFTER INSERT ON memories BEGIN
         INSERT INTO memories_fts(rowid,id,context,summary,topics) VALUES(new.rowid,new.id,new.context,new.summary,new.topics);
       END;
@@ -761,7 +787,8 @@ export class Vault {
   captureMemory(memory: Omit<Memory, 'id' | 'createdAt' | 'archivedAt'>): Memory {
     const id = `mem-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     this.provider.run(
-      `INSERT INTO memories (id, project_path, type, context, summary, topics, files_modified, tools_used) VALUES (@id, @projectPath, @type, @context, @summary, @topics, @filesModified, @toolsUsed)`,
+      `INSERT INTO memories (id, project_path, type, context, summary, topics, files_modified, tools_used, intent, decisions, current_state, next_steps, vault_entries_referenced)
+       VALUES (@id, @projectPath, @type, @context, @summary, @topics, @filesModified, @toolsUsed, @intent, @decisions, @currentState, @nextSteps, @vaultEntriesReferenced)`,
       {
         id,
         projectPath: memory.projectPath,
@@ -771,6 +798,11 @@ export class Vault {
         topics: JSON.stringify(memory.topics),
         filesModified: JSON.stringify(memory.filesModified),
         toolsUsed: JSON.stringify(memory.toolsUsed),
+        intent: memory.intent ?? null,
+        decisions: JSON.stringify(memory.decisions ?? []),
+        currentState: memory.currentState ?? null,
+        nextSteps: JSON.stringify(memory.nextSteps ?? []),
+        vaultEntriesReferenced: JSON.stringify(memory.vaultEntriesReferenced ?? []),
       },
     );
     return this.getMemory(id)!;
@@ -778,7 +810,7 @@ export class Vault {
 
   searchMemories(
     query: string,
-    options?: { type?: string; projectPath?: string; limit?: number },
+    options?: { type?: string; projectPath?: string; intent?: string; limit?: number },
   ): Memory[] {
     const limit = options?.limit ?? 10;
     const filters: string[] = ['m.archived_at IS NULL'];
@@ -790,6 +822,10 @@ export class Vault {
     if (options?.projectPath) {
       filters.push('m.project_path = @projectPath');
       fp.projectPath = options.projectPath;
+    }
+    if (options?.intent) {
+      filters.push('m.intent = @intent');
+      fp.intent = options.intent;
     }
     const wc = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
     try {
@@ -1273,6 +1309,11 @@ function rowToMemory(row: Record<string, unknown>): Memory {
     topics: JSON.parse((row.topics as string) || '[]'),
     filesModified: JSON.parse((row.files_modified as string) || '[]'),
     toolsUsed: JSON.parse((row.tools_used as string) || '[]'),
+    intent: (row.intent as string) ?? null,
+    decisions: JSON.parse((row.decisions as string) || '[]'),
+    currentState: (row.current_state as string) ?? null,
+    nextSteps: JSON.parse((row.next_steps as string) || '[]'),
+    vaultEntriesReferenced: JSON.parse((row.vault_entries_referenced as string) || '[]'),
     createdAt: row.created_at as number,
     archivedAt: (row.archived_at as number) ?? null,
   };

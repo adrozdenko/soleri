@@ -116,6 +116,11 @@ export function createMemoryExtraOps(runtime: AgentRuntime): OpDefinition[] {
           topics: (m.topics as string[]) ?? [],
           filesModified: (m.filesModified as string[]) ?? [],
           toolsUsed: (m.toolsUsed as string[]) ?? [],
+          intent: (m.intent as string) ?? null,
+          decisions: (m.decisions as string[]) ?? [],
+          currentState: (m.currentState as string) ?? null,
+          nextSteps: (m.nextSteps as string[]) ?? [],
+          vaultEntriesReferenced: (m.vaultEntriesReferenced as string[]) ?? [],
           createdAt: m.createdAt as number,
           archivedAt: (m.archivedAt as number | null) ?? null,
         }));

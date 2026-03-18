@@ -54,6 +54,11 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           topics: (params.topics as string[]) ?? [],
           filesModified: (params.filesModified as string[]) ?? [],
           toolsUsed: (params.toolsUsed as string[]) ?? [],
+          intent: null,
+          decisions: [],
+          currentState: null,
+          nextSteps: [],
+          vaultEntriesReferenced: [],
         });
         return { captured: true, memory };
       },
@@ -82,14 +87,22 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'session_capture',
       description:
-        'Capture a session summary before context compaction. Called automatically by PreCompact hook.',
+        'Capture a session summary. Supports rich format: intent, decisions, currentState, nextSteps, vaultEntriesReferenced.',
       auth: 'write',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
-        summary: z.string().describe('Brief summary of what was accomplished in this session'),
+        summary: z.string().describe('Brief summary of what was accomplished'),
         topics: z.array(z.string()).optional().default([]),
         filesModified: z.array(z.string()).optional().default([]),
         toolsUsed: z.array(z.string()).optional().default([]),
+        intent: z.string().optional().describe('What the user was trying to accomplish'),
+        decisions: z.array(z.string()).optional().describe('Key decisions and rationale'),
+        currentState: z.string().optional().describe('Where things stand at capture time'),
+        nextSteps: z.array(z.string()).optional().describe('What should happen next session'),
+        vaultEntriesReferenced: z
+          .array(z.string())
+          .optional()
+          .describe('Vault entry IDs that informed this session'),
       }),
       handler: async (params) => {
         const { resolve } = await import('node:path');
@@ -102,6 +115,11 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           topics: (params.topics as string[]) ?? [],
           filesModified: (params.filesModified as string[]) ?? [],
           toolsUsed: (params.toolsUsed as string[]) ?? [],
+          intent: (params.intent as string) ?? null,
+          decisions: (params.decisions as string[]) ?? [],
+          currentState: (params.currentState as string) ?? null,
+          nextSteps: (params.nextSteps as string[]) ?? [],
+          vaultEntriesReferenced: (params.vaultEntriesReferenced as string[]) ?? [],
         });
         return { captured: true, memory, message: 'Session summary saved to memory.' };
       },
