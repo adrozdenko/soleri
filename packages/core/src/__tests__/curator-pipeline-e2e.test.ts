@@ -94,6 +94,56 @@ beforeAll(() => {
     if (!entry) return { skipped: true, reason: 'entry not found' };
     return classifyEntry(entry, null); // No LLM in tests
   });
+
+  // ─── 9 additional handlers for full Salvador parity (#216) ────
+  runner.registerHandler('enrich-frontmatter', async (job) => {
+    const entry = vault.get(job.entryId ?? '');
+    if (!entry) return { skipped: true, reason: 'entry not found' };
+    return curator.enrichMetadata(entry.id);
+  });
+  runner.registerHandler('detect-staleness', async (job) => {
+    const entry = vault.get(job.entryId ?? '');
+    if (!entry) return { skipped: true, reason: 'entry not found' };
+    const entryTimestamp = (entry.validFrom ?? 0) * 1000 || Date.now();
+    const ageMs = Date.now() - entryTimestamp;
+    const isStale = ageMs > 90 * 86400000;
+    return { stale: isStale, ageDays: Math.floor(ageMs / 86400000), entryId: entry.id };
+  });
+  runner.registerHandler('detect-duplicate', async (job) => {
+    const entry = vault.get(job.entryId ?? '');
+    if (!entry) return { skipped: true, reason: 'entry not found' };
+    return curator.detectDuplicates(entry.id);
+  });
+  runner.registerHandler('detect-contradiction', async (job) => {
+    const entry = vault.get(job.entryId ?? '');
+    if (!entry) return { skipped: true, reason: 'entry not found' };
+    const contradictions = curator.detectContradictions(0.4);
+    const relevant = contradictions.filter(
+      (c) => c.patternId === job.entryId || c.antipatternId === job.entryId,
+    );
+    return { found: relevant.length, contradictions: relevant };
+  });
+  runner.registerHandler('consolidate-duplicates', async () => {
+    return curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
+  });
+  runner.registerHandler('archive-stale', async () => {
+    const result = curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
+    return { archived: result.staleEntries.length, result };
+  });
+  runner.registerHandler('cognee-ingest', async (job) => {
+    // No Cognee in tests — graceful degradation
+    return { skipped: true, reason: 'cognee not available' };
+  });
+  runner.registerHandler('cognee-cognify', async () => {
+    return { skipped: true, reason: 'cognee not available' };
+  });
+  runner.registerHandler('verify-searchable', async (job) => {
+    const entry = vault.get(job.entryId ?? '');
+    if (!entry) return { skipped: true, reason: 'entry not found' };
+    const searchResults = vault.search(entry.title, { limit: 1 });
+    const found = searchResults.some((r) => r.entry.id === entry.id);
+    return { searchable: found, entryId: entry.id };
+  });
 });
 
 afterAll(() => {
@@ -263,6 +313,143 @@ describe('Classifier — graceful degradation', () => {
     expect(job!.status).toBe('completed');
     const result = job!.result as { classified: boolean };
     expect(result.classified).toBe(false); // No LLM
+  });
+});
+
+// ─── Salvador Parity Handlers (#216) ─────────────────────────────────
+
+describe('Pipeline Runner — Salvador parity handlers (#216)', () => {
+  it('enrich-frontmatter enriches entry metadata', async () => {
+    const id = queue.enqueue('enrich-frontmatter', { entryId: 'pattern-circuit-breaker' });
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    expect(job!.result).toBeDefined();
+  });
+
+  it('detect-staleness checks entry age', async () => {
+    const id = queue.enqueue('detect-staleness', { entryId: 'pattern-circuit-breaker' });
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    const result = job!.result as { stale: boolean; ageDays: number };
+    expect(typeof result.stale).toBe('boolean');
+    expect(typeof result.ageDays).toBe('number');
+  });
+
+  it('detect-duplicate runs dedup on specific entry', async () => {
+    const id = queue.enqueue('detect-duplicate', { entryId: 'pattern-circuit-breaker' });
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    expect(job!.result).toBeDefined();
+  });
+
+  it('detect-contradiction finds pattern/anti-pattern conflicts', async () => {
+    const id = queue.enqueue('detect-contradiction', { entryId: 'pattern-circuit-breaker' });
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    const result = job!.result as { found: number };
+    expect(typeof result.found).toBe('number');
+  });
+
+  it('consolidate-duplicates runs consolidation', async () => {
+    const id = queue.enqueue('consolidate-duplicates', {});
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    expect(job!.result).toBeDefined();
+  });
+
+  it('archive-stale archives old entries', async () => {
+    const id = queue.enqueue('archive-stale', {});
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    const result = job!.result as { archived: number };
+    expect(typeof result.archived).toBe('number');
+  });
+
+  it('cognee-ingest degrades gracefully without Cognee', async () => {
+    const id = queue.enqueue('cognee-ingest', { entryId: 'pattern-circuit-breaker' });
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    expect((job!.result as Record<string, unknown>).skipped).toBe(true);
+  });
+
+  it('cognee-cognify degrades gracefully without Cognee', async () => {
+    const id = queue.enqueue('cognee-cognify', {});
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    expect((job!.result as Record<string, unknown>).skipped).toBe(true);
+  });
+
+  it('verify-searchable confirms entry is FTS-indexed', async () => {
+    const id = queue.enqueue('verify-searchable', { entryId: 'pattern-circuit-breaker' });
+    await runner.processOnce();
+    const job = queue.get(id);
+    expect(job!.status).toBe('completed');
+    const result = job!.result as { searchable: boolean };
+    expect(result.searchable).toBe(true);
+  });
+
+  it('all handlers handle missing entries gracefully', async () => {
+    const types = [
+      'enrich-frontmatter',
+      'detect-staleness',
+      'detect-duplicate',
+      'detect-contradiction',
+      'verify-searchable',
+    ];
+    for (const type of types) {
+      const id = queue.enqueue(type, { entryId: 'nonexistent' });
+      await runner.processOnce();
+      const job = queue.get(id);
+      expect(job!.status).toBe('completed');
+      expect((job!.result as Record<string, unknown>).skipped).toBe(true);
+    }
+  });
+});
+
+describe('Full Salvador DAG — 8-step curator pipeline', () => {
+  it('runs the complete quality pipeline in DAG order', async () => {
+    const entryId = 'pattern-semantic-tokens';
+    const pipelineId = 'full-salvador-dag';
+
+    const step1 = queue.enqueue('quality-gate', { entryId, pipelineId });
+    const step2 = queue.enqueue('enrich-frontmatter', { entryId, pipelineId, dependsOn: [step1] });
+    const step3 = queue.enqueue('tag-normalize', { entryId, pipelineId, dependsOn: [step2] });
+    const step4 = queue.enqueue('dedup-check', { entryId, pipelineId, dependsOn: [step3] });
+    const step5 = queue.enqueue('detect-contradiction', {
+      entryId,
+      pipelineId,
+      dependsOn: [step4],
+    });
+    const step6 = queue.enqueue('cognee-ingest', { entryId, pipelineId, dependsOn: [step5] });
+    const step7 = queue.enqueue('auto-link', { entryId, pipelineId, dependsOn: [step6] });
+    const step8 = queue.enqueue('verify-searchable', { entryId, pipelineId, dependsOn: [step7] });
+
+    // Drain the DAG
+    for (let i = 0; i < 15; i++) {
+      await runner.processOnce(20);
+    }
+
+    const jobs = queue.getByPipeline(pipelineId);
+    const statuses = jobs.map((j) => `${j.type}:${j.status}`);
+
+    expect(statuses).toEqual([
+      'quality-gate:completed',
+      'enrich-frontmatter:completed',
+      'tag-normalize:completed',
+      'dedup-check:completed',
+      'detect-contradiction:completed',
+      'cognee-ingest:completed',
+      'auto-link:completed',
+      'verify-searchable:completed',
+    ]);
   });
 });
 
