@@ -111,6 +111,11 @@ The `PersistenceProvider` interface exists for future extensibility, but SQLite 
 | [`create-soleri`](packages/create-soleri) | `npm create soleri` shorthand |
 | [`@soleri/domain-*`](packages/) | Domain packs — design, component, figma, code-review |
 
+### Guides
+
+- [**Knowledge Management**](docs/guides/knowledge-management.md) — How to feed, train, and curate your agent's brain. The daily rhythm: search, capture, curate.
+- [**Cognee Setup**](docs/guides/cognee-setup.md) — Optional vector search integration.
+
 ### Knowledge Packs
 
 Install expertise in one command:
