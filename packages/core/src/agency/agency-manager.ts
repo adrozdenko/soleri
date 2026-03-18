@@ -15,6 +15,7 @@ import { watch, readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import type { FSWatcher } from 'node:fs';
 import type { Vault } from '../vault/vault.js';
+import { DEFAULT_SUGGESTION_RULES } from './default-rules.js';
 import type {
   AgencyConfig,
   AgencyStatus,
@@ -81,6 +82,11 @@ export class AgencyManager {
       minPatternConfidence: config?.minPatternConfidence ?? DEFAULT_MIN_CONFIDENCE,
       cooldownMs: config?.cooldownMs ?? DEFAULT_COOLDOWN_MS,
     };
+
+    // Register built-in suggestion rules
+    for (const rule of DEFAULT_SUGGESTION_RULES) {
+      this.suggestionRules.push(rule);
+    }
   }
 
   // ─── Lifecycle ──────────────────────────────────────────────────

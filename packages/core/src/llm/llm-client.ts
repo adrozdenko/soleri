@@ -25,8 +25,17 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 // =============================================================================
 
 function loadRoutingConfig(agentId: string): RoutingConfig {
+  // Default task→model routing: cheap models for routine, powerful for reasoning
+  const defaultRoutes: RouteEntry[] = [
+    { caller: 'quality-gate', task: 'evaluate', model: 'gpt-4o', provider: 'openai' },
+    { caller: 'classifier', task: 'classify', model: 'gpt-4o-mini', provider: 'openai' },
+    { caller: 'knowledge-synthesizer', task: 'synthesize', model: 'gpt-4o', provider: 'openai' },
+    { caller: 'content-classifier', model: 'gpt-4o-mini', provider: 'openai' },
+    { caller: 'vault-linking', task: 'evaluate-links', model: 'gpt-4o-mini', provider: 'openai' },
+  ];
+
   const defaultConfig: RoutingConfig = {
-    routes: [],
+    routes: defaultRoutes,
     defaultOpenAIModel: 'gpt-4o-mini',
     defaultAnthropicModel: 'claude-sonnet-4-20250514',
   };
