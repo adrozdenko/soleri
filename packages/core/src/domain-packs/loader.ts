@@ -18,7 +18,8 @@ export async function loadDomainPack(packageName: string): Promise<DomainPackMan
     mod = await import(packageName);
   } catch (err) {
     throw new Error(
-      `Failed to import domain pack "${packageName}": ${err instanceof Error ? err.message : String(err)}`, { cause: err },
+      `Failed to import domain pack "${packageName}": ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err },
     );
   }
 
@@ -33,10 +34,29 @@ export async function loadDomainPack(packageName: string): Promise<DomainPackMan
     throw new Error(`Domain pack "${packageName}" failed validation: ${result.errors.message}`);
   }
 
-  return {
-    ...result.data,
-    packageName,
-  };
+  const manifest: DomainPackManifest = { ...result.data, packageName };
+
+  // Warn if pack's engine requirement is mismatched
+  try {
+    const pkgJson = await import(`${packageName}/package.json`, { with: { type: 'json' } })
+      .then((m) => m.default)
+      .catch(() => null);
+    const peerCore = pkgJson?.peerDependencies?.['@soleri/core'];
+    if (peerCore) {
+      const requiredMajor = parseInt(peerCore.replace(/[^0-9]/g, ''), 10);
+      const { ENGINE_MAJOR_VERSION } = await import('../engine/module-manifest.js');
+      if (requiredMajor && ENGINE_MAJOR_VERSION && requiredMajor > ENGINE_MAJOR_VERSION) {
+        console.error(
+          `[warn] Domain pack "${packageName}" requires @soleri/core ${peerCore} ` +
+            `but engine is v${ENGINE_MAJOR_VERSION}. Upgrade @soleri/core.`,
+        );
+      }
+    }
+  } catch {
+    // Version check is best-effort — don't block loading
+  }
+
+  return manifest;
 }
 
 /**
