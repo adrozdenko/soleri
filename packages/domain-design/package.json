@@ -1,6 +1,6 @@
 {
   "name": "@soleri/domain-design",
-  "version": "7.0.0",
+  "version": "8.0.0",
   "description": "Design system intelligence domain pack for Soleri agents — WCAG contrast, token validation, design rules, and patterns.",
   "type": "module",
   "main": "dist/index.js",

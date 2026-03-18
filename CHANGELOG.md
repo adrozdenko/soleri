@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v8.0.0 — 2026-03-18 — Second Brain & Salvador Parity
+
+### Second Brain (Milestone #39 — 8 features)
+
+- **Two-pass vault retrieval** — `search` with `mode: "scan"` returns lightweight results (title + score + snippet), `load_entries` fetches full content. Saves 60-80% context tokens.
+- **Proactive session briefing** — `session_briefing` op gathers last session, active plans, recent captures, brain recommendations, and curator health on session start.
+- **Evidence-based reconciliation** — `plan_reconcile_with_evidence` cross-references plan tasks against git diff. Reports DONE/PARTIAL/MISSING per task, detects unplanned changes.
+- **Routing feedback loop** — `routing_feedback` and `routing_accuracy` ops track whether intent classification was correct, with confidence calibration per bucket.
+- **Ambient learning radar** — 6 ops (`radar_analyze/candidates/approve/dismiss/flush/stats`). Detects learning moments from corrections, search misses, workarounds. Auto-captures high-confidence patterns silently.
+- **External knowledge ingestion** — `ingest_url` (fetch + classify), `ingest_text` (transcripts/notes), `ingest_batch` (multiple items). LLM-powered classification with dedup.
+- **Content synthesis** — `synthesize` op turns vault knowledge into briefs, outlines, talking points, or post drafts. 4 output formats, audience targeting, source attribution, gap detection.
+- **Composable skill chains** — `chain_execute/status/resume/list/step_approve`. Multi-step workflows with $variable data flow between steps, user-approval/auto-test/vault-check gates, SQLite persistence for pause/resume.
+
+### Salvador Parity (Milestone #40 — 10 features)
+
+- **Curator async infrastructure** — Generic `TypedEventBus`, `JobQueue` (SQLite, DAG deps, retries), `PipelineRunner` (background polling). 14 job handlers registered.
+- **LLM quality gate** — 5-criteria scoring (novelty, actionability, specificity, relevance, informationDensity) with ACCEPT/REJECT verdict.
+- **LLM classifier** — Auto-categorize vault entries by domain, severity, and tags.
+- **Agency proactive intelligence** — Rule-based suggestion engine, rich clarifier (urgency levels, typed options with implications), warning suppression, pattern dismissal (24h TTL), notification queue. 7 new ops. 6 built-in suggestion rules.
+- **Context engine scoring** — Multi-signal knowledge scoring (baseScore + titleMatch + tagOverlap + intentBoost). Tunable weights. Entity span tracking.
+- **Enriched session capture** — 5 new fields: intent, decisions, currentState, nextSteps, vaultEntriesReferenced. Backward compatible.
+- **Plan purge** — Permanently delete archived/completed/stale/specific plans with dry-run preview.
+- **Memory knowledge governance** — 10 new ops: memory_get, session_search, knowledge_audit, smart_capture, knowledge_health, merge_patterns, knowledge_reorganize, list_project_knowledge, list_projects, knowledge_debug.
+- **Doctor health checks** — 8 specialized checks: config, database, vault, LLM, auth, plugins, embeddings, security.
+- **LLM model routing** — Default task-to-model routes (Haiku for routine, Sonnet for reasoning). Anthropic extended thinking routes. Configurable per agent.
+
+### Infrastructure
+
+- **Claude Code OAuth discovery** — Cross-platform (macOS Keychain + Linux GNOME Keyring + credentials file). Free Anthropic API via Claude Code subscription. Auto-integrated into key pool.
+- **79 new tests** (1913 total). 14 new source files. ~50 new ops.
+
 ## v7.0.0 — 2026-03-16 — File-Tree Architecture
 
 ### Breaking Changes

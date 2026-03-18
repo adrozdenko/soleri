@@ -56,6 +56,19 @@ Your second brain is ready the moment it's created. No build step needed.
 
 **Playbooks** — Multi-step validated procedures stored in the vault. Token migrations, component setup, contrast audits — each step includes validation criteria so the agent can execute and verify autonomously.
 
+### Second Brain (v8.0)
+
+The engine now acts as a true second brain — it doesn't just store knowledge, it actively helps you use it:
+
+- **Two-pass search** — Scan titles first, load only what's relevant. Saves 60-80% context tokens.
+- **Session briefing** — Start every session with context: what you did last time, active plans, recent learnings, brain recommendations.
+- **Learning radar** — Automatically detects patterns from corrections, search misses, and workarounds. Captures silently or queues for review.
+- **Content synthesis** — Turn vault knowledge into briefs, outlines, talking points, or post drafts.
+- **Skill chains** — Multi-step workflows with data flow between steps and approval gates.
+- **External ingestion** — Ingest articles, transcripts, and notes from outside coding sessions.
+- **Evidence-based reconciliation** — Cross-references plan tasks against actual git changes.
+- **OAuth discovery** — Uses your Claude Code subscription for free Anthropic API access (macOS + Linux).
+
 ### Architecture
 
 Two layers, cleanly separated:
