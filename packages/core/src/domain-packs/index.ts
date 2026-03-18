@@ -11,12 +11,6 @@ export {
 
 export { loadDomainPack, loadDomainPacksFromConfig, resolveDependencies } from './loader.js';
 
-export { installKnowledge, type KnowledgeInstallResult } from './knowledge-installer.js';
-
-export { installSkills, type SkillsInstallResult } from './skills-installer.js';
-
-export { injectDomainRules, removeDomainRules } from './inject-rules.js';
-
 export {
   type PackRuntime,
   type PackProjectContext,

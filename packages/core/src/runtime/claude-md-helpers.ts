@@ -9,7 +9,6 @@
  */
 
 import type { AgentRuntimeConfig } from './types.js';
-import type { OpDefinition } from '../facades/types.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -198,7 +197,7 @@ const ENGINE_RULES_END = '<!-- /soleri:engine-rules -->';
 /**
  * Check if engine rules are present in content.
  */
-export function hasEngineRules(content: string): boolean {
+function hasEngineRules(content: string): boolean {
   return content.includes(ENGINE_RULES_START) && content.includes(ENGINE_RULES_END);
 }
 
@@ -216,21 +215,4 @@ export function injectEngineRulesBlock(content: string, engineRulesContent: stri
   }
   // Append
   return content.trimEnd() + '\n\n' + engineRulesContent + '\n';
-}
-
-/**
- * Extract facade summaries from an ops array (for tools table generation).
- */
-export function extractFacadeSummaries(
-  agentId: string,
-  opsMap: Map<string, OpDefinition[]>,
-): FacadeSummary[] {
-  const summaries: FacadeSummary[] = [];
-  for (const [suffix, ops] of opsMap) {
-    summaries.push({
-      name: `${agentId}_${suffix}`,
-      ops: ops.map((o) => o.name),
-    });
-  }
-  return summaries;
 }
