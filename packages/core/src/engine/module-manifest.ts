@@ -94,3 +94,6 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
 
 /** Core facade ops (always present, not in ENGINE_MODULES) */
 export const CORE_KEY_OPS = ['health', 'identity', 'register', 'activate'];
+
+/** Engine major version — used for compatibility checks against domain packs. */
+export const ENGINE_MAJOR_VERSION = 8;

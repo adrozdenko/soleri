@@ -76,6 +76,32 @@ export class Vault {
         providerOrPath instanceof SQLitePersistenceProvider ? providerOrPath : null;
     }
     this.initialize();
+    this.checkFormatVersion();
+  }
+
+  /**
+   * Vault format version — tracks schema changes for migration safety.
+   * Increment when schema changes in a way that requires migration.
+   *
+   * History:
+   *   1 — Initial schema (v8.0.0): entries, memories, brain_feedback, FTS5
+   */
+  static readonly FORMAT_VERSION = 1;
+
+  private checkFormatVersion(): void {
+    const row = this.provider.get<{ user_version: number }>('PRAGMA user_version');
+    const current = row?.user_version ?? 0;
+
+    if (current === 0) {
+      // Fresh database — stamp with current version
+      this.provider.run(`PRAGMA user_version = ${Vault.FORMAT_VERSION}`);
+    } else if (current > Vault.FORMAT_VERSION) {
+      throw new Error(
+        `Vault format version ${current} is newer than engine supports (${Vault.FORMAT_VERSION}). ` +
+          `Upgrade @soleri/core to a compatible version.`,
+      );
+    }
+    // current < FORMAT_VERSION → future: run migration scripts here
   }
 
   setSyncManager(mgr: import('../cognee/sync-manager.js').CogneeSyncManager): void {
