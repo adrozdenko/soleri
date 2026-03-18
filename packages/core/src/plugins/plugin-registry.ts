@@ -1,6 +1,10 @@
 /**
  * Plugin Registry — tracks loaded plugins and their lifecycle.
  *
+ * @deprecated The plugin system is superseded by knowledge packs (`soleri-pack.json`).
+ * This registry is still used internally by the pack installer to register facades,
+ * but new extensions should use the pack system directly.
+ *
  * Not a singleton — lives on AgentRuntime for testability.
  * Lifecycle: load → register → activate → (deactivate | error)
  */
@@ -161,7 +165,8 @@ export class PluginRegistry {
       throw new Error(`Plugin module "${moduleFile}" must export createFacades(ctx)`);
     } catch (e) {
       throw new Error(
-        `Failed to load plugin module "${moduleFile}": ${e instanceof Error ? e.message : String(e)}`, { cause: e },
+        `Failed to load plugin module "${moduleFile}": ${e instanceof Error ? e.message : String(e)}`,
+        { cause: e },
       );
     }
   }

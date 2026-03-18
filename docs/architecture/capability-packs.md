@@ -3,7 +3,12 @@
 > RFC v2 — Soleri's evolution beyond Salvador's static atomic chains
 > Updated after multi-layer gap analysis against Soleri codebase
 
-## Status: Draft (v2)
+## Status: Draft (v2) — Partially Implemented
+
+> **Note:** The extension model has been consolidated (see `extension-tiers.md`).
+> PackRuntime narrowing (#224) and plugin deprecation (#226) are complete.
+> The capability registry exists but is not yet wired to domain packs at runtime.
+> This RFC remains as the design document for the capability system.
 
 ## Problem
 
