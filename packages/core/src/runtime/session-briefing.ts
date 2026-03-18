@@ -42,6 +42,20 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
         const sections: BriefingSection[] = [];
         let dataPoints = 0;
 
+        // 0. Day-one welcome (vault has few non-playbook entries)
+        try {
+          const stats = vault.stats();
+          const nonPlaybook = stats.totalEntries - (stats.byType?.playbook ?? 0);
+          if (nonPlaybook < 10) {
+            sections.push({
+              label: 'Welcome',
+              content: `Vault has ${nonPlaybook} knowledge entries. Capture patterns as you work — the brain learns from every session. Use op:capture_knowledge to persist insights.`,
+            });
+          }
+        } catch {
+          // Vault stats unavailable — skip
+        }
+
         // 1. Last session
         try {
           const sessions = brainIntelligence.listSessions({ limit: 1, active: false });
