@@ -93,8 +93,8 @@ When building a new feature, adding functionality, or creating components.
   - soleri_vault op:search_intelligent
   - soleri_vault op:capture_knowledge
   - soleri_vault op:link_entries
-  - soleri_planner op:create_plan
-  - soleri_planner op:approve_plan
+  - soleri_plan op:create_plan
+  - soleri_plan op:approve_plan
   - soleri_brain op:recommend
 `,
   },
@@ -146,7 +146,7 @@ When fixing bugs, resolving errors, or addressing regressions.
     tools: `tools:
   - soleri_vault op:search_intelligent
   - soleri_vault op:capture_knowledge
-  - soleri_planner op:create_plan
+  - soleri_plan op:create_plan
   - soleri_brain op:recommend
 `,
   },

@@ -9,6 +9,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { AgentYaml } from './agent-schema.js';
+import { ENGINE_MODULE_MANIFEST, CORE_KEY_OPS } from '@soleri/core/module-manifest';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -160,24 +161,15 @@ function composeToolsTable(agent: AgentYaml, tools?: ToolEntry[]): string {
       lines.push(`| \`${tool.facade}\` | ${opsStr}${suffix} |`);
     }
   } else {
-    // Placeholder — will be filled by engine introspection at dev time
-    lines.push(`| \`${agent.id}_core\` | \`health\`, \`identity\`, \`register\`, \`activate\` |`);
-    lines.push(
-      `| \`${agent.id}_vault\` | \`search_intelligent\`, \`capture_knowledge\`, \`capture_quick\` |`,
-    );
-    lines.push(`| \`${agent.id}_brain\` | \`recommend\`, \`strengths\`, \`feedback\` |`);
-    lines.push(
-      `| \`${agent.id}_planner\` | \`create_plan\`, \`approve_plan\`, \`plan_split\`, \`plan_reconcile\` |`,
-    );
-    lines.push(
-      `| \`${agent.id}_memory\` | \`memory_search\`, \`memory_capture\`, \`session_capture\` |`,
-    );
-    lines.push(
-      `| \`${agent.id}_curator\` | \`curator_groom\`, \`curator_status\`, \`curator_health\` |`,
-    );
-    lines.push(
-      `| \`${agent.id}_admin\` | \`admin_health\`, \`admin_tool_list\`, \`admin_diagnostic\` |`,
-    );
+    // Placeholder generated from ENGINE_MODULE_MANIFEST (single source of truth)
+    const coreOpsStr = CORE_KEY_OPS.map((o) => `\`${o}\``).join(', ');
+    lines.push(`| \`${agent.id}_core\` | ${coreOpsStr} |`);
+
+    for (const mod of ENGINE_MODULE_MANIFEST) {
+      if (mod.conditional) continue;
+      const opsStr = mod.keyOps.map((o) => `\`${o}\``).join(', ');
+      lines.push(`| \`${agent.id}_${mod.suffix}\` | ${opsStr} |`);
+    }
 
     // Domain facades from packs
     if (agent.packs) {

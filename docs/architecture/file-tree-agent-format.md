@@ -218,8 +218,8 @@ gates:
 ```yaml
 tools:
   - soleri_vault op:search_intelligent
-  - soleri_planner op:create_plan
-  - soleri_planner op:approve_plan
+  - soleri_plan op:create_plan
+  - soleri_plan op:approve_plan
   - soleri_brain op:recommend
 ```
 
@@ -347,7 +347,7 @@ The agent folder is the **shell**. The Soleri Knowledge Engine is the **brain**.
 │  ├── soleri_vault           │
 │  ├── soleri_brain           │──── Persistent state, learning,
 │  ├── soleri_curator         │     cross-project intelligence
-│  ├── soleri_planner         │
+│  ├── soleri_plan         │
 │  ├── soleri_memory          │
 │  └── soleri_admin           │
 └─────────────────────────────┘

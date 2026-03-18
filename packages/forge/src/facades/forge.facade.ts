@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { scaffold, previewScaffold, listAgents } from '../scaffolder.js';
+import { scaffoldFileTree } from '../scaffold-filetree.js';
 import { AgentConfigSchema } from '../types.js';
+import { AgentYamlSchema } from '../agent-schema.js';
 import { installKnowledge } from '../knowledge-installer.js';
 import { addDomain } from '../domain-manager.js';
 
@@ -27,10 +29,25 @@ export const forgeOps: OpDef[] = [
   {
     name: 'create',
     description:
-      'Scaffold a complete MCP agent project with activation system. ' +
-      'This creates the full directory structure, source files, config, and activation module, ' +
-      'then auto-builds (npm install + npm run build) and registers the MCP server. ' +
-      'After creation: restart Claude Code and say "Hello, {Name}!" to activate.',
+      'Create a file-tree agent (v7, recommended). ' +
+      'Generates a folder with agent.yaml, instructions/, workflows/, and CLAUDE.md. ' +
+      'No TypeScript, no build step. Ready to use immediately. ' +
+      'After creation: run `soleri install` and restart your host client.',
+    schema: AgentYamlSchema.extend({
+      outputDir: z.string().describe('Parent directory for the new agent folder'),
+    }),
+    handler: async (params) => {
+      const { outputDir, ...input } = params as Record<string, unknown> & { outputDir: string };
+      const config = AgentYamlSchema.parse(input);
+      return scaffoldFileTree(config, outputDir);
+    },
+  },
+  {
+    name: 'create_legacy',
+    description:
+      '[Deprecated] Scaffold a TypeScript MCP agent project (v6). ' +
+      'Prefer "create" for file-tree agents. ' +
+      'This path generates TypeScript source, runs npm install + build, and registers MCP server.',
     schema: AgentConfigSchema,
     handler: async (params) => {
       const config = AgentConfigSchema.parse(params);
