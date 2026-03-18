@@ -7,13 +7,15 @@ interface Props {
 }
 
 const { locale } = Astro.props;
+const prefix = `/${locale}/`;
 ---
 <footer class="footer">
   <p>{t(locale, 'footer.tagline')}</p>
   <p class="copyright" set:html={t(locale, 'footer.copyright')} />
   <nav class="footer-links" aria-label="Footer links">
+    <a href="/docs/">Docs</a>
+    <a href={`${prefix}articles.html`}>Articles</a>
+    <a href={`${prefix}community.html`}>Community</a>
     <a href="https://github.com/adrozdenko/soleri" target="_blank" rel="noreferrer">GitHub</a>
-    <a href="https://www.npmjs.com/package/soleri" target="_blank" rel="noreferrer">npm</a>
-    <a href="https://soleri.ai" target="_blank" rel="noreferrer">soleri.ai</a>
   </nav>
 </footer>

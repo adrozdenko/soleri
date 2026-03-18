@@ -175,35 +175,6 @@ const c = teamsContent(locale);
     </div>
   </section>
 
-  <!-- TELEGRAM BOT -->
-  <section class="team-section">
-    <div class="section-header">
-      <h2 class="section-title">{c.telegram.sectionTitle}</h2>
-    </div>
-    <div class="team-grid">
-      <div class="team-content">
-        <h3>{c.telegram.heading}</h3>
-        <p>{c.telegram.description}</p>
-        <p class="key-point">{c.telegram.keyPoint}</p>
-      </div>
-      <div>
-        <div class="chat-mockup">
-          <div class="chat-header">
-            <span class="chat-header-icon">S</span>
-            Soleri Bot
-          </div>
-          <div class="chat-messages">
-            {c.telegram.chatMessages.map(msg => (
-              <div class={`chat-msg ${msg.role}`} set:html={msg.html} />
-            ))}
-          </div>
-        </div>
-        <div class="feature-code" style="margin-top:12px;"><span class="cmt">{c.telegram.codeComment}</span>
-<Fragment set:html={c.telegram.codeOutput} /></div>
-      </div>
-    </div>
-  </section>
-
   <div class="soleri-mark mark-section"></div>
 
   <CTA locale={locale} />
