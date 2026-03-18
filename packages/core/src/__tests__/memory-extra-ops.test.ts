@@ -52,8 +52,8 @@ describe('createMemoryExtraOps', () => {
     });
   }
 
-  it('should return 8 ops', () => {
-    expect(ops.length).toBe(8);
+  it('should return 18 ops', () => {
+    expect(ops.length).toBe(18);
   });
 
   it('should have all expected op names', () => {
