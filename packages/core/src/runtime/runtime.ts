@@ -289,6 +289,72 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
         if (!entry) return { skipped: true, reason: 'entry not found' };
         return classifyEntry(entry, llmClient);
       });
+
+      // ─── 9 additional handlers for full Salvador parity (#216) ────
+      pr.registerHandler('enrich-frontmatter', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        return curator.enrichMetadata(entry.id);
+      });
+      pr.registerHandler('detect-staleness', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        // Check if entry is older than 90 days (using validFrom or fallback to 0)
+        const entryTimestamp = (entry.validFrom ?? 0) * 1000 || Date.now();
+        const ageMs = Date.now() - entryTimestamp;
+        const staleDays = 90;
+        const isStale = ageMs > staleDays * 86400000;
+        return { stale: isStale, ageDays: Math.floor(ageMs / 86400000), entryId: entry.id };
+      });
+      pr.registerHandler('detect-duplicate', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        return curator.detectDuplicates(entry.id);
+      });
+      pr.registerHandler('detect-contradiction', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        const contradictions = curator.detectContradictions(0.4);
+        const relevant = contradictions.filter(
+          (c) => c.patternId === job.entryId || c.antipatternId === job.entryId,
+        );
+        return { found: relevant.length, contradictions: relevant };
+      });
+      pr.registerHandler('consolidate-duplicates', async (_job) => {
+        return curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
+      });
+      pr.registerHandler('archive-stale', async (_job) => {
+        // Run consolidation with stale detection
+        const result = curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
+        return { archived: result.staleEntries.length, result };
+      });
+      pr.registerHandler('cognee-ingest', async (job) => {
+        if (!cognee) return { skipped: true, reason: 'cognee not available' };
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        try {
+          const result = await cognee.addEntries([entry]);
+          return { ingested: result.added };
+        } catch {
+          return { skipped: true, reason: 'cognee ingestion failed' };
+        }
+      });
+      pr.registerHandler('cognee-cognify', async (_job) => {
+        if (!cognee) return { skipped: true, reason: 'cognee not available' };
+        try {
+          const result = await cognee.cognify();
+          return result;
+        } catch {
+          return { skipped: true, reason: 'cognee cognify failed' };
+        }
+      });
+      pr.registerHandler('verify-searchable', async (job) => {
+        const entry = vault.get(job.entryId ?? '');
+        if (!entry) return { skipped: true, reason: 'entry not found' };
+        const searchResults = vault.search(entry.title, { limit: 1 });
+        const found = searchResults.some((r) => r.entry.id === entry.id);
+        return { searchable: found, entryId: entry.id };
+      });
       return pr;
     })(),
     createdAt: Date.now(),
