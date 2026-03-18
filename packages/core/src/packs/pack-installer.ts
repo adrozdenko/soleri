@@ -21,6 +21,7 @@ import { loadIntelligenceData } from '../intelligence/loader.js';
 import type { Vault } from '../vault/vault.js';
 import type { PluginRegistry } from '../plugins/plugin-registry.js';
 import type { PluginContext } from '../plugins/types.js';
+import type { PackRuntime } from '../domain-packs/pack-runtime.js';
 
 const MANIFEST_FILENAME = 'soleri-pack.json';
 
@@ -108,7 +109,11 @@ export class PackInstaller {
   /**
    * Install a knowledge pack from a directory.
    */
-  async install(packDir: string, runtimeCtx?: unknown): Promise<InstallResult> {
+  async install(
+    packDir: string,
+    runtimeCtx?: unknown,
+    packRuntime?: PackRuntime,
+  ): Promise<InstallResult> {
     // Validate first
     const validation = this.validate(packDir);
     if (!validation.valid || !validation.manifest) {
@@ -174,6 +179,16 @@ export class PackInstaller {
         }
 
         const ctx: PluginContext = {
+          packRuntime:
+            packRuntime ??
+            ({
+              vault: {},
+              getProject: () => undefined,
+              listProjects: () => [],
+              createCheck: () => '',
+              validateCheck: () => null,
+              validateAndConsume: () => null,
+            } as unknown as PackRuntime),
           runtime: runtimeCtx ?? {},
           manifest: pluginLoaded.manifest,
           directory: packDir,

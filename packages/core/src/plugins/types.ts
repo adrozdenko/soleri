@@ -101,8 +101,10 @@ export type PluginFacadeBuilder = (ctx: PluginContext) => FacadeConfig[];
  * Context passed to plugin facade builders during activation.
  */
 export interface PluginContext {
-  /** The agent runtime — full access to vault, brain, planner, etc. */
-  runtime: unknown; // AgentRuntime — kept as unknown to avoid circular deps
+  /** Narrowed runtime — vault, projects, session checks. Preferred over full runtime. */
+  packRuntime: import('../domain-packs/pack-runtime.js').PackRuntime;
+  /** @deprecated Full agent runtime. Use packRuntime instead — only vault, projects, and session checks are guaranteed. */
+  runtime: unknown;
   /** The plugin's own manifest */
   manifest: PluginManifest;
   /** The plugin's directory on disk */

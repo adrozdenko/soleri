@@ -14,7 +14,7 @@ import type { Vault } from '../vault/vault.js';
  */
 export interface PackProjectContext {
   id: string;
-  name: string;
+  name?: string;
   path: string;
   colors?: {
     [scale: string]: {
@@ -49,7 +49,7 @@ export interface PackRuntime {
   getProject(projectId: string): PackProjectContext | undefined;
 
   /** List all registered projects */
-  listProjects(): Array<{ id: string; name: string; path: string }>;
+  listProjects(): Array<{ id: string; name?: string; path: string }>;
 
   /** Create a session check (for tool chaining) */
   createCheck(type: string, data: Record<string, unknown>): string;
@@ -70,8 +70,8 @@ export interface PackRuntime {
 export function createPackRuntime(runtime: {
   vault: Vault;
   projectRegistry: {
-    getProject(id: string): PackProjectContext | undefined;
-    listProjects(): Array<{ id: string; name: string; path: string }>;
+    get(id: string): PackProjectContext | null;
+    list(): Array<{ id: string; name?: string; path: string }>;
   };
   sessionStore?: {
     createCheck(type: string, data: Record<string, unknown>): string;
@@ -81,8 +81,8 @@ export function createPackRuntime(runtime: {
 }): PackRuntime {
   return {
     vault: runtime.vault,
-    getProject: (id) => runtime.projectRegistry.getProject(id),
-    listProjects: () => runtime.projectRegistry.listProjects(),
+    getProject: (id) => runtime.projectRegistry.get(id) ?? undefined,
+    listProjects: () => runtime.projectRegistry.list(),
     createCheck: (type, data) => {
       if (!runtime.sessionStore) throw new Error('Session store not available');
       return runtime.sessionStore.createCheck(type, data);

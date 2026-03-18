@@ -662,9 +662,8 @@ const pack: DomainPack = {
 
 Forbidden: \`#hex\`, \`rgb()\`, \`bg-blue-500\`
 `,
-  onActivate: async (runtime: unknown) => {
-    // Store runtime for ops that need token resolution, checkIds, vault search
-    packRuntime = runtime as PackRuntime;
+  onActivate: async (narrowedRuntime: PackRuntime) => {
+    packRuntime = narrowedRuntime;
   },
 };
 
