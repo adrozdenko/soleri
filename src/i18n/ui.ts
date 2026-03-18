@@ -2,10 +2,10 @@ import type { Locale } from './types';
 
 export const ui: Record<Locale, Record<string, string>> = {
   en: {
-    'site.title': 'Soleri - Persistent memory and structured knowledge for agentic systems',
+    'site.title': 'Soleri - Build a second brain that remembers everything and gets smarter over time',
     'site.description':
-      'Soleri is an open-source framework for persistent memory, structured knowledge, and context that compounds over time.',
-    'brand.meta': 'Executable standards for agentic systems',
+      'Soleri is an open-source second brain builder for AI agents. 270+ ops, persistent vault, learning radar, and intelligence that compounds. Works with Claude Code out of the box.',
+    'brand.meta': 'Open-source second brain for AI agents',
     'nav.how': 'How it works',
     'nav.agent': 'Your Agent',
     'nav.teams': 'Teams',
@@ -13,7 +13,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'nav.community': 'Community',
     'nav.docs': 'Docs',
     'nav.start': 'Get started',
-    'hero.eyebrow': 'Open source',
+    'hero.eyebrow': 'Open source · v8.0',
     'hero.img.alt':
       'Solarpunk cityscape with organic architecture, lush green vegetation, solar panels, and golden sunlight streaming through glass domes',
     'hero.btn.github': 'Explore on GitHub',
@@ -22,7 +22,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'cta.text': 'Open source. Apache 2.0.',
     'cta.btn.github': 'Explore on GitHub',
     'cta.btn.start': 'Get started',
-    'footer.tagline': 'Soleri — Executable standards for agentic systems',
+    'footer.tagline': 'Soleri — Open-source second brain for AI agents',
     'footer.copyright': '© 2026 Drozd&Co',
     'named.after':
       'Named after <a href="https://en.wikipedia.org/wiki/Paolo_Soleri" target="_blank" rel="noreferrer">Paolo Soleri</a>, the architect who believed structures should be alive, adaptive, and evolving.',

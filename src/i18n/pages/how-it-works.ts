@@ -22,7 +22,7 @@ const content: Record<Locale, HowItWorksContent> = {
       },
       {
         name: 'Knowledge Engine',
-        desc: 'Single MCP server (<code>@soleri/core</code>). Vault, Brain, Curator, Planner, Memory. Persistent state and learning. All agents share one engine.',
+        desc: 'Single MCP server (<code>@soleri/core</code>). Vault, Brain, Curator, Planner, Memory, Agency, Learning Radar. 270+ ops. Persistent state, learning, and proactive suggestions. Auto-discovers Claude Code OAuth for free Anthropic API.',
       },
       {
         name: 'Transports',
@@ -42,18 +42,21 @@ const content: Record<Locale, HowItWorksContent> = {
   <span class="key">confidence:</span> <span class="val">0.94</span>
   <span class="key">sessions:</span> <span class="val">12</span>
 <span class="key">tags:</span> <span class="val">[tokens, css, tailwind]</span>`,
-      code2: `<span class="cmt"># Search your vault</span>
-<span class="prompt">$</span> <span class="cmd">soleri vault search</span> <span class="arg">"button styling"</span>
+      code2: `<span class="cmt"># Two-pass search: scan first, load what matters</span>
+<span class="prompt">op:</span> <span class="cmd">search</span> <span class="arg">{ query: "button styling", mode: "scan" }</span>
 
-<span class="ok">Found 3 matches:</span>
-  <span class="val">pattern-semantic-tokens</span>  <span class="cmt">94% confidence</span>
-  <span class="val">pattern-button-sizes</span>    <span class="cmt">87% confidence</span>
-  <span class="val">anti-pattern-inline</span>     <span class="cmt">91% confidence</span>`,
+<span class="ok">3 matches (scan — titles + scores only):</span>
+  <span class="val">pattern-semantic-tokens</span>  <span class="cmt">score: 0.94</span>  <span class="cmt">~120 tokens</span>
+  <span class="val">pattern-button-sizes</span>    <span class="cmt">score: 0.87</span>  <span class="cmt">~85 tokens</span>
+  <span class="val">anti-pattern-inline</span>     <span class="cmt">score: 0.91</span>  <span class="cmt">~60 tokens</span>
+
+<span class="prompt">op:</span> <span class="cmd">load_entries</span> <span class="arg">{ ids: ["pattern-semantic-tokens"] }</span>
+<span class="ok">✓ Full entry loaded — 60-80% context saved</span>`,
     },
     brain: {
       title: 'Gets sharper with every session',
-      text: "Manual knowledge curation doesn't scale. The brain tracks which patterns you apply, how often, and how successfully. Confidence grows automatically \u2014 no manual tagging needed.",
-      keyPoint: 'Automatic capture, no manual tagging.',
+      text: "Manual knowledge curation doesn't scale. The Learning Radar detects patterns from your corrections, search misses, and workarounds — captures silently or queues for review. Confidence grows automatically.",
+      keyPoint: 'Learning Radar: ambient detection, no manual tagging.',
       code: `<span class="cmt"># Brain strengths output</span>
 <span class="prompt">$</span> <span class="cmd">soleri brain</span> <span class="arg">strengths</span>
 
@@ -122,14 +125,17 @@ const content: Record<Locale, HowItWorksContent> = {
 \u2514\u2500\u2500 WebSocket      <span class="cmt"># streaming, Telegram</span>`,
     },
     llm: {
-      title: 'Runs without API keys',
-      text: "Knowledge infrastructure shouldn't require a subscription. Vault search, pattern matching, and Brain tracking all work locally. Add an LLM provider when you want AI-powered suggestions.",
-      keyPoint: 'Core features work offline. LLM is optional.',
-      code: `<span class="cmt"># agent.yaml \u2014 LLM config</span>
-<span class="key">llm:</span>
-  <span class="key">provider:</span> <span class="val">anthropic</span>    <span class="cmt"># or: openai, ollama, none</span>
-  <span class="key">model:</span>    <span class="val">claude-sonnet-4-6</span>
-  <span class="key">fallback:</span> <span class="val">none</span>        <span class="cmt"># works without API keys</span>`,
+      title: 'Works with Claude Code out of the box',
+      text: "Core features (vault, search, brain) work offline. For LLM-powered features (quality gate, synthesis, classification), the engine auto-discovers your Claude Code OAuth token — no API key setup needed. macOS and Linux supported.",
+      keyPoint: 'Free Anthropic API via Claude Code. No keys to configure.',
+      code: `<span class="cmt"># No configuration needed — auto-discovered</span>
+<span class="ok">✓</span> OAuth token found via Claude Code
+<span class="ok">✓</span> Anthropic API available (free with subscription)
+<span class="ok">✓</span> Model routing: Haiku for routine, Sonnet for reasoning
+
+<span class="cmt"># Or bring your own key:</span>
+<span class="key">ANTHROPIC_API_KEY=</span><span class="val">sk-ant-...</span>
+<span class="key">OPENAI_API_KEY=</span><span class="val">sk-...</span>`,
     },
   },
   uk: {

@@ -9,18 +9,18 @@ const content: Record<Locale, GettingStartedContent> = {
       'From zero to a second brain in five minutes. Install Soleri, build your first brain, and start compounding knowledge.',
     eyebrow: 'From zero to a second brain in five minutes',
     heroTitle: 'Your second brain starts smart. It only gets smarter.',
-    heroSubtitle: 'Three steps. No configuration files to write. No API keys required.',
+    heroSubtitle: 'Three steps. No configuration files. No API keys needed — works with Claude Code out of the box.',
     steps: [
       {
         title: 'Install',
-        text: "One global npm package. That's it.",
-        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g @soleri/cli</span>`,
+        text: "One command. No global install required.",
+        code: `<span class="prompt">$</span> <span class="cmd">npx soleri create</span> <span class="arg">my-brain</span>`,
         isInstallCmd: true,
       },
       {
         title: 'Build your second brain',
         text: 'The guided wizard walks you through each step — pick a focus, name it, select domains, principles, and tone. Your second brain is a folder, ready instantly.',
-        code: `<span class="prompt">$</span> <span class="cmd">soleri create</span>
+        code: `<span class="prompt">$</span> <span class="cmd">npx soleri create</span>
 
 <span class="cmt">◆ What kind of agent?   Security Auditor</span>
 <span class="cmt">◆ Display name:         Sentinel</span>
@@ -41,22 +41,16 @@ const content: Record<Locale, GettingStartedContent> = {
         title: 'Start learning',
         text: 'Connect the engine, say hello in your editor. Your second brain activates, captures knowledge as you work, and gets smarter over time.',
         code: `<span class="cmt"># Register and start the engine</span>
-<span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># register MCP server</span>
-<span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># start engine + watch files</span>
+<span class="prompt">$</span> <span class="cmd">npx soleri install</span>   <span class="cmt"># register MCP server</span>
+<span class="prompt">$</span> <span class="cmd">npx soleri dev</span>       <span class="cmt"># start the engine</span>
 
 <span class="cmt"># In your editor — activate the persona</span>
 <span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
 
 <span class="ok">✓</span> Persona activated      <span class="val">Sentinel — Security Auditor</span>
-<span class="ok">✓</span> Vault ready            <span class="val">grows as you work</span>
-<span class="ok">✓</span> Brain tracking         <span class="val">learns from every session</span>
-
-<span class="cmt"># Check everything is healthy</span>
-<span class="prompt">$</span> <span class="cmd">soleri doctor</span>
-
-<span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
-<span class="ok">✓</span> Agent       <span class="val">file-tree, registered</span>
-<span class="ok">✓</span> Engine      <span class="val">connected, 326 ops</span>`,
+<span class="ok">✓</span> Session briefing       <span class="val">46 entries, 0 active plans</span>
+<span class="ok">✓</span> OAuth discovered       <span class="val">Claude Code token ✓</span>
+<span class="ok">✓</span> Engine ready           <span class="val">270+ ops</span>`,
         isInstallCmd: false,
       },
     ],

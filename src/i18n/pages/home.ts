@@ -27,14 +27,14 @@ const content: Record<Locale, HomeContent> = {
 
 <span class="dim">// Session 47</span>
 <span class="hl">You:</span> Review this component.
-<span class="hl">AI:</span>  Found 2 raw hex values. Your vault says
-      semantic tokens only. Fixing now.
+<span class="hl">AI:</span>  <span class="ok">✓ Session briefing: 2 active plans, 3 patterns relevant</span>
+      Found 2 raw hex values. Vault says: semantic only.
       <span class="ok">✓ Pattern applied from vault</span>
-      <span class="ok">✓ Brain strength: 94% (12 sessions)</span>`,
+      <span class="ok">✓ Radar: auto-captured anti-pattern from correction</span>`,
     howTitle: 'Your second brain.<br/>Always learning.<br/>Never forgets.',
     howText:
-      'A <strong>Vault</strong> for long-term memory, a <strong>Brain</strong> that learns what works, <strong>Memory</strong> that carries across sessions and projects. Feed it knowledge — it compounds.',
-    engineTags: ['Vault', 'Brain', 'Memory'],
+      'A <strong>Vault</strong> for long-term memory, a <strong>Brain</strong> that learns what works, a <strong>Radar</strong> that detects patterns automatically, and <strong>Agency</strong> that suggests actions before you ask. 270+ ops. Feed it knowledge — it compounds.',
+    engineTags: ['Vault', 'Brain', 'Radar', 'Agency'],
     features: [
       {
         title: 'Your brain, as code',
@@ -71,16 +71,17 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         title: 'Starts smart, gets smarter',
-        text: 'Starter knowledge on create. Captures patterns as you work. Learns what matters from your sessions.',
-        code: `<span class="cmt">$ soleri create my-agent</span>
+        text: 'Starter knowledge on create. Learning Radar detects patterns from your corrections and search misses — captures silently, no interruptions.',
+        code: `<span class="cmt">$ npx soleri create my-brain</span>
 <span class="ok">✓</span> Installed starter knowledge  <span class="val">34 patterns</span>
 <span class="ok">✓</span> Scanned project              <span class="val">React + TS</span>
-<span class="ok">✓</span> Auto-captured                <span class="val">12 patterns</span>
 <span class="ok">✓</span> Vault ready                  <span class="val">46 entries</span>
 
-<span class="cmt"># After 3 sessions:</span>
-<span class="warn">Brain:</span> You've fixed this import style 3×.
-       <span class="val">Capture as pattern? [y/n]</span>`,
+<span class="cmt"># While you work:</span>
+<span class="ok">Radar:</span> Detected anti-pattern from your correction.
+       <span class="val">Auto-captured with tag: radar-detected</span>
+<span class="ok">Radar:</span> "caching patterns" searched 3× with 0 results.
+       <span class="val">Knowledge gap flagged for review.</span>`,
       },
     ],
     cardsTitle: 'One brain. Many domains.',
@@ -109,18 +110,19 @@ const content: Record<Locale, HomeContent> = {
     ],
     terminalTitle: 'Terminal',
     terminalCode: `<span class="comment"># Build your second brain (~3 seconds)</span>
-<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-brain</span>
+<span class="prompt">$</span> <span class="cmd">npx soleri create</span> <span class="arg">my-brain</span>
 
 <span class="comment">  ✓ Created agent.yaml</span>
 <span class="comment">  ✓ Generated instructions/, workflows/, knowledge/</span>
-<span class="comment">  ✓ Ready — no build step</span>
+<span class="comment">  ✓ Ready — no build step needed</span>
 
-<span class="comment"># Start learning</span>
-<span class="prompt">$</span> <span class="cmd">soleri install</span>            <span class="comment"># connect to your editor</span>
-<span class="prompt">$</span> <span class="cmd">soleri dev</span>                <span class="comment"># start the engine</span>
+<span class="comment"># Connect and start</span>
+<span class="prompt">$</span> <span class="cmd">npx soleri install</span>        <span class="comment"># connect to your editor</span>
+<span class="prompt">$</span> <span class="cmd">npx soleri dev</span>            <span class="comment"># start the engine</span>
 
-<span class="comment"># Feed it knowledge</span>
-<span class="prompt">$</span> <span class="cmd">soleri pack</span> <span class="arg">install community/react-patterns</span>`,
+<span class="comment">  Session briefing: 46 entries, 0 active plans</span>
+<span class="comment">  Brain: ready (270+ ops)</span>
+<span class="comment">  OAuth: Claude Code token discovered ✓</span>`,
     archTitle: 'Two layers, one second brain',
     archSubtitle:
       'Your files define what it knows. The engine makes it learn. They evolve independently.',
@@ -135,7 +137,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         label: 'Knowledge Engine',
-        text: 'Single MCP server (<code>@soleri/core</code>). Vault, Brain, Curator, Planner, Memory. Persistent state and learning. All agents share one engine.',
+        text: 'Single MCP server (<code>@soleri/core</code>). Vault, Brain, Curator, Planner, Memory, Agency, Learning Radar. 270+ ops. Persistent state and learning. Auto-discovers Claude Code OAuth for free Anthropic API.',
       },
       {
         label: 'Transports',
