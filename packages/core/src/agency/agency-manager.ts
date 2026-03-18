@@ -24,6 +24,11 @@ import type {
   WarningDetector,
   SurfacedPattern,
   ClarificationQuestion,
+  SuggestionRule,
+  SuggestionContext,
+  ProactiveSuggestion,
+  RichClarificationQuestion,
+  Notification,
 } from './types.js';
 
 // ─── Defaults ──────────────────────────────────────────────────────
@@ -57,6 +62,14 @@ export class AgencyManager {
   private cooldownMap = new Map<string, number>();
   private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+  // Proactive intelligence (#211)
+  private suggestionRules: SuggestionRule[] = [];
+  private recentFiles: FileChange[] = [];
+  private suppressedWarningIds = new Set<string>();
+  private dismissedPatterns = new Map<string, number>(); // entryId → dismissedAt timestamp
+  private dismissalTtlMs = 24 * 60 * 60 * 1000; // 24 hours
+  private notificationQueue: Notification[] = [];
+
   constructor(vault: Vault, config?: AgencyConfig) {
     this.vault = vault;
     this.config = {
@@ -84,15 +97,7 @@ export class AgencyManager {
   }
 
   getStatus(): AgencyStatus {
-    return {
-      enabled: this.config.enabled,
-      watching: this.watchers.length > 0,
-      watchPaths: this.config.watchPaths,
-      detectorCount: this.detectors.length,
-      pendingWarnings: this.pendingWarnings.length,
-      surfacedPatterns: this.surfacedPatterns.length,
-      fileChangesProcessed: this.changesProcessed,
-    };
+    return this.getFullStatus();
   }
 
   updateConfig(config: Partial<AgencyConfig>): void {
@@ -322,5 +327,202 @@ export class AgencyManager {
   private hasValidExtension(filePath: string): boolean {
     const ext = extname(filePath);
     return this.config.extensions.includes(ext);
+  }
+
+  // ─── Proactive Suggestions (#211) ──────────────────────────────────
+
+  registerSuggestionRule(rule: SuggestionRule): void {
+    this.suggestionRules.push(rule);
+  }
+
+  /**
+   * Evaluate all suggestion rules and return triggered suggestions.
+   */
+  generateSuggestions(): ProactiveSuggestion[] {
+    const context: SuggestionContext = {
+      recentFiles: this.recentFiles.slice(-20),
+      pendingWarnings: this.pendingWarnings,
+      surfacedPatterns: this.surfacedPatterns,
+      fileChangesProcessed: this.changesProcessed,
+    };
+
+    const suggestions: ProactiveSuggestion[] = [];
+    for (const rule of this.suggestionRules) {
+      try {
+        if (rule.condition(context)) {
+          suggestions.push(rule.generate(context));
+        }
+      } catch {
+        // Rule failure is non-critical
+      }
+    }
+
+    // Create notifications for suggestions
+    for (const s of suggestions) {
+      this.pushNotification('suggestion', s.title, s.description, s.priority);
+    }
+
+    return suggestions.sort((a, b) => {
+      const prio = { high: 0, medium: 1, low: 2 };
+      return prio[a.priority] - prio[b.priority];
+    });
+  }
+
+  // ─── Rich Clarification (#211) ─────────────────────────────────────
+
+  generateRichClarification(prompt: string): RichClarificationQuestion[] {
+    const questions: RichClarificationQuestion[] = [];
+
+    // Ambiguous scope detection
+    const scopeWords = ['everything', 'all', 'the whole', 'entire'];
+    if (scopeWords.some((w) => prompt.toLowerCase().includes(w))) {
+      questions.push({
+        question: 'That sounds like a broad scope. Can you narrow it down?',
+        reason: 'Broad requests often lead to unfocused work',
+        urgency: 'recommended',
+        options: [
+          { label: 'Just the current file', description: 'Focus on what I have open' },
+          { label: 'This module/directory', description: 'Scope to the current package' },
+          {
+            label: 'The full project',
+            description: 'I really mean everything',
+            implications: 'This may take significantly longer',
+          },
+        ],
+      });
+    }
+
+    // Missing context detection
+    const vagueVerbs = ['fix', 'improve', 'update', 'change'];
+    const hasVagueVerb = vagueVerbs.some((v) => prompt.toLowerCase().startsWith(v));
+    const isShort = prompt.split(/\s+/).length < 5;
+    if (hasVagueVerb && isShort) {
+      questions.push({
+        question: 'Could you describe the specific problem or desired outcome?',
+        reason: `"${prompt}" is ambiguous — different interpretations lead to different solutions`,
+        urgency: 'blocking',
+        options: [
+          { label: "There's an error/bug", description: 'Something is broken' },
+          { label: 'It works but needs improvement', description: 'Refactoring or enhancement' },
+          { label: 'Add new behavior', description: 'Feature addition' },
+        ],
+      });
+    }
+
+    // Destructive operation detection
+    const destructiveWords = ['delete', 'remove', 'drop', 'reset', 'wipe', 'purge'];
+    if (destructiveWords.some((w) => prompt.toLowerCase().includes(w))) {
+      questions.push({
+        question: 'This sounds like a destructive operation. Are you sure?',
+        reason: 'Destructive actions are hard to undo',
+        urgency: 'blocking',
+        options: [
+          {
+            label: 'Yes, proceed',
+            description: 'I understand the consequences',
+            recommended: false,
+          },
+          {
+            label: 'Let me reconsider',
+            description: 'Show me what would be affected first',
+            recommended: true,
+          },
+        ],
+      });
+    }
+
+    return questions;
+  }
+
+  // ─── Warning Suppression (#211) ────────────────────────────────────
+
+  suppressWarning(warningId: string): void {
+    this.suppressedWarningIds.add(warningId);
+    this.pendingWarnings = this.pendingWarnings.filter((w) => w.id !== warningId);
+  }
+
+  unsuppressWarning(warningId: string): void {
+    this.suppressedWarningIds.delete(warningId);
+  }
+
+  getSuppressedWarnings(): string[] {
+    return [...this.suppressedWarningIds];
+  }
+
+  /**
+   * Override getPendingWarnings to filter out suppressed.
+   */
+  getFilteredWarnings(): Warning[] {
+    return this.pendingWarnings.filter((w) => !this.suppressedWarningIds.has(w.id));
+  }
+
+  // ─── Pattern Dismissal (#211) ──────────────────────────────────────
+
+  dismissPattern(entryId: string): void {
+    this.dismissedPatterns.set(entryId, Date.now());
+    this.surfacedPatterns = this.surfacedPatterns.filter((p) => p.entryId !== entryId);
+  }
+
+  isDismissed(entryId: string): boolean {
+    const dismissedAt = this.dismissedPatterns.get(entryId);
+    if (!dismissedAt) return false;
+    if (Date.now() - dismissedAt > this.dismissalTtlMs) {
+      this.dismissedPatterns.delete(entryId);
+      return false;
+    }
+    return true;
+  }
+
+  getActiveSurfacedPatterns(): SurfacedPattern[] {
+    return this.surfacedPatterns.filter((p) => !this.isDismissed(p.entryId));
+  }
+
+  // ─── Notification Queue (#211) ─────────────────────────────────────
+
+  pushNotification(
+    type: Notification['type'],
+    title: string,
+    message: string,
+    priority: Notification['priority'] = 'medium',
+  ): void {
+    this.notificationQueue.push({
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      type,
+      title,
+      message,
+      priority,
+      createdAt: Date.now(),
+    });
+  }
+
+  drainNotifications(): Notification[] {
+    const notifications = [...this.notificationQueue];
+    this.notificationQueue = [];
+    return notifications.sort((a, b) => {
+      const prio = { high: 0, medium: 1, low: 2 };
+      return prio[a.priority] - prio[b.priority];
+    });
+  }
+
+  getPendingNotificationCount(): number {
+    return this.notificationQueue.length;
+  }
+
+  // ─── Extended Status (#211) ────────────────────────────────────────
+
+  getFullStatus(): AgencyStatus {
+    return {
+      enabled: this.config.enabled,
+      watching: this.watchers.length > 0,
+      watchPaths: this.config.watchPaths,
+      detectorCount: this.detectors.length,
+      pendingWarnings: this.getFilteredWarnings().length,
+      surfacedPatterns: this.getActiveSurfacedPatterns().length,
+      fileChangesProcessed: this.changesProcessed,
+      suggestionRuleCount: this.suggestionRules.length,
+      suppressedWarnings: this.suppressedWarningIds.size,
+      dismissedPatterns: this.dismissedPatterns.size,
+      pendingNotifications: this.notificationQueue.length,
+    };
   }
 }

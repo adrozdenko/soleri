@@ -107,5 +107,73 @@ export function createAgencyFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         return question ?? { clarificationNeeded: false };
       },
     },
+
+    // ─── Proactive Intelligence (#211) ─────────────────────────────
+    {
+      name: 'agency_suggestions',
+      description:
+        'Evaluate suggestion rules and return triggered proactive suggestions, sorted by priority.',
+      auth: 'read',
+      handler: async () => agencyManager.generateSuggestions(),
+    },
+    {
+      name: 'agency_rich_clarify',
+      description:
+        'Generate structured clarification questions with urgency, options, and implications.',
+      auth: 'read',
+      schema: z.object({
+        prompt: z.string().describe('The ambiguous prompt to clarify'),
+      }),
+      handler: async (params) => agencyManager.generateRichClarification(params.prompt as string),
+    },
+    {
+      name: 'agency_suppress_warning',
+      description: 'Suppress a warning by ID — prevents it from appearing in pending warnings.',
+      auth: 'write',
+      schema: z.object({
+        warningId: z.string(),
+      }),
+      handler: async (params) => {
+        agencyManager.suppressWarning(params.warningId as string);
+        return { suppressed: true, warningId: params.warningId };
+      },
+    },
+    {
+      name: 'agency_unsuppress_warning',
+      description: 'Remove suppression for a warning.',
+      auth: 'write',
+      schema: z.object({
+        warningId: z.string(),
+      }),
+      handler: async (params) => {
+        agencyManager.unsuppressWarning(params.warningId as string);
+        return { unsuppressed: true, warningId: params.warningId };
+      },
+    },
+    {
+      name: 'agency_dismiss_pattern',
+      description: 'Dismiss a surfaced pattern for 24h — prevents re-surfacing.',
+      auth: 'write',
+      schema: z.object({
+        entryId: z.string(),
+      }),
+      handler: async (params) => {
+        agencyManager.dismissPattern(params.entryId as string);
+        return { dismissed: true, entryId: params.entryId, ttlHours: 24 };
+      },
+    },
+    {
+      name: 'agency_notifications',
+      description: 'Drain pending notifications — returns and clears the notification queue.',
+      auth: 'read',
+      handler: async () => agencyManager.drainNotifications(),
+    },
+    {
+      name: 'agency_full_status',
+      description:
+        'Full agency status including suggestions, suppressions, dismissals, and notifications.',
+      auth: 'read',
+      handler: async () => agencyManager.getFullStatus(),
+    },
   ];
 }

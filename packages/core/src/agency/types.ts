@@ -85,4 +85,65 @@ export interface AgencyStatus {
   pendingWarnings: number;
   surfacedPatterns: number;
   fileChangesProcessed: number;
+  suggestionRuleCount: number;
+  suppressedWarnings: number;
+  dismissedPatterns: number;
+  pendingNotifications: number;
+}
+
+// ─── Proactive Suggestions (#211) ────────────────────────────────────
+
+export interface SuggestionRule {
+  /** Unique name for this rule. */
+  name: string;
+  /** Human description of what this rule detects. */
+  description: string;
+  /** Condition: returns true if this rule should fire. */
+  condition(context: SuggestionContext): boolean;
+  /** Generate a suggestion when condition is true. */
+  generate(context: SuggestionContext): ProactiveSuggestion;
+}
+
+export interface SuggestionContext {
+  recentFiles: FileChange[];
+  pendingWarnings: Warning[];
+  surfacedPatterns: SurfacedPattern[];
+  fileChangesProcessed: number;
+}
+
+export interface ProactiveSuggestion {
+  rule: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  action?: string;
+}
+
+// ─── Rich Clarification (#211) ───────────────────────────────────────
+
+export type ClarificationUrgency = 'blocking' | 'recommended' | 'optional';
+
+export interface ClarificationOption {
+  label: string;
+  description?: string;
+  implications?: string;
+  recommended?: boolean;
+}
+
+export interface RichClarificationQuestion {
+  question: string;
+  reason: string;
+  urgency: ClarificationUrgency;
+  options?: ClarificationOption[];
+}
+
+// ─── Notifications (#211) ────────────────────────────────────────────
+
+export interface Notification {
+  id: string;
+  type: 'suggestion' | 'warning' | 'pattern';
+  title: string;
+  message: string;
+  priority: 'high' | 'medium' | 'low';
+  createdAt: number;
 }
