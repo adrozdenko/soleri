@@ -747,5 +747,66 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
         }
       },
     },
+
+    // ─── Purge Plans (#215) ──────────────────────────────────────────
+    {
+      name: 'plan_purge',
+      description:
+        'Permanently delete plans by mode: "archived" (only archived), "completed" (completed + archived), ' +
+        '"stale" (draft/approved older than 24h), or "specific" (by IDs). Use dryRun to preview.',
+      auth: 'admin',
+      schema: z.object({
+        mode: z.enum(['archived', 'completed', 'stale', 'specific']).describe('Purge mode'),
+        planIds: z.array(z.string()).optional().describe('Plan IDs for specific mode'),
+        dryRun: z.boolean().optional().default(false).describe('Preview without deleting'),
+      }),
+      handler: async (params) => {
+        const mode = params.mode as string;
+        const dryRun = params.dryRun as boolean;
+        const plans = planner.list();
+        const now = Date.now();
+        const staleThresholdMs = 24 * 60 * 60 * 1000;
+
+        let toPurge: typeof plans;
+        if (mode === 'archived') {
+          toPurge = plans.filter((p) => p.status === 'archived');
+        } else if (mode === 'completed') {
+          toPurge = plans.filter((p) => p.status === 'completed' || p.status === 'archived');
+        } else if (mode === 'stale') {
+          toPurge = plans.filter(
+            (p) =>
+              (p.status === 'draft' || p.status === 'approved' || p.status === 'brainstorming') &&
+              p.createdAt &&
+              now - p.createdAt > staleThresholdMs,
+          );
+        } else if (mode === 'specific') {
+          const ids = new Set((params.planIds as string[]) ?? []);
+          toPurge = plans.filter((p) => ids.has(p.id));
+        } else {
+          return { error: `Unknown purge mode: ${mode}` };
+        }
+
+        if (dryRun) {
+          return {
+            dryRun: true,
+            mode,
+            wouldPurge: toPurge.length,
+            plans: toPurge.map((p) => ({ id: p.id, status: p.status, objective: p.objective })),
+          };
+        }
+
+        let purged = 0;
+        for (const p of toPurge) {
+          try {
+            planner.remove(p.id);
+            purged++;
+          } catch {
+            // Skip plans that can't be removed
+          }
+        }
+
+        return { purged, mode };
+      },
+    },
   ];
 }

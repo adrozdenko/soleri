@@ -386,6 +386,17 @@ export class Planner {
   }
 
   /**
+   * Permanently remove a plan by ID. Returns true if found and removed.
+   */
+  remove(planId: string): boolean {
+    const idx = this.store.plans.findIndex((p) => p.id === planId);
+    if (idx < 0) return false;
+    this.store.plans.splice(idx, 1);
+    this.save();
+    return true;
+  }
+
+  /**
    * Transition a plan to a new status using the typed FSM.
    * Validates that the transition is allowed before applying it.
    */
