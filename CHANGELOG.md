@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v8.1.0 — 2026-03-19 — Architectural Consolidation & OSS Readiness
+
+### Architectural Cleanup (Milestone: Contract Fragmentation Cleanup — 6/6 closed)
+
+- **Single source of truth for tool names** — `ENGINE_MODULE_MANIFEST` in `module-manifest.ts` is now the canonical registry. All templates, docs, and scaffolds generate from it. Zero hardcoded tool names.
+- **Contract drift CI** — `module-manifest-drift.test.ts` (5 assertions) ensures `ENGINE_MODULES` and `ENGINE_MODULE_MANIFEST` stay in sync. Runs in existing CI.
+- **File-tree canonical** — Forge facade defaults to file-tree `create` op. Legacy scaffold moved to `create_legacy` with deprecation notice.
+- **SQLite-first persistence** — Removed `PostgresPersistenceProvider` (310 lines dead code). SQLite is the only supported backend. `PersistenceProvider` interface preserved for future extensibility. Postgres roadmap tracked in #230.
+- **Narrowed extension privileges** — Domain packs and plugins receive `PackRuntime` (vault + projects + session checks) instead of full `AgentRuntime` (26+ modules). Backwards compatible via deprecated second argument.
+- **Consolidated extension model** — Two clear tiers: Domain Packs (npm) and Local Packs (directories). Plugin system (`soleri-plugin.json`) deprecated in favor of `soleri-pack.json`.
+
+### Features
+
+- **Cold start fix** — Scaffold now seeds `knowledge/` from starter packs (design, security, architecture) instead of empty bundles. New agents start with 15-45 entries. Session briefing shows "Welcome" section for new agents.
+- **Hot reload for packs** — `pack_install` registers new MCP tools at runtime via `registerTool` callback. `sendToolListChanged()` notifies connected clients. No restart needed.
+- **LLM provider abstraction** — Removed hardcoded `provider: 'openai'` from all 6 internal call sites. All LLM calls route through `ModelRouter`. Users configure provider preference via `~/.{agentId}/model-routing.json`.
+- **Version compatibility contract** — Vault format versioned via `PRAGMA user_version`. Engine rejects newer formats. Domain pack peer deps fixed to `^8.0.0`. `ENGINE_MAJOR_VERSION` constant for runtime checks.
+
+### Testing & Quality
+
+- **Curator full worker** — All 14 pipeline handlers tested (was 5). Full 8-step Salvador DAG pipeline E2E test: quality-gate → enrich → normalize → dedup → contradiction → cognee → link → verify.
+- **Dead code audit** — Removed `doctor-checks.ts`, 5 unused functions, 4 dead re-exports. -167 lines via knip analysis.
+
+### Documentation
+
+- **CONTRIBUTING.md** rewritten with per-type review guidelines, testing requirements, brain/probabilistic testing guide.
+- **extension-tiers.md** — Two-tier extension model (Domain Packs + Local Packs).
+- **cross-platform.md** — Transport layers, IDE support matrix, host-specific vs agnostic.
+- **multi-persona.md** — Design doc for cross-domain sessions (draft).
+- **version-compatibility.md** — Semver contract, breaking change definitions, compatibility matrix.
+- **Persistence section** added to README documenting SQLite-first choice.
+
+### Milestones Closed
+
+- Architectural Consolidation — Contract Fragmentation Cleanup (6/6)
+- Salvador Parity — Deep Module Porting (11/11)
+- Second Brain — Cognitive Amplifier (8/8)
+- Engine Hardening & OSS Readiness (8/8)
+
+### Stats
+
+- 13 PRs merged, 33 issues resolved
+- Net: ~-300 lines (codebase got smaller and more honest)
+- Tests: 1913 unit + 120 E2E
+
 ## v8.0.0 — 2026-03-18 — Second Brain & Salvador Parity
 
 ### Second Brain (Milestone #39 — 8 features)

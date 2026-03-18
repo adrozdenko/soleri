@@ -6,51 +6,38 @@ const content: Record<Locale, GettingStartedContent> = {
   en: {
     title: 'Getting Started - Soleri',
     description:
-      'From zero to a second brain in five minutes. Install Soleri, build your first brain, and start compounding knowledge.',
-    eyebrow: 'From zero to a second brain in five minutes',
-    heroTitle: 'Your second brain starts smart. It only gets smarter.',
-    heroSubtitle: 'Three steps. No configuration files. No API keys needed — works with Claude Code out of the box.',
+      'Create a file-tree agent, register it with your editor, and start building reusable knowledge in a few minutes.',
+    eyebrow: 'Create an agent folder and connect it in minutes',
+    heroTitle: 'Set up your first Soleri agent.',
+    heroSubtitle:
+      'Three steps: scaffold the folder, register it in your editor, and run the engine. Claude Code token discovery works automatically when available.',
     steps: [
       {
-        title: 'Install',
-        text: "One command. No global install required.",
-        code: `<span class="prompt">$</span> <span class="cmd">npx soleri create</span> <span class="arg">my-brain</span>`,
+        title: 'Create the agent folder',
+        text: 'Use the npm create shorthand or the CLI directly. The result is a plain folder with agent.yaml, instructions, workflows, knowledge, and skills.',
+        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>`,
         isInstallCmd: true,
       },
       {
-        title: 'Build your second brain',
-        text: 'The guided wizard walks you through each step — pick a focus, name it, select domains, principles, and tone. Your second brain is a folder, ready instantly.',
-        code: `<span class="prompt">$</span> <span class="cmd">npx soleri create</span>
+        title: 'Register it in your editor',
+        text: 'From inside the new folder, register the MCP server for Claude Code, Codex, OpenCode, or all supported targets.',
+        code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
 
-<span class="cmt">◆ What kind of agent?   Security Auditor</span>
-<span class="cmt">◆ Display name:         Sentinel</span>
-<span class="cmt">◆ Agent ID:             sentinel</span>
-<span class="cmt">◆ Domains:              security, code-review</span>
-<span class="cmt">◆ Principles:           Security first, Zero trust...</span>
-<span class="cmt">◆ Tone:                 Precise</span>
-
-<span class="ok">✓</span> Created agent.yaml
-<span class="ok">✓</span> Generated instructions/, workflows/, knowledge/
-<span class="ok">✓</span> Auto-composed CLAUDE.md
-<span class="ok">✓</span> Ready — no build step needed
-
-<span class="cmt">Run: soleri install && soleri dev</span>`,
+<span class="ok">✓</span> Detected file-tree agent
+<span class="ok">✓</span> Registered my-agent in <span class="val">~/.claude.json</span>
+<span class="ok">✓</span> Launcher created`,
         isInstallCmd: false,
       },
       {
-        title: 'Start learning',
-        text: 'Connect the engine, say hello in your editor. Your second brain activates, captures knowledge as you work, and gets smarter over time.',
-        code: `<span class="cmt"># Register and start the engine</span>
-<span class="prompt">$</span> <span class="cmd">npx soleri install</span>   <span class="cmt"># register MCP server</span>
-<span class="prompt">$</span> <span class="cmd">npx soleri dev</span>       <span class="cmt"># start the engine</span>
+        title: 'Run the engine',
+        text: 'Start the engine while you work. It watches the agent files and regenerates the editor instruction file when the folder changes.',
+        code: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>
 
-<span class="cmt"># In your editor — activate the persona</span>
-<span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
-
-<span class="ok">✓</span> Persona activated      <span class="val">Sentinel — Security Auditor</span>
-<span class="ok">✓</span> Session briefing       <span class="val">46 entries, 0 active plans</span>
-<span class="ok">✓</span> OAuth discovered       <span class="val">Claude Code token ✓</span>
-<span class="ok">✓</span> Engine ready           <span class="val">270+ ops</span>`,
+<span class="ok">✓</span> MCP server running
+<span class="ok">✓</span> Watching agent.yaml, instructions/, workflows/, knowledge/
+<span class="ok">✓</span> CLAUDE.md regenerates on change
+<span class="ok">✓</span> Claude Code token discovered <span class="cmt">(if available)</span>`,
         isInstallCmd: false,
       },
     ],
@@ -143,18 +130,18 @@ const content: Record<Locale, GettingStartedContent> = {
     nextLinks: [
       {
         title: 'How it works',
-        desc: 'Vault, brain, and transport architecture explained.',
+        desc: 'See the file-tree model, the vault, and the learning loop.',
         href: 'how-it-works.html',
       },
       {
-        title: 'Your Agent',
-        desc: "Create, configure, and grow your agent's knowledge.",
-        href: 'personas.html',
+        title: 'Teams',
+        desc: 'Learn how shared vaults, project links, and playbooks fit together.',
+        href: 'teams.html',
       },
       {
-        title: 'Teams &amp; Ops',
-        desc: 'Shared vaults, knowledge packs, and Telegram bot.',
-        href: 'teams.html',
+        title: 'Docs',
+        desc: 'Go deeper on commands, guides, and the current product surface.',
+        href: '/docs/',
       },
     ],
   },
