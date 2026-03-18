@@ -263,12 +263,12 @@ ${
   const domainPacks = await loadDomainPacksFromConfig(${JSON.stringify(config.domainPacks)});
   console.error(\`[\${tag}] Loaded \${domainPacks.length} domain packs\`);
   for (const pack of domainPacks) {
-    if (pack.onActivate) await pack.onActivate(runtime);
+    const packRuntime = createPackRuntime(runtime);
+    if (pack.onActivate) await pack.onActivate(packRuntime, runtime);
   }
 
   // ─── Capability Registry ─────────────────────────────────────
   const capabilityRegistry = new CapabilityRegistry();
-  const packRuntime = createPackRuntime(runtime);
 
   // Register domain pack capabilities
   for (const pack of domainPacks) {

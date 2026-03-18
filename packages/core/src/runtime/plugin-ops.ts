@@ -8,6 +8,7 @@ import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import { loadPlugins, validateDependencies, sortByDependencies } from '../plugins/index.js';
+import { createPackRuntime } from '../domain-packs/pack-runtime.js';
 
 export function createPluginOps(runtime: AgentRuntime, opSink?: OpDefinition[]): OpDefinition[] {
   const { pluginRegistry, config } = runtime;
@@ -157,6 +158,7 @@ export function createPluginOps(runtime: AgentRuntime, opSink?: OpDefinition[]):
           if (!plugin) return { error: `Plugin not found: ${pluginId}` };
 
           const result = await pluginRegistry.activate(pluginId, {
+            packRuntime: createPackRuntime(runtime),
             runtime,
             manifest: plugin.manifest,
             directory: plugin.directory,
@@ -179,6 +181,7 @@ export function createPluginOps(runtime: AgentRuntime, opSink?: OpDefinition[]):
         const results = await Promise.all(
           pending.map(async (plugin) => {
             const activated = await pluginRegistry.activate(plugin.id, {
+              packRuntime: createPackRuntime(runtime),
               runtime,
               manifest: plugin.manifest,
               directory: plugin.directory,

@@ -410,8 +410,8 @@ const pack: DomainPack = {
   version: '1.0.0',
   domains: ['component'],
   ops,
-  onActivate: async (runtime: unknown) => {
-    packRuntime = runtime as PackRuntime;
+  onActivate: async (narrowedRuntime: PackRuntime) => {
+    packRuntime = narrowedRuntime;
   },
   rules: `## Component Lifecycle
 

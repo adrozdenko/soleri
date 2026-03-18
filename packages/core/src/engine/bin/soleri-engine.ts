@@ -129,9 +129,12 @@ async function main(): Promise<void> {
       const manifests = await loadDomainPacksFromConfig(refs);
 
       // Packs activate sequentially — order may matter for dependencies
+      const { createPackRuntime } = await import('../../domain-packs/pack-runtime.js');
+      const narrowedRuntime = createPackRuntime(runtime);
+
       for (const manifest of manifests) {
         if (manifest.onActivate) {
-          await manifest.onActivate(runtime); // eslint-disable-line no-await-in-loop
+          await manifest.onActivate(narrowedRuntime, runtime); // eslint-disable-line no-await-in-loop
         }
         loadedPacks.push(manifest);
         console.error(`${tag} Domain pack: ${manifest.name}`);

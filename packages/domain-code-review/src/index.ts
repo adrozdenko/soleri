@@ -846,8 +846,8 @@ const pack: DomainPack = {
   version: '1.0.0',
   domains: ['code-review'],
   ops: [...githubOps, ...playwrightOps],
-  onActivate: async (runtime: unknown) => {
-    packRuntime = runtime as PackRuntime;
+  onActivate: async (narrowedRuntime: PackRuntime) => {
+    packRuntime = narrowedRuntime;
   },
   rules: `## Code Review Workflow
 
