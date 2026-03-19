@@ -332,12 +332,12 @@ export class CogneeClient {
       throw new Error('Explicit Cognee credentials are required for non-local endpoints');
     }
 
-    // Try login first
+    // Try login first (use timeoutMs, not healthTimeoutMs — auth can be slow on cold start)
     const loginResp = await globalThis.fetch(`${this.config.baseUrl}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
-      signal: AbortSignal.timeout(this.config.healthTimeoutMs),
+      signal: AbortSignal.timeout(this.config.timeoutMs),
     });
 
     if (loginResp.ok) {
@@ -351,14 +351,14 @@ export class CogneeClient {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
-      signal: AbortSignal.timeout(this.config.healthTimeoutMs),
+      signal: AbortSignal.timeout(this.config.timeoutMs),
     });
 
     const retryLogin = await globalThis.fetch(`${this.config.baseUrl}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
-      signal: AbortSignal.timeout(this.config.healthTimeoutMs),
+      signal: AbortSignal.timeout(this.config.timeoutMs),
     });
 
     if (!retryLogin.ok) {
