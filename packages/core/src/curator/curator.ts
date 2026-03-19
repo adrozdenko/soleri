@@ -1,6 +1,5 @@
 import type { Vault } from '../vault/vault.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
-import type { CogneeClient } from '../cognee/client.js';
 import type { PersistenceProvider } from '../persistence/types.js';
 import {
   tokenize,
@@ -51,12 +50,10 @@ const DEFAULT_TAG_ALIASES: Array<[string, string]> = [
 
 export class Curator {
   private vault: Vault;
-  private cognee: CogneeClient | undefined;
   private provider: PersistenceProvider;
 
-  constructor(vault: Vault, cognee?: CogneeClient) {
+  constructor(vault: Vault) {
     this.vault = vault;
-    this.cognee = cognee;
     this.provider = vault.getProvider();
     this.initializeTables();
     this.seedDefaultAliases();
@@ -378,8 +375,7 @@ export class Curator {
 
   async detectContradictionsHybrid(threshold?: number): Promise<{
     contradictions: Contradiction[];
-    cogneeAvailable: boolean;
-    method: 'hybrid' | 'tfidf-only';
+    method: 'tfidf-only';
   }> {
     const effectiveThreshold = threshold ?? DEFAULT_CONTRADICTION_THRESHOLD;
     const entries = this.vault.list({ limit: 100000 });
@@ -387,13 +383,11 @@ export class Curator {
     const patterns = entries.filter((e) => e.type === 'pattern');
 
     if (antipatterns.length === 0 || patterns.length === 0) {
-      return { contradictions: [], cogneeAvailable: false, method: 'tfidf-only' };
+      return { contradictions: [], method: 'tfidf-only' };
     }
 
     const vocabulary = this.buildVocabulary(entries);
     const detected: Contradiction[] = [];
-
-    const cogneeAvailable = this.cognee?.isAvailable ?? false;
 
     for (const ap of antipatterns) {
       let candidates: IntelligenceEntry[];
@@ -410,23 +404,7 @@ export class Curator {
       for (const pattern of candidates) {
         const pText = [pattern.title, pattern.description, pattern.context ?? ''].join(' ');
         const pVec = calculateTfIdf(tokenize(pText), vocabulary);
-        const tfidfScore = cosineSimilarity(apVec, pVec);
-
-        let finalScore = tfidfScore;
-        if (cogneeAvailable && this.cognee) {
-          try {
-            const cogneeResults = await this.cognee.search(`${ap.title} ${pattern.title}`, {
-              limit: 5,
-            });
-            const cogneeScore =
-              cogneeResults.length > 0
-                ? cogneeResults.reduce((sum, r) => sum + r.score, 0) / cogneeResults.length
-                : 0;
-            finalScore = 0.6 * tfidfScore + 0.4 * cogneeScore;
-          } catch {
-            finalScore = tfidfScore;
-          }
-        }
+        const finalScore = cosineSimilarity(apVec, pVec);
 
         if (finalScore >= effectiveThreshold) {
           const result = this.provider.run(
@@ -446,8 +424,7 @@ export class Curator {
 
     return {
       contradictions: detected,
-      cogneeAvailable,
-      method: cogneeAvailable ? 'hybrid' : 'tfidf-only',
+      method: 'tfidf-only',
     };
   }
 

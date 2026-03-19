@@ -1,5 +1,5 @@
 /**
- * Semantic facade assembler — creates 10 domain-specific facades
+ * Semantic facade assembler — creates domain-specific facades
  * matching Salvador's engine-level architecture.
  *
  * Each facade becomes its own MCP tool with op dispatch.
@@ -16,7 +16,6 @@ import { createCuratorFacadeOps } from './curator-facade.js';
 import { createLoopFacadeOps } from './loop-facade.js';
 import { createOrchestrateFacadeOps } from './orchestrate-facade.js';
 import { createControlFacadeOps } from './control-facade.js';
-import { createCogneeFacadeOps } from './cognee-facade.js';
 import { createContextFacadeOps } from './context-facade.js';
 import { createAgencyFacadeOps } from './agency-facade.js';
 import { createChatFacadeOps } from './chat-facade.js';
@@ -87,15 +86,6 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       ops: createChatFacadeOps(runtime),
     },
   ];
-
-  // Cognee facade — only registered when Cognee integration is enabled
-  if (runtime.cognee) {
-    facades.push({
-      name: `${agentId}_cognee`,
-      description: 'Knowledge graph — Cognee search, sync, export, graph stats.',
-      ops: createCogneeFacadeOps(runtime),
-    });
-  }
 
   return facades;
 }

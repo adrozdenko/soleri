@@ -1,0 +1,50 @@
+{
+  "domain": "design",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "pattern-design-quick-component-variant-enum-over-boolean-prop-explosion",
+      "type": "pattern",
+      "domain": "design",
+      "title": "Component variant enum over boolean prop explosion",
+      "severity": "warning",
+      "description": "# Component variant enum over boolean prop explosion\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nDesign system components must use a single variant enum prop instead of multiple boolean props. Boolean explosion: isLarge, isBold, isPrimary creates 2^3=8 combinations, most invalid. Variant enum: variant='primary'|'secondary'|'destructive'|'outline'|'ghost' makes valid states explicit and invalid states unrepresentable. This pattern is enforced via api-constraints intelligence data and component dev rules.\n\n## Example\n\n```typescript\nBad: <Button isLarge isPrimary isBold>. Good: <Button variant='primary' size='lg'>\n```\n\n## Why\n\nBoolean props create combinatorial explosion of untested states. Variant enums make the valid state space explicit and testable.",
+      "tags": [
+        "variants",
+        "api-design",
+        "boolean-explosion",
+        "type-safety",
+        "components"
+      ]
+    },
+    {
+      "id": "pattern-design-quick-atomic-design-classification-5-levels-from-atom-to",
+      "type": "rule",
+      "domain": "design",
+      "title": "Atomic design classification: 5 levels from atom to page",
+      "severity": "critical",
+      "description": "# Atomic design classification: 5 levels from atom to page\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nSalvador classifies all UI elements into 5 atomic design levels defined in chains/domains/ui-components.yaml. Atom: single-responsibility elements (Button, Input, Icon). Molecule: small groups (FormField = label+input+error). Organism: complex sections (Form, Modal, DataTable). Template: page layouts (DashboardLayout). Page: full screens (LoginPage). Classification drives UX law selection in UX-AUDITOR-flow — atoms get Fitts's Law, organisms get Hick's Law.\n\n## Example\n\n```typescript\nButton (atom) → FormField (molecule) → LoginForm (organism) → AuthLayout (template) → LoginPage (page)\n```\n\n## Why\n\nAtomic level determines which UX laws apply, which validation chains run, and how components compose. Skipping levels creates maintenance debt.",
+      "tags": [
+        "atomic-design",
+        "classification",
+        "component-hierarchy",
+        "ux-laws"
+      ]
+    },
+    {
+      "id": "pattern-design-quick-semantic-color-context-mapping-with-depth-levels",
+      "type": "rule",
+      "domain": "design",
+      "title": "Semantic color context mapping with depth levels",
+      "severity": "critical",
+      "description": "# Semantic color context mapping with depth levels\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nColor intelligence uses context-aware depth levels for semantic color assignment. Page (depth 0): broadest context, lightest backgrounds. Card (depth 2): elevated surface, subtle distinction. Surface (depth 3): interactive or nested areas. Button (depth 4): highest contrast. Each depth defines text color hierarchy (primary > secondary > muted) and valid background/foreground pairs. The validate-colors composite checks both light and dark mode variants at each depth.\n\n## Example\n\n```typescript\nPage depth-0: bg-page + text-primary. Card depth-2: bg-card + text-primary. Button depth-4: bg-primary-500 + text-inverse.\n```\n\n## Why\n\nContext-aware colors prevent accessibility failures when nesting components. A text color valid on a page background may fail on a card background.",
+      "tags": [
+        "color",
+        "context",
+        "depth-levels",
+        "semantic",
+        "dark-mode"
+      ]
+    }
+  ]
+}

@@ -31,10 +31,10 @@ export const AgentConfigSchema = z.object({
   role: z.string().min(1).max(100),
   /** Longer description of what this agent does */
   description: z.string().min(10).max(500),
-  /** Knowledge domains this agent covers */
-  domains: z.array(z.string().min(1)).min(1).max(20),
-  /** Core principles the agent follows (3-7 recommended) */
-  principles: z.array(z.string()).min(1).max(10),
+  /** Knowledge domains this agent covers (discovered from usage if empty) */
+  domains: z.array(z.string().min(1)).max(20).optional().default([]),
+  /** Core principles the agent follows (discovered from usage if empty) */
+  principles: z.array(z.string()).max(10).optional().default([]),
   /** Communication tone: precise, mentor, or pragmatic */
   tone: z.enum(TONES).optional().default('pragmatic'),
   /** Greeting message when agent introduces itself (auto-generated if omitted) */
@@ -51,8 +51,6 @@ export const AgentConfigSchema = z.object({
   setupTarget: z.enum(SETUP_TARGETS).optional().default('claude'),
   /** Enable Telegram transport scaffolding. Default: false. */
   telegram: z.boolean().optional().default(false),
-  /** Enable Cognee vector search integration. Default: false. */
-  cognee: z.boolean().optional().default(false),
   /** Domain packs — npm packages with custom ops, knowledge, rules, and skills. */
   domainPacks: z
     .array(
@@ -78,6 +76,8 @@ export const AgentConfigSchema = z.object({
     .optional(),
   /** @deprecated Use vaults[] instead. Shorthand for a single shared vault at priority 0.6. */
   sharedVaultPath: z.string().optional(),
+  /** Composable persona configuration. If omitted, Italian Craftsperson default is used. */
+  persona: z.record(z.unknown()).optional(),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

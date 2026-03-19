@@ -14,7 +14,6 @@ import { BrainIntelligence } from '../brain/intelligence.js';
 import { Planner } from '../planning/planner.js';
 import { Curator } from '../curator/curator.js';
 import { Governance } from '../governance/governance.js';
-import { CogneeClient } from '../cognee/client.js';
 import { LoopManager } from '../loop/loop-manager.js';
 import { IdentityManager } from '../control/identity-manager.js';
 import { IntentRouter } from '../control/intent-router.js';
@@ -22,7 +21,6 @@ import { KeyPool, loadKeyPoolConfig } from '../llm/key-pool.js';
 import { discoverAnthropicToken } from '../llm/oauth-discovery.js';
 import { loadIntelligenceData } from '../intelligence/loader.js';
 import { LLMClient } from '../llm/llm-client.js';
-import { CogneeSyncManager } from '../cognee/sync-manager.js';
 import { IntakePipeline } from '../intake/intake-pipeline.js';
 import { TextIngester } from '../intake/text-ingester.js';
 import { Telemetry } from '../telemetry/telemetry.js';
@@ -50,6 +48,8 @@ import { PipelineRunner } from '../queue/pipeline-runner.js';
 import { evaluateQuality } from '../curator/quality-gate.js';
 import { classifyEntry } from '../curator/classifier.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
+import { loadPersona } from '../persona/loader.js';
+import { generatePersonaInstructions } from '../persona/prompt-generator.js';
 
 /**
  * Create a fully initialized agent runtime.
@@ -95,25 +95,15 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Planner — multi-step task tracking
   const planner = new Planner(plansPath);
 
-  // Cognee — vector search client (opt-in, graceful degradation if Cognee is down)
-  let cognee: CogneeClient | null = null;
-  if (config.cognee) {
-    const cogneePartial: Partial<import('../cognee/types.js').CogneeConfig> = { dataset: agentId };
-    if (process.env.COGNEE_BASE_URL) cogneePartial.baseUrl = process.env.COGNEE_BASE_URL;
-    if (process.env.COGNEE_API_TOKEN) cogneePartial.apiToken = process.env.COGNEE_API_TOKEN;
-    if (process.env.COGNEE_DATASET) cogneePartial.dataset = process.env.COGNEE_DATASET;
-    cognee = new CogneeClient(cogneePartial);
-  }
-
   // Brain — intelligence layer (TF-IDF scoring, auto-tagging, dedup)
   // Pass vaultManager so intelligentSearch queries all connected sources (not just agent tier)
-  const brain = new Brain(vault, cognee ?? undefined, vaultManager);
+  const brain = new Brain(vault, vaultManager);
 
   // Brain Intelligence — pattern strengths, session knowledge, intelligence pipeline
   const brainIntelligence = new BrainIntelligence(vault, brain);
 
   // Curator — vault self-maintenance (dedup, contradictions, grooming, health)
-  const curator = new Curator(vault, cognee ?? undefined);
+  const curator = new Curator(vault);
 
   // Governance — policy engine + proposal tracker for gated knowledge capture
   const governance = new Governance(vault);
@@ -152,17 +142,6 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const anthropicKeyPool = new KeyPool(anthropicConfig);
   const llmClient = new LLMClient(openaiKeyPool, anthropicKeyPool, agentId);
 
-  // Cognee Sync Manager — queue-based dirty tracking with offline resilience (only when Cognee enabled)
-  let syncManager: CogneeSyncManager | null = null;
-  if (cognee) {
-    syncManager = new CogneeSyncManager(
-      vault.getProvider(),
-      cognee,
-      process.env.COGNEE_DATASET ?? agentId,
-    );
-    vault.setSyncManager(syncManager);
-  }
-
   // Link Manager — Zettelkasten auto-linking on vault ingestion
   const linkManager = new LinkManager(vault.getProvider());
   vault.setLinkManager(linkManager, { enabled: true, maxLinks: 3 });
@@ -184,7 +163,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const vaultBranching = new VaultBranching(vault);
 
   // Context Engine — entity extraction, knowledge retrieval, confidence scoring
-  const contextEngine = new ContextEngine(vault, brain, brainIntelligence, cognee);
+  const contextEngine = new ContextEngine(vault, brain, brainIntelligence);
 
   // Agency Manager — proactive file watching, pattern surfacing (disabled by default)
   const agencyManager = new AgencyManager(vault);
@@ -196,10 +175,6 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const health = new HealthRegistry();
   health.register('vault', 'healthy');
   health.register('brain', 'healthy');
-  health.register(
-    'cognee',
-    cognee ? (cognee.getStatus()?.available ? 'healthy' : 'degraded') : 'down',
-  );
   health.register(
     'llm',
     llmClient.isAvailable().openai || llmClient.isAvailable().anthropic ? 'healthy' : 'degraded',
@@ -228,7 +203,6 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     planner,
     curator,
     governance,
-    cognee,
     loop,
     identityManager,
     intentRouter,
@@ -237,7 +211,6 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     telemetry,
     projectRegistry,
     templateManager,
-    syncManager,
     intakePipeline,
     textIngester,
     authPolicy: { mode: 'permissive', callerLevel: 'admin' },
@@ -335,26 +308,6 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
         const result = curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
         return { archived: result.staleEntries.length, result };
       });
-      pr.registerHandler('cognee-ingest', async (job) => {
-        if (!cognee) return { skipped: true, reason: 'cognee not available' };
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        try {
-          const result = await cognee.addEntries([entry]);
-          return { ingested: result.added };
-        } catch {
-          return { skipped: true, reason: 'cognee ingestion failed' };
-        }
-      });
-      pr.registerHandler('cognee-cognify', async (_job) => {
-        if (!cognee) return { skipped: true, reason: 'cognee not available' };
-        try {
-          const result = await cognee.cognify();
-          return result;
-        } catch {
-          return { skipped: true, reason: 'cognee cognify failed' };
-        }
-      });
       pr.registerHandler('verify-searchable', async (job) => {
         const entry = vault.get(job.entryId ?? '');
         if (!entry) return { skipped: true, reason: 'entry not found' };
@@ -364,10 +317,17 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       });
       return pr;
     })(),
+    persona: (() => {
+      const p = loadPersona(agentId, config.persona ?? undefined);
+      logger.info(`[Persona] Loaded: ${p.name} (${p.template})`);
+      return p;
+    })(),
+    personaInstructions: (() => {
+      const p = loadPersona(agentId, config.persona ?? undefined);
+      return generatePersonaInstructions(p);
+    })(),
     createdAt: Date.now(),
     close: () => {
-      syncManager?.close();
-      cognee?.resetPendingCognify();
       vaultManager.close();
     },
   };

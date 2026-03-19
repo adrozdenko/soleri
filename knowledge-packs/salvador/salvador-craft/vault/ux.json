@@ -1,0 +1,55 @@
+{
+  "domain": "ux",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "pattern-ux-plan-summary-metadata",
+      "type": "pattern",
+      "domain": "ux",
+      "title": "Always include Plan Metadata in summaries",
+      "severity": "critical",
+      "description": "# Always include Plan Metadata in summaries\n\n## Context\n\nWhen presenting plan summaries to users after salvador_plan iterations\n\n## Pattern\n\nEvery plan summary MUST include a Plan Metadata table at the top with: Plan ID, Check ID, Grade (score/100), Status, and Expiration time\n\n## Example\n\n```typescript\n| Field | Value |\\n|-------|-------|\\n| **Plan ID** | 1770027538557_5cfbd0ba |\\n| **Check ID** | chk_plan_1770027538557_5cfbd0ba |\\n| **Grade** | A+ (95/100) |\\n| **Status** | READY_FOR_APPROVAL |\\n| **Expires** | 30 minutes from creation |\n```\n\n## Why\n\nWithout visible IDs, users cannot: (1) Resume plans after interruption, (2) Reference plans in future sessions, (3) Approve plans for task generation. The _checkId is the key to all plan operations.",
+      "tags": [
+        "planning",
+        "salvador",
+        "presentation",
+        "UX"
+      ]
+    },
+    {
+      "id": "pattern-ux-preview-before-confirmation",
+      "type": "pattern",
+      "domain": "ux",
+      "title": "Show preview of changes BEFORE asking for confirmation",
+      "severity": "warning",
+      "description": "# Show preview of changes BEFORE asking for confirmation\n\n## Context\n\nInteractive prompts that ask yes/no should show what will happen first\n\n## Pattern\n\nWhen asking user to confirm a destructive action, first show the list of affected items (files to delete, hooks to remove, etc.), then ask for confirmation.\n\n## Example\n\n```typescript\nconsole.log('Files that will be removed:');\nfor (const f of filesToDelete) {\n  console.log(`  - ${f.path}`);\n}\nconsole.log('(These are safe to remove)');\nconst confirmed = await askQuestion('Proceed? [y/N] ');\n```\n\n## Why\n\nAsking 'Clean up duplicates? [y/N]' without showing WHICH duplicates forces user to guess or abort. Preview builds confidence in the decision.",
+      "tags": [
+        "cli",
+        "ux",
+        "interactive",
+        "confirmation"
+      ],
+      "appliesTo": [
+        "scripts/setup-project.js"
+      ]
+    },
+    {
+      "id": "anti-pattern-ux-confirm-without-preview",
+      "type": "anti-pattern",
+      "domain": "ux",
+      "title": "Asking for confirmation without showing what will change",
+      "severity": "warning",
+      "description": "# Asking for confirmation without showing what will change\n\n## Context\n\nInteractive yes/no prompts that don't show the affected items\n\n## Anti-Pattern\n\nPrompting 'Clean up duplicates? [y/N]' without first listing which files will be deleted forces users to guess or abort.\n\n## Example (Bad)\n\n```typescript\n// BAD:\nconst confirmed = await askQuestion('Clean up? [y/N] ');\nif (confirmed) deleteFiles(analysis.duplicates);\n```\n\n## Why It's Wrong\n\nUsers don't know what they're agreeing to. They either abort (friction) or blindly confirm (risk). Preview eliminates both problems.\n\n## Correct Approach\n\nSee: [preview-before-confirmation](../../patterns/other/preview-before-confirmation.md)",
+      "tags": [
+        "cli",
+        "ux",
+        "anti-pattern",
+        "interactive"
+      ],
+      "appliesTo": [
+        "scripts/setup-project.js"
+      ],
+      "context": "Related: preview-before-confirmation"
+    }
+  ]
+}

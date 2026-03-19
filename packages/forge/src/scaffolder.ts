@@ -257,10 +257,6 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
       name: `${config.id}_control`,
       ops: ['get_identity', 'route_intent', 'governance_policy', '...control+governance ops'],
     },
-    {
-      name: `${config.id}_cognee`,
-      ops: ['cognee_status', 'cognee_search', '...cognee ops', '...cognee-sync'],
-    },
     // Agent-specific facade
     {
       name: `${config.id}_core`,

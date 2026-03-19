@@ -400,11 +400,15 @@ function buildAgentYaml(config: AgentYaml): Record<string, unknown> {
     yaml.greeting = config.greeting;
   }
 
+  // Persona config — include if present
+  if (config.persona && Object.keys(config.persona).length > 0) {
+    yaml.persona = config.persona;
+  }
+
   // Engine config — only include non-defaults
   const engine: Record<string, unknown> = {};
   if (config.engine?.vault) engine.vault = config.engine.vault;
   if (config.engine?.learning === false) engine.learning = false;
-  if (config.engine?.cognee === true) engine.cognee = true;
   if (Object.keys(engine).length > 0) yaml.engine = engine;
 
   // Vaults

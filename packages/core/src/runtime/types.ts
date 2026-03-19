@@ -4,7 +4,6 @@ import type { BrainIntelligence } from '../brain/intelligence.js';
 import type { Planner } from '../planning/planner.js';
 import type { Curator } from '../curator/curator.js';
 import type { Governance } from '../governance/governance.js';
-import type { CogneeClient } from '../cognee/client.js';
 import type { KeyPool } from '../llm/key-pool.js';
 import type { LLMClient } from '../llm/llm-client.js';
 import type { IdentityManager } from '../control/identity-manager.js';
@@ -13,7 +12,6 @@ import type { LoopManager } from '../loop/loop-manager.js';
 import type { Telemetry } from '../telemetry/telemetry.js';
 import type { ProjectRegistry } from '../project/project-registry.js';
 import type { TemplateManager } from '../prompts/template-manager.js';
-import type { CogneeSyncManager } from '../cognee/sync-manager.js';
 import type { IntakePipeline } from '../intake/intake-pipeline.js';
 import type { Logger } from '../logging/logger.js';
 import type { LogLevel } from '../logging/types.js';
@@ -55,10 +53,10 @@ export interface AgentRuntimeConfig {
   logLevel?: LogLevel;
   /** Path to shared global vault. Default: ~/.soleri/vault.db */
   sharedVaultPath?: string;
-  /** Enable Cognee vector search integration. Default: false (opt-in). */
-  cognee?: boolean;
   /** Path to the agent's root directory (containing agent.yaml, instructions/, etc.). Optional — set by engine binary. */
   agentDir?: string;
+  /** Persona configuration from agent.yaml. If omitted, Italian Craftsperson default is used. */
+  persona?: Partial<import('../persona/types.js').PersonaConfig>;
 }
 
 /**
@@ -74,8 +72,6 @@ export interface AgentRuntime {
   planner: Planner;
   curator: Curator;
   governance: Governance;
-  /** Cognee vector search client. Null when Cognee integration is disabled. */
-  cognee: CogneeClient | null;
   loop: LoopManager;
   identityManager: IdentityManager;
   intentRouter: IntentRouter;
@@ -84,8 +80,6 @@ export interface AgentRuntime {
   telemetry: Telemetry;
   projectRegistry: ProjectRegistry;
   templateManager: TemplateManager;
-  /** Cognee sync manager. Null when Cognee integration is disabled. */
-  syncManager: CogneeSyncManager | null;
   intakePipeline: IntakePipeline;
   /** Mutable auth policy — controls facade dispatch enforcement. */
   authPolicy: AuthPolicy;
@@ -123,6 +117,10 @@ export interface AgentRuntime {
   jobQueue: JobQueue;
   /** Pipeline runner — background polling loop for job execution. */
   pipelineRunner: PipelineRunner;
+  /** Agent persona — defines character, voice, and cultural texture. */
+  persona: import('../persona/types.js').PersonaConfig;
+  /** Generated persona system instructions for LLM context. */
+  personaInstructions: import('../persona/types.js').PersonaSystemInstructions;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

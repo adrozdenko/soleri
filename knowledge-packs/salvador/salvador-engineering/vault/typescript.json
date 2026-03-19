@@ -1,0 +1,54 @@
+{
+  "domain": "typescript",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "pattern-typescript-quick-no-any-types-enforcement-unknown-over-any-for-type",
+      "type": "pattern",
+      "domain": "typescript",
+      "title": "No-any-types enforcement: unknown over any for type safety",
+      "severity": "critical",
+      "description": "# No-any-types enforcement: unknown over any for type safety\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nThe no-any-types hookify rule blocks all forms of TypeScript 'any' usage: ': any' type annotations, 'as any' type assertions, and 'Record<string, any>' generic parameters. Use 'unknown' for truly unknown types and narrow with type guards. Use specific types or union types for known shapes. This rule fires as a blocking action on .ts and .tsx files, preventing commits until fixed.\n\n## Example\n\n```typescript\nBlocked: function parse(data: any). Fix: function parse(data: unknown) { if (isConfig(data)) { ... } }\n```\n\n## Why\n\n'any' silently disables TypeScript's type system. 'unknown' preserves type checking while acknowledging the type is not yet known.",
+      "tags": [
+        "type-safety",
+        "any",
+        "unknown",
+        "enforcement",
+        "hookify"
+      ]
+    },
+    {
+      "id": "pattern-typescript-quick-type-safe-tool-registry-with-pre-defined-output-sh",
+      "type": "pattern",
+      "domain": "typescript",
+      "title": "Type-safe tool registry with pre-defined output shapes in YAML",
+      "severity": "warning",
+      "description": "# Type-safe tool registry with pre-defined output shapes in YAML\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nEach atomic chain in chains/atomic.yaml declares its output type as a string template: '{found, id?, similarity?}' for search-components, '{pass, ratio, level}' for contrast checks, '{violations[], score}' for code validation. These output shapes serve as informal type contracts — consumers of chain results know exactly what fields to expect. Related chains and tags enable discovery and composition.\n\n## Example\n\n```typescript\natomic.yaml: search-components: { tool: salvador_search_components, output: '{found, id?, similarity?}', tags: [search] }\n```\n\n## Why\n\nPre-declared output shapes prevent runtime surprises when chaining tools. The YAML acts as a lightweight type system for the data pipeline.",
+      "tags": [
+        "type-safety",
+        "output-shapes",
+        "contracts",
+        "atomic-chains",
+        "yaml"
+      ]
+    },
+    {
+      "id": "pattern-typescript-vault-mcp-separation",
+      "type": "pattern",
+      "domain": "typescript",
+      "title": "Vault vs MCP Server Separation",
+      "severity": "warning",
+      "description": "# Vault vs MCP Server Separation\n\n## Context\n\nWhen adding new intelligence data to Salvador ecosystem\n\n## Pattern\n\nSalvador has clear separation: the VAULT (salvador) contains intelligence data (JSON, YAML), while the MCP SERVER (salvador-mcp) provides the API. Updates require changes to both.\n\n## Example\n\n```typescript\n// Step 1: Add data to vault\n// /salvador/intelligence/data/workflow-patterns.json\n{\n  \"masterStoryProtocol\": { ... }\n}\n\n// Step 2: Update MCP tool to expose it\n// /salvador-mcp/src/tools/get-storybook-patterns.ts\npattern: z.enum([..., 'masterStoryProtocol', 'all'])\n\n// Step 3: Rebuild MCP & reload intelligence\nnpm run build\nsalvador_reload_intelligence()\n```\n\n## Why\n\nVault is the source of truth for design system knowledge. MCP is the access layer. This separation allows updating intelligence without changing server code, and vice versa.",
+      "tags": [
+        "salvador",
+        "mcp",
+        "vault",
+        "architecture"
+      ],
+      "appliesTo": [
+        "intelligence/data/*.json",
+        "src/tools/*.ts"
+      ]
+    }
+  ]
+}

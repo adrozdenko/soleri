@@ -86,7 +86,6 @@ ${domainPackDescribes ? `\n${domainPackDescribes}\n` : ''}
       expect(names).toContain('${config.id}_loop');
       expect(names).toContain('${config.id}_orchestrate');
       expect(names).toContain('${config.id}_control');
-      expect(names).toContain('${config.id}_cognee');
     });
 
     it('total ops across all facades should meet minimum threshold', () => {
@@ -270,16 +269,6 @@ ${domainPackDescribes ? `\n${domainPackDescribes}\n` : ''}
       };
       expect(result.projectPath).toBe('/test');
       expect(result.quotas.maxEntriesTotal).toBe(500);
-    });
-  });
-
-  describe('${config.id}_cognee', () => {
-    it('should contain cognee ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_cognee')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('cognee_status');
-      expect(opNames).toContain('cognee_search');
-      expect(opNames).toContain('cognee_sync_status');
     });
   });
 

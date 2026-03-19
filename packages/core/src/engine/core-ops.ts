@@ -162,7 +162,6 @@ export function createCoreOps(
             byType: s.byType,
           },
           engine: {
-            cognee: runtime.cognee !== null && runtime.cognee !== undefined,
             brain: true,
             curator: true,
             planner: true,

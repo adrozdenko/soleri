@@ -1,0 +1,50 @@
+{
+  "domain": "communication",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "pattern-communication-quick-prompt-library-hint-system-for-domain-specific-wor",
+      "type": "pattern",
+      "domain": "communication",
+      "title": "Prompt library hint system for domain-specific workflow loading",
+      "severity": "warning",
+      "description": "# Prompt library hint system for domain-specific workflow loading\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nEach chain-mapping in routing-config.yaml includes a prompt-hint field that loads domain-specific workflow guidance from Salvador's prompt library (55 prompts). When routing returns a prompt-hint like 'component-create', the system calls salvador_get_prompt('component-create') which returns: protocol (step-by-step guidance), mcpTools (mandatory tool calls), and FORBIDDEN rules (patterns that must not appear). Prompts complement planning — they provide domain knowledge while planning provides task management.\n\n## Example\n\n```typescript\nprompt-hint: 'component-create' → loads protocol with shadcn check, contrast validation, component workflow. mcpTools are MANDATORY.\n```\n\n## Why\n\nPrompt hints inject accumulated domain expertise into every workflow without hardcoding knowledge in flow definitions.",
+      "tags": [
+        "prompts",
+        "domain-knowledge",
+        "workflow",
+        "hint-system",
+        "guidance"
+      ]
+    },
+    {
+      "id": "pattern-communication-quick-knowledge-gather-before-execute-pattern-in-all-flo",
+      "type": "rule",
+      "domain": "communication",
+      "title": "Knowledge gather-before-execute pattern in all flows",
+      "severity": "critical",
+      "description": "# Knowledge gather-before-execute pattern in all flows\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nEvery Salvador flow begins with a gather-knowledge step that loads relevant vault patterns and anti-patterns before execution begins. Each mode has a dedicated composite: gather-build-knowledge, gather-review-knowledge, gather-test-knowledge, gather-ux-knowledge, etc. The composite expands to vault search + domain-specific chain loading. Output is [vault-patterns, vault-anti-patterns] which feeds into subsequent steps. This ensures decisions are informed by accumulated knowledge, not just the current task context.\n\n## Example\n\n```typescript\nDEVELOPER-flow step 1: gather-knowledge → gather-build-knowledge composite → vault patterns + dev rules + architecture patterns\n```\n\n## Why\n\nWithout vault knowledge loading, each task starts from zero. Gathering first prevents repeating known mistakes and ensures consistency with established patterns.",
+      "tags": [
+        "knowledge-first",
+        "vault-search",
+        "gather",
+        "informed-decisions",
+        "composites"
+      ]
+    },
+    {
+      "id": "pattern-communication-quick-handoff-template-format-for-cross-phase-task-trans",
+      "type": "playbook",
+      "domain": "communication",
+      "title": "Handoff template format for cross-phase task transfer",
+      "severity": "warning",
+      "description": "# Handoff template format for cross-phase task transfer\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nSalvador generates structured handoff documents in _handoff/*.md when tasks transfer between phases or agents. Standard sections: metadata (mode, flow, confidence), objective, scope, completed work, remaining tasks, acceptance criteria, known risks. Handoffs are triggered by approval gates and flow completion. The format ensures no context is lost between phases — the receiving phase can reconstruct full context from the handoff alone.\n\n## Example\n\n```typescript\n_handoff/button-component.md: { mode: BUILD-MODE, flow: DEVELOPER-flow, phase: design-complete, next: implement, spec: {...} }\n```\n\n## Why\n\nContext loss between phases is the #1 cause of rework. Structured handoffs preserve intent, decisions, and constraints across boundaries.",
+      "tags": [
+        "handoff",
+        "task-transfer",
+        "documentation",
+        "context-preservation"
+      ]
+    }
+  ]
+}

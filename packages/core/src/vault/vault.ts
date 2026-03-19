@@ -52,7 +52,6 @@ export interface MemoryStats {
 export class Vault {
   private provider: PersistenceProvider;
   private sqliteProvider: SQLitePersistenceProvider | null;
-  private syncManager: import('../cognee/sync-manager.js').CogneeSyncManager | null = null;
   private linkManager: LinkManager | null = null;
   private autoLinkEnabled = true;
   /** Minimum number of FTS5 suggestions to auto-link. Top N are linked. */
@@ -102,10 +101,6 @@ export class Vault {
       );
     }
     // current < FORMAT_VERSION → future: run migration scripts here
-  }
-
-  setSyncManager(mgr: import('../cognee/sync-manager.js').CogneeSyncManager): void {
-    this.syncManager = mgr;
   }
 
   setLinkManager(mgr: LinkManager, opts?: { enabled?: boolean; maxLinks?: number }): void {
@@ -414,9 +409,6 @@ export class Vault {
           origin: entry.origin ?? 'agent',
         });
         count++;
-        if (this.syncManager) {
-          this.syncManager.enqueue('ingest', entry.id, entry);
-        }
       }
       // Auto-link after all entries are inserted (so they can link to each other).
       // Skip for large batches (>100) — use relink_vault for bulk imports.
@@ -608,9 +600,6 @@ export class Vault {
   }
   remove(id: string): boolean {
     const deleted = this.provider.run('DELETE FROM entries WHERE id = ?', [id]).changes > 0;
-    if (deleted && this.syncManager) {
-      this.syncManager.enqueue('delete', id);
-    }
     return deleted;
   }
 
@@ -684,9 +673,6 @@ export class Vault {
       let count = 0;
       for (const id of ids) {
         count += this.provider.run('DELETE FROM entries WHERE id = ?', [id]).changes;
-        if (this.syncManager) {
-          this.syncManager.enqueue('delete', id);
-        }
       }
       return count;
     });

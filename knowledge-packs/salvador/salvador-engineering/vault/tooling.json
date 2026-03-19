@@ -1,0 +1,139 @@
+{
+  "domain": "tooling",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "pattern-tooling-cli-dry-run-flag",
+      "type": "pattern",
+      "domain": "tooling",
+      "title": "Always provide --dry-run for destructive CLI operations",
+      "severity": "critical",
+      "description": "# Always provide --dry-run for destructive CLI operations\n\n## Context\n\nAny CLI script that creates, modifies, or deletes files should have a --dry-run flag\n\n## Pattern\n\nAdd --dry-run flag that shows exact files to be created/modified/deleted without making changes. Users can preview operations before committing, reducing fear and increasing confidence.\n\n## Example\n\n```typescript\nif (args.dryRun) {\n  console.log(`Would remove ${files.length} files:`);\n  for (const f of files) console.log(`  - DELETE ${f}`);\n  process.exit(0);\n}\n```\n\n## Why\n\nUsers hesitate to run commands when they don't know what will change. Dry-run eliminates this friction by providing a safe preview mode.",
+      "tags": [
+        "cli",
+        "ux",
+        "safety",
+        "preview",
+        "zero-friction"
+      ],
+      "appliesTo": [
+        "scripts/setup-project.js",
+        "scripts/export-hooks.js"
+      ]
+    },
+    {
+      "id": "pattern-tooling-help-when-to-use",
+      "type": "pattern",
+      "domain": "tooling",
+      "title": "Include 'when to use' guidance in --help output",
+      "severity": "suggestion",
+      "description": "# Include 'when to use' guidance in --help output\n\n## Context\n\nCLI help text should explain not just WHAT flags do, but WHEN to use them\n\n## Pattern\n\nAdd a 'When to use' section after listing options that provides guidance on which flag to use in which scenario.\n\n## Example\n\n```typescript\nWhen to use each flag:\n  --dry-run      Use FIRST to see what will change\n  --interactive  Use for guided cleanup with prompts\n  --cleanup      Use in CI/automation for direct action\n```\n\n## Why\n\nUsers often don't know which flag combination they need. 'When to use' guidance reduces trial-and-error and gets them to the right command faster.",
+      "tags": [
+        "cli",
+        "ux",
+        "documentation",
+        "help"
+      ],
+      "appliesTo": [
+        "scripts/setup-project.js",
+        "scripts/export-hooks.js"
+      ]
+    },
+    {
+      "id": "pattern-tooling-intelligence-reload-after-vault-update",
+      "type": "pattern",
+      "domain": "tooling",
+      "title": "Reload Intelligence After Vault Updates",
+      "severity": "warning",
+      "description": "# Reload Intelligence After Vault Updates\n\n## Context\n\nAfter modifying intelligence JSON files in the vault\n\n## Pattern\n\nThe MCP server caches intelligence at startup. After updating vault data files, call salvador_reload_intelligence() to refresh the cache without restarting the server.\n\n## Example\n\n```typescript\n// After editing workflow-patterns.json in vault:\nsalvador_reload_intelligence()\n// Returns: { success: true, reloadTime: '9ms', ... }\n```\n\n## Why\n\nThe singleton pattern caches intelligence for performance. Without reload, changes to vault files won't be visible until server restart.",
+      "tags": [
+        "salvador",
+        "mcp",
+        "cache",
+        "reload"
+      ],
+      "appliesTo": [
+        "intelligence/data/*.json"
+      ]
+    },
+    {
+      "id": "pattern-tooling-readme-defers-to-help",
+      "type": "pattern",
+      "domain": "tooling",
+      "title": "README should defer to --help for CLI documentation",
+      "severity": "suggestion",
+      "description": "# README should defer to --help for CLI documentation\n\n## Context\n\nCLI tool documentation in README.md should be minimal and point to --help\n\n## Pattern\n\nInstead of duplicating all flags in README, show 1-2 common examples and add 'Run --help for complete documentation'. This prevents drift between README and actual CLI behavior.\n\n## Example\n\n```typescript\n```bash\n# Preview what will be exported\nnpm run export-hooks /path --dry-run\n\n# See all options\nnpm run export-hooks -- --help\n```\n\n> Note: Run --help for complete, up-to-date documentation.\n```\n\n## Why\n\nDocumentation in multiple places (README, --help, CLAUDE.md) inevitably drifts. Single source of truth in --help ensures accuracy.",
+      "tags": [
+        "documentation",
+        "cli",
+        "single-source-of-truth"
+      ],
+      "appliesTo": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "pattern-tooling-unknown-flag-warning",
+      "type": "pattern",
+      "domain": "tooling",
+      "title": "Warn about unknown flags instead of failing silently",
+      "severity": "warning",
+      "description": "# Warn about unknown flags instead of failing silently\n\n## Context\n\nCLI argument parsing should detect and warn about unrecognized flags\n\n## Pattern\n\nTrack unknown flags during parsing and display a warning with the list of valid flags. Continue execution rather than exiting, so automation isn't broken.\n\n## Example\n\n```typescript\nconst VALID_FLAGS = new Set(['--help', '--json', '--dry-run']);\nif (arg.startsWith('--') && !VALID_FLAGS.has(arg)) {\n  args.unknownFlags.push(arg);\n}\n// Later:\nconsole.log(`⚠ Unknown: ${unknownFlags.join(', ')}`);\nconsole.log(`  Valid: ${[...VALID_FLAGS].join(', ')}`);\n```\n\n## Why\n\nUsers often typo flags (--with-herald-company vs --herald-company). Silent ignore means they think a feature is enabled when it's not. Immediate warning prevents confusion.",
+      "tags": [
+        "cli",
+        "ux",
+        "error-handling",
+        "feedback"
+      ],
+      "appliesTo": [
+        "scripts/setup-project.js",
+        "scripts/export-hooks.js"
+      ]
+    },
+    {
+      "id": "anti-pattern-tooling-silent-flag-ignore",
+      "type": "anti-pattern",
+      "domain": "tooling",
+      "title": "Silently ignoring unknown CLI flags",
+      "severity": "warning",
+      "description": "# Silently ignoring unknown CLI flags\n\n## Context\n\nCLI scripts that store unknown flags but never warn about them\n\n## Anti-Pattern\n\nTracking unknown flags in an array but never displaying a warning means users think features are enabled when they're not.\n\n## Example (Bad)\n\n```typescript\n// BAD:\nelse if (arg.startsWith('--')) {\n  args.unknownFlags.push(arg); // Stored but never warned\n}\n```\n\n## Why It's Wrong\n\nUser types --with-herald-company (wrong), script stores it but continues silently. User thinks Herald is configured with custom company when it's using default.\n\n## Correct Approach\n\nSee: [unknown-flag-warning](../../patterns/other/unknown-flag-warning.md)",
+      "tags": [
+        "cli",
+        "ux",
+        "anti-pattern"
+      ],
+      "appliesTo": [
+        "scripts/export-hooks.js"
+      ],
+      "context": "Related: unknown-flag-warning"
+    },
+    {
+      "id": "pattern-tooling-anteater-outputs",
+      "type": "pattern",
+      "domain": "tooling",
+      "title": "Anteater Generation Outputs",
+      "severity": "warning",
+      "description": "# Anteater Generation Outputs\n\n## Context\n\nWhen explaining what Anteater generates or checking if a project is Anteater-generated\n\n## Pattern\n\nAnteater generates: .anteater.json (project config), tailwind-preset.js (OKLCH tokens 50-900), .claude/ directory (49 skills, 40+ hookify rules, agent-context.json), .mcp.json (points to salvador-mcp), src/components/ui/ (empty, add via 'anteater add'), tokens.css and base.css (CSS custom properties).\n\n## Example\n\n```typescript\n# Check if Anteater project\nif [ -f \".anteater.json\" ] && [ -f \".claude/agent-context.json\" ]; then\n  echo \"This is an Anteater project\"\nfi\n```\n\n## Why\n\nUnderstanding Anteater's output structure helps Salvador validate projects and guide users to the correct files for customization.",
+      "tags": [
+        "anteater",
+        "generation",
+        "outputs",
+        "structure"
+      ]
+    },
+    {
+      "id": "principle-tooling-capture-soleri-development-principle-salvador-is-the-refer",
+      "type": "rule",
+      "domain": "tooling",
+      "title": "Soleri Development Principle: Salvador is the Reference Implementation",
+      "severity": "critical",
+      "description": "# Soleri Development Principle: Salvador is the Reference Implementation\n\n## Context\n\nEstablished during Cognee integration work when feature audit revealed massive gap between generated agents and Salvador capabilities.\n\n## Principle\n\nEvery engine-level feature in Salvador MCP should exist in every Soleri-generated agent. Salvador's code is the blueprint — port features from Salvador into @soleri/core and @soleri/forge, don't reinvent. Generated agents must be Salvador-grade (minus domain-specific design system intelligence). Curator, brain intelligence pipeline, loops, orchestration, identity, governance — all engine features. Currently generated agents have ~36 ops across 2 facades; Salvador has 181+ ops across 14 facades. See GitHub milestones v5.1–v7.0.\n\n## Example\n\nN/A\n\n## Why\n\nWithout this principle, Soleri agents ship as toy demos instead of production-grade knowledge management platforms. Salvador has battle-tested every feature; porting is faster and more reliable than reimplementing.",
+      "tags": [
+        "soleri",
+        "architecture",
+        "salvador-reference",
+        "feature-parity"
+      ]
+    }
+  ]
+}

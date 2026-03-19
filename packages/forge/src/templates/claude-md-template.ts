@@ -115,8 +115,7 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     `| ${bt}${toolPrefix}_memory${bt} | ${bt}memory_search${bt}, ${bt}memory_capture${bt}, ${bt}session_capture${bt} |`,
     `| ${bt}${toolPrefix}_control${bt} | ${bt}route_intent${bt}, ${bt}morph${bt}, ${bt}get_behavior_rules${bt}, ${bt}governance_dashboard${bt}, ${bt}governance_policy${bt} |`,
     `| ${bt}${toolPrefix}_loop${bt} | ${bt}loop_start${bt}, ${bt}loop_iterate${bt}, ${bt}loop_status${bt}, ${bt}loop_cancel${bt} |`,
-    // Intelligence — cognee, context, agency
-    `| ${bt}${toolPrefix}_cognee${bt} | ${bt}cognee_search${bt}, ${bt}cognee_graph_stats${bt}, ${bt}cognee_export_status${bt} |`,
+    // Intelligence — context, agency
     `| ${bt}${toolPrefix}_context${bt} | ${bt}context_extract_entities${bt}, ${bt}context_retrieve_knowledge${bt}, ${bt}context_analyze${bt} |`,
     `| ${bt}${toolPrefix}_agency${bt} | ${bt}agency_enable${bt}, ${bt}agency_status${bt}, ${bt}agency_surface_patterns${bt}, ${bt}agency_warnings${bt}, ${bt}agency_clarify${bt} |`,
     // Admin

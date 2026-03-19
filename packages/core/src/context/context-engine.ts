@@ -3,17 +3,15 @@
  *
  * Orchestrates three signals to enrich intent classification:
  * 1. Entity extraction (regex-based, domain-agnostic)
- * 2. Knowledge retrieval (vault FTS + Cognee vector + brain recommendations)
+ * 2. Knowledge retrieval (vault FTS + brain recommendations)
  * 3. Confidence scoring (combines entity + knowledge signals)
  *
- * Graceful degradation: if Cognee is unavailable, vault-only.
  * If vault is empty, keyword confidence from IntentRouter is unchanged.
  */
 
 import type { Vault } from '../vault/vault.js';
 import type { Brain } from '../brain/brain.js';
 import type { BrainIntelligence } from '../brain/intelligence.js';
-import type { CogneeClient } from '../cognee/client.js';
 import type {
   EntityType,
   ExtractedEntity,
@@ -105,20 +103,17 @@ export class ContextEngine {
   private vault: Vault;
   private brain: Brain;
   private brainIntelligence: BrainIntelligence;
-  private cognee: CogneeClient | null;
   private config: Required<ContextEngineConfig>;
 
   constructor(
     vault: Vault,
     brain: Brain,
     brainIntelligence: BrainIntelligence,
-    cognee: CogneeClient | null,
     config?: ContextEngineConfig,
   ) {
     this.vault = vault;
     this.brain = brain;
     this.brainIntelligence = brainIntelligence;
-    this.cognee = cognee;
     this.config = {
       vaultSearchLimit: config?.vaultSearchLimit ?? 10,
       cogneeSearchLimit: config?.cogneeSearchLimit ?? 10,
@@ -167,7 +162,6 @@ export class ContextEngine {
   async retrieveKnowledge(prompt: string, domain?: string): Promise<KnowledgeRetrievalResult> {
     const items: KnowledgeItem[] = [];
     let vaultHits = 0;
-    let cogneeHits = 0;
     let brainHits = 0;
 
     // 1. Vault FTS search
@@ -208,29 +202,7 @@ export class ContextEngine {
       // Vault search failed — continue with other sources
     }
 
-    // 2. Cognee vector search (async, graceful degradation)
-    if (this.cognee) {
-      try {
-        const cogneeResults = await this.cognee.search(prompt, {
-          limit: this.config.cogneeSearchLimit,
-        });
-        for (const r of cogneeResults) {
-          // Avoid duplicates from vault
-          if (items.some((i) => i.id === r.id)) continue;
-          items.push({
-            id: r.id,
-            title: r.text.slice(0, 100),
-            score: r.score,
-            source: 'cognee',
-          });
-          cogneeHits++;
-        }
-      } catch {
-        // Cognee unavailable — continue without
-      }
-    }
-
-    // 3. Brain recommendations
+    // 2. Brain recommendations
     try {
       const recommendations = this.brainIntelligence.recommend({
         domain,
@@ -255,7 +227,7 @@ export class ContextEngine {
     items.sort((a, b) => b.score - a.score);
     const filtered = items.filter((i) => i.score >= this.config.minScoreThreshold);
 
-    return { items: filtered, vaultHits, cogneeHits, brainHits };
+    return { items: filtered, vaultHits, cogneeHits: 0, brainHits };
   }
 
   // ─── Context Analysis ───────────────────────────────────────────

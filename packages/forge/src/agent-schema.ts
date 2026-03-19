@@ -48,8 +48,6 @@ const EngineConfigSchema = z.object({
   vault: z.string().optional(),
   /** Enable brain/learning loop. Default: true */
   learning: z.boolean().optional().default(true),
-  /** Enable Cognee vector search. Default: false */
-  cognee: z.boolean().optional().default(false),
 });
 
 /** Client setup configuration */
@@ -149,14 +147,16 @@ export const AgentYamlSchema = z.object({
   role: z.string().min(1).max(100),
   /** Longer description of capabilities */
   description: z.string().min(10).max(500),
-  /** Knowledge domains (1–20) */
-  domains: z.array(z.string().min(1)).min(1).max(20),
-  /** Core principles (1–10) */
-  principles: z.array(z.string().min(1)).min(1).max(10),
+  /** Knowledge domains (discovered from usage if empty) */
+  domains: z.array(z.string().min(1)).max(20).optional().default([]),
+  /** Core principles (discovered from usage if empty) */
+  principles: z.array(z.string().min(1)).max(10).optional().default([]),
 
   // ─── Personality (optional) ─────────────────────
   /** Communication tone */
   tone: z.enum(TONES).optional().default('pragmatic'),
+  /** Composable persona — defines character, voice, cultural texture */
+  persona: z.record(z.unknown()).optional(),
   /** Greeting message (auto-generated if omitted) */
   greeting: z.string().min(10).max(300).optional(),
 

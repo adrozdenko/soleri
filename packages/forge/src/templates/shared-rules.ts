@@ -69,6 +69,26 @@ const ENGINE_RULES_LINES: string[] = [
   '- After every response, rate your confidence from 1 to 10. Anything below 7, flag it.',
   '',
 
+  // ─── MCP Tool Schema Validation ─────────────────────────
+  '## MCP Tool Schema Validation',
+  '<!-- soleri:tool-schema-validation -->',
+  '',
+  '**MANDATORY**: Before calling any MCP tool for the first time in a session, fetch its full JSON schema first.',
+  '',
+  '- Use `ToolSearch` (or platform equivalent) to retrieve the tool definition before invoking it.',
+  '- Read required fields, types, enum constraints, and nesting structure.',
+  '- Do NOT guess parameter shapes from memory or training data — schemas evolve between versions.',
+  '- Once fetched, the schema is valid for the remainder of the session.',
+  '',
+  '**Why:** MCP tools have strict parameter validation. Guessing formats causes repeated failures (wrong nesting, invalid enums, missing required fields), wasting tokens and eroding user trust. The schema is always available — use it.',
+  '',
+  '| Wrong | Right |',
+  '|-------|-------|',
+  '| Call tool, fail, retry with different shape | ToolSearch first, call once correctly |',
+  '| Assume `severity: "suggestion"` is valid | Read schema: `"critical" \\| "warning" \\| "info"` |',
+  '| Pass flat params when tool expects `entries[]` | Read schema: `entries` is required array |',
+  '',
+
   // ─── Memory Quality Gate ───────────────────────────────
   '## Memory Quality Gate',
   '<!-- soleri:memory-quality -->',

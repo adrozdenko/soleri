@@ -234,7 +234,6 @@ describe('scaffoldFileTree', () => {
         ...MINIMAL_CONFIG,
         tone: 'precise',
         setup: { target: 'opencode', model: 'claude-code-opus-4' },
-        engine: { cognee: true },
       },
       tempDir,
     );
@@ -246,7 +245,6 @@ describe('scaffoldFileTree', () => {
     expect(parsed.tone).toBe('precise');
     expect(parsed.setup.target).toBe('opencode');
     expect(parsed.setup.model).toBe('claude-code-opus-4');
-    expect(parsed.engine.cognee).toBe(true);
   });
 
   it('summary says no build step needed', () => {

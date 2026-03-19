@@ -1,0 +1,50 @@
+{
+  "domain": "prisma",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "pattern-prisma-quick-yaml-as-schema-for-data-driven-configuration-contr",
+      "type": "pattern",
+      "domain": "prisma",
+      "title": "YAML-as-Schema for data-driven configuration contracts",
+      "severity": "critical",
+      "description": "# YAML-as-Schema for data-driven configuration contracts\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nSalvador uses YAML files as the single source of truth for all system behavior. routing-config.yaml defines intent→mode→chain mappings, flows/*.yaml define workflow steps with gates, and scoring/thresholds.yaml defines quality criteria. This eliminates code-level logic — all routing, scoring, and flow decisions are data-driven and auditable.\n\n## Example\n\n```typescript\nrouting-config.yaml: intents.CREATE.keywords → modes.BUILD-MODE.from-intents → chain-mappings.BUILD-MODE.component.chains\n```\n\n## Why\n\nData-driven config is auditable, versionable, and modifiable without code changes. Reduces coupling between behavior logic and runtime.",
+      "tags": [
+        "yaml",
+        "schema",
+        "data-driven",
+        "configuration",
+        "contracts"
+      ]
+    },
+    {
+      "id": "pattern-prisma-quick-intelligence-data-file-dependency-graph-via-manife",
+      "type": "pattern",
+      "domain": "prisma",
+      "title": "Intelligence data file dependency graph via manifest",
+      "severity": "warning",
+      "description": "# Intelligence data file dependency graph via manifest\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nintelligence/manifest.yaml catalogs all knowledge files with metadata: version, domain, status (active|deprecated|reference-only), dependencies (other files referenced), and queryPatterns (natural language queries answered). This creates a dependency DAG that validates data integrity — if color-intelligence.json depends on token-definitions.json, both must be present and compatible.\n\n## Example\n\n```typescript\nmanifest.yaml entry: { file: color-intelligence.json, version: 2.1.0, domain: design, dependencies: [token-definitions.json], status: active }\n```\n\n## Why\n\nPrevents stale or broken intelligence data from corrupting vault search results.",
+      "tags": [
+        "manifest",
+        "dependency-graph",
+        "intelligence",
+        "data-integrity"
+      ]
+    },
+    {
+      "id": "pattern-prisma-quick-vault-entry-lifecycle-capture-index-search-apply",
+      "type": "playbook",
+      "domain": "prisma",
+      "title": "Vault entry lifecycle: capture → index → search → apply",
+      "severity": "warning",
+      "description": "# Vault entry lifecycle: capture → index → search → apply\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nKnowledge follows a 4-stage lifecycle: (1) Capture via capture_quick/capture_knowledge writes markdown to docs/vault/patterns/ or docs/vault/anti-patterns/. (2) Index builds TF-IDF embeddings (279-term vocabulary). (3) Search uses weighted scoring: semantic 35%, roleMatch 15%, category 15%, temporal 10%, severity 10%, pathMatch 10%, tagOverlap 5%. (4) Apply injects gathered knowledge into flow execution via gather-*-knowledge composites.\n\n## Example\n\n```typescript\ncapture_quick → docs/vault/patterns/testing/my-pattern.md → build-index → search_vault_intelligent returns scored results → compile_prompt injects into flow\n```\n\n## Why\n\nUnderstanding the full lifecycle prevents common issues like captured knowledge not appearing in search (missing index rebuild) or low relevance scores (poor tags/category).",
+      "tags": [
+        "vault",
+        "lifecycle",
+        "indexing",
+        "search",
+        "knowledge-management"
+      ]
+    }
+  ]
+}

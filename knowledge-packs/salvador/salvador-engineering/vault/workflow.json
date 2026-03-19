@@ -1,0 +1,74 @@
+{
+  "domain": "workflow",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "anti-pattern-workflow-custom-loop-cancelled-after-1-iteration-",
+      "type": "pattern",
+      "domain": "workflow",
+      "title": "custom loop cancelled after 1 iteration(s)",
+      "severity": "suggestion",
+      "description": "# custom loop cancelled after 1 iteration(s)\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 127 sessions.\nFlow: loop-custom\n## Anti-Pattern\n\nSession 2026-03-02-fdbe61c9 was cancelled during custom validation after 1 iteration(s). Frequent cancellations in this mode may indicate unclear requirements or overly ambitious targets.\n\n## Evidence\n\n- Observed in 127 sessions across flow `loop-custom`\n- Promoted: 2026-03-02\n- Source rule: `loop-abandoned`",
+      "tags": [
+        "loop",
+        "abandoned",
+        "cancelled",
+        "custom",
+        "loop-custom"
+      ],
+      "appliesTo": [
+        "loop-custom"
+      ]
+    },
+    {
+      "id": "anti-pattern-workflow-custom-loop-hit-max-iterations-failed-to",
+      "type": "pattern",
+      "domain": "workflow",
+      "title": "custom loop hit max iterations — failed to converge",
+      "severity": "warning",
+      "description": "# custom loop hit max iterations — failed to converge\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 19 sessions.\nFlow: loop-custom\n## Anti-Pattern\n\nSession 2026-03-02-f418fb8c exhausted all 2 iterations without reaching the validation target. The custom approach may need a different strategy or lower target threshold.\n\n## Evidence\n\n- Observed in 19 sessions across flow `loop-custom`\n- Promoted: 2026-03-02\n- Source rule: `loop-failed-to-converge`",
+      "tags": [
+        "loop",
+        "convergence-failure",
+        "max-iterations",
+        "custom",
+        "loop-custom"
+      ],
+      "appliesTo": [
+        "loop-custom"
+      ]
+    },
+    {
+      "id": "anti-pattern-workflow-score-variance-in-loop-custom-build",
+      "type": "pattern",
+      "domain": "workflow",
+      "title": "Score variance in loop-custom-BUILD",
+      "severity": "suggestion",
+      "description": "# Score variance in loop-custom-BUILD\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 7 sessions.\nFlow: loop-custom-BUILD\n## Anti-Pattern\n\nWide score variance: weakest step \"loop-validation\" (30) vs strongest \"loop-setup\" (85). Focus improvement on the weak step.\n\n## Evidence\n\n- Observed in 7 sessions across flow `loop-custom-BUILD`\n- Promoted: 2026-03-02\n- Source rule: `step-score-variance`",
+      "tags": [
+        "variance",
+        "improvement",
+        "loop-custom-BUILD"
+      ],
+      "appliesTo": [
+        "loop-custom-BUILD"
+      ]
+    },
+    {
+      "id": "anti-pattern-workflow-score-variance-in-loop-custom",
+      "type": "pattern",
+      "domain": "workflow",
+      "title": "Score variance in loop-custom",
+      "severity": "suggestion",
+      "description": "# Score variance in loop-custom\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 10 sessions.\nFlow: loop-custom\n## Anti-Pattern\n\nWide score variance: weakest step \"loop-validation\" (30) vs strongest \"loop-setup\" (85). Focus improvement on the weak step.\n\n## Evidence\n\n- Observed in 10 sessions across flow `loop-custom`\n- Promoted: 2026-03-02\n- Source rule: `step-score-variance`",
+      "tags": [
+        "variance",
+        "improvement",
+        "loop-custom"
+      ],
+      "appliesTo": [
+        "loop-custom"
+      ]
+    }
+  ]
+}

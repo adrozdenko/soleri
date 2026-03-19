@@ -1,0 +1,12 @@
+{
+  "id": "salvador-uipro",
+  "name": "Salvador UI Pro — Design Reference Library",
+  "version": "1.0.0",
+  "description": "96 color palettes, 67 UI styles, 13 tech stacks, font pairings, chart recommendations, UX patterns, and landing page patterns. A comprehensive design reference library.",
+  "domains": [
+    "ui-design"
+  ],
+  "vault": {
+    "dir": "vault"
+  }
+}

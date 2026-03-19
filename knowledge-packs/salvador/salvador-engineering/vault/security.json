@@ -1,0 +1,55 @@
+{
+  "domain": "security",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "pattern-security-manifest-validation-recovery",
+      "type": "pattern",
+      "domain": "security",
+      "title": "Validate manifest files and provide recovery suggestions",
+      "severity": "critical",
+      "description": "# Validate manifest files and provide recovery suggestions\n\n## Context\n\nAny script that depends on a manifest file should validate it and provide clear recovery steps\n\n## Pattern\n\nCheck for: file exists, file not empty, valid YAML/JSON, expected structure. For each failure mode, provide a specific recovery suggestion (e.g., 'Run npm run sync-hooks to regenerate').\n\n## Example\n\n```typescript\nif (!fs.existsSync(manifestFile)) {\n  return {\n    status: 'manifest_missing',\n    message: 'Manifest not found',\n    recovery: 'Run \"npm run sync-hooks\" to regenerate the manifest.'\n  };\n}\n```\n\n## Why\n\nManifest corruption is a single point of failure. Without recovery guidance, users are stuck with cryptic errors and no path forward.",
+      "tags": [
+        "cli",
+        "ux",
+        "manifest",
+        "recovery",
+        "error-handling"
+      ],
+      "appliesTo": [
+        "scripts/setup-project.js",
+        "scripts/export-hooks.js"
+      ]
+    },
+    {
+      "id": "pattern-security-quick-ai-attribution-blocking-in-git-commits-via-hookify",
+      "type": "pattern",
+      "domain": "security",
+      "title": "AI attribution blocking in git commits via hookify rules",
+      "severity": "critical",
+      "description": "# AI attribution blocking in git commits via hookify rules\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nThe no-ai-attribution rule in chains/rules/enforcement.yaml blocks git commits containing AI attribution markers: the robot emoji, 'Generated with Claude', 'Co-Authored-By: Claude', 'noreply@anthropic.com', 'AI-generated', and similar strings. This is enforced as a blocking Bash event rule that fires on git commit commands. Conventional commit format (feat|fix|chore|refactor|docs: description) is the only accepted format.\n\n## Example\n\n```typescript\nBlocked: git commit -m 'feat: add button\\n\\nCo-Authored-By: Claude'. Allowed: git commit -m 'feat: add button component'.\n```\n\n## Why\n\nAI attribution in commits leaks tooling details and may conflict with organizational policies. Clean conventional commits preserve professional standards.",
+      "tags": [
+        "git",
+        "commits",
+        "ai-attribution",
+        "blocking",
+        "conventional-commits"
+      ]
+    },
+    {
+      "id": "pattern-security-quick-protocol-enforcement-via-checkid-gates-on-critical",
+      "type": "pattern",
+      "domain": "security",
+      "title": "Protocol enforcement via checkId gates on critical MCP operations",
+      "severity": "critical",
+      "description": "# Protocol enforcement via checkId gates on critical MCP operations\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nCritical MCP tool calls return a _checkId that must be passed to dependent operations. search-components returns _checkId, architecture-patterns returns _checkId, component-workflow returns _checkId. create-component REQUIRES all three checkIds. This creates an unforgeable protocol chain: you cannot create a component without first searching for duplicates, checking architecture, and loading the workflow. The gate is enforced at the MCP server level, not just in YAML config.\n\n## Example\n\n```typescript\nsearch-components() → {_checkId: 'abc'}. create-component({checkIds: ['abc', 'def', 'ghi']}) → validates all 3 present.\n```\n\n## Why\n\nWithout checkId enforcement, agents could skip discovery and create duplicate or non-compliant components. Protocol gates make shortcuts impossible.",
+      "tags": [
+        "checkId",
+        "protocol-enforcement",
+        "gates",
+        "mcp",
+        "unforgeable"
+      ]
+    }
+  ]
+}

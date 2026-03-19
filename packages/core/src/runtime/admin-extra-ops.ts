@@ -36,7 +36,7 @@ interface PluginInfo {
  * Create 24 extended admin operations for production observability.
  */
 export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, cognee, telemetry } = runtime;
+  const { vault, brain, telemetry } = runtime;
 
   // In-memory permission level — default 'moderate'
   let permissionLevel: PermissionLevel = 'moderate';
@@ -240,7 +240,6 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'Status of all runtime modules — check each is initialized.',
       auth: 'read',
       handler: async () => {
-        const cogneeStatus = cognee?.getStatus() ?? null;
         const llmAvailable = runtime.llmClient.isAvailable();
         const loopStatus = runtime.loop.getStatus();
 
@@ -250,7 +249,6 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
           planner: true,
           curator: runtime.curator.getStatus().initialized,
           governance: true,
-          cognee: { available: cogneeStatus?.available ?? false },
           loop: { active: loopStatus !== null },
           llm: {
             openai: llmAvailable.openai,
@@ -280,7 +278,7 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
     // ─── Garbage Collection ─────────────────────────────────────────
     {
       name: 'admin_gc',
-      description: 'Trigger garbage collection on in-memory caches — brain, cognee, telemetry.',
+      description: 'Trigger garbage collection on in-memory caches — brain, telemetry.',
       auth: 'write',
       handler: async () => {
         const cleared: string[] = [];
@@ -290,15 +288,6 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
           cleared.push('brain');
         } catch {
           // Brain rebuild failed — graceful degradation
-        }
-
-        if (cognee) {
-          try {
-            cognee.resetPendingCognify();
-            cleared.push('cognee');
-          } catch {
-            // Cognee reset failed — graceful degradation
-          }
         }
 
         try {
@@ -331,7 +320,6 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
             'planner',
             'curator',
             'governance',
-            'cognee',
             'loop',
             'identityManager',
             'intentRouter',
@@ -677,7 +665,7 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'Get health status of a specific subsystem.',
       auth: 'read',
       schema: z.object({
-        subsystem: z.string().describe('Subsystem name (e.g. "vault", "cognee", "llm")'),
+        subsystem: z.string().describe('Subsystem name (e.g. "vault", "brain", "llm")'),
       }),
       handler: async (params) => {
         const sub = runtime.health.get(params.subsystem as string);
@@ -707,7 +695,7 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'Get the current value of a specific feature flag.',
       auth: 'read',
       schema: z.object({
-        flag: z.string().describe('Flag name (e.g. "auth-enforcement", "cognee-sync")'),
+        flag: z.string().describe('Flag name (e.g. "auth-enforcement", "vault-sync")'),
       }),
       handler: async (params) => {
         const flag = params.flag as string;
@@ -772,7 +760,7 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'admin_setup_check',
       description:
-        'Check agent setup status — vault health, brain vocabulary, cognee connection, LLM keys, templates.',
+        'Check agent setup status — vault health, brain vocabulary, LLM keys, templates.',
       auth: 'read',
       handler: async () => {
         const checks: Record<string, { ok: boolean; detail: string }> = {};
@@ -798,17 +786,6 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
         } catch {
           checks.brain = { ok: false, detail: 'Brain not initialized' };
         }
-
-        // Cognee
-        const cogneeStatus = cognee?.getStatus() ?? null;
-        checks.cognee = {
-          ok: cogneeStatus?.available ?? false,
-          detail: cognee
-            ? cogneeStatus?.available
-              ? 'Connected'
-              : 'Not available (optional)'
-            : 'Disabled',
-        };
 
         // LLM keys
         const llmAvail = runtime.llmClient.isAvailable();

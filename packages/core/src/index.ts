@@ -253,31 +253,6 @@ export type {
   BrowserToolResult,
 } from './chat/index.js';
 
-// ─── Cognee ─────────────────────────────────────────────────────────
-export { CogneeClient } from './cognee/client.js';
-export type {
-  CogneeConfig,
-  CogneeSearchResult,
-  CogneeSearchType,
-  CogneeStatus,
-  CogneeAddResult,
-  CogneeCognifyResult,
-  AddErrorCode,
-  DrainResult,
-  DrainAllResult,
-  DrainStopReason,
-} from './cognee/types.js';
-
-// ─── Cognee Sync ──────────────────────────────────────────────────────
-export { CogneeSyncManager } from './cognee/sync-manager.js';
-export type {
-  SyncOp,
-  SyncStatus,
-  SyncQueueItem,
-  SyncManagerStats,
-  SyncManagerConfig,
-} from './cognee/sync-manager.js';
-
 // ─── Intake Pipeline ──────────────────────────────────────────────────
 export { IntakePipeline } from './intake/intake-pipeline.js';
 export { classifyChunk, VALID_TYPES, CLASSIFICATION_PROMPT } from './intake/content-classifier.js';
@@ -502,6 +477,21 @@ export type {
   HealthSnapshot,
   IntegrityResult,
 } from './health/index.js';
+
+// ─── Persona ──────────────────────────────────────────────────────────
+export type {
+  PersonaConfig,
+  ArchivedPersona,
+  PersonaCreateInput,
+  PersonaSystemInstructions,
+} from './persona/types.js';
+export {
+  ITALIAN_CRAFTSPERSON,
+  PERSONA_TEMPLATES,
+  createDefaultPersona,
+} from './persona/defaults.js';
+export { loadPersona } from './persona/loader.js';
+export { generatePersonaInstructions, getRandomSignoff } from './persona/prompt-generator.js';
 
 // ─── Runtime Factory ────────────────────────────────────────────────
 export { createAgentRuntime } from './runtime/runtime.js';

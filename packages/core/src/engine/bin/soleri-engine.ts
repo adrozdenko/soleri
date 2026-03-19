@@ -71,12 +71,13 @@ async function main(): Promise<void> {
     ? resolve((engineConfig.vault as string).replace(/^~/, homedir()))
     : join(homedir(), `.${agentId}`, 'vault.db');
 
-  // 3. Create runtime
+  // 3. Create runtime (with persona from agent.yaml if present)
+  const personaConfig = config.persona as Record<string, unknown> | undefined;
   const runtime = createAgentRuntime({
     agentId,
     vaultPath,
     agentDir,
-    cognee: (engineConfig.cognee as boolean) ?? false,
+    persona: personaConfig as import('../../persona/types.js').PersonaConfig | undefined,
   });
 
   console.error(`${tag} Vault: ${vaultPath}`);
@@ -175,14 +176,14 @@ async function main(): Promise<void> {
     version: '1.0.0',
   });
 
-  // 11. Register persona prompt
-  server.prompt('persona', 'Get agent persona and principles', () => ({
+  // 11. Register persona prompt (uses composable persona system)
+  server.prompt('persona', 'Get agent persona and character instructions', () => ({
     messages: [
       {
         role: 'user' as const,
         content: {
           type: 'text' as const,
-          text: `You are ${identity.name}. ${identity.role}.\n\nPrinciples:\n${identity.principles.map((p) => `- ${p}`).join('\n')}\n\nTone: ${identity.tone}`,
+          text: runtime.personaInstructions.instructions,
         },
       },
     ],

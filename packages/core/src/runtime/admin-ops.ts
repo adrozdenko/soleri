@@ -41,17 +41,16 @@ function getCoreVersion(): string {
  * Groups: health (1), introspection (4), diagnostics (2), mutation (1).
  */
 export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, brainIntelligence, cognee, llmClient, curator } = runtime;
+  const { vault, brain, brainIntelligence, llmClient, curator } = runtime;
 
   return [
     // ─── Health ──────────────────────────────────────────────────────
     {
       name: 'admin_health',
-      description: 'Comprehensive agent health check — vault, cognee, LLM, brain status.',
+      description: 'Comprehensive agent health check — vault, LLM, brain status.',
       auth: 'read',
       handler: async () => {
         const vaultStats = vault.stats();
-        const cogneeStatus = cognee?.getStatus() ?? null;
         const llmAvailable = llmClient.isAvailable();
         const brainStats = brain.getStats();
         const curatorStatus = curator.getStatus();
@@ -59,7 +58,6 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
         return {
           status: 'ok',
           vault: { entries: vaultStats.totalEntries, domains: Object.keys(vaultStats.byDomain) },
-          cognee: { available: cogneeStatus?.available ?? false },
           llm: llmAvailable,
           brain: {
             vocabularySize: brainStats.vocabularySize,
@@ -174,21 +172,14 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
     // ─── Mutation ────────────────────────────────────────────────────
     {
       name: 'admin_reset_cache',
-      description:
-        'Clear all caches — brain vocabulary and cognee health cache. Forces fresh data on next access.',
+      description: 'Clear all caches — brain vocabulary. Forces fresh data on next access.',
       auth: 'write',
       handler: async () => {
-        // Rebuild brain vocabulary (clears old TF-IDF state, rebuilds from vault)
         brain.rebuildVocabulary();
 
-        // Reset cognee health cache by checking health again (no direct reset method)
-        // The next isAvailable check will need a fresh health probe
-        const cogneeHealth = cognee ? await cognee.healthCheck().catch(() => null) : null;
-
         return {
-          cleared: ['brain_vocabulary', ...(cognee ? ['cognee_health_cache'] : [])],
+          cleared: ['brain_vocabulary'],
           brainVocabularySize: brain.getStats().vocabularySize,
-          cogneeAvailable: cogneeHealth?.available ?? false,
         };
       },
     },
@@ -250,31 +241,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           });
         }
 
-        // 4. Cognee availability
-        try {
-          const cogneeStatus = cognee?.getStatus() ?? null;
-          if (cogneeStatus?.available) {
-            checks.push({
-              name: 'cognee',
-              status: 'ok',
-              detail: `Connected to ${cogneeStatus.url}`,
-            });
-          } else {
-            checks.push({
-              name: 'cognee',
-              status: 'warn',
-              detail: cogneeStatus?.error ?? 'Not connected (no health check yet)',
-            });
-          }
-        } catch (err) {
-          checks.push({
-            name: 'cognee',
-            status: 'error',
-            detail: err instanceof Error ? err.message : String(err),
-          });
-        }
-
-        // 5. LLM key pools
+        // 4. LLM key pools
         const llmStatus = llmClient.isAvailable();
         checks.push({
           name: 'llm_openai',
