@@ -116,6 +116,7 @@ export class CogneeClient {
 
   async addEntries(entries: IntelligenceEntry[]): Promise<CogneeAddResult> {
     if (entries.length === 0) return { added: 0 };
+    if (!this.isAvailable) await this.healthCheck();
     if (!this.isAvailable)
       return { added: 0, code: 'UNAVAILABLE', error: 'Cognee health check not passing' };
 
@@ -182,6 +183,7 @@ export class CogneeClient {
   }
 
   async cognify(dataset?: string): Promise<CogneeCognifyResult> {
+    if (!this.isAvailable) await this.healthCheck();
     if (!this.isAvailable) return { status: 'unavailable' };
 
     try {
@@ -248,6 +250,10 @@ export class CogneeClient {
     query: string,
     opts?: { searchType?: CogneeSearchType; limit?: number },
   ): Promise<CogneeSearchResult[]> {
+    // Auto-refresh health cache if null or stale
+    if (!this.isAvailable) {
+      await this.healthCheck();
+    }
     if (!this.isAvailable) return [];
 
     // Default to CHUNKS (pure vector similarity) — GRAPH_COMPLETION requires
@@ -298,7 +304,9 @@ export class CogneeClient {
   // ─── Delete ──────────────────────────────────────────────────────
 
   async deleteEntries(entryIds: string[]): Promise<{ deleted: number }> {
-    if (!this.isAvailable || entryIds.length === 0) return { deleted: 0 };
+    if (entryIds.length === 0) return { deleted: 0 };
+    if (!this.isAvailable) await this.healthCheck();
+    if (!this.isAvailable) return { deleted: 0 };
 
     try {
       const res = await this.post('/api/v1/delete', {
@@ -393,12 +401,26 @@ export class CogneeClient {
 
   private async post(path: string, body: unknown, timeoutMs?: number): Promise<Response> {
     const headers = await this.authHeaders();
-    return globalThis.fetch(`${this.config.baseUrl}${path}`, {
+    const res = await globalThis.fetch(`${this.config.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs ?? this.config.timeoutMs),
     });
+
+    // Token expired — clear cached token, re-auth, and retry once
+    if (res.status === 401 && this.accessToken) {
+      this.accessToken = null;
+      const retryHeaders = await this.authHeaders();
+      return globalThis.fetch(`${this.config.baseUrl}${path}`, {
+        method: 'POST',
+        headers: retryHeaders,
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs ?? this.config.timeoutMs),
+      });
+    }
+
+    return res;
   }
 }
 
