@@ -464,7 +464,6 @@ function readAgentConfig(agentPath: string, agentId: string): AgentConfig | null
     model: pkg.soleri?.model ?? 'claude-code-sonnet-4',
     setupTarget: pkg.soleri?.setupTarget ?? 'claude',
     telegram: true, // Force true — we're enabling telegram
-    cognee: pkg.soleri?.cognee ?? false,
   };
 }
 

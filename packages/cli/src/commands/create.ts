@@ -54,7 +54,24 @@ export function registerCreate(program: Command): void {
         try {
           let config;
 
-          if (opts?.config) {
+          if (name && opts?.yes && !opts?.config) {
+            // Quick non-interactive: name + --yes = Italian Craftsperson defaults
+            const id = name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-|-$/g, '');
+            config = AgentConfigSchema.parse({
+              id,
+              name,
+              role: 'Your universal second brain — learns, remembers, improves',
+              description:
+                'A universal assistant that learns from your projects, captures knowledge, and gets smarter with every session.',
+              domains: [],
+              principles: [],
+              tone: 'mentor',
+              greeting: `Ciao! I'm ${name}. Ready to build something beautiful today?`,
+            });
+          } else if (opts?.config) {
             // Non-interactive: read from config file
             const configPath = resolve(opts.config);
             if (!existsSync(configPath)) {
@@ -115,9 +132,8 @@ export function registerCreate(program: Command): void {
                 target: config.setupTarget,
                 model: (raw.model as string) ?? 'claude-code-sonnet-4',
               },
-              engine: {
-                cognee: (raw.cognee as boolean) ?? false,
-              },
+              engine: {},
+              persona: raw.persona as Record<string, unknown> | undefined,
               vaults: raw.vaults as
                 | Array<{ name: string; path: string; priority?: number }>
                 | undefined,
