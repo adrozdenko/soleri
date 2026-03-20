@@ -96,7 +96,8 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     },
     {
       name: 'complete_plan',
-      description: 'Mark an executing plan as completed.',
+      description:
+        'Mark a reconciled plan as completed. If the plan is still executing, it will be auto-reconciled first. Use `plan_reconcile` to provide a detailed drift report before completing.',
       auth: 'write',
       schema: z.object({
         planId: z.string(),

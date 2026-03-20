@@ -498,13 +498,24 @@ export class Planner {
   }
 
   /**
-   * Complete a plan. Only allowed from 'reconciling'.
+   * Complete a plan. Allowed from 'reconciling' directly.
+   * If the plan is in 'executing' or 'validating' state, auto-reconcile first
+   * with a default outcome summary, then complete.
    * Use startReconciliation() + reconcile() + complete() for the full lifecycle,
    * or reconcile() which auto-transitions through reconciling → completed.
    */
   complete(planId: string): Plan {
     const plan = this.get(planId);
     if (!plan) throw new Error(`Plan not found: ${planId}`);
+
+    // Auto-reconcile if plan is still executing or validating
+    if (plan.status === 'executing' || plan.status === 'validating') {
+      return this.reconcile(planId, {
+        actualOutcome: 'All tasks completed',
+        reconciledBy: 'auto',
+      });
+    }
+
     plan.executionSummary = this.computeExecutionSummary(plan);
     this.transition(plan, 'completed');
     this.save();

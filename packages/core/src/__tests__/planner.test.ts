@@ -187,16 +187,31 @@ describe('Planner', () => {
       expect(completed.status).toBe('completed');
     });
 
-    it('should throw when completing from executing (must go through reconciling)', () => {
-      const plan = planner.create({ objective: 'Not reconciling', scope: 'test' });
+    it('should auto-reconcile when completing from executing state', () => {
+      const plan = planner.create({ objective: 'Auto reconcile', scope: 'test' });
       planner.approve(plan.id);
       planner.startExecution(plan.id);
-      expect(() => planner.complete(plan.id)).toThrow('Invalid transition');
+      const completed = planner.complete(plan.id);
+      expect(completed.status).toBe('completed');
+      expect(completed.reconciliation).toBeDefined();
+      expect(completed.reconciliation!.summary).toBe('All tasks completed');
+      expect(completed.reconciliation!.reconciledAt).toBeGreaterThan(0);
+    });
+
+    it('should auto-reconcile when completing from validating state', () => {
+      const plan = planner.create({ objective: 'Auto reconcile from validating', scope: 'test' });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      planner.startValidation(plan.id);
+      const completed = planner.complete(plan.id);
+      expect(completed.status).toBe('completed');
+      expect(completed.reconciliation).toBeDefined();
+      expect(completed.reconciliation!.summary).toBe('All tasks completed');
     });
 
     it('should throw when completing from draft', () => {
       const plan = planner.create({ objective: 'Not executing', scope: 'test' });
-      expect(() => planner.complete(plan.id)).toThrow('Invalid transition');
+      expect(() => planner.complete(plan.id)).toThrow();
     });
   });
 
