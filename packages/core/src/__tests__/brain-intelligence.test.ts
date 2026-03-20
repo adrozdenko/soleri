@@ -367,17 +367,25 @@ describe('BrainIntelligence', () => {
   // ─── Proposals ─────────────────────────────────────────────────
 
   it('should list proposals', () => {
+    // Use plan_completed (confidence 0.65) — below auto-promote threshold (0.8)
     runtime.brainIntelligence.lifecycle({
       action: 'start',
       sessionId: 'prop-1',
-      toolsUsed: ['a', 'a', 'a'],
+      planId: 'plan-list-1',
     });
-    runtime.brainIntelligence.lifecycle({ action: 'end', sessionId: 'prop-1' });
-    runtime.brainIntelligence.extractKnowledge('prop-1');
+    runtime.brainIntelligence.lifecycle({
+      action: 'end',
+      sessionId: 'prop-1',
+      planId: 'plan-list-1',
+      planOutcome: 'completed',
+    });
 
     const proposals = runtime.brainIntelligence.getProposals();
     expect(proposals.length).toBeGreaterThan(0);
-    expect(proposals[0].promoted).toBe(false);
+    // plan_completed confidence is 0.65 — below auto-promote threshold
+    const planProposals = proposals.filter((p) => p.rule === 'plan_completed');
+    expect(planProposals.length).toBeGreaterThan(0);
+    expect(planProposals[0].promoted).toBe(false);
   });
 
   it('should filter proposals by session', () => {
@@ -404,15 +412,23 @@ describe('BrainIntelligence', () => {
   });
 
   it('should promote proposals to vault', () => {
+    // Use plan_completed (confidence 0.65) to avoid auto-promote (threshold 0.8)
     runtime.brainIntelligence.lifecycle({
       action: 'start',
       sessionId: 'promo-1',
-      toolsUsed: ['z', 'z', 'z'],
+      planId: 'plan-promo-1',
     });
-    runtime.brainIntelligence.lifecycle({ action: 'end', sessionId: 'promo-1' });
-    runtime.brainIntelligence.extractKnowledge('promo-1');
+    runtime.brainIntelligence.lifecycle({
+      action: 'end',
+      sessionId: 'promo-1',
+      planId: 'plan-promo-1',
+      planOutcome: 'completed',
+    });
 
-    const proposals = runtime.brainIntelligence.getProposals({ sessionId: 'promo-1' });
+    const proposals = runtime.brainIntelligence.getProposals({
+      sessionId: 'promo-1',
+      promoted: false,
+    });
     expect(proposals.length).toBeGreaterThan(0);
 
     const result = runtime.brainIntelligence.promoteProposals([proposals[0].id]);
@@ -432,16 +448,23 @@ describe('BrainIntelligence', () => {
   });
 
   it('should gate promote through governance when strict preset', () => {
-    // Create a brain session and extract proposals
+    // Use plan_completed (confidence 0.65) to avoid auto-promote (threshold 0.8)
     runtime.brainIntelligence.lifecycle({
       action: 'start',
       sessionId: 'gov-promo-1',
-      toolsUsed: ['w', 'w', 'w'],
+      planId: 'plan-gov-1',
     });
-    runtime.brainIntelligence.lifecycle({ action: 'end', sessionId: 'gov-promo-1' });
-    runtime.brainIntelligence.extractKnowledge('gov-promo-1');
+    runtime.brainIntelligence.lifecycle({
+      action: 'end',
+      sessionId: 'gov-promo-1',
+      planId: 'plan-gov-1',
+      planOutcome: 'completed',
+    });
 
-    const proposals = runtime.brainIntelligence.getProposals({ sessionId: 'gov-promo-1' });
+    const proposals = runtime.brainIntelligence.getProposals({
+      sessionId: 'gov-promo-1',
+      promoted: false,
+    });
     expect(proposals.length).toBeGreaterThan(0);
 
     // Apply strict preset — requireReview: true

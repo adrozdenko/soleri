@@ -5,6 +5,9 @@ import { homedir } from 'node:os';
 import * as p from '@clack/prompts';
 import { detectAgent } from '../utils/agent-context.js';
 
+/** Default parent directory for agents: ~/.soleri/ */
+const SOLERI_HOME = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
+
 type Target = 'claude' | 'codex' | 'opencode' | 'both' | 'all';
 
 /** MCP server entry for file-tree agents (uses npx @soleri/engine) */
@@ -26,7 +29,7 @@ function legacyMcpEntry(agentDir: string): Record<string, unknown> {
   };
 }
 
-function installClaude(agentId: string, agentDir: string, isFileTree: boolean): void {
+export function installClaude(agentId: string, agentDir: string, isFileTree: boolean): void {
   const configPath = join(homedir(), '.claude.json');
   let config: Record<string, unknown> = {};
 
@@ -174,15 +177,30 @@ function installLauncher(agentId: string, agentDir: string): void {
 export function registerInstall(program: Command): void {
   program
     .command('install')
-    .argument('[dir]', 'Agent directory (defaults to cwd)')
+    .argument('[dir]', 'Agent directory or agent name (checks ~/.soleri/<name> first, then cwd)')
     .option('--target <target>', 'Registration target: claude, opencode, codex, or all', 'claude')
     .description('Register agent as MCP server in editor config')
     .action(async (dir?: string, opts?: { target?: string }) => {
-      const resolvedDir = dir ? resolve(dir) : undefined;
+      let resolvedDir: string | undefined;
+
+      if (dir) {
+        // If dir looks like a bare agent name (no slashes), check ~/.soleri/{name} first
+        if (!dir.includes('/') && !dir.includes('\\')) {
+          const soleriPath = join(SOLERI_HOME, dir);
+          if (existsSync(join(soleriPath, 'agent.yaml'))) {
+            resolvedDir = soleriPath;
+          }
+        }
+        if (!resolvedDir) {
+          resolvedDir = resolve(dir);
+        }
+      }
+
       const ctx = detectAgent(resolvedDir);
 
       if (!ctx) {
         p.log.error('Not in an agent project. Run from an agent directory or pass its path.');
+        p.log.info(`Tip: agents created with "soleri create" live in ${SOLERI_HOME}/`);
         process.exit(1);
       }
 

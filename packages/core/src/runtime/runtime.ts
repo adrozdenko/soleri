@@ -7,8 +7,14 @@
  * ```
  */
 
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import {
+  SOLERI_HOME,
+  agentVaultPath as getAgentVaultPath,
+  agentPlansPath as getAgentPlansPath,
+  agentTemplatesDir as getAgentTemplatesDir,
+  agentFlagsPath as getAgentFlagsPath,
+  sharedVaultPath as getSharedVaultPath,
+} from '../paths.js';
 import { Brain } from '../brain/brain.js';
 import { BrainIntelligence } from '../brain/intelligence.js';
 import { Planner } from '../planning/planner.js';
@@ -61,9 +67,8 @@ import { generatePersonaInstructions } from '../persona/prompt-generator.js';
  */
 export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const { agentId } = config;
-  const agentHome = join(homedir(), `.${agentId}`);
-  const vaultPath = config.vaultPath ?? join(agentHome, 'vault.db');
-  const plansPath = config.plansPath ?? join(agentHome, 'plans.json');
+  const vaultPath = config.vaultPath ?? getAgentVaultPath(agentId);
+  const plansPath = config.plansPath ?? getAgentPlansPath(agentId);
 
   // Logger — structured output to stderr
   const logger = createLogger({ level: config.logLevel, prefix: `[${agentId}]` });
@@ -76,10 +81,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
 
   // Shared vault — cross-agent intelligence (lower priority than agent vault)
   try {
-    const sharedVaultDir = join(homedir(), '.soleri');
-    mkdirSync(sharedVaultDir, { recursive: true });
-    const sharedVaultPath = config.sharedVaultPath ?? join(sharedVaultDir, 'vault.db');
-    vaultManager.connect('shared', sharedVaultPath, 0.6);
+    mkdirSync(SOLERI_HOME, { recursive: true });
+    const sharedPath = config.sharedVaultPath ?? getSharedVaultPath();
+    vaultManager.connect('shared', sharedPath, 0.6);
   } catch (err) {
     logger.warn(`Shared vault unavailable: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -124,7 +128,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const projectRegistry = new ProjectRegistry(vault.getProvider());
 
   // Template Manager — prompt templates with variable substitution
-  const templatesDir = config.templatesDir ?? join(agentHome, 'templates');
+  const templatesDir = config.templatesDir ?? getAgentTemplatesDir(agentId);
   const templateManager = new TemplateManager(templatesDir);
   if (existsSync(templatesDir)) {
     templateManager.load();
@@ -214,7 +218,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     intakePipeline,
     textIngester,
     authPolicy: { mode: 'permissive', callerLevel: 'admin' },
-    flags: new FeatureFlags(join(agentHome, 'flags.json')),
+    flags: new FeatureFlags(getAgentFlagsPath(agentId)),
     health,
     playbookExecutor,
     pluginRegistry,

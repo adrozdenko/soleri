@@ -1,0 +1,116 @@
+name: "Feature Request (Agent-Ready)"
+description: "Structured feature request optimized for AI coding agents"
+title: "feat: "
+labels: ["feature"]
+body:
+  - type: input
+    id: component
+    attributes:
+      label: Component
+      description: "Package or module (e.g. @soleri/core, @soleri/cli, @soleri/forge)"
+      placeholder: "@soleri/core"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 — Critical path
+        - P1 — High (next sprint)
+        - P2 — Medium (backlog)
+        - P3 — Nice to have
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: "Objective (what capability is added and why)"
+      placeholder: "Add --dir flag to soleri create so agents can be installed to custom locations"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      placeholder: |
+        - Why: user need or business reason
+        - Related: links to issues, PRs, vault entries
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      value: |
+        **In scope:**
+        -
+
+        **Out of scope:**
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      placeholder: |
+        - No new npm dependencies
+        - Backward compatible with existing agent.yaml
+        - Do NOT modify public API of X
+
+  - type: textarea
+    id: code_locations
+    attributes:
+      label: Code Locations
+      description: "File paths + symbol names — agent's starting points"
+      placeholder: |
+        - Entry point: `packages/cli/src/commands/create.ts` — `registerCreate()`
+        - Test: `packages/cli/src/__tests__/create.test.ts`
+    validations:
+      required: true
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: Proposed Approach (optional)
+      placeholder: |
+        1. Add --dir flag to commander options
+        2. Pass to scaffoldFileTree() as outputDir
+        3. Update help text
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      value: |
+        - [ ] Given <precondition>, when <action>, then <result>
+        - [ ] Tests added for new behavior
+        - [ ] No new lint/type errors
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification Commands
+      value: |
+        ```bash
+        npm test
+        npm run typecheck
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+      value: |
+        - [ ] Acceptance criteria satisfied
+        - [ ] `npm test` passes
+        - [ ] `npm run typecheck` passes
+        - [ ] Changes scoped to "In Scope" only

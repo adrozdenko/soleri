@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
+import { homedir } from 'node:os';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import {
@@ -13,6 +14,9 @@ import {
 import { runCreateWizard } from '../prompts/create-wizard.js';
 import { listPacks } from '../hook-packs/registry.js';
 import { installPack } from '../hook-packs/installer.js';
+
+/** Default parent directory for new agents: ~/.soleri/ */
+const SOLERI_HOME = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
 
 function parseSetupTarget(value?: string): SetupTarget | undefined {
   if (!value) return undefined;
@@ -37,6 +41,7 @@ export function registerCreate(program: Command): void {
       `Setup target: ${SETUP_TARGETS.join(', ')} (default: claude)`,
     )
     .option('-y, --yes', 'Skip confirmation prompts (use with --config for fully non-interactive)')
+    .option('--dir <path>', `Parent directory for the agent (default: ~/.soleri/)`)
     .option('--filetree', 'Create a file-tree agent (v7 — no TypeScript, no build step)')
     .option('--legacy', 'Create a legacy TypeScript agent (v6 — requires npm install + build)')
     .description('Create a new Soleri agent')
@@ -46,6 +51,7 @@ export function registerCreate(program: Command): void {
         opts?: {
           config?: string;
           yes?: boolean;
+          dir?: string;
           setupTarget?: string;
           filetree?: boolean;
           legacy?: boolean;
@@ -148,7 +154,7 @@ export function registerCreate(program: Command): void {
               })),
             };
 
-            const outputDir = config.outputDir ?? process.cwd();
+            const outputDir = opts?.dir ? resolve(opts.dir) : (config.outputDir ?? SOLERI_HOME);
             const nonInteractive = !!(opts?.yes || opts?.config);
 
             if (!nonInteractive) {

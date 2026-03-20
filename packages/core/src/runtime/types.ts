@@ -39,15 +39,15 @@ import type { PipelineRunner } from '../queue/pipeline-runner.js';
  * Only `agentId` is required — everything else has sensible defaults.
  */
 export interface AgentRuntimeConfig {
-  /** Agent identifier (kebab-case), e.g. 'my-agent'. Used for paths: ~/.{agentId}/ */
+  /** Agent identifier (kebab-case), e.g. 'my-agent'. Used for paths: ~/.soleri/{agentId}/ */
   agentId: string;
-  /** Path to vault database. Default: ~/.{agentId}/vault.db */
+  /** Path to vault database. Default: ~/.soleri/{agentId}/vault.db */
   vaultPath?: string;
-  /** Path to plans JSON store. Default: ~/.{agentId}/plans.json */
+  /** Path to plans JSON store. Default: ~/.soleri/{agentId}/plans.json */
   plansPath?: string;
   /** Intelligence data directory to seed vault from. Optional. */
   dataDir?: string;
-  /** Path to prompt templates directory. Default: ~/.{agentId}/templates */
+  /** Path to prompt templates directory. Default: ~/.soleri/{agentId}/templates */
   templatesDir?: string;
   /** Minimum log level. Default: 'info' (or SOLERI_LOG_LEVEL env var). */
   logLevel?: LogLevel;

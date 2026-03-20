@@ -1,3 +1,17 @@
+// ─── Paths ──────────────────────────────────────────────────────────
+export {
+  SOLERI_HOME,
+  agentHome,
+  legacyAgentHome,
+  usedLegacyFallback,
+  agentVaultPath,
+  agentPlansPath,
+  agentKeysPath,
+  agentTemplatesDir,
+  agentFlagsPath,
+  sharedVaultPath,
+} from './paths.js';
+
 // ─── Intelligence ────────────────────────────────────────────────────
 export type {
   IntelligenceEntry,

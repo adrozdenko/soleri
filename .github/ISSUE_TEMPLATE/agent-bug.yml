@@ -1,0 +1,119 @@
+name: "Bug Report (Agent-Ready)"
+description: "Structured bug report optimized for AI coding agents"
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: input
+    id: component
+    attributes:
+      label: Component
+      description: "Package or module (e.g. @soleri/core, @soleri/cli, @soleri/forge)"
+      placeholder: "@soleri/core"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 — Critical (blocks release)
+        - P1 — High (breaks core workflow)
+        - P2 — Medium (workaround exists)
+        - P3 — Low (cosmetic/friction)
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: "Objective (what's broken → what fixed looks like)"
+      placeholder: "Login returns 401 instead of session token when OAuth callback has valid code"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      value: |
+        1.
+        2.
+        3. Observe:
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs Actual
+      value: |
+        | | Behavior |
+        |--|----------|
+        | **Expected** |  |
+        | **Actual** |  |
+    validations:
+      required: true
+
+  - type: textarea
+    id: error_output
+    attributes:
+      label: Error Output
+      description: "Paste exact error messages, stack traces, or log output"
+      render: shell
+
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: Root Cause (if known)
+      placeholder: |
+        - File: `packages/core/src/file.ts` — `functionName()`
+        - Why: brief technical explanation
+
+  - type: textarea
+    id: code_locations
+    attributes:
+      label: Code Locations
+      description: "File paths + symbol names — agent's starting points"
+      placeholder: |
+        - Bug site: `packages/core/src/file.ts` — `functionName()`
+        - Test file: `packages/core/src/__tests__/file.test.ts`
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      value: |
+        **In scope:**
+        - Fix the specific bug
+        - Add regression test
+
+        **Out of scope:**
+        - Refactoring surrounding code
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      value: |
+        - [ ] Bug no longer reproduces with steps above
+        - [ ] Regression test added (fails without fix, passes with fix)
+        - [ ] No new lint/type errors
+        - [ ] Existing tests pass
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification Commands
+      description: "Exact commands to verify the fix"
+      value: |
+        ```bash
+        npm test
+        npm run typecheck
+        ```
+    validations:
+      required: true

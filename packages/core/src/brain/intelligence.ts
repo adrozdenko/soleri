@@ -38,6 +38,9 @@ const EXTRACTION_TOOL_THRESHOLD = 3;
 const EXTRACTION_FILE_THRESHOLD = 3;
 const EXTRACTION_LONG_SESSION_MINUTES = 30;
 const EXTRACTION_HIGH_FEEDBACK_RATIO = 0.8;
+const AUTO_PROMOTE_THRESHOLD = 0.8;
+const AUTO_PROMOTE_PENDING_MIN = 0.4;
+const AUTO_BUILD_INTELLIGENCE_EVERY_N_SESSIONS = 3;
 
 // ─── Class ──────────────────────────────────────────────────────────
 
@@ -116,6 +119,12 @@ export class BrainIntelligence {
         last_activity TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS brain_metadata (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
   }
 
@@ -177,6 +186,12 @@ export class BrainIntelligence {
    * Attempt auto-extraction after session end if the session has enough signal.
    * Gate: at least 1 tool used OR 1 file modified OR a plan was associated.
    * Silently skips if already extracted or insufficient data.
+   *
+   * After extraction, auto-promotes high-confidence proposals (>= 0.8) via
+   * enrichAndCapture() (which has built-in dedup). Proposals between 0.4-0.8
+   * are queued as pending. Below 0.4 are logged only.
+   *
+   * Also tracks completed sessions and auto-builds intelligence every N sessions.
    */
   private autoExtractIfReady(session: BrainSession): void {
     if (!session.endedAt) return;
@@ -188,7 +203,79 @@ export class BrainIntelligence {
     if (!hasSignal) return;
 
     try {
-      this.extractKnowledge(session.id);
+      const result = this.extractKnowledge(session.id);
+      this.autoPromoteProposals(result.proposals);
+    } catch {
+      // Non-critical — don't break session end
+    }
+
+    // Auto-build intelligence after N completed plan sessions
+    if (session.planOutcome === 'completed') {
+      this.maybeAutoBuildIntelligence();
+    }
+  }
+
+  /**
+   * Auto-promote high-confidence proposals via enrichAndCapture().
+   * Dedup in enrichAndCapture() handles novelty gating:
+   * - TF-IDF similarity >= 0.8 → blocked (near-duplicate)
+   * - Content-hash match → blocked (exact duplicate)
+   */
+  private autoPromoteProposals(proposals: KnowledgeProposal[]): void {
+    for (const p of proposals) {
+      if (p.confidence >= AUTO_PROMOTE_THRESHOLD) {
+        // High confidence — auto-promote through dedup pipeline
+        try {
+          const vaultType: 'pattern' | 'anti-pattern' | 'rule' =
+            p.type === 'anti-pattern' ? 'anti-pattern' : 'pattern';
+          const result = this.brain.enrichAndCapture({
+            id: `proposal-${p.id}`,
+            type: vaultType,
+            domain: 'brain-intelligence',
+            title: p.title,
+            severity: 'suggestion',
+            description: p.description,
+            tags: ['auto-extracted', 'auto-promoted', p.rule],
+          });
+          if (result.captured) {
+            this.provider.run('UPDATE brain_proposals SET promoted = 1 WHERE id = ?', [p.id]);
+          }
+          // If blocked by dedup, leave as unpromoted — that's correct behavior
+        } catch {
+          // Non-critical — proposal stays as pending
+        }
+      } else if (p.confidence < AUTO_PROMOTE_PENDING_MIN) {
+        // Low confidence — mark as not surfaceable (promoted = false is already default)
+        // Just log, don't surface in briefings
+      }
+      // Medium confidence (0.4-0.8) — stays as pending, surfaced in briefing
+    }
+  }
+
+  /**
+   * Track completed sessions and auto-trigger buildIntelligence() every N sessions.
+   */
+  private maybeAutoBuildIntelligence(): void {
+    try {
+      const row = this.provider.get<{ value: string }>(
+        "SELECT value FROM brain_metadata WHERE key = 'sessions_since_last_build'",
+      );
+      const current = row ? parseInt(row.value, 10) : 0;
+      const next = current + 1;
+
+      if (next >= AUTO_BUILD_INTELLIGENCE_EVERY_N_SESSIONS) {
+        this.buildIntelligence();
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
+           VALUES ('sessions_since_last_build', '0', datetime('now'))`,
+        );
+      } else {
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
+           VALUES ('sessions_since_last_build', ?, datetime('now'))`,
+          [String(next)],
+        );
+      }
     } catch {
       // Non-critical — don't break session end
     }
@@ -247,6 +334,24 @@ export class BrainIntelligence {
 
   getSessionById(id: string): BrainSession | null {
     return this.getSession(id);
+  }
+
+  getSessionByPlanId(planId: string): BrainSession | null {
+    const row = this.provider.get<{
+      id: string;
+      started_at: string;
+      ended_at: string | null;
+      domain: string | null;
+      context: string | null;
+      tools_used: string;
+      files_modified: string;
+      plan_id: string | null;
+      plan_outcome: string | null;
+      extracted_at: string | null;
+    }>('SELECT * FROM brain_sessions WHERE plan_id = ? ORDER BY started_at DESC LIMIT 1', [planId]);
+
+    if (!row) return null;
+    return this.rowToSession(row);
   }
 
   listSessions(query?: SessionListQuery): BrainSession[] {
@@ -595,19 +700,34 @@ export class BrainIntelligence {
       }
     }
 
-    // Rule 2: Multi-file edits (3+ files)
+    // Rule 2: Multi-file edits (3+ files sharing a common parent directory)
     if (session.filesModified.length >= EXTRACTION_FILE_THRESHOLD) {
-      rulesApplied.push('multi_file_edit');
-      proposals.push(
-        this.createProposal(sessionId, 'multi_file_edit', 'pattern', {
-          title: `Multi-file change pattern (${session.filesModified.length} files)`,
-          description: `Session modified ${session.filesModified.length} files: ${session.filesModified.slice(0, 5).join(', ')}${session.filesModified.length > 5 ? '...' : ''}. This may indicate an architectural pattern.`,
-          confidence: Math.min(0.8, 0.4 + session.filesModified.length * 0.05),
-        }),
+      // Group files by parent directory to filter noise
+      const dirGroups = new Map<string, string[]>();
+      for (const f of session.filesModified) {
+        const dir = f.includes('/') ? f.slice(0, f.lastIndexOf('/')) : '.';
+        const list = dirGroups.get(dir) ?? [];
+        list.push(f);
+        dirGroups.set(dir, list);
+      }
+      // Only fire if at least 3 files share a common parent directory
+      const significantDirs = [...dirGroups.entries()].filter(
+        ([, files]) => files.length >= EXTRACTION_FILE_THRESHOLD,
       );
+      if (significantDirs.length > 0) {
+        const [topDir, topFiles] = significantDirs.sort((a, b) => b[1].length - a[1].length)[0];
+        rulesApplied.push('multi_file_edit');
+        proposals.push(
+          this.createProposal(sessionId, 'multi_file_edit', 'pattern', {
+            title: `Multi-file change pattern in ${topDir} (${topFiles.length} files)`,
+            description: `Session modified ${topFiles.length} files in ${topDir}: ${topFiles.slice(0, 5).join(', ')}${topFiles.length > 5 ? '...' : ''}. This may indicate an architectural pattern.`,
+            confidence: Math.min(0.8, 0.4 + topFiles.length * 0.05),
+          }),
+        );
+      }
     }
 
-    // Rule 3: Long session (>30min)
+    // Rule 3: Long session (>30min) — neutral observation, not anti-pattern
     if (session.endedAt && session.startedAt) {
       const durationMs =
         new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime();
@@ -615,23 +735,23 @@ export class BrainIntelligence {
       if (durationMin > EXTRACTION_LONG_SESSION_MINUTES) {
         rulesApplied.push('long_session');
         proposals.push(
-          this.createProposal(sessionId, 'long_session', 'anti-pattern', {
+          this.createProposal(sessionId, 'long_session', 'pattern', {
             title: `Long session (${Math.round(durationMin)} minutes)`,
-            description: `Session lasted ${Math.round(durationMin)} minutes. Consider breaking complex tasks into smaller steps or improving automation.`,
-            confidence: 0.5,
+            description: `Session lasted ${Math.round(durationMin)} minutes. Deep work session — review if this duration was productive or indicates a need for better tooling.`,
+            confidence: 0.3,
           }),
         );
       }
     }
 
-    // Rule 4: Plan completed
+    // Rule 4: Plan completed — moderate confidence to avoid auto-promoting generic entries
     if (session.planId && session.planOutcome === 'completed') {
       rulesApplied.push('plan_completed');
       proposals.push(
         this.createProposal(sessionId, 'plan_completed', 'workflow', {
           title: `Successful plan: ${session.planId}`,
           description: `Plan ${session.planId} completed successfully. This workflow can be reused for similar tasks.`,
-          confidence: 0.8,
+          confidence: 0.65,
         }),
       );
     }

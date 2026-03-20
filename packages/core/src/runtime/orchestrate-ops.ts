@@ -61,11 +61,7 @@ const planStore = new Map<string, PlanEntry>();
  * If facades are provided, uses the full dispatch registry.
  * Otherwise, falls back to a simple runtime-based dispatcher.
  */
-function buildDispatch(
-  agentId: string,
-  runtime: AgentRuntime,
-  facades?: FacadeConfig[],
-) {
+function buildDispatch(agentId: string, runtime: AgentRuntime, facades?: FacadeConfig[]) {
   if (facades && facades.length > 0) {
     return createDispatcher(agentId, facades);
   }
@@ -135,27 +131,12 @@ export function createOrchestrateOps(
         'a pruned orchestration plan with gate-guarded steps.',
       auth: 'write',
       schema: z.object({
-        prompt: z
-          .string()
-          .describe('Natural language description of what to do'),
-        projectPath: z
-          .string()
-          .optional()
-          .default('.')
-          .describe('Project root path'),
+        prompt: z.string().describe('Natural language description of what to do'),
+        projectPath: z.string().optional().default('.').describe('Project root path'),
         // Legacy params — still accepted for backward compat
-        objective: z
-          .string()
-          .optional()
-          .describe('(Legacy) Plan objective — use prompt instead'),
-        scope: z
-          .string()
-          .optional()
-          .describe('(Legacy) Plan scope'),
-        domain: z
-          .string()
-          .optional()
-          .describe('Domain hint for brain recommendations'),
+        objective: z.string().optional().describe('(Legacy) Plan objective — use prompt instead'),
+        scope: z.string().optional().describe('(Legacy) Plan scope'),
+        domain: z.string().optional().describe('Domain hint for brain recommendations'),
         tasks: z
           .array(z.object({ title: z.string(), description: z.string() }))
           .optional()
@@ -271,13 +252,17 @@ export function createOrchestrateOps(
           // Store result
           entry.executionResult = executionResult;
 
-          // Start brain session
-          const session = brainIntelligence.lifecycle({
-            action: 'start',
-            domain,
-            context,
-            planId,
-          });
+          // Reuse brain session from plan_split if one exists, otherwise start new
+          const existingSession = brainIntelligence.getSessionByPlanId(planId);
+          const session =
+            existingSession && !existingSession.endedAt
+              ? existingSession
+              : brainIntelligence.lifecycle({
+                  action: 'start',
+                  domain,
+                  context,
+                  planId,
+                });
 
           return {
             plan: { id: planId, status: 'executing' },
@@ -294,12 +279,17 @@ export function createOrchestrateOps(
 
         // Legacy path: no flow plan found, use planner directly
         const plan = planner.startExecution(planId);
-        const session = brainIntelligence.lifecycle({
-          action: 'start',
-          domain,
-          context,
-          planId,
-        });
+        // Reuse brain session from plan_split if one exists, otherwise start new
+        const existingSession = brainIntelligence.getSessionByPlanId(planId);
+        const session =
+          existingSession && !existingSession.endedAt
+            ? existingSession
+            : brainIntelligence.lifecycle({
+                action: 'start',
+                domain,
+                context,
+                planId,
+              });
 
         return { plan, session };
       },

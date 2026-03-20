@@ -5,12 +5,22 @@
  * `soleri agent update` — OTA engine upgrade with migration support.
  */
 
-import { join } from 'node:path';
-import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+  mkdirSync,
+  renameSync,
+  cpSync,
+  rmSync,
+} from 'node:fs';
+import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
-import { PackLockfile, checkNpmVersion, checkVersionCompat } from '@soleri/core';
+import { PackLockfile, checkNpmVersion, checkVersionCompat, SOLERI_HOME } from '@soleri/core';
 import {
   generateClaudeMdTemplate,
   generateInjectClaudeMd,
@@ -18,6 +28,7 @@ import {
 } from '@soleri/forge/lib';
 import type { AgentConfig } from '@soleri/forge/lib';
 import { detectAgent } from '../utils/agent-context.js';
+import { installClaude } from './install.js';
 
 export function registerAgent(program: Command): void {
   const agent = program.command('agent').description('Agent lifecycle management');
@@ -327,6 +338,138 @@ export function registerAgent(program: Command): void {
         console.log(
           `\n  Total: ${totalCapabilities} capabilities across ${packsWithCaps} pack(s)\n`,
         );
+      }
+    });
+
+  // ─── migrate ──────────────────────────────────────────────
+  // Temporary command — moves agent data from ~/.{agentId}/ to ~/.soleri/{agentId}/.
+  // Will be removed in the next major version after all users migrate.
+  agent
+    .command('migrate')
+    .argument('<agentId>', 'Agent ID to migrate (e.g. ernesto, salvador)')
+    .option('--dry-run', 'Preview what would be moved without executing')
+    .description('Move agent data from ~/.{agentId}/ to ~/.soleri/{agentId}/ (one-time migration)')
+    .action((agentId: string, opts: { dryRun?: boolean }) => {
+      const legacyHome = join(homedir(), `.${agentId}`);
+      const newHome = join(SOLERI_HOME, agentId);
+
+      // Data files to migrate (relative to agent home)
+      const dataFiles = [
+        'vault.db',
+        'vault.db-shm',
+        'vault.db-wal',
+        'plans.json',
+        'keys.json',
+        'flags.json',
+      ];
+      const dataDirs = ['templates'];
+
+      // Check if legacy data exists
+      if (!existsSync(legacyHome)) {
+        p.log.info(`No legacy data found at ${legacyHome} — nothing to migrate.`);
+        return;
+      }
+
+      // Check if already migrated
+      if (existsSync(join(newHome, 'vault.db'))) {
+        p.log.warn(`Data already exists at ${newHome}/vault.db — migration may have already run.`);
+        p.log.info('If you want to force re-migration, remove the new directory first.');
+        return;
+      }
+
+      // Discover what to move
+      const toMove: Array<{ src: string; dst: string; type: 'file' | 'dir' }> = [];
+
+      for (const file of dataFiles) {
+        const src = join(legacyHome, file);
+        if (existsSync(src)) {
+          toMove.push({ src, dst: join(newHome, file), type: 'file' });
+        }
+      }
+
+      for (const dir of dataDirs) {
+        const src = join(legacyHome, dir);
+        if (existsSync(src)) {
+          toMove.push({ src, dst: join(newHome, dir), type: 'dir' });
+        }
+      }
+
+      if (toMove.length === 0) {
+        p.log.info(`No data files found in ${legacyHome} — nothing to migrate.`);
+        return;
+      }
+
+      // Preview
+      console.log(`\n  Migration: ${legacyHome} → ${newHome}\n`);
+      for (const item of toMove) {
+        const label = item.type === 'dir' ? '(dir) ' : '';
+        console.log(`  ${label}${item.src} → ${item.dst}`);
+      }
+      console.log('');
+
+      if (opts.dryRun) {
+        p.log.info(
+          `Dry run — ${toMove.length} items would be moved. Run without --dry-run to execute.`,
+        );
+        return;
+      }
+
+      // Execute migration
+      const s = p.spinner();
+      s.start('Migrating agent data...');
+
+      try {
+        // Create new home directory
+        mkdirSync(newHome, { recursive: true });
+
+        let moved = 0;
+        for (const item of toMove) {
+          mkdirSync(dirname(item.dst), { recursive: true });
+          try {
+            // Try atomic rename first (same filesystem)
+            renameSync(item.src, item.dst);
+          } catch {
+            // Cross-filesystem: copy then remove
+            if (item.type === 'dir') {
+              cpSync(item.src, item.dst, { recursive: true });
+              rmSync(item.src, { recursive: true });
+            } else {
+              cpSync(item.src, item.dst);
+              rmSync(item.src);
+            }
+          }
+          moved++;
+        }
+
+        s.stop(`Migrated ${moved} items to ${newHome}`);
+
+        // Detect agent definition (agent.yaml) to re-register MCP
+        const agentYaml = join(newHome, 'agent.yaml');
+        const legacyAgentYaml = join(legacyHome, 'agent.yaml');
+
+        if (existsSync(agentYaml) || existsSync(legacyAgentYaml)) {
+          // If agent.yaml is still in legacy dir, move it too
+          if (!existsSync(agentYaml) && existsSync(legacyAgentYaml)) {
+            p.log.info(
+              'Note: agent.yaml is still at the old location. Move the entire agent folder if needed.',
+            );
+          }
+        }
+
+        // Re-register MCP pointing to new location
+        const agentDir = existsSync(agentYaml) ? newHome : legacyHome;
+        if (existsSync(join(agentDir, 'agent.yaml'))) {
+          installClaude(agentId, agentDir, true);
+          p.log.success('MCP registration updated to new path.');
+        }
+
+        p.log.info(
+          `Legacy directory preserved at ${legacyHome} (safe to remove manually after verifying).`,
+        );
+      } catch (err) {
+        s.stop('Migration failed');
+        p.log.error(err instanceof Error ? err.message : String(err));
+        process.exit(1);
       }
     });
 

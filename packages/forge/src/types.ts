@@ -1,7 +1,12 @@
 import { z } from 'zod';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 
 /** Communication tone for the agent persona */
 const TONES = ['precise', 'mentor', 'pragmatic'] as const;
+
+/** Default parent directory for new agents: ~/.soleri/ */
+const SOLERI_HOME_DEFAULT = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
 
 /** Where to scaffold host/client integration setup. */
 export const SETUP_TARGETS = ['claude', 'codex', 'opencode', 'both', 'all'] as const;
@@ -39,8 +44,8 @@ export const AgentConfigSchema = z.object({
   tone: z.enum(TONES).optional().default('pragmatic'),
   /** Greeting message when agent introduces itself (auto-generated if omitted) */
   greeting: z.string().min(10).max(300).optional(),
-  /** Output directory (parent — agent dir will be created inside, defaults to cwd) */
-  outputDir: z.string().min(1).optional().default(process.cwd()),
+  /** Output directory (parent — agent dir will be created inside, defaults to ~/.soleri/) */
+  outputDir: z.string().min(1).optional().default(SOLERI_HOME_DEFAULT),
   /** Hook packs to install after scaffolding (optional) */
   hookPacks: z.array(z.string()).optional(),
   /** Skills to include (if omitted, all skills are included for backward compat) */

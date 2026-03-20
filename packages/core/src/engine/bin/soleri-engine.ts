@@ -19,6 +19,8 @@ import { createAgentRuntime } from '../../runtime/runtime.js';
 import { registerEngine } from '../register-engine.js';
 import { createCoreOps } from '../core-ops.js';
 import { seedDefaultPlaybooks } from '../../playbooks/playbook-seeder.js';
+import { agentVaultPath } from '../../paths.js';
+import { checkForUpdate } from '../../update-check.js';
 import type { AgentIdentityConfig } from '../core-ops.js';
 
 // ─── Parse CLI args ───────────────────────────────────────────────────
@@ -65,11 +67,11 @@ async function main(): Promise<void> {
   console.error(`${tag} Agent: ${config.name} (${agentId})`);
   console.error(`${tag} Format: file-tree`);
 
-  // 2. Resolve vault path
+  // 2. Resolve vault path (default: ~/.soleri/{agentId}/vault.db)
   const engineConfig = (config.engine ?? {}) as Record<string, unknown>;
   const vaultPath = engineConfig.vault
     ? resolve((engineConfig.vault as string).replace(/^~/, homedir()))
-    : join(homedir(), `.${agentId}`, 'vault.db');
+    : agentVaultPath(agentId);
 
   // 3. Create runtime (with persona from agent.yaml if present)
   const personaConfig = config.persona as Record<string, unknown> | undefined;
@@ -251,7 +253,16 @@ async function main(): Promise<void> {
 
   console.error(`${tag} Engine ready — listening on stdio`);
 
-  // 14. Graceful shutdown
+  // 14. Check for updates (fire-and-forget — never blocks, never throws)
+  const enginePkgPath = new URL('../../../package.json', import.meta.url);
+  try {
+    const enginePkg = JSON.parse(readFileSync(enginePkgPath, 'utf-8'));
+    checkForUpdate(agentId, enginePkg.version ?? '0.0.0').catch(() => {});
+  } catch {
+    // package.json not readable — skip update check silently
+  }
+
+  // 15. Graceful shutdown
   const shutdown = () => {
     console.error(`${tag} Shutting down...`);
     runtime.close();

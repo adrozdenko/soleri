@@ -133,7 +133,36 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
           // Brain unavailable — skip
         }
 
-        // 5. Stale knowledge / health warnings
+        // 5. Pending brain proposals
+        try {
+          const pending = brainIntelligence
+            .getProposals({ promoted: false })
+            .filter((p) => p.confidence >= 0.4)
+            .sort((a, b) => b.confidence - a.confidence);
+          dataPoints += pending.length;
+          if (pending.length > 0) {
+            const top = pending
+              .slice(0, 3)
+              .map(
+                (p) =>
+                  `"${p.title.slice(0, 50)}" (confidence: ${p.confidence.toFixed(2)}, type: ${p.type})`,
+              );
+            const lines = [`${pending.length} awaiting review`, ...top.map((t) => `  - ${t}`)];
+            if (pending.length > 3) {
+              lines.push(
+                `  Use \`brain_promote_proposals\` to review, or \`radar_flush\` to batch-approve above threshold.`,
+              );
+            }
+            sections.push({
+              label: 'Pending proposals',
+              content: lines.join('\n'),
+            });
+          }
+        } catch {
+          // Brain proposals unavailable — skip
+        }
+
+        // 6. Stale knowledge / health warnings
         try {
           const health = curator.healthAudit();
           dataPoints += 1;

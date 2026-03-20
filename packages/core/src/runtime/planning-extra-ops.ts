@@ -29,7 +29,7 @@ import { entryToPlaybookDefinition } from '../playbooks/index.js';
  *             plan_brainstorm, plan_execution_metrics, plan_verify_deliverables
  */
 export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
-  const { planner, vault } = runtime;
+  const { planner, vault, brainIntelligence } = runtime;
 
   return [
     // ─── Plan Iteration ───────────────────────────────────────────
@@ -92,7 +92,22 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
             params.planId as string,
             params.tasks as Array<{ title: string; description: string; dependsOn?: string[] }>,
           );
-          return { split: true, taskCount: plan.tasks.length, plan };
+
+          // Auto-start brain session linked to the plan for learning pipeline
+          let brainSessionId: string | null = null;
+          try {
+            const session = brainIntelligence.lifecycle({
+              action: 'start',
+              domain: plan.scope ?? undefined,
+              context: plan.objective,
+              planId: plan.id,
+            });
+            brainSessionId = session.id;
+          } catch {
+            // Non-critical — don't block plan execution
+          }
+
+          return { split: true, taskCount: plan.tasks.length, brainSessionId, plan };
         } catch (err) {
           return { error: (err as Error).message };
         }
@@ -191,12 +206,32 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
             captured++;
           }
 
+          // End brain session so the learning pipeline can extract patterns
+          let session = null;
+          let extraction = null;
+          const brainSession = brainIntelligence.getSessionByPlanId(plan.id);
+          if (brainSession && !brainSession.endedAt) {
+            session = brainIntelligence.lifecycle({
+              action: 'end',
+              sessionId: brainSession.id,
+              planId: plan.id,
+              planOutcome: 'completed',
+            });
+            try {
+              extraction = brainIntelligence.extractKnowledge(brainSession.id);
+            } catch {
+              // Not enough signal — extraction is best-effort
+            }
+          }
+
           return {
             completed: true,
             knowledgeCaptured: captured,
             patternsAdded: patterns.length,
             antiPatternsAdded: antiPatterns.length,
             reconciliation: plan.reconciliation ?? null,
+            brainSession: session?.id ?? brainSession?.id ?? null,
+            brainExtraction: extraction ? { proposals: extraction.proposals.length } : null,
           };
         } catch (err) {
           return { error: (err as Error).message };

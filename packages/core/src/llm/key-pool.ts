@@ -1,9 +1,8 @@
 import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { homedir } from 'node:os';
 import { SecretString } from './types.js';
 import type { KeyPoolConfig, KeyStatus } from './types.js';
 import { CircuitBreaker } from './utils.js';
+import { agentKeysPath } from '../paths.js';
 
 // =============================================================================
 // CONSTANTS
@@ -146,7 +145,7 @@ export interface KeyPoolFiles {
 /**
  * Load key pool configuration for an agent.
  * Key loading priority:
- * 1. ~/.{agentId}/keys.json
+ * 1. ~/.soleri/{agentId}/keys.json
  * 2. Fallback: OPENAI_API_KEY / ANTHROPIC_API_KEY env vars
  * 3. Empty pool
  */
@@ -154,7 +153,7 @@ export function loadKeyPoolConfig(agentId: string): KeyPoolFiles {
   if (!agentId || /[/\\]/.test(agentId) || agentId.includes('..')) {
     throw new Error(`Invalid agentId: ${agentId}`);
   }
-  const keysFilePath = path.join(homedir(), `.${agentId}`, 'keys.json');
+  const keysFilePath = agentKeysPath(agentId);
 
   let openaiKeys: string[] = [];
   let anthropicKeys: string[] = [];
