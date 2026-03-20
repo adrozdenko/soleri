@@ -29,7 +29,7 @@ import { entryToPlaybookDefinition } from '../playbooks/index.js';
  *             plan_brainstorm, plan_execution_metrics, plan_verify_deliverables
  */
 export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
-  const { planner, vault, brainIntelligence } = runtime;
+  const { planner, vault, brain, brainIntelligence } = runtime;
 
   return [
     // ─── Plan Iteration ───────────────────────────────────────────
@@ -224,9 +224,26 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
             }
           }
 
+          // Auto-record positive feedback for vault entries used as recommendations
+          let feedbackRecorded = 0;
+          const entryIdRegex = /\[entryId:([^\]]+)\]/;
+          for (const d of plan.decisions) {
+            const decisionStr = typeof d === 'string' ? d : d.decision;
+            const match = entryIdRegex.exec(decisionStr);
+            if (match) {
+              try {
+                brain.recordFeedback(plan.objective, match[1], 'accepted');
+                feedbackRecorded++;
+              } catch {
+                // Graceful degradation — skip if entry not found or already recorded
+              }
+            }
+          }
+
           return {
             completed: true,
             knowledgeCaptured: captured,
+            feedbackRecorded,
             patternsAdded: patterns.length,
             antiPatternsAdded: antiPatterns.length,
             reconciliation: plan.reconciliation ?? null,

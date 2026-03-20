@@ -151,17 +151,21 @@ export function createOrchestrateOps(
         const intent = detectIntent(prompt);
 
         // 2. Get brain recommendations — graceful degradation
-        let recommendations: Array<{ pattern: string; strength: number }> = [];
+        let recommendations: Array<{ pattern: string; strength: number; entryId?: string }> = [];
         try {
           const raw = brainIntelligence.recommend({
             domain,
             task: prompt,
             limit: 5,
           });
-          recommendations = raw.map((r) => ({
-            pattern: r.pattern,
-            strength: r.strength,
-          }));
+          recommendations = raw.map((r) => {
+            // Look up vault entry ID by title for feedback tracking
+            const entries = vault.search(r.pattern, { limit: 1 });
+            const entryId = entries.length > 0 && entries[0].entry.title === r.pattern
+              ? entries[0].entry.id
+              : undefined;
+            return { pattern: r.pattern, strength: r.strength, entryId };
+          });
         } catch {
           // Brain has no data yet
         }
@@ -173,6 +177,7 @@ export function createOrchestrateOps(
             recommendations = vaultResults.map((r) => ({
               pattern: r.entry.title,
               strength: 50,
+              entryId: r.entry.id,
             }));
           } catch {
             // Vault search failed
@@ -187,7 +192,10 @@ export function createOrchestrateOps(
 
         // 5. Also create a planner plan for lifecycle tracking (backward compat)
         const decisions = recommendations.map(
-          (r) => `Brain pattern: ${r.pattern} (strength: ${r.strength.toFixed(1)})`,
+          (r) => {
+            const base = `Brain pattern: ${r.pattern} (strength: ${r.strength.toFixed(1)})`;
+            return r.entryId ? `${base} [entryId:${r.entryId}]` : base;
+          },
         );
         const tasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];
 
