@@ -38,14 +38,14 @@ function stripAnsi(s) {
   return s
     .replace(/\x1B\[[0-9;]*[A-Za-z]/g, '')
     .replace(/\x1B\].*?\x07/g, '')
-    .replace(/\r/g, '');
+    .replace(new RegExp('\r', 'g'), '');
 }
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-const ENTER = '\r';
+const ENTER = String.fromCharCode(13);
 const CTRL_C = '\x03';
 const CTRL_U = '\x15';
 const DOWN = '\x1B[B';
@@ -59,7 +59,7 @@ function runWizard(name, actions, opts = {}) {
   const timeout = opts.timeout || 180000;
   return new Promise((resolve) => {
     let buffer = '';
-    let completed = false;
+    const state = { completed: false };
     let actionIndex = 0;
 
     const proc = spawn('node', [CLI, 'create'], {
@@ -71,7 +71,7 @@ function runWizard(name, actions, opts = {}) {
     proc.stderr.on('data', (d) => { buffer += d.toString(); });
 
     async function drive() {
-      while (actionIndex < actions.length && !completed) {
+      while (actionIndex < actions.length && !state.completed) {
         const a = actions[actionIndex];
         const clean = stripAnsi(buffer);
         const matched =
@@ -82,7 +82,7 @@ function runWizard(name, actions, opts = {}) {
         if (matched) {
           actionIndex++;
           await sleep(a.delay || 150);
-          if (!completed) {
+          if (!state.completed) {
             try {
               proc.stdin.write(a.send);
             } catch {}
@@ -95,11 +95,11 @@ function runWizard(name, actions, opts = {}) {
 
     drive();
     const poller = setInterval(() => {
-      if (!completed) drive();
+      if (!state.completed) drive();
     }, 300);
 
     proc.on('close', (code) => {
-      completed = true;
+      state.completed = true;
       clearInterval(poller);
       clearTimeout(timer);
       resolve({
@@ -110,8 +110,8 @@ function runWizard(name, actions, opts = {}) {
     });
 
     const timer = setTimeout(() => {
-      if (!completed) {
-        completed = true;
+      if (!state.completed) {
+        state.completed = true;
         clearInterval(poller);
         proc.kill('SIGTERM');
         setTimeout(() => {
