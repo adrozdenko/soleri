@@ -101,26 +101,32 @@ export function createCoreOps(
 
         // Build activation context
         const s = runtime.vault.stats();
+        const persona = runtime.persona;
+        const personaInstructions = runtime.personaInstructions;
         return {
           activated: true,
           agent: {
             id: identity.id,
-            name: identity.name,
+            name: persona.name,
             role: identity.role,
             description: identity.description,
             format: 'filetree',
           },
           persona: {
-            tone: identity.tone,
-            principles: identity.principles,
-            greeting: identity.greeting ?? `Hello! I am ${identity.name}.`,
+            template: persona.template,
+            name: persona.name,
+            culture: persona.culture,
+            voice: persona.voice,
+            traits: persona.traits,
+            quirks: persona.quirks,
+            greeting: personaInstructions.greeting,
+            instructions: personaInstructions.instructions,
           },
           vault: {
             connected: true,
             entries: s.totalEntries,
             domains: Object.keys(s.byDomain),
           },
-          domains: identity.domains,
         };
       },
     },
