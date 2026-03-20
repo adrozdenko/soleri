@@ -203,6 +203,82 @@ describe('Curator', () => {
       const results = curator.detectDuplicates();
       expect(results).toEqual([]);
     });
+
+    it('should NOT flag cross-domain entries as duplicates', () => {
+      vault.seed([
+        makeEntry({
+          id: 'cross-1',
+          domain: 'design',
+          title: 'Use semantic tokens for colors',
+          description: 'Always use semantic tokens instead of raw hex values for color styling.',
+          tags: ['tokens', 'colors'],
+        }),
+        makeEntry({
+          id: 'cross-2',
+          domain: 'architecture',
+          title: 'Use semantic tokens for colors',
+          description: 'Always use semantic tokens instead of raw hex values for color styling.',
+          tags: ['tokens', 'colors'],
+        }),
+      ]);
+      const results = curator.detectDuplicates(undefined, 0.3);
+      expect(results.length).toBe(0);
+    });
+
+    it('should still flag same-domain entries as duplicates', () => {
+      vault.seed([
+        makeEntry({
+          id: 'same-1',
+          domain: 'design',
+          title: 'Use semantic tokens for colors',
+          description: 'Always use semantic tokens instead of raw hex values for color styling.',
+          tags: ['tokens', 'colors'],
+        }),
+        makeEntry({
+          id: 'same-2',
+          domain: 'design',
+          title: 'Use semantic tokens for color values',
+          description: 'Prefer semantic color tokens over raw hex or rgb values in styling.',
+          tags: ['tokens', 'colors'],
+        }),
+      ]);
+      const results = curator.detectDuplicates(undefined, 0.3);
+      expect(results.length).toBeGreaterThan(0);
+    });
+
+    it('should improve health audit score for cross-domain vaults', () => {
+      // Seed entries across different domains with similar vocabulary
+      vault.seed([
+        makeEntry({
+          id: 'ha-1',
+          domain: 'design',
+          type: 'pattern',
+          title: 'Use semantic tokens for colors',
+          description: 'Always use semantic tokens instead of raw hex values.',
+          tags: ['tokens', 'colors'],
+        }),
+        makeEntry({
+          id: 'ha-2',
+          domain: 'architecture',
+          type: 'anti-pattern',
+          title: 'Use semantic tokens for API responses',
+          description: 'Always use semantic tokens instead of raw values in API.',
+          tags: ['tokens', 'api'],
+        }),
+        makeEntry({
+          id: 'ha-3',
+          domain: 'testing',
+          type: 'rule',
+          title: 'Use semantic assertions',
+          description: 'Always use semantic assertions for test clarity.',
+          tags: ['tokens', 'testing'],
+        }),
+      ]);
+      curator.groomAll();
+      const result = curator.healthAudit();
+      // Cross-domain entries should not be penalized as duplicates
+      expect(result.score).toBeGreaterThanOrEqual(90);
+    });
   });
 
   // ─── Contradictions ───────────────────────────────────────────

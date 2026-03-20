@@ -277,6 +277,8 @@ export class Curator {
 
       for (const other of entries) {
         if (other.id === entry.id) continue;
+        // Skip cross-domain pairs — shared vocabulary across domains causes false positives
+        if (entry.domain !== other.domain) continue;
         const otherVec = vectors.get(other.id)!;
         const similarity = cosineSimilarity(entryVec, otherVec);
         if (similarity >= effectiveThreshold) {
