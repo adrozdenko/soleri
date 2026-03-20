@@ -353,11 +353,9 @@ describe('createCuratorExtraOps', () => {
       setup();
       const result = (await findOp('curator_hybrid_contradictions').handler({})) as {
         contradictions: unknown[];
-        cogneeAvailable: boolean;
         method: string;
       };
       expect(result.contradictions).toEqual([]);
-      expect(result.cogneeAvailable).toBe(false);
       expect(result.method).toBe('tfidf-only');
     });
 

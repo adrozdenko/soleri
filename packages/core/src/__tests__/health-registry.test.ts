@@ -21,16 +21,16 @@ describe('HealthRegistry', () => {
 
   it('tracks status transitions', () => {
     const reg = new HealthRegistry();
-    reg.register('cognee');
-    reg.update('cognee', 'degraded', 'timeout');
-    expect(reg.get('cognee')!.status).toBe('degraded');
-    expect(reg.get('cognee')!.failureCount).toBe(1);
-    expect(reg.get('cognee')!.lastError).toBe('timeout');
+    reg.register('external');
+    reg.update('external', 'degraded', 'timeout');
+    expect(reg.get('external')!.status).toBe('degraded');
+    expect(reg.get('external')!.failureCount).toBe(1);
+    expect(reg.get('external')!.lastError).toBe('timeout');
 
-    reg.update('cognee', 'healthy');
-    expect(reg.get('cognee')!.failureCount).toBe(0);
-    expect(reg.get('cognee')!.lastError).toBeNull();
-    expect(reg.get('cognee')!.lastHealthyAt).toBeGreaterThan(0);
+    reg.update('external', 'healthy');
+    expect(reg.get('external')!.failureCount).toBe(0);
+    expect(reg.get('external')!.lastError).toBeNull();
+    expect(reg.get('external')!.lastHealthyAt).toBeGreaterThan(0);
   });
 
   it('auto-registers on update if not registered', () => {
@@ -84,22 +84,22 @@ describe('HealthRegistry', () => {
 
   it('fires recovery hooks when transitioning to healthy', () => {
     const reg = new HealthRegistry();
-    reg.register('cognee', 'down');
+    reg.register('external', 'down');
     const hook = vi.fn();
-    reg.onRecovery('cognee', hook);
+    reg.onRecovery('external', hook);
 
-    reg.update('cognee', 'healthy');
-    expect(hook).toHaveBeenCalledWith('cognee');
+    reg.update('external', 'healthy');
+    expect(hook).toHaveBeenCalledWith('external');
   });
 
   it('does not fire recovery hooks for non-recovery transitions', () => {
     const reg = new HealthRegistry();
-    reg.register('cognee', 'healthy');
+    reg.register('external', 'healthy');
     const hook = vi.fn();
-    reg.onRecovery('cognee', hook);
+    reg.onRecovery('external', hook);
 
-    reg.update('cognee', 'degraded');
-    reg.update('cognee', 'down');
+    reg.update('external', 'degraded');
+    reg.update('external', 'down');
     expect(hook).not.toHaveBeenCalled();
   });
 

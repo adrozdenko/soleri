@@ -132,7 +132,7 @@ describe('fanOut', () => {
 
     const brainLog: string[] = [];
     const vaultLog: string[] = [];
-    const cogneeLog: string[] = [];
+    const curatorLog: string[] = [];
 
     await fanOut(source(), [
       async (items) => {
@@ -142,14 +142,14 @@ describe('fanOut', () => {
         for await (const item of items) vaultLog.push(`vault:${item}`);
       },
       async (items) => {
-        for await (const item of items) cogneeLog.push(`cognee:${item}`);
+        for await (const item of items) curatorLog.push(`curator:${item}`);
       },
     ]);
 
     const expected = ['plan-result', 'session-data', 'extraction'];
     expect(brainLog).toEqual(expected.map((e) => `brain:${e}`));
     expect(vaultLog).toEqual(expected.map((e) => `vault:${e}`));
-    expect(cogneeLog).toEqual(expected.map((e) => `cognee:${e}`));
+    expect(curatorLog).toEqual(expected.map((e) => `curator:${e}`));
   });
 
   it('source executes only once with fanOut', async () => {

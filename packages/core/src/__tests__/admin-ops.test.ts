@@ -51,7 +51,6 @@ describe('createAdminOps', () => {
 
       expect(result.status).toBe('ok');
       expect(result.vault).toEqual({ entries: 0, domains: [] });
-      expect(result.cognee).toEqual({ available: false });
       expect(result.llm).toHaveProperty('openai');
       expect(result.llm).toHaveProperty('anthropic');
       expect(result.brain).toHaveProperty('vocabularySize');
@@ -181,10 +180,8 @@ describe('createAdminOps', () => {
       setup();
       const result = (await findOp('admin_reset_cache').handler({})) as Record<string, unknown>;
 
-      // When cognee is disabled (default), only brain vocabulary is cleared
       expect(result.cleared).toContain('brain_vocabulary');
       expect(typeof (result as { brainVocabularySize: number }).brainVocabularySize).toBe('number');
-      expect(typeof (result as { cogneeAvailable: boolean }).cogneeAvailable).toBe('boolean');
     });
 
     it('should have write auth', () => {
@@ -206,13 +203,12 @@ describe('createAdminOps', () => {
       };
 
       expect(['healthy', 'degraded', 'unhealthy']).toContain(result.overall);
-      expect(result.checks.length).toBeGreaterThanOrEqual(7);
+      expect(result.checks.length).toBeGreaterThanOrEqual(6);
 
       const checkNames = result.checks.map((c) => c.name);
       expect(checkNames).toContain('vault');
       expect(checkNames).toContain('brain_vocabulary');
       expect(checkNames).toContain('brain_intelligence');
-      expect(checkNames).toContain('cognee');
       expect(checkNames).toContain('llm_openai');
       expect(checkNames).toContain('llm_anthropic');
       expect(checkNames).toContain('curator');

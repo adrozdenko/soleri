@@ -34,7 +34,7 @@ describe('createSemanticFacades', () => {
     return op;
   }
 
-  it('should return ops from all semantic facades (without cognee)', () => {
+  it('should return ops from all semantic facades', () => {
     // Op count varies as new ops are added. Just verify a reasonable minimum.
     expect(ops.length).toBeGreaterThan(250);
   });
@@ -104,8 +104,6 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('route_intent');
     expect(names).toContain('morph');
     expect(names).toContain('get_behavior_rules');
-    // Cognee — only present when cognee is enabled in runtime
-    // (this test creates runtime without cognee: true)
     // Context Engine (#172)
     expect(names).toContain('context_extract_entities');
     expect(names).toContain('context_retrieve_knowledge');
@@ -321,7 +319,6 @@ describe('createSemanticFacades', () => {
     // Prompt templates
     expect(names).toContain('render_prompt');
     expect(names).toContain('list_templates');
-    // Cognee Sync ops — only present when cognee is enabled
     // Intake ops
     expect(names).toContain('intake_ingest_book');
     expect(names).toContain('intake_process');
@@ -508,10 +505,6 @@ describe('createSemanticFacades', () => {
     expect(result.exported).toBe(true);
     expect(result.totalEntries).toBe(1);
   });
-
-  // Cognee ops are only registered when runtime has cognee enabled.
-  // This test creates runtime without cognee: true, so these ops are not present.
-  // See e2e/full-pipeline.test.ts for cognee facade tests with cognee enabled.
 
   it('llm_rotate should return rotation status', async () => {
     const result = (await findOp('llm_rotate').handler({ provider: 'openai' })) as {

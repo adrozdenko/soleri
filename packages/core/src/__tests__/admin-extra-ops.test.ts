@@ -344,7 +344,6 @@ describe('createAdminExtraOps', () => {
         planner: boolean;
         curator: boolean;
         governance: boolean;
-        cognee: { available: boolean };
         loop: { active: boolean };
         llm: { openai: boolean; anthropic: boolean };
       };
@@ -354,7 +353,6 @@ describe('createAdminExtraOps', () => {
       expect(result.planner).toBe(true);
       expect(result.curator).toBe(true);
       expect(result.governance).toBe(true);
-      expect(result.cognee).toEqual({ available: false });
       expect(result.loop).toEqual({ active: false });
       expect(typeof result.llm.openai).toBe('boolean');
       expect(typeof result.llm.anthropic).toBe('boolean');
@@ -392,7 +390,6 @@ describe('createAdminExtraOps', () => {
       const result = (await findOp('admin_gc').handler({})) as { cleared: string[] };
 
       expect(result.cleared).toContain('brain');
-      // cognee is only cleared when enabled (opt-in)
       expect(result.cleared).toContain('telemetry');
     });
 

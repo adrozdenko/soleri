@@ -28,7 +28,6 @@ describe('FeatureFlags', () => {
     expect(flags.isEnabled('search-feedback')).toBe(true);
     expect(flags.isEnabled('telemetry')).toBe(true);
     expect(flags.isEnabled('agency-mode')).toBe(false);
-    expect(flags.isEnabled('cognee-sync')).toBe(true);
   });
 
   it('returns false for unknown flags', () => {

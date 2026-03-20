@@ -1,9 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Vault } from '../vault/vault.js';
 import { Brain } from '../brain/brain.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
-import type { CogneeClient } from '../cognee/client.js';
-import type { CogneeSearchResult, CogneeStatus } from '../cognee/types.js';
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
   return {
@@ -15,36 +13,6 @@ function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntr
     description: overrides.description ?? 'A test pattern for unit tests.',
     tags: overrides.tags ?? ['testing', 'assertions'],
   };
-}
-
-function makeMockCognee(
-  overrides: {
-    available?: boolean;
-    searchResults?: CogneeSearchResult[];
-    searchError?: boolean;
-  } = {},
-): CogneeClient {
-  const available = overrides.available ?? true;
-  return {
-    get isAvailable() {
-      return available;
-    },
-    search: overrides.searchError
-      ? vi.fn().mockRejectedValue(new Error('timeout'))
-      : vi.fn().mockResolvedValue(overrides.searchResults ?? []),
-    addEntries: vi.fn().mockResolvedValue({ added: 0 }),
-    cognify: vi.fn().mockResolvedValue({ status: 'ok' }),
-    healthCheck: vi
-      .fn()
-      .mockResolvedValue({ available, url: 'http://localhost:8000', latencyMs: 1 } as CogneeStatus),
-    getConfig: vi.fn().mockReturnValue({
-      baseUrl: 'http://localhost:8000',
-      dataset: 'vault',
-      timeoutMs: 5000,
-      healthCacheTtlMs: 60000,
-    }),
-    getStatus: vi.fn().mockReturnValue(null),
-  } as unknown as CogneeClient;
 }
 
 describe('Brain', () => {
@@ -84,12 +52,6 @@ describe('Brain', () => {
       ]);
       const brain2 = new Brain(vault);
       expect(brain2.getVocabularySize()).toBeGreaterThan(0);
-    });
-
-    it('should accept optional CogneeClient', () => {
-      const cognee = makeMockCognee();
-      const brain2 = new Brain(vault, cognee);
-      expect(brain2.getVocabularySize()).toBe(0);
     });
   });
 
@@ -145,7 +107,6 @@ describe('Brain', () => {
       expect(breakdown).toHaveProperty('domainMatch');
       expect(breakdown).toHaveProperty('total');
       expect(breakdown.total).toBe(results[0].score);
-      // Without cognee, vector should be 0
       expect(breakdown.vector).toBe(0);
     });
 
@@ -200,176 +161,6 @@ describe('Brain', () => {
       const results = await emptyBrain.intelligentSearch('anything');
       expect(results).toEqual([]);
       emptyVault.close();
-    });
-  });
-
-  // ─── Hybrid Search (with Cognee) ──────────────────────────────
-
-  describe('hybrid search with Cognee', () => {
-    beforeEach(() => {
-      vault.seed([
-        makeEntry({
-          id: 'hs-1',
-          title: 'Authentication flow',
-          description: 'JWT-based authentication for API endpoints.',
-          domain: 'security',
-          severity: 'critical',
-          tags: ['auth', 'jwt'],
-        }),
-        makeEntry({
-          id: 'hs-2',
-          title: 'Logging best practices',
-          description: 'Structured logging with correlation IDs for debugging.',
-          domain: 'observability',
-          severity: 'warning',
-          tags: ['logging', 'debugging'],
-        }),
-      ]);
-    });
-
-    it('should match via [vault-id:] prefix (strategy 1)', async () => {
-      const cognee = makeMockCognee({
-        searchResults: [
-          {
-            id: 'cognee-uuid-1',
-            score: 0.92,
-            text: '[vault-id:hs-1]\nAuthentication flow\nJWT-based authentication for API endpoints.',
-            searchType: 'CHUNKS',
-          },
-        ],
-      });
-      const hybridBrain = new Brain(vault, cognee);
-      const results = await hybridBrain.intelligentSearch('authentication');
-      expect(results.length).toBeGreaterThan(0);
-      const authResult = results.find((r) => r.entry.id === 'hs-1');
-      expect(authResult).toBeDefined();
-      expect(authResult!.breakdown.vector).toBe(0.92);
-    });
-
-    it('should match via title first-line (strategy 2)', async () => {
-      // Cognee stripped the [vault-id:] prefix during chunking — title is on first line
-      const cognee = makeMockCognee({
-        searchResults: [
-          {
-            id: 'cognee-uuid-2',
-            score: 0.9,
-            text: 'Authentication flow\nJWT-based authentication for API endpoints.',
-            searchType: 'CHUNKS',
-          },
-        ],
-      });
-      const hybridBrain = new Brain(vault, cognee);
-      const results = await hybridBrain.intelligentSearch('authentication');
-      const authResult = results.find((r) => r.entry.id === 'hs-1');
-      expect(authResult).toBeDefined();
-      expect(authResult!.breakdown.vector).toBe(0.9);
-    });
-
-    it('should match via title substring (strategy 3)', async () => {
-      // Mid-document chunk where title isn't on the first line
-      const cognee = makeMockCognee({
-        searchResults: [
-          {
-            id: 'cognee-uuid-3',
-            score: 0.85,
-            text: 'Some preamble text\nAuthentication flow\nJWT-based auth...',
-            searchType: 'CHUNKS',
-          },
-        ],
-      });
-      const hybridBrain = new Brain(vault, cognee);
-      const results = await hybridBrain.intelligentSearch('authentication');
-      const authResult = results.find((r) => r.entry.id === 'hs-1');
-      expect(authResult).toBeDefined();
-      expect(authResult!.breakdown.vector).toBe(0.85);
-    });
-
-    it('should merge cognee-only entries via FTS fallback (strategy 4)', async () => {
-      // hs-2 may not match FTS5 for "authentication" but Cognee finds it via semantic similarity.
-      // The chunk text starts with the entry title so strategy 4's vault.search(firstLine) finds it.
-      const cognee = makeMockCognee({
-        searchResults: [
-          {
-            id: 'cognee-uuid-a',
-            score: 0.95,
-            text: 'Authentication flow\nJWT-based authentication for API endpoints.',
-            searchType: 'CHUNKS',
-          },
-          {
-            id: 'cognee-uuid-b',
-            score: 0.6,
-            text: 'Logging best practices\nStructured logging with correlation IDs.',
-            searchType: 'CHUNKS',
-          },
-        ],
-      });
-      const hybridBrain = new Brain(vault, cognee);
-      const results = await hybridBrain.intelligentSearch('authentication');
-      // Both entries should be in results (hs-2 merged from Cognee even if not in FTS5)
-      const ids = results.map((r) => r.entry.id);
-      expect(ids).toContain('hs-1');
-      expect(ids).toContain('hs-2');
-      const loggingResult = results.find((r) => r.entry.id === 'hs-2');
-      expect(loggingResult).toBeDefined();
-      expect(loggingResult!.breakdown.vector).toBe(0.6);
-    });
-
-    it('should fall back to FTS5-only on Cognee search error', async () => {
-      const cognee = makeMockCognee({ searchError: true });
-      const hybridBrain = new Brain(vault, cognee);
-      const results = await hybridBrain.intelligentSearch('authentication');
-      // Should still work, just without vector scores
-      for (const r of results) {
-        expect(r.breakdown.vector).toBe(0);
-      }
-    });
-
-    it('should work without Cognee (backward compatible)', async () => {
-      const noCogneeBrain = new Brain(vault);
-      const results = await noCogneeBrain.intelligentSearch('authentication');
-      for (const r of results) {
-        expect(r.breakdown.vector).toBe(0);
-      }
-    });
-
-    it('should handle unavailable Cognee gracefully', async () => {
-      const cognee = makeMockCognee({ available: false });
-      const hybridBrain = new Brain(vault, cognee);
-      const results = await hybridBrain.intelligentSearch('authentication');
-      for (const r of results) {
-        expect(r.breakdown.vector).toBe(0);
-      }
-      // search should not have been called
-      expect(cognee.search).not.toHaveBeenCalled();
-    });
-  });
-
-  // ─── syncToCognee ──────────────────────────────────────────────
-
-  describe('syncToCognee', () => {
-    it('should return 0 when Cognee not available', async () => {
-      const result = await brain.syncToCognee();
-      expect(result).toEqual({ synced: 0, cognified: false });
-    });
-
-    it('should sync all entries and cognify', async () => {
-      vault.seed([makeEntry({ id: 'sync-1' }), makeEntry({ id: 'sync-2' })]);
-      const cognee = makeMockCognee();
-      (cognee.addEntries as ReturnType<typeof vi.fn>).mockResolvedValue({ added: 2 });
-      const hybridBrain = new Brain(vault, cognee);
-      const result = await hybridBrain.syncToCognee();
-      expect(result.synced).toBe(2);
-      expect(result.cognified).toBe(true);
-      expect(cognee.addEntries).toHaveBeenCalledTimes(1);
-      expect(cognee.cognify).toHaveBeenCalledTimes(1);
-    });
-
-    it('should skip cognify when no entries added', async () => {
-      const cognee = makeMockCognee();
-      const hybridBrain = new Brain(vault, cognee);
-      const result = await hybridBrain.syncToCognee();
-      expect(result.synced).toBe(0);
-      expect(result.cognified).toBe(false);
     });
   });
 
@@ -455,21 +246,6 @@ describe('Brain', () => {
       expect(result.autoTags.length).toBeGreaterThan(0);
       const entry = vault.get('cap-5');
       expect(entry!.tags.length).toBeGreaterThan(0);
-    });
-
-    it('should fire-and-forget sync to Cognee on capture', () => {
-      const cognee = makeMockCognee();
-      const hybridBrain = new Brain(vault, cognee);
-      hybridBrain.enrichAndCapture({
-        id: 'cap-cognee-1',
-        type: 'pattern',
-        domain: 'testing',
-        title: 'Cognee sync test',
-        severity: 'warning',
-        description: 'Testing fire-and-forget Cognee sync.',
-        tags: [],
-      });
-      expect(cognee.addEntries).toHaveBeenCalledTimes(1);
     });
   });
 

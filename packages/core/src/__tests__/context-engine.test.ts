@@ -117,11 +117,6 @@ describe('ContextEngine', () => {
       expect(result.vaultHits).toBe(0);
     });
 
-    test('handles null cognee gracefully', async () => {
-      const result = await engine.retrieveKnowledge('anything');
-      expect(result.cogneeHits).toBe(0);
-    });
-
     test('filters by domain', async () => {
       vault.seed([
         {

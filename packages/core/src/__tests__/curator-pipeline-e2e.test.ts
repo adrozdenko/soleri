@@ -130,13 +130,6 @@ beforeAll(() => {
     const result = curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
     return { archived: result.staleEntries.length, result };
   });
-  runner.registerHandler('cognee-ingest', async (job) => {
-    // No Cognee in tests — graceful degradation
-    return { skipped: true, reason: 'cognee not available' };
-  });
-  runner.registerHandler('cognee-cognify', async () => {
-    return { skipped: true, reason: 'cognee not available' };
-  });
   runner.registerHandler('verify-searchable', async (job) => {
     const entry = vault.get(job.entryId ?? '');
     if (!entry) return { skipped: true, reason: 'entry not found' };
@@ -371,22 +364,6 @@ describe('Pipeline Runner — Salvador parity handlers (#216)', () => {
     expect(typeof result.archived).toBe('number');
   });
 
-  it('cognee-ingest degrades gracefully without Cognee', async () => {
-    const id = queue.enqueue('cognee-ingest', { entryId: 'pattern-circuit-breaker' });
-    await runner.processOnce();
-    const job = queue.get(id);
-    expect(job!.status).toBe('completed');
-    expect((job!.result as Record<string, unknown>).skipped).toBe(true);
-  });
-
-  it('cognee-cognify degrades gracefully without Cognee', async () => {
-    const id = queue.enqueue('cognee-cognify', {});
-    await runner.processOnce();
-    const job = queue.get(id);
-    expect(job!.status).toBe('completed');
-    expect((job!.result as Record<string, unknown>).skipped).toBe(true);
-  });
-
   it('verify-searchable confirms entry is FTS-indexed', async () => {
     const id = queue.enqueue('verify-searchable', { entryId: 'pattern-circuit-breaker' });
     await runner.processOnce();
@@ -414,7 +391,7 @@ describe('Pipeline Runner — Salvador parity handlers (#216)', () => {
   });
 });
 
-describe('Full Salvador DAG — 8-step curator pipeline', () => {
+describe('Full Salvador DAG — 7-step curator pipeline', () => {
   it('runs the complete quality pipeline in DAG order', async () => {
     const entryId = 'pattern-semantic-tokens';
     const pipelineId = 'full-salvador-dag';
@@ -428,9 +405,8 @@ describe('Full Salvador DAG — 8-step curator pipeline', () => {
       pipelineId,
       dependsOn: [step4],
     });
-    const step6 = queue.enqueue('cognee-ingest', { entryId, pipelineId, dependsOn: [step5] });
-    const step7 = queue.enqueue('auto-link', { entryId, pipelineId, dependsOn: [step6] });
-    const step8 = queue.enqueue('verify-searchable', { entryId, pipelineId, dependsOn: [step7] });
+    const step6 = queue.enqueue('auto-link', { entryId, pipelineId, dependsOn: [step5] });
+    const step7 = queue.enqueue('verify-searchable', { entryId, pipelineId, dependsOn: [step6] });
 
     // Drain the DAG
     for (let i = 0; i < 15; i++) {
@@ -446,7 +422,6 @@ describe('Full Salvador DAG — 8-step curator pipeline', () => {
       'tag-normalize:completed',
       'dedup-check:completed',
       'detect-contradiction:completed',
-      'cognee-ingest:completed',
       'auto-link:completed',
       'verify-searchable:completed',
     ]);
