@@ -103,16 +103,26 @@ export function createCoreOps(
         const s = runtime.vault.stats();
         const persona = runtime.persona;
         const personaInstructions = runtime.personaInstructions;
-        return {
+        const hasPersona = persona.template !== 'none';
+
+        const response: Record<string, unknown> = {
           activated: true,
           agent: {
             id: identity.id,
-            name: persona.name,
+            name: hasPersona ? persona.name : identity.name,
             role: identity.role,
             description: identity.description,
             format: 'filetree',
           },
-          persona: {
+          vault: {
+            connected: true,
+            entries: s.totalEntries,
+            domains: Object.keys(s.byDomain),
+          },
+        };
+
+        if (hasPersona) {
+          response.persona = {
             template: persona.template,
             name: persona.name,
             culture: persona.culture,
@@ -121,13 +131,29 @@ export function createCoreOps(
             quirks: persona.quirks,
             greeting: personaInstructions.greeting,
             instructions: personaInstructions.instructions,
-          },
-          vault: {
-            connected: true,
-            entries: s.totalEntries,
-            domains: Object.keys(s.byDomain),
-          },
-        };
+          };
+        } else {
+          response.personaSetup = {
+            needed: true,
+            message: 'No persona configured yet. Would you like to set one up?',
+            options: [
+              {
+                id: 'italian-craftsperson',
+                label: 'Italian Craftsperson (default)',
+                hint: 'Warm, opinionated about quality, sprinkles Italian expressions — perfetto!',
+              },
+              {
+                id: 'custom',
+                label: 'Describe your own',
+                hint: 'Tell me who you want your agent to be',
+              },
+              { id: 'skip', label: 'Skip for now', hint: 'Use the agent without a persona' },
+            ],
+            hint: 'Run: op:set_persona params:{ template: "italian-craftsperson" } or op:set_persona params:{ description: "A calm zen master who values harmony" }',
+          };
+        }
+
+        return response;
       },
     },
     {

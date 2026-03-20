@@ -1,22 +1,37 @@
 import type { PersonaConfig } from './types.js';
-import { createDefaultPersona, PERSONA_TEMPLATES } from './defaults.js';
+import { PERSONA_TEMPLATES } from './defaults.js';
+
+/** A blank persona — agent works without character until user configures one */
+const BLANK_PERSONA: Omit<PersonaConfig, 'name' | 'history'> = {
+  template: 'none',
+  inspiration: '',
+  culture: '',
+  metaphors: [],
+  voice: '',
+  traits: [],
+  quirks: [],
+  opinions: [],
+  languageRule: '',
+  nameRule: '',
+  greetings: [],
+  signoffs: [],
+};
 
 /**
- * Load persona from agent config, falling back to default Italian Craftsperson.
+ * Load persona from agent config.
  *
- * Handles three cases:
- * 1. Full persona: block in agent.yaml → use as-is
- * 2. Template reference only → expand from built-in templates
- * 3. No persona block at all → create default with agent name
+ * - Full persona: block in agent.yaml → use as-is
+ * - Template reference → expand from built-in templates
+ * - No persona block → blank persona (user prompted on activate)
  */
 export function loadPersona(agentName: string, rawPersona?: Partial<PersonaConfig>): PersonaConfig {
-  // No persona config at all → full default
+  // No persona config at all → blank (user will be prompted)
   if (!rawPersona) {
-    return createDefaultPersona(agentName);
+    return { ...BLANK_PERSONA, name: agentName };
   }
 
-  // Has a template reference → expand from built-in, merge overrides
-  const templateId = rawPersona.template ?? 'italian-craftsperson';
+  // Has a template reference → expand from built-in
+  const templateId = rawPersona.template ?? 'none';
   const template = PERSONA_TEMPLATES[templateId];
 
   if (template) {
@@ -24,15 +39,14 @@ export function loadPersona(agentName: string, rawPersona?: Partial<PersonaConfi
       ...template,
       name: rawPersona.name ?? agentName,
       ...stripUndefined(rawPersona),
-      // Preserve history if present
       history: rawPersona.history ?? [],
     };
   }
 
-  // Custom template or full config — fill in any gaps from default
-  const defaults = createDefaultPersona(rawPersona.name ?? agentName);
+  // Custom template or full config — fill in gaps from blank
   return {
-    ...defaults,
+    ...BLANK_PERSONA,
+    name: rawPersona.name ?? agentName,
     ...stripUndefined(rawPersona),
     history: rawPersona.history ?? [],
   };

@@ -7,6 +7,14 @@ import type { PersonaConfig, PersonaSystemInstructions } from './types.js';
  * instructions that the LLM follows to maintain character.
  */
 export function generatePersonaInstructions(persona: PersonaConfig): PersonaSystemInstructions {
+  // Blank persona — no instructions, generic greeting
+  if (persona.template === 'none') {
+    return {
+      instructions: `You are ${persona.name} — a helpful assistant. No persona configured yet.`,
+      greeting: `Hello! I'm ${persona.name}. What are we working on?`,
+    };
+  }
+
   const lines: string[] = [];
 
   lines.push(`# Persona: ${persona.name}`);
