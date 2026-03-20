@@ -1,6 +1,6 @@
 {
   "name": "soleri",
-  "version": "8.1.0",
+  "version": "9.0.0",
   "description": "CLI for building AI agents that learn, remember, and grow. Thin wrapper around @soleri/cli.",
   "keywords": [
     "agent",
@@ -26,7 +26,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@soleri/cli": "^8.0.0"
+    "@soleri/cli": "^9.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
