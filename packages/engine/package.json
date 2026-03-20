@@ -1,6 +1,6 @@
 {
   "name": "@soleri/engine",
-  "version": "9.0.0",
+  "version": "9.0.1",
   "description": "Soleri Knowledge Engine — MCP server binary for AI agents. Reads agent.yaml, boots vault/brain/planner, registers tools.",
   "keywords": ["soleri", "engine", "mcp", "agent", "knowledge"],
   "homepage": "https://soleri.ai",
@@ -19,7 +19,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@soleri/core": "^9.0.0"
+    "@soleri/core": "^9.0.1",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "yaml": "^2.7.0"
   },
   "engines": {
     "node": ">=18.0.0"

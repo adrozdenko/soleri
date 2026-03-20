@@ -1,6 +1,6 @@
 {
   "name": "@soleri/core",
-  "version": "9.0.1",
+  "version": "9.0.2",
   "description": "Shared engine for Soleri agents — vault, brain, planner, LLM utilities, and facade infrastructure.",
   "keywords": [
     "agent",
@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
+    "yaml": "^2.7.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
