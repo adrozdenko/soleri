@@ -268,17 +268,26 @@ export class IntentRouter {
   // ─── Mode Management ───────────────────────────────────────────────
 
   morph(mode: OperationalMode): MorphResult {
-    const row = this.provider.get<ModeRow>('SELECT * FROM agent_modes WHERE mode = ?', [mode]);
+    // Handle "reset" as a built-in alias for GENERAL-MODE
+    const resolvedMode: OperationalMode = (mode as string) === 'reset' ? 'GENERAL-MODE' : mode;
+
+    const row = this.provider.get<ModeRow>('SELECT * FROM agent_modes WHERE mode = ?', [
+      resolvedMode,
+    ]);
 
     if (!row) {
-      throw new Error(`Unknown mode: ${mode}`);
+      const available = this.provider
+        .all<{ mode: string }>('SELECT mode FROM agent_modes ORDER BY mode')
+        .map((r) => r.mode)
+        .join(', ');
+      throw new Error(`Unknown mode: ${mode}. Available: ${available}`);
     }
 
     const previousMode = this.currentMode;
-    this.currentMode = mode;
+    this.currentMode = resolvedMode;
     const behaviorRules = JSON.parse(row.behavior_rules) as string[];
 
-    return { previousMode, currentMode: mode, behaviorRules };
+    return { previousMode, currentMode: resolvedMode, behaviorRules };
   }
 
   getCurrentMode(): OperationalMode {

@@ -117,7 +117,9 @@ export function createControlFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       schema: z.object({
         mode: z
           .string()
-          .describe('The operational mode to switch to (e.g., BUILD-MODE, FIX-MODE).'),
+          .describe(
+            'The operational mode to switch to. Valid modes: BUILD-MODE, FIX-MODE, VALIDATE-MODE, DESIGN-MODE, IMPROVE-MODE, DELIVER-MODE, EXPLORE-MODE, PLAN-MODE, REVIEW-MODE, GENERAL-MODE. Use "reset" to return to GENERAL-MODE.',
+          ),
       }),
       handler: async (params) => {
         return intentRouter.morph(params.mode as OperationalMode);
@@ -159,6 +161,9 @@ export function createControlFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           return governance.getPolicy(projectPath);
         }
         if (action === 'set') {
+          if (!params.policyType) {
+            return { error: "policyType is required when action is 'set'" };
+          }
           governance.setPolicy(
             projectPath,
             params.policyType as PolicyType,

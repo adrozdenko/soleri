@@ -135,8 +135,21 @@ describe('IntentRouter', () => {
     expect(router.getCurrentMode()).toBe('BUILD-MODE');
   });
 
-  it('should throw on morph to unknown mode', () => {
-    expect(() => router.morph('UNKNOWN-MODE' as OperationalMode)).toThrow('Unknown mode');
+  it('should throw on morph to unknown mode with available modes listed', () => {
+    expect(() => router.morph('UNKNOWN-MODE' as OperationalMode)).toThrow(
+      /Unknown mode: UNKNOWN-MODE\. Available: /,
+    );
+    expect(() => router.morph('UNKNOWN-MODE' as OperationalMode)).toThrow(/BUILD-MODE/);
+    expect(() => router.morph('UNKNOWN-MODE' as OperationalMode)).toThrow(/GENERAL-MODE/);
+  });
+
+  it('should morph with "reset" to GENERAL-MODE', () => {
+    router.morph('BUILD-MODE');
+    expect(router.getCurrentMode()).toBe('BUILD-MODE');
+    const result = router.morph('reset' as OperationalMode);
+    expect(result.previousMode).toBe('BUILD-MODE');
+    expect(result.currentMode).toBe('GENERAL-MODE');
+    expect(router.getCurrentMode()).toBe('GENERAL-MODE');
   });
 
   it('should get behavior rules for current mode', () => {
