@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createAgentRuntime } from '../runtime/runtime.js';
 import { createSemanticFacades } from '../runtime/facades/index.js';
+import { createCoreOps } from '../engine/core-ops.js';
+import type { AgentIdentityConfig } from '../engine/core-ops.js';
 import type { AgentRuntime } from '../runtime/types.js';
 import type { OpDefinition } from '../facades/types.js';
 
@@ -524,6 +526,26 @@ describe('createSemanticFacades', () => {
     expect(result.quotas.maxEntriesTotal).toBe(500);
   });
 
+  it('governance_policy set should fail without policyType', async () => {
+    const result = (await findOp('governance_policy').handler({
+      action: 'set',
+      projectPath: '/test',
+      config: { maxEntriesTotal: 100 },
+    })) as { error: string };
+    expect(result.error).toBe("policyType is required when action is 'set'");
+  });
+
+  it('governance_policy set should save policy with valid policyType', async () => {
+    const result = (await findOp('governance_policy').handler({
+      action: 'set',
+      projectPath: '/test',
+      policyType: 'quota',
+      config: { maxEntriesTotal: 200, maxEntriesPerType: 50, maxEntriesPerCategory: 30 },
+    })) as { updated: boolean; policy: { quotas: { maxEntriesTotal: number } } };
+    expect(result.updated).toBe(true);
+    expect(result.policy.quotas.maxEntriesTotal).toBe(200);
+  });
+
   it('governance_stats should return quota and proposal stats', async () => {
     const result = (await findOp('governance_stats').handler({
       projectPath: '/test',
@@ -546,5 +568,113 @@ describe('createSemanticFacades', () => {
     expect(typeof result.vaultSize).toBe('number');
     expect(typeof result.quotaPercent).toBe('number');
     expect(result.pendingProposals).toBe(0);
+  });
+});
+
+describe('createCoreOps — activate persona with identity override (#260)', () => {
+  let runtime: AgentRuntime;
+  let coreOps: OpDefinition[];
+  let plannerDir: string;
+  const testIdentity: AgentIdentityConfig = {
+    id: 'test-activate',
+    name: 'TestAgent',
+    role: 'Test Role',
+    description: 'A test agent for activation tests',
+    domains: ['testing'],
+    principles: ['Be thorough'],
+    tone: 'neutral',
+  };
+
+  beforeEach(() => {
+    plannerDir = join(tmpdir(), 'core-ops-activate-test-' + Date.now());
+    mkdirSync(plannerDir, { recursive: true });
+    runtime = createAgentRuntime({
+      agentId: 'test-activate',
+      vaultPath: ':memory:',
+      plansPath: join(plannerDir, 'plans.json'),
+      persona: { template: 'italian-craftsperson' },
+    });
+    coreOps = createCoreOps(runtime, testIdentity);
+  });
+
+  afterEach(() => {
+    runtime.close();
+    rmSync(plannerDir, { recursive: true, force: true });
+  });
+
+  function findCoreOp(name: string): OpDefinition {
+    const op = coreOps.find((o) => o.name === name);
+    if (!op) throw new Error(`Core op "${name}" not found`);
+    return op;
+  }
+
+  it('should return default persona when no custom identity exists', async () => {
+    const result = (await findCoreOp('activate').handler({ projectPath: '.' })) as {
+      activated: boolean;
+      agent: { name: string; role: string; description: string };
+      persona: { name: string; traits: string[] };
+    };
+
+    expect(result.activated).toBe(true);
+    // First activation seeds identity at version 1 — no custom override
+    expect(result.persona).toBeDefined();
+    // Should use persona name (from template), not the identity-manager override
+    expect(result.persona.name).toBe(runtime.persona.name);
+    expect(result.persona.traits).toEqual(runtime.persona.traits);
+  });
+
+  it('should reflect custom identity in persona after update_identity', async () => {
+    // First activation — seeds identity at version 1
+    await findCoreOp('activate').handler({ projectPath: '.' });
+
+    // Simulate update_identity — this bumps version to 2
+    runtime.identityManager.setIdentity('test-activate', {
+      name: 'CustomName',
+      role: 'Custom Role',
+      description: 'A customized agent',
+      personality: ['Bold', 'Innovative'],
+      changedBy: 'user',
+      changeReason: 'Customizing persona',
+    });
+
+    // Verify identity was updated
+    const updatedIdentity = runtime.identityManager.getIdentity('test-activate');
+    expect(updatedIdentity).not.toBeNull();
+    expect(updatedIdentity!.version).toBe(2);
+
+    // Second activation — should now reflect custom identity
+    const result = (await findCoreOp('activate').handler({ projectPath: '.' })) as {
+      activated: boolean;
+      agent: { name: string; role: string; description: string };
+      persona: { name: string; traits: string[]; voice: string };
+    };
+
+    expect(result.activated).toBe(true);
+    expect(result.agent.name).toBe('CustomName');
+    expect(result.agent.role).toBe('Custom Role');
+    expect(result.agent.description).toBe('A customized agent');
+    expect(result.persona.name).toBe('CustomName');
+    expect(result.persona.traits).toEqual(['Bold', 'Innovative']);
+  });
+
+  it('should return default agent info when identity exists but is not customized (version 1)', async () => {
+    // First activation seeds identity at version 1
+    await findCoreOp('activate').handler({ projectPath: '.' });
+
+    // Verify identity was seeded
+    const seededIdentity = runtime.identityManager.getIdentity('test-activate');
+    expect(seededIdentity).not.toBeNull();
+    expect(seededIdentity!.version).toBe(1);
+
+    // Second activation — still version 1, should use defaults
+    const result = (await findCoreOp('activate').handler({ projectPath: '.' })) as {
+      activated: boolean;
+      agent: { name: string; role: string };
+      persona: { name: string };
+    };
+
+    expect(result.activated).toBe(true);
+    // Should NOT use identity manager values since version is still 1
+    expect(result.agent.role).toBe(testIdentity.role);
   });
 });

@@ -105,13 +105,27 @@ export function createCoreOps(
         const personaInstructions = runtime.personaInstructions;
         const hasPersona = persona.template !== 'none';
 
+        // Check if identity manager has custom identity (updated after initial seed)
+        const customIdentity = runtime.identityManager?.getIdentity(identity.id);
+        const hasCustomIdentity = customIdentity && customIdentity.version > 1;
+
+        const agentName = hasCustomIdentity
+          ? customIdentity.name
+          : hasPersona
+            ? persona.name
+            : identity.name;
+        const agentRole = hasCustomIdentity ? customIdentity.role : identity.role;
+        const agentDescription = hasCustomIdentity
+          ? customIdentity.description
+          : identity.description;
+
         const response: Record<string, unknown> = {
           activated: true,
           agent: {
             id: identity.id,
-            name: hasPersona ? persona.name : identity.name,
-            role: identity.role,
-            description: identity.description,
+            name: agentName,
+            role: agentRole,
+            description: agentDescription,
             format: 'filetree',
           },
           vault: {
@@ -124,10 +138,12 @@ export function createCoreOps(
         if (hasPersona) {
           response.persona = {
             template: persona.template,
-            name: persona.name,
+            name: hasCustomIdentity ? customIdentity.name : persona.name,
             culture: persona.culture,
-            voice: persona.voice,
-            traits: persona.traits,
+            voice: hasCustomIdentity
+              ? customIdentity.personality.join(', ') || persona.voice
+              : persona.voice,
+            traits: hasCustomIdentity ? customIdentity.personality : persona.traits,
             quirks: persona.quirks,
             greeting: personaInstructions.greeting,
             instructions: personaInstructions.instructions,
