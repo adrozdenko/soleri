@@ -308,7 +308,27 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
     writeFile(agentDir, `workflows/${wf.name}/tools.yaml`, wf.tools, filesCreated);
   }
 
-  // ─── 8. Write knowledge bundles (seed from starter packs if available) ──
+  // ─── 8. Copy bundled skills ─────────────────────────────────
+  const skillsSrcDir = join(dirname(fileURLToPath(import.meta.url)), 'skills');
+  if (existsSync(skillsSrcDir)) {
+    const skillDirs = readdirSync(skillsSrcDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+    for (const skillName of skillDirs) {
+      const skillFile = join(skillsSrcDir, skillName, 'SKILL.md');
+      if (existsSync(skillFile)) {
+        mkdirSync(join(agentDir, 'skills', skillName), { recursive: true });
+        writeFile(
+          agentDir,
+          `skills/${skillName}/SKILL.md`,
+          readFileSync(skillFile, 'utf-8'),
+          filesCreated,
+        );
+      }
+    }
+  }
+
+  // ─── 9. Write knowledge bundles (seed from starter packs if available) ──
   const starterPacksDir = resolveStarterPacksDir();
   let totalSeeded = 0;
 
