@@ -35,9 +35,10 @@ function assert(cond, msg, ctx = '') {
 }
 
 function stripAnsi(s) {
+  // eslint-disable-next-line no-control-regex
   return s
-    .replace(/\x1B\[[0-9;]*[A-Za-z]/g, '')
-    .replace(/\x1B\].*?\x07/g, '')
+    .replace(new RegExp('\x1B\\[[0-9;]*[A-Za-z]', 'g'), '')
+    .replace(new RegExp('\x1B\\].*?\x07', 'g'), '')
     .replace(new RegExp('\r', 'g'), '');
 }
 

@@ -84,16 +84,10 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
     description: 'Chat transport — session management, response chunking, authentication.',
     keyOps: ['chat_send', 'chat_history', 'chat_session'],
   },
-  {
-    suffix: 'cognee',
-    description: 'Knowledge graph — Cognee search, sync, export, graph stats.',
-    keyOps: ['cognee_search', 'cognee_add', 'cognee_cognify'],
-    conditional: true,
-  },
 ];
 
 /** Core facade ops (always present, not in ENGINE_MODULES) */
 export const CORE_KEY_OPS = ['health', 'identity', 'register', 'activate'];
 
 /** Engine major version — used for compatibility checks against domain packs. */
-export const ENGINE_MAJOR_VERSION = 8;
+export const ENGINE_MAJOR_VERSION = 9;

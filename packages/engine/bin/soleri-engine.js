@@ -10,7 +10,6 @@
 
 import { createRequire } from 'node:module';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // Resolve @soleri/core's engine binary
 const require = createRequire(import.meta.url);

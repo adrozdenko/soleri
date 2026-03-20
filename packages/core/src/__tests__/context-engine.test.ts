@@ -226,7 +226,7 @@ describe('ContextEngine', () => {
 
   describe('configuration', () => {
     test('respects custom config', async () => {
-      const customEngine = new ContextEngine(vault, brain, intelligence, null, {
+      const customEngine = new ContextEngine(vault, brain, intelligence, {
         vaultSearchLimit: 2,
         minScoreThreshold: 0.9,
       });
