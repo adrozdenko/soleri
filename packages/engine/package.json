@@ -1,0 +1,27 @@
+{
+  "name": "@soleri/engine",
+  "version": "9.0.0",
+  "description": "Soleri Knowledge Engine — MCP server binary for AI agents. Reads agent.yaml, boots vault/brain/planner, registers tools.",
+  "keywords": ["soleri", "engine", "mcp", "agent", "knowledge"],
+  "homepage": "https://soleri.ai",
+  "license": "Apache-2.0",
+  "author": "adrozdenko",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adrozdenko/soleri.git",
+    "directory": "packages/engine"
+  },
+  "type": "module",
+  "bin": {
+    "soleri-engine": "bin/soleri-engine.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@soleri/core": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
