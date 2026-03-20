@@ -46,11 +46,15 @@ npx @soleri/cli doctor                # Check system health
 
 Your second brain is ready the moment it's created. No build step needed.
 
+### Persona System
+
+Every agent has a composable persona that defines HOW it communicates — voice, traits, quirks, opinions, and cultural texture. New agents ship with the Italian Craftsperson persona (inspired by Paolo Soleri): warm, opinionated about quality, universal across domains. Define your own in `agent.yaml` under the `persona:` block.
+
 ### The Engine
 
-**Vault** — Domain-separated knowledge store. Patterns, anti-patterns, workflows, and architecture decisions organized by domain (frontend, backend, cross-cutting), vectorized with [Cognee](https://github.com/topoteretes/cognee) for semantic search and graph-connected for cross-domain discovery. Self-maintaining: deduplication, decay detection, and confidence tracking happen automatically. Knowledge packs export and import with Zettelkasten links — new agents inherit the full knowledge graph, not just orphaned entries.
+**Vault** — Domain-separated knowledge store. Patterns, anti-patterns, workflows, and architecture decisions organized by domain, graph-connected for cross-domain discovery. Self-maintaining: deduplication, decay detection, and confidence tracking happen automatically. Knowledge packs export and import with Zettelkasten links — new agents inherit the full knowledge graph, not just orphaned entries.
 
-**Brain** — Learning loop that captures intelligence from real sessions. Hybrid search combines SQLite FTS5 with optional Cognee vector embeddings for 6-dimension scoring. Tracks pattern strength with confidence scores, surfaces high-confidence patterns first, and operates on a rolling window. No manual tagging — capture is automatic.
+**Brain** — Learning loop that captures intelligence from real sessions. Search combines SQLite FTS5 with TF-IDF scoring. Tracks pattern strength with confidence scores, surfaces high-confidence patterns first, and operates on a rolling window. No manual tagging — capture is automatic.
 
 **Memory** — Cross-session, cross-project continuity. Switch conversations, switch projects — nothing is lost. Link projects as related, parent/child, or fork and search across all of them with weighted relevance.
 
@@ -88,7 +92,7 @@ Two layers, cleanly separated:
 - **Agent Folder** — Plain files (YAML, Markdown, JSON). your AI editor reads them natively. No code generation, no compilation.
 - **Knowledge Engine (`@soleri/core`)** — Persistent state for all agents. Vault (SQLite + FTS5), Brain (hybrid TF-IDF + optional Cognee vector search), Planner (state machine), Curator (dedup, grooming), and cross-project memory.
 - **Extensions** — Two tiers: **Domain Packs** (npm packages like `@soleri/domain-design`) for published intelligence, and **Local Packs** (project directories with `soleri-pack.json`) for project-specific knowledge, skills, and hooks. All extensions receive a narrowed `PackRuntime` (vault + projects + session checks).
-- **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys. Optional Cognee integration adds vector embeddings and knowledge graph.
+- **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys. Pure SQLite — no external services required.
 
 ### Persistence
 

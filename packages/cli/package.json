@@ -1,6 +1,6 @@
 {
   "name": "@soleri/cli",
-  "version": "8.1.1",
+  "version": "9.0.0",
   "description": "Developer CLI for creating and managing Soleri AI agents.",
   "keywords": [
     "agent",
@@ -41,8 +41,8 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.0.0",
-    "@soleri/core": "^8.0.0",
-    "@soleri/forge": "^8.0.0",
+    "@soleri/core": "^9.0.0",
+    "@soleri/forge": "^9.0.0",
     "commander": "^13.0.0"
   },
   "engines": {

@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v9.0.0 — 2026-03-20 — Composable Persona System & Cognee Removal
+
+### Breaking Changes
+
+- **Cognee removed** — `CogneeClient`, `CogneeSyncManager`, and all Cognee-related ops removed from the engine. Vault FTS5 + Brain TF-IDF is the sole search layer. The `engine.cognee` config option is ignored. Remove `COGNEE_BASE_URL` from environment and `docker-compose.cognee.yml` from deployments.
+- **`AgentRuntimeConfig.cognee`** field removed. Agents with `cognee: true` in agent.yaml will work but the field is silently ignored.
+- **`AgentRuntime.cognee`** and **`AgentRuntime.syncManager`** fields removed from runtime interface.
+- **Admin ops** no longer report Cognee status in `admin_health`, `admin_diagnostic`, or `admin_setup_check`.
+- **`drain()` / `drainAll()`** removed — no sync queue exists without Cognee.
+- **`domains` and `principles` no longer required** in agent.yaml / create wizard. Empty arrays are valid — agents discover their domains from usage.
+
+### Features
+
+- **Composable Persona System** — Agents now have a `persona:` block in agent.yaml that defines character, voice, cultural texture, traits, quirks, opinions, and metaphors. The persona defines HOW the agent communicates, not WHAT it knows.
+- **Italian Craftsperson default** — New agents ship with the Italian Craftsperson persona (inspired by Paolo Soleri). Warm, opinionated about quality, sprinkles Italian expressions naturally. Universal — works for any domain.
+- **Persona loader** — `loadPersona()` reads persona from agent.yaml, falls back to Italian Craftsperson default. Supports template expansion and user overrides.
+- **System prompt generation** — `generatePersonaInstructions()` transforms persona YAML into natural language instructions for the LLM, including voice, traits, quirks, opinions, metaphors, cultural texture, and identity persistence rules.
+- **Activate returns persona** — `activate` op now returns full persona config with generated system instructions instead of legacy tone/principles.
+- **Persona prompt** — MCP `persona` prompt returns generated persona instructions for client consumption.
+- **Simplified create wizard** — `soleri create` now asks 2 questions: name + optional persona description. Removed archetype picker (14 archetypes), domain multiselect, principles multiselect, skills multiselect, and tone picker. 547 lines → 130 lines.
+- **Persona templates** — `PERSONA_TEMPLATES` registry allows multiple built-in personas. Currently ships with `italian-craftsperson`.
+
+### Types
+
+- New: `PersonaConfig`, `ArchivedPersona`, `PersonaCreateInput`, `PersonaSystemInstructions`
+- New exports: `loadPersona`, `generatePersonaInstructions`, `getRandomSignoff`, `createDefaultPersona`, `ITALIAN_CRAFTSPERSON`, `PERSONA_TEMPLATES`
+- `AgentRuntime` now includes `persona: PersonaConfig` and `personaInstructions: PersonaSystemInstructions`
+- `AgentRuntimeConfig` now accepts optional `persona?: Partial<PersonaConfig>`
+- `AgentYamlSchema` and `AgentConfigSchema`: `domains` and `principles` are now optional (default to `[]`)
+
+### Removed
+
+- `packages/core/src/cognee/` — entire directory
+- `CogneeClient`, `CogneeSyncManager`, `CogneeConfig`, `CogneeStatus` types
+- `cognee_search`, `cognee_add`, `cognee_cognify`, `cognee_sync_*` ops
+- `packages/cli/src/prompts/archetypes.ts` — 14 archetype definitions
+- Cognee references from admin ops (`admin_health`, `admin_diagnostic`, `admin_gc`, `admin_setup_check`)
+
+---
+
 ## v8.2.0 — 2026-03-19 — Cognee Sync Reliability & Zettelkasten Link Export
 
 ### Bug Fixes
