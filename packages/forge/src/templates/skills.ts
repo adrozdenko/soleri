@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AgentConfig } from '../types.js';
@@ -43,10 +43,10 @@ const AGENT_SPECIFIC_SKILLS = new Set([
  */
 export function generateSkills(config: AgentConfig): Array<[string, string]> {
   const files: Array<[string, string]> = [];
-  let skillFiles: string[];
+  let entries: string[];
 
   try {
-    skillFiles = readdirSync(SKILLS_DIR).filter((f) => f.endsWith('.md'));
+    entries = readdirSync(SKILLS_DIR);
   } catch {
     return files;
   }
@@ -55,14 +55,32 @@ export function generateSkills(config: AgentConfig): Array<[string, string]> {
   // undefined = include all (backward compat), [] = include none.
   const allowedSkills = config.skills ? new Set(config.skills) : null; // null = include all (backward compat)
 
-  for (const file of skillFiles) {
-    const skillName = file.replace('.md', '');
+  for (const entry of entries) {
+    const entryPath = join(SKILLS_DIR, entry);
+
+    // Support both layouts:
+    // - Directory: skills/{name}/SKILL.md (current)
+    // - Flat file: skills/{name}.md (legacy)
+    let skillName: string;
+    let contentPath: string;
+
+    if (statSync(entryPath).isDirectory()) {
+      const skillMd = join(entryPath, 'SKILL.md');
+      if (!existsSync(skillMd)) continue;
+      skillName = entry;
+      contentPath = skillMd;
+    } else if (entry.endsWith('.md')) {
+      skillName = entry.replace('.md', '');
+      contentPath = entryPath;
+    } else {
+      continue;
+    }
 
     if (allowedSkills && !allowedSkills.has(skillName)) {
       continue;
     }
 
-    let content = readFileSync(join(SKILLS_DIR, file), 'utf-8');
+    let content = readFileSync(contentPath, 'utf-8');
 
     if (AGENT_SPECIFIC_SKILLS.has(skillName)) {
       content = content.replace(/YOUR_AGENT_core/g, `${config.id}_core`);
