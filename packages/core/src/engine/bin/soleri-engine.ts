@@ -97,6 +97,40 @@ async function main(): Promise<void> {
     }
   }
 
+  // 4b. Post-connection: rebuild brain index and backfill Zettelkasten links
+  if (vaults.length > 0) {
+    try {
+      // Rebuild TF-IDF vocabulary to include entries from connected vaults
+      runtime.brain.rebuildVocabulary();
+      const brainStats = runtime.brain.getStats();
+      console.error(`${tag} Brain indexed: ${brainStats.vocabularySize} terms`);
+
+      // Backfill Zettelkasten links for orphan entries
+      if (runtime.linkManager) {
+        const orphans = runtime.linkManager.getOrphans(50);
+        if (orphans.length > 0) {
+          let linked = 0;
+          for (const orphan of orphans) {
+            const suggestions = runtime.linkManager.suggestLinks(orphan.id, 3);
+            for (const s of suggestions) {
+              if (s.score > 0.3) {
+                runtime.linkManager.addLink(orphan.id, s.entryId, s.suggestedType);
+                linked++;
+              }
+            }
+          }
+          if (linked > 0) {
+            console.error(`${tag} Zettelkasten: linked ${linked} orphan entries`);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(
+        `${tag} Warning: post-connection indexing failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
   // 5. Seed intelligence data from knowledge/ directory
   const knowledgeDir = join(agentDir, 'knowledge');
   if (existsSync(knowledgeDir)) {
