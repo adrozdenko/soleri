@@ -247,6 +247,8 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
   writeFile(agentDir, 'agent.yaml', agentYamlContent, filesCreated);
 
   // ─── 3. Write .mcp.json ─────────────────────────────────────
+  // Scaffold uses npx as portable fallback. `soleri install` overwrites
+  // with resolved absolute path for instant startup (no npm resolution).
   const mcpJson = {
     mcpServers: {
       'soleri-engine': {

@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { createRequire } from 'node:module';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
@@ -10,8 +11,30 @@ const SOLERI_HOME = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
 
 type Target = 'claude' | 'codex' | 'opencode' | 'both' | 'all';
 
-/** MCP server entry for file-tree agents (uses npx @soleri/engine) */
+/**
+ * Resolve the absolute path to the soleri-engine binary.
+ * Falls back to `npx @soleri/engine` if resolution fails (e.g. not installed globally).
+ */
+function resolveEngineBin(): { command: string; bin: string } {
+  try {
+    const require = createRequire(import.meta.url);
+    const bin = require.resolve('@soleri/core/dist/engine/bin/soleri-engine.js');
+    return { command: 'node', bin };
+  } catch {
+    return { command: 'npx', bin: '@soleri/engine' };
+  }
+}
+
+/** MCP server entry for file-tree agents (resolved engine path, no npx) */
 function fileTreeMcpEntry(agentDir: string): Record<string, unknown> {
+  const engine = resolveEngineBin();
+  if (engine.command === 'node') {
+    return {
+      type: 'stdio',
+      command: 'node',
+      args: [engine.bin, '--agent', join(agentDir, 'agent.yaml')],
+    };
+  }
   return {
     type: 'stdio',
     command: 'npx',
@@ -75,7 +98,12 @@ function installCodex(agentId: string, agentDir: string, isFileTree: boolean): v
   let section: string;
   if (isFileTree) {
     const agentYamlPath = join(agentDir, 'agent.yaml');
-    section = `\n\n${sectionHeader}\ncommand = "npx"\nargs = ["@soleri/engine", "--agent", "${agentYamlPath}"]\n`;
+    const engine = resolveEngineBin();
+    if (engine.command === 'node') {
+      section = `\n\n${sectionHeader}\ncommand = "node"\nargs = ["${engine.bin}", "--agent", "${agentYamlPath}"]\n`;
+    } else {
+      section = `\n\n${sectionHeader}\ncommand = "npx"\nargs = ["@soleri/engine", "--agent", "${agentYamlPath}"]\n`;
+    }
   } else {
     const entryPoint = join(agentDir, 'dist', 'index.js');
     section = `\n\n${sectionHeader}\ncommand = "node"\nargs = ["${entryPoint}"]\n`;
@@ -114,24 +142,12 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
 
   const servers = config.mcp as Record<string, unknown>;
   if (isFileTree) {
+    const engine = resolveEngineBin();
     servers[agentId] = {
       type: 'local',
-      command: [
-        'node',
-        join(
-          agentDir,
-          '..',
-          'soleri',
-          'packages',
-          'core',
-          'dist',
-          'engine',
-          'bin',
-          'soleri-engine.js',
-        ),
-        '--agent',
-        join(agentDir, 'agent.yaml'),
-      ],
+      command: engine.command === 'node'
+        ? ['node', engine.bin, '--agent', join(agentDir, 'agent.yaml')]
+        : ['npx', '-y', '@soleri/engine', '--agent', join(agentDir, 'agent.yaml')],
     };
   } else {
     servers[agentId] = {
@@ -214,7 +230,13 @@ export function registerInstall(program: Command): void {
       }
 
       if (isFileTree) {
-        p.log.info(`Detected file-tree agent (v7) — registering via @soleri/engine`);
+        const engine = resolveEngineBin();
+        if (engine.command === 'node') {
+          p.log.info(`Detected file-tree agent (v7) — using resolved engine at ${engine.bin}`);
+        } else {
+          p.log.warn(`Could not resolve @soleri/core locally — falling back to npx (slower startup)`);
+          p.log.info(`For instant startup: npm install -g @soleri/cli`);
+        }
       }
 
       if (target === 'claude' || target === 'both' || target === 'all') {
