@@ -743,6 +743,7 @@ export {
 } from './flows/index.js';
 
 // ─── Operator Profile ───────────────────────────────────────────────
+export { OperatorProfileStore } from './operator/operator-profile.js';
 export { SignalType } from './operator/operator-types.js';
 export type {
   CommandStyleData,

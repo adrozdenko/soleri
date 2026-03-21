@@ -84,6 +84,11 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
     description: 'Chat transport — session management, response chunking, authentication.',
     keyOps: ['chat_send', 'chat_history', 'chat_session'],
   },
+  {
+    suffix: 'operator',
+    description: 'Operator profile — personality learning, signals, adaptation.',
+    keyOps: ['profile_get', 'signal_accumulate', 'synthesis_check'],
+  },
 ];
 
 /** Core facade ops (always present, not in ENGINE_MODULES) */

@@ -58,6 +58,7 @@ import { classifyEntry } from '../curator/classifier.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 import { loadPersona } from '../persona/loader.js';
 import { generatePersonaInstructions } from '../persona/prompt-generator.js';
+import { OperatorProfileStore } from '../operator/operator-profile.js';
 
 /**
  * Create a fully initialized agent runtime.
@@ -334,6 +335,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       });
       return pr;
     })(),
+    operatorProfile: new OperatorProfileStore(vault),
     persona: (() => {
       const p = loadPersona(agentId, config.persona ?? undefined);
       logger.info(`[Persona] Loaded: ${p.name} (${p.template})`);
