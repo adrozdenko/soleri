@@ -19,6 +19,13 @@ import type {
   LinkSuggestion,
 } from './vault-types.js';
 
+// ── Stop words for keyword extraction ─────────────────────────────────
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'with', 'from', 'this', 'that', 'are', 'was', 'not',
+  'but', 'have', 'has', 'use', 'can', 'will', 'all', 'each', 'than', 'its',
+  'more', 'when', 'into', 'also', 'any', 'may', 'only', 'should', 'which',
+]);
+
 export class LinkManager {
   private initialized = false;
 
@@ -26,9 +33,7 @@ export class LinkManager {
     this.ensureTable();
   }
 
-  // ===========================================================================
-  // SCHEMA
-  // ===========================================================================
+  // ── Schema ──────────────────────────────────────────────────────────
 
   private ensureTable(): void {
     if (this.initialized) return;
@@ -51,9 +56,7 @@ export class LinkManager {
     }
   }
 
-  // ===========================================================================
-  // CRUD
-  // ===========================================================================
+  // ── CRUD ────────────────────────────────────────────────────────────
 
   /** Create a typed link between two entries. */
   addLink(sourceId: string, targetId: string, linkType: LinkType, note?: string): void {
@@ -111,13 +114,10 @@ export class LinkManager {
     }
   }
 
-  // ===========================================================================
-  // GRAPH TRAVERSAL
-  // ===========================================================================
+  // ── Graph Traversal ─────────────────────────────────────────────────
 
   /**
    * Walk the link graph from a starting entry up to `depth` hops.
-   * Returns all connected entries with link metadata.
    * BFS — walks both outgoing and incoming links (undirected).
    */
   traverse(entryId: string, depth: number = 2): LinkedEntry[] {
@@ -127,56 +127,50 @@ export class LinkManager {
 
     for (let d = 0; d < depth && frontier.length > 0; d++) {
       const nextFrontier: string[] = [];
-
       for (const currentId of frontier) {
-        // Outgoing
-        for (const link of this.getLinks(currentId)) {
-          if (!visited.has(link.targetId)) {
-            visited.add(link.targetId);
-            nextFrontier.push(link.targetId);
-            const entry = this.getEntryMeta(link.targetId);
-            if (entry) {
-              result.push({
-                ...entry,
-                linkType: link.linkType,
-                linkDirection: 'outgoing',
-                linkNote: link.note,
-              });
-            }
-          }
-        }
-        // Incoming
-        for (const link of this.getBacklinks(currentId)) {
-          if (!visited.has(link.sourceId)) {
-            visited.add(link.sourceId);
-            nextFrontier.push(link.sourceId);
-            const entry = this.getEntryMeta(link.sourceId);
-            if (entry) {
-              result.push({
-                ...entry,
-                linkType: link.linkType,
-                linkDirection: 'incoming',
-                linkNote: link.note,
-              });
-            }
-          }
-        }
+        this.collectNeighbors(currentId, visited, nextFrontier, result);
       }
-
       frontier = nextFrontier;
     }
 
     return result;
   }
 
-  // ===========================================================================
-  // BULK QUERIES
-  // ===========================================================================
+  /** Collect unvisited outgoing and incoming neighbors for BFS. */
+  private collectNeighbors(
+    currentId: string,
+    visited: Set<string>,
+    nextFrontier: string[],
+    result: LinkedEntry[],
+  ): void {
+    for (const link of this.getLinks(currentId)) {
+      this.visitNeighbor(link.targetId, link, 'outgoing', visited, nextFrontier, result);
+    }
+    for (const link of this.getBacklinks(currentId)) {
+      this.visitNeighbor(link.sourceId, link, 'incoming', visited, nextFrontier, result);
+    }
+  }
 
-  /**
-   * Get all links where either source or target is in the given ID set.
-   * Used for pack export — to find links within an export set.
-   */
+  /** Visit a single neighbor node if not already visited. */
+  private visitNeighbor(
+    neighborId: string,
+    link: VaultLink,
+    direction: 'outgoing' | 'incoming',
+    visited: Set<string>,
+    nextFrontier: string[],
+    result: LinkedEntry[],
+  ): void {
+    if (visited.has(neighborId)) return;
+    visited.add(neighborId);
+    nextFrontier.push(neighborId);
+    const entry = this.getEntryMeta(neighborId);
+    if (!entry) return;
+    result.push({ ...entry, linkType: link.linkType, linkDirection: direction, linkNote: link.note });
+  }
+
+  // ── Bulk Queries ────────────────────────────────────────────────────
+
+  /** Get all links where either source or target is in the given ID set. */
   getAllLinksForEntries(entryIds: string[]): VaultLink[] {
     if (entryIds.length === 0) return [];
     try {
@@ -191,9 +185,7 @@ export class LinkManager {
     }
   }
 
-  // ===========================================================================
-  // ORPHAN DETECTION
-  // ===========================================================================
+  // ── Orphan Detection ────────────────────────────────────────────────
 
   /** Find entries with zero links. */
   getOrphans(
@@ -212,122 +204,65 @@ export class LinkManager {
     }
   }
 
-  // ===========================================================================
-  // LINK SUGGESTIONS (FTS5-powered — improvement over Salvador's TF-IDF)
-  // ===========================================================================
+  // ── Link Suggestions (FTS5) ─────────────────────────────────────────
 
   /** Find semantically similar entries as link candidates using FTS5. */
   suggestLinks(entryId: string, limit: number = 5): LinkSuggestion[] {
     try {
-      // Get the entry to build a search query
-      const entry = this.provider.get<{
-        title: string;
-        description: string;
-        type: string;
-        tags: string;
-      }>('SELECT title, description, type, tags FROM entries WHERE id = ?', [entryId]);
-      if (!entry) return [];
-
-      // Build FTS query from entry content — extract significant keywords only.
-      // FTS5 MATCH chokes on long raw text; use top keywords joined with OR.
-      const rawWords = `${entry.title} ${entry.description}`
-        .replace(/[^\w\s]/g, ' ')
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((w) => w.length > 2);
-      // Deduplicate and take top 10 most significant words (skip common stop words)
-      const stopWords = new Set([
-        'the',
-        'and',
-        'for',
-        'with',
-        'from',
-        'this',
-        'that',
-        'are',
-        'was',
-        'not',
-        'but',
-        'have',
-        'has',
-        'use',
-        'can',
-        'will',
-        'all',
-        'each',
-        'than',
-        'its',
-        'more',
-        'when',
-        'into',
-        'also',
-        'any',
-        'may',
-        'only',
-        'should',
-        'which',
-      ]);
-      const unique = [...new Set(rawWords)].filter((w) => !stopWords.has(w));
-      const keywords = unique.slice(0, 10);
-      if (keywords.length === 0) return [];
-      const queryTerms = keywords.join(' OR ');
-
-      // FTS5 match with BM25 ranking
-      const matches = this.provider.all<{
-        id: string;
-        title: string;
-        type: string;
-        domain: string;
-        rank: number;
-      }>(
-        `SELECT e.id, e.title, e.type, e.domain, rank
-         FROM entries_fts fts
-         JOIN entries e ON e.rowid = fts.rowid
-         WHERE entries_fts MATCH ?
-         ORDER BY rank
-         LIMIT ?`,
-        [queryTerms, limit + 5],
-      );
-
-      // Filter out self and already-linked entries
-      const existingLinks = new Set([
-        ...this.getLinks(entryId).map((l) => l.targetId),
-        ...this.getBacklinks(entryId).map((l) => l.sourceId),
-      ]);
-
-      return matches
-        .filter((m) => m.id !== entryId && !existingLinks.has(m.id))
-        .slice(0, limit)
-        .map((m) => {
-          const suggestedType = inferLinkType(entry.type, m.type);
-          return {
-            entryId: m.id,
-            title: m.title,
-            type: m.type,
-            score: Math.abs(m.rank), // FTS5 rank is negative (lower = better)
-            suggestedType,
-            reason: `${m.type} in ${m.domain}`,
-          };
-        });
+      return this.suggestLinksUnsafe(entryId, limit);
     } catch {
       return [];
     }
   }
 
-  // ===========================================================================
-  // BACKFILL — one-time link generation for existing entries
-  // ===========================================================================
+  private suggestLinksUnsafe(entryId: string, limit: number): LinkSuggestion[] {
+    const entry = this.provider.get<{
+      title: string;
+      description: string;
+      type: string;
+      tags: string;
+    }>('SELECT title, description, type, tags FROM entries WHERE id = ?', [entryId]);
+    if (!entry) return [];
+
+    const keywords = extractKeywords(`${entry.title} ${entry.description}`);
+    if (keywords.length === 0) return [];
+
+    const matches = this.queryFtsCandidates(keywords, limit);
+    const existingLinks = this.getExistingLinkIds(entryId);
+
+    return buildSuggestions(matches, entryId, existingLinks, entry.type, limit);
+  }
+
+  private queryFtsCandidates(
+    keywords: string[],
+    limit: number,
+  ): Array<{ id: string; title: string; type: string; domain: string; rank: number }> {
+    const queryTerms = keywords.join(' OR ');
+    return this.provider.all<{
+      id: string; title: string; type: string; domain: string; rank: number;
+    }>(
+      `SELECT e.id, e.title, e.type, e.domain, rank
+       FROM entries_fts fts
+       JOIN entries e ON e.rowid = fts.rowid
+       WHERE entries_fts MATCH ?
+       ORDER BY rank
+       LIMIT ?`,
+      [queryTerms, limit + 5],
+    );
+  }
+
+  private getExistingLinkIds(entryId: string): Set<string> {
+    return new Set([
+      ...this.getLinks(entryId).map((l) => l.targetId),
+      ...this.getBacklinks(entryId).map((l) => l.sourceId),
+    ]);
+  }
+
+  // ── Backfill ────────────────────────────────────────────────────────
 
   /**
    * Generate links for orphan entries using FTS5 suggestions.
    * Processes orphans in batches and creates links above the threshold.
-   *
-   * @param opts.threshold    Minimum suggestion score to auto-create link (default: 0.7)
-   * @param opts.maxLinks     Max links per entry (default: 3)
-   * @param opts.dryRun       Preview without creating links (default: false)
-   * @param opts.batchSize    Entries per batch (default: 50)
-   * @param opts.onProgress   Progress callback
-   * @returns Stats: processed, linksCreated, durationMs
    */
   backfillLinks(opts?: {
     threshold?: number;
@@ -350,31 +285,15 @@ export class LinkManager {
     const orphans = this.getOrphans(10000);
     let processed = 0;
     let linksCreated = 0;
-    const preview: Array<{ sourceId: string; targetId: string; linkType: string; score: number }> =
-      [];
+    const preview: Array<{ sourceId: string; targetId: string; linkType: string; score: number }> = [];
 
     for (let i = 0; i < orphans.length; i += batchSize) {
       const batch = orphans.slice(i, i + batchSize);
       for (const entry of batch) {
-        const suggestions = this.suggestLinks(entry.id, maxLinks + 2);
-        const qualifying = suggestions.filter((s) => s.score >= threshold).slice(0, maxLinks);
-
-        for (const s of qualifying) {
-          if (dryRun) {
-            preview.push({
-              sourceId: entry.id,
-              targetId: s.entryId,
-              linkType: s.suggestedType,
-              score: s.score,
-            });
-          } else {
-            this.addLink(entry.id, s.entryId, s.suggestedType);
-          }
-          linksCreated++;
-        }
+        const created = this.processOrphan(entry.id, threshold, maxLinks, dryRun, preview);
+        linksCreated += created;
         processed++;
       }
-
       opts?.onProgress?.({ processed, total: orphans.length, linksCreated });
     }
 
@@ -386,9 +305,27 @@ export class LinkManager {
     };
   }
 
-  // ===========================================================================
-  // PRIVATE
-  // ===========================================================================
+  /** Process a single orphan: suggest links, create or preview qualifying ones. */
+  private processOrphan(
+    entryId: string,
+    threshold: number,
+    maxLinks: number,
+    dryRun: boolean,
+    preview: Array<{ sourceId: string; targetId: string; linkType: string; score: number }>,
+  ): number {
+    const suggestions = this.suggestLinks(entryId, maxLinks + 2);
+    const qualifying = suggestions.filter((s) => s.score >= threshold).slice(0, maxLinks);
+    for (const s of qualifying) {
+      if (dryRun) {
+        preview.push({ sourceId: entryId, targetId: s.entryId, linkType: s.suggestedType, score: s.score });
+      } else {
+        this.addLink(entryId, s.entryId, s.suggestedType);
+      }
+    }
+    return qualifying.length;
+  }
+
+  // ── Private Helpers ─────────────────────────────────────────────────
 
   private getEntryMeta(
     entryId: string,
@@ -405,10 +342,7 @@ export class LinkManager {
   }
 }
 
-// =============================================================================
-// HELPERS
-// =============================================================================
-
+// ── Free-standing helpers ─────────────────────────────────────────────
 function rowToVaultLink(row: VaultLinkRow): VaultLink {
   return {
     sourceId: row.source_id,
@@ -424,4 +358,36 @@ function inferLinkType(sourceType: string, targetType: string): LinkType {
   if (sourceType === 'anti-pattern' && targetType === 'pattern') return 'contradicts';
   if (targetType === 'rule') return 'supports';
   return 'extends';
+}
+
+/** Extract significant keywords from text for FTS5 queries. */
+function extractKeywords(text: string): string[] {
+  const rawWords = text
+    .replace(/[^\w\s]/g, ' ')
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+  const unique = [...new Set(rawWords)].filter((w) => !STOP_WORDS.has(w));
+  return unique.slice(0, 10);
+}
+
+/** Convert FTS matches into LinkSuggestions, filtering self and existing links. */
+function buildSuggestions(
+  matches: Array<{ id: string; title: string; type: string; domain: string; rank: number }>,
+  entryId: string,
+  existingLinks: Set<string>,
+  sourceType: string,
+  limit: number,
+): LinkSuggestion[] {
+  return matches
+    .filter((m) => m.id !== entryId && !existingLinks.has(m.id))
+    .slice(0, limit)
+    .map((m) => ({
+      entryId: m.id,
+      title: m.title,
+      type: m.type,
+      score: Math.abs(m.rank),
+      suggestedType: inferLinkType(sourceType, m.type),
+      reason: `${m.type} in ${m.domain}`,
+    }));
 }
