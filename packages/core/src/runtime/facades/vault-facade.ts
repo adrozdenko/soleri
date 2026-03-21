@@ -83,16 +83,25 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         tags: z.array(z.string()).optional(),
         limit: z.number().optional(),
         offset: z.number().optional(),
+        verbose: z.boolean().optional().describe('Return full entry objects instead of summaries'),
       }),
       handler: async (params) => {
-        return vault.list({
+        const verbose = params.verbose === true;
+        const entries = vault.list({
           domain: params.domain as string | undefined,
           type: params.type as string | undefined,
           severity: params.severity as string | undefined,
           tags: params.tags as string[] | undefined,
-          limit: (params.limit as number) ?? 50,
+          limit: (params.limit as number) ?? 20,
           offset: (params.offset as number) ?? 0,
         });
+        if (verbose) {
+          return entries;
+        }
+        // Return lightweight summaries to reduce response size
+        return (entries as Array<{ id: string; title: string; type: string; domain: string; tags?: string[] }>).map(
+          (e) => ({ id: e.id, title: e.title, type: e.type, domain: e.domain, tags: e.tags ?? [] }),
+        );
       },
     },
     {

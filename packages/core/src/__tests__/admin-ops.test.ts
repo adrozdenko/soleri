@@ -81,19 +81,19 @@ describe('createAdminOps', () => {
   // ─── admin_tool_list ───────────────────────────────────────────
 
   describe('admin_tool_list', () => {
-    it('should return fallback list without _allOps', async () => {
+    it('should return fallback grouped list without _allOps', async () => {
       setup();
       const result = (await findOp('admin_tool_list').handler({})) as {
         count: number;
-        ops: Array<{ name: string }>;
+        ops: Record<string, string[]>;
       };
 
       expect(result.count).toBe(8);
-      expect(result.ops.map((o) => o.name)).toContain('admin_health');
-      expect(result.ops.map((o) => o.name)).toContain('admin_diagnostic');
+      expect(result.ops.admin).toContain('admin_health');
+      expect(result.ops.admin).toContain('admin_diagnostic');
     });
 
-    it('should return injected ops when _allOps is provided', async () => {
+    it('should return grouped ops when _allOps is provided (default non-verbose)', async () => {
       setup();
       const allOps = [
         { name: 'search', description: 'Search vault', auth: 'read' },
@@ -101,11 +101,29 @@ describe('createAdminOps', () => {
       ];
       const result = (await findOp('admin_tool_list').handler({ _allOps: allOps })) as {
         count: number;
+        ops: Record<string, string[]>;
+      };
+
+      expect(result.count).toBe(2);
+      // 'search' has no underscore so grouped under 'core'
+      expect(result.ops.core).toContain('search');
+      expect(result.ops.admin).toContain('admin_health');
+    });
+
+    it('should return full ops when verbose: true with _allOps', async () => {
+      setup();
+      const allOps = [
+        { name: 'search', description: 'Search vault', auth: 'read' },
+        { name: 'admin_health', description: 'Health check', auth: 'read' },
+      ];
+      const result = (await findOp('admin_tool_list').handler({ _allOps: allOps, verbose: true })) as {
+        count: number;
         ops: Array<{ name: string; description: string; auth: string }>;
       };
 
       expect(result.count).toBe(2);
       expect(result.ops[0].name).toBe('search');
+      expect(result.ops[0].description).toBe('Search vault');
       expect(result.ops[1].name).toBe('admin_health');
     });
   });

@@ -142,12 +142,12 @@ describe('Agent Simulation: First Week', () => {
     it('2. Tool list — should enumerate registered ops', async () => {
       const res = await op('admin', 'admin_tool_list');
 
-      // Without _allOps injection, returns fallback admin-only list
+      // Without _allOps injection, returns fallback grouped admin-only list
       expect(res.count as number).toBeGreaterThan(0);
-      const ops = res.ops as Array<{ name: string }>;
-      expect(ops.some(t => t.name.includes('admin_health'))).toBe(true);
-      expect(ops.some(t => t.name.includes('admin_diagnostic'))).toBe(true);
-      expect(ops.some(t => t.name.includes('admin_tool_list'))).toBe(true);
+      const ops = res.ops as Record<string, string[]>;
+      expect(ops.admin).toContain('admin_health');
+      expect(ops.admin).toContain('admin_diagnostic');
+      expect(ops.admin).toContain('admin_tool_list');
     });
 
     it('3. Vault has exactly the seeded playbooks at start', async () => {
