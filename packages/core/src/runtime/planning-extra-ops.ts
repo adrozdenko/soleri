@@ -16,6 +16,7 @@ import type { DriftItem, TaskEvidence } from '../planning/planner.js';
 import { collectGitEvidence } from '../planning/evidence-collector.js';
 import { matchPlaybooks, type PlaybookMatchResult } from '../playbooks/index.js';
 import { entryToPlaybookDefinition } from '../playbooks/index.js';
+import { closeIssueWithComment } from './github-integration.js';
 
 /**
  * Create 22 extended planning operations for an agent runtime.
@@ -240,6 +241,20 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
             }
           }
 
+          // Auto-close linked GitHub issue if plan has one
+          let issueClosed = false;
+          if (plan.githubIssue) {
+            const { owner, repo, number: issueNum } = plan.githubIssue;
+            const accuracy = plan.reconciliation?.accuracy ?? 'N/A';
+            const comment =
+              `Plan \`${plan.id}\` completed.\n\n` +
+              `**Objective:** ${plan.objective}\n` +
+              `**Accuracy:** ${accuracy}/100\n` +
+              `**Knowledge captured:** ${captured} entries`;
+            await closeIssueWithComment(owner, repo, issueNum, comment);
+            issueClosed = true;
+          }
+
           return {
             completed: true,
             knowledgeCaptured: captured,
@@ -249,6 +264,7 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
             reconciliation: plan.reconciliation ?? null,
             brainSession: session?.id ?? brainSession?.id ?? null,
             brainExtraction: extraction ? { proposals: extraction.proposals.length } : null,
+            githubIssueClosed: issueClosed ? plan.githubIssue?.number : null,
           };
         } catch (err) {
           return { error: (err as Error).message };
