@@ -441,10 +441,113 @@ describe('createSemanticFacades', () => {
       toolsUsed: [],
     });
 
-    const results = (await findOp('memory_search').handler({
+    const res = (await findOp('memory_search').handler({
       query: 'core ops memory',
-    })) as unknown[];
-    expect(results.length).toBeGreaterThan(0);
+    })) as { results: unknown[]; total: number };
+    expect(res.results.length).toBeGreaterThan(0);
+    expect(res.total).toBeGreaterThan(0);
+  });
+
+  it('memory_search returns slim summaries by default', async () => {
+    const longSummary =
+      'This is a very long memory summary about trimming responses that exceeds one hundred and twenty characters easily so we can verify truncation works correctly in the facade layer';
+    await findOp('memory_capture').handler({
+      projectPath: '/test-slim',
+      type: 'lesson',
+      context: 'trimming context',
+      summary: longSummary,
+      topics: ['trimming'],
+      filesModified: [],
+      toolsUsed: [],
+    });
+
+    const res = (await findOp('memory_search').handler({
+      query: 'trimming responses',
+    })) as { results: Array<{ id: string; summary: string; score: unknown; project: string }>; total: number };
+    expect(res.results.length).toBeGreaterThan(0);
+    const first = res.results[0];
+    // Slim shape: id, summary, score, project — no context, topics, etc.
+    expect(first).toHaveProperty('id');
+    expect(first).toHaveProperty('summary');
+    expect(first).toHaveProperty('score');
+    expect(first).toHaveProperty('project');
+    expect(first).not.toHaveProperty('context');
+    expect(first).not.toHaveProperty('topics');
+    // Summary truncated at 120 chars + ellipsis character
+    expect(first.summary.length).toBeLessThanOrEqual(121);
+    expect(first.summary).toContain('\u2026');
+  });
+
+  it('memory_search verbose returns full objects', async () => {
+    await findOp('memory_capture').handler({
+      projectPath: '/test',
+      type: 'lesson',
+      context: 'verbose test context',
+      summary: 'Verbose test summary',
+      topics: ['verbose'],
+      filesModified: [],
+      toolsUsed: [],
+    });
+
+    const res = (await findOp('memory_search').handler({
+      query: 'verbose test',
+      verbose: true,
+    })) as { results: Array<Record<string, unknown>>; total: number };
+    expect(res.results.length).toBeGreaterThan(0);
+    const first = res.results[0];
+    // Full object has context, topics, etc.
+    expect(first).toHaveProperty('context');
+    expect(first).toHaveProperty('topics');
+    expect(first).toHaveProperty('summary');
+  });
+
+  it('memory_list returns slim entries by default', async () => {
+    await findOp('memory_capture').handler({
+      projectPath: '/test',
+      type: 'lesson',
+      context: 'list test context',
+      summary: 'B'.repeat(200),
+      topics: ['list'],
+      filesModified: [],
+      toolsUsed: [],
+    });
+
+    const res = (await findOp('memory_list').handler({})) as {
+      entries: Array<{ id: string; summary: string; project: string; createdAt: number }>;
+      total: number;
+    };
+    expect(res.entries.length).toBeGreaterThan(0);
+    const first = res.entries[0];
+    expect(first).toHaveProperty('id');
+    expect(first).toHaveProperty('summary');
+    expect(first).toHaveProperty('project');
+    expect(first).toHaveProperty('createdAt');
+    expect(first).not.toHaveProperty('context');
+    expect(first).not.toHaveProperty('topics');
+    // Truncated
+    expect(first.summary.length).toBeLessThanOrEqual(121);
+  });
+
+  it('memory_list verbose returns full objects', async () => {
+    await findOp('memory_capture').handler({
+      projectPath: '/test',
+      type: 'lesson',
+      context: 'verbose list context',
+      summary: 'Verbose list test',
+      topics: ['verbose'],
+      filesModified: [],
+      toolsUsed: [],
+    });
+
+    const res = (await findOp('memory_list').handler({ verbose: true })) as {
+      memories: Array<Record<string, unknown>>;
+      stats: Record<string, unknown>;
+    };
+    expect(res.memories.length).toBeGreaterThan(0);
+    expect(res.stats).toBeDefined();
+    const first = res.memories[0];
+    expect(first).toHaveProperty('context');
+    expect(first).toHaveProperty('topics');
   });
 
   it('brain_feedback should record enhanced feedback', async () => {

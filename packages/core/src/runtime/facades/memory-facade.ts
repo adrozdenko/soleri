@@ -9,6 +9,12 @@ import type { AgentRuntime } from '../types.js';
 import { createMemoryExtraOps } from '../memory-extra-ops.js';
 import { createMemoryCrossProjectOps } from '../memory-cross-project-ops.js';
 
+/** Truncate text to maxLen chars, appending ellipsis when truncated. */
+function truncateSummary(text: string, maxLen = 120): string {
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen) + '\u2026';
+}
+
 export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault } = runtime;
 
@@ -16,20 +22,38 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     // ─── Memory (inline from core-ops.ts) ───────────────────────
     {
       name: 'memory_search',
-      description: 'Search memories using full-text search.',
+      description:
+        'Search memories using full-text search. Returns summaries by default; pass verbose: true for full objects.',
       auth: 'read',
       schema: z.object({
         query: z.string(),
         type: z.enum(['session', 'lesson', 'preference']).optional(),
         projectPath: z.string().optional(),
         limit: z.number().optional(),
+        verbose: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Return full memory objects instead of summaries'),
       }),
       handler: async (params) => {
-        return vault.searchMemories(params.query as string, {
+        const memories = vault.searchMemories(params.query as string, {
           type: params.type as string | undefined,
           projectPath: params.projectPath as string | undefined,
           limit: (params.limit as number) ?? 10,
         });
+        if (params.verbose) {
+          return { results: memories, total: memories.length };
+        }
+        return {
+          results: memories.map((m) => ({
+            id: m.id,
+            summary: truncateSummary(m.summary || m.context),
+            score: null,
+            project: m.projectPath,
+          })),
+          total: memories.length,
+        };
       },
     },
     {
@@ -65,13 +89,19 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     },
     {
       name: 'memory_list',
-      description: 'List memories with optional filters.',
+      description:
+        'List memories with optional filters. Returns summaries by default; pass verbose: true for full objects.',
       auth: 'read',
       schema: z.object({
         type: z.enum(['session', 'lesson', 'preference']).optional(),
         projectPath: z.string().optional(),
         limit: z.number().optional(),
         offset: z.number().optional(),
+        verbose: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Return full memory objects instead of summaries'),
       }),
       handler: async (params) => {
         const memories = vault.listMemories({
@@ -81,7 +111,18 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           offset: (params.offset as number) ?? 0,
         });
         const stats = vault.memoryStats();
-        return { memories, stats };
+        if (params.verbose) {
+          return { memories, stats };
+        }
+        return {
+          entries: memories.map((m) => ({
+            id: m.id,
+            summary: truncateSummary(m.summary || m.context),
+            project: m.projectPath,
+            createdAt: m.createdAt,
+          })),
+          total: stats.total,
+        };
       },
     },
     {
