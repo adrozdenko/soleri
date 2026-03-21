@@ -21,6 +21,7 @@ import { createCoreOps } from '../core-ops.js';
 import { seedDefaultPlaybooks } from '../../playbooks/playbook-seeder.js';
 import { agentVaultPath } from '../../paths.js';
 import { checkForUpdate } from '../../update-check.js';
+import { syncSkillsToClaudeCode } from '../../skills/sync-skills.js';
 import type { AgentIdentityConfig } from '../core-ops.js';
 
 // ─── Parse CLI args ───────────────────────────────────────────────────
@@ -161,6 +162,16 @@ async function main(): Promise<void> {
       .map(([t, n]) => `${n} ${t}`)
       .join(', ')})`,
   );
+
+  // 6b. Auto-sync skills to ~/.claude/commands/
+  const skillsDir = join(agentDir, 'skills');
+  if (existsSync(skillsDir)) {
+    const syncResult = syncSkillsToClaudeCode([skillsDir]);
+    const total = syncResult.installed.length + syncResult.updated.length;
+    if (total > 0) {
+      console.error(`${tag} Skills synced: ${syncResult.installed.length} new, ${syncResult.updated.length} updated`);
+    }
+  }
 
   // 7. Load domain packs
   const packs = (config.packs ?? []) as Array<{ name: string; package: string; version?: string }>;

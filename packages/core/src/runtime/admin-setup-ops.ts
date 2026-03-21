@@ -34,6 +34,7 @@ import {
   buildInjectionContent,
   injectEngineRulesBlock,
 } from './claude-md-helpers.js';
+import { discoverSkills, syncSkillsToClaudeCode } from '../skills/sync-skills.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
@@ -93,24 +94,7 @@ function discoverHookifyFiles(dir: string): Array<{ name: string; path: string }
     .map((f) => ({ name: f, path: join(dir, f) }));
 }
 
-/** Discover skill files (SKILL.md) in a skills directory */
-function discoverSkills(skillsDirs: string[]): Array<{ name: string; sourcePath: string }> {
-  const skills: Array<{ name: string; sourcePath: string }> = [];
-
-  for (const dir of skillsDirs) {
-    if (!existsSync(dir)) continue;
-    const entries = readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const skillPath = join(dir, entry.name, 'SKILL.md');
-      if (existsSync(skillPath)) {
-        skills.push({ name: entry.name, sourcePath: skillPath });
-      }
-    }
-  }
-
-  return skills;
-}
+// discoverSkills imported from '../skills/sync-skills.js'
 
 // ─── Settings.json Hook Merging ───────────────────────────────────────
 
@@ -374,7 +358,6 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
         const skillsOnly = params.skillsOnly as boolean;
 
         const globalClaudeDir = join(homedir(), '.claude');
-        const commandsDir = join(globalClaudeDir, 'commands');
 
         // Discover what's available — prefer dataDir, fall back to agentDir
         const agentDataDir = config.dataDir ?? config.agentDir;
@@ -409,30 +392,23 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
           }
         }
 
-        // 2. Skills analysis
-        const skillsResults = {
-          installed: [] as string[],
-          skipped: [] as string[],
-          failed: [] as string[],
-        };
+        // 2. Skills — use shared sync (same logic as engine startup)
+        let skillsResults: { installed: string[]; updated: string[]; skipped: string[]; failed: string[] };
         if (!hooksOnly && !settingsJsonOnly) {
-          const skills = discoverSkills(skillsSourceDirs);
-          for (const skill of skills) {
-            const targetPath = join(commandsDir, `${skill.name}.md`);
-            if (existsSync(targetPath)) {
-              skillsResults.skipped.push(skill.name);
-            } else if (install) {
-              try {
-                mkdirSync(commandsDir, { recursive: true });
-                copyFileSync(skill.sourcePath, targetPath);
-                skillsResults.installed.push(skill.name);
-              } catch {
-                skillsResults.failed.push(skill.name);
-              }
-            } else {
-              skillsResults.installed.push(skill.name); // would install
-            }
+          if (install) {
+            skillsResults = syncSkillsToClaudeCode(skillsSourceDirs);
+          } else {
+            // Dry run — just discover what would be synced
+            const skills = discoverSkills(skillsSourceDirs);
+            skillsResults = {
+              installed: skills.map((s) => s.name),
+              updated: [],
+              skipped: [],
+              failed: [],
+            };
           }
+        } else {
+          skillsResults = { installed: [], updated: [], skipped: [], failed: [] };
         }
 
         // 3. Settings.json lifecycle hooks

@@ -268,19 +268,19 @@ This is NOT just a file move. It is a quality upgrade.
 
 **Strategy:** Full Feathers — highest priority decomposition in Wave 0
 
-**Current structure:** Single `Vault` class with 45 public methods across 6 responsibilities.
+**Current structure:** Single `Vault` class with **53 public methods** across 6 responsibilities. _(Updated 2026-03-21: was 45, +8 methods added post-plan)_
 
 **Decomposition plan:**
 
 | New File | Responsibility | Methods | Est. LOC |
 |----------|---------------|---------|----------|
 | `vault-schema.ts` | Schema DDL, migrations, format versioning | `initialize()`, 6 `migrate*()`, `checkFormatVersion()` | ~270 |
-| `vault-entries.ts` | Entry CRUD, search, analytics, lifecycle | `seed`, `add`, `remove`, `update`, `get`, `list`, `search`, `stats`, `getTags`, `getDomains`, `getRecent`, `getAgeReport`, `findExpiring`, `findExpired`, `setTemporal`, `bulkRemove`, `archive`, `restore`, `exportAll` | ~400 |
-| `vault-memories.ts` | Memory CRUD, search, analytics, pruning | `captureMemory`, `getMemory`, `deleteMemory`, `searchMemories`, `listMemories`, `memoryStats`, `memoryStatsDetailed`, `exportMemories`, `importMemories`, `memoriesByProject`, `memoryTopics`, `pruneMemories`, `deduplicateMemories` | ~300 |
-| `vault.ts` (facade) | Orchestrates sub-modules, project registry, maintenance | Constructor, project methods, `rebuildFtsIndex`, `optimize`, `close`, delegates to sub-modules | ~250 |
+| `vault-entries.ts` | Entry CRUD, search, analytics, lifecycle | `seed`, `seedDedup`, `installPack`, `add`, `remove`, `update`, `get`, `list`, `search`, `stats`, `getTags`, `getDomains`, `getRecent`, `getAgeReport`, `findByContentHash`, `contentHashStats`, `findExpiring`, `findExpired`, `setTemporal`, `bulkRemove`, `archive`, `restore`, `exportAll` | ~400 |
+| `vault-memories.ts` | Memory CRUD, search, analytics, pruning | `captureMemory`, `getMemory`, `deleteMemory`, `searchMemories`, `listMemories`, `memoryStats`, `memoryStatsDetailed`, `exportMemories`, `importMemories`, `memoriesByProject`, `memoryTopics`, `pruneMemories`, `deduplicateMemories` | **~350-380** _(was ~300)_ |
+| `vault.ts` (facade) | Orchestrates sub-modules, project registry, maintenance | Constructor, project methods, `rebuildFtsIndex`, `optimize`, `close`, delegates to sub-modules | **~200-220** _(was ~250)_ |
 
 **Phases:**
-1. Write characterization tests for all 45 public methods (black-box)
+1. Write characterization tests for all **53** public methods (black-box) _(was 45)_
 2. Extract to 4 files, keeping characterization tests green
 3. Write unit tests for each new file
 4. Migrate from `src/__tests__/vault.test.ts` (750 lines), `vault-extra-ops.test.ts` (482 lines), `vault-integrity.test.ts` (71 lines)
@@ -314,6 +314,7 @@ All already well-sized. Write colocated tests, migrate existing tests, apply nev
 | `knowledge-review.ts` | 221 | (none) | Write tests |
 | `playbook.ts` | 87 | (none) | Write tests |
 | `content-hash.ts` | 31 | (none) | Write tests |
+| **`vault-types.ts`** | **96** | **(none)** | **Write tests if runtime logic; audit types** _(added 2026-03-21)_ |
 
 ### Wave 0 Parallelism
 
@@ -335,25 +336,26 @@ Worktree 4: other vault files (0D) ───────────────
 
 ### Wave 1A: `brain/` module (full — 2,800 LOC total)
 
-**Strategy:** Full Feathers for `intelligence.ts` (1,303 LOC); Contract-first for `brain.ts` (685 LOC); Direct TDD for others.
+**Strategy:** Full Feathers for `intelligence.ts` (**~1,453 LOC** _(was 1,303, +150 from auto-learning pipeline)_); Contract-first for `brain.ts` (685 LOC); Direct TDD for others.
 
 **Files in scope:**
 
 | File | LOC | Strategy | Existing Tests |
 |------|-----|----------|----------------|
-| `intelligence.ts` | 1,303 | Full Feathers → decompose to 4 files | `brain-intelligence.test.ts` (828 lines) |
+| `intelligence.ts` | **~1,453** _(was 1,303)_ | Full Feathers → decompose to **5 files** _(was 4)_ | `brain-intelligence.test.ts` (828 lines) |
 | `brain.ts` | 685 | Contract-first TDD | `brain.test.ts` (exists) |
 | `learning-radar.ts` | 340 | Contract-first TDD | (none — tested implicitly via second-brain-features) |
 | `knowledge-synthesizer.ts` | 216 | Direct TDD | (none — tested implicitly via second-brain-features) |
 | `types.ts` | 256 | No refactoring needed (type definitions) | N/A |
 
-**`intelligence.ts` decomposition:**
+**`intelligence.ts` decomposition:** _(Updated 2026-03-21: 5 files, was 4. See #277)_
 
 | New File | Responsibility | Key Methods | Est. LOC |
 |----------|---------------|-------------|----------|
 | `strength-scorer.ts` | 4-component strength metric (usage, spread, success, recency) | `computeStrengths()`, `getStrengths()`, `recommend()` | ~200 |
 | `session-manager.ts` | Session lifecycle, quality scoring, archival | `lifecycle()`, `getSessionContext()`, `archiveSessions()`, `getSessionById()`, `listSessions()`, `computeSessionQuality()`, `replaySession()` | ~350 |
 | `proposal-manager.ts` | Knowledge proposal capture, confidence gating, vault promotion | `extractKnowledge()`, `resetExtracted()`, `getProposals()`, `promoteProposals()` | ~300 |
+| **`auto-learning.ts`** | **Auto-promote proposals, auto-build trigger, plan-session linking** | **`autoPromoteProposals()`, `maybeAutoBuildIntelligence()`, `getSessionByPlanId()`** | **~150** |
 | `intelligence.ts` (facade) | Orchestrates sub-modules, stats, export/import | Constructor, `buildIntelligence()`, `getStats()`, `export()`, `import()` | ~250 |
 
 **Never-nester focus:** The 6 extraction rules in `extractKnowledge()` — each rule becomes a named function: `detectRepeatedTools()`, `detectMultiFileEdits()`, `detectLongSessions()`, etc.
@@ -487,13 +489,13 @@ The decomposition plan must account for these existing files to avoid duplicatio
 | File | LOC | Has Tests | Notes |
 |------|-----|-----------|-------|
 | `admin-extra-ops.ts` | 853 | Yes | Largest ops file |
-| `planning-extra-ops.ts` | 812 | Yes | |
+| `planning-extra-ops.ts` | **~868** _(was 812, +56)_ | Yes | **Depends on Wave 1A brain decomposition** |
 | `vault-extra-ops.ts` | 682 | Yes | |
 | `admin-setup-ops.ts` | 664 | Yes | |
 | `capture-ops.ts` | 567 | Yes | |
 | `memory-extra-ops.ts` | 494 | Yes | |
 | `vault-linking-ops.ts` | 491 | No | |
-| `orchestrate-ops.ts` | 487 | Yes | |
+| `orchestrate-ops.ts` | **~573** _(was 487, +86)_ | Yes | **Depends on Wave 1A brain decomposition** |
 | `vault-sharing-ops.ts` | 431 | No | |
 | `runtime.ts` | 342 | Yes | |
 | `admin-ops.ts` | 307 | Yes | |
@@ -510,7 +512,7 @@ The decomposition plan must account for these existing files to avoid duplicatio
 | `claude-md-helpers.ts` | 218 | No |
 | `project-ops.ts` | 202 | Yes |
 | `memory-cross-project-ops.ts` | 191 | Yes |
-| `session-briefing.ts` | 175 | No |
+| `session-briefing.ts` | **~206** _(was 175, +31)_ | No |
 | `curator-extra-ops.ts` | 168 | Yes |
 | `grading-ops.ts` | 130 | Yes |
 | `types.ts` | 128 | N/A |
@@ -694,8 +696,70 @@ If E2E tests fail after a wave merge:
 |------|-------|----------|-------------|------------|
 | **0** | persistence, vault, migrations | TDD + Feathers (vault.ts) | 4 worktrees | None |
 | **1** | brain (full), planner, curator, gap-analysis, evidence-collector | Feathers (900+ LOC) + Contract-first + Direct TDD | 4 worktrees | Wave 0 |
-| **2** | runtime facades (13 files), runtime ops (28 files), transport, engine | TDD + Feathers (chat-facade) | 8+ worktrees | Wave 1 |
+| **2** | runtime facades (13 files), runtime ops (28 files), transport, engine | TDD + Feathers (chat-facade) | 8+ worktrees | Wave 1 (planning-extra-ops + orchestrate-ops wait for Wave 1A) |
 | **2.5** | governance, agency, context, loop | Contract-first / Direct TDD | 4 worktrees | Wave 1 (parallel with Wave 2) |
 | **3** | chat, flows, control, domain-packs | Contract-first / Direct TDD | 4 worktrees | Wave 2 |
-| **4** | 19 supporting modules | Direct TDD | Maximum | Wave 3 |
+| **4** | 21 supporting modules (+paths.ts, +update-check.ts) | Direct TDD | Maximum | Wave 3 |
 | **continuous** | Vault knowledge capture | Ongoing | Parallel stream | None |
+
+---
+
+## Drift Addendum (2026-03-21)
+
+Post-feature audit conducted after new features were added between plan creation and execution start. All findings documented in GitHub issue comments and new issues.
+
+### Changes Since Plan Creation
+
+| Commit | Feature | Impact |
+|--------|---------|--------|
+| `e22cda0` | Centralized `~/.soleri/` home + brain auto-learning pipeline | +150 LOC to intelligence.ts, new brain-planner coupling |
+| `6e5169a` | Bundle 17 skills with new agents | No refactoring impact |
+| `31aab23` | Creating-skills skill | No refactoring impact |
+| `e12b07b` | Automatic vault ingestion | No refactoring impact |
+| `4f3c87f` | Remove Postgres provider (#231) | Simplifies Wave 0A (persistence/) |
+
+### Wave 0 Drift
+
+| Issue | Finding | Action |
+|-------|---------|--------|
+| #244 (0A) | Postgres removal simplifies persistence — fewer constructor branches | No plan change needed |
+| #245 (0B) | No drift — exact match | No plan change needed |
+| #246 (0C) | vault.ts has 53 public methods (was 45). vault-memories.ts target +50-80 LOC | Updated decomposition targets in issue |
+| #247 (0D) | New file `vault-types.ts` (96 LOC) not in plan | Added to scope (10 files, was 9) |
+
+### Wave 1 Drift
+
+| Issue | Finding | Action |
+|-------|---------|--------|
+| #248 (1A) | intelligence.ts grew to ~1,453 LOC (+150). Auto-learning pipeline adds 3 new methods | Decomposition → 5 files (was 4). New issue #277 |
+| #248 (1A) | Bidirectional coupling: planner now writes to brain sessions | New sequencing constraint. Issue #278 |
+
+### Wave 2 Drift
+
+| Issue | Finding | Action |
+|-------|---------|--------|
+| #253 (2B) | planning-extra-ops.ts +56 LOC, orchestrate-ops.ts +86 LOC, session-briefing.ts +31 LOC | LOC updates in issue comment |
+| #253 (2B) | Brain-dependent ops must wait for Wave 1A | Sequencing constraint documented in #278 |
+
+### Wave 4 Drift
+
+| Issue | Finding | Action |
+|-------|---------|--------|
+| #258 | 2 new modules: paths.ts (111 LOC), update-check.ts (111 LOC) | Added to Wave 4 scope (21 modules, was 19) |
+
+### New Issues Created
+
+| # | Title | Wave |
+|---|-------|------|
+| #277 | Brain auto-learning module extraction | 1A |
+| #278 | Wave 2 sequencing — planner/orchestrator ops depend on brain decomposition | 2 |
+
+### Updated Parallelism Diagram (Wave 1 → Wave 2)
+
+```
+Wave 1A (brain) ─────────────► Wave 2B: planning-extra-ops.ts, orchestrate-ops.ts
+                                         (must wait for brain decomposition)
+Wave 1B (planner) ───┐
+Wave 1C (curator) ───┤── Wave 2B: all other ops files (unchanged)
+Wave 1D (planning/) ─┘
+```
