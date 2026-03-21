@@ -15,6 +15,7 @@ export type GapCategory =
   | 'clarity'
   | 'semantic-quality'
   | 'knowledge-depth'
+  | 'alternative-analysis'
   | 'tool-feasibility'
   | 'flow-alignment'
   | 'anti-pattern';
@@ -48,6 +49,7 @@ export const SEVERITY_WEIGHTS: Record<GapSeverity, number> = {
  */
 export const CATEGORY_PENALTY_CAPS: Record<string, number> = {
   clarity: 10,
+  'alternative-analysis': 15,
 };
 
 /**
