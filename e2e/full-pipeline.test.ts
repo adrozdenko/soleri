@@ -88,9 +88,9 @@ describe('E2E: full-pipeline', () => {
 
   // --- Facade Registration ---
 
-  it('should register all 15 facades (13 semantic + 2 domain)', () => {
-    expect(facades.length).toBe(15);
-    expect(handlers.size).toBe(15);
+  it('should register all 14 facades (12 semantic + 2 domain)', () => {
+    expect(facades.length).toBe(14);
+    expect(handlers.size).toBe(14);
   });
 
   it('should have correct facade names', () => {
@@ -104,7 +104,7 @@ describe('E2E: full-pipeline', () => {
     expect(names).toContain(`${AGENT_ID}_loop`);
     expect(names).toContain(`${AGENT_ID}_orchestrate`);
     expect(names).toContain(`${AGENT_ID}_control`);
-    expect(names).toContain(`${AGENT_ID}_cognee`);
+
     expect(names).toContain(`${AGENT_ID}_context`);
     expect(names).toContain(`${AGENT_ID}_agency`);
     expect(names).toContain(`${AGENT_ID}_chat`);
@@ -259,13 +259,6 @@ describe('E2E: full-pipeline', () => {
     const res = await callOp(`${AGENT_ID}_control`, 'get_identity', {
       agentId: AGENT_ID,
     });
-    expect(res.success).toBe(true);
-  });
-
-  // --- Cognee Facade (graceful degradation) ---
-
-  it('cognee: cognee_status should report availability without crashing', async () => {
-    const res = await callOp(`${AGENT_ID}_cognee`, 'cognee_status');
     expect(res.success).toBe(true);
   });
 

@@ -12,10 +12,10 @@ description: Use when encountering any bug, test failure, or unexpected behavior
 **BEFORE touching any code:**
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<bug or error message>" }
-ernesto_core op:brain_strengths
-ernesto_core op:memory_search
+YOUR_AGENT_core op:brain_strengths
+YOUR_AGENT_core op:memory_search
   params: { query: "<error or symptom>" }
 ```
 
@@ -26,7 +26,7 @@ Only if vault and web produce no answer, proceed to Phase 1.
 ## Start a Debug Loop
 
 ```
-ernesto_core op:loop_start
+YOUR_AGENT_core op:loop_start
   params: { prompt: "Debug: <bug>", mode: "custom" }
 ```
 
@@ -60,8 +60,8 @@ Form single hypothesis, test minimally (one variable at a time), verify before c
 ## Phase 5: Capture the Learning
 
 ```
-ernesto_core op:loop_complete
-ernesto_core op:capture_knowledge
+YOUR_AGENT_core op:loop_complete
+YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<bug>",
     description: "<root cause, solution, what made it hard to find>",
@@ -69,7 +69,7 @@ ernesto_core op:capture_knowledge
     category: "<domain>",
     tags: ["<relevant>"]
   }
-ernesto_core op:session_capture
+YOUR_AGENT_core op:session_capture
 ```
 
 ## Red Flags — STOP and Return to Phase 1

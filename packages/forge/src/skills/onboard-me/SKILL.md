@@ -12,59 +12,59 @@ Structured tour of everything the vault knows about this project. Decisions, pat
 ### 1. Project Overview
 
 ```
-ernesto_core op:identity
-ernesto_core op:project_get
-ernesto_core op:project_list_rules
-ernesto_core op:get_behavior_rules
+YOUR_AGENT_core op:identity
+YOUR_AGENT_core op:project_get
+YOUR_AGENT_core op:project_list_rules
+YOUR_AGENT_core op:get_behavior_rules
 ```
 
 ### 2. Knowledge Landscape
 
 ```
-ernesto_core op:vault_domains
-ernesto_core op:vault_tags
-ernesto_core op:admin_vault_size
+YOUR_AGENT_core op:vault_domains
+YOUR_AGENT_core op:vault_tags
+YOUR_AGENT_core op:admin_vault_size
 ```
 
 ### 3. Critical Knowledge
 
 ```
-ernesto_core op:search
+YOUR_AGENT_core op:search
   params: { severity: "critical" }
 ```
 
 ### 4. Key Decisions
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "architectural decision design choice" }
 ```
 
 ### 5. Strongest Patterns
 
 ```
-ernesto_core op:brain_strengths
+YOUR_AGENT_core op:brain_strengths
 ```
 
 ### 6. Anti-Patterns to Avoid
 
 ```
-ernesto_core op:search
+YOUR_AGENT_core op:search
   params: { type: "anti-pattern" }
 ```
 
 ### 7. Cross-Project Context
 
 ```
-ernesto_core op:project_linked_projects
-ernesto_core op:brain_global_patterns
+YOUR_AGENT_core op:project_linked_projects
+YOUR_AGENT_core op:brain_global_patterns
 ```
 
 ### 8. Knowledge Gaps
 
 ```
-ernesto_core op:admin_search_insights
-ernesto_core op:vault_age_report
+YOUR_AGENT_core op:admin_search_insights
+YOUR_AGENT_core op:vault_age_report
 ```
 
 ## Presenting the Onboarding

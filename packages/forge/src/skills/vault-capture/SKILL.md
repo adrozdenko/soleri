@@ -12,9 +12,9 @@ Capture patterns, anti-patterns, workflows, and principles to the vault. Capture
 ### 1. Check for Duplicates
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<knowledge title or description>" }
-ernesto_core op:curator_detect_duplicates
+YOUR_AGENT_core op:curator_detect_duplicates
 ```
 
 If similar entry exists, update it instead of creating a duplicate.
@@ -32,7 +32,7 @@ If similar entry exists, update it instead of creating a duplicate.
 ### 3. Capture
 
 ```
-ernesto_core op:capture_knowledge
+YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<clear, searchable name>",
     description: "<what it is and when it applies>",
@@ -44,7 +44,7 @@ ernesto_core op:capture_knowledge
   }
 ```
 
-For quick captures: `ernesto_core op:capture_quick params: { title: "<name>", description: "<details>" }`
+For quick captures: `YOUR_AGENT_core op:capture_quick params: { title: "<name>", description: "<details>" }`
 
 ### 4. Post-Capture Quality
 

@@ -16,11 +16,11 @@ Write implementation plans assuming the engineer has zero codebase context. Docu
 ### 1. Vault First
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<feature being planned>" }
-ernesto_core op:brain_strengths
-ernesto_core op:vault_domains
-ernesto_core op:vault_tags
+YOUR_AGENT_core op:brain_strengths
+YOUR_AGENT_core op:vault_domains
+YOUR_AGENT_core op:vault_tags
 ```
 
 ### 2. Web Search Second
@@ -34,7 +34,7 @@ Incorporate vault insights and web findings. Reference specific entries.
 ## Create a Tracked Plan
 
 ```
-ernesto_core op:create_plan
+YOUR_AGENT_core op:create_plan
   params: {
     objective: "<one-sentence goal>",
     scope: { included: [...], excluded: [...] },
@@ -45,16 +45,16 @@ ernesto_core op:create_plan
 ## Grade and Improve
 
 ```
-ernesto_core op:plan_grade params: { planId: "<id>" }
-ernesto_core op:plan_auto_improve params: { planId: "<id>" }
-ernesto_core op:plan_meets_grade params: { planId: "<id>", targetGrade: "A" }
+YOUR_AGENT_core op:plan_grade params: { planId: "<id>" }
+YOUR_AGENT_core op:plan_auto_improve params: { planId: "<id>" }
+YOUR_AGENT_core op:plan_meets_grade params: { planId: "<id>", targetGrade: "A" }
 ```
 
 Iterate with: `op:plan_iterate params: { planId: "<id>", feedback: "<improvement>" }`
 
 ## Split into Tasks
 
-After approval: `ernesto_core op:plan_split params: { planId: "<id>" }`
+After approval: `YOUR_AGENT_core op:plan_split params: { planId: "<id>" }`
 
 ## Task Granularity
 
@@ -80,7 +80,7 @@ Each step is one action (2-5 minutes): write failing test, run it, implement, ru
 ## After Approval
 
 ```
-ernesto_core op:approve_plan params: { planId: "<id>" }
+YOUR_AGENT_core op:approve_plan params: { planId: "<id>" }
 ```
 
 Offer execution choice: subagent-driven (this session) or parallel session with executing-plans.

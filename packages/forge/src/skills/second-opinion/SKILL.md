@@ -12,7 +12,7 @@ Get an informed recommendation that synthesizes vault knowledge, brain patterns,
 ### 1. Understand the Decision
 
 ```
-ernesto_core op:route_intent
+YOUR_AGENT_core op:route_intent
   params: { prompt: "<user's question>" }
 ```
 
@@ -20,20 +20,20 @@ ernesto_core op:route_intent
 
 **Vault** — previous decisions, patterns, anti-patterns:
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<the decision or options>" }
 ```
 
 **Brain** — proven approaches:
 ```
-ernesto_core op:brain_strengths
-ernesto_core op:brain_recommend
+YOUR_AGENT_core op:brain_strengths
+YOUR_AGENT_core op:brain_recommend
   params: { projectName: "<current project>" }
 ```
 
 **Cross-project** — what other projects chose:
 ```
-ernesto_core op:memory_cross_project_search
+YOUR_AGENT_core op:memory_cross_project_search
   params: { query: "<topic>", crossProject: true }
 ```
 
@@ -69,7 +69,7 @@ ernesto_core op:memory_cross_project_search
 ### 4. Capture the Decision
 
 ```
-ernesto_core op:capture_knowledge
+YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<decision title>",
     description: "<chosen option, rationale, rejected alternatives>",

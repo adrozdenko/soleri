@@ -12,9 +12,9 @@ Reconstruct full working context in seconds. Chains memory, plans, sessions, and
 ### 1. Load Active Plans
 
 ```
-ernesto_core op:plan_stats
-ernesto_core op:get_plan
-ernesto_core op:plan_list_tasks
+YOUR_AGENT_core op:plan_stats
+YOUR_AGENT_core op:get_plan
+YOUR_AGENT_core op:plan_list_tasks
   params: { planId: "<id>" }
 ```
 
@@ -23,29 +23,29 @@ Present: plan objective, task status (completed/in-progress/pending), what's nex
 ### 2. Search Recent Memory
 
 ```
-ernesto_core op:memory_search
+YOUR_AGENT_core op:memory_search
   params: { query: "session summary" }
-ernesto_core op:memory_list
-ernesto_core op:vault_recent
+YOUR_AGENT_core op:memory_list
+YOUR_AGENT_core op:vault_recent
 ```
 
 ### 3. Check Active Loops
 
 ```
-ernesto_core op:loop_is_active
-ernesto_core op:loop_status
+YOUR_AGENT_core op:loop_is_active
+YOUR_AGENT_core op:loop_status
 ```
 
 ### 4. Brain Snapshot
 
 ```
-ernesto_core op:brain_strengths
+YOUR_AGENT_core op:brain_strengths
 ```
 
 ### 5. System Health
 
 ```
-ernesto_core op:admin_health
+YOUR_AGENT_core op:admin_health
 ```
 
 ## Presenting the Resume

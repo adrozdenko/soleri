@@ -61,6 +61,9 @@ describe('E2E: vault-zettelkasten', () => {
       plansPath: join(tmpDir, 'plans.json'),
     });
 
+    // Disable auto-linking so tests control linking explicitly
+    runtime.vault.setLinkManager(runtime.linkManager, { enabled: false });
+
     const facades = createSemanticFacades(runtime, AGENT_ID);
     handlers = new Map();
     for (const facade of facades) {

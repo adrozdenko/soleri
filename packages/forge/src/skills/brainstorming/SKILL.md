@@ -15,8 +15,8 @@ Do NOT invoke any implementation skill, write any code, scaffold any project, or
 
 Complete in order:
 
-1. **Classify intent** — `ernesto_core op:route_intent`
-2. **Search vault for prior art** — `ernesto_core op:search_intelligent`
+1. **Classify intent** — `YOUR_AGENT_core op:route_intent`
+2. **Search vault for prior art** — `YOUR_AGENT_core op:search_intelligent`
 3. **Search web for existing solutions** — don't build what already exists
 4. **Explore project context** — check files, docs, recent commits
 5. **Ask clarifying questions** — one at a time, purpose/constraints/success criteria
@@ -31,7 +31,7 @@ Complete in order:
 ### Vault First
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<the feature or idea>" }
 ```
 
@@ -54,7 +54,7 @@ Present findings: "Before we design this, here's what I found..."
 **Capture the decision:**
 
 ```
-ernesto_core op:capture_knowledge
+YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<feature> — design decision",
     description: "<chosen approach, rationale, rejected alternatives>",

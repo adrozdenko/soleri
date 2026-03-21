@@ -12,7 +12,7 @@ Navigate the vault intelligently. Picks the right search strategy based on what 
 ### "Have we seen this?" / "Best practice for X"
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<question>" }
 ```
 
@@ -21,30 +21,30 @@ If results are weak, fall back to `op:search` with explicit filters (type, categ
 ### "Show me everything about X" (Exploration)
 
 ```
-ernesto_core op:vault_tags
-ernesto_core op:vault_domains
-ernesto_core op:vault_recent
+YOUR_AGENT_core op:vault_tags
+YOUR_AGENT_core op:vault_domains
+YOUR_AGENT_core op:vault_recent
 ```
 
 ### "What's stale?" / "What needs updating?"
 
 ```
-ernesto_core op:vault_age_report
+YOUR_AGENT_core op:vault_age_report
 ```
 
 ### "What do other projects do?"
 
 ```
-ernesto_core op:memory_cross_project_search
+YOUR_AGENT_core op:memory_cross_project_search
   params: { query: "<topic>", crossProject: true }
-ernesto_core op:project_linked_projects
+YOUR_AGENT_core op:project_linked_projects
 ```
 
 ### "Has brain learned about X?"
 
 ```
-ernesto_core op:brain_strengths
-ernesto_core op:brain_global_patterns
+YOUR_AGENT_core op:brain_strengths
+YOUR_AGENT_core op:brain_global_patterns
   params: { domain: "<domain>" }
 ```
 

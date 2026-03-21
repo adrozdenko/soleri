@@ -72,7 +72,7 @@ describe('E2E: cli-commands', () => {
 
   it('should create agent non-interactively with --config --yes', () => {
     const { exitCode, stdout } = runCli(
-      ['create', '--config', join(tempDir, 'agent-config.json'), '--yes'],
+      ['create', '--config', join(tempDir, 'agent-config.json'), '--yes', '--dir', tempDir],
       { cwd: tempDir },
     );
 

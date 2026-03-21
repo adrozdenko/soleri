@@ -131,7 +131,7 @@ export function createOrchestrateOps(
         'a pruned orchestration plan with gate-guarded steps.',
       auth: 'write',
       schema: z.object({
-        prompt: z.string().describe('Natural language description of what to do'),
+        prompt: z.string().optional().describe('Natural language description of what to do (or use objective)'),
         projectPath: z.string().optional().default('.').describe('Project root path'),
         // Legacy params — still accepted for backward compat
         objective: z.string().optional().describe('(Legacy) Plan objective — use prompt instead'),

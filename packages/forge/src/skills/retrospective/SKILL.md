@@ -12,24 +12,24 @@ Generate a data-driven retrospective from session data, vault captures, plan out
 ### 1. Gather Data
 
 ```
-ernesto_core op:brain_stats
-ernesto_core op:brain_stats params: { since: "<start of period>" }
-ernesto_core op:brain_strengths
-ernesto_core op:vault_recent
-ernesto_core op:memory_topics
-ernesto_core op:memory_stats
-ernesto_core op:plan_stats
-ernesto_core op:admin_search_insights
-ernesto_core op:admin_vault_analytics
+YOUR_AGENT_core op:brain_stats
+YOUR_AGENT_core op:brain_stats params: { since: "<start of period>" }
+YOUR_AGENT_core op:brain_strengths
+YOUR_AGENT_core op:vault_recent
+YOUR_AGENT_core op:memory_topics
+YOUR_AGENT_core op:memory_stats
+YOUR_AGENT_core op:plan_stats
+YOUR_AGENT_core op:admin_search_insights
+YOUR_AGENT_core op:admin_vault_analytics
 ```
 
 ### 2. Analyze Patterns
 
 ```
-ernesto_core op:vault_age_report
-ernesto_core op:curator_detect_duplicates
-ernesto_core op:curator_contradictions
-ernesto_core op:curator_health_audit
+YOUR_AGENT_core op:vault_age_report
+YOUR_AGENT_core op:curator_detect_duplicates
+YOUR_AGENT_core op:curator_contradictions
+YOUR_AGENT_core op:curator_health_audit
 ```
 
 ### 3. Present the Retrospective
@@ -62,7 +62,7 @@ Quality: X/100 | Duplicates: N | Contradictions: N | Stale: N
 ### 4. Capture the Retrospective
 
 ```
-ernesto_core op:capture_knowledge
+YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "Retrospective — [period]",
     description: "<key findings and action items>",

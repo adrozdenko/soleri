@@ -121,6 +121,7 @@ export function createCoreOps(
 
         const response: Record<string, unknown> = {
           activated: true,
+          domains: identity.domains,
           agent: {
             id: identity.id,
             name: agentName,

@@ -21,16 +21,16 @@ Fix bugs through a structured recovery workflow, then capture the root cause as 
 ### Step 1: Classify and Route
 
 ```
-ernesto_core op:route_intent
+YOUR_AGENT_core op:route_intent
   params: { prompt: "<bug description>" }
 ```
 
 ### Step 2: Check Vault First
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<error message or bug description>" }
-ernesto_core op:memory_search
+YOUR_AGENT_core op:memory_search
   params: { query: "<bug description>" }
 ```
 
@@ -43,7 +43,7 @@ If vault has no answer, search for known issues, Stack Overflow answers, GitHub 
 ### Step 4: Start Fix Loop
 
 ```
-ernesto_core op:loop_start
+YOUR_AGENT_core op:loop_start
   params: { prompt: "Fix: <bug description>", mode: "custom" }
 ```
 
@@ -59,12 +59,12 @@ If Steps 2-3 didn't produce a solution, use systematic-debugging skill:
 
 ### Step 6: Validate
 
-Run test suite. Use verification-before-completion skill. Complete loop: `ernesto_core op:loop_complete`.
+Run test suite. Use verification-before-completion skill. Complete loop: `YOUR_AGENT_core op:loop_complete`.
 
 ### Step 7: Capture the Learning
 
 ```
-ernesto_core op:capture_knowledge
+YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<bug title>",
     description: "<root cause, solution, what made it hard to find>",
@@ -74,7 +74,7 @@ ernesto_core op:capture_knowledge
   }
 ```
 
-Run `ernesto_core op:curator_detect_duplicates` to avoid redundant entries.
+Run `YOUR_AGENT_core op:curator_detect_duplicates` to avoid redundant entries.
 
 ## Exit Criteria
 

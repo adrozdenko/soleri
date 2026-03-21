@@ -121,6 +121,8 @@ describe('Agent Behavioral Tests', () => {
       vaultPath: ':memory:',
       plansPath: join(workDir, 'plans.json'),
     });
+    // Disable auto-linking so orphan detection tests are deterministic
+    runtime.vault.setLinkManager(runtime.linkManager, { enabled: false });
     const facades = createSemanticFacades(runtime, AGENT_ID);
     handlers = new Map();
     for (const facade of facades) {

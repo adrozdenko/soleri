@@ -12,22 +12,22 @@ Review code against vault patterns, anti-patterns, and project conventions. Catc
 ### 1. Understand the Code's Domain
 
 ```
-ernesto_core op:route_intent
+YOUR_AGENT_core op:route_intent
   params: { prompt: "Code review: <brief description>" }
-ernesto_core op:vault_domains
+YOUR_AGENT_core op:vault_domains
 ```
 
 ### 2. Load Relevant Patterns
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<what this code does>" }
-ernesto_core op:search
+YOUR_AGENT_core op:search
   params: { type: "anti-pattern" }
-ernesto_core op:search
+YOUR_AGENT_core op:search
   params: { severity: "critical" }
-ernesto_core op:project_list_rules
-ernesto_core op:brain_strengths
+YOUR_AGENT_core op:project_list_rules
+YOUR_AGENT_core op:brain_strengths
 ```
 
 ### 3. Review the Code

@@ -11,15 +11,15 @@ Point at code, docs, PRs, architecture decisions, or postmortems — the agent e
 
 ### 1. Understand the Source
 
-Read target content and classify: `ernesto_core op:route_intent params: { prompt: "Extract knowledge from: <source>" }`
+Read target content and classify: `YOUR_AGENT_core op:route_intent params: { prompt: "Extract knowledge from: <source>" }`
 
 ### 2. Check What's Already Known
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<topic of source material>" }
-ernesto_core op:vault_tags
-ernesto_core op:vault_domains
+YOUR_AGENT_core op:vault_tags
+YOUR_AGENT_core op:vault_domains
 ```
 
 Focus extraction on gaps — skip what vault already covers.
@@ -39,7 +39,7 @@ For each: determine category, severity, and tags.
 ### 4. Batch Capture
 
 ```
-ernesto_core op:capture_knowledge
+YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<clear, searchable name>",
     description: "<what it is, when to apply, why it matters>",

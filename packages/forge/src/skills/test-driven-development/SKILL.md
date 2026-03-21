@@ -10,9 +10,9 @@ description: Use when implementing any feature or bugfix — write failing tests
 ## Before You Start — Search First
 
 ```
-ernesto_core op:search_intelligent
+YOUR_AGENT_core op:search_intelligent
   params: { query: "<what you're about to test>" }
-ernesto_core op:brain_strengths
+YOUR_AGENT_core op:brain_strengths
 ```
 
 If vault has testing guidance for this domain, follow it.
@@ -20,7 +20,7 @@ If vault has testing guidance for this domain, follow it.
 ## Start a TDD Loop
 
 ```
-ernesto_core op:loop_start
+YOUR_AGENT_core op:loop_start
   params: { prompt: "TDD: <feature>", mode: "custom" }
 ```
 
@@ -63,8 +63,8 @@ Next failing test for next behavior.
 ## After TDD
 
 ```
-ernesto_core op:loop_complete
-ernesto_core op:capture_quick
+YOUR_AGENT_core op:loop_complete
+YOUR_AGENT_core op:capture_quick
   params: { title: "<testing pattern>", description: "<what you learned>" }
 ```
 

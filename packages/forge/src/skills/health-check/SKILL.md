@@ -12,43 +12,43 @@ Comprehensive maintenance cycle on the knowledge base. Finds stale entries, dupl
 ### 1. System Health
 
 ```
-ernesto_core op:admin_health
-ernesto_core op:admin_diagnostic
+YOUR_AGENT_core op:admin_health
+YOUR_AGENT_core op:admin_diagnostic
 ```
 
 ### 2. Vault Metrics
 
 ```
-ernesto_core op:admin_vault_size
-ernesto_core op:admin_vault_analytics
-ernesto_core op:vault_domains
-ernesto_core op:vault_tags
+YOUR_AGENT_core op:admin_vault_size
+YOUR_AGENT_core op:admin_vault_analytics
+YOUR_AGENT_core op:vault_domains
+YOUR_AGENT_core op:vault_tags
 ```
 
 ### 3. Quality Audit
 
 ```
-ernesto_core op:curator_health_audit
+YOUR_AGENT_core op:curator_health_audit
 ```
 
 ### 4. Find Duplicates
 
 ```
-ernesto_core op:curator_detect_duplicates
+YOUR_AGENT_core op:curator_detect_duplicates
 ```
 
 ### 5. Find Contradictions
 
 ```
-ernesto_core op:curator_contradictions
-ernesto_core op:curator_resolve_contradiction
+YOUR_AGENT_core op:curator_contradictions
+YOUR_AGENT_core op:curator_resolve_contradiction
   params: { contradictionId: "<id>" }
 ```
 
 ### 6. Find Stale Entries
 
 ```
-ernesto_core op:vault_age_report
+YOUR_AGENT_core op:vault_age_report
 ```
 
 Entries >30 days without updates: refresh, archive, or delete.
@@ -56,21 +56,21 @@ Entries >30 days without updates: refresh, archive, or delete.
 ### 7. Check Search Quality
 
 ```
-ernesto_core op:admin_search_insights
+YOUR_AGENT_core op:admin_search_insights
 ```
 
 ### 8. Memory Health
 
 ```
-ernesto_core op:memory_stats
-ernesto_core op:memory_deduplicate
+YOUR_AGENT_core op:memory_stats
+YOUR_AGENT_core op:memory_deduplicate
 ```
 
 ### 9. Governance Queue
 
 ```
-ernesto_core op:governance_proposals params: { action: "list" }
-ernesto_core op:governance_expire
+YOUR_AGENT_core op:governance_proposals params: { action: "list" }
+YOUR_AGENT_core op:governance_expire
 ```
 
 ### 10. Fix Everything (Optional, with user approval)

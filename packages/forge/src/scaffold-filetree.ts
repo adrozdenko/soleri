@@ -15,6 +15,8 @@ import type { AgentYaml, AgentYamlInput } from './agent-schema.js';
 import { AgentYamlSchema } from './agent-schema.js';
 import { getEngineRulesContent } from './templates/shared-rules.js';
 import { composeClaudeMd } from './compose-claude-md.js';
+import { generateSkills } from './templates/skills.js';
+import type { AgentConfig } from './types.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -308,24 +310,11 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
     writeFile(agentDir, `workflows/${wf.name}/tools.yaml`, wf.tools, filesCreated);
   }
 
-  // ─── 8. Copy bundled skills ─────────────────────────────────
-  const skillsSrcDir = join(dirname(fileURLToPath(import.meta.url)), 'skills');
-  if (existsSync(skillsSrcDir)) {
-    const skillDirs = readdirSync(skillsSrcDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name);
-    for (const skillName of skillDirs) {
-      const skillFile = join(skillsSrcDir, skillName, 'SKILL.md');
-      if (existsSync(skillFile)) {
-        mkdirSync(join(agentDir, 'skills', skillName), { recursive: true });
-        writeFile(
-          agentDir,
-          `skills/${skillName}/SKILL.md`,
-          readFileSync(skillFile, 'utf-8'),
-          filesCreated,
-        );
-      }
-    }
+  // ─── 8. Copy bundled skills (with placeholder substitution) ─
+  const skills = generateSkills({ id: config.id } as AgentConfig);
+  for (const [relativePath, content] of skills) {
+    mkdirSync(join(agentDir, dirname(relativePath)), { recursive: true });
+    writeFile(agentDir, relativePath, content, filesCreated);
   }
 
   // ─── 9. Write knowledge bundles (seed from starter packs if available) ──

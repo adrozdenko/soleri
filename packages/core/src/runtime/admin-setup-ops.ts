@@ -376,8 +376,8 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
         const globalClaudeDir = join(homedir(), '.claude');
         const commandsDir = join(globalClaudeDir, 'commands');
 
-        // Discover what's available
-        const agentDataDir = config.dataDir;
+        // Discover what's available — prefer dataDir, fall back to agentDir
+        const agentDataDir = config.dataDir ?? config.agentDir;
         const hookifySourceDirs = agentDataDir ? [join(agentDataDir, '.claude')] : [];
         const skillsSourceDirs = agentDataDir ? [join(agentDataDir, 'skills')] : [];
 

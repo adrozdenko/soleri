@@ -17,7 +17,7 @@ import type { ScopeTier, ScopeDetectionResult } from '../vault/scope-detector.js
  * Groups: capture (2), search (2).
  */
 export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, governance } = runtime;
+  const { vault, brain, governance, linkManager } = runtime;
 
   return [
     // ─── Capture ──────────────────────────────────────────────────
@@ -241,14 +241,11 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
           autoLinked: boolean;
         }> = [];
         try {
-          if (captured > 0) {
-            const { LinkManager } = await import('../vault/linking.js');
-            const lm = new LinkManager(vault.getProvider());
-
-            // Process ALL captured entries, not just the first
+          if (captured > 0 && vault.isAutoLinkEnabled()) {
+            // Use runtime's linkManager (respects vault auto-link setting)
             const capturedEntries = results.filter((r) => r.action === 'capture');
             for (const capturedEntry of capturedEntries) {
-              const suggestions = lm.suggestLinks(capturedEntry.id, AUTO_LINK_MAX + 2);
+              const suggestions = linkManager.suggestLinks(capturedEntry.id, AUTO_LINK_MAX + 2);
               const filtered = suggestions.filter(
                 (s) => s.entryId !== capturedEntry.id && !s.entryId.endsWith(capturedEntry.id),
               );
@@ -258,7 +255,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                 const aboveThreshold = s.score >= AUTO_LINK_THRESHOLD;
                 const canAutoLink = aboveThreshold && linkedForThisEntry < AUTO_LINK_MAX;
                 if (canAutoLink) {
-                  lm.addLink(capturedEntry.id, s.entryId, s.suggestedType);
+                  linkManager.addLink(capturedEntry.id, s.entryId, s.suggestedType);
                   linkedForThisEntry++;
                   autoLinkedCount++;
                 }

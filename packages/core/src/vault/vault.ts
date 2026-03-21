@@ -109,6 +109,11 @@ export class Vault {
     if (opts?.maxLinks !== undefined) this.autoLinkMaxLinks = opts.maxLinks;
   }
 
+  /** Whether auto-linking is enabled (used by capture-ops to respect the setting). */
+  isAutoLinkEnabled(): boolean {
+    return this.autoLinkEnabled && this.linkManager !== null;
+  }
+
   /**
    * Auto-link a newly added entry using FTS5 suggestions.
    * Called after seed() for each entry. Creates links for top N suggestions.

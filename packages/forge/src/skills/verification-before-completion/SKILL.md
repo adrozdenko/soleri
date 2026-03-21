@@ -32,9 +32,9 @@ If you haven't run the verification command in this message, you cannot claim it
 
 After passing verification commands:
 
-- `ernesto_core op:admin_health` — catches vault corruption, stale caches
-- `ernesto_core op:admin_diagnostic` — module status, database integrity, config validity
-- `ernesto_core op:admin_vault_analytics` — knowledge quality metrics
+- `YOUR_AGENT_core op:admin_health` — catches vault corruption, stale caches
+- `YOUR_AGENT_core op:admin_diagnostic` — module status, database integrity, config validity
+- `YOUR_AGENT_core op:admin_vault_analytics` — knowledge quality metrics
 
 If any check reports problems, address before claiming completion.
 
@@ -63,7 +63,7 @@ If any check reports problems, address before claiming completion.
 
 ## After Verification
 
-Capture session summary: `ernesto_core op:session_capture params: { summary: "<what was accomplished>" }`
+Capture session summary: `YOUR_AGENT_core op:session_capture params: { summary: "<what was accomplished>" }`
 
 ## Common Mistakes
 
