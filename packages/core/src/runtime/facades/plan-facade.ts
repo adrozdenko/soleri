@@ -9,6 +9,7 @@ import type { AgentRuntime } from '../types.js';
 import { createPlanningExtraOps } from '../planning-extra-ops.js';
 import { createGradingOps } from '../grading-ops.js';
 import { createChainOps } from '../chain-ops.js';
+import { PlanGradeRejectionError } from '../../planning/planner.js';
 
 export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { planner } = runtime;
@@ -68,11 +69,33 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           .describe('If true, immediately start execution after approval'),
       }),
       handler: async (params) => {
-        let plan = planner.approve(params.planId as string);
-        if (params.startExecution) {
-          plan = planner.startExecution(plan.id);
+        try {
+          let plan = planner.approve(params.planId as string);
+          if (params.startExecution) {
+            plan = planner.startExecution(plan.id);
+          }
+          return { approved: true, executing: plan.status === 'executing', plan };
+        } catch (err) {
+          if (err instanceof PlanGradeRejectionError) {
+            return {
+              approved: false,
+              error: 'grade_gate_rejection',
+              message: err.message,
+              grade: err.grade,
+              score: err.score,
+              minGrade: err.minGrade,
+              gaps: err.gaps.map((g) => ({
+                severity: g.severity,
+                category: g.category,
+                description: g.description,
+                recommendation: g.recommendation,
+              })),
+              recommendation:
+                'Iterate on the plan using `op:create_plan` to address the gaps above, then re-grade with `op:plan_grade` before approving.',
+            };
+          }
+          throw err;
         }
-        return { approved: true, executing: plan.status === 'executing', plan };
       },
     },
     {

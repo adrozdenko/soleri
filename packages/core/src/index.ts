@@ -294,6 +294,7 @@ export {
   LIFECYCLE_TRANSITIONS,
   NON_EXPIRING_STATUSES,
   DRIFT_WEIGHTS,
+  PlanGradeRejectionError,
 } from './planning/planner.js';
 export type {
   PlanStatus,
@@ -311,6 +312,7 @@ export type {
   ReviewEvidence,
   PlanGrade,
   PlanCheck,
+  PlannerOptions,
 } from './planning/planner.js';
 
 // ─── Plan Gap Analysis ──────────────────────────────────────────────

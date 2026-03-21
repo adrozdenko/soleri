@@ -301,14 +301,54 @@ export interface PlanStore {
   plans: Plan[];
 }
 
+/**
+ * Error thrown when a plan's grade is below the minimum required for approval.
+ */
+export class PlanGradeRejectionError extends Error {
+  readonly grade: PlanGrade;
+  readonly score: number;
+  readonly minGrade: PlanGrade;
+  readonly gaps: PlanGap[];
+
+  constructor(grade: PlanGrade, score: number, minGrade: PlanGrade, gaps: PlanGap[]) {
+    const gapSummary = gaps
+      .filter((g) => g.severity === 'critical' || g.severity === 'major')
+      .map((g) => `- [${g.severity}] ${g.description}`)
+      .join('\n');
+    super(
+      `Plan grade ${grade} (${score}/100) is below the minimum required grade ${minGrade} for approval. ` +
+        `Iterate on the plan to address gaps before approving.\n${gapSummary}`,
+    );
+    this.name = 'PlanGradeRejectionError';
+    this.grade = grade;
+    this.score = score;
+    this.minGrade = minGrade;
+    this.gaps = gaps;
+  }
+}
+
+export interface PlannerOptions {
+  gapOptions?: GapAnalysisOptions;
+  /** Minimum grade required for plan approval. Default: 'A'. Set to undefined to disable. */
+  minGradeForApproval?: PlanGrade;
+}
+
 export class Planner {
   private filePath: string;
   private store: PlanStore;
   private gapOptions?: GapAnalysisOptions;
+  private minGradeForApproval: PlanGrade;
 
-  constructor(filePath: string, gapOptions?: GapAnalysisOptions) {
+  constructor(filePath: string, options?: GapAnalysisOptions | PlannerOptions) {
     this.filePath = filePath;
-    this.gapOptions = gapOptions;
+    // Backward compat: accept GapAnalysisOptions directly or PlannerOptions
+    if (options && 'minGradeForApproval' in options) {
+      this.gapOptions = options.gapOptions;
+      this.minGradeForApproval = options.minGradeForApproval ?? 'A';
+    } else {
+      this.gapOptions = options as GapAnalysisOptions | undefined;
+      this.minGradeForApproval = 'A';
+    }
     this.store = this.load();
   }
 
@@ -427,6 +467,21 @@ export class Planner {
   approve(planId: string): Plan {
     const plan = this.get(planId);
     if (!plan) throw new Error(`Plan not found: ${planId}`);
+
+    // Grade gate: if a grade check exists, enforce minimum grade
+    const latestCheck = plan.latestCheck;
+    if (latestCheck) {
+      const minScore = this.gradeToMinScore(this.minGradeForApproval);
+      if (latestCheck.score < minScore) {
+        throw new PlanGradeRejectionError(
+          latestCheck.grade,
+          latestCheck.score,
+          this.minGradeForApproval,
+          latestCheck.gaps,
+        );
+      }
+    }
+
     this.transition(plan, 'approved');
     this.save();
     return plan;
