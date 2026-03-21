@@ -33,6 +33,8 @@ import { Telemetry } from '../telemetry/telemetry.js';
 import { ProjectRegistry } from '../project/project-registry.js';
 import { TemplateManager } from '../prompts/template-manager.js';
 import { existsSync, mkdirSync } from 'node:fs';
+import { syncAllToMarkdown } from '../vault/vault-markdown-sync.js';
+import { agentKnowledgeDir as getAgentKnowledgeDir } from '../paths.js';
 import { createLogger } from '../logging/logger.js';
 import { FeatureFlags } from './feature-flags.js';
 import { HealthRegistry } from '../health/health-registry.js';
@@ -197,6 +199,17 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   } catch {
     // Integrity check itself failed — vault may still work
   }
+
+  // Boot-time markdown sync — catch up entries without .md files (fire-and-forget)
+  const knowledgeDir = getAgentKnowledgeDir(agentId);
+  syncAllToMarkdown(vault, knowledgeDir).then(
+    (result) => {
+      if (result.synced > 0) {
+        logger.info(`Markdown sync: ${result.synced} entries synced, ${result.skipped} skipped`);
+      }
+    },
+    () => { /* best-effort — never block boot */ },
+  );
 
   return {
     config,

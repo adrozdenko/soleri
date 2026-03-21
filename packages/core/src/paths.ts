@@ -104,6 +104,11 @@ export function agentFlagsPath(agentId: string): string {
   return resolveWithFallback(newPath, legacyPath, agentId);
 }
 
+/** Agent knowledge directory for browsable markdown sync. */
+export function agentKnowledgeDir(agentId: string): string {
+  return join(agentHome(agentId), 'knowledge');
+}
+
 /** Shared vault path: ~/.soleri/vault.db (cross-agent intelligence) */
 export function sharedVaultPath(): string {
   return join(SOLERI_HOME, 'vault.db');
