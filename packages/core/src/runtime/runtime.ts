@@ -213,6 +213,12 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     () => { /* best-effort — never block boot */ },
   );
 
+  // ─── Auto-signal pipeline wiring ───────────────────────────────────
+  const learningRadar = new LearningRadar(vault, brain);
+  const operatorProfile = new OperatorProfileStore(vault);
+  learningRadar.setOperatorProfile(operatorProfile);
+  brainIntelligence.setOperatorProfile(operatorProfile);
+
   return {
     config,
     logger,
@@ -244,7 +250,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     agencyManager,
     knowledgeReview,
     linkManager,
-    learningRadar: new LearningRadar(vault, brain),
+    learningRadar,
     knowledgeSynthesizer: new KnowledgeSynthesizer(brain, llmClient),
     chainRunner: new ChainRunner(vault.getProvider()),
     jobQueue: new JobQueue(vault.getProvider()),
@@ -336,7 +342,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       });
       return pr;
     })(),
-    operatorProfile: new OperatorProfileStore(vault),
+    operatorProfile,
     persona: (() => {
       const p = loadPersona(agentId, config.persona ?? undefined);
       logger.info(`[Persona] Loaded: ${p.name} (${p.template})`);

@@ -8,6 +8,8 @@ import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 import { createMemoryExtraOps } from '../memory-extra-ops.js';
 import { createMemoryCrossProjectOps } from '../memory-cross-project-ops.js';
+import { extractFromSession } from '../../operator/operator-signals.js';
+import type { SessionCaptureData } from '../../operator/operator-signals.js';
 
 /** Truncate text to maxLen chars, appending ellipsis when truncated. */
 function truncateSummary(text: string, maxLen = 120): string {
@@ -162,6 +164,27 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           nextSteps: (params.nextSteps as string[]) ?? [],
           vaultEntriesReferenced: (params.vaultEntriesReferenced as string[]) ?? [],
         });
+        // ─── Auto-signal extraction (never breaks session_capture) ───
+        try {
+          if (runtime.operatorProfile) {
+            const sessionData: SessionCaptureData = {
+              sessionId: memory.id ?? `session-${Date.now()}`,
+              intent: (params.intent as string) ?? null,
+              capturedAt: new Date().toISOString(),
+              toolsUsed: (params.toolsUsed as string[]) ?? null,
+              filesModified: (params.filesModified as string[]) ?? null,
+              decisions: (params.decisions as string[]) ?? null,
+              summary: (params.summary as string) ?? null,
+            };
+            const signals = extractFromSession(sessionData);
+            if (signals.length > 0) {
+              runtime.operatorProfile.accumulateSignals(signals);
+            }
+          }
+        } catch {
+          // Signal extraction must never break session_capture
+        }
+
         return { captured: true, memory, message: 'Session summary saved to memory.' };
       },
     },
