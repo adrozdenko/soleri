@@ -40,15 +40,23 @@ describe('Grading Ops', () => {
     scope?: string;
     decisions?: string[];
     tasks?: Array<{ title: string; description: string }>;
+    alternatives?: Array<{ approach: string; pros: string[]; cons: string[]; rejected_reason: string }>;
   }): Promise<string> {
     const result = (await findOp('create_plan').handler({
       objective: opts.objective ?? 'Test plan objective',
       scope: opts.scope ?? 'Test scope description',
       decisions: opts.decisions,
       tasks: opts.tasks,
+      alternatives: opts.alternatives,
     })) as { plan: { id: string } };
     return result.plan.id;
   }
+
+  /** Two well-structured alternatives to satisfy pass 8. */
+  const TWO_ALTERNATIVES = [
+    { approach: 'Use alternative A', pros: ['Pro A'], cons: ['Con A'], rejected_reason: 'Not suitable for our use case' },
+    { approach: 'Use alternative B', pros: ['Pro B'], cons: ['Con B'], rejected_reason: 'Too complex for the scope' },
+  ];
 
   describe('plan_grade', () => {
     it('should grade an empty plan with very low score', async () => {
@@ -94,6 +102,7 @@ describe('Grading Ops', () => {
           { title: 'Add tests', description: 'Integration tests for cache hit/miss scenarios' },
           { title: 'Add metrics', description: 'Track and verify cache hit rate monitoring' },
         ],
+        alternatives: TWO_ALTERNATIVES,
       });
       const check = (await findOp('plan_grade').handler({ planId })) as {
         score: number;
@@ -310,6 +319,7 @@ describe('Grading Ops', () => {
           { title: 'Add tests', description: 'Integration tests for cache hit/miss scenarios' },
           { title: 'Add metrics', description: 'Track and verify cache hit rate monitoring' },
         ],
+        alternatives: TWO_ALTERNATIVES,
       });
       const result = (await findOp('plan_auto_improve').handler({ planId })) as {
         score: number;
