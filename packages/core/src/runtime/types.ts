@@ -33,6 +33,7 @@ import type { KnowledgeSynthesizer } from '../brain/knowledge-synthesizer.js';
 import type { ChainRunner } from '../flows/chain-runner.js';
 import type { JobQueue } from '../queue/job-queue.js';
 import type { PipelineRunner } from '../queue/pipeline-runner.js';
+import type { OperatorProfileStore } from '../operator/operator-profile.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -117,6 +118,8 @@ export interface AgentRuntime {
   jobQueue: JobQueue;
   /** Pipeline runner — background polling loop for job execution. */
   pipelineRunner: PipelineRunner;
+  /** Operator profile — personality learning, signals, adaptation. */
+  operatorProfile: OperatorProfileStore;
   /** Agent persona — defines character, voice, and cultural texture. */
   persona: import('../persona/types.js').PersonaConfig;
   /** Generated persona system instructions for LLM context. */

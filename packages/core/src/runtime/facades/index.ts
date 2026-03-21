@@ -19,6 +19,7 @@ import { createControlFacadeOps } from './control-facade.js';
 import { createContextFacadeOps } from './context-facade.js';
 import { createAgencyFacadeOps } from './agency-facade.js';
 import { createChatFacadeOps } from './chat-facade.js';
+import { createOperatorFacadeOps } from './operator-facade.js';
 
 export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
   const facades: FacadeConfig[] = [
@@ -84,6 +85,11 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       description:
         'Chat transport — session management, response chunking, authentication for chat-based interfaces.',
       ops: createChatFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_operator`,
+      description: 'Operator profile — personality learning, signals, adaptation.',
+      ops: createOperatorFacadeOps(runtime),
     },
   ];
 

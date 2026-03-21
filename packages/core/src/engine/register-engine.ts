@@ -35,6 +35,7 @@ import { createControlFacadeOps } from '../runtime/facades/control-facade.js';
 import { createContextFacadeOps } from '../runtime/facades/context-facade.js';
 import { createAgencyFacadeOps } from '../runtime/facades/agency-facade.js';
 import { createChatFacadeOps } from '../runtime/facades/chat-facade.js';
+import { createOperatorFacadeOps } from '../runtime/facades/operator-facade.js';
 import { createDomainFacade } from '../runtime/domain-ops.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -142,6 +143,11 @@ export const ENGINE_MODULES: ModuleDef[] = [
     suffix: 'chat',
     description: 'Chat transport — session management, response chunking, authentication.',
     createOps: createChatFacadeOps,
+  },
+  {
+    suffix: 'operator',
+    description: 'Operator profile — personality learning, signals, adaptation.',
+    createOps: createOperatorFacadeOps,
   },
 ];
 
