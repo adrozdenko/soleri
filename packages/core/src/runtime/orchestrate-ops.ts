@@ -17,6 +17,7 @@ import { FlowExecutor } from '../flows/executor.js';
 import { createDispatcher } from '../flows/dispatch-registry.js';
 import { runEpilogue } from '../flows/epilogue.js';
 import type { OrchestrationPlan, ExecutionResult } from '../flows/types.js';
+import type { ContextHealthStatus } from './context-health.js';
 import {
   detectGitHubContext,
   findMatchingMilestone,
@@ -121,6 +122,56 @@ function buildDispatch(agentId: string, runtime: AgentRuntime, facades?: FacadeC
 }
 
 // ---------------------------------------------------------------------------
+// Context health warning builder
+// ---------------------------------------------------------------------------
+
+interface HealthWarning {
+  level: string;
+  recommendation: string;
+  sessionCaptured?: boolean;
+}
+
+/**
+ * Build a context health warning if level is yellow or red.
+ * On red: auto-triggers a session capture to vault memory.
+ */
+function buildHealthWarning(
+  status: ContextHealthStatus,
+  vault: AgentRuntime['vault'],
+): HealthWarning | null {
+  if (status.level === 'green') return null;
+
+  const warning: HealthWarning = {
+    level: status.level,
+    recommendation: status.recommendation,
+  };
+
+  if (status.level === 'red') {
+    try {
+      vault.captureMemory({
+        projectPath: '.',
+        type: 'session',
+        context: 'Auto-captured by context health monitor (red level)',
+        summary: `Context fill at ${(status.estimatedFill * 100).toFixed(0)}% (${status.toolCallCount} tool calls, ~${status.estimatedTokens} tokens). Session capture recommended.`,
+        topics: ['context-health'],
+        filesModified: [],
+        toolsUsed: [],
+        intent: null,
+        decisions: [],
+        currentState: `Context health: ${status.level}`,
+        nextSteps: ['Compact context or start a new session'],
+        vaultEntriesReferenced: [],
+      });
+      warning.sessionCaptured = true;
+    } catch {
+      warning.sessionCaptured = false;
+    }
+  }
+
+  return warning;
+}
+
+// ---------------------------------------------------------------------------
 // Op factory
 // ---------------------------------------------------------------------------
 
@@ -132,7 +183,7 @@ export function createOrchestrateOps(
   runtime: AgentRuntime,
   facades?: FacadeConfig[],
 ): OpDefinition[] {
-  const { planner, brainIntelligence, vault } = runtime;
+  const { planner, brainIntelligence, vault, contextHealth } = runtime;
   const agentId = runtime.config.agentId;
 
   return [
@@ -309,6 +360,14 @@ export function createOrchestrateOps(
                   planId,
                 });
 
+          // Track execution in context health monitor
+          contextHealth.track({
+            type: 'orchestrate_execute',
+            payloadSize: JSON.stringify(executionResult).length,
+          });
+          const healthStatus = contextHealth.check();
+          const healthWarning = buildHealthWarning(healthStatus, vault);
+
           return {
             plan: { id: planId, status: 'executing' },
             session,
@@ -319,6 +378,7 @@ export function createOrchestrateOps(
               toolsCalled: executionResult.toolsCalled,
               durationMs: executionResult.durationMs,
             },
+            ...(healthWarning ? { contextHealth: healthWarning } : {}),
           };
         }
 
@@ -336,7 +396,19 @@ export function createOrchestrateOps(
                 planId,
               });
 
-        return { plan, session };
+        // Track legacy execution in context health monitor
+        contextHealth.track({
+          type: 'orchestrate_execute_legacy',
+          payloadSize: JSON.stringify(plan).length,
+        });
+        const healthStatus = contextHealth.check();
+        const healthWarning = buildHealthWarning(healthStatus, vault);
+
+        return {
+          plan,
+          session,
+          ...(healthWarning ? { contextHealth: healthWarning } : {}),
+        };
       },
     },
 

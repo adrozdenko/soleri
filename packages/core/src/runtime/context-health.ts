@@ -1,0 +1,85 @@
+/**
+ * Context Health Monitor — tracks tool call volume and estimates
+ * context window fill to recommend proactive session captures.
+ *
+ * Heuristic: tool calls x average payload size x 1.5 overhead factor.
+ * Assumes ~200K token context window for fill estimation.
+ */
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+export type HealthLevel = 'green' | 'yellow' | 'red';
+
+export interface ContextHealthStatus {
+  level: HealthLevel;
+  estimatedFill: number; // 0.0 - 1.0
+  toolCallCount: number;
+  estimatedTokens: number;
+  recommendation: string;
+}
+
+export interface TrackEvent {
+  type: string;
+  payloadSize: number;
+}
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const CONTEXT_WINDOW = 200_000;
+const OVERHEAD_FACTOR = 1.5;
+const YELLOW_THRESHOLD = 0.4;
+const RED_THRESHOLD = 0.6;
+
+const RECOMMENDATIONS: Record<HealthLevel, string> = {
+  green: 'Context usage is healthy. No action needed.',
+  yellow: 'Consider compacting context soon.',
+  red: 'Session capture recommended before context degradation.',
+};
+
+// =============================================================================
+// CONTEXT HEALTH MONITOR
+// =============================================================================
+
+export class ContextHealthMonitor {
+  private toolCallCount = 0;
+  private totalPayloadSize = 0;
+
+  /** Track a tool call event. */
+  track(event: TrackEvent): void {
+    this.toolCallCount += 1;
+    this.totalPayloadSize += event.payloadSize;
+  }
+
+  /** Check current context health status. */
+  check(): ContextHealthStatus {
+    const estimatedTokens = Math.round(
+      this.totalPayloadSize * OVERHEAD_FACTOR,
+    );
+    const estimatedFill = Math.min(estimatedTokens / CONTEXT_WINDOW, 1.0);
+    const level = this.classifyLevel(estimatedFill);
+
+    return {
+      level,
+      estimatedFill: Math.round(estimatedFill * 1000) / 1000,
+      toolCallCount: this.toolCallCount,
+      estimatedTokens,
+      recommendation: RECOMMENDATIONS[level],
+    };
+  }
+
+  /** Reset all tracking (on session clear). */
+  reset(): void {
+    this.toolCallCount = 0;
+    this.totalPayloadSize = 0;
+  }
+
+  private classifyLevel(fill: number): HealthLevel {
+    if (fill >= RED_THRESHOLD) return 'red';
+    if (fill >= YELLOW_THRESHOLD) return 'yellow';
+    return 'green';
+  }
+}

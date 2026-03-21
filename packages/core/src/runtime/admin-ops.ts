@@ -36,9 +36,9 @@ function getCoreVersion(): string {
 }
 
 /**
- * Create the 8 admin/infrastructure operations for an agent runtime.
+ * Create admin/infrastructure operations for an agent runtime.
  *
- * Groups: health (1), introspection (4), diagnostics (2), mutation (1).
+ * Groups: health (1–2), introspection (4), diagnostics (2), mutation (1).
  */
 export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, brain, brainIntelligence, llmClient, curator } = runtime;
@@ -65,6 +65,17 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           },
           curator: { initialized: curatorStatus.initialized },
         };
+      },
+    },
+
+    // ─── Context Health ────────────────────────────────────────────
+    {
+      name: 'context_health',
+      description:
+        'Check context window health — estimated fill, tool call count, and recommendation.',
+      auth: 'read',
+      handler: async () => {
+        return runtime.contextHealth.check();
       },
     },
 

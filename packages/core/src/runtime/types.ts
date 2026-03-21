@@ -34,6 +34,7 @@ import type { ChainRunner } from '../flows/chain-runner.js';
 import type { JobQueue } from '../queue/job-queue.js';
 import type { PipelineRunner } from '../queue/pipeline-runner.js';
 import type { OperatorProfileStore } from '../operator/operator-profile.js';
+import type { ContextHealthMonitor } from './context-health.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -124,6 +125,8 @@ export interface AgentRuntime {
   persona: import('../persona/types.js').PersonaConfig;
   /** Generated persona system instructions for LLM context. */
   personaInstructions: import('../persona/types.js').PersonaSystemInstructions;
+  /** Context health monitor — tracks tool call volume and context window fill. */
+  contextHealth: ContextHealthMonitor;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close the vault database connection. Call on shutdown. */

@@ -26,12 +26,13 @@ describe('createAdminOps', () => {
     ops = createAdminOps(runtime);
   }
 
-  it('should return 8 ops', () => {
+  it('should return 9 ops', () => {
     setup();
-    expect(ops).toHaveLength(8);
+    expect(ops).toHaveLength(9);
     const names = ops.map((o) => o.name);
     expect(names).toEqual([
       'admin_health',
+      'context_health',
       'admin_tool_list',
       'admin_config',
       'admin_vault_size',
@@ -266,6 +267,7 @@ describe('createAdminOps', () => {
       setup();
       const readOps = [
         'admin_health',
+        'context_health',
         'admin_tool_list',
         'admin_config',
         'admin_vault_size',
