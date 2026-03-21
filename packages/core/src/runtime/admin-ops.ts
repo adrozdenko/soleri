@@ -74,34 +74,51 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'List all available ops with descriptions and auth levels.',
       auth: 'read',
       handler: async (params) => {
+        const verbose = params.verbose === true;
         // The caller can pass in the full ops list via `_allOps` (injected by
         // the facade builder). If not provided, we return only admin ops.
         const allOps = params._allOps as
           | Array<{ name: string; description: string; auth: string }>
           | undefined;
         if (allOps) {
+          if (verbose) {
+            return {
+              count: allOps.length,
+              ops: allOps.map((op) => ({
+                name: op.name,
+                description: op.description,
+                auth: op.auth,
+              })),
+            };
+          }
+          // Group by facade prefix, truncate descriptions to 120 chars
+          const grouped: Record<string, string[]> = {};
+          for (const op of allOps) {
+            const parts = op.name.split('_');
+            const facade = parts.length > 1 ? parts[0] : 'core';
+            if (!grouped[facade]) grouped[facade] = [];
+            grouped[facade].push(op.name);
+          }
           return {
             count: allOps.length,
-            ops: allOps.map((op) => ({
-              name: op.name,
-              description: op.description,
-              auth: op.auth,
-            })),
+            ops: grouped,
           };
         }
         // Fallback — just describe admin ops
         return {
           count: 8,
-          ops: [
-            { name: 'admin_health', auth: 'read' },
-            { name: 'admin_tool_list', auth: 'read' },
-            { name: 'admin_config', auth: 'read' },
-            { name: 'admin_vault_size', auth: 'read' },
-            { name: 'admin_uptime', auth: 'read' },
-            { name: 'admin_version', auth: 'read' },
-            { name: 'admin_reset_cache', auth: 'write' },
-            { name: 'admin_diagnostic', auth: 'read' },
-          ],
+          ops: {
+            admin: [
+              'admin_health',
+              'admin_tool_list',
+              'admin_config',
+              'admin_vault_size',
+              'admin_uptime',
+              'admin_version',
+              'admin_reset_cache',
+              'admin_diagnostic',
+            ],
+          },
         };
       },
     },
