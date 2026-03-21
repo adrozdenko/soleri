@@ -138,8 +138,7 @@ export class OperatorProfileStore {
         snapshot TEXT NOT NULL DEFAULT '{}',
         changes TEXT,
         trigger TEXT NOT NULL DEFAULT 'manual',
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        FOREIGN KEY (profile_id) REFERENCES operator_profiles(id)
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
   }
