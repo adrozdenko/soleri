@@ -17,6 +17,15 @@ import { FlowExecutor } from '../flows/executor.js';
 import { createDispatcher } from '../flows/dispatch-registry.js';
 import { runEpilogue } from '../flows/epilogue.js';
 import type { OrchestrationPlan, ExecutionResult } from '../flows/types.js';
+import {
+  detectGitHubContext,
+  findMatchingMilestone,
+  findDuplicateIssue,
+  formatIssueBody,
+  createGitHubIssue,
+  updateGitHubIssueBody,
+} from '../planning/github-projection.js';
+import type { PlanMetadataForIssue, GitHubProjection } from '../planning/github-projection.js';
 
 // ---------------------------------------------------------------------------
 // Intent detection — keyword-based mapping from prompt to intent
@@ -479,6 +488,179 @@ export function createOrchestrateOps(
         }
 
         return { session: endedSession, extraction };
+      },
+    },
+
+    // ─── orchestrate_project_to_github ─────────────────────────────
+    {
+      name: 'orchestrate_project_to_github',
+      description:
+        'Project plan tasks as GitHub issues. Detects the GitHub remote, checks milestones ' +
+        'and existing issues for duplicates, creates issues with plan metadata linked, and ' +
+        'stores the projection on the plan. Opt-in: the agent suggests, user confirms.',
+      auth: 'write',
+      schema: z.object({
+        planId: z.string().describe('ID of the plan to project to GitHub'),
+        projectPath: z.string().optional().default('.').describe('Project root path for git detection'),
+        milestone: z.number().optional().describe('GitHub milestone number to assign issues to'),
+        labels: z.array(z.string()).optional().describe('Labels to apply to created issues'),
+        linkToIssue: z.number().optional().describe('Existing issue number to link plan to instead of creating new issues'),
+        dryRun: z.boolean().optional().default(false).describe('Preview what would be created without actually creating issues'),
+      }),
+      handler: async (params) => {
+        const planId = params.planId as string;
+        const projectPath = (params.projectPath as string) ?? '.';
+        const milestone = params.milestone as number | undefined;
+        const labels = (params.labels as string[]) ?? [];
+        const linkToIssue = params.linkToIssue as number | undefined;
+        const dryRun = (params.dryRun as boolean) ?? false;
+
+        // 1. Find the plan
+        const plan = planner.get(planId);
+        if (!plan) throw new Error(`Plan not found: ${planId}`);
+
+        if (plan.tasks.length === 0) {
+          throw new Error('Plan has no tasks — run plan_split first to define tasks before projecting to GitHub');
+        }
+
+        // 2. Detect GitHub context
+        const ctx = detectGitHubContext(projectPath);
+        if (!ctx) {
+          return {
+            status: 'skipped',
+            reason: 'No GitHub remote detected or gh CLI not authenticated',
+          };
+        }
+
+        const repoSlug = `${ctx.repo.owner}/${ctx.repo.repo}`;
+
+        // 3. Build plan metadata for issue body
+        const planMeta: PlanMetadataForIssue = {
+          planId: plan.id,
+          grade: plan.latestCheck?.grade ?? 'N/A',
+          score: plan.latestCheck?.score ?? 0,
+          objective: plan.objective,
+          decisions: plan.decisions,
+          tasks: plan.tasks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            description: t.description,
+            dependsOn: t.dependsOn,
+          })),
+        };
+
+        // 4. Handle "link to existing issue" flow
+        if (linkToIssue) {
+          const body = formatIssueBody(planMeta, plan.objective, plan.scope);
+          if (dryRun) {
+            return {
+              status: 'dry_run',
+              action: 'update_existing',
+              repo: repoSlug,
+              issueNumber: linkToIssue,
+              bodyPreview: body.slice(0, 500),
+            };
+          }
+
+          const updated = updateGitHubIssueBody(ctx.repo, linkToIssue, body);
+          if (!updated) {
+            return {
+              status: 'error',
+              reason: `Failed to update issue #${linkToIssue}`,
+            };
+          }
+
+          const projection: GitHubProjection = {
+            repo: repoSlug,
+            issues: [{ taskId: 'all', issueNumber: linkToIssue }],
+            projectedAt: Date.now(),
+          };
+          planner.setGitHubProjection(planId, projection);
+
+          return {
+            status: 'linked',
+            repo: repoSlug,
+            issueNumber: linkToIssue,
+            message: `Plan linked to existing issue #${linkToIssue}`,
+          };
+        }
+
+        // 5. Milestone matching
+        let milestoneNumber = milestone;
+        let milestoneMatch: string | undefined;
+        if (!milestoneNumber && ctx.milestones.length > 0 && plan.scope) {
+          const match = findMatchingMilestone(plan.scope, ctx.milestones);
+          if (match) {
+            milestoneNumber = match.number;
+            milestoneMatch = match.title;
+          }
+        }
+
+        // 6. Create issues per task (with duplicate detection)
+        const created: Array<{ taskId: string; issueNumber: number; title: string }> = [];
+        const skipped: Array<{ taskId: string; title: string; existingIssue: number; reason: string }> = [];
+        const failed: Array<{ taskId: string; title: string; reason: string }> = [];
+
+        for (const task of plan.tasks) {
+          // Duplicate detection
+          const dup = findDuplicateIssue(task.title, ctx.existingIssues);
+          if (dup) {
+            skipped.push({
+              taskId: task.id,
+              title: task.title,
+              existingIssue: dup.number,
+              reason: `Existing issue #${dup.number} "${dup.title}" looks like it covers this task`,
+            });
+            continue;
+          }
+
+          const body = formatIssueBody(planMeta, task.title, task.description);
+
+          if (dryRun) {
+            created.push({ taskId: task.id, issueNumber: 0, title: task.title });
+            continue;
+          }
+
+          const issueNumber = createGitHubIssue(ctx.repo, task.title, body, {
+            milestone: milestoneNumber,
+            labels: labels.length > 0 ? labels : undefined,
+          });
+
+          if (issueNumber) {
+            created.push({ taskId: task.id, issueNumber, title: task.title });
+          } else {
+            failed.push({ taskId: task.id, title: task.title, reason: 'gh issue create failed' });
+          }
+        }
+
+        // 7. Store projection on the plan (unless dry run)
+        if (!dryRun && created.length > 0) {
+          const projection: GitHubProjection = {
+            repo: repoSlug,
+            milestone: milestoneNumber,
+            issues: created.map((c) => ({ taskId: c.taskId, issueNumber: c.issueNumber })),
+            projectedAt: Date.now(),
+          };
+          planner.setGitHubProjection(planId, projection);
+        }
+
+        return {
+          status: dryRun ? 'dry_run' : 'projected',
+          repo: repoSlug,
+          milestone: milestoneMatch
+            ? { number: milestoneNumber, title: milestoneMatch }
+            : milestoneNumber
+              ? { number: milestoneNumber }
+              : null,
+          created,
+          skipped,
+          failed,
+          context: {
+            milestonesFound: ctx.milestones.length,
+            existingIssuesChecked: ctx.existingIssues.length,
+            labelsAvailable: ctx.labels.length,
+          },
+        };
       },
     },
   ];

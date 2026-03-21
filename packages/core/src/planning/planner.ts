@@ -290,6 +290,16 @@ export interface Plan {
     genericId?: string;
     domainId?: string;
   };
+  /** GitHub issue projection — populated by orchestrate_project_to_github. */
+  githubProjection?: {
+    repo: string;
+    milestone?: number;
+    issues: Array<{
+      taskId: string;
+      issueNumber: number;
+    }>;
+    projectedAt: number;
+  };
   /** Aggregate execution metrics — populated by reconcile() and complete(). */
   executionSummary?: ExecutionSummary;
   createdAt: number;
@@ -792,6 +802,27 @@ export class Planner {
       reviewedAt: Date.now(),
     });
 
+    plan.updatedAt = Date.now();
+    this.save();
+    return plan;
+  }
+
+  /**
+   * Set GitHub projection on a plan — records which GitHub issues
+   * were created from plan tasks.
+   */
+  setGitHubProjection(
+    planId: string,
+    projection: {
+      repo: string;
+      milestone?: number;
+      issues: Array<{ taskId: string; issueNumber: number }>;
+      projectedAt: number;
+    },
+  ): Plan {
+    const plan = this.get(planId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+    plan.githubProjection = projection;
     plan.updatedAt = Date.now();
     this.save();
     return plan;

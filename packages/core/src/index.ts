@@ -333,6 +333,32 @@ export {
 } from './planning/gap-types.js';
 export type { GapSeverity, GapCategory, PlanGap } from './planning/gap-types.js';
 
+// ─── GitHub Projection ───────────────────────────────────────────────
+export {
+  parseGitHubRemote,
+  detectGitHubRemote,
+  isGhAuthenticated,
+  detectGitHubContext,
+  findMatchingMilestone,
+  findDuplicateIssue,
+  formatIssueBody,
+  createGitHubIssue,
+  updateGitHubIssueBody,
+  listMilestones,
+  listOpenIssues,
+  listLabels,
+} from './planning/github-projection.js';
+export type {
+  GitHubRepo,
+  GitHubMilestone,
+  GitHubIssue,
+  GitHubLabel,
+  GitHubContext,
+  GitHubProjection,
+  ProjectedIssue,
+  PlanMetadataForIssue,
+} from './planning/github-projection.js';
+
 // ─── Loop ────────────────────────────────────────────────────────────
 export {
   LoopManager,

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -34,8 +34,8 @@ describe('createOrchestrateOps', () => {
     return op;
   }
 
-  it('should return 5 ops', () => {
-    expect(ops.length).toBe(5);
+  it('should return 6 ops', () => {
+    expect(ops.length).toBe(6);
   });
 
   it('should have all expected op names', () => {
@@ -45,6 +45,7 @@ describe('createOrchestrateOps', () => {
     expect(names).toContain('orchestrate_complete');
     expect(names).toContain('orchestrate_status');
     expect(names).toContain('orchestrate_quick_capture');
+    expect(names).toContain('orchestrate_project_to_github');
   });
 
   it('should assign correct auth levels', () => {
@@ -53,6 +54,7 @@ describe('createOrchestrateOps', () => {
     expect(findOp('orchestrate_complete').auth).toBe('write');
     expect(findOp('orchestrate_status').auth).toBe('read');
     expect(findOp('orchestrate_quick_capture').auth).toBe('write');
+    expect(findOp('orchestrate_project_to_github').auth).toBe('write');
   });
 
   // ─── orchestrate_plan ───────────────────────────────────────────
@@ -284,6 +286,72 @@ describe('createOrchestrateOps', () => {
       })) as { session: { planOutcome: string | null } };
 
       expect(result.session.planOutcome).toBe('abandoned');
+    });
+  });
+
+  // ─── orchestrate_project_to_github ──────────────────────────────
+
+  describe('orchestrate_project_to_github', () => {
+    it('should throw when plan not found', async () => {
+      const op = findOp('orchestrate_project_to_github');
+      await expect(
+        op.handler({ planId: 'nonexistent', projectPath: '.' }),
+      ).rejects.toThrow(/Plan not found/);
+    });
+
+    it('should throw when plan has no tasks', async () => {
+      const plan = runtime.planner.create({
+        objective: 'Empty plan',
+        scope: 'test',
+      });
+
+      const op = findOp('orchestrate_project_to_github');
+      await expect(
+        op.handler({ planId: plan.id, projectPath: '.' }),
+      ).rejects.toThrow(/no tasks/);
+    });
+
+    it('should return skipped when no GitHub remote detected', async () => {
+      // Create a plan with tasks in a temp directory (no git)
+      const plan = runtime.planner.create({
+        objective: 'Test plan',
+        scope: 'test',
+        tasks: [
+          { title: 'Task 1', description: 'Do something' },
+        ],
+      });
+
+      const op = findOp('orchestrate_project_to_github');
+      const result = (await op.handler({
+        planId: plan.id,
+        projectPath: plannerDir, // temp dir, no git
+      })) as { status: string; reason: string };
+
+      expect(result.status).toBe('skipped');
+      expect(result.reason).toContain('No GitHub remote');
+    });
+
+    it('should store githubProjection on plan via setGitHubProjection', () => {
+      const plan = runtime.planner.create({
+        objective: 'Test projection storage',
+        scope: 'test',
+        tasks: [
+          { title: 'Task 1', description: 'Do something' },
+        ],
+      });
+
+      runtime.planner.setGitHubProjection(plan.id, {
+        repo: 'owner/repo',
+        milestone: 1,
+        issues: [{ taskId: 'task-1', issueNumber: 42 }],
+        projectedAt: Date.now(),
+      });
+
+      const updated = runtime.planner.get(plan.id);
+      expect(updated?.githubProjection).toBeDefined();
+      expect(updated?.githubProjection?.repo).toBe('owner/repo');
+      expect(updated?.githubProjection?.issues).toHaveLength(1);
+      expect(updated?.githubProjection?.issues[0].issueNumber).toBe(42);
     });
   });
 });
