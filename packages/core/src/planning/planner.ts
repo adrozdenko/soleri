@@ -253,6 +253,18 @@ export interface PlanDecision {
   rationale: string;
 }
 
+/**
+ * A rejected alternative approach considered during planning.
+ * Plans with 2+ alternatives score higher — forced alternative analysis
+ * prevents tunnel vision and strengthens decision rationale.
+ */
+export interface PlanAlternative {
+  approach: string;
+  pros: string[];
+  cons: string[];
+  rejected_reason: string;
+}
+
 export interface Plan {
   id: string;
   objective: string;
@@ -276,6 +288,8 @@ export interface Plan {
   flow?: string;
   /** Target operational mode (e.g., 'build', 'review', 'fix'). */
   target_mode?: string;
+  /** Rejected alternative approaches — plans with 2+ alternatives score higher. */
+  alternatives?: PlanAlternative[];
   /** Reconciliation report — populated by reconcile(). */
   reconciliation?: ReconciliationReport;
   /** Review evidence — populated by addReview(). */
@@ -397,6 +411,7 @@ export class Planner {
     tool_chain?: string[];
     flow?: string;
     target_mode?: string;
+    alternatives?: PlanAlternative[];
     /** Start in 'brainstorming' instead of 'draft'. Default: 'draft'. */
     initialStatus?: 'brainstorming' | 'draft';
   }): Plan {
@@ -420,6 +435,7 @@ export class Planner {
       ...(params.tool_chain !== undefined && { tool_chain: params.tool_chain }),
       ...(params.flow !== undefined && { flow: params.flow }),
       ...(params.target_mode !== undefined && { target_mode: params.target_mode }),
+      ...(params.alternatives !== undefined && { alternatives: params.alternatives }),
       checks: [],
       createdAt: now,
       updatedAt: now,

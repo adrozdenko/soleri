@@ -3,7 +3,7 @@
  * Ported from Salvador MCP's plan-gap-content.ts / plan-gap-technical.ts /
  * plan-gap-domain.ts / plan-gap-antipattern.ts.
  *
- * 7 built-in passes (always run):
+ * 8 built-in passes (always run):
  *   1. Structure     — required fields present and sufficiently long
  *   2. Completeness  — measurable objectives, decision rationale, scope exclusions
  *   3. Feasibility   — overly broad scope, missing dependency awareness
@@ -11,6 +11,7 @@
  *   5. Clarity       — ambiguous language, vague criteria
  *   6. Semantic Quality — generic objectives, shallow rationale, non-concrete approach
  *   7. Knowledge Depth — BONUS: vault pattern refs, acceptance criteria, domain indicators
+ *   8. Alternative Analysis — rejected alternatives prevent tunnel vision (caps at ~85 without)
  *
  * Opt-in pass factories (registered via customPasses):
  *   - createToolFeasibilityPass  — validates tool_chain entries and ordering
@@ -18,7 +19,7 @@
  *   - createAntiPatternPass      — detects content anti-patterns and vague criteria
  */
 
-import type { Plan, PlanDecision } from './planner.js';
+import type { Plan, PlanDecision, PlanAlternative } from './planner.js';
 import type { PlanGap, GapSeverity, GapCategory } from './gap-types.js';
 import {
   generateGapId,
@@ -655,6 +656,57 @@ function analyzeKnowledgeDepth(plan: Plan): PlanGap[] {
   return gaps;
 }
 
+// ─── Pass 8: Alternative Analysis ────────────────────────────────
+
+function analyzeAlternatives(plan: Plan): PlanGap[] {
+  const gaps: PlanGap[] = [];
+  const alts = plan.alternatives;
+
+  if (!alts || alts.length === 0) {
+    gaps.push(
+      gap(
+        'major',
+        'alternative-analysis',
+        'No alternatives considered — risk of tunnel vision.',
+        'Add at least 2 rejected alternatives with pros, cons, and rejection rationale.',
+        'alternatives',
+        'no_alternatives',
+      ),
+    );
+    return gaps;
+  }
+
+  if (alts.length < 2) {
+    gaps.push(
+      gap(
+        'minor',
+        'alternative-analysis',
+        `Only ${alts.length} alternative explored — consider at least 2.`,
+        'Add another rejected alternative to strengthen decision rationale.',
+        'alternatives',
+        'few_alternatives',
+      ),
+    );
+  }
+
+  for (let i = 0; i < alts.length; i++) {
+    if (!alts[i].rejected_reason || alts[i].rejected_reason.trim().length === 0) {
+      gaps.push(
+        gap(
+          'minor',
+          'alternative-analysis',
+          `Alternative ${i + 1} ("${alts[i].approach}") missing rejection rationale.`,
+          'Explain why this alternative was rejected.',
+          `alternatives[${i}]`,
+          'missing_rejection_rationale',
+        ),
+      );
+    }
+  }
+
+  return gaps;
+}
+
 // ─── Types ───────────────────────────────────────────────────────
 
 /** A custom gap analysis pass that agents can register. */
@@ -886,7 +938,7 @@ export function createAntiPatternPass(
 // ─── Orchestrator ────────────────────────────────────────────────
 
 /**
- * Run all 6 built-in gap analysis passes on a plan, plus any custom passes.
+ * Run all 8 built-in gap analysis passes on a plan, plus any custom passes.
  * Returns a combined list of all gaps found, ordered by pass.
  *
  * @param plan - The plan to analyze
@@ -901,6 +953,7 @@ export function runGapAnalysis(plan: Plan, options?: GapAnalysisOptions): PlanGa
     ...analyzeClarity(plan),
     ...analyzeSemanticQuality(plan),
     ...analyzeKnowledgeDepth(plan),
+    ...analyzeAlternatives(plan),
   ];
 
   // Run custom passes (domain-specific checks like tool-feasibility, UI context, etc.)

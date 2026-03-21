@@ -1,10 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Planner, PlanGradeRejectionError } from '../planning/planner.js';
 import type { PlanGap } from '../planning/gap-types.js';
+import type { PlanAlternative } from '../planning/planner.js';
 import { generateGapId } from '../planning/gap-types.js';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+
+/** Two well-structured alternatives to satisfy pass 8. */
+const TWO_ALTERNATIVES: PlanAlternative[] = [
+  { approach: 'Use alternative A', pros: ['Pro A'], cons: ['Con A'], rejected_reason: 'Not suitable for our use case' },
+  { approach: 'Use alternative B', pros: ['Pro B'], cons: ['Con B'], rejected_reason: 'Too complex for the scope' },
+];
 
 describe('Planner', () => {
   let tempDir: string;
@@ -408,6 +415,7 @@ describe('Planner', () => {
           },
           { title: 'Add monitoring', description: 'Track and verify cache hit rate metrics' },
         ],
+        alternatives: TWO_ALTERNATIVES,
       });
       const check = planner.grade(plan.id);
       // Iteration 1: minor gaps are free, so well-formed plan scores very high
@@ -427,15 +435,15 @@ describe('Planner', () => {
     });
 
     it('should use severity-weighted scoring', () => {
-      // Plan with 1 critical gap (missing tasks) = -30 points
+      // Plan with 1 critical gap (missing tasks) = -30, 1 major (no alternatives) = -15
       const plan = planner.create({
         objective: 'Good objective with some detail',
         scope: 'Narrow scope that excludes nothing important',
       });
       const check = planner.grade(plan.id);
-      // No tasks = critical (-30), but also minor gaps from completeness/semantic
-      // On iteration 1, minor gaps are free, so only critical gap counts
-      expect(check.score).toBe(70); // 100 - 30 (no tasks)
+      // No tasks = critical (-30), no alternatives = major (-15)
+      // On iteration 1, minor gaps are free, so only critical + major count
+      expect(check.score).toBe(55); // 100 - 30 (no tasks) - 15 (no alternatives)
     });
 
     it('should detect duplicate task titles', () => {
@@ -503,6 +511,7 @@ describe('Planner', () => {
           },
           { title: 'Write auth tests', description: 'Integration tests for all auth endpoints' },
         ],
+        alternatives: TWO_ALTERNATIVES,
       });
 
       // Iteration 1: minor gaps free → score should be 100
@@ -586,11 +595,12 @@ describe('Planner', () => {
 
     it('should use correct grade thresholds: A+=95, A=90, B=80, C=70, D=60', () => {
       // We can verify by creating plans with known gap profiles
-      // Plan with 1 major gap = score 85 → grade B (80-89)
+      // Plan with 2 major gaps = score 70 → grade C (70-79)
       const plan = planner.create({
         objective: 'Test threshold plan with a good objective description',
         scope: 'Narrow scope, does not include anything beyond testing',
         decisions: [], // no decisions = major gap from semantic-quality (-15)
+        // no alternatives = major gap from alternative-analysis (-15)
         tasks: [
           { title: 'Task 1', description: 'First detailed task description' },
           { title: 'Task 2', description: 'Second detailed task description' },
@@ -598,9 +608,9 @@ describe('Planner', () => {
         ],
       });
       const check = planner.grade(plan.id);
-      // 1 major gap (no decisions for 3 tasks) = -15, iter 1 minor gaps free
-      expect(check.score).toBe(85);
-      expect(check.grade).toBe('B');
+      // 2 major gaps: no decisions (-15) + no alternatives (-15) = -30, iter 1 minor gaps free
+      expect(check.score).toBe(70);
+      expect(check.grade).toBe('C');
     });
   });
 

@@ -22,7 +22,7 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'plan_grade',
       description:
-        'Grade a plan using 7-pass gap analysis — severity-weighted scoring (critical=30, major=15, minor=2) with substance bonuses for vault-informed depth. Returns grade, score, gaps with recommendations, and iteration number.',
+        'Grade a plan using 8-pass gap analysis — severity-weighted scoring (critical=30, major=15, minor=2) with substance bonuses for vault-informed depth. Includes alternative analysis (pass 8) — plans without alternatives cap at ~85. Returns grade, score, gaps with recommendations, and iteration number.',
       auth: 'read',
       schema: z.object({
         planId: z.string().describe('The plan ID to grade.'),

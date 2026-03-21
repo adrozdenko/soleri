@@ -29,6 +29,17 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           .array(z.object({ title: z.string(), description: z.string() }))
           .optional()
           .default([]),
+        alternatives: z
+          .array(
+            z.object({
+              approach: z.string().describe('The alternative approach considered'),
+              pros: z.array(z.string()).describe('Advantages of this approach'),
+              cons: z.array(z.string()).describe('Disadvantages of this approach'),
+              rejected_reason: z.string().describe('Why this alternative was rejected'),
+            }),
+          )
+          .optional()
+          .describe('Rejected alternative approaches — plans with 2+ alternatives score higher'),
       }),
       handler: async (params) => {
         const plan = planner.create({
@@ -36,6 +47,7 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           scope: params.scope as string,
           decisions: (params.decisions as string[]) ?? [],
           tasks: (params.tasks as Array<{ title: string; description: string }>) ?? [],
+          alternatives: params.alternatives as Array<{ approach: string; pros: string[]; cons: string[]; rejected_reason: string }> | undefined,
         });
         return { created: true, plan };
       },
