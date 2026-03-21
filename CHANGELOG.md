@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v9.1.1 — 2026-03-21 — Bug Fixes, DX & Second Brain Foundations
+
+### Bug Fixes
+
+- **Persona override fixed** (#260) — `activate` op now consults identity manager; custom identity via `update_identity` is respected instead of reverting to boot-time persona
+- **Morph modes documented** (#261) — Error message lists all 10 available modes; `"reset"` added as built-in alias for `GENERAL-MODE`; facade schema updated
+- **Governance policy validation** (#262) — `governance_policy` set action validates `policyType` before DB insert instead of leaking SQLite NOT NULL constraint
+- **Cross-domain duplicate detection** (#263) — Curator no longer flags entries in different domains as duplicates; same-domain detection unchanged
+- **Plan auto-reconcile** (#264) — `complete_plan` auto-calls `reconcile()` when plan is in executing/validating state; updated op description
+
+### Performance
+
+- **Instant engine startup** (#279) — `soleri install` resolves absolute path to engine binary via `require.resolve()`, eliminating `npx` cold-start (~200ms vs 2-5s). Falls back to npx if not locally installed.
+
+### Features
+
+- **Centralized home directory** — All agent data now lives under `~/.soleri/{agent-id}/` with legacy fallback
+- **Brain auto-learning pipeline** — Auto-promotes high-confidence proposals (≥0.8), triggers `buildIntelligence()` every 3 plan completions, links brain sessions to plan IDs
+- **Automatic vault ingestion** — Brain indexing and Zettelkasten linking on engine startup
+- **Skills auto-sync** — Engine startup syncs skills to `~/.claude/commands/` automatically
+- **Agent branding in skills** — Skills injected with agent identity on sync
+- **17 bundled skills** — New agents ship with curated skill set
+
+### Published Packages
+
+| Package | Version |
+|---------|---------|
+| `@soleri/core` | 9.1.1 |
+| `@soleri/forge` | 9.1.1 |
+| `@soleri/cli` | 9.1.1 |
+
+### Stats
+
+- 1788 unit tests passing
+- 5 bugs fixed, 1 perf improvement, 6 features
+- Refactoring drift audit completed — design doc updated for Wave 0-4
+
+---
+
 ## v9.0.0 — 2026-03-20 — Composable Persona System & Cognee Removal
 
 ### Breaking Changes
