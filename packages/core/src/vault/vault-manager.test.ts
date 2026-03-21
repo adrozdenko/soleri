@@ -5,14 +5,13 @@ import type { SearchResult } from './vault.js';
 // ─── Mock Vault ──────────────────────────────────────────────────────
 
 vi.mock('./vault.js', () => {
-  return {
-    Vault: vi.fn().mockImplementation((path: string) => ({
-      _path: path,
-      search: vi.fn().mockReturnValue([]),
-      stats: vi.fn().mockReturnValue({ totalEntries: 0, byType: {}, byDomain: {}, bySeverity: {} }),
-      close: vi.fn(),
-    })),
-  };
+  const MockVault = function (this: Record<string, unknown>, path: string) {
+    this._path = path;
+    this.search = vi.fn().mockReturnValue([]);
+    this.stats = vi.fn().mockReturnValue({ totalEntries: 0, byType: {}, byDomain: {}, bySeverity: {} });
+    this.close = vi.fn();
+  } as unknown as typeof import('./vault.js')['Vault'];
+  return { Vault: MockVault };
 });
 
 function makeManager(weights?: Partial<Record<'agent' | 'project' | 'team', number>>): VaultManager {
