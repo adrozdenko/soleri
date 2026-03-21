@@ -24,7 +24,7 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       schema: z.object({
         objective: z.string().describe('What the plan aims to achieve'),
         scope: z.string().describe('Which parts of the codebase are affected'),
-        decisions: z.array(z.string()).optional().default([]),
+        decisions: z.array(z.union([z.string(), z.object({ decision: z.string(), rationale: z.string() })])).optional().default([]),
         tasks: z
           .array(z.object({ title: z.string(), description: z.string() }))
           .optional()
