@@ -26,6 +26,11 @@ import {
   updateGitHubIssueBody,
 } from '../planning/github-projection.js';
 import type { PlanMetadataForIssue, GitHubProjection } from '../planning/github-projection.js';
+import {
+  extractIssueNumber,
+  detectGitHubRemote as detectGitHubRemoteAsync,
+  getIssueDetails,
+} from './github-integration.js';
 
 // ---------------------------------------------------------------------------
 // Intent detection — keyword-based mapping from prompt to intent
@@ -208,14 +213,37 @@ export function createOrchestrateOps(
         );
         const tasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];
 
+        // 5b. Extract GitHub issue context if prompt references #NNN
+        let githubIssue: { owner: string; repo: string; number: number } | undefined;
+        const issueNum = extractIssueNumber(prompt);
+        if (issueNum) {
+          const remote = await detectGitHubRemoteAsync(projectPath);
+          if (remote) {
+            githubIssue = { owner: remote.owner, repo: remote.repo, number: issueNum };
+            const details = await getIssueDetails(remote.owner, remote.repo, issueNum);
+            if (details) {
+              // Enrich objective with issue context
+              const enriched = `${prompt}\n\n--- GitHub Issue #${issueNum}: ${details.title} ---\n${details.body}`;
+              decisions.unshift(`Source: GitHub issue #${issueNum} — ${details.title}`);
+              // Replace prompt for plan creation
+              Object.assign(params, { _enrichedObjective: enriched });
+            }
+          }
+        }
+
+        const planObjective = (params as Record<string, unknown>)._enrichedObjective as string | undefined ?? prompt;
+
         let legacyPlan;
         try {
           legacyPlan = planner.create({
-            objective: prompt,
+            objective: planObjective,
             scope: (params.scope as string) ?? `${intent} workflow`,
             decisions,
             tasks,
           });
+          if (legacyPlan && githubIssue) {
+            legacyPlan.githubIssue = githubIssue;
+          }
         } catch {
           // Planner creation failed — flow plan still valid
         }

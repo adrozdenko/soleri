@@ -290,6 +290,8 @@ export interface Plan {
     genericId?: string;
     domainId?: string;
   };
+  /** Source GitHub issue this plan was created from (e.g., #NNN in prompt). */
+  githubIssue?: { owner: string; repo: string; number: number };
   /** GitHub issue projection — populated by orchestrate_project_to_github. */
   githubProjection?: {
     repo: string;
