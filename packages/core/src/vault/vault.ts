@@ -1,9 +1,10 @@
 import type { PersistenceProvider } from '../persistence/types.js';
 import { SQLitePersistenceProvider } from '../persistence/sqlite-provider.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
-import { computeContentHash } from './content-hash.js';
 import type { LinkManager } from './linking.js';
 import { initializeSchema, checkFormatVersion, VAULT_FORMAT_VERSION } from './vault-schema.js';
+import * as entries from './vault-entries.js';
+import type { AutoLinkConfig } from './vault-entries.js';
 
 export interface SearchResult {
   entry: IntelligenceEntry;
@@ -82,6 +83,14 @@ export class Vault {
   /** Vault format version — delegates to vault-schema.ts constant. */
   static readonly FORMAT_VERSION = VAULT_FORMAT_VERSION;
 
+  private getAutoLinkConfig(): AutoLinkConfig {
+    return {
+      linkManager: this.linkManager,
+      enabled: this.autoLinkEnabled,
+      maxLinks: this.autoLinkMaxLinks,
+    };
+  }
+
   setLinkManager(mgr: LinkManager, opts?: { enabled?: boolean; maxLinks?: number }): void {
     this.linkManager = mgr;
     if (opts?.enabled !== undefined) this.autoLinkEnabled = opts.enabled;
@@ -93,111 +102,29 @@ export class Vault {
     return this.autoLinkEnabled && this.linkManager !== null;
   }
 
-  /**
-   * Auto-link a newly added entry using FTS5 suggestions.
-   * Called after seed() for each entry. Creates links for top N suggestions.
-   */
-  private autoLink(entryId: string): void {
-    if (!this.linkManager || !this.autoLinkEnabled) return;
-    try {
-      const suggestions = this.linkManager.suggestLinks(entryId, this.autoLinkMaxLinks);
-      for (const s of suggestions) {
-        this.linkManager.addLink(entryId, s.entryId, s.suggestedType, `auto: ${s.reason}`);
-      }
-    } catch {
-      // Auto-linking is best-effort — never block ingestion
-    }
-  }
-
   /** Backward-compatible factory. */
   static createWithSQLite(dbPath: string = ':memory:'): Vault {
     return new Vault(dbPath);
   }
 
-  seed(entries: IntelligenceEntry[]): number {
-    const sql = `
-      INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until,content_hash,tier,origin)
-      VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil,@contentHash,@tier,@origin)
-      ON CONFLICT(id) DO UPDATE SET type=excluded.type,domain=excluded.domain,title=excluded.title,severity=excluded.severity,
-        description=excluded.description,context=excluded.context,example=excluded.example,counter_example=excluded.counter_example,
-        why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,valid_from=excluded.valid_from,valid_until=excluded.valid_until,
-        content_hash=excluded.content_hash,tier=excluded.tier,origin=excluded.origin,updated_at=unixepoch()
-    `;
-    return this.provider.transaction(() => {
-      let count = 0;
-      for (const entry of entries) {
-        this.provider.run(sql, {
-          id: entry.id,
-          type: entry.type,
-          domain: entry.domain,
-          title: entry.title,
-          severity: entry.severity,
-          description: entry.description,
-          context: entry.context ?? null,
-          example: entry.example ?? null,
-          counterExample: entry.counterExample ?? null,
-          why: entry.why ?? null,
-          tags: JSON.stringify(entry.tags),
-          appliesTo: JSON.stringify(entry.appliesTo ?? []),
-          validFrom: entry.validFrom ?? null,
-          validUntil: entry.validUntil ?? null,
-          contentHash: computeContentHash(entry),
-          tier: entry.tier ?? 'agent',
-          origin: entry.origin ?? 'agent',
-        });
-        count++;
-      }
-      // Auto-link after all entries are inserted (so they can link to each other).
-      // Skip for large batches (>100) — use relink_vault for bulk imports.
-      if (entries.length <= 100) {
-        for (const entry of entries) {
-          this.autoLink(entry.id);
-        }
-      }
-      return count;
-    });
+  seed(entries_list: IntelligenceEntry[]): number {
+    return entries.seed(this.provider, entries_list, this.getAutoLinkConfig());
   }
 
   /**
    * Install a knowledge pack — seeds entries with origin:'pack' and content-hash dedup.
-   * Packs are installable domain knowledge (UX laws, design tokens, clean code rules).
-   * Unlike seed(), this forces origin:'pack' regardless of what the entry says.
    */
-  installPack(entries: IntelligenceEntry[]): { installed: number; skipped: number } {
-    let installed = 0;
-    let skipped = 0;
-    // Tag all entries with origin:'pack' and seed — seed() handles its own transaction
-    const tagged = entries.map((e) => ({ ...e, origin: 'pack' as const }));
-    const results = this.seedDedup(tagged);
-    for (const r of results) {
-      if (r.action === 'inserted') installed++;
-      else skipped++;
-    }
-    return { installed, skipped };
+  installPack(entries_list: IntelligenceEntry[]): { installed: number; skipped: number } {
+    return entries.installPack(this.provider, entries_list, this.getAutoLinkConfig());
   }
 
   /**
    * Seed entries with content-hash dedup. Returns per-entry results.
-   * Unlike seed(), skips entries whose content already exists in the vault.
    */
   seedDedup(
-    entries: IntelligenceEntry[],
+    entries_list: IntelligenceEntry[],
   ): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
-    return this.provider.transaction(() => {
-      const results: Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> =
-        [];
-      for (const entry of entries) {
-        const hash = computeContentHash(entry);
-        const existing = this.findByContentHash(hash);
-        if (existing && existing !== entry.id) {
-          results.push({ id: entry.id, action: 'duplicate', existingId: existing });
-        } else {
-          this.seed([entry]);
-          results.push({ id: entry.id, action: 'inserted' });
-        }
-      }
-      return results;
-    });
+    return entries.seedDedup(this.provider, entries_list, this.getAutoLinkConfig());
   }
 
   search(
@@ -211,64 +138,11 @@ export class Vault {
       includeExpired?: boolean;
     },
   ): SearchResult[] {
-    const limit = options?.limit ?? 10;
-    const filters: string[] = [];
-    const fp: Record<string, unknown> = {};
-    if (options?.domain) {
-      filters.push('e.domain = @domain');
-      fp.domain = options.domain;
-    }
-    if (options?.type) {
-      filters.push('e.type = @type');
-      fp.type = options.type;
-    }
-    if (options?.severity) {
-      filters.push('e.severity = @severity');
-      fp.severity = options.severity;
-    }
-    if (options?.origin) {
-      filters.push('e.origin = @origin');
-      fp.origin = options.origin;
-    }
-    if (!options?.includeExpired) {
-      const now = Math.floor(Date.now() / 1000);
-      filters.push('(e.valid_until IS NULL OR e.valid_until > @now)');
-      filters.push('(e.valid_from IS NULL OR e.valid_from <= @now)');
-      fp.now = now;
-    }
-    const wc = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
-
-    // Build FTS5 query: use OR between terms for broader matching,
-    // with title column boosted 3x for relevance ranking.
-    // FTS5 BM25 with default AND degrades with more entries because
-    // fewer documents match ALL terms simultaneously.
-    const ftsQuery = buildFtsQuery(query);
-
-    try {
-      const rows = this.provider.all<Record<string, unknown>>(
-        `SELECT e.*, bm25(entries_fts, 5.0, 10.0, 3.0, 1.0, 2.0) as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score ASC LIMIT @limit`,
-        { query: ftsQuery, limit, ...fp },
-      );
-      return rows.map(rowToSearchResult);
-    } catch {
-      // Fallback: try original query if FTS5 syntax fails
-      try {
-        const rows = this.provider.all<Record<string, unknown>>(
-          `SELECT e.*, -rank as score FROM entries_fts fts JOIN entries e ON e.rowid = fts.rowid WHERE entries_fts MATCH @query ${wc} ORDER BY score DESC LIMIT @limit`,
-          { query, limit, ...fp },
-        );
-        return rows.map(rowToSearchResult);
-      } catch {
-        return [];
-      }
-    }
+    return entries.search(this.provider, query, options);
   }
 
   get(id: string): IntelligenceEntry | null {
-    const row = this.provider.get<Record<string, unknown>>('SELECT * FROM entries WHERE id = ?', [
-      id,
-    ]);
-    return row ? rowToEntry(row) : null;
+    return entries.get(this.provider, id);
   }
 
   list(options?: {
@@ -281,63 +155,19 @@ export class Vault {
     offset?: number;
     includeExpired?: boolean;
   }): IntelligenceEntry[] {
-    const filters: string[] = [];
-    const params: Record<string, unknown> = {};
-    if (options?.domain) {
-      filters.push('domain = @domain');
-      params.domain = options.domain;
-    }
-    if (options?.type) {
-      filters.push('type = @type');
-      params.type = options.type;
-    }
-    if (options?.severity) {
-      filters.push('severity = @severity');
-      params.severity = options.severity;
-    }
-    if (options?.origin) {
-      filters.push('origin = @origin');
-      params.origin = options.origin;
-    }
-    if (options?.tags?.length) {
-      const c = options.tags.map((t, i) => {
-        params[`tag${i}`] = `%"${t}"%`;
-        return `tags LIKE @tag${i}`;
-      });
-      filters.push(`(${c.join(' OR ')})`);
-    }
-    if (!options?.includeExpired) {
-      const now = Math.floor(Date.now() / 1000);
-      filters.push('(valid_until IS NULL OR valid_until > @now)');
-      filters.push('(valid_from IS NULL OR valid_from <= @now)');
-      params.now = now;
-    }
-    const wc = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
-    const rows = this.provider.all<Record<string, unknown>>(
-      `SELECT * FROM entries ${wc} ORDER BY severity, domain, title LIMIT @limit OFFSET @offset`,
-      { ...params, limit: options?.limit ?? 50, offset: options?.offset ?? 0 },
-    );
-    return rows.map(rowToEntry);
+    return entries.list(this.provider, options);
   }
 
   stats(): VaultStats {
-    const total = this.provider.get<{ count: number }>(
-      'SELECT COUNT(*) as count FROM entries',
-    )!.count;
-    return {
-      totalEntries: total,
-      byType: gc(this.provider, 'type'),
-      byDomain: gc(this.provider, 'domain'),
-      bySeverity: gc(this.provider, 'severity'),
-    };
+    return entries.stats(this.provider);
   }
 
   add(entry: IntelligenceEntry): void {
-    this.seed([entry]);
+    entries.add(this.provider, entry, this.getAutoLinkConfig());
   }
+
   remove(id: string): boolean {
-    const deleted = this.provider.run('DELETE FROM entries WHERE id = ?', [id]).changes > 0;
-    return deleted;
+    return entries.remove(this.provider, id);
   }
 
   update(
@@ -361,94 +191,39 @@ export class Vault {
       >
     >,
   ): IntelligenceEntry | null {
-    const existing = this.get(id);
-    if (!existing) return null;
-    const merged: IntelligenceEntry = { ...existing, ...fields };
-    this.seed([merged]);
-    return this.get(id);
+    return entries.update(this.provider, id, fields, this.getAutoLinkConfig());
   }
 
   setTemporal(id: string, validFrom?: number, validUntil?: number): boolean {
-    const sets: string[] = [];
-    const params: Record<string, unknown> = { id };
-    if (validFrom !== undefined) {
-      sets.push('valid_from = @validFrom');
-      params.validFrom = validFrom;
-    }
-    if (validUntil !== undefined) {
-      sets.push('valid_until = @validUntil');
-      params.validUntil = validUntil;
-    }
-    if (sets.length === 0) return false;
-    sets.push('updated_at = unixepoch()');
-    return (
-      this.provider.run(`UPDATE entries SET ${sets.join(', ')} WHERE id = @id`, params).changes > 0
-    );
+    return entries.setTemporal(this.provider, id, validFrom, validUntil);
   }
 
   findExpiring(withinDays: number): IntelligenceEntry[] {
-    const now = Math.floor(Date.now() / 1000);
-    const cutoff = now + withinDays * 86400;
-    const rows = this.provider.all<Record<string, unknown>>(
-      'SELECT * FROM entries WHERE valid_until IS NOT NULL AND valid_until > @now AND valid_until <= @cutoff ORDER BY valid_until ASC',
-      { now, cutoff },
-    );
-    return rows.map(rowToEntry);
+    return entries.findExpiring(this.provider, withinDays);
   }
 
   findExpired(limit: number = 50): IntelligenceEntry[] {
-    const now = Math.floor(Date.now() / 1000);
-    const rows = this.provider.all<Record<string, unknown>>(
-      'SELECT * FROM entries WHERE valid_until IS NOT NULL AND valid_until <= @now ORDER BY valid_until DESC LIMIT @limit',
-      { now, limit },
-    );
-    return rows.map(rowToEntry);
+    return entries.findExpired(this.provider, limit);
   }
 
   bulkRemove(ids: string[]): number {
-    return this.provider.transaction(() => {
-      let count = 0;
-      for (const id of ids) {
-        count += this.provider.run('DELETE FROM entries WHERE id = ?', [id]).changes;
-      }
-      return count;
-    });
+    return entries.bulkRemove(this.provider, ids);
   }
 
   getTags(): Array<{ tag: string; count: number }> {
-    const rows = this.provider.all<{ tags: string }>('SELECT tags FROM entries');
-    const counts = new Map<string, number>();
-    for (const row of rows) {
-      const tags: string[] = JSON.parse(row.tags || '[]');
-      for (const tag of tags) {
-        counts.set(tag, (counts.get(tag) ?? 0) + 1);
-      }
-    }
-    return Array.from(counts.entries())
-      .map(([tag, count]) => ({ tag, count }))
-      .sort((a, b) => b.count - a.count);
+    return entries.getTags(this.provider);
   }
 
   getDomains(): Array<{ domain: string; count: number }> {
-    return this.provider.all<{ domain: string; count: number }>(
-      'SELECT domain, COUNT(*) as count FROM entries GROUP BY domain ORDER BY count DESC',
-    );
+    return entries.getDomains(this.provider);
   }
 
   getRecent(limit: number = 20): IntelligenceEntry[] {
-    const rows = this.provider.all<Record<string, unknown>>(
-      'SELECT * FROM entries ORDER BY updated_at DESC LIMIT ?',
-      [limit],
-    );
-    return rows.map(rowToEntry);
+    return entries.getRecent(this.provider, limit);
   }
 
   exportAll(): { entries: IntelligenceEntry[]; exportedAt: number; count: number } {
-    const rows = this.provider.all<Record<string, unknown>>(
-      'SELECT * FROM entries ORDER BY domain, title',
-    );
-    const entries = rows.map(rowToEntry);
-    return { entries, exportedAt: Math.floor(Date.now() / 1000), count: entries.length };
+    return entries.exportAll(this.provider);
   }
 
   getAgeReport(): {
@@ -457,38 +232,7 @@ export class Vault {
     oldestTimestamp: number | null;
     newestTimestamp: number | null;
   } {
-    const rows = this.provider.all<{ created_at: number; updated_at: number }>(
-      'SELECT created_at, updated_at FROM entries',
-    );
-    const now = Math.floor(Date.now() / 1000);
-    const bucketDefs = [
-      { label: 'today', minDays: 0, maxDays: 1 },
-      { label: 'this_week', minDays: 1, maxDays: 7 },
-      { label: 'this_month', minDays: 7, maxDays: 30 },
-      { label: 'this_quarter', minDays: 30, maxDays: 90 },
-      { label: 'older', minDays: 90, maxDays: Infinity },
-    ];
-    const counts = new Array(bucketDefs.length).fill(0) as number[];
-    let oldest: number | null = null;
-    let newest: number | null = null;
-    for (const row of rows) {
-      const ts = row.created_at;
-      if (oldest === null || ts < oldest) oldest = ts;
-      if (newest === null || ts > newest) newest = ts;
-      const ageDays = (now - ts) / 86400;
-      for (let i = 0; i < bucketDefs.length; i++) {
-        if (ageDays >= bucketDefs[i].minDays && ageDays < bucketDefs[i].maxDays) {
-          counts[i]++;
-          break;
-        }
-      }
-    }
-    return {
-      total: rows.length,
-      buckets: bucketDefs.map((b, i) => Object.assign({}, b, { count: counts[i] })),
-      oldestTimestamp: oldest,
-      newestTimestamp: newest,
-    };
+    return entries.getAgeReport(this.provider);
   }
 
   registerProject(path: string, name?: string): ProjectInfo {
@@ -836,13 +580,12 @@ export class Vault {
 
   /**
    * Rebuild the FTS5 index for the entries table.
-   * Useful after bulk operations or if the index gets out of sync.
    */
   rebuildFtsIndex(): void {
     try {
       this.provider.run("INSERT INTO entries_fts(entries_fts) VALUES('rebuild')");
     } catch {
-      // Graceful degradation — FTS rebuild failed (e.g. table doesn't exist yet)
+      // Graceful degradation — FTS rebuild failed
     }
   }
 
@@ -850,56 +593,14 @@ export class Vault {
    * Archive entries older than N days. Moves them to entries_archive.
    */
   archive(options: { olderThanDays: number; reason?: string }): { archived: number } {
-    const cutoff = Math.floor(Date.now() / 1000) - options.olderThanDays * 86400;
-    const reason = options.reason ?? `Archived: older than ${options.olderThanDays} days`;
-
-    return this.provider.transaction(() => {
-      // Find candidates
-      const candidates = this.provider.all<{ id: string }>(
-        'SELECT id FROM entries WHERE updated_at < ?',
-        [cutoff],
-      );
-
-      if (candidates.length === 0) return { archived: 0 };
-
-      let archived = 0;
-      for (const { id } of candidates) {
-        // Copy to archive
-        this.provider.run(
-          `INSERT OR IGNORE INTO entries_archive (id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until, archive_reason)
-           SELECT id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until, ?
-           FROM entries WHERE id = ?`,
-          [reason, id],
-        );
-        // Delete from active
-        const result = this.provider.run('DELETE FROM entries WHERE id = ?', [id]);
-        archived += result.changes;
-      }
-
-      return { archived };
-    });
+    return entries.archive(this.provider, options);
   }
 
   /**
    * Restore an archived entry back to the active table.
    */
   restore(id: string): boolean {
-    return this.provider.transaction(() => {
-      const archived = this.provider.get<Record<string, unknown>>(
-        'SELECT * FROM entries_archive WHERE id = ?',
-        [id],
-      );
-      if (!archived) return false;
-
-      this.provider.run(
-        `INSERT OR REPLACE INTO entries (id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until)
-         SELECT id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until
-         FROM entries_archive WHERE id = ?`,
-        [id],
-      );
-      this.provider.run('DELETE FROM entries_archive WHERE id = ?', [id]);
-      return true;
-    });
+    return entries.restore(this.provider, id);
   }
 
   /**
@@ -910,7 +611,6 @@ export class Vault {
     let analyzed = false;
     let ftsRebuilt = false;
 
-    // VACUUM only for SQLite
     if (this.provider.backend === 'sqlite') {
       try {
         this.provider.execSql('VACUUM');
@@ -961,91 +661,17 @@ export class Vault {
 
   /** Check if an entry with this content hash already exists. Returns the existing ID or null. */
   findByContentHash(hash: string): string | null {
-    const row = this.provider.get<{ id: string }>(
-      'SELECT id FROM entries WHERE content_hash = @hash',
-      { hash },
-    );
-    return row?.id ?? null;
+    return entries.findByContentHash(this.provider, hash);
   }
 
   /** Get content hash stats for dedup reporting. */
   contentHashStats(): { total: number; hashed: number; uniqueHashes: number } {
-    const total = this.provider.get<{ c: number }>('SELECT COUNT(*) as c FROM entries')?.c ?? 0;
-    const hashed =
-      this.provider.get<{ c: number }>(
-        'SELECT COUNT(*) as c FROM entries WHERE content_hash IS NOT NULL',
-      )?.c ?? 0;
-    const uniqueHashes =
-      this.provider.get<{ c: number }>(
-        'SELECT COUNT(DISTINCT content_hash) as c FROM entries WHERE content_hash IS NOT NULL',
-      )?.c ?? 0;
-    return { total, hashed, uniqueHashes };
+    return entries.contentHashStats(this.provider);
   }
 
   close(): void {
     this.provider.close();
   }
-}
-
-function gc(provider: PersistenceProvider, col: string): Record<string, number> {
-  const rows = provider.all<{ key: string; count: number }>(
-    `SELECT ${col} as key, COUNT(*) as count FROM entries GROUP BY ${col}`,
-  );
-  return Object.fromEntries(rows.map((r) => [r.key, r.count]));
-}
-
-function rowToEntry(row: Record<string, unknown>): IntelligenceEntry {
-  return {
-    id: row.id as string,
-    type: row.type as IntelligenceEntry['type'],
-    domain: row.domain as IntelligenceEntry['domain'],
-    title: row.title as string,
-    severity: row.severity as IntelligenceEntry['severity'],
-    description: row.description as string,
-    context: (row.context as string) ?? undefined,
-    example: (row.example as string) ?? undefined,
-    counterExample: (row.counter_example as string) ?? undefined,
-    why: (row.why as string) ?? undefined,
-    tags: JSON.parse((row.tags as string) || '[]'),
-    appliesTo: JSON.parse((row.applies_to as string) || '[]'),
-    tier: (row.tier as IntelligenceEntry['tier']) ?? undefined,
-    origin: (row.origin as IntelligenceEntry['origin']) ?? undefined,
-    validFrom: (row.valid_from as number) ?? undefined,
-    validUntil: (row.valid_until as number) ?? undefined,
-  };
-}
-
-function rowToSearchResult(row: Record<string, unknown>): SearchResult {
-  // bm25() returns negative scores (lower = better), normalize to positive
-  const rawScore = row.score as number;
-  const score = rawScore < 0 ? -rawScore : rawScore;
-  return { entry: rowToEntry(row), score };
-}
-
-/**
- * Build an FTS5 query from natural language input.
- *
- * Converts "React render performance memo" to:
- *   {title}: (react OR render OR performance OR memo) OR (react OR render OR performance OR memo)
- *
- * Uses OR matching (not AND) so results include partial matches.
- * FTS5 BM25 ranks documents with more matching terms higher.
- * Title column is boosted via bm25() weights in the SQL query.
- */
-function buildFtsQuery(query: string): string {
-  const terms = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((t) => t.length >= 2)
-    .map((t) => t.replace(/[^a-z0-9]/g, ''))
-    .filter(Boolean);
-
-  if (terms.length === 0) return query;
-  if (terms.length === 1) return terms[0];
-
-  // Use OR to match any term — BM25 ranks by how many terms match
-  const orTerms = terms.join(' OR ');
-  return orTerms;
 }
 
 function rowToMemory(row: Record<string, unknown>): Memory {
