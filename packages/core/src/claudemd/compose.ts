@@ -42,7 +42,7 @@ function renderSessionStart(agent: AgentMeta): string {
     '### Session Start Protocol',
     '',
     'On EVERY new session:',
-    `1. Register project: \`${agent.id}_core op:register params:{ projectPath: "." }\``,
+    `1. Start session: \`${agent.id}_core op:session_start params:{ projectPath: "." }\``,
     '2. Check activation response for `persistence.status`, `vault.connected`',
     `3. Check for plans in \`executing\` state — remind user to reconcile`,
   ].join('\n');

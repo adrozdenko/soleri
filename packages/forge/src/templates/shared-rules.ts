@@ -339,7 +339,7 @@ const ENGINE_RULES_LINES: string[] = [
   '### Session Start Protocol',
   '',
   'Do NOT call tools automatically on session start — just greet the user in character.',
-  'Call `op:register` only when you need project context for a task (not on every message).',
+  'Call `op:session_start` only when you need project context for a task (not on every message).',
   'Call `op:activate` only when checking evolved capabilities or recovering session state.',
   '',
   '### Context Compaction',

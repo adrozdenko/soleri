@@ -14,11 +14,11 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
   const { vault, governance, projectRegistry } = runtime;
 
   return [
-    // ─── Register (inline from core-ops.ts) ─────────────────────
+    // ─── Session Start (inline from core-ops.ts) ─────────────────────
     {
-      name: 'register',
+      name: 'session_start',
       description:
-        'Register a project for this session. Call on every new session to track usage and get context.',
+        'Start a session for this project. Call on every new session to track usage and get context.',
       auth: 'write',
       schema: z.object({
         projectPath: z.string().optional().default('.'),

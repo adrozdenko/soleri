@@ -22,10 +22,10 @@ The more you capture, the smarter the next session gets.
 On session start, call:
 
 ```
-{agent}_core op:register params:{ projectPath: "." }
+{agent}_core op:session_start params:{ projectPath: "." }
 ```
 
-This registers the project and loads context. The agent responds with a **session briefing** — recent captures, active plans, brain recommendations, and health warnings.
+This starts a session for the project and loads context. The agent responds with a **session briefing** — recent captures, active plans, brain recommendations, and health warnings.
 
 If the briefing is empty, you're in cold start. Start capturing.
 

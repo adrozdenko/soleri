@@ -47,7 +47,7 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('search');
     expect(names).toContain('vault_stats');
     expect(names).toContain('list_all');
-    expect(names).toContain('register');
+    expect(names).toContain('session_start');
     // Memory
     expect(names).toContain('memory_search');
     expect(names).toContain('memory_capture');
@@ -328,8 +328,8 @@ describe('createSemanticFacades', () => {
     expect(names).toContain('intake_preview');
   });
 
-  it('register should include governance summary', async () => {
-    const result = (await findOp('register').handler({ projectPath: '/tmp/test-gov-reg' })) as {
+  it('session_start should include governance summary', async () => {
+    const result = (await findOp('session_start').handler({ projectPath: '/tmp/test-gov-reg' })) as {
       governance: { pendingProposals: number; quotaPercent: number; isQuotaWarning: boolean };
     };
     expect(typeof result.governance.pendingProposals).toBe('number');

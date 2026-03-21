@@ -7,7 +7,7 @@
 
 ## Session Start Protocol
 On every new session:
-1. Register project: `op:register params:{ projectPath: "." }`
+1. Start session: `op:session_start params:{ projectPath: "." }`
 2. Check for plans in `executing`/`reconciling` state and remind
 3. Greet the user in character
 

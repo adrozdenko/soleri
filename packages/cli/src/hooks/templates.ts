@@ -119,7 +119,7 @@ function generateClaudeCodeSettings(dir?: string): Record<string, string> {
             hooks: [
               {
                 type: 'command',
-                command: `echo "[${agentId}] session started — register project: ${agentId}_core op:register params:{ projectPath: \\".\\" }" && echo "Check for active plans: ${agentId}_core op:get_plan"`,
+                command: `echo "[${agentId}] session started — register project: ${agentId}_core op:session_start params:{ projectPath: \\".\\" }" && echo "Check for active plans: ${agentId}_core op:get_plan"`,
               },
             ],
           },

@@ -64,7 +64,7 @@ describe('composeCLAUDEmd', () => {
   it('includes session start protocol', () => {
     const result = composeCLAUDEmd(testAgent, testFacades);
     expect(result).toContain('Session Start Protocol');
-    expect(result).toContain('test-agent_core op:register');
+    expect(result).toContain('test-agent_core op:session_start');
   });
 
   it('generates facade reference table', () => {

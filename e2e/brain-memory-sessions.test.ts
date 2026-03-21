@@ -404,7 +404,7 @@ describe('E2E: brain-memory-sessions', () => {
 
     it('memory_cross_project_search should find memories across projects', async () => {
       // Register a project first
-      const regRes = await callOp(`${AGENT_ID}_orchestrate`, 'register', {
+      const regRes = await callOp(`${AGENT_ID}_orchestrate`, 'session_start', {
         projectPath: '/tmp/project-alpha',
         name: 'Project Alpha',
       });

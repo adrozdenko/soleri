@@ -66,7 +66,7 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     // ─── Session Start ─────────────────────────────────────
     '## Session Start',
     '',
-    `On every new session: ${bt}${toolPrefix}_orchestrate op:register params:{ projectPath: "." }${bt}`,
+    `On every new session: ${bt}${toolPrefix}_orchestrate op:session_start params:{ projectPath: "." }${bt}`,
     '',
   ];
 
@@ -77,7 +77,7 @@ export function generateClaudeMdTemplate(config: AgentConfig): string {
     '',
     '| Facade | Key Ops |',
     '|--------|---------|',
-    `| ${bt}${toolPrefix}_core${bt} | ${bt}health${bt}, ${bt}search${bt}, ${bt}identity${bt}, ${bt}register${bt}, ${bt}activate${bt} |`,
+    `| ${bt}${toolPrefix}_core${bt} | ${bt}health${bt}, ${bt}search${bt}, ${bt}identity${bt}, ${bt}session_start${bt}, ${bt}activate${bt} |`,
   );
 
   // Domain facades — one row per domain

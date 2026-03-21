@@ -174,8 +174,8 @@ export function createCoreOps(
       },
     },
     {
-      name: 'register',
-      description: 'Register a project for context tracking.',
+      name: 'session_start',
+      description: 'Start a session for a project — tracks usage and loads context.',
       auth: 'write',
       schema: z.object({
         projectPath: z.string().default('.'),

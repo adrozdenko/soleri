@@ -332,8 +332,8 @@ describe('E2E: curator-brain-governance', () => {
 
   // ─── Orchestrate Tests ─────────────────────────────────────────────
 
-  it('orchestrate: register project', async () => {
-    const res = await callOp(`${AGENT_ID}_orchestrate`, 'register', {
+  it('orchestrate: session_start project', async () => {
+    const res = await callOp(`${AGENT_ID}_orchestrate`, 'session_start', {
       projectPath: '/tmp/e2e-project',
       name: 'E2E Test Project',
     });

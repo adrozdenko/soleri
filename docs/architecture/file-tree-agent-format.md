@@ -308,7 +308,7 @@ CLAUDE.md is **never manually edited**. It is composed from:
 
 ## Session Start
 
-On every new session: `{id}_core op:register params:{ projectPath: "." }`
+On every new session: `{id}_core op:session_start params:{ projectPath: "." }`
 
 ## Essential Tools
 | Facade | Key Ops |
