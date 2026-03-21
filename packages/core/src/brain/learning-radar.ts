@@ -13,6 +13,8 @@
 import type { Vault } from '../vault/vault.js';
 import type { PersistenceProvider } from '../persistence/types.js';
 import type { Brain } from './brain.js';
+import type { OperatorProfileStore } from '../operator/operator-profile.js';
+import { extractFromRadar } from '../operator/operator-signals.js';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -97,12 +99,18 @@ export class LearningRadar {
   private provider: PersistenceProvider;
   private vault: Vault;
   private brain: Brain;
+  private operatorProfile: OperatorProfileStore | null = null;
 
   constructor(vault: Vault, brain: Brain) {
     this.vault = vault;
     this.brain = brain;
     this.provider = vault.getProvider();
     this.initializeTable();
+  }
+
+  /** Wire operator profile for automatic signal extraction. */
+  setOperatorProfile(profile: OperatorProfileStore): void {
+    this.operatorProfile = profile;
   }
 
   private initializeTable(): void {
@@ -163,7 +171,20 @@ export class LearningRadar {
       this.captureCandidate(id, signal.title, signal.description, suggestedType, signal.type);
     }
 
-    return this.getCandidate(id);
+    // ─── Auto-signal extraction (never breaks radar) ───
+    const candidate = this.getCandidate(id);
+    try {
+      if (this.operatorProfile && candidate) {
+        const signals = extractFromRadar(candidate);
+        if (signals.length > 0) {
+          this.operatorProfile.accumulateSignals(signals);
+        }
+      }
+    } catch {
+      // Signal extraction must never break radar analysis
+    }
+
+    return candidate;
   }
 
   /**
