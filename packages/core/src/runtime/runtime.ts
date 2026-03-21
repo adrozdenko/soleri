@@ -58,6 +58,7 @@ import { classifyEntry } from '../curator/classifier.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 import { loadPersona } from '../persona/loader.js';
 import { generatePersonaInstructions } from '../persona/prompt-generator.js';
+import { ContextHealthMonitor } from './context-health.js';
 
 /**
  * Create a fully initialized agent runtime.
@@ -343,6 +344,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       const p = loadPersona(agentId, config.persona ?? undefined);
       return generatePersonaInstructions(p);
     })(),
+    contextHealth: new ContextHealthMonitor(),
     createdAt: Date.now(),
     close: () => {
       vaultManager.close();
