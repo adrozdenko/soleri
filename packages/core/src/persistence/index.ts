@@ -5,4 +5,4 @@ export type {
   PersistenceConfig,
   FtsSearchOptions,
 } from './types.js';
-export { SQLitePersistenceProvider } from './sqlite-provider.js';
+export { SQLitePersistenceProvider, applyPerformancePragmas } from './sqlite-provider.js';

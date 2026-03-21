@@ -15,6 +15,13 @@ import type {
   FtsSearchOptions,
 } from './types.js';
 
+/** Apply performance-tuning PRAGMAs for file-backed SQLite databases. */
+export function applyPerformancePragmas(db: Database.Database): void {
+  db.pragma('cache_size = -64000'); // 64MB
+  db.pragma('temp_store = MEMORY');
+  db.pragma('mmap_size = 268435456'); // 256MB
+}
+
 export class SQLitePersistenceProvider implements PersistenceProvider {
   readonly backend = 'sqlite' as const;
   private db: Database.Database;
@@ -22,11 +29,7 @@ export class SQLitePersistenceProvider implements PersistenceProvider {
   constructor(path: string = ':memory:') {
     if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
     this.db = new Database(path);
-    if (path !== ':memory:') {
-      this.db.pragma('cache_size = -64000'); // 64MB
-      this.db.pragma('temp_store = MEMORY');
-      this.db.pragma('mmap_size = 268435456'); // 256MB
-    }
+    if (path !== ':memory:') applyPerformancePragmas(this.db);
   }
 
   execSql(sql: string): void {
