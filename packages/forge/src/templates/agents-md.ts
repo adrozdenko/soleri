@@ -61,13 +61,13 @@ When the user asks about your capabilities or you need to check what you've lear
 ## Session Start
 
 Do NOT call any tools automatically on session start. Just greet the user in character.
-Only call ${bt}${tp}_orchestrate op:register${bt} or ${bt}${tp}_core op:activate${bt} when you actually need project context or capability discovery — not on every message.
+Only call ${bt}${tp}_orchestrate op:session_start${bt} or ${bt}${tp}_core op:activate${bt} when you actually need project context or capability discovery — not on every message.
 
 ## Essential Tools
 
 | Facade | Key Ops |
 |--------|---------|
-| ${bt}${tp}_core${bt} | ${bt}health${bt}, ${bt}search${bt}, ${bt}identity${bt}, ${bt}register${bt}, ${bt}activate${bt} |
+| ${bt}${tp}_core${bt} | ${bt}health${bt}, ${bt}search${bt}, ${bt}identity${bt}, ${bt}session_start${bt}, ${bt}activate${bt} |
 ${domainRows}
 | ${bt}${tp}_vault${bt} | ${bt}search_intelligent${bt}, ${bt}capture_knowledge${bt}, ${bt}capture_quick${bt}, ${bt}search_feedback${bt} |
 | ${bt}${tp}_vault${bt} (keeper) | ${bt}knowledge_audit${bt}, ${bt}knowledge_health${bt}, ${bt}knowledge_merge${bt}, ${bt}knowledge_reorganize${bt} |

@@ -132,7 +132,7 @@ export function composeIntegrationSection(
   const lines: string[] = [
     `## ${name} Integration`,
     '',
-    `On session start: \`${agentId}_core op:register params:{ projectPath: "." }\``,
+    `On session start: \`${agentId}_core op:session_start params:{ projectPath: "." }\``,
     '',
     '### Essential Tools',
     '',

@@ -139,7 +139,7 @@ function composeSessionStart(agent: AgentYaml): string {
   return [
     '## Session Start',
     '',
-    `On every new session: \`${agent.id}_core op:register params:{ projectPath: "." }\``,
+    `On every new session: \`${agent.id}_core op:session_start params:{ projectPath: "." }\``,
   ].join('\n');
 }
 
