@@ -1,7 +1,7 @@
 {
   "name": "full",
   "version": "1.0.0",
-  "description": "Complete quality suite — all 8 hooks",
+  "description": "Complete quality suite — all hooks",
   "hooks": [
     "no-any-types",
     "no-console-log",
@@ -12,5 +12,5 @@
     "ux-touch-targets",
     "no-ai-attribution"
   ],
-  "composedFrom": ["typescript-safety", "a11y", "css-discipline", "clean-commits"]
+  "composedFrom": ["typescript-safety", "a11y", "css-discipline", "clean-commits", "yolo-safety"]
 }

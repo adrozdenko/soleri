@@ -1,0 +1,23 @@
+{
+  "name": "yolo-safety",
+  "version": "1.0.0",
+  "description": "Anti-deletion guardrail for YOLO mode — intercepts destructive commands, stages files for review",
+  "hooks": [],
+  "scripts": [
+    {
+      "name": "anti-deletion",
+      "file": "anti-deletion.sh",
+      "targetDir": "hooks"
+    }
+  ],
+  "lifecycleHooks": [
+    {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "type": "command",
+      "command": "bash ~/.claude/hooks/anti-deletion.sh",
+      "timeout": 10,
+      "statusMessage": "Checking for destructive commands..."
+    }
+  ]
+}
