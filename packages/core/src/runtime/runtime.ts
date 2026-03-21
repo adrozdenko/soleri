@@ -216,6 +216,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const learningRadar = new LearningRadar(vault, brain);
   const operatorProfile = new OperatorProfileStore(vault);
   learningRadar.setOperatorProfile(operatorProfile);
+  brainIntelligence.setOperatorProfile(operatorProfile);
 
   return {
     config,

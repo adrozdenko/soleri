@@ -10,6 +10,8 @@ import { randomUUID } from 'node:crypto';
 import type { Vault } from '../vault/vault.js';
 import type { Brain } from './brain.js';
 import type { PersistenceProvider } from '../persistence/types.js';
+import type { OperatorProfileStore } from '../operator/operator-profile.js';
+import { extractFromBrainStrengths } from '../operator/operator-signals.js';
 import type {
   PatternStrength,
   StrengthsQuery,
@@ -48,12 +50,18 @@ export class BrainIntelligence {
   private vault: Vault;
   private brain: Brain;
   private provider: PersistenceProvider;
+  private operatorProfile: OperatorProfileStore | null = null;
 
   constructor(vault: Vault, brain: Brain) {
     this.vault = vault;
     this.brain = brain;
     this.provider = vault.getProvider();
     this.initializeTables();
+  }
+
+  /** Wire operator profile for automatic signal extraction. */
+  setOperatorProfile(profile: OperatorProfileStore): void {
+    this.operatorProfile = profile;
   }
 
   // ─── Table Initialization ─────────────────────────────────────────
@@ -1006,6 +1014,18 @@ export class BrainIntelligence {
 
     // Step 3: Build domain profiles
     const domainProfiles = this.buildDomainProfiles(strengths);
+
+    // Step 4: Extract operator signals from domain expertise
+    try {
+      if (this.operatorProfile && strengths.length > 0) {
+        const signals = extractFromBrainStrengths(strengths);
+        if (signals.length > 0) {
+          this.operatorProfile.accumulateSignals(signals);
+        }
+      }
+    } catch {
+      // Signal extraction must never break intelligence pipeline
+    }
 
     return {
       strengthsComputed: strengths.length,
