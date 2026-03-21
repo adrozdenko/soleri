@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Planner } from '../planning/planner.js';
+import { Planner, PlanGradeRejectionError } from '../planning/planner.js';
 import type { PlanGap } from '../planning/gap-types.js';
 import { generateGapId } from '../planning/gap-types.js';
 import { mkdirSync, rmSync } from 'node:fs';
@@ -100,6 +100,135 @@ describe('Planner', () => {
 
     it('should throw for unknown plan', () => {
       expect(() => planner.approve('plan-xxx')).toThrow('not found');
+    });
+
+    it('should approve a plan with A+ grade', () => {
+      const plan = planner.create({
+        objective: 'Well-graded plan',
+        scope: 'test',
+        tasks: [
+          { title: 'Task 1', description: 'A well-described task for implementation' },
+          { title: 'Task 2', description: 'Another well-described task for testing' },
+        ],
+        decisions: ['Use TypeScript for type safety'],
+      });
+      // Grade the plan — set an A+ grade check
+      const p = planner.get(plan.id)!;
+      p.latestCheck = {
+        checkId: 'chk-test-aplus',
+        planId: plan.id,
+        grade: 'A+',
+        score: 98,
+        gaps: [],
+        iteration: 1,
+        checkedAt: Date.now(),
+      };
+      p.checks = [p.latestCheck];
+      const approved = planner.approve(plan.id);
+      expect(approved.status).toBe('approved');
+    });
+
+    it('should reject approval when grade is below A', () => {
+      const plan = planner.create({
+        objective: 'Bad plan',
+        scope: 'test',
+      });
+      // Manually set a B grade check on the plan
+      const p = planner.get(plan.id)!;
+      p.latestCheck = {
+        checkId: 'chk-test',
+        planId: plan.id,
+        grade: 'B',
+        score: 82,
+        gaps: [
+          {
+            id: 'gap-1',
+            severity: 'major',
+            category: 'completeness',
+            description: 'Missing tasks',
+            recommendation: 'Add tasks',
+            location: 'tasks',
+          },
+        ],
+        iteration: 1,
+        checkedAt: Date.now(),
+      };
+      p.checks = [p.latestCheck];
+      expect(() => planner.approve(plan.id)).toThrow(PlanGradeRejectionError);
+    });
+
+    it('should approve a plan with no grade check (backward compatibility)', () => {
+      const plan = planner.create({ objective: 'No grade plan', scope: 'test' });
+      // No grade() call — latestCheck is undefined
+      const approved = planner.approve(plan.id);
+      expect(approved.status).toBe('approved');
+    });
+
+    it('should respect configurable minGradeForApproval threshold', () => {
+      const lenientPlanner = new Planner(join(tempDir, 'lenient-plans.json'), {
+        minGradeForApproval: 'B',
+      });
+      const plan = lenientPlanner.create({ objective: 'B-grade plan', scope: 'test' });
+      // Set a B grade check
+      const p = lenientPlanner.get(plan.id)!;
+      p.latestCheck = {
+        checkId: 'chk-test-b',
+        planId: plan.id,
+        grade: 'B',
+        score: 82,
+        gaps: [],
+        iteration: 1,
+        checkedAt: Date.now(),
+      };
+      p.checks = [p.latestCheck];
+      // B grade should pass with B threshold
+      const approved = lenientPlanner.approve(plan.id);
+      expect(approved.status).toBe('approved');
+    });
+
+    it('should reject with PlanGradeRejectionError containing gap details', () => {
+      const plan = planner.create({ objective: 'Gap details', scope: 'test' });
+      const p = planner.get(plan.id)!;
+      const testGaps = [
+        {
+          id: 'gap-crit',
+          severity: 'critical' as const,
+          category: 'structure',
+          description: 'Missing critical structure',
+          recommendation: 'Fix structure',
+          location: 'tasks',
+        },
+        {
+          id: 'gap-maj',
+          severity: 'major' as const,
+          category: 'completeness',
+          description: 'Incomplete scope',
+          recommendation: 'Add scope details',
+          location: 'scope',
+        },
+      ];
+      p.latestCheck = {
+        checkId: 'chk-test-gaps',
+        planId: plan.id,
+        grade: 'C',
+        score: 65,
+        gaps: testGaps,
+        iteration: 1,
+        checkedAt: Date.now(),
+      };
+      p.checks = [p.latestCheck];
+      try {
+        planner.approve(plan.id);
+        expect.unreachable('Should have thrown');
+      } catch (err) {
+        expect(err).toBeInstanceOf(PlanGradeRejectionError);
+        const rejection = err as PlanGradeRejectionError;
+        expect(rejection.grade).toBe('C');
+        expect(rejection.score).toBe(65);
+        expect(rejection.minGrade).toBe('A');
+        expect(rejection.gaps).toHaveLength(2);
+        expect(rejection.message).toContain('below the minimum required grade A');
+      }
     });
   });
 
