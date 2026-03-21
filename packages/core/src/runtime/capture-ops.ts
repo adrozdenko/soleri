@@ -10,6 +10,9 @@ import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import { detectScope } from '../vault/scope-detector.js';
 import type { ScopeTier, ScopeDetectionResult } from '../vault/scope-detector.js';
+import { syncEntryToMarkdown } from '../vault/vault-markdown-sync.js';
+import { agentKnowledgeDir } from '../paths.js';
+import type { IntelligenceEntry } from '../intelligence/types.js';
 
 /**
  * Create the 4 intelligent capture operations for an agent runtime.
@@ -17,7 +20,7 @@ import type { ScopeTier, ScopeDetectionResult } from '../vault/scope-detector.js
  * Groups: capture (2), search (2).
  */
 export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, governance, linkManager } = runtime;
+  const { vault, brain, governance, linkManager, config } = runtime;
 
   return [
     // ─── Capture ──────────────────────────────────────────────────
@@ -168,6 +171,25 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                         'Low confidence scope detection — consider reviewing tier assignment';
                     }
                     results.push(result);
+                    // Fire-and-forget markdown sync
+                    fireAndForgetSync(
+                      {
+                        id: entryId,
+                        type: mappedType as IntelligenceEntry['type'],
+                        domain: entry.domain,
+                        title: entry.title,
+                        severity: mappedSeverity,
+                        description: entry.description,
+                        tags: entry.tags ?? [],
+                        context: entry.context,
+                        example: entry.example,
+                        counterExample: entry.counterExample,
+                        why: entry.why,
+                        tier: finalTier,
+                        origin: 'user',
+                      },
+                      config.agentId,
+                    );
                   }
                 } catch (err) {
                   rejected++;
@@ -381,6 +403,21 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                   result.reviewNote =
                     'Low confidence scope detection — consider reviewing tier assignment';
                 }
+                // Fire-and-forget markdown sync
+                fireAndForgetSync(
+                  {
+                    id,
+                    type: mappedType as IntelligenceEntry['type'],
+                    domain,
+                    title,
+                    severity: mapSeverity(mappedSeverity),
+                    description,
+                    tags,
+                    tier: finalTier,
+                    origin: 'user',
+                  },
+                  config.agentId,
+                );
                 return result;
               } catch (err) {
                 return {
@@ -561,4 +598,12 @@ function mapType(type: string): 'pattern' | 'anti-pattern' | 'rule' | 'playbook'
     default:
       return 'rule';
   }
+}
+
+/** Fire-and-forget markdown sync — never blocks capture, logs errors silently. */
+function fireAndForgetSync(entry: IntelligenceEntry, agentId: string): void {
+  const knowledgeDir = agentKnowledgeDir(agentId);
+  syncEntryToMarkdown(entry, knowledgeDir).catch(() => {
+    /* non-blocking — markdown sync is best-effort */
+  });
 }
