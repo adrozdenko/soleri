@@ -636,7 +636,6 @@ export function registerPack(program: Command): void {
 
 function listMdFiles(dir: string): string[] {
   try {
-    const { readdirSync } = require('node:fs');
     const { basename } = require('node:path');
     return readdirSync(dir)
       .filter((f: string) => f.endsWith('.md'))

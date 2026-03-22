@@ -47,7 +47,7 @@ function listStaged(): StagedEntry[] {
   for (const dir of dirs) {
     if (!dir.isDirectory()) continue;
     const stagePath = join(STAGING_ROOT, dir.name);
-    const stat = statSync(stagePath);
+    const _stat = statSync(stagePath);
     const files = walkDir(stagePath, stagePath);
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
 

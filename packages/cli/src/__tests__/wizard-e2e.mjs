@@ -35,11 +35,13 @@ function assert(cond, msg, ctx = '') {
 }
 
 function stripAnsi(s) {
+  /* oxlint-disable eslint(no-control-regex) -- intentional ANSI control char stripping */
   // eslint-disable-next-line no-control-regex
   return s
     .replace(new RegExp('\x1B\\[[0-9;]*[A-Za-z]', 'g'), '')
     .replace(new RegExp('\x1B\\].*?\x07', 'g'), '')
     .replace(new RegExp('\r', 'g'), '');
+  /* oxlint-enable eslint(no-control-regex) */
 }
 
 function sleep(ms) {
@@ -82,6 +84,7 @@ function runWizard(name, actions, opts = {}) {
 
         if (matched) {
           actionIndex++;
+          // oxlint-disable-next-line eslint(no-await-in-loop)
           await sleep(a.delay || 150);
           if (!state.completed) {
             try {
@@ -89,6 +92,7 @@ function runWizard(name, actions, opts = {}) {
             } catch {}
           }
         } else {
+          // oxlint-disable-next-line eslint(no-await-in-loop)
           await sleep(100);
         }
       }
@@ -455,6 +459,7 @@ await testDeclineConfirm();
 
 // All 7 archetypes (each scaffolds + builds, slower)
 for (let i = 0; i < ARCHETYPES.length; i++) {
+  // oxlint-disable-next-line eslint(no-await-in-loop)
   await testArchetype(ARCHETYPES[i], i);
 }
 
