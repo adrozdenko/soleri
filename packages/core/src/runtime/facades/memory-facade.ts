@@ -134,7 +134,11 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'write',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
-        summary: z.string().describe('Brief summary of what was accomplished'),
+        summary: z.string().optional().describe('Brief summary of what was accomplished'),
+        conversationContext: z
+          .string()
+          .optional()
+          .describe('Alias for summary — brief summary of what was accomplished'),
         topics: z.array(z.string()).optional().default([]),
         filesModified: z.array(z.string()).optional().default([]),
         toolsUsed: z.array(z.string()).optional().default([]),
@@ -150,11 +154,15 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       handler: async (params) => {
         const { resolve } = await import('node:path');
         const projectPath = resolve((params.projectPath as string) ?? '.');
+        const summary = (params.summary ?? params.conversationContext) as string;
+        if (!summary) {
+          return { captured: false, error: 'Either summary or conversationContext is required.' };
+        }
         const memory = vault.captureMemory({
           projectPath,
           type: 'session',
           context: 'Auto-captured before context compaction',
-          summary: params.summary as string,
+          summary,
           topics: (params.topics as string[]) ?? [],
           filesModified: (params.filesModified as string[]) ?? [],
           toolsUsed: (params.toolsUsed as string[]) ?? [],
@@ -174,7 +182,7 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
               toolsUsed: (params.toolsUsed as string[]) ?? null,
               filesModified: (params.filesModified as string[]) ?? null,
               decisions: (params.decisions as string[]) ?? null,
-              summary: (params.summary as string) ?? null,
+              summary: summary ?? null,
             };
             const signals = extractFromSession(sessionData);
             if (signals.length > 0) {

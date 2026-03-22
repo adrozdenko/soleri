@@ -24,10 +24,14 @@ export function createMemoryExtraOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'Delete a memory by ID. Returns whether the deletion was successful.',
       auth: 'write',
       schema: z.object({
-        memoryId: z.string().describe('The memory ID to delete'),
+        memoryId: z.string().optional().describe('The memory ID to delete'),
+        id: z.string().optional().describe('Alias for memoryId'),
       }),
       handler: async (params) => {
-        const memoryId = params.memoryId as string;
+        const memoryId = (params.memoryId ?? params.id) as string;
+        if (!memoryId) {
+          return { deleted: false, error: 'Either memoryId or id is required.' };
+        }
         const existing = vault.getMemory(memoryId);
         if (!existing) {
           return { deleted: false, error: `Memory "${memoryId}" not found.` };
