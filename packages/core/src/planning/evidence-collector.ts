@@ -26,6 +26,12 @@ export interface UnplannedChange {
   possibleReason: string;
 }
 
+export interface VerificationGap {
+  taskId: string;
+  taskTitle: string;
+  message: string;
+}
+
 export interface EvidenceReport {
   planId: string;
   planObjective: string;
@@ -34,6 +40,8 @@ export interface EvidenceReport {
   taskEvidence: GitTaskEvidence[];
   unplannedChanges: UnplannedChange[];
   missingWork: GitTaskEvidence[];
+  /** Advisory gaps for tasks claiming fixes without proven findings. */
+  verificationGaps: VerificationGap[];
   summary: string;
 }
 
@@ -93,6 +101,8 @@ export function collectGitEvidence(
     unplannedChanges.length,
   );
 
+  const verificationGaps = collectVerificationGaps(plan.tasks, taskEvidence);
+
   return {
     planId: plan.id,
     planObjective: plan.objective,
@@ -101,8 +111,48 @@ export function collectGitEvidence(
     taskEvidence,
     unplannedChanges,
     missingWork,
+    verificationGaps,
     summary,
   };
+}
+
+/**
+ * Flag tasks that modify existing code but lack proven verification findings.
+ * Advisory only — generates warnings, never blocks.
+ */
+export function collectVerificationGaps(
+  tasks: PlanTask[],
+  evidence: GitTaskEvidence[],
+): VerificationGap[] {
+  const gaps: VerificationGap[] = [];
+
+  for (const task of tasks) {
+    if (!taskModifiesExistingCode(task, evidence)) continue;
+    if (!task.verification) continue; // no verification field = no claim = no gap
+
+    const unproven = task.verification.findings.filter((f) => !f.proven);
+    for (const finding of unproven) {
+      gaps.push({
+        taskId: task.id,
+        taskTitle: task.title,
+        message: `Unproven finding: "${finding.description}" (${finding.severity}). Prove reproducible before fixing.`,
+      });
+    }
+  }
+
+  return gaps;
+}
+
+/**
+ * Check if a task modifies existing code (vs. creating new files).
+ */
+function taskModifiesExistingCode(
+  task: PlanTask,
+  evidence: GitTaskEvidence[],
+): boolean {
+  const taskEvidence = evidence.find((e) => e.taskId === task.id);
+  if (!taskEvidence) return false;
+  return taskEvidence.matchedFiles.some((f) => f.status === 'modified');
 }
 
 function getGitDiff(projectPath: string, baseBranch: string): FileChange[] {
