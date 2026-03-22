@@ -38,6 +38,10 @@ export const gateSchema = z.discriminatedUnion('type', [
     type: z.literal('BRANCH'),
     'on-false': gateActionSchema.optional(),
   }),
+  z.object({
+    type: z.literal('VERIFY'),
+    'on-false': gateActionSchema.optional(),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------
