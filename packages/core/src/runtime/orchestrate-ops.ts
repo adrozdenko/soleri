@@ -33,6 +33,8 @@ import {
   getIssueDetails,
 } from './github-integration.js';
 import { detectRationalizations } from '../planning/rationalization-detector.js';
+import { ImpactAnalyzer } from '../planning/impact-analyzer.js';
+import type { ImpactReport } from '../planning/impact-analyzer.js';
 
 // ---------------------------------------------------------------------------
 // Intent detection — keyword-based mapping from prompt to intent
@@ -479,8 +481,9 @@ export function createOrchestrateOps(
         summary: z.string().optional().describe('Completion summary — checked for rationalization language'),
         toolsUsed: z.array(z.string()).optional().describe('Tools used during execution'),
         filesModified: z.array(z.string()).optional().describe('Files modified during execution'),
+        projectPath: z.string().optional().default('.').describe('Project root path for impact analysis'),
         overrideRationalization: z.boolean().optional().default(false)
-          .describe('Set true to bypass rationalization gate after reviewing warnings'),
+          .describe('Set true to bypass rationalization gate and impact warnings after review'),
       }),
       handler: async (params) => {
         const planId = params.planId as string;
@@ -505,6 +508,35 @@ export function createOrchestrateOps(
                 hint: 'Address the unmet criteria, or set overrideRationalization: true to bypass this gate.',
               };
             }
+          }
+        }
+
+        // Impact analysis gate: assess downstream impact of modified files
+        let impactReport: ImpactReport | null = null;
+        if (filesModified.length > 0) {
+          try {
+            const analyzer = new ImpactAnalyzer();
+            const planObj = planner.get(planId);
+            const scopeHints = planObj?.scope
+              ? [planObj.scope]
+              : undefined;
+            impactReport = analyzer.analyzeImpact(
+              filesModified,
+              (params.projectPath as string) ?? '.',
+              scopeHints,
+            );
+
+            // If high risk and not overridden, warn the user
+            if (impactReport.riskLevel === 'high' && !overrideRationalization) {
+              return {
+                warning: true,
+                reason: 'High impact detected — review before completing',
+                impactReport,
+                hint: 'Review affected consumers and re-run with overrideRationalization: true or address the issues.',
+              };
+            }
+          } catch {
+            // Impact analysis is best-effort — never blocks
           }
         }
 
@@ -550,7 +582,13 @@ export function createOrchestrateOps(
           planStore.delete(planId);
         }
 
-        return { plan, session, extraction, epilogue: epilogueResult };
+        return {
+          plan,
+          session,
+          extraction,
+          epilogue: epilogueResult,
+          ...(impactReport ? { impactAnalysis: impactReport } : {}),
+        };
       },
     },
 
