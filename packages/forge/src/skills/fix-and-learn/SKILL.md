@@ -1,6 +1,10 @@
 ---
 name: fix-and-learn
-description: Use when fixing bugs, broken behavior, errors, regressions, or unexpected results and wanting to capture the learning for future sessions.
+description: >
+  Use AFTER a root cause has been identified (typically via systematic-debugging) to execute
+  the fix and capture the learning in the vault. Triggers on "fix it", "apply the fix",
+  "patch this and remember". Do NOT use as the first response to a bug — use
+  systematic-debugging first to find root cause.
 ---
 
 # Fix & Learn — Debug, Repair, Capture

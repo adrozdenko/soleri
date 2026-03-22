@@ -1,10 +1,10 @@
 ---
 name: vault-curate
 description: >
-  Use when the user says "clean vault", "deduplicate", "groom knowledge",
-  "consolidate vault", "vault maintenance", "find duplicates", "merge patterns",
-  "check contradictions", "vault health", or wants to maintain, clean, reorganize,
-  or improve the quality of the agent's knowledge base.
+  Use to actively clean, deduplicate, merge, consolidate, or reorganize vault entries. Triggers
+  on "clean vault", "deduplicate", "merge patterns", "consolidate vault", "remove duplicates",
+  "fix contradictions", "vault maintenance". This skill MODIFIES vault contents. For a read-only
+  health assessment without changes, use health-check instead.
 ---
 
 # Vault Curate — Knowledge Maintenance

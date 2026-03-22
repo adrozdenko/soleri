@@ -1,6 +1,9 @@
 ---
 name: verification-before-completion
-description: Use when about to claim work is complete, fixed, or passing — before committing, creating PRs, or moving to the next task.
+description: >
+  Use as an internal quality gate before claiming any task is done — run tests, check output,
+  verify behavior. This is a mid-workflow checkpoint, not a shipping gate. For actual deployment
+  and release workflows, use deliver-and-ship instead.
 ---
 
 # Verification Before Completion

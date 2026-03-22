@@ -1,6 +1,9 @@
 ---
 name: retrospective
-description: Use when reflecting on recent work — sprint retros, weekly summaries, learning reports, or extracting actionable insights from accumulated session data.
+description: >
+  Use for time-bound reflection on recent WORK — "sprint retro", "weekly summary", "what went
+  well this week", "end of sprint", "monthly report". Reviews sessions and extracts actionable
+  improvements. For brain pattern intelligence and strength scores, use brain-debrief instead.
 ---
 
 # Retrospective — Learning Report From Real Data

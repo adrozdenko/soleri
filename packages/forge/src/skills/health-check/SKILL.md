@@ -1,6 +1,10 @@
 ---
 name: health-check
-description: Use when running maintenance on the knowledge base — deduplication, contradiction resolution, stale entry cleanup, or vault quality auditing.
+description: >
+  Use when the user asks "check health", "system status", "how healthy is the vault",
+  "knowledge quality", "run diagnostics", "vault health report", or wants a read-only health
+  assessment of the knowledge base — scoring, reporting, finding issues. Does NOT modify vault
+  entries. To actively clean, merge, or deduplicate, use vault-curate instead.
 ---
 
 # Health Check — Knowledge Base Maintenance

@@ -1,6 +1,9 @@
 ---
 name: writing-plans
-description: Use when there is a spec or requirements for a multi-step task and an implementation plan needs to be written before touching code.
+description: >
+  Use when the user has clear requirements or a spec and needs a structured implementation plan —
+  "create a plan", "break this down", "plan the implementation". Requirements are already known.
+  For open-ended exploration when requirements are unclear, use brainstorming instead.
 ---
 
 # Writing Plans

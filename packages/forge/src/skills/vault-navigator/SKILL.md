@@ -1,6 +1,10 @@
 ---
 name: vault-navigator
-description: Use when querying the knowledge base for existing solutions, patterns, best practices, or prior art before building something new.
+description: >
+  Use when the user asks "search the vault", "find patterns for", "have we seen this before",
+  "what does the vault say about", "best practice for", "check vault", "vault search", or wants
+  to query the knowledge base for existing solutions and prior art. For saving a new entry, use
+  vault-capture instead.
 ---
 
 # Vault Navigator — Knowledge Oracle

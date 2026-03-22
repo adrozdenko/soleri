@@ -1,6 +1,9 @@
 ---
 name: context-resume
-description: Use when starting a new session, returning to work after a break, or needing to reconstruct working context from memory, plans, and sessions.
+description: >
+  Use when the user says "where did I leave off", "what was I working on", "catch me up",
+  "resume", "continue where we stopped", or is starting a new session and needs to reconstruct
+  working context from memory, plans, and sessions.
 ---
 
 # Context Resume — Pick Up Where You Left Off

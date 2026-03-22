@@ -1,6 +1,10 @@
 ---
 name: knowledge-harvest
-description: Use when pointing at code, docs, PRs, or any text to automatically extract and capture patterns, anti-patterns, and decisions into the vault.
+description: >
+  Use to EXTRACT multiple patterns from a source — code, docs, PRs, articles. Triggers on
+  "learn from this", "harvest knowledge", "ingest this document", "extract patterns from".
+  The agent reads the source and identifies what to capture. For saving a single known item,
+  use vault-capture instead.
 ---
 
 # Knowledge Harvest — Extract Patterns From Anything

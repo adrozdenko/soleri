@@ -1,6 +1,10 @@
 ---
 name: brain-debrief
-description: Use when the user wants to see accumulated knowledge, pattern strengths, cross-project insights, learning velocity, or an intelligence report from the brain.
+description: >
+  Use when the user wants to explore the brain's learned PATTERNS — "brain stats", "pattern
+  strengths", "what patterns are strongest", "intelligence report", "show brain data". Focused
+  on the brain module's accumulated pattern intelligence. For time-bound sprint or weekly
+  reflection, use retrospective instead.
 ---
 
 # Brain Debrief — Intelligence Report

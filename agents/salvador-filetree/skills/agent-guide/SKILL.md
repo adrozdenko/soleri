@@ -1,11 +1,10 @@
 ---
 name: agent-guide
 description: >
-  Use when the user asks "what can you do", "help me", "how do I use this",
-  "what features do you have", "what tools are available", "how does this work",
-  "show me your capabilities", "what are you", "who are you", or any question
-  about the agent's identity, capabilities, available tools, or how to use them.
-  Not needed for proactive tool suggestions — those are handled by engine rules.
+  Use when the user asks about the AGENT itself — "what can you do", "what tools do you have",
+  "show capabilities", "who are you", "what features are available". Questions about the agent's
+  identity and abilities, not about the project. For project-level orientation ("I'm new here",
+  "what should I know about this codebase"), use onboard-me instead.
 ---
 
 # Agent Guide — Capability Discovery

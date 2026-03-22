@@ -1,6 +1,9 @@
 ---
 name: onboard-me
-description: Use when someone is new to the project and needs a structured introduction to its knowledge, patterns, decisions, and conventions.
+description: >
+  Use when someone is new to the PROJECT and needs orientation — "onboard me", "I'm new here",
+  "project overview", "what should I know about this codebase". Questions about the project's
+  patterns and conventions, not about the agent's capabilities (use agent-guide for that).
 ---
 
 # Onboard Me — Instant Project Intelligence

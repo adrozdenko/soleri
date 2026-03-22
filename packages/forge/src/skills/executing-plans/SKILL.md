@@ -1,6 +1,10 @@
 ---
 name: executing-plans
-description: Use when there is a written implementation plan to execute with review checkpoints between task batches.
+description: >
+  Use when the user says "execute my plan", "run the plan", "start executing", "implement the
+  plan step by step", or has a written plan to execute sequentially with review checkpoints.
+  Tasks run one at a time in order. If tasks are independent and can run in parallel, use
+  parallel-execute instead.
 ---
 
 # Executing Plans

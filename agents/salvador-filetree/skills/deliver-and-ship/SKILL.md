@@ -1,10 +1,10 @@
 ---
 name: deliver-and-ship
 description: >
-  Use when the user says "ship it", "ready to deploy", "package", "release",
-  "pre-PR check", "delivery checklist", "is this ready", "final review", or mentions
-  shipping, deploying, packaging, or releasing work. Runs pre-delivery quality gates
-  to ensure nothing ships without passing stability, knowledge capture, and code quality checks.
+  Use for actual deployment and release workflows — "ship it", "ready to deploy", "release",
+  "package", "pre-PR check", "delivery checklist". Runs pre-delivery quality gates for shipping.
+  For a mid-workflow quality checkpoint before claiming a task is done (not shipping), use
+  verification-before-completion instead.
 ---
 
 # Deliver & Ship — Quality Gate Runner

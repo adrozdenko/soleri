@@ -1,6 +1,10 @@
 ---
 name: vault-capture
-description: Use when persisting a pattern, anti-pattern, workflow, decision, or principle to the knowledge base — after discovering something worth remembering.
+description: >
+  Use to capture a SINGLE known pattern, anti-pattern, workflow, decision, or principle to the
+  vault. Triggers on "save this", "capture this", "remember this pattern", "add to vault". The
+  user already knows what to capture. For bulk extraction from documents, code, or PRs, use
+  knowledge-harvest instead.
 ---
 
 # Vault Capture — Persist Knowledge

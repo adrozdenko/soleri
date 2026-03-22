@@ -1,6 +1,10 @@
 ---
 name: brainstorming
-description: Use when creating features, building components, adding functionality, or modifying behavior — explores intent and design before implementation.
+description: >
+  Use for open-ended creative exploration when requirements are NOT yet clear — "I want to build
+  something", "let's think about", "explore options for", "what if we". Explores intent and
+  design before implementation. If the user already has a spec or clear requirements, use
+  writing-plans instead.
 ---
 
 # Brainstorming Ideas Into Designs
