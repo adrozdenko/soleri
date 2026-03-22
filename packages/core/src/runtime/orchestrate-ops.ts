@@ -32,6 +32,7 @@ import {
   detectGitHubRemote as detectGitHubRemoteAsync,
   getIssueDetails,
 } from './github-integration.js';
+import { detectRationalizations } from '../planning/rationalization-detector.js';
 
 // ---------------------------------------------------------------------------
 // Intent detection — keyword-based mapping from prompt to intent
@@ -169,6 +170,54 @@ function buildHealthWarning(
   }
 
   return warning;
+}
+
+// ---------------------------------------------------------------------------
+// Anti-rationalization helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Collect all acceptance criteria from a plan's tasks.
+ * Returns empty array if plan not found or has no criteria (graceful skip).
+ */
+function collectAcceptanceCriteria(
+  plannerRef: AgentRuntime['planner'],
+  planId: string,
+): string[] {
+  const plan = plannerRef.get(planId);
+  if (!plan) return [];
+  const criteria: string[] = [];
+  for (const task of plan.tasks) {
+    if (task.acceptanceCriteria) {
+      criteria.push(...task.acceptanceCriteria);
+    }
+  }
+  return criteria;
+}
+
+/**
+ * Capture detected rationalization as an anti-pattern in vault.
+ * Best-effort — never throws.
+ */
+function captureRationalizationAntiPattern(
+  vaultRef: AgentRuntime['vault'],
+  report: import('../planning/rationalization-detector.js').RationalizationReport,
+): void {
+  try {
+    const patterns = report.items.map((i) => i.pattern).join(', ');
+    vaultRef.add({
+      id: `antipattern-rationalization-${Date.now()}`,
+      title: 'Rationalization detected in completion claim',
+      description: `Detected rationalization patterns: ${patterns}. ` +
+        `Items: ${report.items.map((i) => `"${i.phrase}" (${i.pattern})`).join('; ')}.`,
+      type: 'anti-pattern',
+      domain: 'planning',
+      severity: 'warning',
+      tags: ['rationalization', 'anti-pattern', 'completion-gate'],
+    });
+  } catch {
+    // Vault capture is best-effort
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -427,15 +476,37 @@ export function createOrchestrateOps(
           .optional()
           .default('completed')
           .describe('Plan outcome'),
+        summary: z.string().optional().describe('Completion summary — checked for rationalization language'),
         toolsUsed: z.array(z.string()).optional().describe('Tools used during execution'),
         filesModified: z.array(z.string()).optional().describe('Files modified during execution'),
+        overrideRationalization: z.boolean().optional().default(false)
+          .describe('Set true to bypass rationalization gate after reviewing warnings'),
       }),
       handler: async (params) => {
         const planId = params.planId as string;
         const sessionId = params.sessionId as string;
         const outcome = (params.outcome as string) ?? 'completed';
+        const completionSummary = (params.summary as string) ?? '';
         const toolsUsed = (params.toolsUsed as string[]) ?? [];
         const filesModified = (params.filesModified as string[]) ?? [];
+        const overrideRationalization = (params.overrideRationalization as boolean) ?? false;
+
+        // Anti-rationalization gate: check completion summary before completing
+        if (outcome === 'completed' && !overrideRationalization) {
+          const criteria = collectAcceptanceCriteria(planner, planId);
+          if (criteria.length > 0 && completionSummary) {
+            const report = detectRationalizations(criteria, completionSummary);
+            if (report.detected) {
+              captureRationalizationAntiPattern(vault, report);
+              return {
+                blocked: true,
+                reason: 'Rationalization language detected in completion summary',
+                rationalization: report,
+                hint: 'Address the unmet criteria, or set overrideRationalization: true to bypass this gate.',
+              };
+            }
+          }
+        }
 
         // Complete the planner plan (legacy lifecycle)
         const plan = planner.complete(planId);
