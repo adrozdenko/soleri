@@ -35,11 +35,52 @@ const signalSchema = z.object({
 
 function profileToMarkdown(profile: Record<string, unknown>): string {
   const lines: string[] = ['# Operator Profile', ''];
+  const meta: [string, unknown][] = [];
+  const sections: [string, unknown][] = [];
+
   for (const [key, value] of Object.entries(profile)) {
     if (key === 'id' || key === 'operatorId') continue;
-    lines.push(`## ${key}`, '', '```json', JSON.stringify(value, null, 2), '```', '');
+    if (['version', 'sessionCount', 'lastSynthesis', 'createdAt', 'updatedAt'].includes(key)) {
+      meta.push([key, value]);
+    } else {
+      sections.push([key, value]);
+    }
   }
+
+  // Metadata table
+  if (meta.length > 0) {
+    lines.push('## Metadata', '');
+    lines.push('| Field | Value |', '|-------|-------|');
+    for (const [k, v] of meta) lines.push(`| ${k} | ${v ?? '—'} |`);
+    lines.push('');
+  }
+
+  // Profile sections with evidence extraction
+  for (const [key, value] of sections) {
+    const heading = key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+    lines.push(`## ${heading}`, '');
+    const obj = value as Record<string, unknown>;
+    const evidence = extractEvidence(obj);
+    const content = { ...obj };
+    delete content.evidence;
+    lines.push('```json', JSON.stringify(content, null, 2), '```', '');
+    if (evidence.length > 0) {
+      lines.push(`**Evidence (${evidence.length}):**`, '');
+      for (const e of evidence.slice(0, 10)) {
+        const label = e.source === 'observed' ? '[observed]' : e.source === 'reported' ? '[reported]' : '';
+        lines.push(`- ${label} ${e.summary} (confidence: ${e.confidence}, ${e.timestamp})`);
+      }
+      lines.push('');
+    }
+  }
+
   return lines.join('\n');
+}
+
+function extractEvidence(obj: Record<string, unknown>): Array<{ summary: string; confidence: number; timestamp: string; source?: string }> {
+  const evidence = obj.evidence;
+  if (!Array.isArray(evidence)) return [];
+  return evidence.filter((e) => e && typeof e === 'object' && 'summary' in e) as Array<{ summary: string; confidence: number; timestamp: string; source?: string }>;
 }
 
 // ─── Facade Creator ─────────────────────────────────────────────────
