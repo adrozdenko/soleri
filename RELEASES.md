@@ -12,7 +12,7 @@ v9.1.1 → v9.1 → v9.2 → v10.0
 |---------|-----------|--------|--------|------------|-------------------|
 | **v9.1.1** | Bug Fixes | 6 | Ready to ship | Nothing — independent | #274 |
 | **v9.1** | Core Refactoring Waves | 17 | In progress | Nothing — foundation | #275 |
-| **v9.2** | Operator Profile | 10 | Planned | v9.1 (stable runtime) | #276 |
+| **v9.2** | Operator Profile + Engine Hardening | 29 | **Shipped 2026-03-22** | v9.1 (stable runtime) | #276 |
 | **v10.0** | soleri.dev Platform | 17 | Future | Nothing — independent track | — |
 
 ## v9.1.1: Bug Fixes

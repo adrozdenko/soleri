@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v9.2.0 — 2026-03-22 — Operator Profile, Engine Hardening & TDD Refactoring
+
+### Operator Profile — Personality Learning System
+
+- **Operator types** (#265) — `OperatorSignal`, `OperatorProfile`, 8 profile sections, signal taxonomy
+- **OperatorProfileStore** (#266) — 3 SQLite tables, CRUD, signal accumulation, synthesis thresholds
+- **Signal extraction** (#267) — Pure functions: `extractFromSession`, `extractFromRadar`, `extractFromBrainStrengths`
+- **Operator facade** (#268) — 10 MCP ops with Zod schemas, parallel-safe section writes
+- **Engine registration** (#269) — Operator module in `ENGINE_MODULES`, `AgentRuntime`, public exports
+- **Auto signal pipeline** (#270) — Session capture, radar, and brain auto-accumulate signals
+- **Subagent prompts** (#271) — 5 synthesis subagents + PreCompact dispatch hook
+- **Session briefing** (#272) — Operator adaptation summary in session briefing, `profile_export` markdown
+- **Full test coverage** (#273) — 51 unit + E2E tests for operator pipeline
+
+### Engine Hardening (Bulletproof-Inspired)
+
+- **Challenge loop** (#319) — `PlanAlternative` type, gap analysis pass 8, plans without alternatives cap at ~85
+- **Context health monitor** (#320) — `ContextHealthMonitor` class, green/yellow/red thresholds, orchestrate integration
+- **Anti-rationalization gate** (#318) — Detects 6 rationalization patterns, blocks `orchestrate_complete` until resolved
+- **False-positive verification** (#321) — `verification` field on `PlanTask`, `VERIFY` gate type, evidence validation
+- **Impact analysis** (#322) — `ImpactAnalyzer` with dependency scan, scope creep detection, risk levels
+
+### Core Refactoring (TDD Waves)
+
+- **Wave 0A** (#244) — persistence/ TDD migration, test factories, edge-case tests
+- **Wave 0B** (#245) — migrations/ TDD migration, semver edges, concurrent migration tests
+- **Wave 0C** (#246) — vault.ts decomposition: 1,332 LOC → 4 files (schema, entries, memories, facade)
+- **Wave 0D** (#247) — 9 vault support file colocated tests, linking.ts never-nester refactor (427 → 393 LOC)
+- **Wave 1A** (#248 + #277) — brain/ full decomposition + auto-learning module extraction
+
+### Features
+
+- **Vault markdown sync** (#280) — Auto-write `.md` files on capture, boot-time catch-up sync
+- **GitHub integration** (#293) — Auto-detect GH remote, pull issue details into plans, auto-close on completion
+- **Wave 2 sequencing** (#278) — Dependency mapping: 2 ops files blocked by brain, 27 independent
+- **Vault ops audit** (#298) — 79 ops mapped to 6 target facades
+
+### DX Improvements
+
+- **Trimmed responses** (#283, #284) — memory_list, memory_search, admin_tool_list, list_all return concise summaries
+- **Plan grade gate** (#295) — Plans must meet grade threshold before approval
+- **Auto-link plans to GH issues** (#296) — Planning lifecycle tracks GitHub issue references
+- **Rename orchestrate register → session_start** (#292) — Clearer intent for session initialization
+- **Anti-deletion hook pack** (#291) — `yolo-safety` hook pack prevents accidental file deletion
+- **Param aliases** — `session_capture` accepts `conversationContext`, `memory_delete` accepts `id`
+- **Resilient scaffolder tests** — Facade/skill count assertions no longer brittle
+
+### Published Packages
+
+| Package | Version |
+|---------|---------|
+| `@soleri/core` | 9.2.0 |
+| `@soleri/forge` | 9.2.0 |
+| `@soleri/cli` | 9.2.0 |
+
+### Stats
+
+- 2,323 unit tests + 99 forge tests (2,422 total)
+- 29 issues closed
+- 5 new engine modules (operator, context health, rationalization, verification, impact)
+
+---
+
 ## v9.1.1 — 2026-03-21 — Bug Fixes, DX & Second Brain Foundations
 
 ### Bug Fixes
