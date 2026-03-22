@@ -43,6 +43,7 @@ const EXTRACTION_HIGH_FEEDBACK_RATIO = 0.8;
 const AUTO_PROMOTE_THRESHOLD = 0.8;
 const AUTO_PROMOTE_PENDING_MIN = 0.4;
 const AUTO_BUILD_INTELLIGENCE_EVERY_N_SESSIONS = 3;
+const AUTO_BUILD_INTELLIGENCE_EVERY_N_FEEDBACK = 5;
 
 // ─── Class ──────────────────────────────────────────────────────────
 
@@ -277,6 +278,11 @@ export class BrainIntelligence {
           `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
            VALUES ('sessions_since_last_build', '0', datetime('now'))`,
         );
+        // Reset feedback counter too — avoid double-trigger
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
+           VALUES ('feedback_since_last_build', '0', datetime('now'))`,
+        );
       } else {
         this.provider.run(
           `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
@@ -286,6 +292,41 @@ export class BrainIntelligence {
       }
     } catch {
       // Non-critical — don't break session end
+    }
+  }
+
+  /**
+   * Auto-rebuild intelligence after N feedback entries accumulate.
+   * Called from facade after record_feedback / brain_feedback ops.
+   */
+  maybeAutoBuildOnFeedback(): void {
+    try {
+      const row = this.provider.get<{ value: string }>(
+        "SELECT value FROM brain_metadata WHERE key = 'feedback_since_last_build'",
+      );
+      const current = row ? parseInt(row.value, 10) : 0;
+      const next = current + 1;
+
+      if (next >= AUTO_BUILD_INTELLIGENCE_EVERY_N_FEEDBACK) {
+        this.buildIntelligence();
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
+           VALUES ('feedback_since_last_build', '0', datetime('now'))`,
+        );
+        // Reset session counter too — avoid double-trigger
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
+           VALUES ('sessions_since_last_build', '0', datetime('now'))`,
+        );
+      } else {
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
+           VALUES ('feedback_since_last_build', ?, datetime('now'))`,
+          [String(next)],
+        );
+      }
+    } catch {
+      // Non-critical — don't block feedback recording
     }
   }
 

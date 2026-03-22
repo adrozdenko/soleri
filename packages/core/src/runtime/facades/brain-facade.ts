@@ -36,6 +36,7 @@ export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           params.entryId as string,
           params.action as 'accepted' | 'dismissed',
         );
+        brainIntelligence.maybeAutoBuildOnFeedback();
         return {
           recorded: true,
           query: params.query,
@@ -78,6 +79,7 @@ export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           context: params.context as string | undefined,
           reason: params.reason as string | undefined,
         });
+        brainIntelligence.maybeAutoBuildOnFeedback();
         return entry;
       },
     },
