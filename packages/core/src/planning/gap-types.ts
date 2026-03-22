@@ -18,7 +18,8 @@ export type GapCategory =
   | 'alternative-analysis'
   | 'tool-feasibility'
   | 'flow-alignment'
-  | 'anti-pattern';
+  | 'anti-pattern'
+  | 'rationalization';
 
 export interface PlanGap {
   id: string;
