@@ -108,6 +108,22 @@ export interface ExecutionSummary {
   avgTaskDurationMs: number;
 }
 
+export interface VerificationFinding {
+  /** What was found (bug, issue, code smell). */
+  description: string;
+  /** How severe the finding is. */
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  /** Whether the finding was proven reproducible before fixing. */
+  proven: boolean;
+  /** How the finding was proven (test case, reproduction steps, stack trace). */
+  proof?: string;
+}
+
+export interface TaskVerification {
+  /** Findings that motivated changes to existing code. */
+  findings: VerificationFinding[];
+}
+
 export interface PlanTask {
   id: string;
   title: string;
@@ -129,6 +145,8 @@ export interface PlanTask {
   metrics?: TaskMetrics;
   /** Deliverables produced by this task. */
   deliverables?: TaskDeliverable[];
+  /** Verification findings for tasks that modify existing code. Advisory only. */
+  verification?: TaskVerification;
   updatedAt: number;
 }
 
