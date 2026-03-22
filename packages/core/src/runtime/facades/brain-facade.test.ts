@@ -47,6 +47,7 @@ function makeMockBrainIntelligence() {
     computeSessionQuality: vi.fn().mockReturnValue({ score: 75 }),
     replaySession: vi.fn().mockReturnValue({ session: {}, quality: 75 }),
     resetExtracted: vi.fn().mockReturnValue({ reset: 1 }),
+    maybeAutoBuildOnFeedback: vi.fn(),
   };
 }
 

@@ -6,6 +6,14 @@ import type { AgentRuntime } from './types.js';
 // Heavy mocks — runtime.ts instantiates dozens of modules, we mock them all
 // ---------------------------------------------------------------------------
 
+// Helper: create a constructor-compatible mock for Vitest 4
+// vi.fn(function() { ... }) is callable with `new` in Vitest 4.
+function mockClass(instance: Record<string, unknown> = {}) {
+  return vi.fn(function (this: Record<string, unknown>) {
+    Object.assign(this, instance);
+  });
+}
+
 vi.mock('../paths.js', () => ({
   SOLERI_HOME: '/tmp/soleri-test',
   agentVaultPath: vi.fn().mockReturnValue(':memory:'),
@@ -17,8 +25,8 @@ vi.mock('../paths.js', () => ({
 }));
 
 vi.mock('../vault/vault-manager.js', () => ({
-  VaultManager: vi.fn().mockImplementation(() => ({
-    open: vi.fn().mockReturnValue({
+  VaultManager: vi.fn(function (this: Record<string, unknown>) {
+    const vaultInstance = {
       stats: vi.fn().mockReturnValue({ totalEntries: 0, byDomain: {}, byType: {} }),
       seed: vi.fn(),
       getProvider: vi.fn().mockReturnValue({
@@ -32,59 +40,60 @@ vi.mock('../vault/vault-manager.js', () => ({
       get: vi.fn(),
       list: vi.fn().mockReturnValue([]),
       exportAll: vi.fn().mockReturnValue({ entries: [] }),
-    }),
-    connect: vi.fn(),
-    close: vi.fn(),
-  })),
+    };
+    this.open = vi.fn().mockReturnValue(vaultInstance);
+    this.connect = vi.fn();
+    this.close = vi.fn();
+  }),
 }));
 
 vi.mock('../brain/brain.js', () => ({
-  Brain: vi.fn().mockImplementation(() => ({
-    getStats: vi.fn().mockReturnValue({ vocabularySize: 0, feedbackCount: 0 }),
-    rebuildVocabulary: vi.fn(),
-  })),
+  Brain: vi.fn(function (this: Record<string, unknown>) {
+    this.getStats = vi.fn().mockReturnValue({ vocabularySize: 0, feedbackCount: 0 });
+    this.rebuildVocabulary = vi.fn();
+  }),
 }));
 
 vi.mock('../brain/intelligence.js', () => ({
-  BrainIntelligence: vi.fn().mockImplementation(() => ({
-    getStats: vi.fn().mockReturnValue({ strengths: 0, sessions: 0 }),
-    setOperatorProfile: vi.fn(),
-  })),
+  BrainIntelligence: vi.fn(function (this: Record<string, unknown>) {
+    this.getStats = vi.fn().mockReturnValue({ strengths: 0, sessions: 0 });
+    this.setOperatorProfile = vi.fn();
+  }),
 }));
 
 vi.mock('../planning/planner.js', () => ({
-  Planner: vi.fn().mockImplementation(() => ({})),
+  Planner: mockClass(),
 }));
 
 vi.mock('../curator/curator.js', () => ({
-  Curator: vi.fn().mockImplementation(() => ({
-    getStatus: vi.fn().mockReturnValue({ initialized: true }),
-    normalizeTag: vi.fn(),
-    detectDuplicates: vi.fn(),
-    detectContradictions: vi.fn().mockReturnValue([]),
-    consolidate: vi.fn().mockReturnValue({ staleEntries: [] }),
-    enrichMetadata: vi.fn(),
-  })),
+  Curator: vi.fn(function (this: Record<string, unknown>) {
+    this.getStatus = vi.fn().mockReturnValue({ initialized: true });
+    this.normalizeTag = vi.fn();
+    this.detectDuplicates = vi.fn();
+    this.detectContradictions = vi.fn().mockReturnValue([]);
+    this.consolidate = vi.fn().mockReturnValue({ staleEntries: [] });
+    this.enrichMetadata = vi.fn();
+  }),
 }));
 
 vi.mock('../governance/governance.js', () => ({
-  Governance: vi.fn().mockImplementation(() => ({})),
+  Governance: mockClass(),
 }));
 
 vi.mock('../loop/loop-manager.js', () => ({
-  LoopManager: vi.fn().mockImplementation(() => ({})),
+  LoopManager: mockClass(),
 }));
 
 vi.mock('../control/identity-manager.js', () => ({
-  IdentityManager: vi.fn().mockImplementation(() => ({})),
+  IdentityManager: mockClass(),
 }));
 
 vi.mock('../control/intent-router.js', () => ({
-  IntentRouter: vi.fn().mockImplementation(() => ({})),
+  IntentRouter: mockClass(),
 }));
 
 vi.mock('../llm/key-pool.js', () => ({
-  KeyPool: vi.fn().mockImplementation(() => ({})),
+  KeyPool: mockClass(),
   loadKeyPoolConfig: vi.fn().mockReturnValue({
     openai: { keys: [] },
     anthropic: { keys: [] },
@@ -96,9 +105,9 @@ vi.mock('../llm/oauth-discovery.js', () => ({
 }));
 
 vi.mock('../llm/llm-client.js', () => ({
-  LLMClient: vi.fn().mockImplementation(() => ({
-    isAvailable: vi.fn().mockReturnValue({ openai: false, anthropic: false }),
-  })),
+  LLMClient: vi.fn(function (this: Record<string, unknown>) {
+    this.isAvailable = vi.fn().mockReturnValue({ openai: false, anthropic: false });
+  }),
 }));
 
 vi.mock('../intelligence/loader.js', () => ({
@@ -106,25 +115,25 @@ vi.mock('../intelligence/loader.js', () => ({
 }));
 
 vi.mock('../intake/intake-pipeline.js', () => ({
-  IntakePipeline: vi.fn().mockImplementation(() => ({})),
+  IntakePipeline: mockClass(),
 }));
 
 vi.mock('../intake/text-ingester.js', () => ({
-  TextIngester: vi.fn().mockImplementation(() => ({})),
+  TextIngester: mockClass(),
 }));
 
 vi.mock('../telemetry/telemetry.js', () => ({
-  Telemetry: vi.fn().mockImplementation(() => ({})),
+  Telemetry: mockClass(),
 }));
 
 vi.mock('../project/project-registry.js', () => ({
-  ProjectRegistry: vi.fn().mockImplementation(() => ({})),
+  ProjectRegistry: mockClass(),
 }));
 
 vi.mock('../prompts/template-manager.js', () => ({
-  TemplateManager: vi.fn().mockImplementation(() => ({
-    load: vi.fn(),
-  })),
+  TemplateManager: vi.fn(function (this: Record<string, unknown>) {
+    this.load = vi.fn();
+  }),
 }));
 
 vi.mock('../logging/logger.js', () => ({
@@ -137,14 +146,14 @@ vi.mock('../logging/logger.js', () => ({
 }));
 
 vi.mock('./feature-flags.js', () => ({
-  FeatureFlags: vi.fn().mockImplementation(() => ({})),
+  FeatureFlags: mockClass(),
 }));
 
 vi.mock('../health/health-registry.js', () => ({
-  HealthRegistry: vi.fn().mockImplementation(() => ({
-    register: vi.fn(),
-    update: vi.fn(),
-  })),
+  HealthRegistry: vi.fn(function (this: Record<string, unknown>) {
+    this.register = vi.fn();
+    this.update = vi.fn();
+  }),
 }));
 
 vi.mock('../health/vault-integrity.js', () => ({
@@ -156,62 +165,62 @@ vi.mock('../health/vault-integrity.js', () => ({
 }));
 
 vi.mock('../playbooks/playbook-executor.js', () => ({
-  PlaybookExecutor: vi.fn().mockImplementation(() => ({})),
+  PlaybookExecutor: mockClass(),
 }));
 
 vi.mock('../plugins/plugin-registry.js', () => ({
-  PluginRegistry: vi.fn().mockImplementation(() => ({})),
+  PluginRegistry: mockClass(),
 }));
 
 vi.mock('../packs/pack-installer.js', () => ({
-  PackInstaller: vi.fn().mockImplementation(() => ({})),
+  PackInstaller: mockClass(),
 }));
 
 vi.mock('../vault/vault-branching.js', () => ({
-  VaultBranching: vi.fn().mockImplementation(() => ({})),
+  VaultBranching: mockClass(),
 }));
 
 vi.mock('../context/context-engine.js', () => ({
-  ContextEngine: vi.fn().mockImplementation(() => ({})),
+  ContextEngine: mockClass(),
 }));
 
 vi.mock('../agency/agency-manager.js', () => ({
-  AgencyManager: vi.fn().mockImplementation(() => ({})),
+  AgencyManager: mockClass(),
 }));
 
 vi.mock('../vault/knowledge-review.js', () => ({
-  KnowledgeReview: vi.fn().mockImplementation(() => ({})),
+  KnowledgeReview: mockClass(),
 }));
 
 vi.mock('../vault/linking.js', () => ({
-  LinkManager: vi.fn().mockImplementation(() => ({
-    suggestLinks: vi.fn().mockReturnValue([]),
-    addLink: vi.fn(),
-  })),
+  LinkManager: vi.fn(function (this: Record<string, unknown>) {
+    this.suggestLinks = vi.fn().mockReturnValue([]);
+    this.addLink = vi.fn();
+  }),
 }));
 
 vi.mock('../brain/learning-radar.js', () => ({
-  LearningRadar: vi.fn().mockImplementation(() => ({
-    setOperatorProfile: vi.fn(),
-  })),
+  LearningRadar: vi.fn(function (this: Record<string, unknown>) {
+    this.setOperatorProfile = vi.fn();
+  }),
 }));
 
 vi.mock('../brain/knowledge-synthesizer.js', () => ({
-  KnowledgeSynthesizer: vi.fn().mockImplementation(() => ({})),
+  KnowledgeSynthesizer: mockClass(),
 }));
 
 vi.mock('../flows/chain-runner.js', () => ({
-  ChainRunner: vi.fn().mockImplementation(() => ({})),
+  ChainRunner: mockClass(),
 }));
 
 vi.mock('../queue/job-queue.js', () => ({
-  JobQueue: vi.fn().mockImplementation(() => ({})),
+  JobQueue: mockClass(),
 }));
 
 vi.mock('../queue/pipeline-runner.js', () => ({
-  PipelineRunner: vi.fn().mockImplementation(() => ({
-    registerHandler: vi.fn(),
-  })),
+  PipelineRunner: vi.fn(function (this: Record<string, unknown>) {
+    this.registerHandler = vi.fn();
+  }),
 }));
 
 vi.mock('../curator/quality-gate.js', () => ({
@@ -242,14 +251,14 @@ vi.mock('../persona/prompt-generator.js', () => ({
 }));
 
 vi.mock('../operator/operator-profile.js', () => ({
-  OperatorProfileStore: vi.fn().mockImplementation(() => ({})),
+  OperatorProfileStore: mockClass(),
 }));
 
 vi.mock('./context-health.js', () => ({
-  ContextHealthMonitor: vi.fn().mockImplementation(() => ({
-    check: vi.fn().mockReturnValue({ level: 'green' }),
-    track: vi.fn(),
-  })),
+  ContextHealthMonitor: vi.fn(function (this: Record<string, unknown>) {
+    this.check = vi.fn().mockReturnValue({ level: 'green' });
+    this.track = vi.fn();
+  }),
 }));
 
 vi.mock('node:fs', () => ({

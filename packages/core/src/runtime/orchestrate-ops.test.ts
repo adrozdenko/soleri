@@ -21,15 +21,15 @@ vi.mock('../flows/plan-builder.js', () => ({
 }));
 
 vi.mock('../flows/executor.js', () => ({
-  FlowExecutor: vi.fn().mockImplementation(() => ({
-    execute: vi.fn().mockResolvedValue({
+  FlowExecutor: class {
+    execute = vi.fn().mockResolvedValue({
       status: 'completed',
       stepsCompleted: 1,
       totalSteps: 1,
       toolsCalled: ['tool1'],
       durationMs: 100,
-    }),
-  })),
+    });
+  },
 }));
 
 vi.mock('../flows/dispatch-registry.js', () => ({

@@ -16,19 +16,19 @@ vi.mock('../vault/scope-detector.js', () => ({
 }));
 
 vi.mock('../vault/git-vault-sync.js', () => ({
-  GitVaultSync: vi.fn().mockImplementation(() => ({
-    init: vi.fn().mockResolvedValue(undefined),
-    syncAll: vi.fn().mockResolvedValue({ pushed: 5 }),
-    pull: vi.fn().mockResolvedValue({ imported: 3, conflicts: 0 }),
-    sync: vi.fn().mockResolvedValue({ pushed: 2, pulled: 1 }),
-  })),
+  GitVaultSync: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+    this.init = vi.fn().mockResolvedValue(undefined);
+    this.syncAll = vi.fn().mockResolvedValue({ pushed: 5 });
+    this.pull = vi.fn().mockResolvedValue({ imported: 3, conflicts: 0 });
+    this.sync = vi.fn().mockResolvedValue({ pushed: 2, pulled: 1 });
+  }),
 }));
 
 vi.mock('../vault/linking.js', () => ({
-  LinkManager: vi.fn().mockImplementation(() => ({
-    getAllLinksForEntries: vi.fn().mockReturnValue([]),
-    addLink: vi.fn(),
-  })),
+  LinkManager: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+    this.getAllLinksForEntries = vi.fn().mockReturnValue([]);
+    this.addLink = vi.fn();
+  }),
 }));
 
 // ---------------------------------------------------------------------------
