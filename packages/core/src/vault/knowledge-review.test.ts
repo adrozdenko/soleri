@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { KnowledgeReview, type ReviewEntry } from './knowledge-review.js';
+import { KnowledgeReview } from './knowledge-review.js';
 import type { PersistenceProvider, RunResult } from '../persistence/types.js';
 
 // ─── In-memory mock persistence ──────────────────────────────────────

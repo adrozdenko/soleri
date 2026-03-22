@@ -87,7 +87,7 @@ function createCoreTables(provider: PersistenceProvider): void {
     );`);
 
   // Add memory columns if missing
-  const memCols = provider.all<{ name: string }>('PRAGMA table_info(memories)').map((r: any) => r.name);
+  const memCols = provider.all<{ name: string }>('PRAGMA table_info(memories)').map((r: { name: string }) => r.name);
   if (!memCols.includes('intent')) {
     provider.execSql(`
       ALTER TABLE memories ADD COLUMN intent TEXT;
@@ -131,7 +131,7 @@ function createCoreTables(provider: PersistenceProvider): void {
 
 function migrateBrainSchema(provider: PersistenceProvider): void {
   const columns = provider.all<{ name: string }>('PRAGMA table_info(brain_feedback)');
-  const hasSource = columns.some((c: any) => c.name === 'source');
+  const hasSource = columns.some((c: { name: string }) => c.name === 'source');
   if (!hasSource && columns.length > 0) {
     provider.transaction(() => {
       provider.run(`CREATE TABLE brain_feedback_new (id INTEGER PRIMARY KEY AUTOINCREMENT, query TEXT NOT NULL, entry_id TEXT NOT NULL, action TEXT NOT NULL CHECK(action IN ('accepted', 'dismissed', 'modified', 'failed')), source TEXT NOT NULL DEFAULT 'search', confidence REAL NOT NULL DEFAULT 0.6, duration INTEGER, context TEXT NOT NULL DEFAULT '{}', reason TEXT, created_at INTEGER NOT NULL DEFAULT (unixepoch()))`);
@@ -143,7 +143,7 @@ function migrateBrainSchema(provider: PersistenceProvider): void {
   }
   try {
     const sessionCols = provider.all<{ name: string }>('PRAGMA table_info(brain_sessions)');
-    if (sessionCols.length > 0 && !sessionCols.some((c: any) => c.name === 'extracted_at')) {
+    if (sessionCols.length > 0 && !sessionCols.some((c: { name: string }) => c.name === 'extracted_at')) {
       provider.run('ALTER TABLE brain_sessions ADD COLUMN extracted_at TEXT');
     }
   } catch { /* brain_sessions doesn't exist yet */ }

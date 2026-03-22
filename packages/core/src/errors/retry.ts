@@ -104,6 +104,7 @@ export async function retryWithPreset<T>(
 
   for (let attempt = 0; attempt < RETRY_PRESETS[preset].maxAttempts; attempt++) {
     try {
+      // oxlint-disable-next-line eslint(no-await-in-loop)
       const value = await fn();
       return ok(value);
     } catch (thrown: unknown) {
@@ -117,6 +118,7 @@ export async function retryWithPreset<T>(
       options?.onRetry?.(lastError, attempt + 1, delay);
 
       try {
+        // oxlint-disable-next-line eslint(no-await-in-loop)
         await sleep(delay, options?.signal);
       } catch {
         // Aborted during sleep

@@ -19,7 +19,7 @@
  *   - createAntiPatternPass      — detects content anti-patterns and vague criteria
  */
 
-import type { Plan, PlanDecision, PlanAlternative } from './planner.js';
+import type { Plan, PlanDecision } from './planner.js';
 import type { PlanGap, GapSeverity, GapCategory } from './gap-types.js';
 import {
   generateGapId,

@@ -10,8 +10,6 @@ import Database from 'better-sqlite3';
 import { MigrationRunner } from './migration-runner.js';
 import {
   createMigration,
-  createFailingMigration,
-  getAppliedVersions,
 } from './migration-runner.test-helpers.js';
 
 describe('MigrationRunner — edge cases', () => {

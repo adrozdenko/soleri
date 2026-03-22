@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { VaultBranching, type MergeResult } from './vault-branching.js';
+import { VaultBranching } from './vault-branching.js';
 import type { PersistenceProvider, RunResult } from '../persistence/types.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 

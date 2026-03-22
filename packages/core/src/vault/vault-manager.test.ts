@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { VaultManager, type ConnectedVault } from './vault-manager.js';
-import type { SearchResult } from './vault.js';
+import { VaultManager } from './vault-manager.js';
 
 // ─── Mock Vault ──────────────────────────────────────────────────────
 

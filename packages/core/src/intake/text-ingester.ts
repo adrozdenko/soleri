@@ -104,6 +104,7 @@ export class TextIngester {
     // Classify all chunks
     const allItems: ClassifiedItem[] = [];
     for (const chunk of chunks) {
+      // oxlint-disable-next-line eslint(no-await-in-loop)
       const items = await classifyChunk(this.llm, chunk, `${source.type}: ${source.title}`);
       allItems.push(...items);
     }
@@ -153,6 +154,7 @@ export class TextIngester {
   ): Promise<IngestResult[]> {
     const results: IngestResult[] = [];
     for (const item of items) {
+      // oxlint-disable-next-line eslint(no-await-in-loop)
       const result = await this.ingestText(item.text, item.source, item.opts);
       results.push(result);
     }

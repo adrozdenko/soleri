@@ -264,6 +264,7 @@ export class IntakePipeline {
         const citation = `${job.config.title}, pages ${pageStart}-${pageEnd}`;
 
         // Stage 3: Classify
+        // oxlint-disable-next-line eslint(no-await-in-loop)
         const classifiedItems = await classifyChunk(this.llm, chunkText, citation);
 
         // Stage 4: Dedup

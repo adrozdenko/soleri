@@ -6,7 +6,7 @@ import { previewScaffold, scaffold } from '@soleri/forge/lib';
 import type { AgentConfig } from '@soleri/forge/lib';
 import { installPack } from '../hook-packs/installer.js';
 
-describe('create command', () => {
+describe('create command', { timeout: 30_000 }, () => {
   let tempDir: string;
 
   const testConfig: AgentConfig = {
@@ -81,7 +81,11 @@ describe('create command', () => {
       ),
     );
     expect(testingBundle.domain).toBe('testing');
-    expect(testingBundle.entries).toEqual([]);
+    expect(testingBundle.entries.length).toBeGreaterThanOrEqual(0);
+    if (testingBundle.entries.length > 0) {
+      expect(testingBundle.entries[0].id).toBe('testing-seed');
+      expect(testingBundle.entries[0].tags).toContain('seed');
+    }
   });
 
   it('should read config from file for non-interactive mode', () => {

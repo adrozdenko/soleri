@@ -125,7 +125,7 @@ describe('Pass 8: Alternative Analysis', () => {
     expect(altGaps).toHaveLength(0);
 
     // Without alternative gaps, a well-formed plan can reach 95+
-    const score = calculateScore(gaps, 3);
+    const _score = calculateScore(gaps, 3);
     // The plan may still have other minor gaps, but no alternative-analysis penalty
     const altPenalty = gaps
       .filter((g) => g.category === 'alternative-analysis')

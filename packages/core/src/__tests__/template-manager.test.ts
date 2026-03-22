@@ -83,7 +83,7 @@ describe('resolveIncludes', () => {
     // Each level includes a unique name so cycle detection doesn't fire
     let counter = 0;
     expect(() =>
-      resolveIncludes('@include(level0)', (name) => {
+      resolveIncludes('@include(level0)', (_name) => {
         counter++;
         return `@include(level${counter})`;
       }),

@@ -109,7 +109,7 @@ describe('JobQueue', () => {
   });
 
   it('dequeue returns oldest pending job', () => {
-    const id = queue.enqueue('dedup-check');
+    const _id = queue.enqueue('dedup-check');
     const job = queue.dequeue();
     expect(job).not.toBeNull();
     expect(job!.type).toBe('tag-normalize'); // First enqueued from previous test

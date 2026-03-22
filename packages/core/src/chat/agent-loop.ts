@@ -64,6 +64,7 @@ export async function runAgentLoop(
     // Call the Anthropic API
     let response: AnthropicResponse;
     try {
+      // oxlint-disable-next-line eslint(no-await-in-loop)
       response = await callAnthropic({
         baseUrl,
         apiKey: config.apiKey,
@@ -158,6 +159,7 @@ export async function runAgentLoop(
       const startTime = Date.now();
       let result;
       try {
+        // oxlint-disable-next-line eslint(no-await-in-loop)
         result = await config.executor(toolUse.name, toolUse.input as Record<string, unknown>);
       } catch (error) {
         result = {

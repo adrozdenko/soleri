@@ -182,6 +182,7 @@ export async function retry<T>(fn: () => Promise<T>, config?: Partial<RetryConfi
 
   for (let attempt = 0; attempt < resolved.maxAttempts; attempt++) {
     try {
+      // oxlint-disable-next-line eslint(no-await-in-loop)
       return await fn();
     } catch (error) {
       lastError = error;
@@ -193,6 +194,7 @@ export async function retry<T>(fn: () => Promise<T>, config?: Partial<RetryConfi
       const delay = computeDelay(error, attempt, resolved);
       resolved.onRetry?.(error, attempt + 1, delay);
 
+      // oxlint-disable-next-line eslint(no-await-in-loop)
       await sleep(delay);
     }
   }

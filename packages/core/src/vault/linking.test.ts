@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LinkManager } from './linking.js';
 import type { PersistenceProvider, RunResult } from '../persistence/types.js';
-import type { VaultLinkRow } from './vault-types.js';
 
 // ─── In-memory mock persistence ──────────────────────────────────────
 

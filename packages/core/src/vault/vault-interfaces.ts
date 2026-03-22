@@ -2,7 +2,7 @@
  * ISP interfaces for Vault decomposition.
  */
 import type { IntelligenceEntry } from '../intelligence/types.js';
-import type { SearchResult, VaultStats, Memory, MemoryStats, ProjectInfo } from './vault.js';
+import type { SearchResult, VaultStats, Memory, MemoryStats } from './vault.js';
 
 export interface VaultReader {
   get(id: string): IntelligenceEntry | null;

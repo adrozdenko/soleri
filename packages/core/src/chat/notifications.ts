@@ -126,8 +126,10 @@ export class NotificationEngine {
           continue;
         }
 
+        // oxlint-disable-next-line eslint(no-await-in-loop)
         const message = await check.check();
         if (message) {
+          // oxlint-disable-next-line eslint(no-await-in-loop)
           await this.onNotify(id, message);
           this.lastNotified.set(id, Date.now());
           this.sent++;
