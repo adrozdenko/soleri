@@ -303,6 +303,8 @@ export type {
   TaskMetrics,
   TaskDeliverable,
   ExecutionSummary,
+  VerificationFinding,
+  TaskVerification,
   PlanTask,
   PlanDecision,
   Plan,

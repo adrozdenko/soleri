@@ -64,6 +64,19 @@ export function evaluateGate(
       };
     }
 
+    case 'VERIFY': {
+      const hasVerification = evaluateVerifyGate(toolResults);
+      if (hasVerification) return { passed: true, action: 'CONTINUE' };
+      // Advisory only — always continues, just warns
+      return {
+        passed: true,
+        action: 'CONTINUE',
+        message:
+          gate.onFail?.message ??
+          'Advisory: task modifies existing code without verification evidence.',
+      };
+    }
+
     default:
       return { passed: true, action: 'CONTINUE' };
   }
@@ -156,6 +169,18 @@ export function resolvePath(obj: Record<string, unknown>, path: string): unknown
 // ---------------------------------------------------------------------------
 // Internal
 // ---------------------------------------------------------------------------
+
+/**
+ * Check if tool results contain verification evidence.
+ * Looks for a verification object with at least one proven finding.
+ */
+function evaluateVerifyGate(data: Record<string, unknown>): boolean {
+  const verification = data.verification as
+    | { findings?: Array<{ proven?: boolean }> }
+    | undefined;
+  if (!verification?.findings?.length) return false;
+  return verification.findings.some((f) => f.proven === true);
+}
 
 function parseConditionValue(raw: string): string | number | boolean {
   if (raw === 'true') return true;
