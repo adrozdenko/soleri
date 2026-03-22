@@ -747,6 +747,12 @@ export {
 // ─── Operator Profile ───────────────────────────────────────────────
 export { OperatorProfileStore } from './operator/operator-profile.js';
 export { SignalType } from './operator/operator-types.js';
+export {
+  extractFromSession,
+  extractFromRadar,
+  extractFromBrainStrengths,
+} from './operator/operator-signals.js';
+export type { SessionCaptureData } from './operator/operator-signals.js';
 export type {
   CommandStyleData,
   WorkRhythmData,
