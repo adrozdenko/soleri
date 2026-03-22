@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import type { OperatorProfile } from '../operator/operator-types.js';
 
 export interface BriefingSection {
   label: string;
@@ -183,6 +184,20 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
           // Curator unavailable — skip
         }
 
+        // 7. Operator adaptation
+        try {
+          const profile = runtime.operatorProfile.getProfile();
+          if (profile) {
+            const summary = buildAdaptationSummary(profile);
+            if (summary) {
+              sections.push({ label: 'Operator Adaptation', content: summary });
+              dataPoints += 1;
+            }
+          }
+        } catch {
+          // Operator profile unavailable — skip
+        }
+
         return {
           sections: sections.slice(0, maxSections),
           generatedAt: Date.now(),
@@ -191,6 +206,41 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
       },
     },
   ];
+}
+
+/** Build a concise adaptation summary from an operator profile (5-8 lines max). */
+export function buildAdaptationSummary(profile: OperatorProfile): string | null {
+  const lines: string[] = [];
+  const { communication, trustModel, workingRules, growthEdges } = profile;
+
+  // Communication style
+  if (communication.style && communication.style !== 'mixed') {
+    const formality = communication.formality >= 0.7 ? 'formal' : communication.formality <= 0.3 ? 'casual' : '';
+    const parts = [communication.style, formality].filter(Boolean);
+    lines.push(`Communication: ${parts.join(', ')}`);
+  }
+
+  // Challenge threshold / pushback level
+  if (trustModel.level !== 'new') {
+    const autonomy = trustModel.currentLevel >= 0.7 ? 'high autonomy' : trustModel.currentLevel <= 0.3 ? 'check before acting' : 'moderate autonomy';
+    lines.push(`Trust: ${trustModel.level} — ${autonomy}`);
+  }
+
+  // Work priorities (from top working rules)
+  const topRules = workingRules.rules.slice(0, 3);
+  if (topRules.length > 0) {
+    const ruleTexts = topRules.map((r) => r.rule.slice(0, 60));
+    lines.push(`Priorities: ${ruleTexts.join('; ')}`);
+  }
+
+  // Growth edges
+  const edges = [...growthEdges.observed, ...growthEdges.selfReported];
+  if (edges.length > 0) {
+    const edgeNames = edges.slice(0, 3).map((e) => e.area);
+    lines.push(`Growth edges: ${edgeNames.join(', ')}`);
+  }
+
+  return lines.length > 0 ? lines.join('\n') : null;
 }
 
 function formatTimeAgo(timestamp: number): string {
