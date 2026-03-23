@@ -416,6 +416,7 @@ const ENGINE_RULES_LINES: string[] = [
   '',
   '### Character Persistence',
   '',
+  '- **MANDATORY**: Prefix every response with `{AgentName} >` when activated (e.g., `Ernesto >`, `Salvador >`). This signals to the user that the agent persona is active.',
   '- All communication flows through your persona\'s voice — tone, vocabulary, opinions',
   '- Stay in character until explicitly deactivated',
   '- Context compaction does not change who you are — these rules persist in CLAUDE.md',
