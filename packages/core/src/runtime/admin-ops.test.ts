@@ -67,8 +67,8 @@ describe('createAdminOps', () => {
     ops = createAdminOps(rt);
   });
 
-  it('returns 9 ops', () => {
-    expect(ops.length).toBe(9);
+  it('returns 11 ops', () => {
+    expect(ops.length).toBe(11);
   });
 
   // ─── admin_health ─────────────────────────────────────────────
@@ -226,6 +226,75 @@ describe('createAdminOps', () => {
       const result = (await op.handler({})) as Record<string, unknown>;
       expect(rt.brain.rebuildVocabulary).toHaveBeenCalled();
       expect(result.cleared).toContain('brain_vocabulary');
+    });
+  });
+
+  // ─── operator_context_inspect ────────────────────────────────
+
+  describe('operator_context_inspect', () => {
+    it('returns full profile when store is available', async () => {
+      const mockContext = {
+        expertise: [{ topic: 'TypeScript', level: 'expert', confidence: 0.9, sessionCount: 5, lastObserved: Date.now() }],
+        corrections: [],
+        interests: [{ tag: 'testing', confidence: 0.7, mentionCount: 3, lastMentioned: Date.now() }],
+        patterns: [],
+        sessionCount: 5,
+        lastUpdated: Date.now(),
+      };
+      (rt as Record<string, unknown>).operatorContextStore = {
+        inspect: vi.fn().mockReturnValue(mockContext),
+        deleteItem: vi.fn(),
+      };
+      const updatedOps = createAdminOps(rt);
+      const op = findOp(updatedOps, 'operator_context_inspect');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      expect(result.available).toBe(true);
+      expect(result.expertise).toEqual(mockContext.expertise);
+      expect(result.interests).toEqual(mockContext.interests);
+    });
+
+    it('returns not-available when store is missing', async () => {
+      // Default mock runtime has no operatorContextStore
+      const op = findOp(ops, 'operator_context_inspect');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      expect(result.available).toBe(false);
+      expect(result.message).toBe('Operator context not configured');
+    });
+  });
+
+  // ─── operator_context_delete ───────────────────────────────────
+
+  describe('operator_context_delete', () => {
+    it('removes an item successfully', async () => {
+      (rt as Record<string, unknown>).operatorContextStore = {
+        inspect: vi.fn(),
+        deleteItem: vi.fn().mockReturnValue(true),
+      };
+      const updatedOps = createAdminOps(rt);
+      const op = findOp(updatedOps, 'operator_context_delete');
+      const result = (await op.handler({ type: 'expertise', id: 'abc-123' })) as Record<string, unknown>;
+      expect(result.deleted).toBe(true);
+      expect(result.type).toBe('expertise');
+      expect(result.id).toBe('abc-123');
+    });
+
+    it('returns false for missing item', async () => {
+      (rt as Record<string, unknown>).operatorContextStore = {
+        inspect: vi.fn(),
+        deleteItem: vi.fn().mockReturnValue(false),
+      };
+      const updatedOps = createAdminOps(rt);
+      const op = findOp(updatedOps, 'operator_context_delete');
+      const result = (await op.handler({ type: 'pattern', id: 'nonexistent' })) as Record<string, unknown>;
+      expect(result.deleted).toBe(false);
+      expect(result.message).toBe('Item not found');
+    });
+
+    it('returns not-available when store is missing', async () => {
+      const op = findOp(ops, 'operator_context_delete');
+      const result = (await op.handler({ type: 'expertise', id: 'abc' })) as Record<string, unknown>;
+      expect(result.deleted).toBe(false);
+      expect(result.message).toBe('Operator context not configured');
     });
   });
 

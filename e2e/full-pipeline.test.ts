@@ -19,6 +19,7 @@ import {
   createDomainFacades,
   registerFacade,
   assessTaskComplexity,
+  OperatorContextStore,
 } from '@soleri/core';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 
@@ -434,6 +435,138 @@ describe('E2E: full-pipeline', () => {
       const approachSignal = result.signals.find((s) => s.name === 'approach-already-described');
       expect(approachSignal?.triggered).toBe(true);
       expect(approachSignal?.weight).toBeLessThan(0);
+    });
+  });
+
+  // --- Operator Context Learning ---
+
+  describe('Operator Context Learning', () => {
+    beforeAll(() => {
+      // Wire up OperatorContextStore on the runtime using the vault's persistence provider
+      const store = new OperatorContextStore(runtime.vault.getProvider());
+      (runtime as Record<string, unknown>).operatorContextStore = store;
+    });
+
+    it('signals compound through orchestrate_complete', async () => {
+      // Start a brain session so orchestrate_complete has a valid sessionId
+      const sessionRes = await callOp(`${AGENT_ID}_brain`, 'brain_lifecycle', {
+        action: 'start',
+        domain: 'testing',
+        context: 'operator context test session 1',
+      });
+      expect(sessionRes.success).toBe(true);
+      const session = sessionRes.data as { id: string };
+
+      const result = await callOp(`${AGENT_ID}_orchestrate`, 'orchestrate_complete', {
+        sessionId: session.id,
+        outcome: 'completed',
+        summary: 'Fixed a bug',
+        operatorSignals: {
+          expertise: [{ topic: 'typescript', level: 'expert', confidence: 0.9 }],
+          corrections: [{ rule: 'dont summarize', scope: 'global' }],
+          interests: [{ tag: 'coffee' }],
+          patterns: [{ pattern: 'prefers small PRs', frequency: 'occasional' }],
+        },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('inspect returns accumulated profile', async () => {
+      const inspect = await callOp(`${AGENT_ID}_admin`, 'operator_context_inspect', {});
+      expect(inspect.success).toBe(true);
+      const ctx = inspect.data as {
+        available: boolean;
+        expertise: unknown[];
+        corrections: unknown[];
+        interests: unknown[];
+        patterns: unknown[];
+        sessionCount: number;
+      };
+      expect(ctx.available).toBe(true);
+      expect(ctx.expertise).toBeDefined();
+      expect(ctx.expertise.length).toBeGreaterThan(0);
+      expect(ctx.corrections).toBeDefined();
+      expect(ctx.corrections.length).toBeGreaterThan(0);
+      expect(ctx.interests).toBeDefined();
+      expect(ctx.interests.length).toBeGreaterThan(0);
+      expect(ctx.patterns).toBeDefined();
+      expect(ctx.patterns.length).toBeGreaterThan(0);
+    });
+
+    it('second session compounds (progressive learning)', async () => {
+      // Start another brain session
+      const sessionRes = await callOp(`${AGENT_ID}_brain`, 'brain_lifecycle', {
+        action: 'start',
+        domain: 'testing',
+        context: 'operator context test session 2',
+      });
+      expect(sessionRes.success).toBe(true);
+      const session = sessionRes.data as { id: string };
+
+      // Second complete with overlapping signals — confidence should grow
+      await callOp(`${AGENT_ID}_orchestrate`, 'orchestrate_complete', {
+        sessionId: session.id,
+        outcome: 'completed',
+        summary: 'Added feature',
+        operatorSignals: {
+          expertise: [{ topic: 'typescript', level: 'expert', confidence: 0.95 }],
+          corrections: [],
+          interests: [{ tag: 'coffee' }], // mentioned again — confidence should grow
+          patterns: [],
+        },
+      });
+
+      // Inspect should show compounded results
+      const inspect = await callOp(`${AGENT_ID}_admin`, 'operator_context_inspect', {});
+      expect(inspect.success).toBe(true);
+      const ctx = inspect.data as {
+        available: boolean;
+        expertise: Array<{ topic: string; confidence: number; sessionCount: number }>;
+        interests: Array<{ tag: string; confidence: number; mentionCount: number }>;
+      };
+
+      // Expertise: typescript should have sessionCount 2
+      const tsExpertise = ctx.expertise.find(
+        (e) => e.topic.toLowerCase() === 'typescript',
+      );
+      expect(tsExpertise).toBeDefined();
+      expect(tsExpertise!.sessionCount).toBe(2);
+
+      // Interest: coffee mentioned 2x — confidence should be higher than initial 0.5
+      const coffeeInterest = ctx.interests.find(
+        (i) => i.tag.toLowerCase() === 'coffee',
+      );
+      expect(coffeeInterest).toBeDefined();
+      expect(coffeeInterest!.mentionCount).toBe(2);
+      expect(coffeeInterest!.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('delete removes a correction item', async () => {
+      // Inspect to get the actual correction id
+      const inspect = await callOp(`${AGENT_ID}_admin`, 'operator_context_inspect', {});
+      expect(inspect.success).toBe(true);
+      const ctx = inspect.data as {
+        corrections: Array<{ id: string; rule: string }>;
+      };
+      expect(ctx.corrections.length).toBeGreaterThan(0);
+      const correctionId = ctx.corrections[0].id;
+
+      // Delete the correction
+      const del = await callOp(`${AGENT_ID}_admin`, 'operator_context_delete', {
+        type: 'correction',
+        id: correctionId,
+      });
+      expect(del.success).toBe(true);
+      const delData = del.data as { deleted: boolean };
+      expect(delData.deleted).toBe(true);
+
+      // Verify it's gone
+      const inspect2 = await callOp(`${AGENT_ID}_admin`, 'operator_context_inspect', {});
+      const ctx2 = inspect2.data as {
+        corrections: Array<{ id: string }>;
+      };
+      const found = ctx2.corrections.find((c) => c.id === correctionId);
+      expect(found).toBeUndefined();
     });
   });
 });

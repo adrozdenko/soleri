@@ -1,5 +1,5 @@
 /**
- * Admin / infrastructure operations — 8 ops for agent self-management.
+ * Admin / infrastructure operations — 11 ops for agent self-management.
  *
  * These ops let agents introspect their own health, configuration, and
  * runtime state. No new modules needed — uses existing runtime parts.
@@ -212,6 +212,39 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           cleared: ['brain_vocabulary'],
           brainVocabularySize: brain.getStats().vocabularySize,
         };
+      },
+    },
+
+    // ─── Operator Context ───────────────────────────────────────────
+    {
+      name: 'operator_context_inspect',
+      description:
+        'Inspect the full operator context profile — expertise, corrections, interests, patterns.',
+      auth: 'read',
+      handler: async () => {
+        const store = runtime.operatorContextStore;
+        if (!store) {
+          return { available: false, message: 'Operator context not configured' };
+        }
+        return { available: true, ...store.inspect() };
+      },
+    },
+    {
+      name: 'operator_context_delete',
+      description: 'Delete a specific item from the operator context profile.',
+      auth: 'write',
+      handler: async (params) => {
+        const store = runtime.operatorContextStore;
+        if (!store) {
+          return { deleted: false, message: 'Operator context not configured' };
+        }
+        const type = params.type as string;
+        const id = params.id as string;
+        const deleted = store.deleteItem(type as Parameters<typeof store.deleteItem>[0], id);
+        if (deleted) {
+          return { deleted: true, type, id };
+        }
+        return { deleted: false, message: 'Item not found' };
       },
     },
 
