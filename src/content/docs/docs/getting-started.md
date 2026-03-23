@@ -15,7 +15,7 @@ description: Install Soleri, create your first agent, and connect it to your AI 
   sudo apt-get install -y build-essential python3
 
   # Fedora / RHEL
-  sudo dnf groupinstall "Development Tools" && sudo dnf install python3
+  sudo dnf group install "Development Tools" && sudo dnf install python3
 
   # Alpine
   apk add build-base python3

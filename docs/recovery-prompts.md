@@ -1,3 +1,4 @@
+<!-- cspell:words Worktree unpushed -->
 # Recovery Prompts — Worktree Staging Disaster (2026-03-21)
 
 All prompts below are for `cd ~/projects/soleri && claude` sessions.
