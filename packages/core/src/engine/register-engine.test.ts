@@ -12,7 +12,7 @@
  * - Dynamic tool registration (registerTool)
  */
 
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createAgentRuntime } from '../runtime/runtime.js';
 import { registerEngine, ENGINE_MODULES } from './register-engine.js';

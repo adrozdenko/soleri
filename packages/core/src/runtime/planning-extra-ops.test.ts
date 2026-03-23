@@ -26,7 +26,7 @@ vi.mock('../playbooks/index.js', () => ({
     genericMatch: 'build',
     domainMatch: 'feature',
   })),
-  entryToPlaybookDefinition: vi.fn((e: any) =>
+  entryToPlaybookDefinition: vi.fn((e: Record<string, unknown>) =>
     e.type === 'playbook' ? { id: e.id, label: e.title } : null,
   ),
 }));
@@ -201,7 +201,7 @@ describe('createPlanningExtraOps', () => {
           status: 'completed',
           reconciliation: { accuracy: 90, driftItems: [] },
           decisions: [],
-        }) as any,
+        }) as unknown,
       );
       const result = (await findOp(ops, 'plan_complete_lifecycle').handler({
         planId: 'plan-1',
@@ -215,7 +215,7 @@ describe('createPlanningExtraOps', () => {
     });
 
     it('returns error for non-completed plan', async () => {
-      vi.mocked(runtime.planner.get).mockReturnValue(makePlan({ status: 'draft' }) as any);
+      vi.mocked(runtime.planner.get).mockReturnValue(makePlan({ status: 'draft' }) as unknown);
       const result = (await findOp(ops, 'plan_complete_lifecycle').handler({
         planId: 'plan-1',
       })) as Record<string, unknown>;
@@ -223,7 +223,7 @@ describe('createPlanningExtraOps', () => {
     });
 
     it('returns error for missing plan', async () => {
-      vi.mocked(runtime.planner.get).mockReturnValue(null as any);
+      vi.mocked(runtime.planner.get).mockReturnValue(null as unknown);
       const result = (await findOp(ops, 'plan_complete_lifecycle').handler({
         planId: 'x',
       })) as Record<string, unknown>;
@@ -236,7 +236,7 @@ describe('createPlanningExtraOps', () => {
           status: 'completed',
           reconciliation: { accuracy: 90, driftItems: [] },
           decisions: ['Used pattern [entryId:abc-123] for auth'],
-        }) as any,
+        }) as unknown,
       );
       const result = (await findOp(ops, 'plan_complete_lifecycle').handler({
         planId: 'plan-1',
@@ -251,7 +251,7 @@ describe('createPlanningExtraOps', () => {
           reconciliation: { accuracy: 90, driftItems: [] },
           githubIssue: { owner: 'org', repo: 'repo', number: 42 },
           decisions: [],
-        }) as any,
+        }) as unknown,
       );
       const { closeIssueWithComment } = await import('./github-integration.js');
       const result = (await findOp(ops, 'plan_complete_lifecycle').handler({
@@ -312,7 +312,7 @@ describe('createPlanningExtraOps', () => {
     });
 
     it('returns error for missing plan', async () => {
-      vi.mocked(runtime.planner.get).mockReturnValue(null as any);
+      vi.mocked(runtime.planner.get).mockReturnValue(null as unknown);
       const result = (await findOp(ops, 'plan_list_tasks').handler({
         planId: 'x',
       })) as Record<string, unknown>;
@@ -411,7 +411,7 @@ describe('createPlanningExtraOps', () => {
 
     it('returns not-matched when no playbook fits', async () => {
       const { matchPlaybooks } = await import('../playbooks/index.js');
-      vi.mocked(matchPlaybooks).mockReturnValue({ playbook: null } as any);
+      vi.mocked(matchPlaybooks).mockReturnValue({ playbook: null } as unknown);
       const result = (await findOp(ops, 'plan_brainstorm').handler({
         text: 'random',
       })) as Record<string, unknown>;
@@ -429,7 +429,7 @@ describe('createPlanningExtraOps', () => {
     });
 
     it('returns false when drift is too significant', async () => {
-      vi.mocked(runtime.planner.autoReconcile).mockReturnValue(null as any);
+      vi.mocked(runtime.planner.autoReconcile).mockReturnValue(null as unknown);
       const result = (await findOp(ops, 'plan_auto_reconcile').handler({
         planId: 'plan-1',
       })) as Record<string, unknown>;
@@ -448,7 +448,7 @@ describe('createPlanningExtraOps', () => {
     });
 
     it('returns error for missing plan', async () => {
-      vi.mocked(runtime.planner.get).mockReturnValue(null as any);
+      vi.mocked(runtime.planner.get).mockReturnValue(null as unknown);
       const result = (await findOp(ops, 'plan_execution_metrics').handler({
         planId: 'x',
       })) as Record<string, unknown>;
@@ -466,7 +466,7 @@ describe('createPlanningExtraOps', () => {
         updatedAt: 0,
       };
       vi.mocked(runtime.planner.get).mockReturnValue(
-        makePlan({ tasks: [taskWithMetrics] }) as any,
+        makePlan({ tasks: [taskWithMetrics] }) as unknown,
       );
       const result = (await findOp(ops, 'plan_record_task_metrics').handler({
         planId: 'plan-1',
@@ -523,7 +523,7 @@ describe('createPlanningExtraOps', () => {
     });
 
     it('returns error for missing plan', async () => {
-      vi.mocked(runtime.planner.get).mockReturnValue(null as any);
+      vi.mocked(runtime.planner.get).mockReturnValue(null as unknown);
       const result = (await findOp(ops, 'plan_reconcile_with_evidence').handler({
         planId: 'x',
         projectPath: '/tmp',
@@ -536,7 +536,7 @@ describe('createPlanningExtraOps', () => {
     it('dry run previews purge candidates', async () => {
       vi.mocked(runtime.planner.list).mockReturnValue([
         makePlan({ status: 'archived' }),
-      ] as any);
+      ] as unknown);
       const result = (await findOp(ops, 'plan_purge').handler({
         mode: 'archived',
         dryRun: true,
@@ -548,7 +548,7 @@ describe('createPlanningExtraOps', () => {
     it('purges archived plans', async () => {
       vi.mocked(runtime.planner.list).mockReturnValue([
         makePlan({ status: 'archived' }),
-      ] as any);
+      ] as unknown);
       const result = (await findOp(ops, 'plan_purge').handler({
         mode: 'archived',
         dryRun: false,
@@ -560,7 +560,7 @@ describe('createPlanningExtraOps', () => {
     it('purges stale draft plans', async () => {
       vi.mocked(runtime.planner.list).mockReturnValue([
         makePlan({ status: 'draft', createdAt: Date.now() - 48 * 60 * 60 * 1000 }),
-      ] as any);
+      ] as unknown);
       const result = (await findOp(ops, 'plan_purge').handler({
         mode: 'stale',
         dryRun: false,
@@ -571,7 +571,7 @@ describe('createPlanningExtraOps', () => {
     it('purges specific plans by ID', async () => {
       vi.mocked(runtime.planner.list).mockReturnValue([
         makePlan({ id: 'plan-1' }),
-      ] as any);
+      ] as unknown);
       const result = (await findOp(ops, 'plan_purge').handler({
         mode: 'specific',
         planIds: ['plan-1'],

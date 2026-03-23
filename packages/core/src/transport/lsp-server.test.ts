@@ -18,7 +18,7 @@ function encodeLsp(obj: unknown): string {
   return `Content-Length: ${len}\r\n\r\n${json}`;
 }
 
-function parseLspResponse(buffer: string): { message: any; remaining: string } | null {
+function parseLspResponse(buffer: string): { message: unknown; remaining: string } | null {
   const headerEnd = buffer.indexOf('\r\n\r\n');
   if (headerEnd < 0) return null;
 
@@ -36,9 +36,9 @@ function parseLspResponse(buffer: string): { message: any; remaining: string } |
   return { message: JSON.parse(body), remaining };
 }
 
-function collectMessages(output: PassThrough, count = 1, timeoutMs = 3000): Promise<any[]> {
+function collectMessages(output: PassThrough, count = 1, timeoutMs = 3000): Promise<unknown[]> {
   return new Promise((resolve, reject) => {
-    const messages: any[] = [];
+    const messages: unknown[] = [];
     let buffer = '';
     const timer = setTimeout(() => {
       if (messages.length > 0) resolve(messages);

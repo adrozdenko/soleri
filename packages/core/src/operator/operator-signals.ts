@@ -91,7 +91,7 @@ export function extractFromSession(session: SessionCaptureData): OperatorSignal[
   // ─── work_rhythm ────────────────────────────────────────────────
   if (session.capturedAt) {
     const date = new Date(session.capturedAt);
-    const hour = date.getUTCHours();
+    const _hour = date.getUTCHours();
     const decisions = session.decisions ?? [];
     const files = session.filesModified ?? [];
 

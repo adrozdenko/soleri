@@ -36,6 +36,9 @@ import { createContextFacadeOps } from '../runtime/facades/context-facade.js';
 import { createAgencyFacadeOps } from '../runtime/facades/agency-facade.js';
 import { createChatFacadeOps } from '../runtime/facades/chat-facade.js';
 import { createOperatorFacadeOps } from '../runtime/facades/operator-facade.js';
+import { createArchiveFacadeOps } from '../runtime/facades/archive-facade.js';
+import { createSyncFacadeOps } from '../runtime/facades/sync-facade.js';
+import { createReviewFacadeOps } from '../runtime/facades/review-facade.js';
 import { createDomainFacade } from '../runtime/domain-ops.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -85,7 +88,7 @@ interface ModuleDef {
 export const ENGINE_MODULES: ModuleDef[] = [
   {
     suffix: 'vault',
-    description: 'Knowledge management — search, CRUD, import/export, intake, archival.',
+    description: 'Knowledge management — search, CRUD, import/export, intake, sharing, linking.',
     createOps: createVaultFacadeOps,
   },
   {
@@ -148,6 +151,21 @@ export const ENGINE_MODULES: ModuleDef[] = [
     suffix: 'operator',
     description: 'Operator profile — personality learning, signals, adaptation.',
     createOps: createOperatorFacadeOps,
+  },
+  {
+    suffix: 'archive',
+    description: 'Archival, lifecycle, and knowledge maintenance.',
+    createOps: createArchiveFacadeOps,
+  },
+  {
+    suffix: 'sync',
+    description: 'Git, Obsidian, and pack sync operations.',
+    createOps: createSyncFacadeOps,
+  },
+  {
+    suffix: 'review',
+    description: 'Knowledge review workflow.',
+    createOps: createReviewFacadeOps,
   },
 ];
 

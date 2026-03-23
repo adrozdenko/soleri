@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Telemetry } from './telemetry.js';
-import type { TelemetryStats } from './telemetry.js';
 
 describe('Telemetry', () => {
   let tel: Telemetry;

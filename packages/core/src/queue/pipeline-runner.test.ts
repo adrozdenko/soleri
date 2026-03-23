@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { PipelineRunner } from './pipeline-runner.js';
 import type { JobQueue, Job } from './job-queue.js';
 

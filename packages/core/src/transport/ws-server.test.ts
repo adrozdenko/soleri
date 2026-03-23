@@ -83,13 +83,13 @@ describe('WsMcpServer', () => {
   afterEach(async () => {
     // The WsMcpServer.stop() can hang when the underlying HTTP server
     // waits for upgraded WebSocket connections to drain. Force-destroy.
-    const httpServer = (server as any).server as Server | undefined;
+    const httpServer = (server as unknown).server as Server | undefined;
     if (httpServer) {
       // Force immediate close of all tracked sockets
-      for (const conn of ((server as any).connections as Map<string, any>)?.values() ?? []) {
+      for (const conn of ((server as unknown).connections as Map<string, unknown>)?.values() ?? []) {
         conn.socket?.destroy();
       }
-      ((server as any).connections as Map<string, any>)?.clear();
+      ((server as unknown).connections as Map<string, unknown>)?.clear();
       // Close with a force-destroy fallback
       await Promise.race([
         server.stop(),
@@ -97,7 +97,7 @@ describe('WsMcpServer', () => {
           setTimeout(() => {
             httpServer.closeAllConnections?.();
             httpServer.close(() => {});
-            (server as any).server = undefined;
+            (server as unknown).server = undefined;
             resolve();
           }, 200);
         }),
@@ -156,7 +156,7 @@ describe('WsMcpServer', () => {
   describe('WebSocket handshake', () => {
     it('completes handshake with valid token', async () => {
       await server.start(0);
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const wsKey = 'dGhlIHNhbXBsZSBub25jZQ==';
@@ -184,7 +184,7 @@ describe('WsMcpServer', () => {
 
     it('rejects connection with invalid token', async () => {
       await server.start(0);
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const socket = connect(addr.port, '127.0.0.1');
@@ -202,7 +202,7 @@ describe('WsMcpServer', () => {
 
     it('supports Authorization header auth', async () => {
       await server.start(0);
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const socket = connect(addr.port, '127.0.0.1');
@@ -244,7 +244,7 @@ describe('WsMcpServer', () => {
   describe('message handling', () => {
     it('calls onMessage for valid JSON text frames', async () => {
       await server.start(0);
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const socket = connect(addr.port, '127.0.0.1');
@@ -273,7 +273,7 @@ describe('WsMcpServer', () => {
   describe('cleanup on stop', () => {
     it('cleans up connections when server stops', async () => {
       await server.start(0);
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const socket = connect(addr.port, '127.0.0.1');

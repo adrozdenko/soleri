@@ -25,7 +25,7 @@ export interface ModuleManifestEntry {
 export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
   {
     suffix: 'vault',
-    description: 'Knowledge management — search, CRUD, import/export, intake, archival.',
+    description: 'Knowledge management — search, CRUD, import/export, intake, sharing, linking.',
     keyOps: ['search_intelligent', 'capture_knowledge', 'capture_quick'],
   },
   {
@@ -88,6 +88,21 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
     suffix: 'operator',
     description: 'Operator profile — personality learning, signals, adaptation.',
     keyOps: ['profile_get', 'signal_accumulate', 'synthesis_check'],
+  },
+  {
+    suffix: 'archive',
+    description: 'Archival, lifecycle, and knowledge maintenance.',
+    keyOps: ['vault_archive', 'vault_restore', 'vault_optimize', 'knowledge_audit'],
+  },
+  {
+    suffix: 'sync',
+    description: 'Git, Obsidian, and pack sync operations.',
+    keyOps: ['vault_git_push', 'vault_git_pull', 'obsidian_sync'],
+  },
+  {
+    suffix: 'review',
+    description: 'Knowledge review workflow.',
+    keyOps: ['vault_submit_review', 'vault_approve', 'vault_reject'],
   },
 ];
 

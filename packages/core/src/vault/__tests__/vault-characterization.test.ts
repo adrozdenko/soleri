@@ -29,8 +29,8 @@ describe('Vault Characterization Tests', () => {
 
   describe('setLinkManager / isAutoLinkEnabled', () => {
     it('defaults to no link manager', () => { expect(vault.isAutoLinkEnabled()).toBe(false); });
-    it('enables auto-link when set', () => { vault.setLinkManager({ suggestLinks: () => [], addLink: () => {} } as any); expect(vault.isAutoLinkEnabled()).toBe(true); });
-    it('respects enabled:false', () => { vault.setLinkManager({ suggestLinks: () => [], addLink: () => {} } as any, { enabled: false }); expect(vault.isAutoLinkEnabled()).toBe(false); });
+    it('enables auto-link when set', () => { vault.setLinkManager({ suggestLinks: () => [], addLink: () => {} } as unknown); expect(vault.isAutoLinkEnabled()).toBe(true); });
+    it('respects enabled:false', () => { vault.setLinkManager({ suggestLinks: () => [], addLink: () => {} } as unknown, { enabled: false }); expect(vault.isAutoLinkEnabled()).toBe(false); });
   });
 
   describe('seed', () => {

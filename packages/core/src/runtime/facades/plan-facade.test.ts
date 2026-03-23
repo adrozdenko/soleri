@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Vault } from '../../vault/vault.js';

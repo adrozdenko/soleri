@@ -115,7 +115,7 @@ function makeMockVault(provider: BranchingMockDB) {
     getProvider: () => provider,
     add: vi.fn(),
     remove: vi.fn(),
-  } as any;
+  } as unknown;
 }
 
 describe('VaultBranching', () => {

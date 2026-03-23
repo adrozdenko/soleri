@@ -80,7 +80,7 @@ export function getAgeReport(provider: PersistenceProvider): {
     { label: 'this_quarter', minDays: 30, maxDays: 90 },
     { label: 'older', minDays: 90, maxDays: Infinity },
   ];
-  const counts = new Array(bucketDefs.length).fill(0) as number[];
+  const counts = Array.from<number>({ length: bucketDefs.length }).fill(0);
   let oldest: number | null = null;
   let newest: number | null = null;
   for (const row of rows) {

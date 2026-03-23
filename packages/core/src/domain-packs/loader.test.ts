@@ -5,7 +5,7 @@
  * Here we add edge cases and test loadDomainPack / loadDomainPacksFromConfig.
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { resolveDependencies, loadDomainPack, loadDomainPacksFromConfig } from './loader.js';
 import type { DomainPack } from './types.js';
 

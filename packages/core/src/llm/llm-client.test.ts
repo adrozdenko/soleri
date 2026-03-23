@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { LLMClient } from './llm-client.js';
 import { KeyPool } from './key-pool.js';
 import { LLMError } from './types.js';

@@ -2,7 +2,7 @@
  * Unit tests for telemetry-ops — 2 ops: telemetry_errors, telemetry_slow_ops.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { captureOps, executeOp } from '../engine/test-helpers.js';
 import { createTelemetryOps } from './telemetry-ops.js';
 import type { AgentRuntime } from './types.js';

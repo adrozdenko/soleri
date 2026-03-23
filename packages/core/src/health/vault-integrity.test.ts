@@ -45,7 +45,6 @@ describe('checkVaultIntegrity', () => {
   });
 
   it('detects FTS row count mismatch and attempts rebuild', () => {
-    let callCount = 0;
     const getMock = vi.fn().mockImplementation((sql: string) => {
       if (sql.includes('SELECT 1 FROM')) return { exists: 1 };
       if (sql.includes('COUNT(*)') && sql.includes('entries_fts')) return { count: 3 };
@@ -96,7 +95,6 @@ describe('checkVaultIntegrity', () => {
   });
 
   it('handles FTS count query failure gracefully', () => {
-    let firstCall = true;
     const getMock = vi.fn().mockImplementation((sql: string) => {
       if (sql.includes('SELECT 1 FROM')) return { exists: 1 };
       if (sql.includes('COUNT(*)')) throw new Error('query failed');

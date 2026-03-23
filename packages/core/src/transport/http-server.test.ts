@@ -12,13 +12,13 @@ import { HttpMcpServer, type HttpServerCallbacks } from './http-server.js';
 // MOCK FACTORIES
 // =============================================================================
 
-function makeReq(opts: {
+function _makeReq(opts: {
   method?: string;
   url?: string;
   headers?: Record<string, string | undefined>;
   body?: unknown;
-}): any {
-  const req = new EventEmitter() as any;
+}): unknown {
+  const req = new EventEmitter() as unknown;
   req.method = opts.method ?? 'GET';
   req.url = opts.url ?? '/';
   req.headers = opts.headers ?? {};
@@ -34,8 +34,8 @@ function makeReq(opts: {
   return req;
 }
 
-function makeRes(): any {
-  const res: any = {
+function _makeRes(): unknown {
+  const res: Record<string, unknown> = {
     headersSent: false,
     statusCode: 0,
     _headers: {} as Record<string, string>,
@@ -157,7 +157,7 @@ describe('HttpMcpServer', () => {
     it('responds to GET /health', async () => {
       await server.start();
       // Use the actual port the server is listening on
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/health`);
@@ -171,7 +171,7 @@ describe('HttpMcpServer', () => {
   describe('auth on /mcp', () => {
     it('rejects unauthenticated POST /mcp with 401', async () => {
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/mcp`, {
@@ -184,7 +184,7 @@ describe('HttpMcpServer', () => {
 
     it('accepts authenticated POST /mcp initialize', async () => {
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/mcp`, {
@@ -203,7 +203,7 @@ describe('HttpMcpServer', () => {
   describe('session-based routing', () => {
     it('returns 404 for unknown session on POST', async () => {
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/mcp`, {
@@ -221,7 +221,7 @@ describe('HttpMcpServer', () => {
     it('routes POST to onRequest for known session', async () => {
       server.sessionManager.add('sess-1', null, null);
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/mcp`, {
@@ -239,7 +239,7 @@ describe('HttpMcpServer', () => {
 
     it('returns 400 for GET /mcp without session ID', async () => {
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/mcp`, {
@@ -251,7 +251,7 @@ describe('HttpMcpServer', () => {
     it('routes DELETE /mcp to onDelete for known session', async () => {
       server.sessionManager.add('sess-1', null, null);
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/mcp`, {
@@ -273,7 +273,7 @@ describe('HttpMcpServer', () => {
         callbacks,
       );
       await corsServer.start();
-      const addr = (corsServer as any).server?.address();
+      const addr = (corsServer as unknown).server?.address();
       if (!addr || typeof addr === 'string') {
         await corsServer.stop();
         return;
@@ -296,7 +296,7 @@ describe('HttpMcpServer', () => {
         callbacks,
       );
       await rlServer.start();
-      const addr = (rlServer as any).server?.address();
+      const addr = (rlServer as unknown).server?.address();
       if (!addr || typeof addr === 'string') {
         await rlServer.stop();
         return;
@@ -326,7 +326,7 @@ describe('HttpMcpServer', () => {
   describe('404 for unknown routes', () => {
     it('returns 404 for non-/mcp and non-/health routes', async () => {
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/unknown`);
@@ -337,7 +337,7 @@ describe('HttpMcpServer', () => {
   describe('method not allowed', () => {
     it('returns 405 for PUT /mcp', async () => {
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/mcp`, {
@@ -352,11 +352,11 @@ describe('HttpMcpServer', () => {
     it('uses custom initializer check when provided', async () => {
       const customCallbacks = defaultCallbacks();
       customCallbacks.isInitializeRequest = (body: unknown) => {
-        return (body as any)?.type === 'init';
+        return (body as unknown)?.type === 'init';
       };
       const customServer = new HttpMcpServer(makeConfig(), customCallbacks);
       await customServer.start();
-      const addr = (customServer as any).server?.address();
+      const addr = (customServer as unknown).server?.address();
       if (!addr || typeof addr === 'string') {
         await customServer.stop();
         return;
@@ -377,7 +377,7 @@ describe('HttpMcpServer', () => {
 
     it('returns 400 when POST has no session and is not initialize', async () => {
       await server.start();
-      const addr = (server as any).server?.address();
+      const addr = (server as unknown).server?.address();
       if (!addr || typeof addr === 'string') return;
 
       const response = await fetch(`http://${addr.address}:${addr.port}/mcp`, {

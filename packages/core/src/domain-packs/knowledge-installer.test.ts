@@ -26,14 +26,14 @@ function mockPack(overrides: Partial<DomainPack> = {}): DomainPack {
 }
 
 function mockRuntime(): AgentRuntime {
-  const entries = new Map<string, any>();
+  const entries = new Map<string, unknown>();
   return {
     vault: {
       get: vi.fn((id: string) => entries.get(id) ?? null),
-      add: vi.fn((entry: any) => entries.set(entry.id, entry)),
+      add: vi.fn((entry: Record<string, unknown>) => entries.set(entry.id as string, entry)),
       search: vi.fn(() => []),
     },
-  } as any;
+  } as unknown;
 }
 
 function writeMdFiles(dir: string, files: Record<string, string>) {
@@ -102,7 +102,7 @@ describe('installKnowledge', () => {
     writeMdFiles(canonicalDir, { 'existing.md': 'Content.' });
     const runtime = mockRuntime();
     // Pre-populate vault with existing entry
-    (runtime.vault.get as any).mockImplementation((id: string) =>
+    (runtime.vault.get as unknown).mockImplementation((id: string) =>
       id === 'pack-test-pack-existing' ? { id } : null,
     );
     const result = await installKnowledge(
@@ -133,7 +133,7 @@ describe('installKnowledge', () => {
       runtime,
       tempDir,
     );
-    const addCall = (runtime.vault.add as any).mock.calls[0][0];
+    const addCall = (runtime.vault.add as unknown).mock.calls[0][0];
     expect(addCall.tags).toContain('pack:test-pack');
     expect(addCall.tags).toContain('tier:canonical');
     expect(addCall.origin).toBe('pack');
@@ -149,7 +149,7 @@ describe('installKnowledge', () => {
       runtime,
       tempDir,
     );
-    const addCall = (runtime.vault.add as any).mock.calls[0][0];
+    const addCall = (runtime.vault.add as unknown).mock.calls[0][0];
     expect(addCall.id).toBe('pack-test-pack-my-pattern');
   });
 

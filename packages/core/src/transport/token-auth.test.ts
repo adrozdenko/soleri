@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -11,8 +11,6 @@ import {
   validateBearerToken,
   authenticateRequest,
   loadToken,
-  saveToken,
-  getOrGenerateToken,
 } from './token-auth.js';
 
 describe('generateToken', () => {
@@ -59,11 +57,11 @@ describe('authenticateRequest', () => {
   const token = 'test-token';
 
   function makeReq(authorization?: string) {
-    return { headers: { authorization } } as any;
+    return { headers: { authorization } } as unknown;
   }
 
   function makeRes() {
-    const res: any = {
+    const res: Record<string, unknown> = {
       writeHead: vi.fn().mockReturnThis(),
       end: vi.fn(),
     };
@@ -93,7 +91,7 @@ describe('authenticateRequest', () => {
 
 describe('loadToken / saveToken / getOrGenerateToken', () => {
   let tmpDir: string;
-  const agentId = 'test-agent';
+  const _agentId = 'test-agent';
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), 'token-auth-test-'));

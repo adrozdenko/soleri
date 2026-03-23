@@ -305,7 +305,7 @@ describe('createAdminExtraOps', () => {
         { id: 'api-token-tok1', tags: ['api-token', 'read'] },
         { id: 'api-token-tok2', tags: ['api-token', 'admin'] },
         { id: 'unrelated-entry', tags: ['other'] },
-      ] as any);
+      ] as unknown);
       const result = (await findOp(ops, 'admin_list_tokens').handler({})) as Record<
         string,
         unknown
@@ -336,7 +336,7 @@ describe('createAdminExtraOps', () => {
 
   describe('admin_rotate_account', () => {
     it('returns error when profile not found', async () => {
-      vi.mocked(runtime.vault.get).mockReturnValue(null as any);
+      vi.mocked(runtime.vault.get).mockReturnValue(null as unknown);
       const result = (await findOp(ops, 'admin_rotate_account').handler({
         name: 'missing',
       })) as Record<string, unknown>;
@@ -344,7 +344,7 @@ describe('createAdminExtraOps', () => {
     });
 
     it('returns rotated when profile exists', async () => {
-      vi.mocked(runtime.vault.get).mockReturnValue({ id: 'account-profile-prod' } as any);
+      vi.mocked(runtime.vault.get).mockReturnValue({ id: 'account-profile-prod' } as unknown);
       const result = (await findOp(ops, 'admin_rotate_account').handler({
         name: 'prod',
       })) as Record<string, unknown>;
@@ -356,7 +356,7 @@ describe('createAdminExtraOps', () => {
     it('returns filtered account entries', async () => {
       vi.mocked(runtime.vault.list).mockReturnValue([
         { id: 'account-profile-prod', tags: ['account-profile', 'openai'] },
-      ] as any);
+      ] as unknown);
       const result = (await findOp(ops, 'admin_list_accounts').handler({})) as Record<
         string,
         unknown
@@ -385,7 +385,7 @@ describe('createAdminExtraOps', () => {
     });
 
     it('returns status for domain with entries', async () => {
-      vi.mocked(runtime.vault.list).mockReturnValue([{ id: 'entry-1' }] as any);
+      vi.mocked(runtime.vault.list).mockReturnValue([{ id: 'entry-1' }] as unknown);
       const result = (await findOp(ops, 'admin_plugin_status').handler({
         pluginId: 'design',
       })) as Record<string, unknown>;

@@ -187,7 +187,7 @@ describe('JobQueue', () => {
     });
 
     it('returns a job with status running', () => {
-      const id = queue.enqueue('groom');
+      queue.enqueue('groom');
       const job = queue.dequeue();
       expect(job).not.toBeNull();
       expect(job!.status).toBe('running');

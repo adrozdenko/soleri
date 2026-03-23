@@ -10,7 +10,7 @@ import { createPackRuntime } from './pack-runtime.js';
 import type { PackProjectContext, PackCheckContext } from './pack-runtime.js';
 
 function mockVault() {
-  return { search: vi.fn(), get: vi.fn(), add: vi.fn() } as any;
+  return { search: vi.fn(), get: vi.fn(), add: vi.fn() } as unknown;
 }
 
 function mockRegistry(projects: PackProjectContext[] = []) {

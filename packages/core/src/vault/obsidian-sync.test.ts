@@ -175,7 +175,7 @@ describe('ObsidianSync', () => {
       get: vi.fn().mockImplementation((id: string) => entryList.find((e) => e.id === id) ?? null),
       seed: vi.fn().mockReturnValue(1),
       update: vi.fn().mockReturnValue(null),
-    } as any;
+    } as unknown;
   }
 
   beforeEach(() => {

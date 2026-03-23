@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnforcementRegistry } from './registry.js';
 import { ClaudeCodeAdapter } from './adapters/claude-code.js';
-import type { EnforcementRule, HostAdapter, EnforcementConfig, HostAdapterResult } from './types.js';
+import type { EnforcementRule } from './types.js';
 
 function makeRule(overrides: Partial<EnforcementRule> = {}): EnforcementRule {
   return {

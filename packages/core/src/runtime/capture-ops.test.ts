@@ -127,7 +127,7 @@ describe('createCaptureOps', () => {
       vi.mocked(runtime.governance.evaluateCapture).mockReturnValue({
         action: 'propose',
         reason: 'Requires review',
-      } as any);
+      } as unknown);
       const result = (await findOp(ops, 'capture_knowledge').handler({
         entries: [
           { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
@@ -142,7 +142,7 @@ describe('createCaptureOps', () => {
       vi.mocked(runtime.governance.evaluateCapture).mockReturnValue({
         action: 'reject',
         reason: 'Not allowed',
-      } as any);
+      } as unknown);
       const result = (await findOp(ops, 'capture_knowledge').handler({
         entries: [
           { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
@@ -155,7 +155,7 @@ describe('createCaptureOps', () => {
       vi.mocked(runtime.brain.enrichAndCapture).mockReturnValue({
         blocked: true,
         duplicate: { id: 'existing-1' },
-      } as any);
+      } as unknown);
       const result = (await findOp(ops, 'capture_knowledge').handler({
         entries: [
           { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
@@ -256,7 +256,7 @@ describe('createCaptureOps', () => {
       vi.mocked(runtime.governance.evaluateCapture).mockReturnValue({
         action: 'propose',
         reason: 'Needs review',
-      } as any);
+      } as unknown);
       const result = (await findOp(ops, 'capture_quick').handler({
         type: 'pattern',
         domain: 'testing',
@@ -271,7 +271,7 @@ describe('createCaptureOps', () => {
       vi.mocked(runtime.governance.evaluateCapture).mockReturnValue({
         action: 'reject',
         reason: 'Blocked',
-      } as any);
+      } as unknown);
       const result = (await findOp(ops, 'capture_quick').handler({
         type: 'pattern',
         domain: 'testing',
@@ -286,7 +286,7 @@ describe('createCaptureOps', () => {
       vi.mocked(runtime.brain.enrichAndCapture).mockReturnValue({
         blocked: true,
         duplicate: { id: 'existing-2' },
-      } as any);
+      } as unknown);
       const result = (await findOp(ops, 'capture_quick').handler({
         type: 'pattern',
         domain: 'testing',
@@ -339,7 +339,7 @@ describe('createCaptureOps', () => {
     it('includes memories when flag is set', async () => {
       vi.mocked(runtime.vault.searchMemories).mockReturnValue([
         { id: 'm1', summary: 'Auth discussion', score: 0.5 },
-      ] as any);
+      ] as unknown);
       const result = (await findOp(ops, 'search_intelligent').handler({
         query: 'auth',
         includeMemories: true,
@@ -361,7 +361,7 @@ describe('createCaptureOps', () => {
         id: `r${i}`,
         score: 1 - i * 0.01,
       }));
-      vi.mocked(runtime.brain.intelligentSearch).mockResolvedValue(manyResults as any);
+      vi.mocked(runtime.brain.intelligentSearch).mockResolvedValue(manyResults as unknown);
       const result = (await findOp(ops, 'search_intelligent').handler({
         query: 'test',
         limit: 5,
@@ -373,7 +373,7 @@ describe('createCaptureOps', () => {
       vi.mocked(runtime.brain.intelligentSearch).mockResolvedValue([
         { id: 'low', score: 0.3 },
         { id: 'high', score: 0.9 },
-      ] as any);
+      ] as unknown);
       const result = (await findOp(ops, 'search_intelligent').handler({
         query: 'test',
       })) as Array<Record<string, unknown>>;

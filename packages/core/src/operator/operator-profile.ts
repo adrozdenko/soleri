@@ -14,7 +14,6 @@ import type {
   ProfileSectionKey,
   SynthesisCheckResult,
   ProfileSection,
-  SignalType,
 } from './operator-types.js';
 
 // ─── Constants ──────────────────────────────────────────────────────

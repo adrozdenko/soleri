@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ProjectRegistry } from './project-registry.js';
 import type { PersistenceProvider } from '../persistence/types.js';
 
@@ -9,7 +9,7 @@ interface MockTable {
 }
 
 function createMockProvider(): PersistenceProvider {
-  const tables: Record<string, MockTable> = {};
+  const _tables: Record<string, MockTable> = {};
   let autoIncrementId = 0;
 
   // Simple in-memory store that understands basic SQL patterns
@@ -182,7 +182,7 @@ function createMockProvider(): PersistenceProvider {
       return fn();
     },
 
-    ftsSearch: (() => []) as any,
+    ftsSearch: (() => []) as unknown,
   };
 
   return provider;

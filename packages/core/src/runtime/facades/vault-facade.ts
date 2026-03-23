@@ -1,6 +1,9 @@
 /**
  * Vault facade — knowledge management ops.
- * search, CRUD, import/export, intake, archival.
+ * search, CRUD, import/export, intake, sharing, linking.
+ * Archival and lifecycle ops are in archive-facade.ts.
+ * Sync ops (git, obsidian, packs) are in sync-facade.ts.
+ * Review ops are in review-facade.ts.
  */
 
 import { z } from 'zod';
@@ -13,7 +16,6 @@ import { createCaptureOps } from '../capture-ops.js';
 import { createIntakeOps } from '../intake-ops.js';
 import { createVaultSharingOps } from '../vault-sharing-ops.js';
 import { createVaultLinkingOps } from '../vault-linking-ops.js';
-import { ObsidianSync } from '../../vault/obsidian-sync.js';
 
 export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, brain, intakePipeline, textIngester, vaultManager } = runtime;
@@ -438,72 +440,6 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         const { vaultBranching } = runtime;
         const deleted = vaultBranching.deleteBranch(params.branchName as string);
         return { deleted, branchName: params.branchName };
-      },
-    },
-
-    // ─── Obsidian Sync ──────────────────────────────────────────
-    {
-      name: 'obsidian_export',
-      description:
-        'Export vault entries to Obsidian-compatible markdown files with YAML frontmatter. Creates domain subdirectories.',
-      auth: 'read',
-      schema: z.object({
-        obsidianDir: z.string().describe('Path to Obsidian vault directory'),
-        types: z.array(z.string()).optional().describe('Filter by entry types'),
-        domains: z.array(z.string()).optional().describe('Filter by domains'),
-        dryRun: z.boolean().optional().describe('Preview without writing files'),
-      }),
-      handler: async (params) => {
-        const sync = new ObsidianSync({ vault });
-        return sync.export(params.obsidianDir as string, {
-          types: params.types as string[] | undefined,
-          domains: params.domains as string[] | undefined,
-          dryRun: params.dryRun as boolean | undefined,
-        });
-      },
-    },
-    {
-      name: 'obsidian_import',
-      description:
-        'Import Obsidian markdown files with YAML frontmatter into the vault. Parses title, type, domain, tags from frontmatter.',
-      auth: 'write',
-      schema: z.object({
-        obsidianDir: z.string().describe('Path to Obsidian vault directory to import from'),
-        defaultType: z
-          .string()
-          .optional()
-          .describe('Default type for entries without frontmatter type'),
-        defaultDomain: z.string().optional().describe('Default domain for entries without one'),
-        dryRun: z.boolean().optional().describe('Preview without modifying vault'),
-      }),
-      handler: async (params) => {
-        const sync = new ObsidianSync({ vault });
-        return sync.import(params.obsidianDir as string, {
-          defaultType: params.defaultType as string | undefined,
-          defaultDomain: params.defaultDomain as string | undefined,
-          dryRun: params.dryRun as boolean | undefined,
-        });
-      },
-    },
-    {
-      name: 'obsidian_sync',
-      description:
-        'Bidirectional sync between vault and Obsidian directory. Modes: push (vault→Obsidian), pull (Obsidian→vault), bidirectional.',
-      auth: 'write',
-      schema: z.object({
-        obsidianDir: z.string().describe('Path to Obsidian vault directory'),
-        mode: z
-          .enum(['push', 'pull', 'bidirectional'])
-          .optional()
-          .describe('Sync mode. Default: bidirectional'),
-        dryRun: z.boolean().optional().describe('Preview without making changes'),
-      }),
-      handler: async (params) => {
-        const sync = new ObsidianSync({ vault });
-        return sync.sync(params.obsidianDir as string, {
-          mode: params.mode as 'push' | 'pull' | 'bidirectional' | undefined,
-          dryRun: params.dryRun as boolean | undefined,
-        });
       },
     },
 

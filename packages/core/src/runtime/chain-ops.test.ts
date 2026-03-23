@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createChainOps } from './chain-ops.js';
 import type { AgentRuntime } from './types.js';
-import { captureOps, executeOp } from '../engine/test-helpers.js';
+import { captureOps } from '../engine/test-helpers.js';
 
 function mockRuntime(): AgentRuntime {
   return {

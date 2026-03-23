@@ -1,0 +1,215 @@
+/**
+ * Shared type definitions for the planning module.
+ * Extracted to avoid circular imports between planner.ts and its extracted modules.
+ */
+
+import type { PlanStatus, PlanGrade } from './plan-lifecycle.js';
+import type { PlanGap } from './gap-types.js';
+import type { GapAnalysisOptions } from './gap-analysis.js';
+
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed';
+
+export interface TaskEvidence {
+  /** What the evidence proves (maps to an acceptance criterion). */
+  criterion: string;
+  /** Evidence content — command output, URL, file path, description. */
+  content: string;
+  /** Evidence type. */
+  type: 'command_output' | 'url' | 'file' | 'description';
+  submittedAt: number;
+}
+
+export interface TaskMetrics {
+  durationMs?: number;
+  iterations?: number;
+  toolCalls?: number;
+  modelTier?: string;
+  estimatedCostUsd?: number;
+}
+
+export interface TaskDeliverable {
+  type: 'file' | 'vault_entry' | 'url';
+  path: string;
+  hash?: string;
+  verifiedAt?: number;
+  stale?: boolean;
+}
+
+export interface ExecutionSummary {
+  totalDurationMs: number;
+  tasksCompleted: number;
+  tasksSkipped: number;
+  tasksFailed: number;
+  avgTaskDurationMs: number;
+}
+
+export interface VerificationFinding {
+  /** What was found (bug, issue, code smell). */
+  description: string;
+  /** How severe the finding is. */
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  /** Whether the finding was proven reproducible before fixing. */
+  proven: boolean;
+  /** How the finding was proven (test case, reproduction steps, stack trace). */
+  proof?: string;
+}
+
+export interface TaskVerification {
+  /** Findings that motivated changes to existing code. */
+  findings: VerificationFinding[];
+}
+
+export interface PlanTask {
+  id: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  /** Optional dependency IDs — tasks that must complete before this one. */
+  dependsOn?: string[];
+  /** Evidence submitted for task acceptance criteria. */
+  evidence?: TaskEvidence[];
+  /** Whether this task has been verified (all evidence checked + reviews passed). */
+  verified?: boolean;
+  /** Task-level acceptance criteria (for verification checking). */
+  acceptanceCriteria?: string[];
+  /** Timestamp when task was first moved to in_progress. */
+  startedAt?: number;
+  /** Timestamp when task reached a terminal state (completed/skipped/failed). */
+  completedAt?: number;
+  /** Per-task execution metrics. */
+  metrics?: TaskMetrics;
+  /** Deliverables produced by this task. */
+  deliverables?: TaskDeliverable[];
+  /** Verification findings for tasks that modify existing code. Advisory only. */
+  verification?: TaskVerification;
+  updatedAt: number;
+}
+
+export interface DriftItem {
+  /** Type of drift */
+  type: 'skipped' | 'added' | 'modified' | 'reordered';
+  /** What drifted */
+  description: string;
+  /** How much this affected the plan */
+  impact: 'low' | 'medium' | 'high';
+  /** Why the drift occurred */
+  rationale: string;
+}
+
+export interface ReconciliationReport {
+  planId: string;
+  /** Accuracy score: 100 = perfect execution, 0 = total drift. Impact-weighted. */
+  accuracy: number;
+  driftItems: DriftItem[];
+  /** Human-readable summary of the drift */
+  summary: string;
+  reconciledAt: number;
+}
+
+export interface ReviewEvidence {
+  planId: string;
+  taskId?: string;
+  reviewer: string;
+  outcome: 'approved' | 'rejected' | 'needs_changes';
+  comments: string;
+  reviewedAt: number;
+}
+
+export interface PlanCheck {
+  checkId: string;
+  planId: string;
+  grade: PlanGrade;
+  score: number; // 0-100
+  gaps: PlanGap[];
+  iteration: number;
+  checkedAt: number;
+}
+
+/**
+ * A structured decision with rationale.
+ * Ported from Salvador's PlanContent.decisions.
+ */
+export interface PlanDecision {
+  decision: string;
+  rationale: string;
+}
+
+/**
+ * A rejected alternative approach considered during planning.
+ * Plans with 2+ alternatives score higher — forced alternative analysis
+ * prevents tunnel vision and strengthens decision rationale.
+ */
+export interface PlanAlternative {
+  approach: string;
+  pros: string[];
+  cons: string[];
+  rejected_reason: string;
+}
+
+export interface Plan {
+  id: string;
+  objective: string;
+  scope: string;
+  status: PlanStatus;
+  /**
+   * Decisions can be flat strings (backward compat) or structured {decision, rationale}.
+   * New plans should prefer PlanDecision[].
+   */
+  decisions: (string | PlanDecision)[];
+  tasks: PlanTask[];
+  /** High-level approach description. Ported from Salvador's PlanContent. */
+  approach?: string;
+  /** Additional context for the plan. */
+  context?: string;
+  /** Measurable success criteria. */
+  success_criteria?: string[];
+  /** Tools to use in execution order. */
+  tool_chain?: string[];
+  /** Flow definition to follow (e.g., 'developer', 'reviewer', 'designer'). */
+  flow?: string;
+  /** Target operational mode (e.g., 'build', 'review', 'fix'). */
+  target_mode?: string;
+  /** Rejected alternative approaches — plans with 2+ alternatives score higher. */
+  alternatives?: PlanAlternative[];
+  /** Reconciliation report — populated by reconcile(). */
+  reconciliation?: ReconciliationReport;
+  /** Review evidence — populated by addReview(). */
+  reviews?: ReviewEvidence[];
+  /** Latest grading check. */
+  latestCheck?: PlanCheck;
+  /** All check history. */
+  checks: PlanCheck[];
+  /** Matched playbook info (set by orchestration layer via playbook_match). */
+  playbookMatch?: {
+    label: string;
+    genericId?: string;
+    domainId?: string;
+  };
+  /** Source GitHub issue this plan was created from (e.g., #NNN in prompt). */
+  githubIssue?: { owner: string; repo: string; number: number };
+  /** GitHub issue projection — populated by orchestrate_project_to_github. */
+  githubProjection?: {
+    repo: string;
+    milestone?: number;
+    issues: Array<{
+      taskId: string;
+      issueNumber: number;
+    }>;
+    projectedAt: number;
+  };
+  /** Aggregate execution metrics — populated by reconcile() and complete(). */
+  executionSummary?: ExecutionSummary;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface PlanStore {
+  version: string;
+  plans: Plan[];
+}
+
+export interface PlannerOptions {
+  gapOptions?: GapAnalysisOptions;
+  /** Minimum grade required for plan approval. Default: 'A'. Set to undefined to disable. */
+  minGradeForApproval?: PlanGrade;
+}

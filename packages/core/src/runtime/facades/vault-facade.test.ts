@@ -185,7 +185,6 @@ describe('vault-facade', () => {
       'vault_search_all', 'vault_connect_source', 'vault_disconnect_source',
       'vault_list_sources', 'vault_branch', 'vault_branch_add',
       'vault_branch_list', 'vault_merge_branch', 'vault_delete_branch',
-      'obsidian_export', 'obsidian_import', 'obsidian_sync',
     ];
     for (const name of coreOps) {
       expect(ops.has(name), `missing op: ${name}`).toBe(true);
@@ -221,9 +220,6 @@ describe('vault-facade', () => {
     expect(ops.get('vault_branch_list')!.auth).toBe('read');
     expect(ops.get('vault_merge_branch')!.auth).toBe('admin');
     expect(ops.get('vault_delete_branch')!.auth).toBe('admin');
-    expect(ops.get('obsidian_export')!.auth).toBe('read');
-    expect(ops.get('obsidian_import')!.auth).toBe('write');
-    expect(ops.get('obsidian_sync')!.auth).toBe('write');
   });
 
   // ─── search ────────────────────────────────────────────────────────
@@ -632,27 +628,4 @@ describe('vault-facade', () => {
   // ObsidianSync is instantiated inside the handler, so we test param passing
   // and that the handler doesn't throw. Full ObsidianSync tests are elsewhere.
 
-  describe('obsidian_export', () => {
-    it('has valid schema requiring obsidianDir', async () => {
-      const result = await executeOp(ops, 'obsidian_export', {});
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Invalid params');
-    });
-  });
-
-  describe('obsidian_import', () => {
-    it('has valid schema requiring obsidianDir', async () => {
-      const result = await executeOp(ops, 'obsidian_import', {});
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Invalid params');
-    });
-  });
-
-  describe('obsidian_sync', () => {
-    it('has valid schema requiring obsidianDir', async () => {
-      const result = await executeOp(ops, 'obsidian_sync', {});
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Invalid params');
-    });
-  });
 });

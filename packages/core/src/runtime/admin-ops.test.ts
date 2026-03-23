@@ -164,7 +164,6 @@ describe('createAdminOps', () => {
 
   describe('admin_vault_size', () => {
     it('returns in-memory for :memory: vaults', async () => {
-      const op = findOp(ops, 'admin_vault_size');
       const rtMem = mockRuntime();
       (rtMem.config as Record<string, unknown>).vaultPath = ':memory:';
       const memOps = createAdminOps(rtMem);

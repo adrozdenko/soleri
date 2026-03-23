@@ -9,7 +9,7 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { runAgentLoop } from './agent-loop.js';
-import type { AgentLoopConfig, AgentCallbacks, ToolResult } from './agent-loop-types.js';
+import type { AgentLoopConfig, ToolResult } from './agent-loop-types.js';
 import type { ChatMessage } from './types.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ describe('runAgentLoop', () => {
       );
 
       const executorResults: string[] = [];
-      const executor = async (name: string, input: Record<string, unknown>): Promise<ToolResult> => {
+      const executor = async (name: string, _input: Record<string, unknown>): Promise<ToolResult> => {
         executorResults.push(name);
         return { output: `result for ${name}`, isError: false };
       };

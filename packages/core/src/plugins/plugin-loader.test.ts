@@ -32,7 +32,7 @@ function makeLoaded(overrides: Partial<LoadedPlugin & { manifest: Partial<Plugin
       id: 'test-plugin',
       name: 'Test',
       version: '1.0.0',
-      ...(overrides.manifest ?? {}),
+      ...(overrides.manifest),
     }),
     directory: overrides.directory ?? '/tmp/test',
     provenance: overrides.provenance ?? 'global',
