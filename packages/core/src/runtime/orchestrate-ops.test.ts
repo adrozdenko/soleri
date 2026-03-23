@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createOrchestrateOps } from './orchestrate-ops.js';
+import { assessTaskComplexity } from '../planning/task-complexity-assessor.js';
 import type { AgentRuntime } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -364,6 +365,142 @@ describe('createOrchestrateOps', () => {
       const op = findOp(ops, 'orchestrate_project_to_github');
       vi.mocked(rt.planner.get).mockReturnValue(null as never);
       await expect(op.handler({ planId: 'missing' })).rejects.toThrow('not found');
+    });
+  });
+
+  // ─── task auto-assessment routing ────────────────────────────
+  //
+  // Integration-style tests that verify the full assess → route → complete flow:
+  // 1. Use TaskComplexityAssessor to classify the task
+  // 2. Route to direct execution (simple) or planning (complex)
+  // 3. Complete via orchestrate_complete in both paths
+
+  describe('task auto-assessment routing', () => {
+    it('simple task routes to direct execution + complete', async () => {
+      // Step 1: Assess — "fix typo in README" should be simple
+      const assessment = assessTaskComplexity({ prompt: 'fix typo in README' });
+      expect(assessment.classification).toBe('simple');
+
+      // Step 2: Skip planning, go straight to complete without a planId
+      const completeOp = findOp(ops, 'orchestrate_complete');
+      const result = (await completeOp.handler({
+        sessionId: 'session-simple',
+        outcome: 'completed',
+        summary: 'Fixed typo in README',
+      })) as Record<string, unknown>;
+
+      // Should not touch the planner at all
+      expect(rt.planner.complete).not.toHaveBeenCalled();
+
+      // Should still produce a valid completion record
+      const plan = result.plan as Record<string, unknown>;
+      expect(plan.status).toBe('completed');
+      expect(plan.objective).toBe('Fixed typo in README');
+
+      // Knowledge should still be captured
+      expect(rt.brainIntelligence.extractKnowledge).toHaveBeenCalledWith('session-simple');
+    });
+
+    it('complex task routes through planning + complete', async () => {
+      // Step 1: Assess — cross-cutting auth task should be complex
+      const assessment = assessTaskComplexity({
+        prompt: 'add authentication across all API routes',
+        filesEstimated: 8,
+      });
+      expect(assessment.classification).toBe('complex');
+
+      // Step 2: Create a plan via orchestrate_plan
+      const planOp = findOp(ops, 'orchestrate_plan');
+      const planResult = (await planOp.handler({
+        prompt: 'add authentication across all API routes',
+      })) as Record<string, unknown>;
+      expect(planResult).toHaveProperty('plan');
+      expect(planResult).toHaveProperty('flow');
+
+      // Step 3: Complete with the planId
+      const completeOp = findOp(ops, 'orchestrate_complete');
+      const result = (await completeOp.handler({
+        planId: 'plan-1',
+        sessionId: 'session-complex',
+        outcome: 'completed',
+        summary: 'Added authentication middleware to all API routes',
+      })) as Record<string, unknown>;
+
+      // Should complete via the planner lifecycle
+      expect(rt.planner.complete).toHaveBeenCalledWith('plan-1');
+
+      // Knowledge should be captured
+      expect(rt.brainIntelligence.lifecycle).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'end', sessionId: 'session-complex' }),
+      );
+      expect(rt.brainIntelligence.extractKnowledge).toHaveBeenCalledWith('session-complex');
+
+      // Plan should be marked completed
+      const completedPlan = result.plan as Record<string, unknown>;
+      expect(completedPlan.status).toBe('completed');
+    });
+
+    it('orchestrate_complete captures knowledge in both paths', async () => {
+      const completeOp = findOp(ops, 'orchestrate_complete');
+
+      // ── Simple path (no planId) ──
+      vi.clearAllMocks();
+      rt = mockRuntime();
+      ops = createOrchestrateOps(rt);
+
+      await findOp(ops, 'orchestrate_complete').handler({
+        sessionId: 'session-simple',
+        outcome: 'completed',
+        summary: 'Renamed a variable',
+      });
+
+      // Brain session end called
+      expect(rt.brainIntelligence.lifecycle).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'end', sessionId: 'session-simple' }),
+      );
+      // Knowledge extraction called
+      expect(rt.brainIntelligence.extractKnowledge).toHaveBeenCalledWith('session-simple');
+      // Planner.complete NOT called (no plan)
+      expect(rt.planner.complete).not.toHaveBeenCalled();
+
+      // ── Complex path (with planId) ──
+      vi.clearAllMocks();
+      rt = mockRuntime();
+      ops = createOrchestrateOps(rt);
+
+      await findOp(ops, 'orchestrate_complete').handler({
+        planId: 'plan-1',
+        sessionId: 'session-complex',
+        outcome: 'completed',
+        summary: 'Implemented full auth layer',
+      });
+
+      // Brain session end called
+      expect(rt.brainIntelligence.lifecycle).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'end', sessionId: 'session-complex' }),
+      );
+      // Knowledge extraction called
+      expect(rt.brainIntelligence.extractKnowledge).toHaveBeenCalledWith('session-complex');
+      // Planner.complete IS called (has plan)
+      expect(rt.planner.complete).toHaveBeenCalledWith('plan-1');
+    });
+
+    it('assessment result includes non-empty reasoning for simple tasks', () => {
+      const result = assessTaskComplexity({ prompt: 'fix typo in README' });
+      expect(result.classification).toBe('simple');
+      expect(typeof result.reasoning).toBe('string');
+      expect(result.reasoning.length).toBeGreaterThan(0);
+    });
+
+    it('assessment result includes non-empty reasoning for complex tasks', () => {
+      const result = assessTaskComplexity({
+        prompt: 'add authentication across all API routes',
+        filesEstimated: 8,
+        domains: ['auth', 'api', 'middleware'],
+      });
+      expect(result.classification).toBe('complex');
+      expect(typeof result.reasoning).toBe('string');
+      expect(result.reasoning.length).toBeGreaterThan(0);
     });
   });
 });

@@ -18,6 +18,7 @@ import {
   createSemanticFacades,
   createDomainFacades,
   registerFacade,
+  assessTaskComplexity,
 } from '@soleri/core';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 
@@ -326,5 +327,113 @@ describe('E2E: full-pipeline', () => {
     expect(searchRes.success).toBe(true);
     const results = searchRes.data as Array<{ entry: { title: string } }>;
     expect(results.some((r) => r.entry.title === 'Database Connection Pooling')).toBe(true);
+  });
+
+  // --- Task Auto-Assessment ---
+
+  describe('Task Auto-Assessment', () => {
+    it('simple task: assess → complete without plan', async () => {
+      const result = assessTaskComplexity({ prompt: 'fix typo in README' });
+      expect(result.classification).toBe('simple');
+      expect(result.score).toBeLessThan(40);
+
+      // Start a brain session first so orchestrate_complete has a valid sessionId
+      const sessionRes = await callOp(`${AGENT_ID}_brain`, 'brain_lifecycle', {
+        action: 'start',
+        domain: 'testing',
+        context: 'simple task test',
+      });
+      expect(sessionRes.success).toBe(true);
+      const session = sessionRes.data as { id: string };
+
+      // Call orchestrate_complete without a plan (direct task path)
+      const complete = await callOp(`${AGENT_ID}_orchestrate`, 'orchestrate_complete', {
+        sessionId: session.id,
+        summary: 'Fixed typo in README',
+        outcome: 'completed',
+      });
+      expect(complete.success).toBe(true);
+      const data = complete.data as { plan: { status: string } };
+      expect(data.plan.status).toBe('completed');
+    });
+
+    it('complex task: assess → plan → complete', async () => {
+      // Multiple signals needed to exceed threshold of 40:
+      // cross-cutting (auth=20) + file-count (5 files=25) = 45
+      const result = assessTaskComplexity({
+        prompt: 'add authentication to all API endpoints',
+        filesEstimated: 5,
+      });
+      expect(result.classification).toBe('complex');
+
+      // Create plan via orchestrate
+      const plan = await callOp(`${AGENT_ID}_orchestrate`, 'orchestrate_plan', {
+        prompt: 'add authentication to all API endpoints',
+        projectPath: plannerDir,
+      });
+      expect(plan.success).toBe(true);
+      const planData = plan.data as { plan: { id: string }; flow: { intent: string } };
+      expect(planData.plan.id).toBeDefined();
+
+      // Approve and execute the plan through its lifecycle
+      const approveRes = await callOp(`${AGENT_ID}_plan`, 'approve_plan', {
+        planId: planData.plan.id,
+      });
+      expect(approveRes.success).toBe(true);
+
+      // Execute via orchestrate (transitions plan to executing + starts brain session)
+      const execRes = await callOp(`${AGENT_ID}_orchestrate`, 'orchestrate_execute', {
+        planId: planData.plan.id,
+        domain: 'testing',
+        context: 'complex task test',
+      });
+      expect(execRes.success).toBe(true);
+      const execData = execRes.data as { session: { id: string } };
+
+      // Complete with plan
+      const complete = await callOp(`${AGENT_ID}_orchestrate`, 'orchestrate_complete', {
+        planId: planData.plan.id,
+        sessionId: execData.session.id,
+        summary: 'Added auth to all endpoints',
+        outcome: 'completed',
+      });
+      expect(complete.success).toBe(true);
+    });
+
+    it('assessment signals are correct for multi-signal complex task', () => {
+      // migrate (cross-cutting=20) + filesEstimated 8 (file-count=25) = 45
+      const result = assessTaskComplexity({
+        prompt: 'migrate database schema across services',
+        filesEstimated: 8,
+      });
+      expect(result.classification).toBe('complex');
+      expect(result.score).toBeGreaterThanOrEqual(40);
+      expect(result.signals.length).toBeGreaterThan(0);
+
+      // Verify specific signals fired
+      const triggered = result.signals.filter((s) => s.triggered);
+      expect(triggered.length).toBeGreaterThan(0);
+
+      // file-count should trigger (8 >= 3)
+      const fileCountSignal = result.signals.find((s) => s.name === 'file-count');
+      expect(fileCountSignal?.triggered).toBe(true);
+
+      // cross-cutting should trigger (migrate keyword)
+      const crossCuttingSignal = result.signals.find((s) => s.name === 'cross-cutting-keywords');
+      expect(crossCuttingSignal?.triggered).toBe(true);
+    });
+
+    it('simple task with parent plan context stays simple', () => {
+      const result = assessTaskComplexity({
+        prompt: 'update button styles in header component',
+        hasParentPlan: true,
+        filesEstimated: 1,
+      });
+      expect(result.classification).toBe('simple');
+      // approach-already-described signal should have negative weight
+      const approachSignal = result.signals.find((s) => s.name === 'approach-already-described');
+      expect(approachSignal?.triggered).toBe(true);
+      expect(approachSignal?.weight).toBeLessThan(0);
+    });
   });
 });
