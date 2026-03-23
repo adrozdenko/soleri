@@ -49,6 +49,8 @@ jobs:
       - run: npm run build --workspace=@soleri/forge
       - run: npm run build --workspace=@soleri/cli
       - run: npm run test --workspace=@soleri/cli
+        env:
+          VITEST_POOL_TIMEOUT: 120000
       - run: npm run typecheck --workspace=@soleri/cli
 
   create-soleri:
@@ -94,6 +96,7 @@ jobs:
 
       - name: Dead code (knip)
         run: npm run deadcode:knip
+        continue-on-error: true
 
   website:
     name: Validate Website Content

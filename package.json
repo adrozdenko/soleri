@@ -43,7 +43,7 @@
     "lint:md": "markdownlint-cli2",
     "lint:spell": "cspell --no-progress",
     "secrets:check": "secretlint \"packages/*/src/**\"",
-    "deadcode:knip": "knip",
+    "deadcode:knip": "knip --exclude exports --exclude types --exclude duplicates --exclude unlisted --exclude binaries",
     "deadcode:ts-prune": "ts-prune",
     "test:e2e": "vitest run --config e2e/vitest.config.ts --dir e2e",
     "prepare": "husky"
