@@ -441,8 +441,6 @@ describe('createOrchestrateOps', () => {
     });
 
     it('orchestrate_complete captures knowledge in both paths', async () => {
-      const completeOp = findOp(ops, 'orchestrate_complete');
-
       // ── Simple path (no planId) ──
       vi.clearAllMocks();
       rt = mockRuntime();
