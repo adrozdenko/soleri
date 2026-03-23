@@ -25,15 +25,13 @@ function makeRuntime(vault: Vault): AgentRuntime {
   const playbookExecutor = new PlaybookExecutor();
   const contextHealth = {
     track: vi.fn(),
-    check: vi
-      .fn()
-      .mockReturnValue({
-        level: 'green',
-        estimatedFill: 0.1,
-        toolCallCount: 5,
-        estimatedTokens: 1000,
-        recommendation: '',
-      }),
+    check: vi.fn().mockReturnValue({
+      level: 'green',
+      estimatedFill: 0.1,
+      toolCallCount: 5,
+      estimatedTokens: 1000,
+      recommendation: '',
+    }),
   };
 
   return {

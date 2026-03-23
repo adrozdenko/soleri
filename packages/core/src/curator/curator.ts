@@ -352,9 +352,7 @@ export class Curator {
     return { recorded: true, historyId: Number(result.lastInsertRowid) };
   }
 
-  getVersionHistory(
-    entryId: string,
-  ): Array<{
+  getVersionHistory(entryId: string): Array<{
     historyId: number;
     entryId: string;
     snapshot: IntelligenceEntry;

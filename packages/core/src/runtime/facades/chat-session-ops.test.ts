@@ -29,8 +29,22 @@ const mockSessionManager = {
   listAll: vi.fn().mockReturnValue(['sess-1', 'sess-2']),
 };
 
+const mockConstructorCalls: unknown[][] = [];
+
 vi.mock('../../chat/chat-session.js', () => ({
-  ChatSessionManager: vi.fn().mockImplementation(() => mockSessionManager),
+  ChatSessionManager: class {
+    size = mockSessionManager.size;
+    startReaper = mockSessionManager.startReaper;
+    getOrCreate = mockSessionManager.getOrCreate;
+    appendMessage = mockSessionManager.appendMessage;
+    messageCount = mockSessionManager.messageCount;
+    clear = mockSessionManager.clear;
+    delete = mockSessionManager.delete;
+    listAll = mockSessionManager.listAll;
+    constructor(...args: unknown[]) {
+      mockConstructorCalls.push(args);
+    }
+  },
 }));
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -49,6 +63,7 @@ describe('chat-session-ops', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConstructorCalls.length = 0;
     state = createChatState();
     ops = createChatSessionOps(state);
   });
@@ -78,7 +93,6 @@ describe('chat-session-ops', () => {
     });
 
     it('passes optional config params', async () => {
-      const { ChatSessionManager } = await import('../../chat/chat-session.js');
       const op = findOp(ops, 'chat_session_init');
       await op.handler({
         storageDir: '/tmp/s',
@@ -86,12 +100,14 @@ describe('chat-session-ops', () => {
         compactionThreshold: 50,
         compactionKeep: 20,
       });
-      expect(ChatSessionManager).toHaveBeenCalledWith({
-        storageDir: '/tmp/s',
-        ttlMs: 5000,
-        compactionThreshold: 50,
-        compactionKeep: 20,
-      });
+      expect(mockConstructorCalls[0]).toEqual([
+        {
+          storageDir: '/tmp/s',
+          ttlMs: 5000,
+          compactionThreshold: 50,
+          compactionKeep: 20,
+        },
+      ]);
     });
 
     it('has write auth level', () => {
@@ -190,8 +206,7 @@ describe('chat-session-ops', () => {
       await getOp.handler({ sessionId: 'x', storageDir: '/tmp/s' });
 
       // ChatSessionManager should be constructed only once
-      const { ChatSessionManager } = await import('../../chat/chat-session.js');
-      expect(ChatSessionManager).toHaveBeenCalledTimes(1);
+      expect(mockConstructorCalls).toHaveLength(1);
     });
   });
 });

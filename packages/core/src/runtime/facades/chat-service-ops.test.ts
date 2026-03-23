@@ -9,24 +9,59 @@ import { createChatState } from './chat-state.js';
 import type { ChatState } from './chat-state.js';
 import type { OpDefinition } from '../../facades/types.js';
 
+// ─── Mock instances ─────────────────────────────────────────────────
+
+const mockCancellation = {
+  create: vi.fn().mockReturnValue({ aborted: false }),
+  cancel: vi.fn().mockReturnValue({ description: 'test', startedAt: 1000 }),
+  getInfo: vi.fn().mockReturnValue({ description: 'test', startedAt: 1000 }),
+  listRunning: vi.fn().mockReturnValue(['chat-1']),
+  size: 1,
+};
+
+const mockSelfUpdate = {
+  loadContext: vi.fn().mockReturnValue(null),
+  clearContext: vi.fn(),
+  requestRestart: vi.fn().mockReturnValue({ scheduled: true }),
+};
+
+const mockNotification = {
+  start: vi.fn(),
+  stop: vi.fn(),
+  poll: vi.fn().mockResolvedValue(2),
+  stats: vi.fn().mockReturnValue({ checks: 3, running: true, sent: 5, lastPollAt: 1000 }),
+};
+
+const mockBrowserSession = {
+  process: { pid: 1234 },
+};
+
+const mockBrowser = {
+  acquire: vi.fn().mockReturnValue(mockBrowserSession),
+  release: vi.fn().mockReturnValue(true),
+  size: 1,
+  listSessions: vi.fn().mockReturnValue(['c1']),
+  getInfo: vi.fn().mockReturnValue({ startedAt: 1000 }),
+};
+
 // ─── Mock chat modules ─────────────────────────────────────────────
 
 vi.mock('../../chat/cancellation.js', () => ({
-  TaskCancellationManager: vi.fn().mockImplementation(() => ({
-    create: vi.fn().mockReturnValue({ aborted: false }),
-    cancel: vi.fn().mockReturnValue({ description: 'test', startedAt: 1000 }),
-    getInfo: vi.fn().mockReturnValue({ description: 'test', startedAt: 1000 }),
-    listRunning: vi.fn().mockReturnValue(['chat-1']),
-    size: 1,
-  })),
+  TaskCancellationManager: class {
+    create = mockCancellation.create;
+    cancel = mockCancellation.cancel;
+    getInfo = mockCancellation.getInfo;
+    listRunning = mockCancellation.listRunning;
+    size = mockCancellation.size;
+  },
 }));
 
 vi.mock('../../chat/self-update.js', () => ({
-  SelfUpdateManager: vi.fn().mockImplementation(() => ({
-    loadContext: vi.fn().mockReturnValue(null),
-    clearContext: vi.fn(),
-    requestRestart: vi.fn().mockReturnValue({ scheduled: true }),
-  })),
+  SelfUpdateManager: class {
+    loadContext = mockSelfUpdate.loadContext;
+    clearContext = mockSelfUpdate.clearContext;
+    requestRestart = mockSelfUpdate.requestRestart;
+  },
 }));
 
 vi.mock('../../chat/file-handler.js', () => ({
@@ -36,31 +71,27 @@ vi.mock('../../chat/file-handler.js', () => ({
 }));
 
 vi.mock('../../chat/notifications.js', () => ({
-  NotificationEngine: vi.fn().mockImplementation(() => ({
-    start: vi.fn(),
-    stop: vi.fn(),
-    poll: vi.fn().mockResolvedValue(2),
-    stats: vi.fn().mockReturnValue({ checks: 3, running: true, sent: 5, lastPollAt: 1000 }),
-  })),
+  NotificationEngine: class {
+    start = mockNotification.start;
+    stop = mockNotification.stop;
+    poll = mockNotification.poll;
+    stats = mockNotification.stats;
+  },
 }));
 
-const mockBrowserSession = {
-  process: { pid: 1234 },
-};
-
 vi.mock('../../chat/browser-session.js', () => ({
-  BrowserSessionManager: vi.fn().mockImplementation(() => ({
-    acquire: vi.fn().mockReturnValue(mockBrowserSession),
-    release: vi.fn().mockReturnValue(true),
-    size: 1,
-    listSessions: vi.fn().mockReturnValue(['c1']),
-    getInfo: vi.fn().mockReturnValue({ startedAt: 1000 }),
-  })),
+  BrowserSessionManager: class {
+    acquire = mockBrowser.acquire;
+    release = mockBrowser.release;
+    size = mockBrowser.size;
+    listSessions = mockBrowser.listSessions;
+    getInfo = mockBrowser.getInfo;
+  },
 }));
 
 // Needed via chat-state imports
-vi.mock('../../chat/chat-session.js', () => ({ ChatSessionManager: vi.fn() }));
-vi.mock('../../chat/auth-manager.js', () => ({ ChatAuthManager: vi.fn() }));
+vi.mock('../../chat/chat-session.js', () => ({ ChatSessionManager: class {} }));
+vi.mock('../../chat/auth-manager.js', () => ({ ChatAuthManager: class {} }));
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
