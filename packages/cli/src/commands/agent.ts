@@ -215,7 +215,9 @@ export function registerAgent(program: Command): void {
         // 2. Recompose CLAUDE.md from agent.yaml + instructions + workflows + skills
         const result = composeClaudeMd(ctx.agentPath);
         writeFileSync(claudeMdPath, result.content, 'utf-8');
-        p.log.success(`Regenerated ${claudeMdPath} (${result.sources.length} sources, ${result.content.length} bytes)`);
+        p.log.success(
+          `Regenerated ${claudeMdPath} (${result.sources.length} sources, ${result.content.length} bytes)`,
+        );
         return;
       }
 

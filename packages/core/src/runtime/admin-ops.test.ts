@@ -135,9 +135,7 @@ describe('createAdminOps', () => {
 
     it('returns routing hints in grouped mode', async () => {
       const op = findOp(ops, 'admin_tool_list');
-      const allOps = [
-        { name: 'admin_health', description: 'Health check', auth: 'read' },
-      ];
+      const allOps = [{ name: 'admin_health', description: 'Health check', auth: 'read' }];
       const result = (await op.handler({ _allOps: allOps })) as Record<string, unknown>;
       const routing = result.routing as Record<string, string>;
       expect(routing).toBeDefined();
@@ -234,9 +232,19 @@ describe('createAdminOps', () => {
   describe('operator_context_inspect', () => {
     it('returns full profile when store is available', async () => {
       const mockContext = {
-        expertise: [{ topic: 'TypeScript', level: 'expert', confidence: 0.9, sessionCount: 5, lastObserved: Date.now() }],
+        expertise: [
+          {
+            topic: 'TypeScript',
+            level: 'expert',
+            confidence: 0.9,
+            sessionCount: 5,
+            lastObserved: Date.now(),
+          },
+        ],
         corrections: [],
-        interests: [{ tag: 'testing', confidence: 0.7, mentionCount: 3, lastMentioned: Date.now() }],
+        interests: [
+          { tag: 'testing', confidence: 0.7, mentionCount: 3, lastMentioned: Date.now() },
+        ],
         patterns: [],
         sessionCount: 5,
         lastUpdated: Date.now(),
@@ -272,7 +280,10 @@ describe('createAdminOps', () => {
       };
       const updatedOps = createAdminOps(rt);
       const op = findOp(updatedOps, 'operator_context_delete');
-      const result = (await op.handler({ type: 'expertise', id: 'abc-123' })) as Record<string, unknown>;
+      const result = (await op.handler({ type: 'expertise', id: 'abc-123' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.deleted).toBe(true);
       expect(result.type).toBe('expertise');
       expect(result.id).toBe('abc-123');
@@ -285,14 +296,20 @@ describe('createAdminOps', () => {
       };
       const updatedOps = createAdminOps(rt);
       const op = findOp(updatedOps, 'operator_context_delete');
-      const result = (await op.handler({ type: 'pattern', id: 'nonexistent' })) as Record<string, unknown>;
+      const result = (await op.handler({ type: 'pattern', id: 'nonexistent' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.deleted).toBe(false);
       expect(result.message).toBe('Item not found');
     });
 
     it('returns not-available when store is missing', async () => {
       const op = findOp(ops, 'operator_context_delete');
-      const result = (await op.handler({ type: 'expertise', id: 'abc' })) as Record<string, unknown>;
+      const result = (await op.handler({ type: 'expertise', id: 'abc' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.deleted).toBe(false);
       expect(result.message).toBe('Operator context not configured');
     });

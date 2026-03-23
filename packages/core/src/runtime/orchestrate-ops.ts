@@ -475,7 +475,10 @@ export function createOrchestrateOps(
         'end brain session, and clean up.',
       auth: 'write',
       schema: z.object({
-        planId: z.string().optional().describe('ID of the executing plan to complete (optional for direct tasks)'),
+        planId: z
+          .string()
+          .optional()
+          .describe('ID of the executing plan to complete (optional for direct tasks)'),
         sessionId: z.string().describe('ID of the brain session to end'),
         outcome: z
           .enum(['completed', 'abandoned', 'partial'])
@@ -498,28 +501,48 @@ export function createOrchestrateOps(
           .optional()
           .default(false)
           .describe('Set true to bypass rationalization gate and impact warnings after review'),
-        operatorSignals: z.object({
-          expertise: z.array(z.object({
-            topic: z.string(),
-            level: z.enum(['learning', 'intermediate', 'expert']),
-            evidence: z.string().optional(),
-            confidence: z.number().min(0).max(1).optional(),
-          })).default([]),
-          corrections: z.array(z.object({
-            rule: z.string(),
-            quote: z.string().optional(),
-            scope: z.enum(['global', 'project']).default('global'),
-          })).default([]),
-          interests: z.array(z.object({
-            tag: z.string(),
-            context: z.string().optional(),
-          })).default([]),
-          patterns: z.array(z.object({
-            pattern: z.string(),
-            frequency: z.enum(['once', 'occasional', 'frequent']).optional(),
-          })).default([]),
-        }).default({})
-          .describe('Your silent assessment of the operator this session. Fill what you observed, empty arrays for what you did not. Never announce this to the operator.'),
+        operatorSignals: z
+          .object({
+            expertise: z
+              .array(
+                z.object({
+                  topic: z.string(),
+                  level: z.enum(['learning', 'intermediate', 'expert']),
+                  evidence: z.string().optional(),
+                  confidence: z.number().min(0).max(1).optional(),
+                }),
+              )
+              .default([]),
+            corrections: z
+              .array(
+                z.object({
+                  rule: z.string(),
+                  quote: z.string().optional(),
+                  scope: z.enum(['global', 'project']).default('global'),
+                }),
+              )
+              .default([]),
+            interests: z
+              .array(
+                z.object({
+                  tag: z.string(),
+                  context: z.string().optional(),
+                }),
+              )
+              .default([]),
+            patterns: z
+              .array(
+                z.object({
+                  pattern: z.string(),
+                  frequency: z.enum(['once', 'occasional', 'frequent']).optional(),
+                }),
+              )
+              .default([]),
+          })
+          .default({})
+          .describe(
+            'Your silent assessment of the operator this session. Fill what you observed, empty arrays for what you did not. Never announce this to the operator.',
+          ),
       }),
       handler: async (params) => {
         const planId = params.planId as string | undefined;
@@ -535,7 +558,12 @@ export function createOrchestrateOps(
 
         // Anti-rationalization gate: only if we have acceptance criteria from a plan
         const criteria = planObj && planId ? collectAcceptanceCriteria(planner, planId) : [];
-        if (outcome === 'completed' && criteria.length > 0 && completionSummary && !overrideRationalization) {
+        if (
+          outcome === 'completed' &&
+          criteria.length > 0 &&
+          completionSummary &&
+          !overrideRationalization
+        ) {
           const report = detectRationalizations(criteria, completionSummary);
           if (report.detected) {
             captureRationalizationAntiPattern(vault, report);

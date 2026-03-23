@@ -81,10 +81,7 @@ describe('OperatorContextStore', () => {
 
   describe('expertise compounding', () => {
     it('inserts a new expertise item', () => {
-      store.compoundSignals(
-        { ...emptySignals(), expertise: [makeExpertise()] },
-        'session-1',
-      );
+      store.compoundSignals({ ...emptySignals(), expertise: [makeExpertise()] }, 'session-1');
       const ctx = store.getContext();
       expect(ctx.expertise).toHaveLength(1);
       expect(ctx.expertise[0].topic).toBe('typescript');
@@ -117,16 +114,25 @@ describe('OperatorContextStore', () => {
       );
       // Push to intermediate with high confidence — should upgrade
       store.compoundSignals(
-        { ...emptySignals(), expertise: [makeExpertise({ level: 'intermediate', confidence: 0.95 })] },
+        {
+          ...emptySignals(),
+          expertise: [makeExpertise({ level: 'intermediate', confidence: 0.95 })],
+        },
         's2',
       );
       // Compound a few more times to push EMA above 0.8
       store.compoundSignals(
-        { ...emptySignals(), expertise: [makeExpertise({ level: 'intermediate', confidence: 0.95 })] },
+        {
+          ...emptySignals(),
+          expertise: [makeExpertise({ level: 'intermediate', confidence: 0.95 })],
+        },
         's3',
       );
       store.compoundSignals(
-        { ...emptySignals(), expertise: [makeExpertise({ level: 'intermediate', confidence: 0.95 })] },
+        {
+          ...emptySignals(),
+          expertise: [makeExpertise({ level: 'intermediate', confidence: 0.95 })],
+        },
         's4',
       );
       const ctx = store.getContext();
@@ -167,10 +173,7 @@ describe('OperatorContextStore', () => {
 
   describe('corrections compounding', () => {
     it('inserts a new correction', () => {
-      store.compoundSignals(
-        { ...emptySignals(), corrections: [makeCorrection()] },
-        'session-1',
-      );
+      store.compoundSignals({ ...emptySignals(), corrections: [makeCorrection()] }, 'session-1');
       const ctx = store.getContext();
       expect(ctx.corrections).toHaveLength(1);
       expect(ctx.corrections[0].rule).toBe('always use semicolons');
@@ -215,10 +218,7 @@ describe('OperatorContextStore', () => {
 
   describe('interests compounding', () => {
     it('inserts a new interest with default confidence', () => {
-      store.compoundSignals(
-        { ...emptySignals(), interests: [makeInterest()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), interests: [makeInterest()] }, 's1');
       const ctx = store.getContext();
       expect(ctx.interests).toHaveLength(1);
       expect(ctx.interests[0].tag).toBe('coffee');
@@ -228,10 +228,7 @@ describe('OperatorContextStore', () => {
 
     it('grows confidence on repeated mentions', () => {
       for (let i = 0; i < 3; i++) {
-        store.compoundSignals(
-          { ...emptySignals(), interests: [makeInterest()] },
-          `s${i}`,
-        );
+        store.compoundSignals({ ...emptySignals(), interests: [makeInterest()] }, `s${i}`);
       }
       const ctx = store.getContext();
       // 0.5 → 0.6 → 0.7
@@ -240,10 +237,7 @@ describe('OperatorContextStore', () => {
     });
 
     it('decays confidence when not mentioned', () => {
-      store.compoundSignals(
-        { ...emptySignals(), interests: [makeInterest()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), interests: [makeInterest()] }, 's1');
       // Session without mentioning coffee
       store.compoundSignals(emptySignals(), 's2');
       const ctx = store.getContext();
@@ -251,10 +245,7 @@ describe('OperatorContextStore', () => {
     });
 
     it('decay floors at 0.1', () => {
-      store.compoundSignals(
-        { ...emptySignals(), interests: [makeInterest()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), interests: [makeInterest()] }, 's1');
       // Force confidence very low by many empty sessions
       for (let i = 0; i < 100; i++) {
         store.compoundSignals(emptySignals(), `s${i + 2}`);
@@ -265,10 +256,7 @@ describe('OperatorContextStore', () => {
 
     it('confidence caps at 1.0', () => {
       for (let i = 0; i < 20; i++) {
-        store.compoundSignals(
-          { ...emptySignals(), interests: [makeInterest()] },
-          `s${i}`,
-        );
+        store.compoundSignals({ ...emptySignals(), interests: [makeInterest()] }, `s${i}`);
       }
       const ctx = store.getContext();
       expect(ctx.interests[0].confidence).toBeLessThanOrEqual(1.0);
@@ -279,10 +267,7 @@ describe('OperatorContextStore', () => {
 
   describe('patterns compounding', () => {
     it('inserts a new pattern', () => {
-      store.compoundSignals(
-        { ...emptySignals(), patterns: [makePattern()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), patterns: [makePattern()] }, 's1');
       const ctx = store.getContext();
       expect(ctx.patterns).toHaveLength(1);
       expect(ctx.patterns[0].pattern).toBe('batches work locally');
@@ -292,10 +277,7 @@ describe('OperatorContextStore', () => {
 
     it('upgrades frequency: once → occasional at 3 observations', () => {
       for (let i = 0; i < 3; i++) {
-        store.compoundSignals(
-          { ...emptySignals(), patterns: [makePattern()] },
-          `s${i}`,
-        );
+        store.compoundSignals({ ...emptySignals(), patterns: [makePattern()] }, `s${i}`);
       }
       const ctx = store.getContext();
       expect(ctx.patterns[0].frequency).toBe('occasional');
@@ -304,10 +286,7 @@ describe('OperatorContextStore', () => {
 
     it('upgrades frequency: occasional → frequent at 8 observations', () => {
       for (let i = 0; i < 8; i++) {
-        store.compoundSignals(
-          { ...emptySignals(), patterns: [makePattern()] },
-          `s${i}`,
-        );
+        store.compoundSignals({ ...emptySignals(), patterns: [makePattern()] }, `s${i}`);
       }
       const ctx = store.getContext();
       expect(ctx.patterns[0].frequency).toBe('frequent');
@@ -315,14 +294,8 @@ describe('OperatorContextStore', () => {
     });
 
     it('compounds confidence with EMA (0.8/0.2 weights)', () => {
-      store.compoundSignals(
-        { ...emptySignals(), patterns: [makePattern()] },
-        's1',
-      );
-      store.compoundSignals(
-        { ...emptySignals(), patterns: [makePattern()] },
-        's2',
-      );
+      store.compoundSignals({ ...emptySignals(), patterns: [makePattern()] }, 's1');
+      store.compoundSignals({ ...emptySignals(), patterns: [makePattern()] }, 's2');
       const ctx = store.getContext();
       // EMA: 0.5 * 0.8 + 0.5 * 0.2 = 0.5 (stays same since signal is same)
       expect(ctx.patterns[0].confidence).toBeCloseTo(0.5, 2);
@@ -343,10 +316,7 @@ describe('OperatorContextStore', () => {
 
     it('returns true after new correction added', () => {
       store.hasDrifted(); // prime
-      store.compoundSignals(
-        { ...emptySignals(), corrections: [makeCorrection()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), corrections: [makeCorrection()] }, 's1');
       expect(store.hasDrifted()).toBe(true);
     });
 
@@ -373,10 +343,7 @@ describe('OperatorContextStore', () => {
     });
 
     it('renders expertise as facts', () => {
-      store.compoundSignals(
-        { ...emptySignals(), expertise: [makeExpertise()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), expertise: [makeExpertise()] }, 's1');
       const output = store.renderContextFile();
       expect(output).toContain('**Expertise:**');
       expect(output).toContain('typescript');
@@ -396,20 +363,14 @@ describe('OperatorContextStore', () => {
     });
 
     it('renders interests above confidence threshold', () => {
-      store.compoundSignals(
-        { ...emptySignals(), interests: [makeInterest()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), interests: [makeInterest()] }, 's1');
       const output = store.renderContextFile();
       expect(output).toContain('**Interests:**');
       expect(output).toContain('coffee');
     });
 
     it('renders work patterns', () => {
-      store.compoundSignals(
-        { ...emptySignals(), patterns: [makePattern()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), patterns: [makePattern()] }, 's1');
       const output = store.renderContextFile();
       expect(output).toContain('**Work patterns:**');
       expect(output).toContain('batches work locally');
@@ -460,10 +421,7 @@ describe('OperatorContextStore', () => {
 
   describe('deleteItem', () => {
     it('removes a specific item', () => {
-      store.compoundSignals(
-        { ...emptySignals(), corrections: [makeCorrection()] },
-        's1',
-      );
+      store.compoundSignals({ ...emptySignals(), corrections: [makeCorrection()] }, 's1');
       const ctx = store.getContext();
       const id = ctx.corrections[0].id;
       const deleted = store.deleteItem('correction', id);
@@ -509,7 +467,9 @@ describe('OperatorContextStore', () => {
       store.compoundSignals(
         {
           ...emptySignals(),
-          expertise: [makeExpertise({ topic: 'coding', evidence: 'mentioned their medical condition' })],
+          expertise: [
+            makeExpertise({ topic: 'coding', evidence: 'mentioned their medical condition' }),
+          ],
         },
         's1',
       );
@@ -557,10 +517,7 @@ describe('OperatorContextStore', () => {
     it('processes all four signal types in one call', () => {
       store.compoundSignals(
         {
-          expertise: [
-            makeExpertise({ topic: 'react' }),
-            makeExpertise({ topic: 'node' }),
-          ],
+          expertise: [makeExpertise({ topic: 'react' }), makeExpertise({ topic: 'node' })],
           corrections: [makeCorrection()],
           interests: [makeInterest(), makeInterest({ tag: 'climbing' })],
           patterns: [makePattern()],
@@ -589,7 +546,10 @@ describe('OperatorContextStore', () => {
 
       // Then: "actually, summaries are fine"
       store.compoundSignals(
-        { ...emptySignals(), corrections: [makeCorrection({ rule: 'actually, summaries are fine' })] },
+        {
+          ...emptySignals(),
+          corrections: [makeCorrection({ rule: 'actually, summaries are fine' })],
+        },
         's2',
       );
 
@@ -600,11 +560,11 @@ describe('OperatorContextStore', () => {
 
     it('undo detection handles various phrasings', () => {
       const pairs: [string, string][] = [
-        ["no emoji", "you can use emoji again"],
-        ["stop using bullet points", "actually, bullet points are fine"],
-        ["don't use abbreviations", "feel free to use abbreviations"],
-        ["avoid long explanations", "go ahead with long explanations"],
-        ["never use slang", "it's fine to use slang"],
+        ['no emoji', 'you can use emoji again'],
+        ['stop using bullet points', 'actually, bullet points are fine'],
+        ["don't use abbreviations", 'feel free to use abbreviations'],
+        ['avoid long explanations', 'go ahead with long explanations'],
+        ['never use slang', "it's fine to use slang"],
       ];
 
       for (const [original, undo] of pairs) {
@@ -642,7 +602,10 @@ describe('OperatorContextStore', () => {
 
       // Undo only the summarize correction
       store.compoundSignals(
-        { ...emptySignals(), corrections: [makeCorrection({ rule: 'actually, summaries are fine' })] },
+        {
+          ...emptySignals(),
+          corrections: [makeCorrection({ rule: 'actually, summaries are fine' })],
+        },
         's2',
       );
 
@@ -668,7 +631,10 @@ describe('OperatorContextStore', () => {
 
       // Undo "don't summarize"
       store.compoundSignals(
-        { ...emptySignals(), corrections: [makeCorrection({ rule: 'actually, summaries are fine' })] },
+        {
+          ...emptySignals(),
+          corrections: [makeCorrection({ rule: 'actually, summaries are fine' })],
+        },
         's2',
       );
 
@@ -682,18 +648,45 @@ describe('OperatorContextStore', () => {
 
   describe('normalizeCorrection', () => {
     it('extracts topic and direction correctly for dont patterns', () => {
-      expect(normalizeCorrection("don't summarize")).toEqual({ topic: 'summarize', direction: 'dont' });
-      expect(normalizeCorrection('stop using emoji')).toEqual({ topic: 'using emoji', direction: 'dont' });
-      expect(normalizeCorrection('never use slang')).toEqual({ topic: 'use slang', direction: 'dont' });
-      expect(normalizeCorrection('no abbreviations')).toEqual({ topic: 'abbreviations', direction: 'dont' });
-      expect(normalizeCorrection('avoid long answers')).toEqual({ topic: 'long answers', direction: 'dont' });
+      expect(normalizeCorrection("don't summarize")).toEqual({
+        topic: 'summarize',
+        direction: 'dont',
+      });
+      expect(normalizeCorrection('stop using emoji')).toEqual({
+        topic: 'using emoji',
+        direction: 'dont',
+      });
+      expect(normalizeCorrection('never use slang')).toEqual({
+        topic: 'use slang',
+        direction: 'dont',
+      });
+      expect(normalizeCorrection('no abbreviations')).toEqual({
+        topic: 'abbreviations',
+        direction: 'dont',
+      });
+      expect(normalizeCorrection('avoid long answers')).toEqual({
+        topic: 'long answers',
+        direction: 'dont',
+      });
     });
 
     it('extracts topic and direction correctly for do patterns', () => {
-      expect(normalizeCorrection('actually, summaries are fine')).toEqual({ topic: 'summaries are fine', direction: 'do' });
-      expect(normalizeCorrection('you can use emoji again')).toEqual({ topic: 'use emoji again', direction: 'do' });
-      expect(normalizeCorrection('feel free to abbreviate')).toEqual({ topic: 'to abbreviate', direction: 'do' });
-      expect(normalizeCorrection('go ahead with bullet points')).toEqual({ topic: 'with bullet points', direction: 'do' });
+      expect(normalizeCorrection('actually, summaries are fine')).toEqual({
+        topic: 'summaries are fine',
+        direction: 'do',
+      });
+      expect(normalizeCorrection('you can use emoji again')).toEqual({
+        topic: 'use emoji again',
+        direction: 'do',
+      });
+      expect(normalizeCorrection('feel free to abbreviate')).toEqual({
+        topic: 'to abbreviate',
+        direction: 'do',
+      });
+      expect(normalizeCorrection('go ahead with bullet points')).toEqual({
+        topic: 'with bullet points',
+        direction: 'do',
+      });
     });
 
     it('defaults to dont direction for unrecognized prefixes', () => {

@@ -164,10 +164,7 @@ export function assessTaskComplexity(input: AssessmentInput): AssessmentResult {
     detectMultiDomain(input),
   ];
 
-  const rawScore = signals.reduce(
-    (sum, s) => sum + (s.triggered ? s.weight : 0),
-    0,
-  );
+  const rawScore = signals.reduce((sum, s) => sum + (s.triggered ? s.weight : 0), 0);
 
   // Clamp to 0-100
   const score = Math.max(0, Math.min(100, rawScore));

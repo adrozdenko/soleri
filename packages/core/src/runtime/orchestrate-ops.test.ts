@@ -584,7 +584,11 @@ describe('createOrchestrateOps', () => {
     it('orchestrate_complete re-renders context file when drift detected', async () => {
       const compoundSignalsMock = vi.fn();
       const hasDriftedMock = vi.fn().mockReturnValue(true);
-      const renderContextFileMock = vi.fn().mockReturnValue('# Operator Context\n\n**Expertise:** typescript (expert, 1 sessions, confidence 0.90).');
+      const renderContextFileMock = vi
+        .fn()
+        .mockReturnValue(
+          '# Operator Context\n\n**Expertise:** typescript (expert, 1 sessions, confidence 0.90).',
+        );
       (rt as Record<string, unknown>).operatorContextStore = {
         compoundSignals: compoundSignalsMock,
         hasDrifted: hasDriftedMock,
@@ -608,10 +612,9 @@ describe('createOrchestrateOps', () => {
       expect(compoundSignalsMock).toHaveBeenCalled();
       expect(hasDriftedMock).toHaveBeenCalled();
       expect(renderContextFileMock).toHaveBeenCalled();
-      expect(fs.mkdirSync).toHaveBeenCalledWith(
-        path.join('/tmp/test-agent', 'instructions'),
-        { recursive: true },
-      );
+      expect(fs.mkdirSync).toHaveBeenCalledWith(path.join('/tmp/test-agent', 'instructions'), {
+        recursive: true,
+      });
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         path.join('/tmp/test-agent', 'instructions', 'operator-context.md'),
         '# Operator Context\n\n**Expertise:** typescript (expert, 1 sessions, confidence 0.90).',

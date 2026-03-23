@@ -56,7 +56,7 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
     keyOps: ['recommend', 'strengths', 'feedback'],
     intentSignals: {
       'what works': 'recommend',
-      'recommendations': 'recommend',
+      recommendations: 'recommend',
       'pattern strengths': 'strengths',
       'give feedback': 'feedback',
     },

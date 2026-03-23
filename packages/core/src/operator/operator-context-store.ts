@@ -177,7 +177,10 @@ export class OperatorContextStore {
     if (ctx.expertise.length > 0) {
       const items = ctx.expertise
         .sort((a, b) => b.confidence - a.confidence)
-        .map((e) => `${e.topic} (${e.level}, ${e.sessionCount} sessions, confidence ${e.confidence.toFixed(2)})`);
+        .map(
+          (e) =>
+            `${e.topic} (${e.level}, ${e.sessionCount} sessions, confidence ${e.confidence.toFixed(2)})`,
+        );
       lines.push(`**Expertise:** ${items.join(', ')}.`);
       lines.push('');
     }
@@ -524,10 +527,7 @@ export function normalizeCorrection(rule: string): NormalizedCorrection {
  * Two corrections are an undo pair when they share a topic (fuzzy substring
  * match) but have opposite directions.
  */
-export function isUndoCorrection(
-  a: NormalizedCorrection,
-  b: NormalizedCorrection,
-): boolean {
+export function isUndoCorrection(a: NormalizedCorrection, b: NormalizedCorrection): boolean {
   if (a.direction === b.direction) return false;
 
   // Exact match

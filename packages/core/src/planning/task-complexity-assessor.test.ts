@@ -72,7 +72,10 @@ describe('assessTaskComplexity — complex tasks', () => {
   });
 
   it('classifies many-file task with design decision as complex', () => {
-    const result = assess({ prompt: 'how should we update styles across the app', filesEstimated: 5 });
+    const result = assess({
+      prompt: 'how should we update styles across the app',
+      filesEstimated: 5,
+    });
     expect(result.classification).toBe('complex');
     expect(result.score).toBeGreaterThanOrEqual(40);
     expect(signalByName(result, 'file-count')!.triggered).toBe(true);
@@ -117,7 +120,8 @@ describe('assessTaskComplexity — edge cases', () => {
 
   it('clamps score to 100 maximum', () => {
     const result = assess({
-      prompt: 'add authentication, migrate the DB, install new package, how should we design this, refactor across all modules',
+      prompt:
+        'add authentication, migrate the DB, install new package, how should we design this, refactor across all modules',
       filesEstimated: 10,
       domains: ['vault', 'brain', 'planning'],
     });
