@@ -20,7 +20,6 @@ import {
   type InterestSignal,
   type OperatorContext,
   type OperatorSignals,
-  type PatternFrequency,
   type WorkPatternItem,
   type WorkPatternSignal,
 } from './operator-context-types.js';

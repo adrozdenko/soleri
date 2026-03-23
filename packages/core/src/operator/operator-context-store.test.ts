@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Vault } from '../vault/vault.js';
-import { OperatorContextStore, normalizeCorrection, isUndoCorrection } from './operator-context-store.js';
+import { OperatorContextStore, normalizeCorrection } from './operator-context-store.js';
 import { DECLINED_CATEGORIES } from './operator-context-types.js';
 import type {
   OperatorSignals,
@@ -8,7 +8,6 @@ import type {
   CorrectionSignal,
   InterestSignal,
   WorkPatternSignal,
-  OperatorContext,
 } from './operator-context-types.js';
 
 // =============================================================================
