@@ -45,9 +45,16 @@ describe('operator-facade (colocated)', () => {
     expect(ops.size).toBe(10);
     expect([...ops.keys()]).toEqual(
       expect.arrayContaining([
-        'profile_get', 'profile_update_section', 'profile_correct',
-        'profile_delete', 'profile_export', 'signal_accumulate',
-        'signal_list', 'signal_stats', 'synthesis_check', 'profile_snapshot',
+        'profile_get',
+        'profile_update_section',
+        'profile_correct',
+        'profile_delete',
+        'profile_export',
+        'signal_accumulate',
+        'signal_list',
+        'signal_stats',
+        'synthesis_check',
+        'profile_snapshot',
       ]),
     );
   });
@@ -85,7 +92,13 @@ describe('operator-facade (colocated)', () => {
   it('profile_update_section updates section', async () => {
     const result = await executeOp(ops, 'profile_update_section', {
       section: 'communication',
-      data: { style: 'concise', signalWords: ['yo'], formality: 0.3, patience: 0.9, adaptationRules: [] },
+      data: {
+        style: 'concise',
+        signalWords: ['yo'],
+        formality: 0.3,
+        patience: 0.9,
+        adaptationRules: [],
+      },
     });
     expect(result.success).toBe(true);
     expect((result.data as Record<string, unknown>).updated).toBe(true);

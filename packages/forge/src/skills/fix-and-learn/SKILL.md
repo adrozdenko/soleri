@@ -92,11 +92,11 @@ Bug resolved, tests pass, root cause captured in vault. A fix without a capture 
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `route_intent` | Classify as FIX intent |
-| `search_intelligent` | Check vault for known bugs |
-| `memory_search` | Search session memories |
-| `loop_start` / `loop_iterate` / `loop_complete` | Iterative fix cycle |
-| `capture_knowledge` / `capture_quick` | Persist anti-pattern |
-| `curator_detect_duplicates` | Prevent redundant entries |
+| Op                                              | When to Use                |
+| ----------------------------------------------- | -------------------------- |
+| `route_intent`                                  | Classify as FIX intent     |
+| `search_intelligent`                            | Check vault for known bugs |
+| `memory_search`                                 | Search session memories    |
+| `loop_start` / `loop_iterate` / `loop_complete` | Iterative fix cycle        |
+| `capture_knowledge` / `capture_quick`           | Persist anti-pattern       |
+| `curator_detect_duplicates`                     | Prevent redundant entries  |

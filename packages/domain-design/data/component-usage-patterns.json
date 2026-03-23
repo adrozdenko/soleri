@@ -135,10 +135,7 @@
         "Shopping carts",
         "Navigation menus"
       ],
-      "whenNotToUse": [
-        "Critical actions (use Dialog)",
-        "Very wide content"
-      ],
+      "whenNotToUse": ["Critical actions (use Dialog)", "Very wide content"],
       "bestPractices": [
         "Slide in from edge (right for LTR languages)",
         "Include close button",
@@ -214,10 +211,7 @@
         "Dashboard views",
         "Profile sections"
       ],
-      "whenNotToUse": [
-        "Primary navigation (use menu)",
-        "Sequential steps (use stepper/wizard)"
-      ],
+      "whenNotToUse": ["Primary navigation (use menu)", "Sequential steps (use stepper/wizard)"],
       "bestPractices": [
         "Limit to 3-7 tabs for usability",
         "Use clear, concise tab labels",
@@ -252,10 +246,7 @@
         "Progressive content loading",
         "Optimistic UI patterns"
       ],
-      "whenNotToUse": [
-        "Very short load times (<200ms)",
-        "When spinner is more appropriate"
-      ],
+      "whenNotToUse": ["Very short load times (<200ms)", "When spinner is more appropriate"],
       "bestPractices": [
         "Match layout of actual content",
         "Use subtle shimmer animation",

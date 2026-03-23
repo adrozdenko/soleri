@@ -9,16 +9,8 @@
       "title": "Successful custom loop (score: 85)",
       "severity": "suggestion",
       "description": "# Successful custom loop (score: 85)\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 45 sessions.\nFlow: loop-custom\n## Pattern\n\nSession 2026-03-02-ffa03ef9 completed custom validation with a score of 85 (grade: B). This approach worked well for custom tasks.\n\n## Evidence\n\n- Observed in 45 sessions across flow `loop-custom`\n- Promoted: 2026-03-02\n- Source rule: `loop-good-score`",
-      "tags": [
-        "loop",
-        "success",
-        "good-score",
-        "custom",
-        "loop-custom"
-      ],
-      "appliesTo": [
-        "loop-custom"
-      ]
+      "tags": ["loop", "success", "good-score", "custom", "loop-custom"],
+      "appliesTo": ["loop-custom"]
     }
   ]
 }

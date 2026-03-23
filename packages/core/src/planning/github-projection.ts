@@ -129,7 +129,12 @@ export function listMilestones(repo: GitHubRepo): GitHubMilestone[] {
   try {
     const output = execFileSync(
       'gh',
-      ['api', `repos/${repo.owner}/${repo.repo}/milestones`, '--jq', '.[] | {number, title, state}'],
+      [
+        'api',
+        `repos/${repo.owner}/${repo.repo}/milestones`,
+        '--jq',
+        '.[] | {number, title, state}',
+      ],
       {
         encoding: 'utf-8',
         timeout: 10000,
@@ -157,11 +162,16 @@ export function listOpenIssues(repo: GitHubRepo, limit: number = 100): GitHubIss
     const output = execFileSync(
       'gh',
       [
-        'issue', 'list',
-        '--repo', `${repo.owner}/${repo.repo}`,
-        '--state', 'open',
-        '--limit', String(limit),
-        '--json', 'number,title,state,body',
+        'issue',
+        'list',
+        '--repo',
+        `${repo.owner}/${repo.repo}`,
+        '--state',
+        'open',
+        '--limit',
+        String(limit),
+        '--json',
+        'number,title,state,body',
       ],
       {
         encoding: 'utf-8',
@@ -184,11 +194,7 @@ export function listLabels(repo: GitHubRepo): GitHubLabel[] {
   try {
     const output = execFileSync(
       'gh',
-      [
-        'label', 'list',
-        '--repo', `${repo.owner}/${repo.repo}`,
-        '--json', 'name,color',
-      ],
+      ['label', 'list', '--repo', `${repo.owner}/${repo.repo}`, '--json', 'name,color'],
       {
         encoding: 'utf-8',
         timeout: 10000,
@@ -273,10 +279,18 @@ export function findDuplicateIssue(
   taskTitle: string,
   existingIssues: GitHubIssue[],
 ): GitHubIssue | null {
-  const taskWords = new Set(taskTitle.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
+  const taskWords = new Set(
+    taskTitle
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2),
+  );
 
   for (const issue of existingIssues) {
-    const issueWords = issue.title.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+    const issueWords = issue.title
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2);
     let overlap = 0;
     for (const w of issueWords) {
       if (taskWords.has(w)) overlap++;
@@ -367,10 +381,14 @@ export function createGitHubIssue(
 ): number | null {
   try {
     const args = [
-      'issue', 'create',
-      '--repo', `${repo.owner}/${repo.repo}`,
-      '--title', title,
-      '--body', body,
+      'issue',
+      'create',
+      '--repo',
+      `${repo.owner}/${repo.repo}`,
+      '--title',
+      title,
+      '--body',
+      body,
     ];
 
     if (options?.milestone) {
@@ -407,10 +425,13 @@ export function updateGitHubIssueBody(
     execFileSync(
       'gh',
       [
-        'issue', 'edit',
-        '--repo', `${repo.owner}/${repo.repo}`,
+        'issue',
+        'edit',
+        '--repo',
+        `${repo.owner}/${repo.repo}`,
         String(issueNumber),
-        '--body', body,
+        '--body',
+        body,
       ],
       {
         encoding: 'utf-8',

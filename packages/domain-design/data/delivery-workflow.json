@@ -153,8 +153,14 @@
         "description": "Convert internal paths to deliverable format",
         "pathHandling": [
           { "deliveryType": "Self-Contained", "handling": "Inline the utility functions" },
-          { "deliveryType": "Dependency-Free", "handling": "Use relative paths (e.g., ./utils) or bundled file" },
-          { "deliveryType": "Library Compatible", "handling": "Keep standard paths (e.g., @/lib/utils)" }
+          {
+            "deliveryType": "Dependency-Free",
+            "handling": "Use relative paths (e.g., ./utils) or bundled file"
+          },
+          {
+            "deliveryType": "Library Compatible",
+            "handling": "Keep standard paths (e.g., @/lib/utils)"
+          }
         ],
         "commonInternalPaths": [
           { "path": "@/lib/utils", "contents": "Class merging utility function" },
@@ -200,8 +206,23 @@
     },
     "essentialFilesByPackageType": [
       { "type": "Minimal", "requiredFiles": ["Component", "README"] },
-      { "type": "Standard", "requiredFiles": ["Component", "utils", "types", "README", "package.json"] },
-      { "type": "Complete", "requiredFiles": ["Component", "stories", "tests", "utils", "types", "README", "package.json", "tsconfig"] }
+      {
+        "type": "Standard",
+        "requiredFiles": ["Component", "utils", "types", "README", "package.json"]
+      },
+      {
+        "type": "Complete",
+        "requiredFiles": [
+          "Component",
+          "stories",
+          "tests",
+          "utils",
+          "types",
+          "README",
+          "package.json",
+          "tsconfig"
+        ]
+      }
     ]
   },
   "tailwindIntegration": {
@@ -214,7 +235,11 @@
     "importOrder": [
       { "order": 1, "item": "Source directives", "example": "@source \"./src/**/*.{ts,tsx}\";" },
       { "order": 2, "item": "Framework import", "example": "@import \"tailwindcss\";" },
-      { "order": 3, "item": "Theme/custom tokens", "example": "@theme { --color-primary: #DC0000; }" },
+      {
+        "order": 3,
+        "item": "Theme/custom tokens",
+        "example": "@theme { --color-primary: #DC0000; }"
+      },
       { "order": 4, "item": "Component-specific utilities", "example": "Custom CSS rules" }
     ],
     "recipientSetupNotes": [
@@ -259,7 +284,10 @@
       "mistake": "Delivering component without cn utility",
       "symptom": "ReferenceError: cn is not defined",
       "fixes": [
-        { "type": "Self-Contained", "fix": "Add inline: export function cn(...inputs) { return twMerge(clsx(inputs)) }" },
+        {
+          "type": "Self-Contained",
+          "fix": "Add inline: export function cn(...inputs) { return twMerge(clsx(inputs)) }"
+        },
         { "type": "With Deps", "fix": "Add clsx and tailwind-merge to dependencies" },
         { "type": "Library", "fix": "Ensure recipient has @/lib/utils set up" }
       ]
@@ -277,7 +305,11 @@
     {
       "name": "TypeScript Syntax Issues",
       "mistake": "Using TypeScript syntax that requires specific config",
-      "examples": ["satisfies keyword (TS 4.9+)", "const assertions (strict mode)", "import type syntax"],
+      "examples": [
+        "satisfies keyword (TS 4.9+)",
+        "const assertions (strict mode)",
+        "import type syntax"
+      ],
       "fix": "Document minimum TypeScript version in README"
     },
     {

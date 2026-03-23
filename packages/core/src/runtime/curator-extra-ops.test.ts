@@ -14,7 +14,9 @@ function mockRuntime() {
       recordSnapshot: vi.fn().mockReturnValue({ recorded: true, historyId: 42 }),
       getQueueStats: vi.fn().mockReturnValue({ totalEntries: 5, groomedEntries: 3 }),
       enrichMetadata: vi.fn().mockReturnValue({ enriched: false, changes: [] }),
-      detectContradictionsHybrid: vi.fn().mockResolvedValue({ contradictions: [], method: 'tfidf-only' }),
+      detectContradictionsHybrid: vi
+        .fn()
+        .mockResolvedValue({ contradictions: [], method: 'tfidf-only' }),
       consolidate: vi.fn(),
     },
     jobQueue: {

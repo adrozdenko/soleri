@@ -120,11 +120,7 @@
         "Semantic names (primary, destructive)",
         "Single variant prop"
       ],
-      "dont": [
-        "Every possible variation",
-        "Generic names (type1, type2)",
-        "Multiple boolean flags"
-      ]
+      "dont": ["Every possible variation", "Generic names (type1, type2)", "Multiple boolean flags"]
     },
     "sizes": {
       "do": [
@@ -163,16 +159,8 @@
       ]
     },
     "stylingPatterns": {
-      "do": [
-        "Variant utilities (cva or similar)",
-        "Class merging utilities",
-        "Utility-first CSS"
-      ],
-      "dont": [
-        "Ternary chains",
-        "String concatenation",
-        "CSS-in-JS or CSS modules for variants"
-      ]
+      "do": ["Variant utilities (cva or similar)", "Class merging utilities", "Utility-first CSS"],
+      "dont": ["Ternary chains", "String concatenation", "CSS-in-JS or CSS modules for variants"]
     },
     "primitives": {
       "description": "Use established primitive libraries for complex interactive components",

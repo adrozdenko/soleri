@@ -215,14 +215,20 @@ export function buildAdaptationSummary(profile: OperatorProfile): string | null 
 
   // Communication style
   if (communication.style && communication.style !== 'mixed') {
-    const formality = communication.formality >= 0.7 ? 'formal' : communication.formality <= 0.3 ? 'casual' : '';
+    const formality =
+      communication.formality >= 0.7 ? 'formal' : communication.formality <= 0.3 ? 'casual' : '';
     const parts = [communication.style, formality].filter(Boolean);
     lines.push(`Communication: ${parts.join(', ')}`);
   }
 
   // Challenge threshold / pushback level
   if (trustModel.level !== 'new') {
-    const autonomy = trustModel.currentLevel >= 0.7 ? 'high autonomy' : trustModel.currentLevel <= 0.3 ? 'check before acting' : 'moderate autonomy';
+    const autonomy =
+      trustModel.currentLevel >= 0.7
+        ? 'high autonomy'
+        : trustModel.currentLevel <= 0.3
+          ? 'check before acting'
+          : 'moderate autonomy';
     lines.push(`Trust: ${trustModel.level} — ${autonomy}`);
   }
 

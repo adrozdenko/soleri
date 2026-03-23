@@ -36,9 +36,7 @@ function createMockRuntime(): AgentRuntime {
         blocked: false,
         entry: { id: 'captured-1' },
       })),
-      intelligentSearch: vi.fn(async () => [
-        { id: 'r1', title: 'Result 1', score: 0.8 },
-      ]),
+      intelligentSearch: vi.fn(async () => [{ id: 'r1', title: 'Result 1', score: 0.8 }]),
       recordFeedback: vi.fn(),
     },
     governance: {
@@ -113,9 +111,7 @@ describe('createCaptureOps', () => {
     it('uses manual tier override when provided', async () => {
       const result = (await findOp(ops, 'capture_knowledge').handler({
         tier: 'team',
-        entries: [
-          { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
-        ],
+        entries: [{ type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] }],
       })) as Record<string, unknown>;
       expect(result.captured).toBe(1);
       const results = result.results as Array<Record<string, unknown>>;
@@ -129,9 +125,7 @@ describe('createCaptureOps', () => {
         reason: 'Requires review',
       } as unknown);
       const result = (await findOp(ops, 'capture_knowledge').handler({
-        entries: [
-          { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
-        ],
+        entries: [{ type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] }],
       })) as Record<string, unknown>;
       expect(result.proposed).toBe(1);
       expect(result.captured).toBe(0);
@@ -144,9 +138,7 @@ describe('createCaptureOps', () => {
         reason: 'Not allowed',
       } as unknown);
       const result = (await findOp(ops, 'capture_knowledge').handler({
-        entries: [
-          { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
-        ],
+        entries: [{ type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] }],
       })) as Record<string, unknown>;
       expect(result.rejected).toBe(1);
     });
@@ -157,9 +149,7 @@ describe('createCaptureOps', () => {
         duplicate: { id: 'existing-1' },
       } as unknown);
       const result = (await findOp(ops, 'capture_knowledge').handler({
-        entries: [
-          { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
-        ],
+        entries: [{ type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] }],
       })) as Record<string, unknown>;
       expect(result.duplicated).toBe(1);
       expect(result.captured).toBe(0);
@@ -170,9 +160,7 @@ describe('createCaptureOps', () => {
         throw new Error('Capture failed');
       });
       const result = (await findOp(ops, 'capture_knowledge').handler({
-        entries: [
-          { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
-        ],
+        entries: [{ type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] }],
       })) as Record<string, unknown>;
       expect(result.rejected).toBe(1);
       const results = result.results as Array<Record<string, unknown>>;
@@ -185,9 +173,7 @@ describe('createCaptureOps', () => {
         { entryId: 'related-1', title: 'Related', suggestedType: 'related', score: 0.9 },
       ]);
       const result = (await findOp(ops, 'capture_knowledge').handler({
-        entries: [
-          { type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] },
-        ],
+        entries: [{ type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] }],
       })) as Record<string, unknown>;
       expect(result.autoLinkedCount).toBe(1);
       expect(result.suggestedLinks).toBeDefined();

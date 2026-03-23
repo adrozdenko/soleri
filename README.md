@@ -107,13 +107,13 @@ The `PersistenceProvider` interface exists for future extensibility, but SQLite 
 
 ### Packages
 
-| Package | Description |
-|---------|-------------|
-| [`@soleri/core`](packages/core) | Knowledge Engine — vault, brain, planner, curator, `registerEngine()`, engine binary |
-| [`@soleri/forge`](packages/forge) | Agent scaffolder — generates file-tree agents from config |
-| [`@soleri/cli`](packages/cli) | Developer CLI — create, install, dev, doctor, packs, hooks |
-| [`create-soleri`](packages/create-soleri) | `npm create soleri` shorthand |
-| [`@soleri/domain-*`](packages/) | Domain packs — design, component, figma, code-review |
+| Package                                   | Description                                                                          |
+| ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| [`@soleri/core`](packages/core)           | Knowledge Engine — vault, brain, planner, curator, `registerEngine()`, engine binary |
+| [`@soleri/forge`](packages/forge)         | Agent scaffolder — generates file-tree agents from config                            |
+| [`@soleri/cli`](packages/cli)             | Developer CLI — create, install, dev, doctor, packs, hooks                           |
+| [`create-soleri`](packages/create-soleri) | `npm create soleri` shorthand                                                        |
+| [`@soleri/domain-*`](packages/)           | Domain packs — design, component, figma, code-review                                 |
 
 ### Guides
 

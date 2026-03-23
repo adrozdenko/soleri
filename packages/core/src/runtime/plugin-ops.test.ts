@@ -10,17 +10,28 @@ import type { OpDefinition } from '../facades/types.js';
 
 /** Minimal plugin registry stub. */
 function makePluginRegistryStub() {
-  const plugins = new Map<string, {
-    id: string;
-    manifest: { id: string; name: string; version: string; domain: string; description: string; dependencies: string[]; intelligence: unknown[] };
-    status: string;
-    provenance: string;
-    directory: string;
-    error?: string;
-    facades: Array<{ name: string; description: string; ops: OpDefinition[] }>;
-    registeredAt: number;
-    activatedAt?: number;
-  }>();
+  const plugins = new Map<
+    string,
+    {
+      id: string;
+      manifest: {
+        id: string;
+        name: string;
+        version: string;
+        domain: string;
+        description: string;
+        dependencies: string[];
+        intelligence: unknown[];
+      };
+      status: string;
+      provenance: string;
+      directory: string;
+      error?: string;
+      facades: Array<{ name: string; description: string; ops: OpDefinition[] }>;
+      registeredAt: number;
+      activatedAt?: number;
+    }
+  >();
 
   return {
     get: (id: string) => plugins.get(id) ?? null,
@@ -43,10 +54,24 @@ function makePluginRegistryStub() {
       plugin.status = 'registered';
       return true;
     }),
-    _seed: (id: string, overrides?: Partial<{ status: string; facades: Array<{ name: string; description: string; ops: OpDefinition[] }> }>) => {
+    _seed: (
+      id: string,
+      overrides?: Partial<{
+        status: string;
+        facades: Array<{ name: string; description: string; ops: OpDefinition[] }>;
+      }>,
+    ) => {
       plugins.set(id, {
         id,
-        manifest: { id, name: `Plugin ${id}`, version: '1.0.0', domain: 'test', description: 'Test plugin', dependencies: [], intelligence: [] },
+        manifest: {
+          id,
+          name: `Plugin ${id}`,
+          version: '1.0.0',
+          domain: 'test',
+          description: 'Test plugin',
+          dependencies: [],
+          intelligence: [],
+        },
         status: overrides?.status ?? 'registered',
         provenance: 'local',
         directory: `/plugins/${id}`,
@@ -63,10 +88,7 @@ describe('plugin-ops', () => {
     const config = { agentId: 'test-agent' };
     const opSink = opts?.opSink;
     const ops = captureOps(
-      createPluginOps(
-        { pluginRegistry, config } as unknown as AgentRuntime,
-        opSink,
-      ),
+      createPluginOps({ pluginRegistry, config } as unknown as AgentRuntime, opSink),
     );
     return { pluginRegistry, ops, opSink };
   }
@@ -83,11 +105,24 @@ describe('plugin-ops', () => {
 
     it('lists registered plugins with status', async () => {
       const { ops, pluginRegistry } = setup();
-      pluginRegistry._seed('plug-a', { status: 'active', facades: [{ name: 'f1', description: 'F1', ops: [{ name: 'op1', handler: async () => ({}), auth: 'read', description: '' }] }] });
+      pluginRegistry._seed('plug-a', {
+        status: 'active',
+        facades: [
+          {
+            name: 'f1',
+            description: 'F1',
+            ops: [{ name: 'op1', handler: async () => ({}), auth: 'read', description: '' }],
+          },
+        ],
+      });
       pluginRegistry._seed('plug-b', { status: 'registered' });
 
       const res = await executeOp(ops, 'plugin_list');
-      const data = res.data as { count: number; active: number; plugins: Array<{ id: string; status: string; facades: number; ops: number }> };
+      const data = res.data as {
+        count: number;
+        active: number;
+        plugins: Array<{ id: string; status: string; facades: number; ops: number }>;
+      };
       expect(data.count).toBe(2);
       expect(data.active).toBe(1);
       expect(data.plugins[0].facades).toBe(1);
@@ -108,7 +143,13 @@ describe('plugin-ops', () => {
       pluginRegistry._seed('my-plug');
 
       const res = await executeOp(ops, 'plugin_status', { pluginId: 'my-plug' });
-      const data = res.data as { id: string; name: string; version: string; status: string; directory: string };
+      const data = res.data as {
+        id: string;
+        name: string;
+        version: string;
+        status: string;
+        directory: string;
+      };
       expect(data.id).toBe('my-plug');
       expect(data.version).toBe('1.0.0');
       expect(data.directory).toBe('/plugins/my-plug');
@@ -140,7 +181,10 @@ describe('plugin-ops', () => {
       pluginRegistry._seed('p2', { status: 'registered', facades: [] });
 
       const res = await executeOp(ops, 'plugin_activate', {});
-      const data = res.data as { activated: number; results: Array<{ id: string; status: string }> };
+      const data = res.data as {
+        activated: number;
+        results: Array<{ id: string; status: string }>;
+      };
       expect(data.activated).toBe(2);
       expect(data.results).toHaveLength(2);
     });
@@ -148,8 +192,15 @@ describe('plugin-ops', () => {
     it('injects plugin ops into opSink on activation', async () => {
       const opSink: OpDefinition[] = [];
       const { ops, pluginRegistry } = setup({ opSink });
-      const testOp: OpDefinition = { name: 'injected_op', handler: async () => 'hi', auth: 'read', description: 'test' };
-      pluginRegistry._seed('plug-inject', { facades: [{ name: 'test-facade', description: 'TF', ops: [testOp] }] });
+      const testOp: OpDefinition = {
+        name: 'injected_op',
+        handler: async () => 'hi',
+        auth: 'read',
+        description: 'test',
+      };
+      pluginRegistry._seed('plug-inject', {
+        facades: [{ name: 'test-facade', description: 'TF', ops: [testOp] }],
+      });
 
       await executeOp(ops, 'plugin_activate', { pluginId: 'plug-inject' });
       expect(opSink.some((o) => o.name === 'injected_op')).toBe(true);
@@ -177,8 +228,15 @@ describe('plugin-ops', () => {
     it('removes injected ops from opSink on deactivation', async () => {
       const opSink: OpDefinition[] = [];
       const { ops, pluginRegistry } = setup({ opSink });
-      const testOp: OpDefinition = { name: 'to_remove', handler: async () => 'hi', auth: 'read', description: 'test' };
-      pluginRegistry._seed('plug-rm', { facades: [{ name: 'f', description: 'F', ops: [testOp] }] });
+      const testOp: OpDefinition = {
+        name: 'to_remove',
+        handler: async () => 'hi',
+        auth: 'read',
+        description: 'test',
+      };
+      pluginRegistry._seed('plug-rm', {
+        facades: [{ name: 'f', description: 'F', ops: [testOp] }],
+      });
 
       await executeOp(ops, 'plugin_activate', { pluginId: 'plug-rm' });
       expect(opSink.some((o) => o.name === 'to_remove')).toBe(true);

@@ -9,6 +9,7 @@ description: Install Soleri, create your first agent, and connect it to your AI 
 - **An MCP-compatible AI editor** — OpenCode, Claude Code, Cursor, or similar
 - **npm** — ships with Node.js
 - **Build tools** (Linux only) — Soleri uses `better-sqlite3` which requires native compilation:
+
   ```bash
   # Ubuntu / Debian
   sudo apt-get install -y build-essential python3
@@ -19,6 +20,7 @@ description: Install Soleri, create your first agent, and connect it to your AI 
   # Alpine
   apk add build-base python3
   ```
+
   macOS and Windows users: Xcode Command Line Tools and Visual Studio Build Tools are typically already installed.
 
 ## Create Your Agent
@@ -31,12 +33,12 @@ npx @soleri/cli create my-agent
 
 The interactive wizard asks for:
 
-| Prompt            | What it means                                                  |
-| ----------------- | -------------------------------------------------------------- |
-| **Agent name**    | Your agent's identity (e.g., "sentinel", "architect")          |
-| **Role**          | One-line description of what it does                           |
-| **Domains**       | Knowledge areas — `frontend`, `backend`, `security`, or custom |
-| **Tone**          | How the agent communicates — precise, mentor, pragmatic        |
+| Prompt         | What it means                                                  |
+| -------------- | -------------------------------------------------------------- |
+| **Agent name** | Your agent's identity (e.g., "sentinel", "architect")          |
+| **Role**       | One-line description of what it does                           |
+| **Domains**    | Knowledge areas — `frontend`, `backend`, `security`, or custom |
+| **Tone**       | How the agent communicates — precise, mentor, pragmatic        |
 
 This generates a folder — no TypeScript, no build step:
 

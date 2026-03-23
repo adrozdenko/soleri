@@ -1,14 +1,14 @@
-name: "Feature Request (Agent-Ready)"
-description: "Structured feature request optimized for AI coding agents"
-title: "feat: "
-labels: ["feature"]
+name: 'Feature Request (Agent-Ready)'
+description: 'Structured feature request optimized for AI coding agents'
+title: 'feat: '
+labels: ['feature']
 body:
   - type: input
     id: component
     attributes:
       label: Component
-      description: "Package or module (e.g. @soleri/core, @soleri/cli, @soleri/forge)"
-      placeholder: "@soleri/core"
+      description: 'Package or module (e.g. @soleri/core, @soleri/cli, @soleri/forge)'
+      placeholder: '@soleri/core'
     validations:
       required: true
 
@@ -27,8 +27,8 @@ body:
   - type: textarea
     id: objective
     attributes:
-      label: "Objective (what capability is added and why)"
-      placeholder: "Add --dir flag to soleri create so agents can be installed to custom locations"
+      label: 'Objective (what capability is added and why)'
+      placeholder: 'Add --dir flag to soleri create so agents can be installed to custom locations'
     validations:
       required: true
 

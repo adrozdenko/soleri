@@ -19,9 +19,9 @@ function makeMockBrain() {
     rebuildVocabulary: vi.fn(),
     getVocabularySize: vi.fn().mockReturnValue(42),
     getStats: vi.fn().mockReturnValue({ vocabularySize: 42, feedbackCount: 5 }),
-    getDecayReport: vi.fn().mockResolvedValue([
-      { id: 'e1', title: 'Test', decayScore: 0.8, status: 'active' },
-    ]),
+    getDecayReport: vi
+      .fn()
+      .mockResolvedValue([{ id: 'e1', title: 'Test', decayScore: 0.8, status: 'active' }]),
     intelligentSearch: vi.fn().mockResolvedValue([]),
     scanSearch: vi.fn().mockResolvedValue([]),
     enrichAndCapture: vi.fn().mockReturnValue({ captured: true, id: 'cap-1', autoTags: [] }),
@@ -125,15 +125,35 @@ describe('brain-facade', () => {
 
   it('includes all expected op names', () => {
     const expected = [
-      'record_feedback', 'brain_feedback', 'brain_feedback_stats',
-      'rebuild_vocabulary', 'brain_stats', 'brain_decay_report',
-      'llm_status', 'brain_session_context', 'brain_strengths',
-      'brain_global_patterns', 'brain_recommend', 'brain_build_intelligence',
-      'brain_export', 'brain_import', 'brain_extract_knowledge',
-      'brain_archive_sessions', 'brain_promote_proposals', 'brain_lifecycle',
-      'session_list', 'session_get', 'session_quality', 'session_replay',
-      'brain_reset_extracted', 'radar_analyze', 'radar_candidates',
-      'radar_approve', 'radar_dismiss', 'radar_flush', 'radar_stats',
+      'record_feedback',
+      'brain_feedback',
+      'brain_feedback_stats',
+      'rebuild_vocabulary',
+      'brain_stats',
+      'brain_decay_report',
+      'llm_status',
+      'brain_session_context',
+      'brain_strengths',
+      'brain_global_patterns',
+      'brain_recommend',
+      'brain_build_intelligence',
+      'brain_export',
+      'brain_import',
+      'brain_extract_knowledge',
+      'brain_archive_sessions',
+      'brain_promote_proposals',
+      'brain_lifecycle',
+      'session_list',
+      'session_get',
+      'session_quality',
+      'session_replay',
+      'brain_reset_extracted',
+      'radar_analyze',
+      'radar_candidates',
+      'radar_approve',
+      'radar_dismiss',
+      'radar_flush',
+      'radar_stats',
       'synthesize',
     ];
     for (const name of expected) {
@@ -145,11 +165,22 @@ describe('brain-facade', () => {
 
   it('has correct auth levels for read ops', () => {
     const readOps = [
-      'brain_feedback_stats', 'brain_stats', 'brain_decay_report',
-      'llm_status', 'brain_session_context', 'brain_strengths',
-      'brain_global_patterns', 'brain_recommend', 'brain_export',
-      'session_list', 'session_get', 'session_quality', 'session_replay',
-      'radar_candidates', 'radar_stats', 'synthesize',
+      'brain_feedback_stats',
+      'brain_stats',
+      'brain_decay_report',
+      'llm_status',
+      'brain_session_context',
+      'brain_strengths',
+      'brain_global_patterns',
+      'brain_recommend',
+      'brain_export',
+      'session_list',
+      'session_get',
+      'session_quality',
+      'session_replay',
+      'radar_candidates',
+      'radar_stats',
+      'synthesize',
     ];
     for (const name of readOps) {
       expect(ops.get(name)!.auth, `${name} should be read`).toBe('read');
@@ -158,11 +189,20 @@ describe('brain-facade', () => {
 
   it('has correct auth levels for write ops', () => {
     const writeOps = [
-      'record_feedback', 'brain_feedback', 'rebuild_vocabulary',
-      'brain_build_intelligence', 'brain_import', 'brain_extract_knowledge',
-      'brain_archive_sessions', 'brain_promote_proposals', 'brain_lifecycle',
-      'brain_reset_extracted', 'radar_analyze', 'radar_approve',
-      'radar_dismiss', 'radar_flush',
+      'record_feedback',
+      'brain_feedback',
+      'rebuild_vocabulary',
+      'brain_build_intelligence',
+      'brain_import',
+      'brain_extract_knowledge',
+      'brain_archive_sessions',
+      'brain_promote_proposals',
+      'brain_lifecycle',
+      'brain_reset_extracted',
+      'radar_analyze',
+      'radar_approve',
+      'radar_dismiss',
+      'radar_flush',
     ];
     for (const name of writeOps) {
       expect(ops.get(name)!.auth, `${name} should be write`).toBe('write');
@@ -179,7 +219,12 @@ describe('brain-facade', () => {
         action: 'accepted',
       });
       expect(result.success).toBe(true);
-      const data = result.data as { recorded: boolean; query: string; entryId: string; action: string };
+      const data = result.data as {
+        recorded: boolean;
+        query: string;
+        entryId: string;
+        action: string;
+      };
       expect(data.recorded).toBe(true);
       expect(data.query).toBe('test query');
       expect(data.entryId).toBe('e-1');
@@ -188,7 +233,9 @@ describe('brain-facade', () => {
 
     it('calls brain.recordFeedback with positional args', async () => {
       await executeOp(ops, 'record_feedback', {
-        query: 'q', entryId: 'e', action: 'dismissed',
+        query: 'q',
+        entryId: 'e',
+        action: 'dismissed',
       });
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
       expect(brain.recordFeedback).toHaveBeenCalledWith('q', 'e', 'dismissed');
@@ -196,7 +243,9 @@ describe('brain-facade', () => {
 
     it('rejects invalid action enum', async () => {
       const result = await executeOp(ops, 'record_feedback', {
-        query: 'q', entryId: 'e', action: 'invalid',
+        query: 'q',
+        entryId: 'e',
+        action: 'invalid',
       });
       expect(result.success).toBe(false);
       expect(result.error).toContain('Invalid params');
@@ -208,22 +257,34 @@ describe('brain-facade', () => {
   describe('brain_feedback', () => {
     it('records enhanced feedback with all fields', async () => {
       const result = await executeOp(ops, 'brain_feedback', {
-        query: 'design tokens', entryId: 'e-2', action: 'modified',
-        source: 'search', confidence: 0.9, duration: 1200,
-        context: '{}', reason: 'too verbose',
+        query: 'design tokens',
+        entryId: 'e-2',
+        action: 'modified',
+        source: 'search',
+        confidence: 0.9,
+        duration: 1200,
+        context: '{}',
+        reason: 'too verbose',
       });
       expect(result.success).toBe(true);
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
       expect(brain.recordFeedback).toHaveBeenCalledWith({
-        query: 'design tokens', entryId: 'e-2', action: 'modified',
-        source: 'search', confidence: 0.9, duration: 1200,
-        context: '{}', reason: 'too verbose',
+        query: 'design tokens',
+        entryId: 'e-2',
+        action: 'modified',
+        source: 'search',
+        confidence: 0.9,
+        duration: 1200,
+        context: '{}',
+        reason: 'too verbose',
       });
     });
 
     it('works with minimal required fields', async () => {
       const result = await executeOp(ops, 'brain_feedback', {
-        query: 'q', entryId: 'e', action: 'failed',
+        query: 'q',
+        entryId: 'e',
+        action: 'failed',
       });
       expect(result.success).toBe(true);
     });
@@ -231,7 +292,9 @@ describe('brain-facade', () => {
     it('accepts all 4 action types', async () => {
       for (const action of ['accepted', 'dismissed', 'modified', 'failed']) {
         const result = await executeOp(ops, 'brain_feedback', {
-          query: 'q', entryId: 'e', action,
+          query: 'q',
+          entryId: 'e',
+          action,
         });
         expect(result.success, `action ${action} should succeed`).toBe(true);
       }
@@ -274,7 +337,10 @@ describe('brain-facade', () => {
     it('merges brain and intelligence stats', async () => {
       const result = await executeOp(ops, 'brain_stats', {});
       expect(result.success).toBe(true);
-      const data = result.data as { vocabularySize: number; intelligence: { pipelineRuns: number } };
+      const data = result.data as {
+        vocabularySize: number;
+        intelligence: { pipelineRuns: number };
+      };
       expect(data.vocabularySize).toBe(42);
       expect(data.intelligence.pipelineRuns).toBe(3);
     });
@@ -344,17 +410,23 @@ describe('brain-facade', () => {
       expect(result.success).toBe(true);
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
       expect(bi.getStrengths).toHaveBeenCalledWith({
-        domain: undefined, minStrength: undefined, limit: 50,
+        domain: undefined,
+        minStrength: undefined,
+        limit: 50,
       });
     });
 
     it('passes all filter params', async () => {
       await executeOp(ops, 'brain_strengths', {
-        domain: 'design', minStrength: 60, limit: 10,
+        domain: 'design',
+        minStrength: 60,
+        limit: 10,
       });
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
       expect(bi.getStrengths).toHaveBeenCalledWith({
-        domain: 'design', minStrength: 60, limit: 10,
+        domain: 'design',
+        minStrength: 60,
+        limit: 10,
       });
     });
   });
@@ -380,12 +452,16 @@ describe('brain-facade', () => {
   describe('brain_recommend', () => {
     it('passes all params with defaults', async () => {
       const result = await executeOp(ops, 'brain_recommend', {
-        domain: 'css', task: 'build button',
+        domain: 'css',
+        task: 'build button',
       });
       expect(result.success).toBe(true);
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
       expect(bi.recommend).toHaveBeenCalledWith({
-        domain: 'css', task: 'build button', source: undefined, limit: 5,
+        domain: 'css',
+        task: 'build button',
+        source: undefined,
+        limit: 5,
       });
     });
   });
@@ -459,23 +535,16 @@ describe('brain-facade', () => {
       });
       expect(result.success).toBe(true);
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
-      expect(bi.promoteProposals).toHaveBeenCalledWith(
-        ['p1', 'p2'],
-        runtime.governance,
-        '.',
-      );
+      expect(bi.promoteProposals).toHaveBeenCalledWith(['p1', 'p2'], runtime.governance, '.');
     });
 
     it('uses custom project path', async () => {
       await executeOp(ops, 'brain_promote_proposals', {
-        proposalIds: ['p1'], projectPath: '/my/project',
+        proposalIds: ['p1'],
+        projectPath: '/my/project',
       });
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
-      expect(bi.promoteProposals).toHaveBeenCalledWith(
-        ['p1'],
-        runtime.governance,
-        '/my/project',
-      );
+      expect(bi.promoteProposals).toHaveBeenCalledWith(['p1'], runtime.governance, '/my/project');
     });
   });
 
@@ -484,7 +553,8 @@ describe('brain-facade', () => {
   describe('brain_lifecycle', () => {
     it('starts a session', async () => {
       const result = await executeOp(ops, 'brain_lifecycle', {
-        action: 'start', domain: 'test',
+        action: 'start',
+        domain: 'test',
       });
       expect(result.success).toBe(true);
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
@@ -495,15 +565,23 @@ describe('brain-facade', () => {
 
     it('ends a session with all metadata', async () => {
       await executeOp(ops, 'brain_lifecycle', {
-        action: 'end', sessionId: 's1',
-        toolsUsed: ['search', 'capture'], filesModified: ['a.ts'],
-        planId: 'plan-1', planOutcome: 'success',
+        action: 'end',
+        sessionId: 's1',
+        toolsUsed: ['search', 'capture'],
+        filesModified: ['a.ts'],
+        planId: 'plan-1',
+        planOutcome: 'success',
       });
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
       expect(bi.lifecycle).toHaveBeenCalledWith({
-        action: 'end', sessionId: 's1', domain: undefined, context: undefined,
-        toolsUsed: ['search', 'capture'], filesModified: ['a.ts'],
-        planId: 'plan-1', planOutcome: 'success',
+        action: 'end',
+        sessionId: 's1',
+        domain: undefined,
+        context: undefined,
+        toolsUsed: ['search', 'capture'],
+        filesModified: ['a.ts'],
+        planId: 'plan-1',
+        planOutcome: 'success',
       });
     });
   });
@@ -524,11 +602,19 @@ describe('brain-facade', () => {
 
     it('passes all filter params', async () => {
       await executeOp(ops, 'session_list', {
-        domain: 'design', active: true, extracted: false, limit: 10, offset: 5,
+        domain: 'design',
+        active: true,
+        extracted: false,
+        limit: 10,
+        offset: 5,
       });
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
       expect(bi.listSessions).toHaveBeenCalledWith({
-        domain: 'design', active: true, extracted: false, limit: 10, offset: 5,
+        domain: 'design',
+        active: true,
+        extracted: false,
+        limit: 10,
+        offset: 5,
       });
     });
   });
@@ -578,7 +664,9 @@ describe('brain-facade', () => {
       await executeOp(ops, 'brain_reset_extracted', { sessionId: 'sess-1' });
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
       expect(bi.resetExtracted).toHaveBeenCalledWith({
-        sessionId: 'sess-1', since: undefined, all: undefined,
+        sessionId: 'sess-1',
+        since: undefined,
+        all: undefined,
       });
     });
 
@@ -586,7 +674,9 @@ describe('brain-facade', () => {
       await executeOp(ops, 'brain_reset_extracted', { all: true });
       const bi = runtime.brainIntelligence as ReturnType<typeof makeMockBrainIntelligence>;
       expect(bi.resetExtracted).toHaveBeenCalledWith({
-        sessionId: undefined, since: undefined, all: true,
+        sessionId: undefined,
+        since: undefined,
+        all: true,
       });
     });
   });
@@ -608,15 +698,23 @@ describe('brain-facade', () => {
 
     it('passes all optional fields', async () => {
       await executeOp(ops, 'radar_analyze', {
-        type: 'search_miss', title: 't', description: 'd',
-        suggestedType: 'anti-pattern', confidence: 0.95,
-        sourceQuery: 'tokens', context: 'extra',
+        type: 'search_miss',
+        title: 't',
+        description: 'd',
+        suggestedType: 'anti-pattern',
+        confidence: 0.95,
+        sourceQuery: 'tokens',
+        context: 'extra',
       });
       const radar = runtime.learningRadar as ReturnType<typeof makeMockLearningRadar>;
       expect(radar.analyze).toHaveBeenCalledWith({
-        type: 'search_miss', title: 't', description: 'd',
-        suggestedType: 'anti-pattern', confidence: 0.95,
-        sourceQuery: 'tokens', context: 'extra',
+        type: 'search_miss',
+        title: 't',
+        description: 'd',
+        suggestedType: 'anti-pattern',
+        confidence: 0.95,
+        sourceQuery: 'tokens',
+        context: 'extra',
       });
     });
   });
@@ -684,8 +782,10 @@ describe('brain-facade', () => {
   describe('synthesize', () => {
     it('synthesizes with all params', async () => {
       const result = await executeOp(ops, 'synthesize', {
-        query: 'design tokens', format: 'brief',
-        maxEntries: 5, audience: 'technical',
+        query: 'design tokens',
+        format: 'brief',
+        maxEntries: 5,
+        audience: 'technical',
       });
       expect(result.success).toBe(true);
       const data = result.data as { content: string; coverageScore: number };
@@ -695,17 +795,21 @@ describe('brain-facade', () => {
 
     it('uses default audience and maxEntries', async () => {
       await executeOp(ops, 'synthesize', {
-        query: 'test', format: 'outline',
+        query: 'test',
+        format: 'outline',
       });
       const synth = runtime.knowledgeSynthesizer as ReturnType<typeof makeMockKnowledgeSynthesizer>;
       expect(synth.synthesize).toHaveBeenCalledWith('test', {
-        format: 'outline', maxEntries: 10, audience: 'general',
+        format: 'outline',
+        maxEntries: 10,
+        audience: 'general',
       });
     });
 
     it('rejects invalid format', async () => {
       const result = await executeOp(ops, 'synthesize', {
-        query: 'test', format: 'invalid',
+        query: 'test',
+        format: 'invalid',
       });
       expect(result.success).toBe(false);
       expect(result.error).toContain('Invalid params');

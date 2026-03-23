@@ -18,6 +18,7 @@ The agent never acts on its own. It responds to tool calls from your AI editor �
 The vault is a SQLite database with FTS5 (full-text search) enabled. It stores knowledge entries — patterns, anti-patterns, rules, playbooks — as structured records.
 
 Each entry has:
+
 - **Type** — pattern, anti-pattern, rule, playbook, workflow, principle, reference
 - **Domain** — the knowledge area (frontend, security, infrastructure, or your custom domains)
 - **Severity** — critical, warning, or suggestion
@@ -30,14 +31,14 @@ The vault file lives in your agent's data directory. It's a regular SQLite file 
 
 When your AI editor calls the search tool, the agent doesn't just do a keyword match. It combines six signals into a single relevance score:
 
-| Signal | What it measures |
-|--------|-----------------|
+| Signal                    | What it measures                                                      |
+| ------------------------- | --------------------------------------------------------------------- |
 | **TF-IDF text relevance** | How well the query matches the entry's text — weighted by term rarity |
-| **Severity weight** | Critical entries get a boost over suggestions |
-| **Recency** | Recently added or modified entries rank slightly higher |
-| **Tag overlap** | Entries whose tags match the query context score higher |
-| **Domain match** | Entries in the matching domain get a boost |
-| **Usage history** | Entries that have been useful before rank higher over time |
+| **Severity weight**       | Critical entries get a boost over suggestions                         |
+| **Recency**               | Recently added or modified entries rank slightly higher               |
+| **Tag overlap**           | Entries whose tags match the query context score higher               |
+| **Domain match**          | Entries in the matching domain get a boost                            |
+| **Usage history**         | Entries that have been useful before rank higher over time            |
 
 This is why a critical security pattern about JWT storage outranks a suggestion about loading spinners when you search for "authentication" — even if both mention tokens.
 
@@ -48,11 +49,13 @@ The brain is the intelligence layer that sits on top of the vault. It tracks whi
 ### Pattern strength
 
 Every vault entry has a strength score tracked by the brain. Strength increases when:
+
 - The pattern is found in a search and used in work
 - A plan that included this pattern completes successfully
 - You give positive feedback on a search result
 
 Strength decreases when:
+
 - The pattern is found but dismissed
 - Plans that used the pattern have high drift (things didn't go as planned)
 - The entry goes unused for a long period (decay)
@@ -87,6 +90,7 @@ This is the automatic part of the compound loop — you don't have to manually c
 ## Memory and persistence
 
 Everything your agent knows persists in files:
+
 - **Vault** — SQLite database with knowledge entries
 - **Brain state** — JSON file with strength scores, session history, TF-IDF vocabulary
 - **Plans** — JSON file with plan history and reconciliation reports

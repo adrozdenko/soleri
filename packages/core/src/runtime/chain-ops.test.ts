@@ -95,7 +95,11 @@ describe('createChainOps', () => {
       const rt = mockRuntime();
       const ops = captureOps(createChainOps(rt));
       await ops.get('chain_resume')!.handler({ instanceId: 'inst-1', chain: VALID_CHAIN });
-      expect(rt.chainRunner.resume).toHaveBeenCalledWith('inst-1', VALID_CHAIN, expect.any(Function));
+      expect(rt.chainRunner.resume).toHaveBeenCalledWith(
+        'inst-1',
+        VALID_CHAIN,
+        expect.any(Function),
+      );
     });
   });
 
@@ -113,7 +117,11 @@ describe('createChainOps', () => {
       const rt = mockRuntime();
       const ops = captureOps(createChainOps(rt));
       await ops.get('chain_step_approve')!.handler({ instanceId: 'inst-1', chain: VALID_CHAIN });
-      expect(rt.chainRunner.approve).toHaveBeenCalledWith('inst-1', VALID_CHAIN, expect.any(Function));
+      expect(rt.chainRunner.approve).toHaveBeenCalledWith(
+        'inst-1',
+        VALID_CHAIN,
+        expect.any(Function),
+      );
     });
   });
 
@@ -138,10 +146,12 @@ describe('createChainOps', () => {
       (ops as typeof ops & { _setAllOps: (o: typeof fakeOps) => void })._setAllOps(fakeOps);
 
       // Execute chain — the dispatch should be able to find 'some_op'
-      await ops.find((o) => o.name === 'chain_execute')!.handler({
-        chain: VALID_CHAIN,
-        input: {},
-      });
+      await ops
+        .find((o) => o.name === 'chain_execute')!
+        .handler({
+          chain: VALID_CHAIN,
+          input: {},
+        });
       // The dispatch function was passed to chainRunner.execute; verify it was called
       expect(rt.chainRunner.execute).toHaveBeenCalledOnce();
     });

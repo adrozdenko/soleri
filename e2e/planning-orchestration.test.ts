@@ -12,20 +12,18 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  createAgentRuntime,
-  createSemanticFacades,
-  registerFacade,
-} from '@soleri/core';
+import { createAgentRuntime, createSemanticFacades, registerFacade } from '@soleri/core';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 
 const AGENT_ID = 'e2e-planning';
 
 /** Capture the MCP handler from registerFacade without a real server */
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
@@ -98,14 +96,32 @@ describe('E2E: planning-orchestration', () => {
         scope: 'packages/auth — new module with login, signup, token refresh',
         decisions: ['Use JWT for stateless auth', 'Store refresh tokens in DB'],
         tasks: [
-          { title: 'Design token schema', description: 'Define JWT payload structure and DB schema for refresh tokens' },
-          { title: 'Implement login endpoint', description: 'POST /auth/login — validate credentials, issue JWT + refresh token' },
-          { title: 'Implement token refresh', description: 'POST /auth/refresh — validate refresh token, issue new JWT' },
+          {
+            title: 'Design token schema',
+            description: 'Define JWT payload structure and DB schema for refresh tokens',
+          },
+          {
+            title: 'Implement login endpoint',
+            description: 'POST /auth/login — validate credentials, issue JWT + refresh token',
+          },
+          {
+            title: 'Implement token refresh',
+            description: 'POST /auth/refresh — validate refresh token, issue new JWT',
+          },
         ],
       });
 
       expect(res.success).toBe(true);
-      const data = res.data as { created: boolean; plan: { id: string; objective: string; scope: string; status: string; tasks: Array<{ id: string; title: string; status: string }> } };
+      const data = res.data as {
+        created: boolean;
+        plan: {
+          id: string;
+          objective: string;
+          scope: string;
+          status: string;
+          tasks: Array<{ id: string; title: string; status: string }>;
+        };
+      };
       expect(data.created).toBe(true);
       expect(data.plan.id).toBeDefined();
       expect(data.plan.id).toMatch(/^plan-/);
@@ -131,14 +147,32 @@ describe('E2E: planning-orchestration', () => {
         planId,
         tasks: [
           { title: 'Design token schema', description: 'JWT payload + DB refresh token table' },
-          { title: 'Write auth tests', description: 'TDD: failing tests for login and refresh', dependsOn: ['task-1'] },
-          { title: 'Implement login', description: 'POST /auth/login endpoint', dependsOn: ['task-1', 'task-2'] },
-          { title: 'Implement refresh', description: 'POST /auth/refresh endpoint', dependsOn: ['task-3'] },
+          {
+            title: 'Write auth tests',
+            description: 'TDD: failing tests for login and refresh',
+            dependsOn: ['task-1'],
+          },
+          {
+            title: 'Implement login',
+            description: 'POST /auth/login endpoint',
+            dependsOn: ['task-1', 'task-2'],
+          },
+          {
+            title: 'Implement refresh',
+            description: 'POST /auth/refresh endpoint',
+            dependsOn: ['task-3'],
+          },
         ],
       });
 
       expect(res.success).toBe(true);
-      const data = res.data as { split: boolean; taskCount: number; plan: { tasks: Array<{ id: string; description: string; status: string; dependsOn?: string[] }> } };
+      const data = res.data as {
+        split: boolean;
+        taskCount: number;
+        plan: {
+          tasks: Array<{ id: string; description: string; status: string; dependsOn?: string[] }>;
+        };
+      };
       expect(data.split).toBe(true);
       expect(data.taskCount).toBe(4);
 
@@ -184,7 +218,12 @@ describe('E2E: planning-orchestration', () => {
       });
 
       expect(res.success).toBe(true);
-      const data = res.data as { reconciled: boolean; accuracy: number; driftCount: number; plan: { status: string; reconciliation: { accuracy: number; driftItems: unknown[] } } };
+      const data = res.data as {
+        reconciled: boolean;
+        accuracy: number;
+        driftCount: number;
+        plan: { status: string; reconciliation: { accuracy: number; driftItems: unknown[] } };
+      };
       expect(data.reconciled).toBe(true);
       expect(data.accuracy).toBe(100);
       expect(data.driftCount).toBe(0);
@@ -198,7 +237,12 @@ describe('E2E: planning-orchestration', () => {
       });
 
       expect(res.success).toBe(true);
-      const data = res.data as { completed: boolean; knowledgeCaptured: number; patternsAdded: number; antiPatternsAdded: number };
+      const data = res.data as {
+        completed: boolean;
+        knowledgeCaptured: number;
+        patternsAdded: number;
+        antiPatternsAdded: number;
+      };
       expect(data.completed).toBe(true);
       expect(data.knowledgeCaptured).toBe(2);
       expect(data.patternsAdded).toBe(1);
@@ -243,7 +287,10 @@ describe('E2E: planning-orchestration', () => {
         tasks: [
           { title: 'Design theme tokens', description: 'CSS custom properties for all 3 themes' },
           { title: 'Add theme switcher', description: 'Three-state toggle in settings' },
-          { title: 'Persist preference', description: 'localStorage + prefers-color-scheme fallback' },
+          {
+            title: 'Persist preference',
+            description: 'localStorage + prefers-color-scheme fallback',
+          },
         ],
       });
 
@@ -285,8 +332,14 @@ describe('E2E: planning-orchestration', () => {
         projectPath: workDir,
         domain: 'backend',
         tasks: [
-          { title: 'Design notification schema', description: 'Define notification types and payload structure' },
-          { title: 'Implement email sender', description: 'SMTP integration for email notifications' },
+          {
+            title: 'Design notification schema',
+            description: 'Define notification types and payload structure',
+          },
+          {
+            title: 'Implement email sender',
+            description: 'SMTP integration for email notifications',
+          },
         ],
       });
 
@@ -381,7 +434,11 @@ describe('E2E: planning-orchestration', () => {
       const freshSessionId = (execRes.data as { session: { id: string } }).session.id;
 
       // Mark task done
-      await callOp(planFacade, 'update_task', { planId: freshId, taskId: 'task-1', status: 'completed' });
+      await callOp(planFacade, 'update_task', {
+        planId: freshId,
+        taskId: 'task-1',
+        status: 'completed',
+      });
 
       // Reconcile (auto-completes the plan)
       await callOp(planFacade, 'plan_reconcile', {
@@ -510,9 +567,18 @@ describe('E2E: planning-orchestration', () => {
         objective: 'Implement caching layer for API responses',
         scope: 'packages/api — Redis cache integration',
         tasks: [
-          { title: 'Set up Redis connection', description: 'Configure Redis client with connection pooling' },
-          { title: 'Add cache middleware', description: 'Express middleware for GET request caching' },
-          { title: 'Add cache invalidation', description: 'Event-driven cache invalidation on writes' },
+          {
+            title: 'Set up Redis connection',
+            description: 'Configure Redis client with connection pooling',
+          },
+          {
+            title: 'Add cache middleware',
+            description: 'Express middleware for GET request caching',
+          },
+          {
+            title: 'Add cache invalidation',
+            description: 'Event-driven cache invalidation on writes',
+          },
         ],
       });
 
@@ -549,7 +615,8 @@ describe('E2E: planning-orchestration', () => {
     it('reconcile should report drift for the skipped step', async () => {
       const res = await callOp(planFacade, 'plan_reconcile', {
         planId: driftPlanId,
-        actualOutcome: 'Redis caching works for GET requests but cache invalidation was deferred to next sprint',
+        actualOutcome:
+          'Redis caching works for GET requests but cache invalidation was deferred to next sprint',
         driftItems: [
           {
             type: 'skipped',
@@ -565,7 +632,11 @@ describe('E2E: planning-orchestration', () => {
         reconciled: boolean;
         accuracy: number;
         driftCount: number;
-        plan: { status: string; reconciliation: { accuracy: number; driftItems: Array<{ type: string; impact: string }> }; executionSummary: { tasksCompleted: number; tasksSkipped: number } };
+        plan: {
+          status: string;
+          reconciliation: { accuracy: number; driftItems: Array<{ type: string; impact: string }> };
+          executionSummary: { tasksCompleted: number; tasksSkipped: number };
+        };
       };
 
       expect(data.reconciled).toBe(true);
@@ -686,9 +757,24 @@ describe('E2E: planning-orchestration', () => {
         planId: id,
         actualOutcome: 'Nothing went as planned',
         driftItems: [
-          { type: 'skipped', description: 'Task A abandoned', impact: 'high', rationale: 'Changed approach entirely' },
-          { type: 'skipped', description: 'Task B abandoned', impact: 'high', rationale: 'Changed approach entirely' },
-          { type: 'added', description: 'Completely new approach taken', impact: 'high', rationale: 'Original plan was wrong' },
+          {
+            type: 'skipped',
+            description: 'Task A abandoned',
+            impact: 'high',
+            rationale: 'Changed approach entirely',
+          },
+          {
+            type: 'skipped',
+            description: 'Task B abandoned',
+            impact: 'high',
+            rationale: 'Changed approach entirely',
+          },
+          {
+            type: 'added',
+            description: 'Completely new approach taken',
+            impact: 'high',
+            rationale: 'Original plan was wrong',
+          },
         ],
       });
 
@@ -701,13 +787,17 @@ describe('E2E: planning-orchestration', () => {
 
     it('plan grading should return grade and score', async () => {
       const createRes = await callOp(planFacade, 'create_plan', {
-        objective: 'Implement a comprehensive user dashboard with real-time analytics, role-based access control, and data export',
+        objective:
+          'Implement a comprehensive user dashboard with real-time analytics, role-based access control, and data export',
         scope: 'packages/dashboard — new module with charts, permissions, CSV export',
         decisions: ['Use WebSocket for real-time updates', 'RBAC with predefined roles'],
         tasks: [
           { title: 'Design dashboard layout', description: 'Wireframe and component hierarchy' },
           { title: 'Implement RBAC', description: 'Role definitions and permission checks' },
-          { title: 'Build analytics charts', description: 'Real-time charts with WebSocket data feed' },
+          {
+            title: 'Build analytics charts',
+            description: 'Real-time charts with WebSocket data feed',
+          },
           { title: 'Add CSV export', description: 'Server-side CSV generation with streaming' },
         ],
       });
@@ -716,7 +806,13 @@ describe('E2E: planning-orchestration', () => {
 
       const gradeRes = await callOp(planFacade, 'plan_grade', { planId: id });
       expect(gradeRes.success).toBe(true);
-      const data = gradeRes.data as { grade: string; score: number; gaps: unknown[]; iteration: number; checkId: string };
+      const data = gradeRes.data as {
+        grade: string;
+        score: number;
+        gaps: unknown[];
+        iteration: number;
+        checkId: string;
+      };
       expect(data.grade).toBeDefined();
       expect(data.grade).toMatch(/^(A\+|A|B|C|D|F)$/);
       expect(typeof data.score).toBe('number');
@@ -741,7 +837,10 @@ describe('E2E: planning-orchestration', () => {
       });
 
       expect(iterRes.success).toBe(true);
-      const data = iterRes.data as { iterated: boolean; plan: { objective: string; tasks: unknown[] } };
+      const data = iterRes.data as {
+        iterated: boolean;
+        plan: { objective: string; tasks: unknown[] };
+      };
       expect(data.iterated).toBe(true);
       expect(data.plan.objective).toBe('Updated objective with more detail');
       expect(data.plan.tasks).toHaveLength(2);
@@ -750,7 +849,11 @@ describe('E2E: planning-orchestration', () => {
     it('plan_stats should return aggregate statistics', async () => {
       const res = await callOp(planFacade, 'plan_stats');
       expect(res.success).toBe(true);
-      const data = res.data as { total: number; byStatus: Record<string, number>; totalTasks: number };
+      const data = res.data as {
+        total: number;
+        byStatus: Record<string, number>;
+        totalTasks: number;
+      };
       expect(data.total).toBeGreaterThan(0);
       expect(data.byStatus).toBeDefined();
       expect(typeof data.totalTasks).toBe('number');
@@ -806,9 +909,7 @@ describe('E2E: planning-orchestration', () => {
 
       const res = await callOp(planFacade, 'plan_split', {
         planId: id,
-        tasks: [
-          { title: 'Task A', description: 'First task', dependsOn: ['task-99'] },
-        ],
+        tasks: [{ title: 'Task A', description: 'First task', dependsOn: ['task-99'] }],
       });
 
       expect(res.success).toBe(true); // Op succeeds but returns error in data

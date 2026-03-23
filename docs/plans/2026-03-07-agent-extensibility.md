@@ -13,6 +13,7 @@
 ## Task 1: Extension Types in `@soleri/core`
 
 **Files:**
+
 - Create: `packages/core/src/extensions/types.ts`
 - Create: `packages/core/src/extensions/middleware.ts`
 - Create: `packages/core/src/extensions/index.ts`
@@ -162,19 +163,37 @@ describe('extensions', () => {
 
       const mw1: OpMiddleware = {
         name: 'first',
-        before: async (ctx) => { order.push('first:before'); return ctx.params; },
-        after: async (ctx) => { order.push('first:after'); return ctx.result; },
+        before: async (ctx) => {
+          order.push('first:before');
+          return ctx.params;
+        },
+        after: async (ctx) => {
+          order.push('first:after');
+          return ctx.result;
+        },
       };
       const mw2: OpMiddleware = {
         name: 'second',
-        before: async (ctx) => { order.push('second:before'); return ctx.params; },
-        after: async (ctx) => { order.push('second:after'); return ctx.result; },
+        before: async (ctx) => {
+          order.push('second:before');
+          return ctx.params;
+        },
+        after: async (ctx) => {
+          order.push('second:after');
+          return ctx.result;
+        },
       };
 
       wrapWithMiddleware([facade], [mw1, mw2]);
       await facade.ops[0].handler({});
 
-      expect(order).toEqual(['first:before', 'second:before', 'handler', 'second:after', 'first:after']);
+      expect(order).toEqual([
+        'first:before',
+        'second:before',
+        'handler',
+        'second:after',
+        'first:after',
+      ]);
     });
 
     it('should allow before middleware to modify params', async () => {
@@ -236,7 +255,9 @@ describe('extensions', () => {
 
       const mw: OpMiddleware = {
         name: 'blocker',
-        before: async () => { throw new Error('Blocked by policy'); },
+        before: async () => {
+          throw new Error('Blocked by policy');
+        },
       };
 
       wrapWithMiddleware([facade], [mw]);
@@ -253,7 +274,7 @@ Expected: FAIL — modules don't exist yet
 
 **Step 3: Write the extension types**
 
-```ts
+````ts
 // packages/core/src/extensions/types.ts
 import type { OpDefinition, FacadeConfig } from '../facades/types.js';
 import type { AgentRuntime } from '../runtime/types.js';
@@ -319,7 +340,7 @@ export interface AgentExtensions {
     onShutdown?: (runtime: AgentRuntime) => Promise<void>;
   };
 }
-```
+````
 
 **Step 4: Write the middleware utility**
 
@@ -415,6 +436,7 @@ git commit -m "feat(core): add AgentExtensions types and middleware utility"
 ## Task 2: Extensions Scaffold Template in `@soleri/forge`
 
 **Files:**
+
 - Create: `packages/forge/src/templates/extensions.ts`
 - Modify: `packages/forge/src/scaffolder.ts` (add extensions dir + files to scaffold)
 - Test: verify scaffold output includes extensions
@@ -521,6 +543,7 @@ export function createExampleOp(runtime: AgentRuntime): OpDefinition {
 In `packages/forge/src/scaffolder.ts`:
 
 a) Add import at top (after line 25):
+
 ```ts
 import { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
 ```
@@ -528,12 +551,14 @@ import { generateExtensionsIndex, generateExampleOp } from './templates/extensio
 b) Add `'src/extensions'`, `'src/extensions/ops'`, `'src/extensions/facades'`, `'src/extensions/middleware'` to the `dirs` array (after `'src/__tests__'`, around line 406).
 
 c) Add extensions files to `sourceFiles` array (after the facades test entry, around line 451):
+
 ```ts
 ['src/extensions/index.ts', generateExtensionsIndex(config)],
 ['src/extensions/ops/example.ts', generateExampleOp(config)],
 ```
 
 d) Add extensions to `previewScaffold` files array (before the `.mcp.json` entry, around line 72):
+
 ```ts
 {
   path: 'src/extensions/',
@@ -558,6 +583,7 @@ git commit -m "feat(forge): scaffold extensions directory with example op"
 ## Task 3: Update Entry Point Template for Auto-Discovery
 
 **Files:**
+
 - Modify: `packages/forge/src/templates/entry-point.ts`
 - Modify: `packages/forge/src/templates/test-facades.ts` (add extensions test block)
 
@@ -566,6 +592,7 @@ git commit -m "feat(forge): scaffold extensions directory with example op"
 In `packages/forge/src/templates/entry-point.ts`, make these changes to the generated code:
 
 a) Add `wrapWithMiddleware` to the import from `@soleri/core` (line ~24):
+
 ```ts
 import {
   createAgentRuntime,
@@ -619,6 +646,7 @@ b) After the domain facades creation (line ~211) and before the MCP server creat
 ```
 
 c) Update the facades variable and registerAllFacades call (replace `const facades = [coreFacade, ...domainFacades];`):
+
 ```ts
   registerAllFacades(server, allFacades);
 
@@ -627,6 +655,7 @@ c) Update the facades variable and registerAllFacades call (replace `const facad
 ```
 
 d) Update the shutdown handler to call onShutdown:
+
 ```ts
   const shutdown = async (): Promise<void> => {
     console.error(\`[\${tag}] Shutting down...\`);
@@ -659,6 +688,7 @@ git commit -m "feat(forge): auto-discover extensions in generated entry point"
 ## Task 4: CLI `extend` Command
 
 **Files:**
+
 - Create: `packages/cli/src/commands/extend.ts`
 - Modify: `packages/cli/src/main.ts` (register command)
 
@@ -699,15 +729,16 @@ export function registerExtend(program: Command): void {
       }
 
       // Lazy import forge template to avoid hard dep at CLI level
-      const { generateExtensionsIndex, generateExampleOp } = await import(
-        '@soleri/forge/templates/extensions'
-      );
+      const { generateExtensionsIndex, generateExampleOp } =
+        await import('@soleri/forge/templates/extensions');
       const config = { id: ctx.agentId, name: ctx.agentId };
       writeFileSync(join(extDir, 'index.ts'), generateExtensionsIndex(config as any), 'utf-8');
       writeFileSync(join(extDir, 'ops', 'example.ts'), generateExampleOp(config as any), 'utf-8');
 
       p.log.success(`Extensions directory created at src/extensions/`);
-      p.log.info('Edit src/extensions/index.ts to register your custom ops, facades, and middleware.');
+      p.log.info(
+        'Edit src/extensions/index.ts to register your custom ops, facades, and middleware.',
+      );
     });
 
   extend
@@ -732,10 +763,13 @@ export function registerExtend(program: Command): void {
         process.exit(1);
       }
 
-      const fnName = 'create' + name
-        .split('_')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join('') + 'Op';
+      const fnName =
+        'create' +
+        name
+          .split('_')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join('') +
+        'Op';
 
       const content = `import { z } from 'zod';
 import type { OpDefinition, AgentRuntime } from '@soleri/core';
@@ -787,7 +821,10 @@ export function ${fnName}(runtime: AgentRuntime): OpDefinition {
       const content = `import { z } from 'zod';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 
-export function create${name.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('')}Facade(runtime: AgentRuntime): FacadeConfig {
+export function create${name
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join('')}Facade(runtime: AgentRuntime): FacadeConfig {
   return {
     name: '${facadeName}',
     description: 'TODO: describe this facade',
@@ -860,10 +897,13 @@ export const ${varName}: OpMiddleware = {
 **Step 2: Register in main.ts**
 
 In `packages/cli/src/main.ts`, add:
+
 ```ts
 import { registerExtend } from './commands/extend.js';
 ```
+
 And before `program.parse()`:
+
 ```ts
 registerExtend(program);
 ```
@@ -885,6 +925,7 @@ git commit -m "feat(cli): add extend command for scaffolding custom ops, facades
 ## Task 5: Update Documentation
 
 **Files:**
+
 - Modify: `src/content/docs/docs/extending.md`
 
 **Step 1: Rewrite the extending guide**
@@ -913,6 +954,7 @@ git commit -m "docs: comprehensive agent extensibility guide"
 ## Task 6: Integration Test — Scaffold + Extensions
 
 **Files:**
+
 - Create: `packages/forge/src/__tests__/extensions-scaffold.test.ts`
 
 **Step 1: Write the integration test**
@@ -1002,12 +1044,14 @@ git commit -m "test(forge): integration test for extensions scaffold"
 ## Task 7: Export Extensions Template from Forge
 
 **Files:**
+
 - Modify: `packages/forge/src/index.ts` or relevant barrel (check what's exported)
 - Needed so CLI can `import { generateExtensionsIndex } from '@soleri/forge/templates/extensions'`
 
 **Step 1: Check forge exports**
 
 Read `packages/forge/src/index.ts` (or `package.json` exports field) and add:
+
 ```ts
 export { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
 ```
@@ -1023,14 +1067,14 @@ git commit -m "feat(forge): export extension template generators"
 
 ## Summary
 
-| Task | Package | What | Commit Message |
-|------|---------|------|----------------|
-| 1 | `@soleri/core` | Extension types + middleware utility + tests | `feat(core): add AgentExtensions types and middleware utility` |
-| 2 | `@soleri/forge` | Extensions scaffold template | `feat(forge): scaffold extensions directory with example op` |
-| 3 | `@soleri/forge` | Entry point auto-discovery | `feat(forge): auto-discover extensions in generated entry point` |
-| 4 | `@soleri/cli` | `extend` CLI command (init, add-op, add-facade, add-middleware) | `feat(cli): add extend command` |
-| 5 | docs | Comprehensive extending guide | `docs: comprehensive agent extensibility guide` |
-| 6 | `@soleri/forge` | Integration test | `test(forge): integration test for extensions scaffold` |
-| 7 | `@soleri/forge` | Export template generators for CLI | `feat(forge): export extension template generators` |
+| Task | Package         | What                                                            | Commit Message                                                   |
+| ---- | --------------- | --------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 1    | `@soleri/core`  | Extension types + middleware utility + tests                    | `feat(core): add AgentExtensions types and middleware utility`   |
+| 2    | `@soleri/forge` | Extensions scaffold template                                    | `feat(forge): scaffold extensions directory with example op`     |
+| 3    | `@soleri/forge` | Entry point auto-discovery                                      | `feat(forge): auto-discover extensions in generated entry point` |
+| 4    | `@soleri/cli`   | `extend` CLI command (init, add-op, add-facade, add-middleware) | `feat(cli): add extend command`                                  |
+| 5    | docs            | Comprehensive extending guide                                   | `docs: comprehensive agent extensibility guide`                  |
+| 6    | `@soleri/forge` | Integration test                                                | `test(forge): integration test for extensions scaffold`          |
+| 7    | `@soleri/forge` | Export template generators for CLI                              | `feat(forge): export extension template generators`              |
 
 **Dependency order:** Task 1 → Tasks 2+3 (parallel) → Task 7 → Task 4 → Tasks 5+6 (parallel)

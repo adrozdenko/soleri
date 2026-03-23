@@ -268,14 +268,18 @@ export function buildSpecReviewPrompt(
     ? `\n\nAcceptance Criteria:\n${task.acceptanceCriteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}`
     : '';
   return [
-    `# Spec Compliance Review`, ``, `## Task: ${task.title}`,
+    `# Spec Compliance Review`,
+    ``,
+    `## Task: ${task.title}`,
     `**Description:** ${task.description}`,
-    `**Plan Objective:** ${planObjective}${criteria}`, ``,
+    `**Plan Objective:** ${planObjective}${criteria}`,
+    ``,
     `## Review Checklist`,
     `1. Does the implementation match the task description?`,
     `2. Are all acceptance criteria satisfied?`,
     `3. Does it align with the plan's overall objective?`,
-    `4. Are there any spec deviations?`, ``,
+    `4. Are there any spec deviations?`,
+    ``,
     `Provide: outcome (approved/rejected/needs_changes) and detailed comments.`,
   ].join('\n');
 }
@@ -284,12 +288,13 @@ export function buildSpecReviewPrompt(
  * Generate a code quality review prompt for a task.
  * Pure function — no persistence side-effects.
  */
-export function buildQualityReviewPrompt(
-  task: Pick<PlanTask, 'title' | 'description'>,
-): string {
+export function buildQualityReviewPrompt(task: Pick<PlanTask, 'title' | 'description'>): string {
   return [
-    `# Code Quality Review`, ``, `## Task: ${task.title}`,
-    `**Description:** ${task.description}`, ``,
+    `# Code Quality Review`,
+    ``,
+    `## Task: ${task.title}`,
+    `**Description:** ${task.description}`,
+    ``,
     `## Quality Checklist`,
     `1. **Correctness** — Does it work as intended?`,
     `2. **Security** — No injection, XSS, or OWASP top 10 vulnerabilities?`,
@@ -297,7 +302,8 @@ export function buildQualityReviewPrompt(
     `4. **Maintainability** — Clear naming, appropriate abstractions, documented intent?`,
     `5. **Testing** — Adequate test coverage for the changes?`,
     `6. **Error Handling** — Graceful degradation, no swallowed errors?`,
-    `7. **Conventions** — Follows project coding standards?`, ``,
+    `7. **Conventions** — Follows project coding standards?`,
+    ``,
     `Provide: outcome (approved/rejected/needs_changes) and detailed comments.`,
   ].join('\n');
 }

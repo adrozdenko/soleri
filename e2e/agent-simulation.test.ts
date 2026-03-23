@@ -22,16 +22,23 @@ import {
   seedDefaultPlaybooks,
   CapabilityRegistry,
 } from '@soleri/core';
-import type { FacadeConfig, AgentRuntime, CapabilityHandler, CapabilityDefinition } from '@soleri/core';
+import type {
+  FacadeConfig,
+  AgentRuntime,
+  CapabilityHandler,
+  CapabilityDefinition,
+} from '@soleri/core';
 
 // ─── Infrastructure ──────────────────────────────────────
 
 const AGENT_ID = 'sim-agent';
 
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
       captured = handler as typeof captured;
@@ -90,7 +97,11 @@ describe('Agent Simulation: First Week', () => {
     });
 
     const semanticFacades = createSemanticFacades(runtime, AGENT_ID);
-    const domainFacades = createDomainFacades(runtime, AGENT_ID, ['frontend', 'backend', 'infrastructure']);
+    const domainFacades = createDomainFacades(runtime, AGENT_ID, [
+      'frontend',
+      'backend',
+      'infrastructure',
+    ]);
     const allFacades = [...semanticFacades, ...domainFacades];
 
     handlers = new Map();
@@ -104,11 +115,19 @@ describe('Agent Simulation: First Week', () => {
     // Initialize capability registry (like entry-point does)
     registry = new CapabilityRegistry();
     const coreCaps: CapabilityDefinition[] = [
-      'vault.search', 'vault.capture', 'brain.recommend', 'brain.strengths',
-      'memory.search', 'plan.create', 'orchestrate.plan', 'admin.health',
-    ].map(id => ({ id, description: id, provides: [`${id}-output`], requires: [] }));
+      'vault.search',
+      'vault.capture',
+      'brain.recommend',
+      'brain.strengths',
+      'memory.search',
+      'plan.create',
+      'orchestrate.plan',
+      'admin.health',
+    ].map((id) => ({ id, description: id, provides: [`${id}-output`], requires: [] }));
     const coreHandlers = new Map<string, CapabilityHandler>();
-    coreCaps.forEach(c => coreHandlers.set(c.id, async () => ({ success: true, data: {}, produced: [] })));
+    coreCaps.forEach((c) =>
+      coreHandlers.set(c.id, async () => ({ success: true, data: {}, produced: [] })),
+    );
     registry.registerPack('core', coreCaps, coreHandlers, 100);
   });
 
@@ -122,7 +141,6 @@ describe('Agent Simulation: First Week', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Day 1: Setup & First Contact', () => {
-
     it('1. Health check — all subsystems should report ok', async () => {
       const res = await op('admin', 'admin_health');
 
@@ -187,7 +205,9 @@ describe('Agent Simulation: First Week', () => {
     });
 
     it('7. Route intent — "the navbar is broken" should classify as fix', async () => {
-      const res = await op('control', 'route_intent', { prompt: 'the navbar is broken and crashes on mobile' });
+      const res = await op('control', 'route_intent', {
+        prompt: 'the navbar is broken and crashes on mobile',
+      });
 
       expect(res.intent).toBe('fix');
       expect(res.mode).toBe('FIX-MODE');
@@ -197,7 +217,9 @@ describe('Agent Simulation: First Week', () => {
     it('8. Route intent — "make it faster" should classify as improve', async () => {
       // Note: tokenizer splits on whitespace, so "faster," won't match "faster"
       // Use a prompt where improve keywords appear without trailing punctuation
-      const res = await op('control', 'route_intent', { prompt: 'optimize and refactor the dashboard to load faster' });
+      const res = await op('control', 'route_intent', {
+        prompt: 'optimize and refactor the dashboard to load faster',
+      });
 
       expect(res.intent).toBe('improve');
       expect(res.mode).toBe('IMPROVE-MODE');
@@ -209,15 +231,24 @@ describe('Agent Simulation: First Week', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Day 2: First Work Task', () => {
-
     it('9. Create plan for "build error handler"', async () => {
       const res = await op('plan', 'create_plan', {
-        objective: 'Build a centralized error handling system with error boundaries, retry logic, and monitoring integration',
+        objective:
+          'Build a centralized error handling system with error boundaries, retry logic, and monitoring integration',
         scope: 'Frontend error handling for React application',
         tasks: [
-          { title: 'Set up error boundary at route level', description: 'Wrap route components with React ErrorBoundary' },
-          { title: 'Create centralized error service', description: 'Build error capture, context enrichment, and monitoring integration' },
-          { title: 'Add retry logic with exponential backoff', description: 'Implement retry for API calls with jitter and circuit breaker' },
+          {
+            title: 'Set up error boundary at route level',
+            description: 'Wrap route components with React ErrorBoundary',
+          },
+          {
+            title: 'Create centralized error service',
+            description: 'Build error capture, context enrichment, and monitoring integration',
+          },
+          {
+            title: 'Add retry logic with exponential backoff',
+            description: 'Implement retry for API calls with jitter and circuit breaker',
+          },
         ],
       });
 
@@ -230,7 +261,7 @@ describe('Agent Simulation: First Week', () => {
       expect((plan.tasks as Array<unknown>).length).toBe(3);
 
       state.planId = plan.id;
-      state.taskIds = (plan.tasks as Array<{ id: string }>).map(t => t.id);
+      state.taskIds = (plan.tasks as Array<{ id: string }>).map((t) => t.id);
     });
 
     it('10. Approve the plan', async () => {
@@ -282,7 +313,8 @@ describe('Agent Simulation: First Week', () => {
     it('14. Reconcile — all tasks done, accuracy should be 100', async () => {
       const res = await op('plan', 'plan_reconcile', {
         planId: state.planId,
-        actualOutcome: 'All three error handling components built and tested. Error boundaries catch route-level crashes, centralized service logs to monitoring, retry logic uses exponential backoff with jitter.',
+        actualOutcome:
+          'All three error handling components built and tested. Error boundaries catch route-level crashes, centralized service logs to monitoring, retry logic uses exponential backoff with jitter.',
       });
 
       expect(res.reconciled).toBe(true);
@@ -302,15 +334,23 @@ describe('Agent Simulation: First Week', () => {
       expect(res.antiPatternsAdded).toBeGreaterThanOrEqual(1);
 
       // Verify the captured patterns actually exist in the vault
-      const patternSearch = await op('vault', 'search', { query: 'error boundaries cascading failures' });
-      const patternResults = patternSearch as unknown as Array<{ entry: { title: string; type: string } }>;
+      const patternSearch = await op('vault', 'search', {
+        query: 'error boundaries cascading failures',
+      });
+      const patternResults = patternSearch as unknown as Array<{
+        entry: { title: string; type: string };
+      }>;
       expect(patternResults.length).toBeGreaterThan(0);
-      expect(patternResults.some(r => r.entry.title.toLowerCase().includes('error bound'))).toBe(true);
+      expect(patternResults.some((r) => r.entry.title.toLowerCase().includes('error bound'))).toBe(
+        true,
+      );
 
       const antiSearch = await op('vault', 'search', { query: 'empty catch blocks' });
-      const antiResults = antiSearch as unknown as Array<{ entry: { title: string; type: string } }>;
+      const antiResults = antiSearch as unknown as Array<{
+        entry: { title: string; type: string };
+      }>;
       expect(antiResults.length).toBeGreaterThan(0);
-      expect(antiResults.some(r => r.entry.title.toLowerCase().includes('catch'))).toBe(true);
+      expect(antiResults.some((r) => r.entry.title.toLowerCase().includes('catch'))).toBe(true);
     });
 
     it('16. Verify plan is completed', async () => {
@@ -326,7 +366,6 @@ describe('Agent Simulation: First Week', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Day 3: Knowledge Compounds', () => {
-
     it('17. Capture knowledge from Day 2 experience', async () => {
       const res = await op('vault', 'capture_knowledge', {
         entries: [
@@ -334,7 +373,8 @@ describe('Agent Simulation: First Week', () => {
             type: 'pattern',
             domain: 'frontend',
             title: 'Error boundaries at route level prevent cascading failures',
-            description: 'Wrapping route components in React ErrorBoundary prevents a single component crash from taking down the entire page. Show fallback UI and log to monitoring.',
+            description:
+              'Wrapping route components in React ErrorBoundary prevents a single component crash from taking down the entire page. Show fallback UI and log to monitoring.',
             severity: 'critical',
             tags: ['react', 'error-handling', 'resilience'],
           },
@@ -342,7 +382,8 @@ describe('Agent Simulation: First Week', () => {
             type: 'pattern',
             domain: 'frontend',
             title: 'Exponential backoff with jitter for API retries',
-            description: 'Use exponential backoff starting at 1s with random jitter to prevent thundering herd. Include circuit breaker after 5 consecutive failures.',
+            description:
+              'Use exponential backoff starting at 1s with random jitter to prevent thundering herd. Include circuit breaker after 5 consecutive failures.',
             severity: 'warning',
             tags: ['api', 'retry', 'resilience'],
           },
@@ -350,7 +391,8 @@ describe('Agent Simulation: First Week', () => {
             type: 'anti-pattern',
             domain: 'frontend',
             title: 'Empty catch blocks swallow errors silently',
-            description: 'Every catch block must either re-throw, log with context, or handle the specific error type. Empty catch blocks hide bugs and make debugging impossible.',
+            description:
+              'Every catch block must either re-throw, log with context, or handle the specific error type. Empty catch blocks hide bugs and make debugging impossible.',
             severity: 'critical',
             tags: ['error-handling', 'debugging'],
           },
@@ -366,7 +408,7 @@ describe('Agent Simulation: First Week', () => {
         expect(r.id).toBeDefined();
         expect(typeof r.id).toBe('string');
       }
-      state.capturedIds = results.map(r => r.id);
+      state.capturedIds = results.map((r) => r.id);
     });
 
     it('18. Search vault — should find captured error handling patterns', async () => {
@@ -375,12 +417,15 @@ describe('Agent Simulation: First Week', () => {
       });
 
       // intelligentSearch returns RankedResult[] directly, which becomes data
-      const results = res as unknown as Array<{ entry: { id: string; title: string }; score: number }>;
+      const results = res as unknown as Array<{
+        entry: { id: string; title: string };
+        score: number;
+      }>;
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBeGreaterThan(0);
 
       // Should find the error boundary pattern we just captured
-      const errorBoundary = results.find(r =>
+      const errorBoundary = results.find((r) =>
         r.entry.title.toLowerCase().includes('error bound'),
       );
       expect(errorBoundary).toBeDefined();
@@ -480,7 +525,6 @@ describe('Agent Simulation: First Week', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Day 4: Pack Installation & Capabilities', () => {
-
     it('25. Registry starts with core capabilities only', () => {
       expect(registry.has('vault.search')).toBe(true);
       expect(registry.has('brain.recommend')).toBe(true);
@@ -529,7 +573,10 @@ describe('Agent Simulation: First Week', () => {
       designHandlers.set('color.validate', contrastHandler);
       designHandlers.set('token.check', async (params) => ({
         success: true,
-        data: { valid: !(params['token-value'] as string).startsWith('#'), suggestion: 'Use semantic token' },
+        data: {
+          valid: !(params['token-value'] as string).startsWith('#'),
+          suggestion: 'Use semantic token',
+        },
         produced: ['valid', 'suggestion'],
       }));
       designHandlers.set('component.scaffold', async () => ({
@@ -550,7 +597,10 @@ describe('Agent Simulation: First Week', () => {
       const resolved = registry.resolve('color.validate');
       expect(resolved.available).toBe(true);
 
-      const result = await resolved.handler!({ foreground: '#000000', background: '#FFFFFF' }, {} as never);
+      const result = await resolved.handler!(
+        { foreground: '#000000', background: '#FFFFFF' },
+        {} as never,
+      );
       expect(result.success).toBe(true);
       expect(result.data.ratio).toBe(21);
       expect(result.data.level).toBe('AAA');
@@ -610,10 +660,10 @@ describe('Agent Simulation: First Week', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Day 5: Multi-Session Memory', () => {
-
     it('33. Capture session summary from Day 2-4 work', async () => {
       const res = await op('memory', 'session_capture', {
-        summary: 'Built error handling system: error boundaries, centralized error service, retry with backoff. Installed design-system pack. Validated color contrast and token usage.',
+        summary:
+          'Built error handling system: error boundaries, centralized error service, retry with backoff. Installed design-system pack. Validated color contrast and token usage.',
         topics: ['error-handling', 'design-system', 'accessibility'],
         toolsUsed: ['create_plan', 'capture_knowledge', 'link_entries', 'color.validate'],
       });
@@ -635,7 +685,7 @@ describe('Agent Simulation: First Week', () => {
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBeGreaterThan(0);
       // Should find the session captured in test 33
-      expect(results.some(r => r.summary.toLowerCase().includes('error handling'))).toBe(true);
+      expect(results.some((r) => r.summary.toLowerCase().includes('error handling'))).toBe(true);
     });
 
     it('35. Build brain intelligence from accumulated feedback', async () => {
@@ -676,7 +726,6 @@ describe('Agent Simulation: First Week', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Day 6: Governance & Quality', () => {
-
     it('38. Curator health audit — should return quality score', async () => {
       const res = await op('curator', 'curator_health_audit');
 
@@ -738,13 +787,15 @@ describe('Agent Simulation: First Week', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Day 7: Orchestration & Validation', () => {
-
     it('42. Orchestrate plan — full pipeline', async () => {
       const res = await op('orchestrate', 'orchestrate_plan', {
         prompt: 'Add loading skeleton screens to all data-fetching pages',
         scope: 'Frontend UX improvement',
         tasks: [
-          { title: 'Create SkeletonLoader component', description: 'Reusable skeleton with pulse animation' },
+          {
+            title: 'Create SkeletonLoader component',
+            description: 'Reusable skeleton with pulse animation',
+          },
           { title: 'Add to dashboard page', description: 'Replace spinner with skeleton' },
         ],
       });
@@ -847,7 +898,6 @@ describe('Agent Simulation: First Week', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Edge Cases', () => {
-
     it('49. Empty prompt — route intent should not crash', async () => {
       const res = await op('control', 'route_intent', { prompt: '' });
       expect(res.intent).toBeDefined();
@@ -872,14 +922,16 @@ describe('Agent Simulation: First Week', () => {
 
     it('52. Capture duplicate pattern — should not create second entry', async () => {
       const res1 = await op('vault', 'capture_knowledge', {
-        entries: [{
-          type: 'pattern',
-          domain: 'frontend',
-          title: 'Error boundaries at route level prevent cascading failures',
-          description: 'Same pattern as before — should deduplicate',
-          severity: 'critical',
-          tags: ['react'],
-        }],
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'frontend',
+            title: 'Error boundaries at route level prevent cascading failures',
+            description: 'Same pattern as before — should deduplicate',
+            severity: 'critical',
+            tags: ['react'],
+          },
+        ],
       });
 
       // Should either update existing or report as duplicate

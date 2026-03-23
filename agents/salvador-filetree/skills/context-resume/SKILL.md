@@ -85,11 +85,11 @@ salvador_core op:admin_health
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `plan_stats` / `get_plan` / `plan_list_tasks` | Active plans |
-| `memory_search` / `memory_list` | Session summaries |
-| `vault_recent` | Recently captured knowledge |
-| `loop_is_active` / `loop_status` | In-flight loops |
-| `brain_strengths` | Relevant proven patterns |
-| `admin_health` | System health check |
+| Op                                            | When to Use                 |
+| --------------------------------------------- | --------------------------- |
+| `plan_stats` / `get_plan` / `plan_list_tasks` | Active plans                |
+| `memory_search` / `memory_list`               | Session summaries           |
+| `vault_recent`                                | Recently captured knowledge |
+| `loop_is_active` / `loop_status`              | In-flight loops             |
+| `brain_strengths`                             | Relevant proven patterns    |
+| `admin_health`                                | System health check         |

@@ -24,9 +24,27 @@ function makePlan(overrides: Partial<Plan> = {}): Plan {
     status: 'executing',
     decisions: [],
     tasks: [
-      { id: 'task-1', title: 'Add auth middleware', description: 'Create auth middleware for Express', status: 'completed', updatedAt: Date.now() },
-      { id: 'task-2', title: 'Add login endpoint', description: 'POST /auth/login endpoint', status: 'completed', updatedAt: Date.now() },
-      { id: 'task-3', title: 'Add JWT utils', description: 'JWT signing and verification utilities', status: 'pending', updatedAt: Date.now() },
+      {
+        id: 'task-1',
+        title: 'Add auth middleware',
+        description: 'Create auth middleware for Express',
+        status: 'completed',
+        updatedAt: Date.now(),
+      },
+      {
+        id: 'task-2',
+        title: 'Add login endpoint',
+        description: 'POST /auth/login endpoint',
+        status: 'completed',
+        updatedAt: Date.now(),
+      },
+      {
+        id: 'task-3',
+        title: 'Add JWT utils',
+        description: 'JWT signing and verification utilities',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
     ],
     checks: [],
     createdAt: Date.now(),
@@ -97,7 +115,13 @@ describe('collectGitEvidence', () => {
 
     const plan = makePlan({
       tasks: [
-        { id: 'task-1', title: 'Add auth middleware', description: 'Auth middleware', status: 'skipped', updatedAt: Date.now() },
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'skipped',
+          updatedAt: Date.now(),
+        },
       ],
     });
     const report = collectGitEvidence(plan, '/project', 'main');
@@ -112,13 +136,21 @@ describe('collectGitEvidence', () => {
 
     const plan = makePlan({
       tasks: [
-        { id: 'task-1', title: 'Add auth middleware', description: 'Auth middleware', status: 'completed', updatedAt: Date.now() },
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
       ],
     });
     const report = collectGitEvidence(plan, '/project', 'main');
 
     expect(report.unplannedChanges.length).toBeGreaterThanOrEqual(1);
-    const configChange = report.unplannedChanges.find((uc) => uc.file.path === 'src/config/database.ts');
+    const configChange = report.unplannedChanges.find(
+      (uc) => uc.file.path === 'src/config/database.ts',
+    );
     expect(configChange).toBeDefined();
     expect(configChange?.possibleReason).toBe('configuration change');
   });
@@ -130,8 +162,20 @@ describe('collectGitEvidence', () => {
 
     const plan = makePlan({
       tasks: [
-        { id: 'task-1', title: 'Add auth middleware', description: 'Auth middleware', status: 'completed', updatedAt: Date.now() },
-        { id: 'task-2', title: 'Add login endpoint', description: 'Login endpoint', status: 'completed', updatedAt: Date.now() },
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
+        {
+          id: 'task-2',
+          title: 'Add login endpoint',
+          description: 'Login endpoint',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
       ],
     });
     const report = collectGitEvidence(plan, '/project', 'main');
@@ -141,9 +185,7 @@ describe('collectGitEvidence', () => {
   });
 
   it('returns 100% accuracy for empty task list', () => {
-    mockExecFileSync
-      .mockReturnValueOnce('main\n')
-      .mockReturnValueOnce('');
+    mockExecFileSync.mockReturnValueOnce('main\n').mockReturnValueOnce('');
 
     const plan = makePlan({ tasks: [] });
     const report = collectGitEvidence(plan, '/project', 'main');
@@ -167,12 +209,20 @@ describe('collectGitEvidence', () => {
   it('falls back to HEAD~5 when branch diff fails', () => {
     mockExecFileSync
       .mockReturnValueOnce('feature/auth\n') // rev-parse
-      .mockImplementationOnce(() => { throw new Error('bad revision'); }) // main...HEAD fails
+      .mockImplementationOnce(() => {
+        throw new Error('bad revision');
+      }) // main...HEAD fails
       .mockReturnValueOnce('M\tsrc/auth/middleware.ts\n'); // HEAD~5 fallback
 
     const plan = makePlan({
       tasks: [
-        { id: 'task-1', title: 'Add auth middleware', description: 'Auth middleware', status: 'completed', updatedAt: Date.now() },
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
       ],
     });
     const report = collectGitEvidence(plan, '/project', 'main');
@@ -188,7 +238,13 @@ describe('collectGitEvidence', () => {
 
     const plan = makePlan({
       tasks: [
-        { id: 'task-1', title: 'Add login endpoint', description: 'Login endpoint', status: 'completed', updatedAt: Date.now() },
+        {
+          id: 'task-1',
+          title: 'Add login endpoint',
+          description: 'Login endpoint',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
       ],
     });
     collectGitEvidence(plan, '/project', 'main');
@@ -206,7 +262,13 @@ describe('collectGitEvidence', () => {
 
     const plan = makePlan({
       tasks: [
-        { id: 'task-1', title: 'Add auth middleware', description: 'Auth middleware', status: 'completed', updatedAt: Date.now() },
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
       ],
     });
     const report = collectGitEvidence(plan, '/project', 'main');
@@ -224,7 +286,13 @@ describe('collectGitEvidence', () => {
 
     const plan = makePlan({
       tasks: [
-        { id: 'task-1', title: 'Remove old auth middleware', description: 'Delete old auth middleware files', status: 'completed', updatedAt: Date.now() },
+        {
+          id: 'task-1',
+          title: 'Remove old auth middleware',
+          description: 'Delete old auth middleware files',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
       ],
     });
     const report = collectGitEvidence(plan, '/project', 'main');
@@ -252,11 +320,11 @@ describe('collectGitEvidence', () => {
       .mockReturnValueOnce('feature/auth\n')
       .mockReturnValueOnce(
         'M\tpackage.json\n' +
-        'M\tsrc/types/auth.d.ts\n' +
-        'A\tsrc/tests/auth.test.ts\n' +
-        'M\tREADME.md\n' +
-        'M\tsrc/index.ts\n' +
-        'M\tsrc/random/file.ts\n'
+          'M\tsrc/types/auth.d.ts\n' +
+          'A\tsrc/tests/auth.test.ts\n' +
+          'M\tREADME.md\n' +
+          'M\tsrc/index.ts\n' +
+          'M\tsrc/random/file.ts\n',
       );
 
     const plan = makePlan({ tasks: [] });
@@ -276,7 +344,13 @@ describe('collectVerificationGaps', () => {
   it('returns empty array when no tasks have verification', () => {
     const tasks: PlanTask[] = [makeTask()];
     const evidence: GitTaskEvidence[] = [
-      { taskId: 'task-1', taskTitle: 'Fix auth bug', plannedStatus: 'completed', matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }], verdict: 'DONE' },
+      {
+        taskId: 'task-1',
+        taskTitle: 'Fix auth bug',
+        plannedStatus: 'completed',
+        matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }],
+        verdict: 'DONE',
+      },
     ];
 
     const gaps = collectVerificationGaps(tasks, evidence);
@@ -287,14 +361,18 @@ describe('collectVerificationGaps', () => {
     const tasks: PlanTask[] = [
       makeTask({
         verification: {
-          findings: [
-            { description: 'Auth timeout under load', severity: 'high', proven: false },
-          ],
+          findings: [{ description: 'Auth timeout under load', severity: 'high', proven: false }],
         },
       }),
     ];
     const evidence: GitTaskEvidence[] = [
-      { taskId: 'task-1', taskTitle: 'Fix auth bug', plannedStatus: 'completed', matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }], verdict: 'DONE' },
+      {
+        taskId: 'task-1',
+        taskTitle: 'Fix auth bug',
+        plannedStatus: 'completed',
+        matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }],
+        verdict: 'DONE',
+      },
     ];
 
     const gaps = collectVerificationGaps(tasks, evidence);
@@ -308,13 +386,24 @@ describe('collectVerificationGaps', () => {
       makeTask({
         verification: {
           findings: [
-            { description: 'Auth timeout under load', severity: 'high', proven: true, proof: 'Reproduced with load test' },
+            {
+              description: 'Auth timeout under load',
+              severity: 'high',
+              proven: true,
+              proof: 'Reproduced with load test',
+            },
           ],
         },
       }),
     ];
     const evidence: GitTaskEvidence[] = [
-      { taskId: 'task-1', taskTitle: 'Fix auth bug', plannedStatus: 'completed', matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }], verdict: 'DONE' },
+      {
+        taskId: 'task-1',
+        taskTitle: 'Fix auth bug',
+        plannedStatus: 'completed',
+        matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }],
+        verdict: 'DONE',
+      },
     ];
 
     const gaps = collectVerificationGaps(tasks, evidence);
@@ -325,14 +414,18 @@ describe('collectVerificationGaps', () => {
     const tasks: PlanTask[] = [
       makeTask({
         verification: {
-          findings: [
-            { description: 'Some finding', severity: 'medium', proven: false },
-          ],
+          findings: [{ description: 'Some finding', severity: 'medium', proven: false }],
         },
       }),
     ];
     const evidence: GitTaskEvidence[] = [
-      { taskId: 'task-1', taskTitle: 'Fix auth bug', plannedStatus: 'completed', matchedFiles: [{ path: 'src/new-auth.ts', status: 'added' }], verdict: 'DONE' },
+      {
+        taskId: 'task-1',
+        taskTitle: 'Fix auth bug',
+        plannedStatus: 'completed',
+        matchedFiles: [{ path: 'src/new-auth.ts', status: 'added' }],
+        verdict: 'DONE',
+      },
     ];
 
     const gaps = collectVerificationGaps(tasks, evidence);
@@ -343,9 +436,7 @@ describe('collectVerificationGaps', () => {
     const tasks: PlanTask[] = [
       makeTask({
         verification: {
-          findings: [
-            { description: 'Some finding', severity: 'medium', proven: false },
-          ],
+          findings: [{ description: 'Some finding', severity: 'medium', proven: false }],
         },
       }),
     ];
@@ -368,7 +459,13 @@ describe('collectVerificationGaps', () => {
       }),
     ];
     const evidence: GitTaskEvidence[] = [
-      { taskId: 'task-1', taskTitle: 'Fix auth bug', plannedStatus: 'completed', matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }], verdict: 'DONE' },
+      {
+        taskId: 'task-1',
+        taskTitle: 'Fix auth bug',
+        plannedStatus: 'completed',
+        matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }],
+        verdict: 'DONE',
+      },
     ];
 
     const gaps = collectVerificationGaps(tasks, evidence);
@@ -394,8 +491,20 @@ describe('collectVerificationGaps', () => {
       }),
     ];
     const evidence: GitTaskEvidence[] = [
-      { taskId: 'task-1', taskTitle: 'Fix auth bug', plannedStatus: 'completed', matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }], verdict: 'DONE' },
-      { taskId: 'task-2', taskTitle: 'Fix other bug', plannedStatus: 'completed', matchedFiles: [{ path: 'src/other.ts', status: 'modified' }], verdict: 'DONE' },
+      {
+        taskId: 'task-1',
+        taskTitle: 'Fix auth bug',
+        plannedStatus: 'completed',
+        matchedFiles: [{ path: 'src/auth.ts', status: 'modified' }],
+        verdict: 'DONE',
+      },
+      {
+        taskId: 'task-2',
+        taskTitle: 'Fix other bug',
+        plannedStatus: 'completed',
+        matchedFiles: [{ path: 'src/other.ts', status: 'modified' }],
+        verdict: 'DONE',
+      },
     ];
 
     const gaps = collectVerificationGaps(tasks, evidence);

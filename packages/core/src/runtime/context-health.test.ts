@@ -43,9 +43,7 @@ describe('ContextHealthMonitor', () => {
     expect(status.level).toBe('red');
     expect(status.estimatedFill).toBeGreaterThanOrEqual(0.6);
     expect(status.toolCallCount).toBe(200);
-    expect(status.recommendation).toBe(
-      'Session capture recommended before context degradation.',
-    );
+    expect(status.recommendation).toBe('Session capture recommended before context degradation.');
   });
 
   it('should reset all tracking', () => {

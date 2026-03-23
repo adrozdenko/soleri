@@ -14,7 +14,14 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { PERSONA } from '../identity/persona.js';
 import { activateAgent, deactivateAgent } from '../activation/activate.js';
-import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker, injectAgentsMd, injectAgentsMdGlobal, hasAgentMarkerInAgentsMd } from '../activation/inject-claude-md.js';
+import {
+  injectClaudeMd,
+  injectClaudeMdGlobal,
+  hasAgentMarker,
+  injectAgentsMd,
+  injectAgentsMdGlobal,
+  hasAgentMarkerInAgentsMd,
+} from '../activation/inject-claude-md.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -78,13 +85,26 @@ describe('Facades', () => {
 
     it('search should scope to design with ranked results', async () => {
       runtime.vault.seed([
-        makeEntry({ id: 'design-s1', domain: 'design', title: 'Domain specific pattern', tags: ['find-me'] }),
-        makeEntry({ id: 'other-s1', domain: 'other', title: 'Other domain pattern', tags: ['nope'] }),
+        makeEntry({
+          id: 'design-s1',
+          domain: 'design',
+          title: 'Domain specific pattern',
+          tags: ['find-me'],
+        }),
+        makeEntry({
+          id: 'other-s1',
+          domain: 'other',
+          title: 'Other domain pattern',
+          tags: ['nope'],
+        }),
       ]);
       runtime.brain.rebuildVocabulary();
       const facade = buildDomainFacade();
       const op = facade.ops.find((o) => o.name === 'search')!;
-      const results = (await op.handler({ query: 'pattern' })) as Array<{ entry: IntelligenceEntry; score: number }>;
+      const results = (await op.handler({ query: 'pattern' })) as Array<{
+        entry: IntelligenceEntry;
+        score: number;
+      }>;
       expect(results.every((r) => r.entry.domain === 'design')).toBe(true);
     });
 
@@ -152,13 +172,26 @@ describe('Facades', () => {
 
     it('search should scope to component with ranked results', async () => {
       runtime.vault.seed([
-        makeEntry({ id: 'component-s1', domain: 'component', title: 'Domain specific pattern', tags: ['find-me'] }),
-        makeEntry({ id: 'other-s1', domain: 'other', title: 'Other domain pattern', tags: ['nope'] }),
+        makeEntry({
+          id: 'component-s1',
+          domain: 'component',
+          title: 'Domain specific pattern',
+          tags: ['find-me'],
+        }),
+        makeEntry({
+          id: 'other-s1',
+          domain: 'other',
+          title: 'Other domain pattern',
+          tags: ['nope'],
+        }),
       ]);
       runtime.brain.rebuildVocabulary();
       const facade = buildDomainFacade();
       const op = facade.ops.find((o) => o.name === 'search')!;
-      const results = (await op.handler({ query: 'pattern' })) as Array<{ entry: IntelligenceEntry; score: number }>;
+      const results = (await op.handler({ query: 'pattern' })) as Array<{
+        entry: IntelligenceEntry;
+        score: number;
+      }>;
       expect(results.every((r) => r.entry.domain === 'component')).toBe(true);
     });
 
@@ -226,13 +259,26 @@ describe('Facades', () => {
 
     it('search should scope to figma with ranked results', async () => {
       runtime.vault.seed([
-        makeEntry({ id: 'figma-s1', domain: 'figma', title: 'Domain specific pattern', tags: ['find-me'] }),
-        makeEntry({ id: 'other-s1', domain: 'other', title: 'Other domain pattern', tags: ['nope'] }),
+        makeEntry({
+          id: 'figma-s1',
+          domain: 'figma',
+          title: 'Domain specific pattern',
+          tags: ['find-me'],
+        }),
+        makeEntry({
+          id: 'other-s1',
+          domain: 'other',
+          title: 'Other domain pattern',
+          tags: ['nope'],
+        }),
       ]);
       runtime.brain.rebuildVocabulary();
       const facade = buildDomainFacade();
       const op = facade.ops.find((o) => o.name === 'search')!;
-      const results = (await op.handler({ query: 'pattern' })) as Array<{ entry: IntelligenceEntry; score: number }>;
+      const results = (await op.handler({ query: 'pattern' })) as Array<{
+        entry: IntelligenceEntry;
+        score: number;
+      }>;
       expect(results.every((r) => r.entry.domain === 'figma')).toBe(true);
     });
 
@@ -300,13 +346,26 @@ describe('Facades', () => {
 
     it('search should scope to code-review with ranked results', async () => {
       runtime.vault.seed([
-        makeEntry({ id: 'code-review-s1', domain: 'code-review', title: 'Domain specific pattern', tags: ['find-me'] }),
-        makeEntry({ id: 'other-s1', domain: 'other', title: 'Other domain pattern', tags: ['nope'] }),
+        makeEntry({
+          id: 'code-review-s1',
+          domain: 'code-review',
+          title: 'Domain specific pattern',
+          tags: ['find-me'],
+        }),
+        makeEntry({
+          id: 'other-s1',
+          domain: 'other',
+          title: 'Other domain pattern',
+          tags: ['nope'],
+        }),
       ]);
       runtime.brain.rebuildVocabulary();
       const facade = buildDomainFacade();
       const op = facade.ops.find((o) => o.name === 'search')!;
-      const results = (await op.handler({ query: 'pattern' })) as Array<{ entry: IntelligenceEntry; score: number }>;
+      const results = (await op.handler({ query: 'pattern' })) as Array<{
+        entry: IntelligenceEntry;
+        score: number;
+      }>;
       expect(results.every((r) => r.entry.domain === 'code-review')).toBe(true);
     });
 
@@ -328,7 +387,9 @@ describe('Facades', () => {
     });
 
     it('get_entry should return specific entry', async () => {
-      runtime.vault.seed([makeEntry({ id: 'code-review-ge1', domain: 'code-review', tags: ['test'] })]);
+      runtime.vault.seed([
+        makeEntry({ id: 'code-review-ge1', domain: 'code-review', tags: ['test'] }),
+      ]);
       const facade = buildDomainFacade();
       const op = facade.ops.find((o) => o.name === 'get_entry')!;
       const result = (await op.handler({ id: 'code-review-ge1' })) as IntelligenceEntry;
@@ -336,7 +397,9 @@ describe('Facades', () => {
     });
 
     it('remove should delete entry', async () => {
-      runtime.vault.seed([makeEntry({ id: 'code-review-rm1', domain: 'code-review', tags: ['test'] })]);
+      runtime.vault.seed([
+        makeEntry({ id: 'code-review-rm1', domain: 'code-review', tags: ['test'] }),
+      ]);
       const facade = buildDomainFacade();
       const op = facade.ops.find((o) => o.name === 'remove')!;
       const result = (await op.handler({ id: 'code-review-rm1' })) as { removed: boolean };
@@ -347,24 +410,30 @@ describe('Facades', () => {
 
   describe('domain pack: design', () => {
     it('should load and validate the domain pack', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"design","package":"@soleri/domain-design"}]);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'design', package: '@soleri/domain-design' },
+      ]);
       expect(packs.length).toBe(1);
       expect(packs[0].name).toBe('design');
       expect(packs[0].ops.length).toBeGreaterThan(0);
     });
 
     it('should register pack ops in domain facades', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"design","package":"@soleri/domain-design"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["design"], packs);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'design', package: '@soleri/domain-design' },
+      ]);
+      const facades = createDomainFacades(runtime, 'salvador', ['design'], packs);
       expect(facades.length).toBeGreaterThanOrEqual(1);
       // Pack ops should be present
-      const allOps = facades.flatMap(f => f.ops.map(o => o.name));
+      const allOps = facades.flatMap((f) => f.ops.map((o) => o.name));
       expect(allOps.length).toBeGreaterThan(5); // More than standard 5
     });
 
     it('pack custom ops should be callable', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"design","package":"@soleri/domain-design"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["design"], packs);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'design', package: '@soleri/domain-design' },
+      ]);
+      const facades = createDomainFacades(runtime, 'salvador', ['design'], packs);
       const facade = facades[0];
       // Test first custom op returns without error
       const firstOp = facade.ops[0];
@@ -375,24 +444,30 @@ describe('Facades', () => {
 
   describe('domain pack: component', () => {
     it('should load and validate the domain pack', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"component","package":"@soleri/domain-component"}]);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'component', package: '@soleri/domain-component' },
+      ]);
       expect(packs.length).toBe(1);
       expect(packs[0].name).toBe('component');
       expect(packs[0].ops.length).toBeGreaterThan(0);
     });
 
     it('should register pack ops in domain facades', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"component","package":"@soleri/domain-component"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["component"], packs);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'component', package: '@soleri/domain-component' },
+      ]);
+      const facades = createDomainFacades(runtime, 'salvador', ['component'], packs);
       expect(facades.length).toBeGreaterThanOrEqual(1);
       // Pack ops should be present
-      const allOps = facades.flatMap(f => f.ops.map(o => o.name));
+      const allOps = facades.flatMap((f) => f.ops.map((o) => o.name));
       expect(allOps.length).toBeGreaterThan(5); // More than standard 5
     });
 
     it('pack custom ops should be callable', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"component","package":"@soleri/domain-component"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["component"], packs);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'component', package: '@soleri/domain-component' },
+      ]);
+      const facades = createDomainFacades(runtime, 'salvador', ['component'], packs);
       const facade = facades[0];
       // Test first custom op returns without error
       const firstOp = facade.ops[0];
@@ -403,24 +478,30 @@ describe('Facades', () => {
 
   describe('domain pack: design-qa', () => {
     it('should load and validate the domain pack', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"design-qa","package":"@soleri/domain-design-qa"}]);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'design-qa', package: '@soleri/domain-design-qa' },
+      ]);
       expect(packs.length).toBe(1);
       expect(packs[0].name).toBe('design-qa');
       expect(packs[0].ops.length).toBeGreaterThan(0);
     });
 
     it('should register pack ops in domain facades', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"design-qa","package":"@soleri/domain-design-qa"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["design-qa"], packs);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'design-qa', package: '@soleri/domain-design-qa' },
+      ]);
+      const facades = createDomainFacades(runtime, 'salvador', ['design-qa'], packs);
       expect(facades.length).toBeGreaterThanOrEqual(1);
       // Pack ops should be present
-      const allOps = facades.flatMap(f => f.ops.map(o => o.name));
+      const allOps = facades.flatMap((f) => f.ops.map((o) => o.name));
       expect(allOps.length).toBeGreaterThan(5); // More than standard 5
     });
 
     it('pack custom ops should be callable', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"design-qa","package":"@soleri/domain-design-qa"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["design-qa"], packs);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'design-qa', package: '@soleri/domain-design-qa' },
+      ]);
+      const facades = createDomainFacades(runtime, 'salvador', ['design-qa'], packs);
       const facade = facades[0];
       // Test first custom op returns without error
       const firstOp = facade.ops[0];
@@ -431,24 +512,30 @@ describe('Facades', () => {
 
   describe('domain pack: code-review', () => {
     it('should load and validate the domain pack', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"code-review","package":"@soleri/domain-code-review"}]);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'code-review', package: '@soleri/domain-code-review' },
+      ]);
       expect(packs.length).toBe(1);
       expect(packs[0].name).toBe('code-review');
       expect(packs[0].ops.length).toBeGreaterThan(0);
     });
 
     it('should register pack ops in domain facades', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"code-review","package":"@soleri/domain-code-review"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["code-review"], packs);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'code-review', package: '@soleri/domain-code-review' },
+      ]);
+      const facades = createDomainFacades(runtime, 'salvador', ['code-review'], packs);
       expect(facades.length).toBeGreaterThanOrEqual(1);
       // Pack ops should be present
-      const allOps = facades.flatMap(f => f.ops.map(o => o.name));
+      const allOps = facades.flatMap((f) => f.ops.map((o) => o.name));
       expect(allOps.length).toBeGreaterThan(5); // More than standard 5
     });
 
     it('pack custom ops should be callable', async () => {
-      const packs = await loadDomainPacksFromConfig([{"name":"code-review","package":"@soleri/domain-code-review"}]);
-      const facades = createDomainFacades(runtime, 'salvador', ["code-review"], packs);
+      const packs = await loadDomainPacksFromConfig([
+        { name: 'code-review', package: '@soleri/domain-code-review' },
+      ]);
+      const facades = createDomainFacades(runtime, 'salvador', ['code-review'], packs);
       const facade = facades[0];
       // Test first custom op returns without error
       const firstOp = facade.ops[0];
@@ -467,7 +554,7 @@ describe('Facades', () => {
       const facades = buildSemanticFacades();
       // At least the core 10 facades must exist; new ones may be added by @soleri/core
       expect(facades.length).toBeGreaterThanOrEqual(10);
-      const names = facades.map(f => f.name);
+      const names = facades.map((f) => f.name);
       expect(names).toContain('salvador_vault');
       expect(names).toContain('salvador_plan');
       expect(names).toContain('salvador_brain');
@@ -490,11 +577,11 @@ describe('Facades', () => {
 
   describe('salvador_vault', () => {
     function getFacade(): FacadeConfig {
-      return createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_vault')!;
+      return createSemanticFacades(runtime, 'salvador').find((f) => f.name === 'salvador_vault')!;
     }
 
     it('should contain vault ops', () => {
-      const opNames = getFacade().ops.map(o => o.name);
+      const opNames = getFacade().ops.map((o) => o.name);
       expect(opNames).toContain('search');
       expect(opNames).toContain('vault_stats');
       expect(opNames).toContain('list_all');
@@ -516,14 +603,23 @@ describe('Facades', () => {
         makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
         makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
       ]);
-      runtime = createAgentRuntime({ agentId: 'salvador', vaultPath: ':memory:', plansPath: join(plannerDir, 'plans2.json') });
+      runtime = createAgentRuntime({
+        agentId: 'salvador',
+        vaultPath: ':memory:',
+        plansPath: join(plannerDir, 'plans2.json'),
+      });
       runtime.vault.seed([
         makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
         makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
       ]);
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_vault')!;
-      const searchOp = facade.ops.find(o => o.name === 'search')!;
-      const results = (await searchOp.handler({ query: 'pattern' })) as Array<{ entry: unknown; score: number }>;
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_vault',
+      )!;
+      const searchOp = facade.ops.find((o) => o.name === 'search')!;
+      const results = (await searchOp.handler({ query: 'pattern' })) as Array<{
+        entry: unknown;
+        score: number;
+      }>;
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBe(2);
     });
@@ -533,8 +629,10 @@ describe('Facades', () => {
         makeEntry({ id: 'vs1', domain: 'd1', tags: ['x'] }),
         makeEntry({ id: 'vs2', domain: 'd2', tags: ['y'] }),
       ]);
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_vault')!;
-      const statsOp = facade.ops.find(o => o.name === 'vault_stats')!;
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_vault',
+      )!;
+      const statsOp = facade.ops.find((o) => o.name === 'vault_stats')!;
       const stats = (await statsOp.handler({})) as { totalEntries: number };
       expect(stats.totalEntries).toBe(2);
     });
@@ -542,8 +640,10 @@ describe('Facades', () => {
 
   describe('salvador_plan', () => {
     it('should contain planning ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_plan')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_plan',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('create_plan');
       expect(opNames).toContain('get_plan');
       expect(opNames).toContain('approve_plan');
@@ -552,8 +652,10 @@ describe('Facades', () => {
     });
 
     it('create_plan should create a draft plan', async () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_plan')!;
-      const createOp = facade.ops.find(o => o.name === 'create_plan')!;
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_plan',
+      )!;
+      const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
       const result = (await createOp.handler({
         objective: 'Add caching',
         scope: 'api layer',
@@ -566,8 +668,10 @@ describe('Facades', () => {
 
   describe('salvador_brain', () => {
     it('should contain brain ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_brain')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_brain',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('brain_stats');
       expect(opNames).toContain('brain_strengths');
       expect(opNames).toContain('brain_build_intelligence');
@@ -576,8 +680,10 @@ describe('Facades', () => {
     });
 
     it('brain_stats should return intelligence stats', async () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_brain')!;
-      const statsOp = facade.ops.find(o => o.name === 'brain_stats')!;
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_brain',
+      )!;
+      const statsOp = facade.ops.find((o) => o.name === 'brain_stats')!;
       const result = (await statsOp.handler({})) as { vocabularySize: number };
       expect(result.vocabularySize).toBe(0);
     });
@@ -585,8 +691,10 @@ describe('Facades', () => {
 
   describe('salvador_memory', () => {
     it('should contain memory ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_memory')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_memory',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('memory_search');
       expect(opNames).toContain('memory_capture');
       expect(opNames).toContain('memory_promote_to_global');
@@ -595,8 +703,10 @@ describe('Facades', () => {
 
   describe('salvador_admin', () => {
     it('should contain admin ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_admin')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_admin',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('admin_health');
       expect(opNames).toContain('admin_tool_list');
       expect(opNames).toContain('llm_rotate');
@@ -606,16 +716,20 @@ describe('Facades', () => {
 
   describe('salvador_curator', () => {
     it('should contain curator ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_curator')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_curator',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('curator_status');
       expect(opNames).toContain('curator_health_audit');
       expect(opNames).toContain('curator_hybrid_contradictions');
     });
 
     it('curator_status should return initialized', async () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_curator')!;
-      const statusOp = facade.ops.find(o => o.name === 'curator_status')!;
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_curator',
+      )!;
+      const statusOp = facade.ops.find((o) => o.name === 'curator_status')!;
       const result = (await statusOp.handler({})) as { initialized: boolean };
       expect(result.initialized).toBe(true);
     });
@@ -623,8 +737,10 @@ describe('Facades', () => {
 
   describe('salvador_loop', () => {
     it('should contain loop ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_loop')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_loop',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('loop_start');
       expect(opNames).toContain('loop_iterate');
       expect(opNames).toContain('loop_cancel');
@@ -633,8 +749,10 @@ describe('Facades', () => {
 
   describe('salvador_orchestrate', () => {
     it('should contain orchestrate ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_orchestrate')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_orchestrate',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('register');
       expect(opNames).toContain('orchestrate_plan');
       expect(opNames).toContain('project_get');
@@ -644,8 +762,10 @@ describe('Facades', () => {
 
   describe('salvador_control', () => {
     it('should contain control and governance ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_control')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_control',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('get_identity');
       expect(opNames).toContain('route_intent');
       expect(opNames).toContain('governance_policy');
@@ -653,8 +773,10 @@ describe('Facades', () => {
     });
 
     it('governance_policy should return default policy', async () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_control')!;
-      const policyOp = facade.ops.find(o => o.name === 'governance_policy')!;
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_control',
+      )!;
+      const policyOp = facade.ops.find((o) => o.name === 'governance_policy')!;
       const result = (await policyOp.handler({ action: 'get', projectPath: '/test' })) as {
         projectPath: string;
         quotas: { maxEntriesTotal: number };
@@ -666,8 +788,10 @@ describe('Facades', () => {
 
   describe('salvador_cognee', () => {
     it('should contain cognee ops', () => {
-      const facade = createSemanticFacades(runtime, 'salvador').find(f => f.name === 'salvador_cognee')!;
-      const opNames = facade.ops.map(o => o.name);
+      const facade = createSemanticFacades(runtime, 'salvador').find(
+        (f) => f.name === 'salvador_cognee',
+      )!;
+      const opNames = facade.ops.map((o) => o.name);
       expect(opNames).toContain('cognee_status');
       expect(opNames).toContain('cognee_search');
       expect(opNames).toContain('cognee_sync_status');
@@ -759,7 +883,11 @@ describe('Facades', () => {
             const { readdirSync } = await import('node:fs');
             const agentClaudeDir = joinPath(__dirname, '..', '.claude');
             const globalClaudeDir = joinPath(homedir(), '.claude');
-            const hookStatus = { agent: [] as string[], global: [] as string[], missing: [] as string[] };
+            const hookStatus = {
+              agent: [] as string[],
+              global: [] as string[],
+              missing: [] as string[],
+            };
             if (exists(agentClaudeDir)) {
               try {
                 const agentHooks = readdirSync(agentClaudeDir)
@@ -773,10 +901,14 @@ describe('Facades', () => {
                     hookStatus.missing.push(hook);
                   }
                 }
-              } catch { /* ignore */ }
+              } catch {
+                /* ignore */
+              }
             }
             if (hookStatus.missing.length > 0) {
-              recommendations.push(`${hookStatus.missing.length} hook(s) not installed globally — run scripts/setup.sh`);
+              recommendations.push(
+                `${hookStatus.missing.length} hook(s) not installed globally — run scripts/setup.sh`,
+              );
             }
             if (recommendations.length === 0) {
               recommendations.push('Salvador is fully set up and ready!');
@@ -784,8 +916,14 @@ describe('Facades', () => {
             return {
               agent: { name: PERSONA.name, role: PERSONA.role },
               claude_md: {
-                project: { exists: exists(projectClaudeMd), has_agent_section: hasAgentMarker(projectClaudeMd) },
-                global: { exists: exists(globalClaudeMd), has_agent_section: hasAgentMarker(globalClaudeMd) },
+                project: {
+                  exists: exists(projectClaudeMd),
+                  has_agent_section: hasAgentMarker(projectClaudeMd),
+                },
+                global: {
+                  exists: exists(globalClaudeMd),
+                  has_agent_section: hasAgentMarker(globalClaudeMd),
+                },
               },
               vault: { entries: stats.totalEntries, domains: Object.keys(stats.byDomain) },
               hooks: hookStatus,
@@ -803,7 +941,7 @@ describe('Facades', () => {
 
     it('agent ops should not appear in semantic facades', () => {
       const facades = createSemanticFacades(runtime, 'salvador');
-      const allOps = facades.flatMap(f => f.ops.map(o => o.name));
+      const allOps = facades.flatMap((f) => f.ops.map((o) => o.name));
       expect(allOps).not.toContain('health');
       expect(allOps).not.toContain('identity');
       expect(allOps).not.toContain('activate');
@@ -841,7 +979,10 @@ describe('Facades', () => {
     it('activate with deactivate flag should return deactivation', async () => {
       const facade = buildAgentFacade();
       const activateOp = facade.ops.find((o) => o.name === 'activate')!;
-      const result = (await activateOp.handler({ deactivate: true })) as { deactivated: boolean; message: string };
+      const result = (await activateOp.handler({ deactivate: true })) as {
+        deactivated: boolean;
+        message: string;
+      };
       expect(result.deactivated).toBe(true);
       expect(result.message).toBeDefined();
     });
@@ -893,7 +1034,10 @@ describe('Facades', () => {
       const setupOp = facade.ops.find((o) => o.name === 'setup')!;
       const result = (await setupOp.handler({ projectPath: '/tmp/nonexistent-test' })) as {
         agent: { name: string };
-        claude_md: { project: { exists: boolean; has_agent_section: boolean }; global: { exists: boolean; has_agent_section: boolean } };
+        claude_md: {
+          project: { exists: boolean; has_agent_section: boolean };
+          global: { exists: boolean; has_agent_section: boolean };
+        };
         vault: { entries: number };
         hooks: { agent: string[]; global: string[]; missing: string[] };
         recommendations: string[];

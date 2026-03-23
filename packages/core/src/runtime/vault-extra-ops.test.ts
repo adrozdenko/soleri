@@ -91,12 +91,18 @@ describe('createVaultExtraOps', () => {
 
   describe('vault_get', () => {
     it('returns entry by ID', async () => {
-      const result = (await findOp(ops, 'vault_get').handler({ id: 'entry-1' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_get').handler({ id: 'entry-1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.id).toBe('entry-1');
     });
 
     it('returns error for missing entry', async () => {
-      const result = (await findOp(ops, 'vault_get').handler({ id: 'missing' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_get').handler({ id: 'missing' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.error).toContain('not found');
     });
   });
@@ -112,7 +118,10 @@ describe('createVaultExtraOps', () => {
     });
 
     it('returns error when no fields provided', async () => {
-      const result = (await findOp(ops, 'vault_update').handler({ id: 'entry-1' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_update').handler({ id: 'entry-1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.error).toBe('No fields to update');
     });
 
@@ -128,7 +137,10 @@ describe('createVaultExtraOps', () => {
 
   describe('vault_remove', () => {
     it('removes entry by ID', async () => {
-      const result = (await findOp(ops, 'vault_remove').handler({ id: 'entry-1' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_remove').handler({ id: 'entry-1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.removed).toBe(true);
       expect(result.id).toBe('entry-1');
     });
@@ -137,7 +149,10 @@ describe('createVaultExtraOps', () => {
   describe('vault_bulk_add', () => {
     it('seeds multiple entries', async () => {
       const entries = [makeEntry({ id: 'a' }), makeEntry({ id: 'b' })];
-      const result = (await findOp(ops, 'vault_bulk_add').handler({ entries })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_bulk_add').handler({ entries })) as Record<
+        string,
+        unknown
+      >;
       expect(result.added).toBe(2);
       expect(result.total).toBe(10);
     });
@@ -186,7 +201,10 @@ describe('createVaultExtraOps', () => {
         .mockReturnValueOnce({ totalEntries: 10 } as unknown)
         .mockReturnValueOnce({ totalEntries: 12 } as unknown);
       const entries = [makeEntry({ id: 'x' }), makeEntry({ id: 'y' })];
-      const result = (await findOp(ops, 'vault_import').handler({ entries })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_import').handler({ entries })) as Record<
+        string,
+        unknown
+      >;
       expect(result.imported).toBe(2);
       expect(result.newEntries).toBe(2);
       expect(result.total).toBe(12);
@@ -196,7 +214,10 @@ describe('createVaultExtraOps', () => {
   describe('vault_seed', () => {
     it('seeds entries idempotently', async () => {
       const entries = [makeEntry()];
-      const result = (await findOp(ops, 'vault_seed').handler({ entries })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_seed').handler({ entries })) as Record<
+        string,
+        unknown
+      >;
       expect(result.seeded).toBe(1);
     });
   });
@@ -237,7 +258,10 @@ describe('createVaultExtraOps', () => {
 
   describe('vault_dedup_status', () => {
     it('reports dedup statistics with coverage', async () => {
-      const result = (await findOp(ops, 'vault_dedup_status').handler({})) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_dedup_status').handler({})) as Record<
+        string,
+        unknown
+      >;
       expect(result.total).toBe(10);
       expect(result.duplicates).toBe(2);
       expect(result.coverage).toBe(90);

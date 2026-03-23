@@ -7,13 +7,17 @@ vi.mock('./vault.js', () => {
   const MockVault = function (this: Record<string, unknown>, path: string) {
     this._path = path;
     this.search = vi.fn().mockReturnValue([]);
-    this.stats = vi.fn().mockReturnValue({ totalEntries: 0, byType: {}, byDomain: {}, bySeverity: {} });
+    this.stats = vi
+      .fn()
+      .mockReturnValue({ totalEntries: 0, byType: {}, byDomain: {}, bySeverity: {} });
     this.close = vi.fn();
-  } as unknown as typeof import('./vault.js')['Vault'];
+  } as unknown as (typeof import('./vault.js'))['Vault'];
   return { Vault: MockVault };
 });
 
-function makeManager(weights?: Partial<Record<'agent' | 'project' | 'team', number>>): VaultManager {
+function makeManager(
+  weights?: Partial<Record<'agent' | 'project' | 'team', number>>,
+): VaultManager {
   return new VaultManager({ agentId: 'test-agent', weights });
 }
 
@@ -74,7 +78,7 @@ describe('VaultManager', () => {
 
   it('throws when connecting duplicate named vault', () => {
     mgr.connect('shared', '/tmp/shared.db');
-    expect(() => mgr.connect('shared', '/tmp/other.db')).toThrow("already connected");
+    expect(() => mgr.connect('shared', '/tmp/other.db')).toThrow('already connected');
   });
 
   it('disconnects a named vault', () => {
@@ -122,14 +126,10 @@ describe('VaultManager', () => {
   it('deduplicates entries keeping highest weighted score', () => {
     const entry = { id: 'e1', title: 'Shared' };
     const agentVault = mgr.open('agent', '/tmp/a.db');
-    (agentVault.search as ReturnType<typeof vi.fn>).mockReturnValue([
-      { entry, score: 0.5 },
-    ]);
+    (agentVault.search as ReturnType<typeof vi.fn>).mockReturnValue([{ entry, score: 0.5 }]);
 
     const teamVault = mgr.open('team', '/tmp/t.db');
-    (teamVault.search as ReturnType<typeof vi.fn>).mockReturnValue([
-      { entry, score: 0.8 },
-    ]);
+    (teamVault.search as ReturnType<typeof vi.fn>).mockReturnValue([{ entry, score: 0.8 }]);
 
     const results = mgr.search('test');
     // Agent: 0.5 * 1.0 = 0.5, Team: 0.8 * 0.6 = 0.48 → agent wins

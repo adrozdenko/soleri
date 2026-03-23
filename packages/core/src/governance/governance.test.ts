@@ -65,14 +65,25 @@ describe('Governance (colocated)', () => {
 
   describe('setPolicy', () => {
     it('upserts on repeated calls for same project+type', () => {
-      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 100 } as Record<string, unknown>);
-      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 200 } as Record<string, unknown>);
+      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 100 } as Record<
+        string,
+        unknown
+      >);
+      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 200 } as Record<
+        string,
+        unknown
+      >);
       const policy = runtime.governance.getPolicy('/p');
       expect(policy.quotas.maxEntriesTotal).toBe(200);
     });
 
     it('records audit trail with changedBy', () => {
-      runtime.governance.setPolicy('/p', 'retention', { archiveAfterDays: 7 } as Record<string, unknown>, 'admin');
+      runtime.governance.setPolicy(
+        '/p',
+        'retention',
+        { archiveAfterDays: 7 } as Record<string, unknown>,
+        'admin',
+      );
       const trail = runtime.governance.getAuditTrail('/p');
       expect(trail).toHaveLength(1);
       expect(trail[0].changedBy).toBe('admin');
@@ -81,8 +92,14 @@ describe('Governance (colocated)', () => {
     });
 
     it('captures old config on update', () => {
-      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 50 } as Record<string, unknown>);
-      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 100 } as Record<string, unknown>);
+      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 50 } as Record<
+        string,
+        unknown
+      >);
+      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 100 } as Record<
+        string,
+        unknown
+      >);
       const trail = runtime.governance.getAuditTrail('/p');
       const update = trail.find((t) => t.oldConfig !== null);
       expect(update).toBeDefined();
@@ -124,7 +141,9 @@ describe('Governance (colocated)', () => {
     });
 
     it('throws on unknown preset', () => {
-      expect(() => runtime.governance.applyPreset('/p', 'nonexistent' as never)).toThrow('Unknown preset');
+      expect(() => runtime.governance.applyPreset('/p', 'nonexistent' as never)).toThrow(
+        'Unknown preset',
+      );
     });
 
     it('creates audit trail entries for all 3 policy types', () => {
@@ -151,9 +170,33 @@ describe('Governance (colocated)', () => {
 
     it('counts entries by category and type', () => {
       runtime.vault.seed([
-        { id: 'e1', type: 'pattern', domain: 'testing', title: 'T1', severity: 'warning', description: 'D1', tags: [] },
-        { id: 'e2', type: 'rule', domain: 'testing', title: 'T2', severity: 'warning', description: 'D2', tags: [] },
-        { id: 'e3', type: 'pattern', domain: 'styling', title: 'T3', severity: 'warning', description: 'D3', tags: [] },
+        {
+          id: 'e1',
+          type: 'pattern',
+          domain: 'testing',
+          title: 'T1',
+          severity: 'warning',
+          description: 'D1',
+          tags: [],
+        },
+        {
+          id: 'e2',
+          type: 'rule',
+          domain: 'testing',
+          title: 'T2',
+          severity: 'warning',
+          description: 'D2',
+          tags: [],
+        },
+        {
+          id: 'e3',
+          type: 'pattern',
+          domain: 'styling',
+          title: 'T3',
+          severity: 'warning',
+          description: 'D3',
+          tags: [],
+        },
       ]);
       const status = runtime.governance.getQuotaStatus('/p');
       expect(status.total).toBe(3);
@@ -193,7 +236,15 @@ describe('Governance (colocated)', () => {
         warnAtPercent: 80,
       });
       runtime.vault.seed([
-        { id: 'x1', type: 'pattern', domain: 'a', title: 'T', severity: 'warning', description: 'D', tags: [] },
+        {
+          id: 'x1',
+          type: 'pattern',
+          domain: 'a',
+          title: 'T',
+          severity: 'warning',
+          description: 'D',
+          tags: [],
+        },
       ]);
       const status = runtime.governance.getQuotaStatus('/p');
       expect(status.isWarning).toBe(false);
@@ -289,7 +340,15 @@ describe('Governance (colocated)', () => {
         warnAtPercent: 80,
       });
       runtime.vault.seed([
-        { id: 'full1', type: 'pattern', domain: 'a', title: 'T', severity: 'warning', description: 'D', tags: [] },
+        {
+          id: 'full1',
+          type: 'pattern',
+          domain: 'a',
+          title: 'T',
+          severity: 'warning',
+          description: 'D',
+          tags: [],
+        },
       ]);
       const decision = runtime.governance.evaluateCapture('/p', { type: 'pattern', category: 'a' });
       expect(decision.allowed).toBe(false);
@@ -305,7 +364,15 @@ describe('Governance (colocated)', () => {
         warnAtPercent: 80,
       });
       runtime.vault.seed([
-        { id: 'cat1', type: 'pattern', domain: 'a', title: 'T', severity: 'warning', description: 'D', tags: [] },
+        {
+          id: 'cat1',
+          type: 'pattern',
+          domain: 'a',
+          title: 'T',
+          severity: 'warning',
+          description: 'D',
+          tags: [],
+        },
       ]);
       const decision = runtime.governance.evaluateCapture('/p', { type: 'pattern', category: 'a' });
       expect(decision.allowed).toBe(false);
@@ -321,7 +388,15 @@ describe('Governance (colocated)', () => {
         warnAtPercent: 80,
       });
       runtime.vault.seed([
-        { id: 'typ1', type: 'pattern', domain: 'a', title: 'T', severity: 'warning', description: 'D', tags: [] },
+        {
+          id: 'typ1',
+          type: 'pattern',
+          domain: 'a',
+          title: 'T',
+          severity: 'warning',
+          description: 'D',
+          tags: [],
+        },
       ]);
       const decision = runtime.governance.evaluateCapture('/p', { type: 'pattern', category: 'b' });
       expect(decision.allowed).toBe(false);
@@ -354,7 +429,15 @@ describe('Governance (colocated)', () => {
         warnAtPercent: 80,
       });
       runtime.vault.seed([
-        { id: 'mx1', type: 'pattern', domain: 'a', title: 'T', severity: 'warning', description: 'D', tags: [] },
+        {
+          id: 'mx1',
+          type: 'pattern',
+          domain: 'a',
+          title: 'T',
+          severity: 'warning',
+          description: 'D',
+          tags: [],
+        },
       ]);
       const results = runtime.governance.evaluateBatch('/p', [
         { type: 'pattern', category: 'a' },
@@ -478,7 +561,11 @@ describe('Governance (colocated)', () => {
         category: 'a',
         data: { description: 'Original', severity: 'warning' },
       });
-      const result = runtime.governance.modifyProposal(id, { description: 'Updated', extra: true }, 'editor');
+      const result = runtime.governance.modifyProposal(
+        id,
+        { description: 'Updated', extra: true },
+        'editor',
+      );
       expect(result).not.toBeNull();
       expect(result!.status).toBe('modified');
       expect(result!.proposedData.description).toBe('Updated');
@@ -578,7 +665,11 @@ describe('Governance (colocated)', () => {
     });
 
     it('computes byCategory breakdown', () => {
-      const id1 = runtime.governance.propose('/p', { title: 'P1', type: 'pattern', category: 'arch' });
+      const id1 = runtime.governance.propose('/p', {
+        title: 'P1',
+        type: 'pattern',
+        category: 'arch',
+      });
       const id2 = runtime.governance.propose('/p', { title: 'P2', type: 'rule', category: 'arch' });
       runtime.governance.approveProposal(id1);
       runtime.governance.rejectProposal(id2);
@@ -645,8 +736,24 @@ describe('Governance (colocated)', () => {
         warnAtPercent: 80,
       });
       runtime.vault.seed([
-        { id: 'd1', type: 'pattern', domain: 'd', title: 'T', severity: 'warning', description: 'D', tags: [] },
-        { id: 'd2', type: 'rule', domain: 'd', title: 'T', severity: 'warning', description: 'D', tags: [] },
+        {
+          id: 'd1',
+          type: 'pattern',
+          domain: 'd',
+          title: 'T',
+          severity: 'warning',
+          description: 'D',
+          tags: [],
+        },
+        {
+          id: 'd2',
+          type: 'rule',
+          domain: 'd',
+          title: 'T',
+          severity: 'warning',
+          description: 'D',
+          tags: [],
+        },
       ]);
       const dashboard = runtime.governance.getDashboard('/p');
       expect(dashboard.vaultSize).toBe(2);
@@ -702,9 +809,18 @@ describe('Governance (colocated)', () => {
     });
 
     it('setPolicy handles all three policy types independently', () => {
-      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 42 } as Record<string, unknown>);
-      runtime.governance.setPolicy('/p', 'retention', { archiveAfterDays: 7 } as Record<string, unknown>);
-      runtime.governance.setPolicy('/p', 'auto-capture', { enabled: false } as Record<string, unknown>);
+      runtime.governance.setPolicy('/p', 'quota', { maxEntriesTotal: 42 } as Record<
+        string,
+        unknown
+      >);
+      runtime.governance.setPolicy('/p', 'retention', { archiveAfterDays: 7 } as Record<
+        string,
+        unknown
+      >);
+      runtime.governance.setPolicy('/p', 'auto-capture', { enabled: false } as Record<
+        string,
+        unknown
+      >);
 
       const policy = runtime.governance.getPolicy('/p');
       expect(policy.quotas.maxEntriesTotal).toBe(42);

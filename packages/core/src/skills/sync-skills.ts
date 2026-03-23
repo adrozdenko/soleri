@@ -6,14 +6,7 @@
  * Called automatically at engine startup and by admin_setup_global.
  */
 
-import {
-  existsSync,
-  readdirSync,
-  readFileSync,
-  writeFileSync,
-  mkdirSync,
-  statSync,
-} from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
@@ -68,10 +61,7 @@ function brandSkillContent(content: string, agentName: string): string {
  * - Changed skills are overwritten (compared by mtime)
  * - Missing source skills leave target untouched (other agents may own them)
  */
-export function syncSkillsToClaudeCode(
-  skillsDirs: string[],
-  agentName?: string,
-): SyncResult {
+export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string): SyncResult {
   const commandsDir = join(homedir(), '.claude', 'commands');
   const skills = discoverSkills(skillsDirs);
   const result: SyncResult = { installed: [], updated: [], skipped: [], failed: [] };

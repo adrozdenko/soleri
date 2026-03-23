@@ -10,12 +10,7 @@
  */
 
 import { describe, it, expect, afterAll } from 'vitest';
-import {
-  HttpMcpServer,
-  WsMcpServer,
-  SessionManager,
-  RateLimiter,
-} from '@soleri/core';
+import { HttpMcpServer, WsMcpServer, SessionManager, RateLimiter } from '@soleri/core';
 
 describe('E2E: transports', () => {
   // ─── Session Manager ───────────────────────────────────────────────
@@ -143,7 +138,11 @@ describe('E2E: transports', () => {
 
     afterAll(async () => {
       if (httpServer) {
-        try { await httpServer.stop(); } catch { /* ignore */ }
+        try {
+          await httpServer.stop();
+        } catch {
+          /* ignore */
+        }
       }
     });
 
@@ -204,7 +203,7 @@ describe('E2E: transports', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({ jsonrpc: '2.0', method: 'initialize', id: 1 }),
       });
@@ -235,7 +234,11 @@ describe('E2E: transports', () => {
 
     afterAll(async () => {
       if (wsServer) {
-        try { await wsServer.stop(); } catch { /* ignore */ }
+        try {
+          await wsServer.stop();
+        } catch {
+          /* ignore */
+        }
       }
     });
 

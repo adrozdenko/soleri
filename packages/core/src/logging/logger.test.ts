@@ -103,7 +103,10 @@ describe('Logger file logging', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    tempDir = join(tmpdir(), `logger-colocated-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    tempDir = join(
+      tmpdir(),
+      `logger-colocated-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
     mkdirSync(tempDir, { recursive: true });
   });
 

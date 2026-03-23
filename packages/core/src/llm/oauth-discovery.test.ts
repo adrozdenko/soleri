@@ -37,7 +37,9 @@ describe('discoverAnthropicToken', () => {
     delete process.env.ANTHROPIC_API_KEY;
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(readFileSync).mockReturnValue('{}');
-    vi.mocked(execFileSync).mockImplementation(() => { throw new Error('not found'); });
+    vi.mocked(execFileSync).mockImplementation(() => {
+      throw new Error('not found');
+    });
     vi.mocked(platform).mockReturnValue('darwin');
   });
 
@@ -69,18 +71,14 @@ describe('discoverAnthropicToken', () => {
 
   it('should return token from credentials file with direct accessToken', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue(
-      JSON.stringify({ accessToken: 'direct-token' }),
-    );
+    vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ accessToken: 'direct-token' }));
     const discover = await freshDiscover();
     expect(discover()).toBe('direct-token');
   });
 
   it('should return token from credentials file with apiKey field', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue(
-      JSON.stringify({ apiKey: 'api-key-field' }),
-    );
+    vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ apiKey: 'api-key-field' }));
     const discover = await freshDiscover();
     expect(discover()).toBe('api-key-field');
   });
@@ -101,9 +99,7 @@ describe('discoverAnthropicToken', () => {
 
   it('should handle keychain returning non-JSON with regex fallback', async () => {
     vi.mocked(platform).mockReturnValue('darwin');
-    vi.mocked(execFileSync).mockReturnValue(
-      '{ truncated "accessToken": "regex-token" garbage',
-    );
+    vi.mocked(execFileSync).mockReturnValue('{ truncated "accessToken": "regex-token" garbage');
     const discover = await freshDiscover();
     expect(discover()).toBe('regex-token');
   });
@@ -124,7 +120,9 @@ describe('discoverAnthropicToken', () => {
 
   it('should treat long raw string from Linux keyring as token', async () => {
     vi.mocked(platform).mockReturnValue('linux');
-    vi.mocked(execFileSync).mockReturnValue('a-long-raw-token-string-that-is-definitely-over-twenty-chars');
+    vi.mocked(execFileSync).mockReturnValue(
+      'a-long-raw-token-string-that-is-definitely-over-twenty-chars',
+    );
     const discover = await freshDiscover();
     expect(discover()).toBe('a-long-raw-token-string-that-is-definitely-over-twenty-chars');
   });
@@ -142,14 +140,18 @@ describe('discoverAnthropicToken', () => {
 
   it('should handle credentials file read errors gracefully', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockImplementation(() => { throw new Error('permission denied'); });
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error('permission denied');
+    });
     const discover = await freshDiscover();
     expect(discover()).toBeNull();
   });
 
   it('should handle keychain errors gracefully', async () => {
     vi.mocked(platform).mockReturnValue('darwin');
-    vi.mocked(execFileSync).mockImplementation(() => { throw new Error('no keychain entry'); });
+    vi.mocked(execFileSync).mockImplementation(() => {
+      throw new Error('no keychain entry');
+    });
     const discover = await freshDiscover();
     expect(discover()).toBeNull();
   });
@@ -164,9 +166,7 @@ describe('discoverAnthropicToken', () => {
   it('should prioritize env var over credentials file', async () => {
     process.env.ANTHROPIC_API_KEY = 'env-key';
     vi.mocked(existsSync).mockReturnValue(true);
-    vi.mocked(readFileSync).mockReturnValue(
-      JSON.stringify({ apiKey: 'file-key' }),
-    );
+    vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ apiKey: 'file-key' }));
     const discover = await freshDiscover();
     expect(discover()).toBe('env-key');
   });

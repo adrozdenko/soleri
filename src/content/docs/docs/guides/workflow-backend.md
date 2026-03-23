@@ -12,6 +12,7 @@ Before writing an endpoint or modifying a service, check what the team has estab
 > **You:** "What do we know about API error handling?"
 >
 > **Agent:** _Found 4 entries:_
+>
 > 1. All errors must return { error, code, details } format (critical)
 > 2. Always include rate limit headers in responses (critical)
 > 3. Use structured logging — no console.log in production (pattern)
@@ -20,6 +21,7 @@ Before writing an endpoint or modifying a service, check what the team has estab
 > **You:** "Any anti-patterns for authentication?"
 >
 > **Agent:** _Found 2 entries:_
+>
 > 1. Never store JWTs in localStorage — use httpOnly cookies (critical)
 > 2. Don't roll your own password hashing — use bcrypt or argon2 (critical)
 
@@ -30,6 +32,7 @@ These are the rules your team agreed on. Searching takes seconds and prevents yo
 > **You:** "Plan: add a POST /teams endpoint with invite flow — create team, assign owner, send invite emails to members"
 >
 > **Agent:** _Plan created:_
+>
 > 1. Define request/response schema with validation
 > 2. Implement handler — create team, assign owner role
 > 3. Add invite logic — generate tokens, queue emails
@@ -55,6 +58,7 @@ During implementation, check your decisions:
 > **You:** "Review this endpoint for security issues"
 >
 > **Agent:** _2 issues found:_
+>
 > 1. No rate limiting on invite endpoint — potential abuse vector
 > 2. Invite token has no expiration — should expire in 48 hours
 
@@ -76,14 +80,14 @@ Next time someone builds an endpoint with email sending, the search step will su
 
 ## Backend patterns worth capturing early
 
-| Area | What to capture |
-|------|----------------|
-| **API conventions** | Error format, status codes, pagination, versioning |
-| **Database** | Transaction rules, migration strategy, indexing guidelines |
-| **Authentication** | Token strategy, session handling, permission model |
-| **Error handling** | Retry policies, circuit breaker rules, fallback behavior |
-| **Performance** | Query limits, caching strategy, N+1 prevention |
-| **Security** | Input validation, rate limiting, secret management |
+| Area                | What to capture                                            |
+| ------------------- | ---------------------------------------------------------- |
+| **API conventions** | Error format, status codes, pagination, versioning         |
+| **Database**        | Transaction rules, migration strategy, indexing guidelines |
+| **Authentication**  | Token strategy, session handling, permission model         |
+| **Error handling**  | Retry policies, circuit breaker rules, fallback behavior   |
+| **Performance**     | Query limits, caching strategy, N+1 prevention             |
+| **Security**        | Input validation, rate limiting, secret management         |
 
 ---
 

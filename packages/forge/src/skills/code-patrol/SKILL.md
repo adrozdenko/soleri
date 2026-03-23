@@ -32,13 +32,13 @@ YOUR_AGENT_core op:brain_strengths
 
 ### 3. Review the Code
 
-| Check | Source | Severity |
-|-------|--------|----------|
-| Violates critical rule | `search (severity: critical)` | Must fix |
-| Matches known anti-pattern | `search (type: anti-pattern)` | Must fix |
-| Doesn't follow proven pattern | `brain_strengths` | Should fix |
-| Breaks project conventions | `project_list_rules` | Should fix |
-| Misses pattern opportunity | `search_intelligent` | Could improve |
+| Check                         | Source                        | Severity      |
+| ----------------------------- | ----------------------------- | ------------- |
+| Violates critical rule        | `search (severity: critical)` | Must fix      |
+| Matches known anti-pattern    | `search (type: anti-pattern)` | Must fix      |
+| Doesn't follow proven pattern | `brain_strengths`             | Should fix    |
+| Breaks project conventions    | `project_list_rules`          | Should fix    |
+| Misses pattern opportunity    | `search_intelligent`          | Could improve |
 
 ### 4. Present the Review
 
@@ -76,11 +76,11 @@ Re-run patrol after user applies fixes. Check `admin_health`.
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `route_intent` | Classify code domain |
-| `search_intelligent` | Find relevant patterns |
-| `search` | Find anti-patterns and critical rules |
-| `project_list_rules` / `get_behavior_rules` | Project conventions |
-| `brain_strengths` | Proven patterns |
-| `capture_quick` / `capture_knowledge` | Capture new discoveries |
+| Op                                          | When to Use                           |
+| ------------------------------------------- | ------------------------------------- |
+| `route_intent`                              | Classify code domain                  |
+| `search_intelligent`                        | Find relevant patterns                |
+| `search`                                    | Find anti-patterns and critical rules |
+| `project_list_rules` / `get_behavior_rules` | Project conventions                   |
+| `brain_strengths`                           | Proven patterns                       |
+| `capture_quick` / `capture_knowledge`       | Capture new discoveries               |

@@ -31,7 +31,13 @@ function createMockIntelligence(overrides?: Partial<BrainIntelligence>): BrainIn
   } as unknown as BrainIntelligence;
 }
 
-function makeVaultResult(id: string, title: string, score: number, domain: string, tags: string[] = []) {
+function makeVaultResult(
+  id: string,
+  title: string,
+  score: number,
+  domain: string,
+  tags: string[] = [],
+) {
   return {
     entry: { id, title, domain, tags, type: 'pattern', severity: 'suggestion', description: '' },
     score,
@@ -120,7 +126,9 @@ describe('ContextEngine', () => {
     });
 
     it('extracts kebab-case patterns but filters stop words', () => {
-      const result = engine.extractEntities('Use the token-migration pattern, not built-in or real-time');
+      const result = engine.extractEntities(
+        'Use the token-migration pattern, not built-in or real-time',
+      );
       const patterns = result.byType.pattern ?? [];
       expect(patterns.some((p) => p.value === 'token-migration')).toBe(true);
       expect(patterns.some((p) => p.value === 'real-time')).toBe(false);
@@ -170,9 +178,11 @@ describe('ContextEngine', () => {
 
   describe('retrieveKnowledge', () => {
     it('returns vault results with enriched scores', async () => {
-      const mockSearch = vi.fn().mockReturnValue([
-        makeVaultResult('v1', 'Button pattern', 10, 'design', ['button', 'component']),
-      ]);
+      const mockSearch = vi
+        .fn()
+        .mockReturnValue([
+          makeVaultResult('v1', 'Button pattern', 10, 'design', ['button', 'component']),
+        ]);
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
       engine = new ContextEngine(vault, brain, intelligence);
 
@@ -186,10 +196,12 @@ describe('ContextEngine', () => {
     });
 
     it('returns brain recommendations normalized to 0-1', async () => {
-      const mockRecommend = vi.fn().mockReturnValue([
-        makeBrainRecommendation('semantic-tokens', 'design', 80),
-      ]);
-      intelligence = createMockIntelligence({ recommend: mockRecommend } as unknown as Partial<BrainIntelligence>);
+      const mockRecommend = vi
+        .fn()
+        .mockReturnValue([makeBrainRecommendation('semantic-tokens', 'design', 80)]);
+      intelligence = createMockIntelligence({
+        recommend: mockRecommend,
+      } as unknown as Partial<BrainIntelligence>);
       engine = new ContextEngine(vault, brain, intelligence);
 
       const result = await engine.retrieveKnowledge('design tokens');
@@ -200,14 +212,16 @@ describe('ContextEngine', () => {
     });
 
     it('combines vault and brain results sorted by score descending', async () => {
-      const mockSearch = vi.fn().mockReturnValue([
-        makeVaultResult('v1', 'Low relevance', 2, 'general'),
-      ]);
-      const mockRecommend = vi.fn().mockReturnValue([
-        makeBrainRecommendation('high-relevance', 'design', 95),
-      ]);
+      const mockSearch = vi
+        .fn()
+        .mockReturnValue([makeVaultResult('v1', 'Low relevance', 2, 'general')]);
+      const mockRecommend = vi
+        .fn()
+        .mockReturnValue([makeBrainRecommendation('high-relevance', 'design', 95)]);
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
-      intelligence = createMockIntelligence({ recommend: mockRecommend } as unknown as Partial<BrainIntelligence>);
+      intelligence = createMockIntelligence({
+        recommend: mockRecommend,
+      } as unknown as Partial<BrainIntelligence>);
       engine = new ContextEngine(vault, brain, intelligence);
 
       const result = await engine.retrieveKnowledge('test query');
@@ -216,9 +230,9 @@ describe('ContextEngine', () => {
     });
 
     it('filters items below minScoreThreshold', async () => {
-      const mockSearch = vi.fn().mockReturnValue([
-        makeVaultResult('v1', 'Irrelevant entry', 1, 'misc'),
-      ]);
+      const mockSearch = vi
+        .fn()
+        .mockReturnValue([makeVaultResult('v1', 'Irrelevant entry', 1, 'misc')]);
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
       engine = new ContextEngine(vault, brain, intelligence, { minScoreThreshold: 0.99 });
 
@@ -241,12 +255,17 @@ describe('ContextEngine', () => {
       engine = new ContextEngine(vault, brain, intelligence);
 
       await engine.retrieveKnowledge('test', 'security');
-      expect(mockSearch).toHaveBeenCalledWith('test', expect.objectContaining({ domain: 'security' }));
+      expect(mockSearch).toHaveBeenCalledWith(
+        'test',
+        expect.objectContaining({ domain: 'security' }),
+      );
     });
 
     it('passes domain to brain recommendations', async () => {
       const mockRecommend = vi.fn().mockReturnValue([]);
-      intelligence = createMockIntelligence({ recommend: mockRecommend } as unknown as Partial<BrainIntelligence>);
+      intelligence = createMockIntelligence({
+        recommend: mockRecommend,
+      } as unknown as Partial<BrainIntelligence>);
       engine = new ContextEngine(vault, brain, intelligence);
 
       await engine.retrieveKnowledge('test', 'design');
@@ -254,7 +273,9 @@ describe('ContextEngine', () => {
     });
 
     it('gracefully handles vault search throwing', async () => {
-      const mockSearch = vi.fn().mockImplementation(() => { throw new Error('DB error'); });
+      const mockSearch = vi.fn().mockImplementation(() => {
+        throw new Error('DB error');
+      });
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
       engine = new ContextEngine(vault, brain, intelligence);
 
@@ -264,8 +285,12 @@ describe('ContextEngine', () => {
     });
 
     it('gracefully handles brain recommend throwing', async () => {
-      const mockRecommend = vi.fn().mockImplementation(() => { throw new Error('Brain error'); });
-      intelligence = createMockIntelligence({ recommend: mockRecommend } as unknown as Partial<BrainIntelligence>);
+      const mockRecommend = vi.fn().mockImplementation(() => {
+        throw new Error('Brain error');
+      });
+      intelligence = createMockIntelligence({
+        recommend: mockRecommend,
+      } as unknown as Partial<BrainIntelligence>);
       engine = new ContextEngine(vault, brain, intelligence);
 
       const result = await engine.retrieveKnowledge('test');
@@ -283,7 +308,9 @@ describe('ContextEngine', () => {
 
     it('respects brainRecommendLimit config', async () => {
       const mockRecommend = vi.fn().mockReturnValue([]);
-      intelligence = createMockIntelligence({ recommend: mockRecommend } as unknown as Partial<BrainIntelligence>);
+      intelligence = createMockIntelligence({
+        recommend: mockRecommend,
+      } as unknown as Partial<BrainIntelligence>);
       engine = new ContextEngine(vault, brain, intelligence, { brainRecommendLimit: 2 });
 
       await engine.retrieveKnowledge('test');
@@ -312,7 +339,9 @@ describe('ContextEngine', () => {
     });
 
     it('confidence is between 0 and 1', async () => {
-      const result = await engine.analyze('Create React TypeScript component in src/app.tsx for security');
+      const result = await engine.analyze(
+        'Create React TypeScript component in src/app.tsx for security',
+      );
       expect(result.confidence).toBeGreaterThanOrEqual(0);
       expect(result.confidence).toBeLessThanOrEqual(1);
     });
@@ -324,13 +353,17 @@ describe('ContextEngine', () => {
     });
 
     it('assigns higher confidence when entities and knowledge are present', async () => {
-      const mockSearch = vi.fn().mockReturnValue([
-        makeVaultResult('v1', 'Unit test best practices', 10, 'testing', ['testing']),
-      ]);
+      const mockSearch = vi
+        .fn()
+        .mockReturnValue([
+          makeVaultResult('v1', 'Unit test best practices', 10, 'testing', ['testing']),
+        ]);
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
       engine = new ContextEngine(vault, brain, intelligence);
 
-      const result = await engine.analyze('Create unit tests for the search() function in src/vault.ts with TypeScript');
+      const result = await engine.analyze(
+        'Create unit tests for the search() function in src/vault.ts with TypeScript',
+      );
       expect(result.confidence).toBeGreaterThan(0.4);
     });
 
@@ -341,9 +374,9 @@ describe('ContextEngine', () => {
     });
 
     it('detects domains from knowledge items', async () => {
-      const mockSearch = vi.fn().mockReturnValue([
-        makeVaultResult('v1', 'Perf guide', 10, 'performance', ['performance']),
-      ]);
+      const mockSearch = vi
+        .fn()
+        .mockReturnValue([makeVaultResult('v1', 'Perf guide', 10, 'performance', ['performance'])]);
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
       engine = new ContextEngine(vault, brain, intelligence);
 
@@ -352,9 +385,9 @@ describe('ContextEngine', () => {
     });
 
     it('deduplicates domains from entities and knowledge', async () => {
-      const mockSearch = vi.fn().mockReturnValue([
-        makeVaultResult('v1', 'A11y rules', 10, 'accessibility', ['a11y']),
-      ]);
+      const mockSearch = vi
+        .fn()
+        .mockReturnValue([makeVaultResult('v1', 'A11y rules', 10, 'accessibility', ['a11y'])]);
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
       engine = new ContextEngine(vault, brain, intelligence);
 
@@ -393,27 +426,35 @@ describe('ContextEngine', () => {
 
     it('more entities increase confidence up to a cap', async () => {
       const few = await engine.analyze('fix it');
-      const many = await engine.analyze('fix the React TypeScript component in src/app.tsx for accessibility and deploy');
+      const many = await engine.analyze(
+        'fix the React TypeScript component in src/app.tsx for accessibility and deploy',
+      );
       expect(many.confidence).toBeGreaterThan(few.confidence);
     });
 
     it('source diversity bonus applies when multiple sources return results', async () => {
-      const mockSearch = vi.fn().mockReturnValue([
-        makeVaultResult('v1', 'Pattern one', 10, 'design', ['design']),
-      ]);
-      const mockRecommend = vi.fn().mockReturnValue([
-        makeBrainRecommendation('some-pattern', 'design', 70),
-      ]);
+      const mockSearch = vi
+        .fn()
+        .mockReturnValue([makeVaultResult('v1', 'Pattern one', 10, 'design', ['design'])]);
+      const mockRecommend = vi
+        .fn()
+        .mockReturnValue([makeBrainRecommendation('some-pattern', 'design', 70)]);
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
-      intelligence = createMockIntelligence({ recommend: mockRecommend } as unknown as Partial<BrainIntelligence>);
+      intelligence = createMockIntelligence({
+        recommend: mockRecommend,
+      } as unknown as Partial<BrainIntelligence>);
       const multiEngine = new ContextEngine(vault, brain, intelligence);
 
-      const vaultOnlySearch = vi.fn().mockReturnValue([
-        makeVaultResult('v1', 'Pattern one', 10, 'design', ['design']),
-      ]);
+      const vaultOnlySearch = vi
+        .fn()
+        .mockReturnValue([makeVaultResult('v1', 'Pattern one', 10, 'design', ['design'])]);
       const emptyRecommend = vi.fn().mockReturnValue([]);
-      const vaultOnlyVault = createMockVault({ search: vaultOnlySearch } as unknown as Partial<Vault>);
-      const emptyIntel = createMockIntelligence({ recommend: emptyRecommend } as unknown as Partial<BrainIntelligence>);
+      const vaultOnlyVault = createMockVault({
+        search: vaultOnlySearch,
+      } as unknown as Partial<Vault>);
+      const emptyIntel = createMockIntelligence({
+        recommend: emptyRecommend,
+      } as unknown as Partial<BrainIntelligence>);
       const singleEngine = new ContextEngine(vaultOnlyVault, brain, emptyIntel);
 
       const multi = await multiEngine.analyze('design patterns');
@@ -428,7 +469,9 @@ describe('ContextEngine', () => {
       expect(low.confidence).toBeLessThan(0.45);
 
       // Construct a scenario with enough signals for medium (action + 6 entities = 0.2 + 0.4 cap = 0.6)
-      const medium = await engine.analyze('create a React TypeScript component in src/app.tsx for security');
+      const medium = await engine.analyze(
+        'create a React TypeScript component in src/app.tsx for security',
+      );
       expect(medium.confidence).toBeGreaterThanOrEqual(0.45);
       expect(['medium', 'high']).toContain(medium.confidenceLevel);
     });
@@ -450,7 +493,9 @@ describe('ContextEngine', () => {
       const mockSearch = vi.fn().mockReturnValue([]);
       const mockRecommend = vi.fn().mockReturnValue([]);
       vault = createMockVault({ search: mockSearch } as unknown as Partial<Vault>);
-      intelligence = createMockIntelligence({ recommend: mockRecommend } as unknown as Partial<BrainIntelligence>);
+      intelligence = createMockIntelligence({
+        recommend: mockRecommend,
+      } as unknown as Partial<BrainIntelligence>);
       engine = new ContextEngine(vault, brain, intelligence, { vaultSearchLimit: 5 });
 
       await engine.retrieveKnowledge('test');

@@ -30,12 +30,15 @@ describe('runEpilogue', () => {
     const dispatch = vi.fn(async () => ({ tool: 'capture_knowledge', status: 'ok', data: {} }));
     const result = await runEpilogue(dispatch, probes({ vault: true }), '/project', 'summary');
 
-    expect(dispatch).toHaveBeenCalledWith('capture_knowledge', expect.objectContaining({
-      title: 'Flow execution summary',
-      content: 'summary',
-      type: 'workflow',
-      projectPath: '/project',
-    }));
+    expect(dispatch).toHaveBeenCalledWith(
+      'capture_knowledge',
+      expect.objectContaining({
+        title: 'Flow execution summary',
+        content: 'summary',
+        type: 'workflow',
+        projectPath: '/project',
+      }),
+    );
     expect(result.captured).toBe(true);
   });
 
@@ -52,10 +55,13 @@ describe('runEpilogue', () => {
       'summary',
     );
 
-    expect(dispatch).toHaveBeenCalledWith('session_capture', expect.objectContaining({
-      summary: 'summary',
-      projectPath: '/project',
-    }));
+    expect(dispatch).toHaveBeenCalledWith(
+      'session_capture',
+      expect.objectContaining({
+        summary: 'summary',
+        projectPath: '/project',
+      }),
+    );
     expect(result.captured).toBe(true);
     expect(result.sessionId).toBe('sess-123');
   });

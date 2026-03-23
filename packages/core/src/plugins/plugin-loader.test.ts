@@ -13,7 +13,10 @@ import type { LoadedPlugin, PluginManifest } from './types.js';
 let testDirs: string[] = [];
 
 function makeTempDir(): string {
-  const dir = join(tmpdir(), `soleri-loader-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const dir = join(
+    tmpdir(),
+    `soleri-loader-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  );
   mkdirSync(dir, { recursive: true });
   testDirs.push(dir);
   return dir;
@@ -26,13 +29,15 @@ function writePlugin(parentDir: string, id: string, manifest: Record<string, unk
   return dir;
 }
 
-function makeLoaded(overrides: Partial<LoadedPlugin & { manifest: Partial<PluginManifest> }> = {}): LoadedPlugin {
+function makeLoaded(
+  overrides: Partial<LoadedPlugin & { manifest: Partial<PluginManifest> }> = {},
+): LoadedPlugin {
   return {
     manifest: pluginManifestSchema.parse({
       id: 'test-plugin',
       name: 'Test',
       version: '1.0.0',
-      ...(overrides.manifest),
+      ...overrides.manifest,
     }),
     directory: overrides.directory ?? '/tmp/test',
     provenance: overrides.provenance ?? 'global',
@@ -41,7 +46,11 @@ function makeLoaded(overrides: Partial<LoadedPlugin & { manifest: Partial<Plugin
 
 afterEach(() => {
   for (const dir of testDirs) {
-    try { rmSync(dir, { recursive: true, force: true }); } catch { /* noop */ }
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      /* noop */
+    }
   }
   testDirs = [];
 });
@@ -62,11 +71,11 @@ describe('loadPlugins — colocated', () => {
     const result = loadPlugins('test-agent', undefined, [dir1, dir2]);
 
     expect(result.loaded).toHaveLength(2);
-    const ids = result.loaded.map(p => p.manifest.id);
+    const ids = result.loaded.map((p) => p.manifest.id);
     expect(ids).toContain('alpha');
     expect(ids).toContain('beta');
     // First occurrence wins
-    expect(result.loaded.find(p => p.manifest.id === 'alpha')!.manifest.name).toBe('Alpha');
+    expect(result.loaded.find((p) => p.manifest.id === 'alpha')!.manifest.name).toBe('Alpha');
   });
 
   it('skips files (non-directories) inside plugin dir', () => {
@@ -154,18 +163,14 @@ describe('validateDependencies — colocated', () => {
   });
 
   it('detects multiple missing dependencies', () => {
-    const plugins = [
-      makeLoaded({ manifest: { id: 'lonely', dependencies: ['dep-a', 'dep-b'] } }),
-    ];
+    const plugins = [makeLoaded({ manifest: { id: 'lonely', dependencies: ['dep-a', 'dep-b'] } })];
     const errors = validateDependencies(plugins);
     expect(errors).toHaveLength(2);
-    expect(errors.map(e => e.missingDep)).toEqual(['dep-a', 'dep-b']);
+    expect(errors.map((e) => e.missingDep)).toEqual(['dep-a', 'dep-b']);
   });
 
   it('handles plugins with no dependencies', () => {
-    const plugins = [
-      makeLoaded({ manifest: { id: 'standalone' } }),
-    ];
+    const plugins = [makeLoaded({ manifest: { id: 'standalone' } })];
     expect(validateDependencies(plugins)).toEqual([]);
   });
 });
@@ -181,7 +186,7 @@ describe('sortByDependencies — colocated', () => {
     const a = makeLoaded({ manifest: { id: 'a' } });
 
     const sorted = sortByDependencies([c, b, a]);
-    const ids = sorted.map(p => p.manifest.id);
+    const ids = sorted.map((p) => p.manifest.id);
 
     expect(ids.indexOf('a')).toBeLessThan(ids.indexOf('b'));
     expect(ids.indexOf('b')).toBeLessThan(ids.indexOf('c'));

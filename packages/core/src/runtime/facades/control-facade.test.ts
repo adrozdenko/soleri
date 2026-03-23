@@ -402,9 +402,9 @@ describe('createControlFacadeOps', () => {
 
   describe('routing_feedback', () => {
     it('records feedback', async () => {
-      vi.mocked(runtime.intentRouter.recordRoutingFeedback).mockReturnValue(
-        { recorded: true } as never,
-      );
+      vi.mocked(runtime.intentRouter.recordRoutingFeedback).mockReturnValue({
+        recorded: true,
+      } as never);
 
       const result = await findOp(ops, 'routing_feedback').handler({
         initialIntent: 'BUILD',

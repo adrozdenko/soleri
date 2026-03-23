@@ -165,11 +165,7 @@ export class OperatorProfileStore {
     return JSON.parse((row[col] as string) || '{}') as ProfileSection;
   }
 
-  updateSection(
-    section: ProfileSectionKey,
-    data: ProfileSection,
-    profileId?: string,
-  ): boolean {
+  updateSection(section: ProfileSectionKey, data: ProfileSection, profileId?: string): boolean {
     const id = profileId ?? this.ensureProfile();
     const col = SECTION_COLUMNS[section];
     const result = this.provider.run(
@@ -179,11 +175,7 @@ export class OperatorProfileStore {
     return result.changes > 0;
   }
 
-  correctSection(
-    section: ProfileSectionKey,
-    data: ProfileSection,
-    profileId?: string,
-  ): boolean {
+  correctSection(section: ProfileSectionKey, data: ProfileSection, profileId?: string): boolean {
     const id = profileId ?? this.ensureProfile();
     this.snapshot('correction', id);
     return this.updateSection(section, data, id);
@@ -210,7 +202,14 @@ export class OperatorProfileStore {
         this.provider.run(
           `INSERT INTO operator_signals (profile_id, signal_type, signal_data, source, confidence, created_at)
            VALUES (?, ?, ?, ?, ?, ?)`,
-          [id, signal.signalType, JSON.stringify(signal.data), signal.source ?? null, signal.confidence, signal.timestamp],
+          [
+            id,
+            signal.signalType,
+            JSON.stringify(signal.data),
+            signal.source ?? null,
+            signal.confidence,
+            signal.timestamp,
+          ],
         );
         inserted++;
       }
@@ -225,7 +224,15 @@ export class OperatorProfileStore {
   listSignals(
     filter: { types?: string[]; processed?: boolean; limit?: number } = {},
     profileId?: string,
-  ): Array<{ id: number; signalType: string; signalData: unknown; source: string | null; confidence: number; processed: boolean; createdAt: string }> {
+  ): Array<{
+    id: number;
+    signalType: string;
+    signalData: unknown;
+    source: string | null;
+    confidence: number;
+    processed: boolean;
+    createdAt: string;
+  }> {
     const id = profileId ?? this.getDefaultProfileId();
     if (!id) return [];
     const conditions = ['profile_id = ?'];
@@ -296,7 +303,11 @@ export class OperatorProfileStore {
       };
     }
     const stats = this.signalStats(id);
-    const profile = this.provider.get<{ session_count: number; last_synthesis: string | null; synthesis_version: number }>(
+    const profile = this.provider.get<{
+      session_count: number;
+      last_synthesis: string | null;
+      synthesis_version: number;
+    }>(
       'SELECT session_count, last_synthesis, synthesis_version FROM operator_profiles WHERE id = ?',
       [id],
     );
@@ -311,14 +322,14 @@ export class OperatorProfileStore {
     }
 
     const pending = stats.totalUnprocessed;
-    const sessionsSinceSynthesis = profile.synthesis_version === 0
-      ? profile.session_count
-      : profile.session_count; // tracked by incrementing session_count
+    const sessionsSinceSynthesis =
+      profile.synthesis_version === 0 ? profile.session_count : profile.session_count; // tracked by incrementing session_count
 
     const signalThresholdMet = pending >= SYNTHESIS_SIGNAL_THRESHOLD;
-    const sessionThresholdMet = sessionsSinceSynthesis >= SYNTHESIS_SESSION_THRESHOLD && profile.synthesis_version > 0
-      ? false // sessions threshold only meaningful after first synthesis
-      : sessionsSinceSynthesis >= SYNTHESIS_SESSION_THRESHOLD;
+    const sessionThresholdMet =
+      sessionsSinceSynthesis >= SYNTHESIS_SESSION_THRESHOLD && profile.synthesis_version > 0
+        ? false // sessions threshold only meaningful after first synthesis
+        : sessionsSinceSynthesis >= SYNTHESIS_SESSION_THRESHOLD;
 
     const due = signalThresholdMet || sessionThresholdMet;
 
@@ -332,8 +343,12 @@ export class OperatorProfileStore {
     }
 
     const reasons: string[] = [];
-    if (signalThresholdMet) reasons.push(`${pending} unprocessed signals (threshold: ${SYNTHESIS_SIGNAL_THRESHOLD})`);
-    if (sessionThresholdMet) reasons.push(`${sessionsSinceSynthesis} sessions since last synthesis (threshold: ${SYNTHESIS_SESSION_THRESHOLD})`);
+    if (signalThresholdMet)
+      reasons.push(`${pending} unprocessed signals (threshold: ${SYNTHESIS_SIGNAL_THRESHOLD})`);
+    if (sessionThresholdMet)
+      reasons.push(
+        `${sessionsSinceSynthesis} sessions since last synthesis (threshold: ${SYNTHESIS_SESSION_THRESHOLD})`,
+      );
     if (!due) reasons.push('Below all thresholds');
 
     return {
@@ -385,7 +400,8 @@ export class OperatorProfileStore {
       `INSERT INTO operator_profiles (id, agent_id, identity, cognition, communication, working_rules, trust_model, taste_profile, growth_edges, technical_context)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        id, agentId,
+        id,
+        agentId,
         JSON.stringify(profile.identity),
         JSON.stringify(profile.cognition),
         JSON.stringify(profile.communication),

@@ -18,7 +18,14 @@ import { loadDomainPacksFromConfig } from '@soleri/core';
 import { z } from 'zod';
 import { PERSONA, getPersonaPrompt } from './identity/persona.js';
 import { activateAgent, deactivateAgent } from './activation/activate.js';
-import { injectClaudeMd, injectClaudeMdGlobal, hasAgentMarker, injectAgentsMd, injectAgentsMdGlobal, hasAgentMarkerInAgentsMd } from './activation/inject-claude-md.js';
+import {
+  injectClaudeMd,
+  injectClaudeMdGlobal,
+  hasAgentMarker,
+  injectAgentsMd,
+  injectAgentsMdGlobal,
+  hasAgentMarkerInAgentsMd,
+} from './activation/inject-claude-md.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -32,7 +39,15 @@ async function main(): Promise<void> {
   const tag = PERSONA.name.toLowerCase();
 
   // ─── Linked vaults ──────────────────────────────────────────────
-  try { runtime.vaultManager.connect('salvador-vault', '/Users/adrozdenko/projects/salvador/docs/vault/vault.db', 0.7); } catch { /* already connected or unavailable */ }
+  try {
+    runtime.vaultManager.connect(
+      'salvador-vault',
+      '/Users/adrozdenko/projects/salvador/docs/vault/vault.db',
+      0.7,
+    );
+  } catch {
+    /* already connected or unavailable */
+  }
   console.error(`[${tag}] Connected 1 linked vault(s): salvador-vault`);
 
   // Seed built-in playbooks (idempotent)
@@ -42,10 +57,14 @@ async function main(): Promise<void> {
   }
 
   const stats = runtime.vault.stats();
-  console.error(`[${tag}] Vault: ${stats.totalEntries} entries, Brain: ${runtime.brain.getVocabularySize()} terms`);
+  console.error(
+    `[${tag}] Vault: ${stats.totalEntries} entries, Brain: ${runtime.brain.getVocabularySize()} terms`,
+  );
 
   const llmAvail = runtime.llmClient.isAvailable();
-  console.error(`[${tag}] LLM: OpenAI ${llmAvail.openai ? 'available' : 'not configured'}, Anthropic ${llmAvail.anthropic ? 'available' : 'not configured'}`);
+  console.error(
+    `[${tag}] LLM: OpenAI ${llmAvail.openai ? 'available' : 'not configured'}, Anthropic ${llmAvail.anthropic ? 'available' : 'not configured'}`,
+  );
 
   // ─── Agent-specific ops (reference persona + activation) ────────
   const agentOps: OpDefinition[] = [
@@ -64,7 +83,8 @@ async function main(): Promise<void> {
     },
     {
       name: 'identity',
-      description: 'Get agent identity — name, role, principles. Uses IdentityManager with PERSONA fallback.',
+      description:
+        'Get agent identity — name, role, principles. Uses IdentityManager with PERSONA fallback.',
       auth: 'read',
       handler: async () => {
         const identity = runtime.identityManager.getIdentity('salvador');
@@ -74,7 +94,8 @@ async function main(): Promise<void> {
     },
     {
       name: 'activate',
-      description: 'Activate agent persona — returns full context for Claude to adopt. Say "Hello, Salvador!" to trigger.',
+      description:
+        'Activate agent persona — returns full context for Claude to adopt. Say "Hello, Salvador!" to trigger.',
       auth: 'read',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
@@ -100,11 +121,15 @@ async function main(): Promise<void> {
     },
     {
       name: 'inject_claude_md',
-      description: 'Inject agent sections into CLAUDE.md — project-level or global (~/.claude/CLAUDE.md). Idempotent.',
+      description:
+        'Inject agent sections into CLAUDE.md — project-level or global (~/.claude/CLAUDE.md). Idempotent.',
       auth: 'write',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
-        global: z.boolean().optional().describe('If true, inject into ~/.claude/CLAUDE.md instead of project-level'),
+        global: z
+          .boolean()
+          .optional()
+          .describe('If true, inject into ~/.claude/CLAUDE.md instead of project-level'),
       }),
       handler: async (params) => {
         if (params.global) {
@@ -115,11 +140,15 @@ async function main(): Promise<void> {
     },
     {
       name: 'inject_agents_md',
-      description: 'Inject agent sections into AGENTS.md — project-level or global (~/.config/opencode/AGENTS.md). For OpenCode and Codex. Idempotent.',
+      description:
+        'Inject agent sections into AGENTS.md — project-level or global (~/.config/opencode/AGENTS.md). For OpenCode and Codex. Idempotent.',
       auth: 'write',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
-        global: z.boolean().optional().describe('If true, inject into ~/.config/opencode/AGENTS.md instead of project-level'),
+        global: z
+          .boolean()
+          .optional()
+          .describe('If true, inject into ~/.config/opencode/AGENTS.md instead of project-level'),
       }),
       handler: async (params) => {
         if (params.global) {
@@ -130,7 +159,8 @@ async function main(): Promise<void> {
     },
     {
       name: 'setup',
-      description: 'Check setup status — CLAUDE.md configured? AGENTS.md configured? Vault has entries? What to do next?',
+      description:
+        'Check setup status — CLAUDE.md configured? AGENTS.md configured? Vault has entries? What to do next?',
       auth: 'read',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
@@ -160,15 +190,23 @@ async function main(): Promise<void> {
 
         const recommendations: string[] = [];
         if (!globalHasAgent && !projectHasAgent) {
-          recommendations.push('No CLAUDE.md configured — run inject_claude_md with global: true for all projects, or without for this project');
+          recommendations.push(
+            'No CLAUDE.md configured — run inject_claude_md with global: true for all projects, or without for this project',
+          );
         } else if (!globalHasAgent) {
-          recommendations.push('Global ~/.claude/CLAUDE.md not configured — run inject_claude_md with global: true to enable in all projects');
+          recommendations.push(
+            'Global ~/.claude/CLAUDE.md not configured — run inject_claude_md with global: true to enable in all projects',
+          );
         }
         if (!agentsMdGlobalHasAgent && !agentsMdProjectHasAgent) {
-          recommendations.push('No AGENTS.md configured — run inject_agents_md for OpenCode/Codex support');
+          recommendations.push(
+            'No AGENTS.md configured — run inject_agents_md for OpenCode/Codex support',
+          );
         }
         if (s.totalEntries === 0) {
-          recommendations.push('Vault is empty — add intelligence data or capture knowledge via domain facades');
+          recommendations.push(
+            'Vault is empty — add intelligence data or capture knowledge via domain facades',
+          );
         }
 
         // Check hook status
@@ -176,7 +214,11 @@ async function main(): Promise<void> {
         const agentClaudeDir = joinPath(__dirname, '..', '.claude');
         const globalClaudeDir = joinPath(homedir(), '.claude');
 
-        const hookStatus = { agent: [] as string[], global: [] as string[], missing: [] as string[] };
+        const hookStatus = {
+          agent: [] as string[],
+          global: [] as string[],
+          missing: [] as string[],
+        };
 
         if (existsSync(agentClaudeDir)) {
           try {
@@ -198,7 +240,9 @@ async function main(): Promise<void> {
         }
 
         if (hookStatus.missing.length > 0) {
-          recommendations.push(`${hookStatus.missing.length} hook(s) not installed globally — run scripts/setup.sh`);
+          recommendations.push(
+            `${hookStatus.missing.length} hook(s) not installed globally — run scripts/setup.sh`,
+          );
         }
 
         if (recommendations.length === 0) {
@@ -227,17 +271,28 @@ async function main(): Promise<void> {
   const semanticFacades = createSemanticFacades(runtime, 'salvador');
   const agentFacade = {
     name: 'salvador_core',
-    description: 'Agent-specific operations — health, identity, activation, CLAUDE.md injection, setup.',
+    description:
+      'Agent-specific operations — health, identity, activation, CLAUDE.md injection, setup.',
     ops: agentOps,
   };
 
   // ─── Domain packs ─────────────────────────────────────────────
-  const domainPacks = await loadDomainPacksFromConfig([{"name":"design","package":"@soleri/domain-design"},{"name":"component","package":"@soleri/domain-component"},{"name":"design-qa","package":"@soleri/domain-design-qa"},{"name":"code-review","package":"@soleri/domain-code-review"}]);
+  const domainPacks = await loadDomainPacksFromConfig([
+    { name: 'design', package: '@soleri/domain-design' },
+    { name: 'component', package: '@soleri/domain-component' },
+    { name: 'design-qa', package: '@soleri/domain-design-qa' },
+    { name: 'code-review', package: '@soleri/domain-code-review' },
+  ]);
   console.error(`[${tag}] Loaded ${domainPacks.length} domain packs`);
   for (const pack of domainPacks) {
     if (pack.onActivate) await pack.onActivate(runtime);
   }
-  const domainFacades = createDomainFacades(runtime, 'salvador', ["design","component","figma","code-review"], domainPacks);
+  const domainFacades = createDomainFacades(
+    runtime,
+    'salvador',
+    ['design', 'component', 'figma', 'code-review'],
+    domainPacks,
+  );
 
   // ─── User extensions (auto-discovered from src/extensions/) ────
   let extensions: AgentExtensions = {};
@@ -250,7 +305,9 @@ async function main(): Promise<void> {
       extensions = loader;
     }
     if (extensions.ops?.length || extensions.facades?.length || extensions.middleware?.length) {
-      console.error(`[${tag}] Extensions loaded: ${extensions.ops?.length ?? 0} ops, ${extensions.facades?.length ?? 0} facades, ${extensions.middleware?.length ?? 0} middleware`);
+      console.error(
+        `[${tag}] Extensions loaded: ${extensions.ops?.length ?? 0} ops, ${extensions.facades?.length ?? 0} facades, ${extensions.middleware?.length ?? 0} middleware`,
+      );
     }
   } catch {
     // No extensions directory or load error — run vanilla
@@ -282,7 +339,9 @@ async function main(): Promise<void> {
   });
 
   server.prompt('persona', 'Get agent persona and principles', async () => ({
-    messages: [{ role: 'assistant' as const, content: { type: 'text' as const, text: getPersonaPrompt() } }],
+    messages: [
+      { role: 'assistant' as const, content: { type: 'text' as const, text: getPersonaPrompt() } },
+    ],
   }));
 
   // Hot ops — promoted to standalone MCP tools with full schema discovery
@@ -301,7 +360,9 @@ async function main(): Promise<void> {
   });
 
   console.error(`[${tag}] ${PERSONA.name} — ${PERSONA.role}`);
-  console.error(`[${tag}] Registered ${allFacades.length} facades with ${allFacades.reduce((sum, f) => sum + f.ops.length, 0)} operations (${hotOps.size} hot)`);
+  console.error(
+    `[${tag}] Registered ${allFacades.length} facades with ${allFacades.reduce((sum, f) => sum + f.ops.length, 0)} operations (${hotOps.size} hot)`,
+  );
 
   // ─── Transport + shutdown ──────────────────────────────────────
   const transport = new StdioServerTransport();

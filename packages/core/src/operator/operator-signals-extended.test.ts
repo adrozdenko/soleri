@@ -106,12 +106,14 @@ describe('operator-signals (extended)', () => {
 
   describe('edge cases', () => {
     it('empty session data — null fields produce minimal signals', () => {
-      const signals = extractFromSession(makeSession({
-        intent: null as unknown as string,
-        toolsUsed: null as unknown as string[],
-        filesModified: null as unknown as string[],
-        decisions: null as unknown as string[],
-      }));
+      const signals = extractFromSession(
+        makeSession({
+          intent: null as unknown as string,
+          toolsUsed: null as unknown as string[],
+          filesModified: null as unknown as string[],
+          decisions: null as unknown as string[],
+        }),
+      );
       // Should still get work_rhythm and session_depth
       expect(signals.some((s) => s.signalType === 'work_rhythm')).toBe(true);
       expect(signals.some((s) => s.signalType === 'session_depth')).toBe(true);
@@ -139,10 +141,12 @@ describe('operator-signals (extended)', () => {
     });
 
     it('empty filesModified and decisions produces shallow depth', () => {
-      const signals = extractFromSession(makeSession({
-        filesModified: [],
-        decisions: [],
-      }));
+      const signals = extractFromSession(
+        makeSession({
+          filesModified: [],
+          decisions: [],
+        }),
+      );
       const sd = signals.find((s) => s.signalType === 'session_depth');
       expect(sd).toBeDefined();
       expect((sd!.data as { depth: string }).depth).toBe('shallow');
@@ -211,7 +215,9 @@ describe('operator-signals (extended)', () => {
     });
 
     it('returns empty array for completely unknown type', () => {
-      expect(extractFromRadar(makeRadarCandidate({ signalType: 'alien_signal' as never }))).toEqual([]);
+      expect(extractFromRadar(makeRadarCandidate({ signalType: 'alien_signal' as never }))).toEqual(
+        [],
+      );
     });
   });
 
@@ -219,26 +225,32 @@ describe('operator-signals (extended)', () => {
 
   describe('extractFromRadar frustration level mapping', () => {
     it('high confidence (>=0.7) → high frustration', () => {
-      const signals = extractFromRadar(makeRadarCandidate({
-        signalType: 'repeated_question',
-        confidence: 0.75,
-      }));
+      const signals = extractFromRadar(
+        makeRadarCandidate({
+          signalType: 'repeated_question',
+          confidence: 0.75,
+        }),
+      );
       expect((signals[0].data as { level: string }).level).toBe('high');
     });
 
     it('medium confidence (0.5-0.7) → moderate frustration', () => {
-      const signals = extractFromRadar(makeRadarCandidate({
-        signalType: 'repeated_question',
-        confidence: 0.55,
-      }));
+      const signals = extractFromRadar(
+        makeRadarCandidate({
+          signalType: 'repeated_question',
+          confidence: 0.55,
+        }),
+      );
       expect((signals[0].data as { level: string }).level).toBe('moderate');
     });
 
     it('low confidence (<0.5) → mild frustration', () => {
-      const signals = extractFromRadar(makeRadarCandidate({
-        signalType: 'repeated_question',
-        confidence: 0.3,
-      }));
+      const signals = extractFromRadar(
+        makeRadarCandidate({
+          signalType: 'repeated_question',
+          confidence: 0.3,
+        }),
+      );
       expect((signals[0].data as { level: string }).level).toBe('mild');
     });
   });

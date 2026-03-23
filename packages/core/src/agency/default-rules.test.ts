@@ -43,7 +43,7 @@ function makePattern(overrides?: Partial<SurfacedPattern>): SurfacedPattern {
 }
 
 function findRule(name: string) {
-  return DEFAULT_SUGGESTION_RULES.find(r => r.name === name)!;
+  return DEFAULT_SUGGESTION_RULES.find((r) => r.name === name)!;
 }
 
 describe('DEFAULT_SUGGESTION_RULES', () => {
@@ -93,10 +93,14 @@ describe('DEFAULT_SUGGESTION_RULES', () => {
     });
 
     it('does not fire with patterns present', () => {
-      expect(rule.condition(makeContext({
-        fileChangesProcessed: 30,
-        surfacedPatterns: [makePattern()],
-      }))).toBe(false);
+      expect(
+        rule.condition(
+          makeContext({
+            fileChangesProcessed: 30,
+            surfacedPatterns: [makePattern()],
+          }),
+        ),
+      ).toBe(false);
     });
 
     it('does not fire with few changes', () => {
@@ -120,10 +124,14 @@ describe('DEFAULT_SUGGESTION_RULES', () => {
     });
 
     it('does not fire with patterns', () => {
-      expect(rule.condition(makeContext({
-        fileChangesProcessed: 60,
-        surfacedPatterns: [makePattern()],
-      }))).toBe(false);
+      expect(
+        rule.condition(
+          makeContext({
+            fileChangesProcessed: 60,
+            surfacedPatterns: [makePattern()],
+          }),
+        ),
+      ).toBe(false);
     });
 
     it('does not fire with few changes', () => {

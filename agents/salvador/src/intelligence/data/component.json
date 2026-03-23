@@ -9,10 +9,7 @@
       "title": "component domain seed",
       "severity": "suggestion",
       "description": "Seed entry for the component domain. Replace or remove once real knowledge is captured.",
-      "tags": [
-        "component",
-        "seed"
-      ]
+      "tags": ["component", "seed"]
     }
   ]
 }

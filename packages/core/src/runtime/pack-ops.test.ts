@@ -54,7 +54,10 @@ describe('createPackOps', () => {
     runtime = makeMockRuntime();
     ops = createPackOps(runtime);
     expect(ops.map((o) => o.name)).toEqual([
-      'pack_validate', 'pack_install', 'pack_list', 'pack_uninstall',
+      'pack_validate',
+      'pack_install',
+      'pack_list',
+      'pack_uninstall',
     ]);
   });
 
@@ -91,7 +94,10 @@ describe('createPackOps', () => {
       const hotRegister = vi.fn();
       setHotRegister(hotRegister);
       ops = createPackOps(runtime);
-      const result = (await findOp('pack_install').handler({ packDir: '/packs/test' })) as Record<string, unknown>;
+      const result = (await findOp('pack_install').handler({ packDir: '/packs/test' })) as Record<
+        string,
+        unknown
+      >;
       expect(hotRegister).toHaveBeenCalledWith('test-agent_design', 'Design facade', []);
       expect(result.hotReloaded).toBe(true);
     });
@@ -99,14 +105,19 @@ describe('createPackOps', () => {
     it('skips hot-register when no callback set', async () => {
       runtime = makeMockRuntime();
       ops = createPackOps(runtime);
-      const result = (await findOp('pack_install').handler({ packDir: '/packs/test' })) as Record<string, unknown>;
+      const result = (await findOp('pack_install').handler({ packDir: '/packs/test' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.hotReloaded).toBeUndefined();
     });
 
     it('skips hot-register when no facades', async () => {
       runtime = makeMockRuntime();
       (runtime.packInstaller.install as ReturnType<typeof vi.fn>).mockResolvedValue({
-        installed: true, id: 'pack-1', facades: 0,
+        installed: true,
+        id: 'pack-1',
+        facades: 0,
       });
       const hotRegister = vi.fn();
       setHotRegister(hotRegister);
@@ -142,7 +153,10 @@ describe('createPackOps', () => {
     it('uninstalls a pack', async () => {
       runtime = makeMockRuntime();
       ops = createPackOps(runtime);
-      const result = (await findOp('pack_uninstall').handler({ packId: 'pack-1' })) as Record<string, unknown>;
+      const result = (await findOp('pack_uninstall').handler({ packId: 'pack-1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.uninstalled).toBe(true);
       expect(result.id).toBe('pack-1');
     });
@@ -151,7 +165,10 @@ describe('createPackOps', () => {
       runtime = makeMockRuntime();
       (runtime.packInstaller.uninstall as ReturnType<typeof vi.fn>).mockReturnValue(false);
       ops = createPackOps(runtime);
-      const result = (await findOp('pack_uninstall').handler({ packId: 'missing' })) as Record<string, unknown>;
+      const result = (await findOp('pack_uninstall').handler({ packId: 'missing' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.error).toContain('Pack not found');
     });
   });

@@ -6,7 +6,12 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { createAgentRuntime, createDomainFacades, type AgentRuntime, type FacadeConfig } from '@soleri/core';
+import {
+  createAgentRuntime,
+  createDomainFacades,
+  type AgentRuntime,
+  type FacadeConfig,
+} from '@soleri/core';
 import designPack from '../packages/domain-design/src/index.js';
 import componentPack from '../packages/domain-component/src/index.js';
 import designQaPack from '../packages/domain-design-qa/src/index.js';
@@ -17,9 +22,15 @@ let facades: FacadeConfig[];
 
 function findOp(facadeName: string, opName: string) {
   const facade = facades.find((f) => f.name.includes(facadeName));
-  if (!facade) throw new Error(`Facade ${facadeName} not found. Available: ${facades.map(f => f.name).join(', ')}`);
+  if (!facade)
+    throw new Error(
+      `Facade ${facadeName} not found. Available: ${facades.map((f) => f.name).join(', ')}`,
+    );
   const op = facade.ops.find((o) => o.name === opName);
-  if (!op) throw new Error(`Op ${opName} not found in ${facade.name}. Available: ${facade.ops.map(o => o.name).join(', ')}`);
+  if (!op)
+    throw new Error(
+      `Op ${opName} not found in ${facade.name}. Available: ${facade.ops.map((o) => o.name).join(', ')}`,
+    );
   return op;
 }
 
@@ -50,7 +61,11 @@ describe('Parity: check_contrast', () => {
   for (const tc of testCases) {
     it(`${tc.fg} on ${tc.bg} → ratio ~${tc.expectedRatio}, level ${tc.expectedLevel}`, async () => {
       const op = findOp('design', 'check_contrast');
-      const result = (await op.handler({ foreground: tc.fg, background: tc.bg, context: 'text' })) as {
+      const result = (await op.handler({
+        foreground: tc.fg,
+        background: tc.bg,
+        context: 'text',
+      })) as {
         ratio: number;
         wcagLevel: string;
       };
@@ -67,7 +82,9 @@ describe('Parity: check_contrast', () => {
 describe('Parity: validate_component_code', () => {
   it('should detect arbitrary spacing', async () => {
     const op = findOp('design', 'validate_component_code');
-    const result = (await op.handler({ code: '<div className="p-[13px] mt-[7rem]">Bad</div>' })) as {
+    const result = (await op.handler({
+      code: '<div className="p-[13px] mt-[7rem]">Bad</div>',
+    })) as {
       valid: boolean;
       violations: Array<{ type: string }>;
     };
@@ -77,7 +94,9 @@ describe('Parity: validate_component_code', () => {
 
   it('should detect arbitrary typography', async () => {
     const op = findOp('design', 'validate_component_code');
-    const result = (await op.handler({ code: '<p className="text-[15px] font-[450]">Bad</p>' })) as {
+    const result = (await op.handler({
+      code: '<p className="text-[15px] font-[450]">Bad</p>',
+    })) as {
       valid: boolean;
       violations: Array<{ type: string }>;
     };
@@ -87,7 +106,9 @@ describe('Parity: validate_component_code', () => {
 
   it('should pass clean code with score 100', async () => {
     const op = findOp('design', 'validate_component_code');
-    const result = (await op.handler({ code: '<div className="bg-surface text-primary p-4 rounded-lg">Clean</div>' })) as {
+    const result = (await op.handler({
+      code: '<div className="bg-surface text-primary p-4 rounded-lg">Clean</div>',
+    })) as {
       valid: boolean;
       score: number;
       grade: string;
@@ -99,7 +120,9 @@ describe('Parity: validate_component_code', () => {
 
   it('scoring: each error costs 15 points', async () => {
     const op = findOp('design', 'validate_component_code');
-    const result = (await op.handler({ code: '<div className="p-[5px] text-[14px]">Two errors</div>' })) as {
+    const result = (await op.handler({
+      code: '<div className="p-[5px] text-[14px]">Two errors</div>',
+    })) as {
       score: number;
     };
     // Multiple violations detected (spacing + typography patterns)
@@ -114,7 +137,12 @@ describe('Parity: validate_component_code', () => {
 
 describe('Parity: check_button_semantics', () => {
   const testCases = [
-    { action: 'Delete account', variant: 'default', expectedRecommended: 'destructive', correct: false },
+    {
+      action: 'Delete account',
+      variant: 'default',
+      expectedRecommended: 'destructive',
+      correct: false,
+    },
     { action: 'Cancel', variant: 'outline', expectedRecommended: 'outline', correct: true },
     { action: 'Save changes', variant: 'default', expectedRecommended: 'default', correct: true },
     { action: 'Go back', variant: 'default', expectedRecommended: 'outline', correct: false },
@@ -163,7 +191,11 @@ describe('Parity: check_container_pattern', () => {
   it('confirmation always uses dialog', async () => {
     const facade = facades.find((f) => f.name.includes('design_patterns'));
     const op = facade!.ops.find((o) => o.name === 'check_container_pattern')!;
-    const result = (await op.handler({ fieldCount: 20, currentPattern: 'page', isConfirmation: true })) as {
+    const result = (await op.handler({
+      fieldCount: 20,
+      currentPattern: 'page',
+      isConfirmation: true,
+    })) as {
       recommendedPattern: string;
     };
     expect(result.recommendedPattern).toBe('dialog');
@@ -177,7 +209,9 @@ describe('Parity: check_container_pattern', () => {
 describe('Parity: check_action_overflow', () => {
   it('<=3 actions → buttons', async () => {
     const op = findOp('design', 'check_action_overflow');
-    const result = (await op.handler({ actionCount: 3, currentDisplay: 'buttons' })) as { correct: boolean };
+    const result = (await op.handler({ actionCount: 3, currentDisplay: 'buttons' })) as {
+      correct: boolean;
+    };
     expect(result.correct).toBe(true);
   });
 
@@ -222,7 +256,11 @@ describe('Parity: review_pr_design', () => {
     const op = findOp('code_review', 'review_pr_design');
     const result = (await op.handler({
       files: [
-        { file: 'src/Button.tsx', additions: ['color: #FF0000;', 'background-color: #00FF00;'], deletions: [] },
+        {
+          file: 'src/Button.tsx',
+          additions: ['color: #FF0000;', 'background-color: #00FF00;'],
+          deletions: [],
+        },
       ],
     })) as { designFiles: number; issuesFound: number };
 
@@ -233,9 +271,7 @@ describe('Parity: review_pr_design', () => {
   it('should ignore non-design files', async () => {
     const op = findOp('code_review', 'review_pr_design');
     const result = (await op.handler({
-      files: [
-        { file: 'README.md', additions: ['color: #FF0000;'], deletions: [] },
-      ],
+      files: [{ file: 'README.md', additions: ['color: #FF0000;'], deletions: [] }],
     })) as { designFiles: number };
 
     expect(result.designFiles).toBe(0);
@@ -250,9 +286,7 @@ describe('Parity: check_architecture', () => {
   it('should detect cross-feature imports', async () => {
     const op = findOp('code_review', 'check_architecture');
     const result = (await op.handler({
-      imports: [
-        { fromFile: 'src/features/auth/login.ts', importPath: '../../features/users/api' },
-      ],
+      imports: [{ fromFile: 'src/features/auth/login.ts', importPath: '../../features/users/api' }],
     })) as { violations: Array<{ rule: string }> };
 
     expect(result.violations.length).toBeGreaterThan(0);
@@ -261,9 +295,7 @@ describe('Parity: check_architecture', () => {
   it('should pass clean architecture', async () => {
     const op = findOp('code_review', 'check_architecture');
     const result = (await op.handler({
-      imports: [
-        { fromFile: 'src/components/Button.tsx', importPath: '@/lib/utils' },
-      ],
+      imports: [{ fromFile: 'src/components/Button.tsx', importPath: '@/lib/utils' }],
     })) as { violations: Array<unknown> };
 
     expect(result.violations.length).toBe(0);
@@ -303,9 +335,9 @@ describe('Parity: design-qa accessibility_precheck', () => {
     const op = findOp('design_qa', 'accessibility_precheck');
     const result = (await op.handler({
       colorPairs: [
-        { foreground: '#000000', background: '#FFFFFF' },  // 21:1 → pass
-        { foreground: '#CCCCCC', background: '#DDDDDD' },  // ~1.1:1 → fail
-        { foreground: '#1E3A5F', background: '#FFFFFF' },  // high → pass
+        { foreground: '#000000', background: '#FFFFFF' }, // 21:1 → pass
+        { foreground: '#CCCCCC', background: '#DDDDDD' }, // ~1.1:1 → fail
+        { foreground: '#1E3A5F', background: '#FFFFFF' }, // high → pass
       ],
     })) as { results: Array<{ passes: boolean; ratio: number }> };
 

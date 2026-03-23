@@ -133,14 +133,16 @@ describe('E2E: mcp-transport', () => {
       arguments: {
         op: 'capture_knowledge',
         params: {
-          entries: [{
-            type: 'pattern',
-            domain: 'testing',
-            title: 'MCP Transport Verified',
-            description: 'E2E test confirmed MCP stdio transport works end-to-end',
-            severity: 'warning',
-            tags: ['e2e', 'mcp', 'transport'],
-          }],
+          entries: [
+            {
+              type: 'pattern',
+              domain: 'testing',
+              title: 'MCP Transport Verified',
+              description: 'E2E test confirmed MCP stdio transport works end-to-end',
+              severity: 'warning',
+              tags: ['e2e', 'mcp', 'transport'],
+            },
+          ],
         },
       },
     });

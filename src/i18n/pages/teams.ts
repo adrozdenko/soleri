@@ -173,9 +173,24 @@ const content: Record<Locale, TeamsContent> = {
         'Use packs for reusable knowledge, skills, hooks, or domain-specific logic. The CLI supports built-in, local, and npm-sourced packs.',
       tableHeaders: ['Type', 'Source', 'Typical use'],
       rows: [
-        { tierLabel: 'Built-in', tierClass: 'free', source: 'Installed with the agent', price: 'Default playbooks and core setup' },
-        { tierLabel: 'Local', tierClass: 'free', source: 'Path on disk', price: 'Team standards or private experiments' },
-        { tierLabel: 'npm', tierClass: 'paid', source: 'Registry package', price: 'Versioned reusable packs' },
+        {
+          tierLabel: 'Built-in',
+          tierClass: 'free',
+          source: 'Installed with the agent',
+          price: 'Default playbooks and core setup',
+        },
+        {
+          tierLabel: 'Local',
+          tierClass: 'free',
+          source: 'Path on disk',
+          price: 'Team standards or private experiments',
+        },
+        {
+          tierLabel: 'npm',
+          tierClass: 'paid',
+          source: 'Registry package',
+          price: 'Versioned reusable packs',
+        },
       ],
       code1Comment: '# List installed packs',
       code1Output: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli pack list</span>
@@ -225,10 +240,22 @@ const content: Record<Locale, TeamsContent> = {
       sectionTitle: 'Keep the shared core maintainable',
       tableHeaders: ['Layer', 'Update command', 'Scope'],
       rows: [
-        { layer: 'CLI', command: 'npx @soleri/cli upgrade --check', scope: 'Check the installed CLI version' },
+        {
+          layer: 'CLI',
+          command: 'npx @soleri/cli upgrade --check',
+          scope: 'Check the installed CLI version',
+        },
         { layer: 'Packs', command: 'npx @soleri/cli pack outdated', scope: 'See npm pack updates' },
-        { layer: 'Packs', command: 'npx @soleri/cli pack update', scope: 'Update npm-sourced packs' },
-        { layer: 'Editor setup', command: 'npx @soleri/cli install --target all', scope: 'Refresh MCP registration across clients' },
+        {
+          layer: 'Packs',
+          command: 'npx @soleri/cli pack update',
+          scope: 'Update npm-sourced packs',
+        },
+        {
+          layer: 'Editor setup',
+          command: 'npx @soleri/cli install --target all',
+          scope: 'Refresh MCP registration across clients',
+        },
       ],
       footnote: 'Your vault data stays yours; tool and pack updates do not rewrite it for you.',
       codeComment: '# Check and apply pack updates',

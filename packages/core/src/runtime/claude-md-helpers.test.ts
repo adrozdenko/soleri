@@ -124,9 +124,7 @@ describe('composeIntegrationSection', () => {
   });
 
   it('renders provided facades with up to 5 ops', () => {
-    const facades = [
-      { name: 'mybot_custom', ops: ['a', 'b', 'c', 'd', 'e', 'f'] },
-    ];
+    const facades = [{ name: 'mybot_custom', ops: ['a', 'b', 'c', 'd', 'e', 'f'] }];
     const result = composeIntegrationSection(CONFIG, facades);
     expect(result).toContain('`mybot_custom`');
     expect(result).toContain('`a`');

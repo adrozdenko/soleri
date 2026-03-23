@@ -228,16 +228,16 @@ export function pruneMemories(
   olderThanDays: number,
 ): { pruned: number } {
   const cutoff = Math.floor(Date.now() / 1000) - olderThanDays * 86400;
-  const result = provider.run(
-    'DELETE FROM memories WHERE created_at < ? AND archived_at IS NULL',
-    [cutoff],
-  );
+  const result = provider.run('DELETE FROM memories WHERE created_at < ? AND archived_at IS NULL', [
+    cutoff,
+  ]);
   return { pruned: result.changes };
 }
 
-export function deduplicateMemories(
-  provider: PersistenceProvider,
-): { removed: number; groups: Array<{ kept: string; removed: string[] }> } {
+export function deduplicateMemories(provider: PersistenceProvider): {
+  removed: number;
+  groups: Array<{ kept: string; removed: string[] }>;
+} {
   const dupeRows = provider.all<{ id1: string; id2: string }>(`
       SELECT m1.id as id1, m2.id as id2
       FROM memories m1

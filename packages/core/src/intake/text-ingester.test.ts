@@ -13,13 +13,15 @@ import type { ClassifiedItem } from './types.js';
 function mockLLM(items: ClassifiedItem[]): LLMClient {
   return {
     complete: async (): Promise<LLMCallResult> => ({
-      text: JSON.stringify(items.map(i => ({
-        type: i.type,
-        title: i.title,
-        description: i.description,
-        tags: i.tags,
-        severity: i.severity,
-      }))),
+      text: JSON.stringify(
+        items.map((i) => ({
+          type: i.type,
+          title: i.title,
+          description: i.description,
+          tags: i.tags,
+          severity: i.severity,
+        })),
+      ),
       model: 'mock',
       provider: 'openai' as const,
       durationMs: 0,
@@ -29,11 +31,13 @@ function mockLLM(items: ClassifiedItem[]): LLMClient {
   } as unknown as LLMClient;
 }
 
-function mockVault(existingEntries: Array<{ id: string; title: string; description: string }> = []): Vault {
+function mockVault(
+  existingEntries: Array<{ id: string; title: string; description: string }> = [],
+): Vault {
   const seeded: unknown[] = [];
   return {
     exportAll: () => ({
-      entries: existingEntries.map(e => ({
+      entries: existingEntries.map((e) => ({
         id: e.id,
         title: e.title,
         description: e.description,
@@ -43,7 +47,9 @@ function mockVault(existingEntries: Array<{ id: string; title: string; descripti
         tags: [],
       })),
     }),
-    seed: (entries: unknown[]) => { seeded.push(...entries); },
+    seed: (entries: unknown[]) => {
+      seeded.push(...entries);
+    },
     add: vi.fn(),
     _seeded: seeded,
   } as unknown as Vault & { _seeded: unknown[] };
@@ -67,9 +73,7 @@ function makeItem(overrides: Partial<ClassifiedItem> = {}): ClassifiedItem {
 
 describe('TextIngester — ingestText', () => {
   it('classifies, deduplicates, and stores unique items in vault', async () => {
-    const items = [
-      makeItem({ title: 'Pattern A', description: 'Unique pattern about testing.' }),
-    ];
+    const items = [makeItem({ title: 'Pattern A', description: 'Unique pattern about testing.' })];
     const llm = mockLLM(items);
     const vault = mockVault() as Vault & { _seeded: unknown[] };
     const ingester = new TextIngester(vault, llm);
@@ -126,13 +130,15 @@ describe('TextIngester — ingestText', () => {
       complete: async (): Promise<LLMCallResult> => {
         callCount.n++;
         return {
-          text: JSON.stringify([{
-            type: 'pattern',
-            title: `Item ${callCount.n}`,
-            description: 'A pattern.',
-            tags: ['test'],
-            severity: 'suggestion',
-          }]),
+          text: JSON.stringify([
+            {
+              type: 'pattern',
+              title: `Item ${callCount.n}`,
+              description: 'A pattern.',
+              tags: ['test'],
+              severity: 'suggestion',
+            },
+          ]),
           model: 'mock',
           provider: 'openai' as const,
           durationMs: 0,

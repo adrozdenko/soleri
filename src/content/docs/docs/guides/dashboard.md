@@ -84,11 +84,11 @@ Emma got a personalized onboarding in 30 seconds — not a generic wiki page, bu
 
 ## What Happened
 
-| Milestone | Patterns | Value |
-|-----------|----------|-------|
-| **Day 1** | 3 | Architecture decisions — captured, not forgotten |
-| **Day 3** | 8 | Agent catches missing idempotency and wrong error format before they ship |
-| **Day 20** | 50+ | New team member onboards in seconds. Knowledge flows both ways. |
+| Milestone  | Patterns | Value                                                                     |
+| ---------- | -------- | ------------------------------------------------------------------------- |
+| **Day 1**  | 3        | Architecture decisions — captured, not forgotten                          |
+| **Day 3**  | 8        | Agent catches missing idempotency and wrong error format before they ship |
+| **Day 20** | 50+      | New team member onboards in seconds. Knowledge flows both ways.           |
 
 Each session makes the agent smarter. Each captured pattern prevents a future mistake. Each team member who links adds to the collective knowledge.
 

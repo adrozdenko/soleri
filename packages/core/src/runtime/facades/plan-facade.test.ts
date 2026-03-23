@@ -23,7 +23,13 @@ function makeRuntime(vault: Vault): AgentRuntime {
   const linkManager = null;
   const chainRunner = new ChainRunner(vault.getProvider());
   return {
-    vault, planner, brain, brainIntelligence, curator, linkManager, chainRunner,
+    vault,
+    planner,
+    brain,
+    brainIntelligence,
+    curator,
+    linkManager,
+    chainRunner,
   } as unknown as AgentRuntime;
 }
 
@@ -92,9 +98,11 @@ describe('plan-facade', () => {
 
   it('get_plan returns plan by ID', async () => {
     const createResult = await executeOp(ops, 'create_plan', {
-      objective: 'Test', scope: 'test',
+      objective: 'Test',
+      scope: 'test',
     });
-    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>).id as string;
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
     const result = await executeOp(ops, 'get_plan', { planId });
     expect(result.success).toBe(true);
     expect((result.data as Record<string, unknown>).objective).toBe('Test');
@@ -126,7 +134,8 @@ describe('plan-facade', () => {
         { title: 'Task 2', description: 'desc 2' },
       ],
     });
-    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>).id as string;
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
 
     const result = await executeOp(ops, 'approve_plan', { planId });
     expect(result.success).toBe(true);
@@ -150,7 +159,8 @@ describe('plan-facade', () => {
         { approach: 'Alt B', pros: ['safe'], cons: ['slow'], rejected_reason: 'Too slow' },
       ],
     });
-    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>).id as string;
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
 
     const result = await executeOp(ops, 'approve_plan', { planId, startExecution: true });
     expect(result.success).toBe(true);
@@ -171,13 +181,15 @@ describe('plan-facade', () => {
     });
     const plan = (createResult.data as Record<string, unknown>).plan as Record<string, unknown>;
     const planId = plan.id as string;
-    const taskId = ((plan.tasks as Array<Record<string, unknown>>)[0]).id as string;
+    const taskId = (plan.tasks as Array<Record<string, unknown>>)[0].id as string;
 
     // Approve and start execution first
     await executeOp(ops, 'approve_plan', { planId, startExecution: true });
 
     const result = await executeOp(ops, 'update_task', {
-      planId, taskId, status: 'completed',
+      planId,
+      taskId,
+      status: 'completed',
     });
     expect(result.success).toBe(true);
     const data = result.data as { updated: boolean };
@@ -197,7 +209,8 @@ describe('plan-facade', () => {
         { approach: 'B', pros: ['a'], cons: ['b'], rejected_reason: 'c' },
       ],
     });
-    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>).id as string;
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
     await executeOp(ops, 'approve_plan', { planId, startExecution: true });
 
     const result = await executeOp(ops, 'complete_plan', { planId });
@@ -211,12 +224,15 @@ describe('plan-facade', () => {
 
   it('plan_iterate revises a draft plan', async () => {
     const createResult = await executeOp(ops, 'create_plan', {
-      objective: 'Initial', scope: 'test',
+      objective: 'Initial',
+      scope: 'test',
     });
-    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>).id as string;
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
 
     const result = await executeOp(ops, 'plan_iterate', {
-      planId, objective: 'Revised objective',
+      planId,
+      objective: 'Revised objective',
     });
     expect(result.success).toBe(true);
     const data = result.data as { iterated?: boolean; error?: string };
@@ -240,7 +256,8 @@ describe('plan-facade', () => {
       decisions: ['Use pattern X'],
       tasks: [{ title: 'Task 1', description: 'desc' }],
     });
-    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>).id as string;
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
 
     const result = await executeOp(ops, 'plan_grade', { planId });
     expect(result.success).toBe(true);

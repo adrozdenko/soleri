@@ -110,8 +110,15 @@ describe('plan-lifecycle', () => {
 
   describe('PlanGradeRejectionError', () => {
     it('contains grade, score, minGrade and gaps', () => {
-      const gaps = [{ id: 'g1', severity: 'critical' as const, category: 'structure',
-        description: 'Missing structure', recommendation: 'Fix it' }];
+      const gaps = [
+        {
+          id: 'g1',
+          severity: 'critical' as const,
+          category: 'structure',
+          description: 'Missing structure',
+          recommendation: 'Fix it',
+        },
+      ];
       const err = new PlanGradeRejectionError('C', 65, 'A', gaps);
       expect(err.grade).toBe('C');
       expect(err.score).toBe(65);
@@ -122,8 +129,20 @@ describe('plan-lifecycle', () => {
     });
     it('includes critical and major gaps in message', () => {
       const gaps = [
-        { id: 'g1', severity: 'critical' as const, category: 'x', description: 'Crit gap', recommendation: '' },
-        { id: 'g2', severity: 'minor' as const, category: 'x', description: 'Minor gap', recommendation: '' },
+        {
+          id: 'g1',
+          severity: 'critical' as const,
+          category: 'x',
+          description: 'Crit gap',
+          recommendation: '',
+        },
+        {
+          id: 'g2',
+          severity: 'minor' as const,
+          category: 'x',
+          description: 'Minor gap',
+          recommendation: '',
+        },
       ];
       const err = new PlanGradeRejectionError('D', 55, 'A', gaps);
       expect(err.message).toContain('Crit gap');
@@ -133,24 +152,33 @@ describe('plan-lifecycle', () => {
 
   describe('hasCircularDependencies', () => {
     it('returns false for no dependencies', () => {
-      expect(hasCircularDependencies([
-        { id: 'a' }, { id: 'b' },
-      ])).toBe(false);
+      expect(hasCircularDependencies([{ id: 'a' }, { id: 'b' }])).toBe(false);
     });
     it('returns false for linear dependencies', () => {
-      expect(hasCircularDependencies([
-        { id: 'a' }, { id: 'b', dependsOn: ['a'] }, { id: 'c', dependsOn: ['b'] },
-      ])).toBe(false);
+      expect(
+        hasCircularDependencies([
+          { id: 'a' },
+          { id: 'b', dependsOn: ['a'] },
+          { id: 'c', dependsOn: ['b'] },
+        ]),
+      ).toBe(false);
     });
     it('returns true for direct cycle', () => {
-      expect(hasCircularDependencies([
-        { id: 'a', dependsOn: ['b'] }, { id: 'b', dependsOn: ['a'] },
-      ])).toBe(true);
+      expect(
+        hasCircularDependencies([
+          { id: 'a', dependsOn: ['b'] },
+          { id: 'b', dependsOn: ['a'] },
+        ]),
+      ).toBe(true);
     });
     it('returns true for indirect cycle', () => {
-      expect(hasCircularDependencies([
-        { id: 'a', dependsOn: ['c'] }, { id: 'b', dependsOn: ['a'] }, { id: 'c', dependsOn: ['b'] },
-      ])).toBe(true);
+      expect(
+        hasCircularDependencies([
+          { id: 'a', dependsOn: ['c'] },
+          { id: 'b', dependsOn: ['a'] },
+          { id: 'c', dependsOn: ['b'] },
+        ]),
+      ).toBe(true);
     });
     it('returns true for self-dependency', () => {
       expect(hasCircularDependencies([{ id: 'a', dependsOn: ['a'] }])).toBe(true);
@@ -162,29 +190,60 @@ describe('plan-lifecycle', () => {
       expect(calculateScore([])).toBe(100);
     });
     it('deducts critical gaps at weight 30', () => {
-      const gaps = [{ id: 'g', severity: 'critical' as const, category: 'structure',
-        description: 'x', recommendation: 'y' }];
+      const gaps = [
+        {
+          id: 'g',
+          severity: 'critical' as const,
+          category: 'structure',
+          description: 'x',
+          recommendation: 'y',
+        },
+      ];
       expect(calculateScore(gaps)).toBe(70);
     });
     it('treats minor gaps as free on iteration 1', () => {
-      const gaps = [{ id: 'g', severity: 'minor' as const, category: 'clarity',
-        description: 'x', recommendation: 'y' }];
+      const gaps = [
+        {
+          id: 'g',
+          severity: 'minor' as const,
+          category: 'clarity',
+          description: 'x',
+          recommendation: 'y',
+        },
+      ];
       expect(calculateScore(gaps, 1)).toBe(100);
     });
     it('treats minor gaps at half weight on iteration 2', () => {
-      const gaps = [{ id: 'g', severity: 'minor' as const, category: 'clarity',
-        description: 'x', recommendation: 'y' }];
+      const gaps = [
+        {
+          id: 'g',
+          severity: 'minor' as const,
+          category: 'clarity',
+          description: 'x',
+          recommendation: 'y',
+        },
+      ];
       expect(calculateScore(gaps, 2)).toBe(99);
     });
     it('treats minor gaps at full weight on iteration 3', () => {
-      const gaps = [{ id: 'g', severity: 'minor' as const, category: 'clarity',
-        description: 'x', recommendation: 'y' }];
+      const gaps = [
+        {
+          id: 'g',
+          severity: 'minor' as const,
+          category: 'clarity',
+          description: 'x',
+          recommendation: 'y',
+        },
+      ];
       expect(calculateScore(gaps, 3)).toBe(98);
     });
     it('floors at 0', () => {
       const gaps = Array.from({ length: 5 }, (_, i) => ({
-        id: `g${i}`, severity: 'critical' as const, category: `cat${i}`,
-        description: 'x', recommendation: 'y',
+        id: `g${i}`,
+        severity: 'critical' as const,
+        category: `cat${i}`,
+        description: 'x',
+        recommendation: 'y',
       }));
       expect(calculateScore(gaps)).toBe(0);
     });
@@ -201,7 +260,9 @@ describe('plan-lifecycle', () => {
     });
     it('adds tasks with correct IDs', () => {
       const plan = makePlan();
-      plan.tasks = [{ id: 'task-1', title: 'T1', description: 'd', status: 'pending', updatedAt: 0 }];
+      plan.tasks = [
+        { id: 'task-1', title: 'T1', description: 'd', status: 'pending', updatedAt: 0 },
+      ];
       applyIteration(plan, { addTasks: [{ title: 'T2', description: 'd2' }] });
       expect(plan.tasks).toHaveLength(2);
       expect(plan.tasks[1].id).toBe('task-2');
@@ -230,22 +291,24 @@ describe('plan-lifecycle', () => {
     });
     it('throws on unknown dependency', () => {
       const plan = createPlanObject({ objective: 'test', scope: 'test' });
-      expect(() => applySplitTasks(plan, [
-        { title: 'A', description: 'a', dependsOn: ['task-99'] },
-      ])).toThrow('depends on unknown task');
+      expect(() =>
+        applySplitTasks(plan, [{ title: 'A', description: 'a', dependsOn: ['task-99'] }]),
+      ).toThrow('depends on unknown task');
     });
     it('preserves acceptance criteria', () => {
       const plan = createPlanObject({ objective: 'test', scope: 'test' });
-      applySplitTasks(plan, [
-        { title: 'A', description: 'a', acceptanceCriteria: ['cr1', 'cr2'] },
-      ]);
+      applySplitTasks(plan, [{ title: 'A', description: 'a', acceptanceCriteria: ['cr1', 'cr2'] }]);
       expect(plan.tasks[0].acceptanceCriteria).toEqual(['cr1', 'cr2']);
     });
   });
 
   describe('applyTaskStatusUpdate', () => {
     const makeTask = (): PlanTask => ({
-      id: 'task-1', title: 'T', description: 'd', status: 'pending', updatedAt: 0,
+      id: 'task-1',
+      title: 'T',
+      description: 'd',
+      status: 'pending',
+      updatedAt: 0,
     });
 
     it('sets startedAt on first in_progress', () => {
@@ -295,8 +358,12 @@ describe('plan-lifecycle', () => {
     });
     it('creates numbered tasks', () => {
       const plan = createPlanObject({
-        objective: 'x', scope: 'y',
-        tasks: [{ title: 'A', description: 'a' }, { title: 'B', description: 'b' }],
+        objective: 'x',
+        scope: 'y',
+        tasks: [
+          { title: 'A', description: 'a' },
+          { title: 'B', description: 'b' },
+        ],
       });
       expect(plan.tasks[0].id).toBe('task-1');
       expect(plan.tasks[1].id).toBe('task-2');

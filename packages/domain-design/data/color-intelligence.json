@@ -84,17 +84,34 @@
         "hover": { "modifier": "hover:brightness-95" },
         "active": { "modifier": "active:scale-[0.98]" },
         "focus": { "ring": "ring-2 ring-primary-500", "outline": "outline-none" },
-        "disabled": { "bg": "bg-neutral-100", "text": "text-neutral-400", "cursor": "cursor-not-allowed", "opacity": "opacity-50" }
+        "disabled": {
+          "bg": "bg-neutral-100",
+          "text": "text-neutral-400",
+          "cursor": "cursor-not-allowed",
+          "opacity": "opacity-50"
+        }
       }
     },
 
     "input": {
       "description": "Form inputs, selects, textareas",
-      "default": { "bg": "bg-white", "border": "border border-neutral-300", "text": "text-neutral-900" },
+      "default": {
+        "bg": "bg-white",
+        "border": "border border-neutral-300",
+        "text": "text-neutral-900"
+      },
       "placeholder": { "text": "text-neutral-400" },
       "focus": { "ring": "ring-2 ring-primary-500", "border": "border-primary-500" },
-      "error": { "border": "border-red-500", "ring": "ring-2 ring-red-200", "text": "text-red-600" },
-      "disabled": { "bg": "bg-neutral-50", "text": "text-neutral-400", "cursor": "cursor-not-allowed" }
+      "error": {
+        "border": "border-red-500",
+        "ring": "ring-2 ring-red-200",
+        "text": "text-red-600"
+      },
+      "disabled": {
+        "bg": "bg-neutral-50",
+        "text": "text-neutral-400",
+        "cursor": "cursor-not-allowed"
+      }
     },
 
     "badge": {

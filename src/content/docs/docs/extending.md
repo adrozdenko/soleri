@@ -53,23 +53,28 @@ Example `workflows/migration/prompt.md`:
 # Database Migration
 
 ## When to Use
+
 When creating or modifying database schemas.
 
 ## Steps
 
 ### 1. Plan
+
 - Search vault for migration patterns: `op:search_intelligent`
 - Create migration plan: `op:orchestrate_plan`
 
 ### 2. Write Migration
+
 - Create reversible migration (up + down)
 - Test on a copy of production data
 
 ### 3. Verify
+
 - Run migration against test database
 - Verify data integrity
 
 ### 4. Capture
+
 - Capture any patterns learned: `op:capture_knowledge`
 ```
 
@@ -101,9 +106,9 @@ Domain packs are npm packages that add specialized ops and knowledge. Add them t
 ```yaml
 packs:
   - name: design
-    package: "@soleri/domain-design"
+    package: '@soleri/domain-design'
   - name: security
-    package: "@my-org/domain-security"
+    package: '@my-org/domain-security'
 ```
 
 The engine loads them at startup and registers their tools automatically.
@@ -122,11 +127,11 @@ Skills follow the standard SKILL.md format with YAML frontmatter.
 
 ## What NOT to edit
 
-| File | Why |
-|------|-----|
-| `CLAUDE.md` | Auto-generated from folder contents |
-| `instructions/_engine.md` | Auto-generated engine rules |
-| `AGENTS.md` | Auto-generated for OpenCode/Codex |
+| File                      | Why                                 |
+| ------------------------- | ----------------------------------- |
+| `CLAUDE.md`               | Auto-generated from folder contents |
+| `instructions/_engine.md` | Auto-generated engine rules         |
+| `AGENTS.md`               | Auto-generated for OpenCode/Codex   |
 
 Keep all customization in `agent.yaml`, `instructions/`, `workflows/`, `knowledge/`, and `skills/`.
 
@@ -143,12 +148,12 @@ Your agent folder is untouched by engine upgrades.
 
 ## Extension commands
 
-| Command | What it does |
-|---------|--------------|
-| `soleri install` | Register agent's engine as MCP server |
-| `soleri dev` | Start engine + watch files for changes |
-| `soleri doctor` | Check system health and connectivity |
-| `soleri pack install <pack>` | Install a domain or knowledge pack |
-| `soleri add-domain <name>` | Add a knowledge domain |
+| Command                      | What it does                           |
+| ---------------------------- | -------------------------------------- |
+| `soleri install`             | Register agent's engine as MCP server  |
+| `soleri dev`                 | Start engine + watch files for changes |
+| `soleri doctor`              | Check system health and connectivity   |
+| `soleri pack install <pack>` | Install a domain or knowledge pack     |
+| `soleri add-domain <name>`   | Add a knowledge domain                 |
 
 For full command documentation, see [CLI Reference](/docs/cli-reference/). For configuration details, see [Customizing Your Agent](/docs/guides/customizing/).

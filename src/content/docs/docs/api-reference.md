@@ -40,22 +40,22 @@ Every response follows the same envelope:
 
 Each agent gets facades named `<agent_id>_<facade>`:
 
-| Facade | Tool name | Ops |
-|--------|-----------|-----|
-| Vault | `<id>_vault` | 66 |
-| Admin | `<id>_admin` | 56 |
-| Chat | `<id>_chat` | 41 |
-| Plan | `<id>_plan` | 32 |
-| Orchestrate | `<id>_orchestrate` | 26 |
-| Brain | `<id>_brain` | 23 |
-| Memory | `<id>_memory` | 15 |
-| Curator | `<id>_curator` | 13 |
-| Control | `<id>_control` | 13 |
-| Cognee | `<id>_cognee` | 11 |
-| Loop | `<id>_loop` | 9 |
-| Agency | `<id>_agency` | 8 |
-| Context | `<id>_context` | 3 |
-| Domain | `<id>_<domain>` | 5 each |
+| Facade      | Tool name          | Ops    |
+| ----------- | ------------------ | ------ |
+| Vault       | `<id>_vault`       | 66     |
+| Admin       | `<id>_admin`       | 56     |
+| Chat        | `<id>_chat`        | 41     |
+| Plan        | `<id>_plan`        | 32     |
+| Orchestrate | `<id>_orchestrate` | 26     |
+| Brain       | `<id>_brain`       | 23     |
+| Memory      | `<id>_memory`      | 15     |
+| Curator     | `<id>_curator`     | 13     |
+| Control     | `<id>_control`     | 13     |
+| Cognee      | `<id>_cognee`      | 11     |
+| Loop        | `<id>_loop`        | 9      |
+| Agency      | `<id>_agency`      | 8      |
+| Context     | `<id>_context`     | 3      |
+| Domain      | `<id>_<domain>`    | 5 each |
 
 ---
 
@@ -117,35 +117,35 @@ Semantic search with 6-dimension scoring.
 
 Create a named vault branch for experimentation.
 
-| Param        | Type   | Required | Description         |
-| ------------ | ------ | -------- | ------------------- |
-| `branchName` | string | yes      | Branch name         |
-| `createdBy`  | string | no       | Who created it      |
+| Param        | Type   | Required | Description    |
+| ------------ | ------ | -------- | -------------- |
+| `branchName` | string | yes      | Branch name    |
+| `createdBy`  | string | no       | Who created it |
 
 ### intake_ingest_book
 
 Ingest a PDF book into vault knowledge.
 
-| Param             | Type     | Required | Description                              |
-| ----------------- | -------- | -------- | ---------------------------------------- |
-| `pdfPath`         | string   | yes      | Path to PDF file                         |
-| `title`           | string   | yes      | Book title                               |
-| `author`          | string   | yes      | Book author                              |
-| `targetScope`     | enum     | no       | `global` or `project`                    |
-| `focusCategories` | string[] | no       | Categories to focus extraction on        |
-| `chunkPageSize`   | number   | no       | Pages per chunk                          |
-| `dryRun`          | boolean  | no       | Preview without importing                |
+| Param             | Type     | Required | Description                       |
+| ----------------- | -------- | -------- | --------------------------------- |
+| `pdfPath`         | string   | yes      | Path to PDF file                  |
+| `title`           | string   | yes      | Book title                        |
+| `author`          | string   | yes      | Book author                       |
+| `targetScope`     | enum     | no       | `global` or `project`             |
+| `focusCategories` | string[] | no       | Categories to focus extraction on |
+| `chunkPageSize`   | number   | no       | Pages per chunk                   |
+| `dryRun`          | boolean  | no       | Preview without importing         |
 
 ### obsidian_sync
 
 Bidirectional sync with Obsidian.
 
-| Param              | Type   | Required | Description                       |
-| ------------------ | ------ | -------- | --------------------------------- |
-| `projectPath`      | string | yes      | Project directory                 |
-| `obsidianVaultPath`| string | yes      | Path to Obsidian vault            |
-| `direction`        | enum   | no       | `push`, `pull`, or `bidirectional`|
-| `dryRun`           | boolean| no       | Preview without changes           |
+| Param               | Type    | Required | Description                        |
+| ------------------- | ------- | -------- | ---------------------------------- |
+| `projectPath`       | string  | yes      | Project directory                  |
+| `obsidianVaultPath` | string  | yes      | Path to Obsidian vault             |
+| `direction`         | enum    | no       | `push`, `pull`, or `bidirectional` |
+| `dryRun`            | boolean | no       | Preview without changes            |
 
 ---
 
@@ -165,19 +165,19 @@ Create a multi-step execution plan.
 
 Design-before-code brainstorming with domain awareness.
 
-| Param       | Type   | Required | Description                                     |
-| ----------- | ------ | -------- | ----------------------------------------------- |
-| `objective` | string | yes      | What you're brainstorming                       |
-| `scope`     | string | no       | Scope description                               |
+| Param       | Type   | Required | Description                                            |
+| ----------- | ------ | -------- | ------------------------------------------------------ |
+| `objective` | string | yes      | What you're brainstorming                              |
+| `scope`     | string | no       | Scope description                                      |
 | `intent`    | enum   | no       | `BUILD`, `FIX`, `REVIEW`, `PLAN`, `IMPROVE`, `DELIVER` |
 
 ### plan_grade
 
 Grade a plan against quality criteria.
 
-| Param          | Type   | Required | Description              |
-| -------------- | ------ | -------- | ------------------------ |
-| `planCheckId`  | string | yes      | Plan check ID to grade   |
+| Param         | Type   | Required | Description            |
+| ------------- | ------ | -------- | ---------------------- |
+| `planCheckId` | string | yes      | Plan check ID to grade |
 
 ### plan_submit_evidence
 
@@ -205,22 +205,22 @@ Get context-aware recommendations.
 
 Record feedback to the learning system.
 
-| Param        | Type    | Required | Description                           |
-| ------------ | ------- | -------- | ------------------------------------- |
-| `type`       | string  | yes      | Feedback type                         |
-| `source`     | string  | no       | Feedback source                       |
-| `accepted`   | boolean | no       | Whether the recommendation was used   |
-| `confidence` | number  | no       | Confidence level (0-1)                |
+| Param        | Type    | Required | Description                         |
+| ------------ | ------- | -------- | ----------------------------------- |
+| `type`       | string  | yes      | Feedback type                       |
+| `source`     | string  | no       | Feedback source                     |
+| `accepted`   | boolean | no       | Whether the recommendation was used |
+| `confidence` | number  | no       | Confidence level (0-1)              |
 
 ### brain_extract_knowledge
 
 Extract patterns from session history.
 
-| Param     | Type    | Required | Description                          |
-| --------- | ------- | -------- | ------------------------------------ |
-| `limit`   | number  | no       | Max sessions to analyze              |
-| `since`   | string  | no       | ISO date — only analyze after this   |
-| `persist` | boolean | no       | Whether to persist extracted patterns|
+| Param     | Type    | Required | Description                           |
+| --------- | ------- | -------- | ------------------------------------- |
+| `limit`   | number  | no       | Max sessions to analyze               |
+| `since`   | string  | no       | ISO date — only analyze after this    |
+| `persist` | boolean | no       | Whether to persist extracted patterns |
 
 ---
 
@@ -239,9 +239,9 @@ Create an orchestrated plan with vault + brain context.
 
 Start executing a playbook.
 
-| Param        | Type   | Required | Description           |
-| ------------ | ------ | -------- | --------------------- |
-| `playbookId` | string | yes      | Playbook ID to start  |
+| Param        | Type   | Required | Description          |
+| ------------ | ------ | -------- | -------------------- |
+| `playbookId` | string | yes      | Playbook ID to start |
 
 ### playbook_match
 
@@ -259,43 +259,43 @@ Find playbooks that match a context.
 
 Initialize chat session management.
 
-| Param                   | Type   | Required | Description                          |
-| ----------------------- | ------ | -------- | ------------------------------------ |
-| `storageDir`            | string | yes      | Directory for session persistence    |
-| `ttlMs`                 | number | no       | Session TTL in ms (default: 2 hours) |
-| `compactionThreshold`   | number | no       | Messages before auto-compaction      |
-| `compactionKeep`        | number | no       | Messages to keep after compaction    |
+| Param                 | Type   | Required | Description                          |
+| --------------------- | ------ | -------- | ------------------------------------ |
+| `storageDir`          | string | yes      | Directory for session persistence    |
+| `ttlMs`               | number | no       | Session TTL in ms (default: 2 hours) |
+| `compactionThreshold` | number | no       | Messages before auto-compaction      |
+| `compactionKeep`      | number | no       | Messages to keep after compaction    |
 
 ### chat_session_append
 
 Append a message to a session.
 
-| Param        | Type   | Required | Description                                 |
-| ------------ | ------ | -------- | ------------------------------------------- |
-| `sessionId`  | string | yes      | Session ID                                  |
-| `storageDir` | string | yes      | Storage directory                           |
-| `role`       | enum   | yes      | `user`, `assistant`, `system`, or `tool`    |
-| `content`    | string | yes      | Message content                             |
+| Param        | Type   | Required | Description                              |
+| ------------ | ------ | -------- | ---------------------------------------- |
+| `sessionId`  | string | yes      | Session ID                               |
+| `storageDir` | string | yes      | Storage directory                        |
+| `role`       | enum   | yes      | `user`, `assistant`, `system`, or `tool` |
+| `content`    | string | yes      | Message content                          |
 
 ### chat_auth_init
 
 Initialize chat authentication.
 
-| Param          | Type          | Required | Description                   |
-| -------------- | ------------- | -------- | ----------------------------- |
-| `storagePath`  | string        | yes      | Path for auth storage         |
-| `passphrase`   | string        | no       | Auth passphrase               |
-| `allowedUsers` | (string\|number)[] | no  | Allowed user IDs              |
+| Param          | Type               | Required | Description           |
+| -------------- | ------------------ | -------- | --------------------- |
+| `storagePath`  | string             | yes      | Path for auth storage |
+| `passphrase`   | string             | no       | Auth passphrase       |
+| `allowedUsers` | (string\|number)[] | no       | Allowed user IDs      |
 
 ### chat_voice_transcribe
 
 Transcribe audio using OpenAI Whisper.
 
-| Param         | Type   | Required | Description            |
-| ------------- | ------ | -------- | ---------------------- |
-| `audioBase64` | string | yes      | Base64-encoded audio   |
-| `openaiApiKey`| string | yes      | OpenAI API key         |
-| `filename`    | string | no       | Original filename      |
+| Param          | Type   | Required | Description          |
+| -------------- | ------ | -------- | -------------------- |
+| `audioBase64`  | string | yes      | Base64-encoded audio |
+| `openaiApiKey` | string | yes      | OpenAI API key       |
+| `filename`     | string | no       | Original filename    |
 
 ---
 
@@ -305,39 +305,39 @@ Transcribe audio using OpenAI Whisper.
 
 Enable proactive file watching.
 
-| Param         | Type   | Required | Description                    |
-| ------------- | ------ | -------- | ------------------------------ |
+| Param         | Type   | Required | Description                          |
+| ------------- | ------ | -------- | ------------------------------------ |
 | `projectPath` | string | no       | Project root to watch (default: `.`) |
 
 ### agency_config
 
 Update agency configuration.
 
-| Param                  | Type     | Required | Description                          |
-| ---------------------- | -------- | -------- | ------------------------------------ |
-| `watchPaths`           | string[] | no       | Directories to watch                 |
-| `ignorePatterns`       | string[] | no       | Glob patterns to ignore              |
-| `extensions`           | string[] | no       | File extensions to watch             |
-| `debounceMs`           | number   | no       | Debounce interval                    |
-| `minPatternConfidence` | number   | no       | Min confidence to surface a pattern  |
-| `cooldownMs`           | number   | no       | Cooldown between alerts              |
+| Param                  | Type     | Required | Description                         |
+| ---------------------- | -------- | -------- | ----------------------------------- |
+| `watchPaths`           | string[] | no       | Directories to watch                |
+| `ignorePatterns`       | string[] | no       | Glob patterns to ignore             |
+| `extensions`           | string[] | no       | File extensions to watch            |
+| `debounceMs`           | number   | no       | Debounce interval                   |
+| `minPatternConfidence` | number   | no       | Min confidence to surface a pattern |
+| `cooldownMs`           | number   | no       | Cooldown between alerts             |
 
 ### agency_scan_file
 
 Manually scan a file for warnings.
 
-| Param      | Type   | Required | Description           |
-| ---------- | ------ | -------- | --------------------- |
-| `filePath` | string | yes      | Path to file to scan  |
+| Param      | Type   | Required | Description          |
+| ---------- | ------ | -------- | -------------------- |
+| `filePath` | string | yes      | Path to file to scan |
 
 ### agency_clarify
 
 Generate clarification for ambiguous intent.
 
-| Param        | Type   | Required | Description                       |
-| ------------ | ------ | -------- | --------------------------------- |
-| `prompt`     | string | yes      | The user prompt to analyze        |
-| `confidence` | number | yes      | Current intent confidence (0-1)   |
+| Param        | Type   | Required | Description                     |
+| ------------ | ------ | -------- | ------------------------------- |
+| `prompt`     | string | yes      | The user prompt to analyze      |
+| `confidence` | number | yes      | Current intent confidence (0-1) |
 
 ---
 
@@ -347,9 +347,9 @@ Generate clarification for ambiguous intent.
 
 Extract named entities from a prompt.
 
-| Param    | Type   | Required | Description           |
-| -------- | ------ | -------- | --------------------- |
-| `prompt` | string | yes      | Prompt to analyze     |
+| Param    | Type   | Required | Description       |
+| -------- | ------ | -------- | ----------------- |
+| `prompt` | string | yes      | Prompt to analyze |
 
 Returns: files, functions, domains, actions, technologies, patterns.
 
@@ -357,19 +357,19 @@ Returns: files, functions, domains, actions, technologies, patterns.
 
 Retrieve relevant knowledge from vault, Cognee, and brain.
 
-| Param    | Type   | Required | Description        |
-| -------- | ------ | -------- | ------------------ |
-| `prompt` | string | yes      | Query to search    |
-| `domain` | string | no       | Filter by domain   |
+| Param    | Type   | Required | Description      |
+| -------- | ------ | -------- | ---------------- |
+| `prompt` | string | yes      | Query to search  |
+| `domain` | string | no       | Filter by domain |
 
 ### context_analyze
 
 Full context analysis — combines entity extraction and knowledge retrieval.
 
-| Param    | Type   | Required | Description           |
-| -------- | ------ | -------- | --------------------- |
-| `prompt` | string | yes      | Prompt to analyze     |
-| `domain` | string | no       | Optional domain hint  |
+| Param    | Type   | Required | Description          |
+| -------- | ------ | -------- | -------------------- |
+| `prompt` | string | yes      | Prompt to analyze    |
+| `domain` | string | no       | Optional domain hint |
 
 ---
 

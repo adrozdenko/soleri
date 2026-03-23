@@ -102,9 +102,13 @@ export async function getIssueDetails(
     const { stdout } = await execFileAsync(
       'gh',
       [
-        'issue', 'view', String(issueNumber),
-        '--repo', `${owner}/${repo}`,
-        '--json', 'title,body,labels',
+        'issue',
+        'view',
+        String(issueNumber),
+        '--repo',
+        `${owner}/${repo}`,
+        '--json',
+        'title,body,labels',
       ],
       {
         timeout: 10_000,
@@ -148,11 +152,10 @@ export async function closeIssueWithComment(
       ['issue', 'comment', String(issueNumber), '--repo', repoSlug, '--body', comment],
       { timeout: 10_000, signal: AbortSignal.timeout(10_000) },
     );
-    await execFileAsync(
-      'gh',
-      ['issue', 'close', String(issueNumber), '--repo', repoSlug],
-      { timeout: 10_000, signal: AbortSignal.timeout(10_000) },
-    );
+    await execFileAsync('gh', ['issue', 'close', String(issueNumber), '--repo', repoSlug], {
+      timeout: 10_000,
+      signal: AbortSignal.timeout(10_000),
+    });
   } catch {
     // Graceful degradation — gh not available or auth expired
   }

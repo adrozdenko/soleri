@@ -123,18 +123,14 @@ describe('operator-signals', () => {
     });
 
     it('returns shallow depth for minimal session', () => {
-      const signals = extractFromSession(
-        makeSession({ filesModified: [], decisions: [] }),
-      );
+      const signals = extractFromSession(makeSession({ filesModified: [], decisions: [] }));
       const sd = signals.find((s) => s.signalType === 'session_depth');
       expect(sd).toBeDefined();
       expect((sd!.data as { depth: string }).depth).toBe('shallow');
     });
 
     it('handles null toolsUsed gracefully — returns signals for other fields', () => {
-      const signals = extractFromSession(
-        makeSession({ toolsUsed: null as unknown as string[] }),
-      );
+      const signals = extractFromSession(makeSession({ toolsUsed: null as unknown as string[] }));
       // Should still have command_style, work_rhythm, session_depth
       expect(signals.some((s) => s.signalType === 'command_style')).toBe(true);
       expect(signals.some((s) => s.signalType === 'work_rhythm')).toBe(true);
@@ -144,9 +140,7 @@ describe('operator-signals', () => {
     });
 
     it('handles null intent gracefully — skips command_style', () => {
-      const signals = extractFromSession(
-        makeSession({ intent: null as unknown as string }),
-      );
+      const signals = extractFromSession(makeSession({ intent: null as unknown as string }));
       expect(signals.some((s) => s.signalType === 'command_style')).toBe(false);
       expect(signals.some((s) => s.signalType === 'work_rhythm')).toBe(true);
     });
@@ -208,7 +202,9 @@ describe('operator-signals', () => {
 
   describe('extractFromBrainStrengths', () => {
     it('creates domain_expertise for strengths with score > 0.6', () => {
-      const strengths = [makeStrength({ pattern: 'typescript-strict', domain: 'typescript', strength: 0.8 })];
+      const strengths = [
+        makeStrength({ pattern: 'typescript-strict', domain: 'typescript', strength: 0.8 }),
+      ];
       const signals = extractFromBrainStrengths(strengths);
       expect(signals.length).toBe(1);
       expect(signals[0].signalType).toBe('domain_expertise');

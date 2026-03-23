@@ -53,7 +53,9 @@ describe('validateDomainPack', () => {
   });
 
   it('accepts pack with rules string', () => {
-    const result = validateDomainPack(minimalPack({ rules: '## Token Rules\nUse semantic tokens.' }));
+    const result = validateDomainPack(
+      minimalPack({ rules: '## Token Rules\nUse semantic tokens.' }),
+    );
     expect(result.success).toBe(true);
   });
 
@@ -122,7 +124,19 @@ describe('SEMANTIC_FACADE_NAMES', () => {
   });
 
   it('contains all core engine facades', () => {
-    const expected = ['vault', 'plan', 'brain', 'memory', 'admin', 'curator', 'loop', 'orchestrate', 'control', 'cognee', 'governance'];
+    const expected = [
+      'vault',
+      'plan',
+      'brain',
+      'memory',
+      'admin',
+      'curator',
+      'loop',
+      'orchestrate',
+      'control',
+      'cognee',
+      'governance',
+    ];
     for (const name of expected) {
       expect(SEMANTIC_FACADE_NAMES).toContain(name);
     }

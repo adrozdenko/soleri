@@ -10,13 +10,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  mkdirSync,
-  rmSync,
-  existsSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -27,11 +21,7 @@ import {
 } from '@soleri/core';
 import type { FacadeConfig, OpDefinition, AgentRuntime } from '@soleri/core';
 import { z } from 'zod';
-import {
-  scaffold,
-  getEngineRulesContent,
-  getEngineMarker,
-} from '@soleri/forge/lib';
+import { scaffold, getEngineRulesContent, getEngineMarker } from '@soleri/forge/lib';
 
 // ─── Agent config used throughout all journeys ───────────────────────
 
@@ -45,12 +35,11 @@ const AGENT_PRINCIPLES = ['Test everything', 'Fast feedback loops'];
 // ─── Helpers (same pattern as full-pipeline.test.ts) ─────────────────
 
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: {
-    op: string;
-    params: Record<string, unknown>;
-  }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
@@ -128,7 +117,8 @@ function activateAgent(runtime: AgentRuntime, projectPath: string): ActivationRe
   const { vault, planner, identityManager } = runtime;
 
   const projectClaudeMd = join(projectPath, 'CLAUDE.md');
-  const claudeMdInjected = existsSync(projectClaudeMd) &&
+  const claudeMdInjected =
+    existsSync(projectClaudeMd) &&
     readFileSync(projectClaudeMd, 'utf-8').includes(`<!-- ${AGENT_ID}:mode -->`);
 
   // We don't check real global CLAUDE.md in tests
@@ -738,9 +728,8 @@ describe('E2E: agent-activation', () => {
       // Verify no duplicate markers
       const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf-8');
       const engineMarkerCount = (content.match(/<!-- soleri:engine-rules -->/g) || []).length;
-      const agentMarkerCount = (
-        content.match(new RegExp(`<!-- ${AGENT_ID}:mode -->`, 'g')) || []
-      ).length;
+      const agentMarkerCount = (content.match(new RegExp(`<!-- ${AGENT_ID}:mode -->`, 'g')) || [])
+        .length;
       expect(engineMarkerCount).toBe(1);
       expect(agentMarkerCount).toBe(1);
     });
@@ -860,8 +849,8 @@ describe('E2E: agent-activation', () => {
       });
       const data = res.data as ActivationResult;
 
-      const planStep = data.next_steps.find((s) =>
-        s.toLowerCase().includes('plan') && s.toLowerCase().includes('progress'),
+      const planStep = data.next_steps.find(
+        (s) => s.toLowerCase().includes('plan') && s.toLowerCase().includes('progress'),
       );
       expect(planStep).toBeDefined();
     });

@@ -31,9 +31,11 @@ import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 const AGENT_ID = 'trace';
 
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
       captured = handler as typeof captured;
@@ -43,9 +45,12 @@ function captureHandler(facade: FacadeConfig) {
   return captured!;
 }
 
-function parseEnvelope(raw: { content: Array<{ type: string; text: string }> }): Record<string, unknown> {
+function parseEnvelope(raw: {
+  content: Array<{ type: string; text: string }>;
+}): Record<string, unknown> {
   const envelope = JSON.parse(raw.content[0].text);
-  if (envelope.success === false) return { _failed: true, _error: envelope.error, ...(envelope.data ?? {}) };
+  if (envelope.success === false)
+    return { _failed: true, _error: envelope.error, ...(envelope.data ?? {}) };
   return envelope.data as Record<string, unknown>;
 }
 
@@ -85,7 +90,8 @@ describe('Knowledge Traceability', () => {
   // The knowledge we'll trace through the entire system
   const KNOWLEDGE = {
     title: 'Always validate JWT tokens on every API request',
-    description: 'Never trust the client. Validate the JWT signature, check expiration, verify issuer and audience claims on every API endpoint. Use middleware to enforce this consistently. Expired or malformed tokens must return 401.',
+    description:
+      'Never trust the client. Validate the JWT signature, check expiration, verify issuer and audience claims on every API endpoint. Use middleware to enforce this consistently. Expired or malformed tokens must return 401.',
     domain: 'security',
     type: 'pattern' as const,
     severity: 'critical' as const,
@@ -95,7 +101,8 @@ describe('Knowledge Traceability', () => {
   // A related anti-pattern
   const ANTI_KNOWLEDGE = {
     title: 'Trusting client-side JWT validation alone is a security hole',
-    description: 'Only validating JWT on the client allows attackers to forge tokens. Server-side validation is the security boundary. Client validation is UX convenience only.',
+    description:
+      'Only validating JWT on the client allows attackers to forge tokens. Server-side validation is the security boundary. Client validation is UX convenience only.',
     domain: 'security',
     type: 'anti-pattern' as const,
     severity: 'critical' as const,
@@ -105,7 +112,8 @@ describe('Knowledge Traceability', () => {
   // A related but different domain pattern
   const RELATED_KNOWLEDGE = {
     title: 'Implement rate limiting on authentication endpoints',
-    description: 'Brute force attacks target login and token refresh endpoints. Rate limit by IP and user ID. Use sliding window algorithm. Return 429 after threshold.',
+    description:
+      'Brute force attacks target login and token refresh endpoints. Rate limit by IP and user ID. Use sliding window algorithm. Return 429 after threshold.',
     domain: 'security',
     type: 'pattern' as const,
     severity: 'warning' as const,
@@ -122,14 +130,16 @@ describe('Knowledge Traceability', () => {
   describe('Step 1: CAPTURE', () => {
     it('capture_knowledge should accept the pattern and return an ID', async () => {
       const res = await op('vault', 'capture_knowledge', {
-        entries: [{
-          type: KNOWLEDGE.type,
-          domain: KNOWLEDGE.domain,
-          title: KNOWLEDGE.title,
-          description: KNOWLEDGE.description,
-          severity: KNOWLEDGE.severity,
-          tags: KNOWLEDGE.tags,
-        }],
+        entries: [
+          {
+            type: KNOWLEDGE.type,
+            domain: KNOWLEDGE.domain,
+            title: KNOWLEDGE.title,
+            description: KNOWLEDGE.description,
+            severity: KNOWLEDGE.severity,
+            tags: KNOWLEDGE.tags,
+          },
+        ],
       });
 
       expect(res.captured).toBe(1);
@@ -164,14 +174,16 @@ describe('Knowledge Traceability', () => {
 
     it('capture the anti-pattern', async () => {
       const res = await op('vault', 'capture_knowledge', {
-        entries: [{
-          type: ANTI_KNOWLEDGE.type,
-          domain: ANTI_KNOWLEDGE.domain,
-          title: ANTI_KNOWLEDGE.title,
-          description: ANTI_KNOWLEDGE.description,
-          severity: ANTI_KNOWLEDGE.severity,
-          tags: ANTI_KNOWLEDGE.tags,
-        }],
+        entries: [
+          {
+            type: ANTI_KNOWLEDGE.type,
+            domain: ANTI_KNOWLEDGE.domain,
+            title: ANTI_KNOWLEDGE.title,
+            description: ANTI_KNOWLEDGE.description,
+            severity: ANTI_KNOWLEDGE.severity,
+            tags: ANTI_KNOWLEDGE.tags,
+          },
+        ],
       });
 
       const results = res.results as Array<{ id: string }>;
@@ -180,14 +192,16 @@ describe('Knowledge Traceability', () => {
 
     it('capture the related pattern', async () => {
       const res = await op('vault', 'capture_knowledge', {
-        entries: [{
-          type: RELATED_KNOWLEDGE.type,
-          domain: RELATED_KNOWLEDGE.domain,
-          title: RELATED_KNOWLEDGE.title,
-          description: RELATED_KNOWLEDGE.description,
-          severity: RELATED_KNOWLEDGE.severity,
-          tags: RELATED_KNOWLEDGE.tags,
-        }],
+        entries: [
+          {
+            type: RELATED_KNOWLEDGE.type,
+            domain: RELATED_KNOWLEDGE.domain,
+            title: RELATED_KNOWLEDGE.title,
+            description: RELATED_KNOWLEDGE.description,
+            severity: RELATED_KNOWLEDGE.severity,
+            tags: RELATED_KNOWLEDGE.tags,
+          },
+        ],
       });
 
       const results = res.results as Array<{ id: string }>;
@@ -216,9 +230,12 @@ describe('Knowledge Traceability', () => {
 
     it('search by exact title should return entry with correct data', async () => {
       const results = await op('vault', 'search', { query: KNOWLEDGE.title });
-      const entries = results as unknown as Array<{ entry: { id: string; title: string; domain: string; type: string; severity: string }; score: number }>;
+      const entries = results as unknown as Array<{
+        entry: { id: string; title: string; domain: string; type: string; severity: string };
+        score: number;
+      }>;
 
-      const found = entries.find(e => e.entry.id === state.knowledgeId);
+      const found = entries.find((e) => e.entry.id === state.knowledgeId);
       expect(found).toBeDefined();
       expect(found!.entry.title).toBe(KNOWLEDGE.title);
       expect(found!.entry.domain).toBe(KNOWLEDGE.domain);
@@ -234,11 +251,14 @@ describe('Knowledge Traceability', () => {
   describe('Step 3: INDEX (FTS5 search)', () => {
     it('exact title search should find the pattern', async () => {
       const results = await op('vault', 'search', { query: 'validate JWT tokens API request' });
-      const entries = results as unknown as Array<{ entry: { id: string; title: string }; score: number }>;
+      const entries = results as unknown as Array<{
+        entry: { id: string; title: string };
+        score: number;
+      }>;
 
       expect(entries.length).toBeGreaterThan(0);
 
-      const found = entries.find(e => e.entry.id === state.knowledgeId);
+      const found = entries.find((e) => e.entry.id === state.knowledgeId);
       expect(found).toBeDefined();
       expect(found!.entry.title).toBe(KNOWLEDGE.title);
     });
@@ -250,7 +270,7 @@ describe('Knowledge Traceability', () => {
       expect(entries.length).toBeGreaterThan(0);
 
       // Our JWT pattern should appear (it mentions middleware and token)
-      const found = entries.find(e => e.entry.id === state.knowledgeId);
+      const found = entries.find((e) => e.entry.id === state.knowledgeId);
       expect(found).toBeDefined();
     });
 
@@ -269,7 +289,7 @@ describe('Knowledge Traceability', () => {
       const entries = results as unknown as Array<{ entry: { id: string }; score: number }>;
 
       expect(entries.length).toBeGreaterThan(0);
-      const found = entries.find(e => e.entry.id === state.antiId);
+      const found = entries.find((e) => e.entry.id === state.antiId);
       expect(found).toBeDefined();
     });
   });
@@ -308,10 +328,14 @@ describe('Knowledge Traceability', () => {
       const incoming = res.incoming as Array<{ sourceId: string; linkType: string }>;
 
       // Outgoing: knowledgeId → relatedId (supports)
-      expect(outgoing.some(l => l.targetId === state.relatedId && l.linkType === 'supports')).toBe(true);
+      expect(
+        outgoing.some((l) => l.targetId === state.relatedId && l.linkType === 'supports'),
+      ).toBe(true);
 
       // Incoming: antiId → knowledgeId (contradicts)
-      expect(incoming.some(l => l.sourceId === state.antiId && l.linkType === 'contradicts')).toBe(true);
+      expect(
+        incoming.some((l) => l.sourceId === state.antiId && l.linkType === 'contradicts'),
+      ).toBe(true);
 
       expect(res.totalLinks).toBeGreaterThanOrEqual(2);
     });
@@ -328,15 +352,15 @@ describe('Knowledge Traceability', () => {
       const connected = res.connectedEntries as Array<{ id: string; linkType: string }>;
 
       expect(connected.length).toBeGreaterThanOrEqual(2);
-      expect(connected.some(c => c.id === state.antiId)).toBe(true);
-      expect(connected.some(c => c.id === state.relatedId)).toBe(true);
+      expect(connected.some((c) => c.id === state.antiId)).toBe(true);
+      expect(connected.some((c) => c.id === state.relatedId)).toBe(true);
     });
 
     it('traverse from anti-pattern should find the pattern it contradicts', async () => {
       const res = await op('vault', 'traverse', { entryId: state.antiId, depth: 1 });
 
       const connected = res.connectedEntries as Array<{ id: string }>;
-      expect(connected.some(c => c.id === state.knowledgeId)).toBe(true);
+      expect(connected.some((c) => c.id === state.knowledgeId)).toBe(true);
     });
   });
 
@@ -378,7 +402,7 @@ describe('Knowledge Traceability', () => {
         entryId: state.knowledgeId,
         action: 'accepted',
         source: 'search',
-        confidence: 0.90,
+        confidence: 0.9,
       });
 
       await op('brain', 'brain_feedback', {
@@ -416,16 +440,22 @@ describe('Knowledge Traceability', () => {
     it('brain_strengths should show JWT pattern with non-zero strength', async () => {
       const res = await op('brain', 'brain_strengths', { domain: 'security' });
 
-      const patterns = (res.patterns ?? res) as Array<{ id: string; title: string; strength: number; pattern?: string }>;
+      const patterns = (res.patterns ?? res) as Array<{
+        id: string;
+        title: string;
+        strength: number;
+        pattern?: string;
+      }>;
 
       expect(Array.isArray(patterns)).toBe(true);
       expect(patterns.length).toBeGreaterThan(0);
 
       // Find by pattern field (brain_strengths returns pattern titles, not raw IDs)
-      const jwtPattern = patterns.find(p =>
-        p.id === state.knowledgeId ||
-        p.pattern?.toLowerCase().includes('jwt') ||
-        p.title?.toLowerCase().includes('jwt'),
+      const jwtPattern = patterns.find(
+        (p) =>
+          p.id === state.knowledgeId ||
+          p.pattern?.toLowerCase().includes('jwt') ||
+          p.title?.toLowerCase().includes('jwt'),
       );
       expect(jwtPattern).toBeDefined();
       expect(jwtPattern!.strength).toBeGreaterThan(0);
@@ -443,16 +473,21 @@ describe('Knowledge Traceability', () => {
         task: 'securing REST API endpoints',
       });
 
-      const recs = (Array.isArray(res) ? res : res.recommendations ?? []) as Array<{ pattern: string; domain: string; strength: number }>;
+      const recs = (Array.isArray(res) ? res : (res.recommendations ?? [])) as Array<{
+        pattern: string;
+        domain: string;
+        strength: number;
+      }>;
 
       expect(Array.isArray(recs)).toBe(true);
       expect(recs.length).toBeGreaterThan(0);
 
       // After 3 positive feedbacks, JWT pattern should be among recommendations
-      const securityRec = recs.find(r =>
-        r.pattern?.toLowerCase().includes('jwt') ||
-        r.pattern?.toLowerCase().includes('token') ||
-        r.pattern?.toLowerCase().includes('validate'),
+      const securityRec = recs.find(
+        (r) =>
+          r.pattern?.toLowerCase().includes('jwt') ||
+          r.pattern?.toLowerCase().includes('token') ||
+          r.pattern?.toLowerCase().includes('validate'),
       );
       expect(securityRec).toBeDefined();
       expect(securityRec!.strength).toBeGreaterThan(0);
@@ -464,10 +499,12 @@ describe('Knowledge Traceability', () => {
         task: 'building a CSS animation library',
       });
 
-      const recs = (Array.isArray(res) ? res : res.recommendations ?? []) as Array<{ id: string }>;
+      const recs = (Array.isArray(res) ? res : (res.recommendations ?? [])) as Array<{
+        id: string;
+      }>;
 
       if (recs.length > 0) {
-        const jwtRec = recs.find(r => r.id === state.knowledgeId);
+        const jwtRec = recs.find((r) => r.id === state.knowledgeId);
         // JWT security pattern should NOT appear for CSS animation work
         expect(jwtRec).toBeUndefined();
       }
@@ -489,9 +526,15 @@ describe('Knowledge Traceability', () => {
           'Avoid client-only JWT validation (vault anti-pattern)',
         ],
         tasks: [
-          { title: 'Add JWT validation middleware', description: 'Validate signature, expiry, issuer on every request' },
+          {
+            title: 'Add JWT validation middleware',
+            description: 'Validate signature, expiry, issuer on every request',
+          },
           { title: 'Implement rate limiting', description: 'Sliding window, 429 responses' },
-          { title: 'Remove client-only validation', description: 'Server-side is the security boundary' },
+          {
+            title: 'Remove client-only validation',
+            description: 'Server-side is the security boundary',
+          },
         ],
       });
 
@@ -501,9 +544,9 @@ describe('Knowledge Traceability', () => {
 
       // Plan should capture the vault-informed decisions
       const decisions = plan.decisions as string[];
-      expect(decisions.some(d => d.includes('JWT'))).toBe(true);
-      expect(decisions.some(d => d.includes('rate limiting'))).toBe(true);
-      expect(decisions.some(d => d.includes('anti-pattern'))).toBe(true);
+      expect(decisions.some((d) => d.includes('JWT'))).toBe(true);
+      expect(decisions.some((d) => d.includes('rate limiting'))).toBe(true);
+      expect(decisions.some((d) => d.includes('anti-pattern'))).toBe(true);
     });
 
     it('orchestrate_plan should create a plan and consult vault', async () => {
@@ -533,7 +576,8 @@ describe('Knowledge Traceability', () => {
   describe('Step 10: SESSION (cross-session persistence)', () => {
     it('capture session with knowledge references', async () => {
       const res = await op('memory', 'session_capture', {
-        summary: 'Secured API endpoints: added JWT validation middleware, rate limiting, removed client-only validation. Used vault patterns for JWT and rate limiting, avoided vault anti-pattern for client-only validation.',
+        summary:
+          'Secured API endpoints: added JWT validation middleware, rate limiting, removed client-only validation. Used vault patterns for JWT and rate limiting, avoided vault anti-pattern for client-only validation.',
         topics: ['security', 'jwt', 'authentication', 'rate-limiting'],
         toolsUsed: ['capture_knowledge', 'link_entries', 'create_plan', 'brain_feedback'],
       });
@@ -545,7 +589,7 @@ describe('Knowledge Traceability', () => {
       const res = await op('memory', 'memory_search', { query: 'JWT authentication security' });
 
       // Memory search returns results
-      const results = Array.isArray(res) ? res : (res as Record<string, unknown>).results ?? [];
+      const results = Array.isArray(res) ? res : ((res as Record<string, unknown>).results ?? []);
       // The session summary mentions JWT — should be findable
       expect(results).toBeDefined();
     });
@@ -553,9 +597,12 @@ describe('Knowledge Traceability', () => {
     it('vault knowledge should still be intact after session capture', async () => {
       // The pattern should still be in the vault exactly as captured
       const results = await op('vault', 'search', { query: 'validate JWT tokens' });
-      const entries = results as unknown as Array<{ entry: { id: string; title: string }; score: number }>;
+      const entries = results as unknown as Array<{
+        entry: { id: string; title: string };
+        score: number;
+      }>;
 
-      const found = entries.find(e => e.entry.id === state.knowledgeId);
+      const found = entries.find((e) => e.entry.id === state.knowledgeId);
       expect(found).toBeDefined();
       expect(found!.entry.title).toBe(KNOWLEDGE.title);
     });
@@ -578,11 +625,14 @@ describe('Knowledge Traceability', () => {
   describe('Step 11: RECALL (future session uses past knowledge)', () => {
     it('new search for "API security" should find the JWT pattern', async () => {
       const results = await op('vault', 'search', { query: 'API security authentication' });
-      const entries = results as unknown as Array<{ entry: { id: string; title: string }; score: number }>;
+      const entries = results as unknown as Array<{
+        entry: { id: string; title: string };
+        score: number;
+      }>;
 
       expect(entries.length).toBeGreaterThan(0);
 
-      const jwtFound = entries.some(e => e.entry.id === state.knowledgeId);
+      const jwtFound = entries.some((e) => e.entry.id === state.knowledgeId);
       expect(jwtFound).toBe(true);
     });
 
@@ -591,8 +641,8 @@ describe('Knowledge Traceability', () => {
       const connected = res.connectedEntries as Array<{ id: string }>;
 
       // Anti-pattern and rate limiting should still be connected
-      expect(connected.some(c => c.id === state.antiId)).toBe(true);
-      expect(connected.some(c => c.id === state.relatedId)).toBe(true);
+      expect(connected.some((c) => c.id === state.antiId)).toBe(true);
+      expect(connected.some((c) => c.id === state.relatedId)).toBe(true);
     });
 
     it('brain recommend in recall should surface patterns from feedback history', async () => {
@@ -601,34 +651,45 @@ describe('Knowledge Traceability', () => {
         task: 'API endpoint protection',
       });
 
-      const recs = (Array.isArray(res) ? res : res.recommendations ?? []) as Array<{ pattern: string; domain: string; strength: number }>;
+      const recs = (Array.isArray(res) ? res : (res.recommendations ?? [])) as Array<{
+        pattern: string;
+        domain: string;
+        strength: number;
+      }>;
       expect(Array.isArray(recs)).toBe(true);
       expect(recs.length).toBeGreaterThan(0);
 
-      const securityRec = recs.find(r =>
-        r.pattern?.toLowerCase().includes('jwt') ||
-        r.pattern?.toLowerCase().includes('validate') ||
-        r.pattern?.toLowerCase().includes('auth'),
+      const securityRec = recs.find(
+        (r) =>
+          r.pattern?.toLowerCase().includes('jwt') ||
+          r.pattern?.toLowerCase().includes('validate') ||
+          r.pattern?.toLowerCase().includes('auth'),
       );
       expect(securityRec).toBeDefined();
     });
 
     it('creating a new plan for related work should benefit from existing knowledge', async () => {
       // Search vault FIRST (vault-first protocol)
-      const searchResults = await op('vault', 'search', { query: 'token validation security middleware' });
+      const searchResults = await op('vault', 'search', {
+        query: 'token validation security middleware',
+      });
       const entries = searchResults as unknown as Array<{ entry: { id: string; title: string } }>;
 
       // Our JWT pattern should appear in search results
-      const jwtEntry = entries.find(e => e.entry.id === state.knowledgeId);
+      const jwtEntry = entries.find((e) => e.entry.id === state.knowledgeId);
       expect(jwtEntry).toBeDefined();
 
       // Traverse to find related knowledge
       const traversal = await op('vault', 'traverse', { entryId: state.knowledgeId, depth: 1 });
-      const connected = traversal.connectedEntries as Array<{ id: string; linkType: string; title: string }>;
+      const connected = traversal.connectedEntries as Array<{
+        id: string;
+        linkType: string;
+        title: string;
+      }>;
 
       // Should find both the anti-pattern (what to avoid) and the related pattern (what else to do)
-      const contradictions = connected.filter(c => c.linkType === 'contradicts');
-      const supports = connected.filter(c => c.linkType === 'supports');
+      const contradictions = connected.filter((c) => c.linkType === 'contradicts');
+      const supports = connected.filter((c) => c.linkType === 'supports');
 
       expect(contradictions.length).toBeGreaterThan(0); // things to AVOID
       expect(supports.length).toBeGreaterThan(0); // things that HELP
@@ -650,7 +711,7 @@ describe('Knowledge Traceability', () => {
 
       // Plan should reference knowledge from the vault
       expect(decisions.length).toBeGreaterThanOrEqual(3);
-      expect(decisions.some(d => d.includes('JWT'))).toBe(true);
+      expect(decisions.some((d) => d.includes('JWT'))).toBe(true);
     });
   });
 
@@ -665,7 +726,7 @@ describe('Knowledge Traceability', () => {
       // Search finds it by ID
       const searchResults = await op('vault', 'search', { query: 'validate JWT tokens' });
       const entries = searchResults as unknown as Array<{ entry: { id: string } }>;
-      expect(entries.some(e => e.entry.id === id)).toBe(true);
+      expect(entries.some((e) => e.entry.id === id)).toBe(true);
 
       // Links reference it
       const links = await op('vault', 'get_links', { entryId: id });

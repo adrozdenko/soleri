@@ -33,9 +33,7 @@ function createMockProvider(): PersistenceProvider {
         // Check for duplicate
         const existing = store.project_links.find(
           (r) =>
-            r.source_project_id === p[0] &&
-            r.target_project_id === p[1] &&
-            r.link_type === p[2],
+            r.source_project_id === p[0] && r.target_project_id === p[1] && r.link_type === p[2],
         );
         if (existing) return { changes: 0, lastInsertRowid: existing.id as number };
         autoIncrementId++;
@@ -97,7 +95,11 @@ function createMockProvider(): PersistenceProvider {
         return { changes: before - store.project_rules.length, lastInsertRowid: 0 };
       }
 
-      if (sql.startsWith('DELETE FROM project_links WHERE source_project_id = ? AND target_project_id = ? AND link_type')) {
+      if (
+        sql.startsWith(
+          'DELETE FROM project_links WHERE source_project_id = ? AND target_project_id = ? AND link_type',
+        )
+      ) {
         const before = store.project_links.length;
         store.project_links = store.project_links.filter(
           (r) =>
@@ -106,16 +108,23 @@ function createMockProvider(): PersistenceProvider {
         return { changes: before - store.project_links.length, lastInsertRowid: 0 };
       }
 
-      if (sql.startsWith('DELETE FROM project_links WHERE source_project_id = ? AND target_project_id = ?')) {
+      if (
+        sql.startsWith(
+          'DELETE FROM project_links WHERE source_project_id = ? AND target_project_id = ?',
+        )
+      ) {
         const before = store.project_links.length;
         store.project_links = store.project_links.filter(
-          (r) =>
-            !(r.source_project_id === p[0] && r.target_project_id === p[1]),
+          (r) => !(r.source_project_id === p[0] && r.target_project_id === p[1]),
         );
         return { changes: before - store.project_links.length, lastInsertRowid: 0 };
       }
 
-      if (sql.startsWith('DELETE FROM project_links WHERE source_project_id = ? OR target_project_id = ?')) {
+      if (
+        sql.startsWith(
+          'DELETE FROM project_links WHERE source_project_id = ? OR target_project_id = ?',
+        )
+      ) {
         const before = store.project_links.length;
         store.project_links = store.project_links.filter(
           (r) => r.source_project_id !== p[0] && r.target_project_id !== p[1],
@@ -141,12 +150,14 @@ function createMockProvider(): PersistenceProvider {
       if (sql.includes('FROM registered_projects WHERE path')) {
         return store.registered_projects.find((r) => r.path === p[0]) as T | undefined;
       }
-      if (sql.includes('FROM project_links WHERE source_project_id = ? AND target_project_id = ? AND link_type')) {
+      if (
+        sql.includes(
+          'FROM project_links WHERE source_project_id = ? AND target_project_id = ? AND link_type',
+        )
+      ) {
         return store.project_links.find(
           (r) =>
-            r.source_project_id === p[0] &&
-            r.target_project_id === p[1] &&
-            r.link_type === p[2],
+            r.source_project_id === p[0] && r.target_project_id === p[1] && r.link_type === p[2],
         ) as T | undefined;
       }
 

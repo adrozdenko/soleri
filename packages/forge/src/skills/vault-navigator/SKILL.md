@@ -72,13 +72,13 @@ If all vault strategies return nothing, search the web. If web finds something u
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `search_intelligent` | Default semantic search |
-| `search` | Structured search with filters |
-| `vault_tags` / `vault_domains` | Browse knowledge landscape |
-| `vault_recent` | Recently modified entries |
-| `vault_age_report` | Stale entries |
-| `memory_cross_project_search` | Cross-project search |
-| `brain_strengths` / `brain_global_patterns` | Proven patterns |
-| `capture_quick` | Capture web findings |
+| Op                                          | When to Use                    |
+| ------------------------------------------- | ------------------------------ |
+| `search_intelligent`                        | Default semantic search        |
+| `search`                                    | Structured search with filters |
+| `vault_tags` / `vault_domains`              | Browse knowledge landscape     |
+| `vault_recent`                              | Recently modified entries      |
+| `vault_age_report`                          | Stale entries                  |
+| `memory_cross_project_search`               | Cross-project search           |
+| `brain_strengths` / `brain_global_patterns` | Proven patterns                |
+| `capture_quick`                             | Capture web findings           |

@@ -11,11 +11,13 @@ You are a dispatcher hook that runs during PreCompact. You decide which operator
 ### Step 1: Check Synthesis Status
 
 Call `{agentId}_operator op:synthesis_check` with:
+
 ```json
 {}
 ```
 
 This returns:
+
 ```json
 {
   "due": true | false,
@@ -40,6 +42,7 @@ This returns:
 Subagent A runs on every PreCompact regardless of synthesis status. It extracts new signals from the conversation that just happened.
 
 Spawn as **background** (non-blocking):
+
 - Prompt: contents of `subagent-soft-signal-extractor.md`
 - Context: the current conversation context available to this hook
 
@@ -49,12 +52,12 @@ Only spawn synthesis subagents if `synthesis_check` returned `due: true`.
 
 Map `sectionsToUpdate` to subagents:
 
-| Sections | Subagent | Prompt File |
-|----------|----------|-------------|
-| `communication: true` OR `workingRules: true` | Subagent B | `subagent-synthesis-communication.md` |
-| `cognition: true` OR `identity: true` OR `tasteProfile: true` | Subagent C | `subagent-synthesis-cognition.md` |
-| `technicalContext: true` OR `growthEdges: true` | Subagent D | `subagent-synthesis-technical.md` |
-| `trustModel: true` | Subagent E | `subagent-synthesis-trust.md` |
+| Sections                                                      | Subagent   | Prompt File                           |
+| ------------------------------------------------------------- | ---------- | ------------------------------------- |
+| `communication: true` OR `workingRules: true`                 | Subagent B | `subagent-synthesis-communication.md` |
+| `cognition: true` OR `identity: true` OR `tasteProfile: true` | Subagent C | `subagent-synthesis-cognition.md`     |
+| `technicalContext: true` OR `growthEdges: true`               | Subagent D | `subagent-synthesis-technical.md`     |
+| `trustModel: true`                                            | Subagent E | `subagent-synthesis-trust.md`         |
 
 Spawn each applicable subagent as **background** (non-blocking).
 
@@ -81,6 +84,7 @@ Pending signals: {count}.
 ## Subagent Isolation
 
 Each subagent operates independently:
+
 - They read their own signal types via `op:signal_list`.
 - They read their own profile sections via `op:profile_get`.
 - They write their own sections via `op:profile_update_section`.

@@ -161,7 +161,14 @@ describe('withDegradation', () => {
     reg.register('test');
 
     const fail = () =>
-      withDegradation(reg, 'test', async () => { throw new Error('fail'); }, null);
+      withDegradation(
+        reg,
+        'test',
+        async () => {
+          throw new Error('fail');
+        },
+        null,
+      );
 
     await fail();
     expect(reg.get('test')!.status).toBe('degraded');

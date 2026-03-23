@@ -91,13 +91,13 @@ YOUR_AGENT_core op:session_capture
 
 ## Quick Reference
 
-| Phase | Key Activities | Tools |
-|-------|---------------|-------|
-| 0. Search | Vault, web, memory | `search_intelligent`, `brain_strengths`, `memory_search` |
-| 1. Root Cause | Read errors, reproduce, trace | `loop_iterate` |
-| 2. Pattern | Find working examples, compare | `search_intelligent` |
-| 3. Hypothesis | Form theory, test minimally | `loop_iterate` |
-| 4. Implementation | Test, fix, verify | `loop_iterate` |
-| 5. Capture | Persist root cause | `capture_knowledge`, `loop_complete` |
+| Phase             | Key Activities                 | Tools                                                    |
+| ----------------- | ------------------------------ | -------------------------------------------------------- |
+| 0. Search         | Vault, web, memory             | `search_intelligent`, `brain_strengths`, `memory_search` |
+| 1. Root Cause     | Read errors, reproduce, trace  | `loop_iterate`                                           |
+| 2. Pattern        | Find working examples, compare | `search_intelligent`                                     |
+| 3. Hypothesis     | Form theory, test minimally    | `loop_iterate`                                           |
+| 4. Implementation | Test, fix, verify              | `loop_iterate`                                           |
+| 5. Capture        | Persist root cause             | `capture_knowledge`, `loop_complete`                     |
 
 **Related skills:** test-driven-development, verification-before-completion, fix-and-learn

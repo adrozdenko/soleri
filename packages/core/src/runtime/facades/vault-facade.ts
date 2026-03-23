@@ -108,9 +108,21 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           return entries;
         }
         // Return lightweight summaries to reduce response size
-        return (entries as Array<{ id: string; title: string; type: string; domain: string; tags?: string[] }>).map(
-          (e) => ({ id: e.id, title: e.title, type: e.type, domain: e.domain, tags: e.tags ?? [] }),
-        );
+        return (
+          entries as Array<{
+            id: string;
+            title: string;
+            type: string;
+            domain: string;
+            tags?: string[];
+          }>
+        ).map((e) => ({
+          id: e.id,
+          title: e.title,
+          type: e.type,
+          domain: e.domain,
+          tags: e.tags ?? [],
+        }));
       },
     },
     {

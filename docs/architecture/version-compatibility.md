@@ -4,13 +4,13 @@ Soleri packages version independently but must remain compatible. This document 
 
 ## Packages
 
-| Package | Role | Versioning |
-|---------|------|-----------|
-| `@soleri/core` | Engine runtime | Semver — breaking changes = major bump |
-| `@soleri/forge` | Agent scaffolder | Follows core major version |
-| `@soleri/cli` | Developer CLI | Follows core major version |
-| `@soleri/domain-*` | Domain packs | Independent semver, declares `@soleri/core` peer dep |
-| Knowledge packs | Local packs | `soleri-pack.json` manifest with optional `engine` field |
+| Package            | Role             | Versioning                                               |
+| ------------------ | ---------------- | -------------------------------------------------------- |
+| `@soleri/core`     | Engine runtime   | Semver — breaking changes = major bump                   |
+| `@soleri/forge`    | Agent scaffolder | Follows core major version                               |
+| `@soleri/cli`      | Developer CLI    | Follows core major version                               |
+| `@soleri/domain-*` | Domain packs     | Independent semver, declares `@soleri/core` peer dep     |
+| Knowledge packs    | Local packs      | `soleri-pack.json` manifest with optional `engine` field |
 
 ## Compatibility Rules
 
@@ -21,6 +21,7 @@ Soleri packages version independently but must remain compatible. This document 
 ### Rule 2: Domain packs declare peer dependency on core
 
 Every `@soleri/domain-*` package must declare:
+
 ```json
 "peerDependencies": {
   "@soleri/core": "^8.0.0"
@@ -78,9 +79,9 @@ This is validated at install time. Packs without `engine` are assumed compatible
 
 ## Compatibility Matrix
 
-| Core | Forge | CLI | Domain Packs | Vault Format |
-|------|-------|-----|-------------|-------------|
-| 8.x | 8.x | 8.x | peer: `^8.0.0` | 1 |
+| Core | Forge | CLI | Domain Packs   | Vault Format |
+| ---- | ----- | --- | -------------- | ------------ |
+| 8.x  | 8.x   | 8.x | peer: `^8.0.0` | 1            |
 
 ## Verification
 

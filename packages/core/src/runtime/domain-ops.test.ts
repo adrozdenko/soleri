@@ -94,13 +94,13 @@ describe('createDomainFacade', () => {
     it('falls back to vault FTS when brain returns empty', async () => {
       const rt = mockRuntime();
       (rt.brain.intelligentSearch as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (rt.vault.search as ReturnType<typeof vi.fn>).mockReturnValue([
-        { entry: { id: 'e1' } },
-      ]);
+      (rt.vault.search as ReturnType<typeof vi.fn>).mockReturnValue([{ entry: { id: 'e1' } }]);
       const facade = createDomainFacade(rt, 'a', 'security');
-      const results = (await facade.ops.find((o) => o.name === 'search')!.handler({
-        query: 'test',
-      })) as unknown[];
+      const results = (await facade.ops
+        .find((o) => o.name === 'search')!
+        .handler({
+          query: 'test',
+        })) as unknown[];
       expect(rt.vault.search).toHaveBeenCalledWith('test', { domain: 'security', limit: 10 });
       expect(results).toHaveLength(1);
     });
@@ -118,9 +118,11 @@ describe('createDomainFacade', () => {
     it('returns error object for missing entry', async () => {
       const rt = mockRuntime();
       const facade = createDomainFacade(rt, 'a', 'testing');
-      const result = (await facade.ops.find((o) => o.name === 'get_entry')!.handler({
-        id: 'missing',
-      })) as { error: string };
+      const result = (await facade.ops
+        .find((o) => o.name === 'get_entry')!
+        .handler({
+          id: 'missing',
+        })) as { error: string };
       expect(result.error).toContain('missing');
     });
   });
@@ -129,14 +131,16 @@ describe('createDomainFacade', () => {
     it('calls brain.enrichAndCapture when governance allows', async () => {
       const rt = mockRuntime();
       const facade = createDomainFacade(rt, 'a', 'security');
-      const result = (await facade.ops.find((o) => o.name === 'capture')!.handler({
-        id: 'new-1',
-        type: 'pattern',
-        title: 'Test',
-        severity: 'warning',
-        description: 'desc',
-        tags: ['x'],
-      })) as { captured: boolean; governance: { action: string } };
+      const result = (await facade.ops
+        .find((o) => o.name === 'capture')!
+        .handler({
+          id: 'new-1',
+          type: 'pattern',
+          title: 'Test',
+          severity: 'warning',
+          description: 'desc',
+          tags: ['x'],
+        })) as { captured: boolean; governance: { action: string } };
       expect(rt.brain.enrichAndCapture).toHaveBeenCalledOnce();
       expect(result.governance.action).toBe('capture');
     });
@@ -148,14 +152,16 @@ describe('createDomainFacade', () => {
         reason: 'needs review',
       });
       const facade = createDomainFacade(rt, 'a', 'security');
-      const result = (await facade.ops.find((o) => o.name === 'capture')!.handler({
-        id: 'p1',
-        type: 'pattern',
-        title: 'Proposed',
-        severity: 'warning',
-        description: 'desc',
-        tags: [],
-      })) as { captured: boolean; governance: { action: string; proposalId: number } };
+      const result = (await facade.ops
+        .find((o) => o.name === 'capture')!
+        .handler({
+          id: 'p1',
+          type: 'pattern',
+          title: 'Proposed',
+          severity: 'warning',
+          description: 'desc',
+          tags: [],
+        })) as { captured: boolean; governance: { action: string; proposalId: number } };
       expect(result.captured).toBe(false);
       expect(result.governance.action).toBe('propose');
       expect(result.governance.proposalId).toBe(1);
@@ -168,14 +174,16 @@ describe('createDomainFacade', () => {
         reason: 'quota exceeded',
       });
       const facade = createDomainFacade(rt, 'a', 'security');
-      const result = (await facade.ops.find((o) => o.name === 'capture')!.handler({
-        id: 'r1',
-        type: 'rule',
-        title: 'Rejected',
-        severity: 'warning',
-        description: 'desc',
-        tags: [],
-      })) as { captured: boolean; governance: { action: string; reason: string } };
+      const result = (await facade.ops
+        .find((o) => o.name === 'capture')!
+        .handler({
+          id: 'r1',
+          type: 'rule',
+          title: 'Rejected',
+          severity: 'warning',
+          description: 'desc',
+          tags: [],
+        })) as { captured: boolean; governance: { action: string; reason: string } };
       expect(result.captured).toBe(false);
       expect(result.governance.action).toBe('reject');
       expect(result.governance.reason).toBe('quota exceeded');
@@ -186,9 +194,11 @@ describe('createDomainFacade', () => {
     it('returns removed status', async () => {
       const rt = mockRuntime();
       const facade = createDomainFacade(rt, 'a', 'testing');
-      const result = (await facade.ops.find((o) => o.name === 'remove')!.handler({
-        id: 'del-1',
-      })) as { removed: boolean; id: string };
+      const result = (await facade.ops
+        .find((o) => o.name === 'remove')!
+        .handler({
+          id: 'del-1',
+        })) as { removed: boolean; id: string };
       expect(result.removed).toBe(true);
       expect(result.id).toBe('del-1');
     });

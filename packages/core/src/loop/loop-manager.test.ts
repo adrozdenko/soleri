@@ -34,9 +34,7 @@ describe('extractPromise', () => {
   });
 
   it('handles multiline content inside tags', () => {
-    expect(extractPromise('<promise>\nSALVADOR_VALIDATED\n</promise>')).toBe(
-      'SALVADOR_VALIDATED',
-    );
+    expect(extractPromise('<promise>\nSALVADOR_VALIDATED\n</promise>')).toBe('SALVADOR_VALIDATED');
   });
 
   it('extracts only the first match', () => {
@@ -349,9 +347,7 @@ describe('LoopManager', () => {
 
     it('detects completion promise and ends loop', () => {
       mgr.startLoop(makeConfig({ completionPromise: 'SALVADOR_VALIDATED' }));
-      const result = mgr.iterateWithGate(
-        'Done! <promise>SALVADOR_VALIDATED</promise>',
-      );
+      const result = mgr.iterateWithGate('Done! <promise>SALVADOR_VALIDATED</promise>');
 
       expect(result.decision).toBe('allow');
       expect(result.outcome).toBe('completed');

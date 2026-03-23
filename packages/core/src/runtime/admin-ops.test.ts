@@ -135,9 +135,7 @@ describe('createAdminOps', () => {
 
     it('returns verbose format when verbose=true', async () => {
       const op = findOp(ops, 'admin_tool_list');
-      const allOps = [
-        { name: 'admin_health', description: 'Health check', auth: 'read' },
-      ];
+      const allOps = [{ name: 'admin_health', description: 'Health check', auth: 'read' }];
       const result = (await op.handler({
         _allOps: allOps,
         verbose: true,

@@ -113,19 +113,15 @@ describe('E2E: cli-commands', () => {
     const badConfig = join(tempDir, 'bad-config.json');
     writeFileSync(badConfig, JSON.stringify({ id: '123INVALID' }));
 
-    const { exitCode } = runCli(
-      ['create', '--config', badConfig, '--yes'],
-      { cwd: tempDir },
-    );
+    const { exitCode } = runCli(['create', '--config', badConfig, '--yes'], { cwd: tempDir });
 
     expect(exitCode).not.toBe(0);
   });
 
   it('should reject nonexistent config file', () => {
-    const { exitCode } = runCli(
-      ['create', '--config', '/tmp/nonexistent-config.json', '--yes'],
-      { cwd: tempDir },
-    );
+    const { exitCode } = runCli(['create', '--config', '/tmp/nonexistent-config.json', '--yes'], {
+      cwd: tempDir,
+    });
 
     expect(exitCode).not.toBe(0);
   });

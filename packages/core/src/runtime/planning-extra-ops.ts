@@ -46,7 +46,9 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
         decisions: z
           .array(z.union([z.string(), z.object({ decision: z.string(), rationale: z.string() })]))
           .optional()
-          .describe('New decisions list (replaces existing) — strings or {decision, rationale} objects'),
+          .describe(
+            'New decisions list (replaces existing) — strings or {decision, rationale} objects',
+          ),
         addTasks: z
           .array(z.object({ title: z.string(), description: z.string() }))
           .optional()

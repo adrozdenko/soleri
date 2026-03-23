@@ -9,7 +9,19 @@ import type { AgentRuntime } from './types.js';
 
 /** Minimal vault stub that stores entries in memory. */
 function makeVaultStub() {
-  const entries = new Map<string, { id: string; type: string; domain?: string; title: string; description: string; context?: string; tags?: string[]; severity?: string }>();
+  const entries = new Map<
+    string,
+    {
+      id: string;
+      type: string;
+      domain?: string;
+      title: string;
+      description: string;
+      context?: string;
+      tags?: string[];
+      severity?: string;
+    }
+  >();
   return {
     list: (opts: { type?: string; domain?: string; limit?: number }) => {
       let arr = [...entries.values()];
@@ -18,7 +30,16 @@ function makeVaultStub() {
       return arr.slice(0, opts.limit ?? 50);
     },
     get: (id: string) => entries.get(id) ?? null,
-    add: (entry: { id: string; type: string; title: string; description: string; domain?: string; context?: string; tags?: string[]; severity?: string }) => {
+    add: (entry: {
+      id: string;
+      type: string;
+      title: string;
+      description: string;
+      domain?: string;
+      context?: string;
+      tags?: string[];
+      severity?: string;
+    }) => {
       entries.set(entry.id, entry);
     },
     _entries: entries,
@@ -77,7 +98,9 @@ describe('playbook-ops', () => {
         domain: 'testing',
         title: 'TDD Workflow',
         description: 'Test-driven development playbook',
-        context: JSON.stringify({ steps: [{ order: 1, title: 'Write test', description: 'Write failing test' }] }),
+        context: JSON.stringify({
+          steps: [{ order: 1, title: 'Write test', description: 'Write failing test' }],
+        }),
         tags: ['tdd'],
       });
 

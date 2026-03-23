@@ -95,7 +95,9 @@ describe('classifyError', () => {
 
   describe('message pattern classification', () => {
     it('should classify "overloaded" as LLM_OVERLOAD', () => {
-      expect(classifyError(new Error('server is overloaded')).code).toBe(SoleriErrorCode.LLM_OVERLOAD);
+      expect(classifyError(new Error('server is overloaded')).code).toBe(
+        SoleriErrorCode.LLM_OVERLOAD,
+      );
     });
 
     it('should classify "model busy" as LLM_OVERLOAD', () => {
@@ -123,7 +125,9 @@ describe('classifyError', () => {
     });
 
     it('should classify "not found" as RESOURCE_NOT_FOUND', () => {
-      expect(classifyError(new Error('resource not found')).code).toBe(SoleriErrorCode.RESOURCE_NOT_FOUND);
+      expect(classifyError(new Error('resource not found')).code).toBe(
+        SoleriErrorCode.RESOURCE_NOT_FOUND,
+      );
     });
 
     it('should classify "rate limit" as RATE_LIMIT', () => {

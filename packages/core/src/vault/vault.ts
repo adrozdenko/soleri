@@ -80,7 +80,11 @@ export class Vault {
   static readonly FORMAT_VERSION = VAULT_FORMAT_VERSION;
 
   private getAutoLinkConfig(): AutoLinkConfig {
-    return { linkManager: this.linkManager, enabled: this.autoLinkEnabled, maxLinks: this.autoLinkMaxLinks };
+    return {
+      linkManager: this.linkManager,
+      enabled: this.autoLinkEnabled,
+      maxLinks: this.autoLinkMaxLinks,
+    };
   }
 
   setLinkManager(mgr: LinkManager, opts?: { enabled?: boolean; maxLinks?: number }): void {
@@ -105,16 +109,37 @@ export class Vault {
   installPack(entryList: IntelligenceEntry[]): { installed: number; skipped: number } {
     return entries.installPack(this.provider, entryList, this.getAutoLinkConfig());
   }
-  seedDedup(entryList: IntelligenceEntry[]): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
+  seedDedup(
+    entryList: IntelligenceEntry[],
+  ): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
     return entries.seedDedup(this.provider, entryList, this.getAutoLinkConfig());
   }
-  search(query: string, options?: { domain?: string; type?: string; severity?: string; origin?: 'agent' | 'pack' | 'user'; limit?: number; includeExpired?: boolean }): SearchResult[] {
+  search(
+    query: string,
+    options?: {
+      domain?: string;
+      type?: string;
+      severity?: string;
+      origin?: 'agent' | 'pack' | 'user';
+      limit?: number;
+      includeExpired?: boolean;
+    },
+  ): SearchResult[] {
     return entries.search(this.provider, query, options);
   }
   get(id: string): IntelligenceEntry | null {
     return entries.get(this.provider, id);
   }
-  list(options?: { domain?: string; type?: string; severity?: string; origin?: 'agent' | 'pack' | 'user'; tags?: string[]; limit?: number; offset?: number; includeExpired?: boolean }): IntelligenceEntry[] {
+  list(options?: {
+    domain?: string;
+    type?: string;
+    severity?: string;
+    origin?: 'agent' | 'pack' | 'user';
+    tags?: string[];
+    limit?: number;
+    offset?: number;
+    includeExpired?: boolean;
+  }): IntelligenceEntry[] {
     return entries.list(this.provider, options);
   }
   stats(): VaultStats {
@@ -162,7 +187,12 @@ export class Vault {
   exportAll(): { entries: IntelligenceEntry[]; exportedAt: number; count: number } {
     return maintenance.exportAll(this.provider);
   }
-  getAgeReport(): { total: number; buckets: Array<{ label: string; count: number; minDays: number; maxDays: number }>; oldestTimestamp: number | null; newestTimestamp: number | null } {
+  getAgeReport(): {
+    total: number;
+    buckets: Array<{ label: string; count: number; minDays: number; maxDays: number }>;
+    oldestTimestamp: number | null;
+    newestTimestamp: number | null;
+  } {
     return maintenance.getAgeReport(this.provider);
   }
   archive(options: { olderThanDays: number; reason?: string }): { archived: number } {
@@ -201,19 +231,35 @@ export class Vault {
   deleteMemory(id: string): boolean {
     return memories.deleteMemory(this.provider, id);
   }
-  searchMemories(query: string, options?: { type?: string; projectPath?: string; intent?: string; limit?: number }): Memory[] {
+  searchMemories(
+    query: string,
+    options?: { type?: string; projectPath?: string; intent?: string; limit?: number },
+  ): Memory[] {
     return memories.searchMemories(this.provider, query, options);
   }
-  listMemories(options?: { type?: string; projectPath?: string; limit?: number; offset?: number }): Memory[] {
+  listMemories(options?: {
+    type?: string;
+    projectPath?: string;
+    limit?: number;
+    offset?: number;
+  }): Memory[] {
     return memories.listMemories(this.provider, options);
   }
   memoryStats(): MemoryStats {
     return memories.memoryStats(this.provider);
   }
-  memoryStatsDetailed(options?: { projectPath?: string; fromDate?: number; toDate?: number }): MemoryStats & { oldest: number | null; newest: number | null; archivedCount: number } {
+  memoryStatsDetailed(options?: {
+    projectPath?: string;
+    fromDate?: number;
+    toDate?: number;
+  }): MemoryStats & { oldest: number | null; newest: number | null; archivedCount: number } {
     return memories.memoryStatsDetailed(this.provider, options);
   }
-  exportMemories(options?: { projectPath?: string; type?: string; includeArchived?: boolean }): Memory[] {
+  exportMemories(options?: {
+    projectPath?: string;
+    type?: string;
+    includeArchived?: boolean;
+  }): Memory[] {
     return memories.exportMemories(this.provider, options);
   }
   importMemories(memoryList: Memory[]): { imported: number; skipped: number } {

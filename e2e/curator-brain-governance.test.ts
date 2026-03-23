@@ -10,19 +10,17 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  createAgentRuntime,
-  createSemanticFacades,
-  registerFacade,
-} from '@soleri/core';
+import { createAgentRuntime, createSemanticFacades, registerFacade } from '@soleri/core';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 
 const AGENT_ID = 'e2e-advanced';
 
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
@@ -131,7 +129,11 @@ describe('E2E: curator-brain-governance', () => {
   it('curator: health_audit should return score and metrics', async () => {
     const res = await callOp(`${AGENT_ID}_curator`, 'curator_health_audit');
     expect(res.success).toBe(true);
-    const data = res.data as { score: number; metrics: Record<string, number>; recommendations: string[] };
+    const data = res.data as {
+      score: number;
+      metrics: Record<string, number>;
+      recommendations: string[];
+    };
     expect(typeof data.score).toBe('number');
     expect(data.score).toBeGreaterThanOrEqual(0);
     expect(data.score).toBeLessThanOrEqual(100);
@@ -186,7 +188,9 @@ describe('E2E: curator-brain-governance', () => {
 
   it('brain: record_feedback should accept feedback on entries', async () => {
     // Search first to get entry IDs
-    const searchRes = await callOp(`${AGENT_ID}_vault`, 'search', { query: 'component composition' });
+    const searchRes = await callOp(`${AGENT_ID}_vault`, 'search', {
+      query: 'component composition',
+    });
     expect(searchRes.success).toBe(true);
     const results = searchRes.data as Array<{ entry: { id: string }; score: number }>;
     expect(results.length).toBeGreaterThan(0);
@@ -275,7 +279,11 @@ describe('E2E: curator-brain-governance', () => {
       projectPath: '/tmp/e2e-project',
     });
     expect(res.success).toBe(true);
-    const data = res.data as { quotas: { maxEntriesTotal: number }; retention: unknown; autoCapture: unknown };
+    const data = res.data as {
+      quotas: { maxEntriesTotal: number };
+      retention: unknown;
+      autoCapture: unknown;
+    };
     expect(data.quotas.maxEntriesTotal).toBeDefined();
     expect(data.retention).toBeDefined();
     expect(data.autoCapture).toBeDefined();

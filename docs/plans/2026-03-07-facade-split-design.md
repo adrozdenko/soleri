@@ -7,6 +7,7 @@
 ## Problem
 
 Generated agents expose all 209+ ops in a single `{agentId}_core` MCP tool. This causes:
+
 - Poor op discoverability for Claude (one massive tool with 200+ op enum)
 - No per-facade auth/permission gating
 - Divergence from Salvador's 20-facade architecture
@@ -19,18 +20,18 @@ Generated agents expose all 209+ ops in a single `{agentId}_core` MCP tool. This
 
 ## Facade Definitions
 
-| Facade | Description | Approx Ops | Sources |
-|--------|-------------|:---:|---------|
-| `{id}_vault` | Knowledge management — CRUD, search, import/export, intake | ~35 | inline vault ops + `vault-extra-ops` + `capture-ops` + `intake-ops` |
-| `{id}_plan` | Plan lifecycle — create/approve/execute/reconcile/complete, grading | ~32 | inline plan ops + `planning-extra-ops` + `grading-ops` |
-| `{id}_brain` | Learning system — intelligence, patterns, strengths, feedback, lifecycle | ~19 | inline brain + brain intelligence ops |
-| `{id}_memory` | Session & cross-project memory — capture, search, dedup | ~15 | inline memory ops + `memory-extra-ops` + `memory-cross-project-ops` |
-| `{id}_admin` | Infrastructure — health, config, telemetry, tokens, LLM, prompts | ~36 | inline llm/prompt ops + `admin-ops` + `admin-extra-ops` |
-| `{id}_curator` | Quality — duplicate detection, contradictions, grooming, health | ~13 | inline curator ops + `curator-extra-ops` |
-| `{id}_loop` | Iterative validation loops | 9 | `loop-ops` |
-| `{id}_orchestrate` | Execution orchestration — project, playbooks, orchestrate | ~23 | inline register + `orchestrate-ops` + `project-ops` + `playbook-ops` |
-| `{id}_control` | Agent behavior — identity, intent, morphing, guidelines, governance | ~13 | inline control + governance ops |
-| `{id}_cognee` | Knowledge graph — search, sync, export | ~11 | inline cognee ops + `cognee-sync-ops` |
+| Facade             | Description                                                              | Approx Ops | Sources                                                              |
+| ------------------ | ------------------------------------------------------------------------ | :--------: | -------------------------------------------------------------------- |
+| `{id}_vault`       | Knowledge management — CRUD, search, import/export, intake               |    ~35     | inline vault ops + `vault-extra-ops` + `capture-ops` + `intake-ops`  |
+| `{id}_plan`        | Plan lifecycle — create/approve/execute/reconcile/complete, grading      |    ~32     | inline plan ops + `planning-extra-ops` + `grading-ops`               |
+| `{id}_brain`       | Learning system — intelligence, patterns, strengths, feedback, lifecycle |    ~19     | inline brain + brain intelligence ops                                |
+| `{id}_memory`      | Session & cross-project memory — capture, search, dedup                  |    ~15     | inline memory ops + `memory-extra-ops` + `memory-cross-project-ops`  |
+| `{id}_admin`       | Infrastructure — health, config, telemetry, tokens, LLM, prompts         |    ~36     | inline llm/prompt ops + `admin-ops` + `admin-extra-ops`              |
+| `{id}_curator`     | Quality — duplicate detection, contradictions, grooming, health          |    ~13     | inline curator ops + `curator-extra-ops`                             |
+| `{id}_loop`        | Iterative validation loops                                               |     9      | `loop-ops`                                                           |
+| `{id}_orchestrate` | Execution orchestration — project, playbooks, orchestrate                |    ~23     | inline register + `orchestrate-ops` + `project-ops` + `playbook-ops` |
+| `{id}_control`     | Agent behavior — identity, intent, morphing, guidelines, governance      |    ~13     | inline control + governance ops                                      |
+| `{id}_cognee`      | Knowledge graph — search, sync, export                                   |    ~11     | inline cognee ops + `cognee-sync-ops`                                |
 
 **Agent-specific ops** (5: `health`, `identity`, `activate`, `inject_claude_md`, `setup`) remain in the entry-point template as `{id}_core`.
 
@@ -52,6 +53,7 @@ packages/core/src/runtime/facades/
 ```
 
 Each facade file:
+
 - Imports from existing satellite op modules (unchanged)
 - Contains inline ops moved from `core-ops.ts`
 - Returns `OpDefinition[]`

@@ -44,11 +44,7 @@
         "ifValid": "Render normally",
         "ifInvalid": {
           "action": "Show error indicator",
-          "questions": [
-            "What field failed?",
-            "What value was received?",
-            "Where to fix it?"
-          ]
+          "questions": ["What field failed?", "What value was received?", "Where to fix it?"]
         }
       }
     }
@@ -111,11 +107,7 @@
         "Invalid status: 'OPENN' - Check your data adapter",
         "Expected number, received: '[object Object]'"
       ],
-      "bad": [
-        "Error",
-        "Invalid data",
-        "Something went wrong"
-      ]
+      "bad": ["Error", "Invalid data", "Something went wrong"]
     },
     "gracefulDegradationLevels": [
       {

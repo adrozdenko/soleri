@@ -97,7 +97,12 @@ describe('registerEngine — core ops', () => {
   it('registers core facade when coreOps provided', () => {
     const server = makeServer();
     const coreOps: OpDefinition[] = [
-      { name: 'health', description: 'Health check', auth: 'read', handler: async () => ({ ok: true }) },
+      {
+        name: 'health',
+        description: 'Health check',
+        auth: 'read',
+        handler: async () => ({ ok: true }),
+      },
     ];
     const result = registerEngine(server, runtime, { agentId: 'core', coreOps });
     expect(result.tools).toContain('core_core');

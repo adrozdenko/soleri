@@ -56,15 +56,15 @@ Format as a report with: Strengths, Risks (recurring anti-patterns), Gaps, Stale
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `brain_stats` | Aggregate metrics |
-| `brain_strengths` | Proven patterns ranked |
-| `brain_global_patterns` | Cross-project patterns |
-| `brain_recommend` | Project-similarity recommendations |
-| `brain_build_intelligence` | Rebuild intelligence pipeline |
-| `memory_topics` / `memory_stats` | Knowledge clusters and health |
-| `vault_age_report` | Stale entries |
-| `curator_health_audit` | Vault quality score |
-| `admin_vault_analytics` | Knowledge quality metrics |
-| `admin_search_insights` | Search miss analysis |
+| Op                               | When to Use                        |
+| -------------------------------- | ---------------------------------- |
+| `brain_stats`                    | Aggregate metrics                  |
+| `brain_strengths`                | Proven patterns ranked             |
+| `brain_global_patterns`          | Cross-project patterns             |
+| `brain_recommend`                | Project-similarity recommendations |
+| `brain_build_intelligence`       | Rebuild intelligence pipeline      |
+| `memory_topics` / `memory_stats` | Knowledge clusters and health      |
+| `vault_age_report`               | Stale entries                      |
+| `curator_health_audit`           | Vault quality score                |
+| `admin_vault_analytics`          | Knowledge quality metrics          |
+| `admin_search_insights`          | Search miss analysis               |

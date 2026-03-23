@@ -30,25 +30,33 @@ function resolveHookFiles(packName: string): Map<string, string> {
   if (pack.manifest.composedFrom) {
     for (const subPackName of pack.manifest.composedFrom) {
       const subFiles = resolveHookFiles(subPackName);
-      for (const [hook, path] of subFiles) { files.set(hook, path); }
+      for (const [hook, path] of subFiles) {
+        files.set(hook, path);
+      }
     }
   } else {
     for (const hook of pack.manifest.hooks) {
       const filePath = join(pack.dir, `hookify.${hook}.local.md`);
-      if (existsSync(filePath)) { files.set(hook, filePath); }
+      if (existsSync(filePath)) {
+        files.set(hook, filePath);
+      }
     }
   }
   return files;
 }
 
-function resolveScripts(packName: string): Map<string, { sourcePath: string; targetDir: string; file: string }> {
+function resolveScripts(
+  packName: string,
+): Map<string, { sourcePath: string; targetDir: string; file: string }> {
   const pack = getPack(packName);
   if (!pack) return new Map();
   const scripts = new Map<string, { sourcePath: string; targetDir: string; file: string }>();
   if (pack.manifest.composedFrom) {
     for (const subPackName of pack.manifest.composedFrom) {
       const subScripts = resolveScripts(subPackName);
-      for (const [name, info] of subScripts) { scripts.set(name, info); }
+      for (const [name, info] of subScripts) {
+        scripts.set(name, info);
+      }
     }
   } else if (pack.manifest.scripts) {
     for (const script of pack.manifest.scripts) {
@@ -61,24 +69,39 @@ function resolveScripts(packName: string): Map<string, { sourcePath: string; tar
   return scripts;
 }
 
-function resolveLifecycleHooks(packName: string): { packName: string; hook: HookPackLifecycleHook }[] {
+function resolveLifecycleHooks(
+  packName: string,
+): { packName: string; hook: HookPackLifecycleHook }[] {
   const pack = getPack(packName);
   if (!pack) return [];
   const hooks: { packName: string; hook: HookPackLifecycleHook }[] = [];
   if (pack.manifest.composedFrom) {
-    for (const subPackName of pack.manifest.composedFrom) { hooks.push(...resolveLifecycleHooks(subPackName)); }
+    for (const subPackName of pack.manifest.composedFrom) {
+      hooks.push(...resolveLifecycleHooks(subPackName));
+    }
   } else if (pack.manifest.lifecycleHooks) {
-    for (const hook of pack.manifest.lifecycleHooks) { hooks.push({ packName: pack.manifest.name, hook }); }
+    for (const hook of pack.manifest.lifecycleHooks) {
+      hooks.push({ packName: pack.manifest.name, hook });
+    }
   }
   return hooks;
 }
 
-interface SettingsHookEntry { type: 'command'; command: string; timeout?: number; [key: string]: unknown; }
+interface SettingsHookEntry {
+  type: 'command';
+  command: string;
+  timeout?: number;
+  [key: string]: unknown;
+}
 
 function readClaudeSettings(claudeDir: string): Record<string, unknown> {
   const settingsPath = join(claudeDir, 'settings.json');
   if (!existsSync(settingsPath)) return {};
-  try { return JSON.parse(readFileSync(settingsPath, 'utf-8')); } catch { return {}; }
+  try {
+    return JSON.parse(readFileSync(settingsPath, 'utf-8'));
+  } catch {
+    return {};
+  }
 }
 
 function writeClaudeSettings(claudeDir: string, settings: Record<string, unknown>): void {
@@ -86,7 +109,10 @@ function writeClaudeSettings(claudeDir: string, settings: Record<string, unknown
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8');
 }
 
-function addLifecycleHooks(claudeDir: string, lifecycleHooks: { packName: string; hook: HookPackLifecycleHook }[]): string[] {
+function addLifecycleHooks(
+  claudeDir: string,
+  lifecycleHooks: { packName: string; hook: HookPackLifecycleHook }[],
+): string[] {
   if (lifecycleHooks.length === 0) return [];
   const settings = readClaudeSettings(claudeDir);
   const hooks = (settings['hooks'] ?? {}) as Record<string, unknown>;
@@ -94,10 +120,18 @@ function addLifecycleHooks(claudeDir: string, lifecycleHooks: { packName: string
   for (const { packName: sourcePack, hook } of lifecycleHooks) {
     const eventKey = hook.event;
     const eventHooks = (hooks[eventKey] ?? []) as SettingsHookEntry[];
-    const alreadyExists = eventHooks.some((h) => h.command === hook.command && h[PACK_MARKER] === sourcePack);
+    const alreadyExists = eventHooks.some(
+      (h) => h.command === hook.command && h[PACK_MARKER] === sourcePack,
+    );
     if (!alreadyExists) {
-      const entry: SettingsHookEntry = { type: hook.type, command: hook.command, [PACK_MARKER]: sourcePack };
-      if (hook.timeout) { entry.timeout = hook.timeout; }
+      const entry: SettingsHookEntry = {
+        type: hook.type,
+        command: hook.command,
+        [PACK_MARKER]: sourcePack,
+      };
+      if (hook.timeout) {
+        entry.timeout = hook.timeout;
+      }
       eventHooks.push(entry);
       hooks[eventKey] = eventHooks;
       added.push(`${eventKey}:${hook.matcher}`);
@@ -118,10 +152,17 @@ function removeLifecycleHooks(claudeDir: string, packName: string): string[] {
     const filtered = eventHooks.filter((h) => h[PACK_MARKER] !== packName);
     if (filtered.length < before) {
       removed.push(eventKey);
-      if (filtered.length === 0) { delete hooks[eventKey]; } else { hooks[eventKey] = filtered; }
+      if (filtered.length === 0) {
+        delete hooks[eventKey];
+      } else {
+        hooks[eventKey] = filtered;
+      }
     }
   }
-  if (removed.length > 0) { settings['hooks'] = hooks; writeClaudeSettings(claudeDir, settings); }
+  if (removed.length > 0) {
+    settings['hooks'] = hooks;
+    writeClaudeSettings(claudeDir, settings);
+  }
   return removed;
 }
 
@@ -130,7 +171,9 @@ export function installPack(
   options?: { projectDir?: string },
 ): { installed: string[]; skipped: string[]; scripts: string[]; lifecycleHooks: string[] } {
   const pack = getPack(packName);
-  if (!pack) { throw new Error(`Unknown hook pack: "${packName}"`); }
+  if (!pack) {
+    throw new Error(`Unknown hook pack: "${packName}"`);
+  }
   const claudeDir = resolveClaudeDir(options?.projectDir);
   mkdirSync(claudeDir, { recursive: true });
   const hookFiles = resolveHookFiles(packName);
@@ -138,7 +181,12 @@ export function installPack(
   const skipped: string[] = [];
   for (const [hook, sourcePath] of hookFiles) {
     const destPath = join(claudeDir, `hookify.${hook}.local.md`);
-    if (existsSync(destPath)) { skipped.push(hook); } else { copyFileSync(sourcePath, destPath); installed.push(hook); }
+    if (existsSync(destPath)) {
+      skipped.push(hook);
+    } else {
+      copyFileSync(sourcePath, destPath);
+      installed.push(hook);
+    }
   }
   const scriptFiles = resolveScripts(packName);
   const installedScripts: string[] = [];
@@ -160,18 +208,26 @@ export function removePack(
   options?: { projectDir?: string },
 ): { removed: string[]; scripts: string[]; lifecycleHooks: string[] } {
   const pack = getPack(packName);
-  if (!pack) { throw new Error(`Unknown hook pack: "${packName}"`); }
+  if (!pack) {
+    throw new Error(`Unknown hook pack: "${packName}"`);
+  }
   const claudeDir = resolveClaudeDir(options?.projectDir);
   const removed: string[] = [];
   for (const hook of pack.manifest.hooks) {
     const filePath = join(claudeDir, `hookify.${hook}.local.md`);
-    if (existsSync(filePath)) { unlinkSync(filePath); removed.push(hook); }
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+      removed.push(hook);
+    }
   }
   const removedScripts: string[] = [];
   if (pack.manifest.scripts) {
     for (const script of pack.manifest.scripts) {
       const filePath = join(claudeDir, script.targetDir, script.file);
-      if (existsSync(filePath)) { unlinkSync(filePath); removedScripts.push(`${script.targetDir}/${script.file}`); }
+      if (existsSync(filePath)) {
+        unlinkSync(filePath);
+        removedScripts.push(`${script.targetDir}/${script.file}`);
+      }
     }
   }
   if (pack.manifest.composedFrom) {
@@ -180,14 +236,19 @@ export function removePack(
       if (subPack?.manifest.scripts) {
         for (const script of subPack.manifest.scripts) {
           const filePath = join(claudeDir, script.targetDir, script.file);
-          if (existsSync(filePath)) { unlinkSync(filePath); removedScripts.push(`${script.targetDir}/${script.file}`); }
+          if (existsSync(filePath)) {
+            unlinkSync(filePath);
+            removedScripts.push(`${script.targetDir}/${script.file}`);
+          }
         }
       }
     }
   }
   const removedHooks = removeLifecycleHooks(claudeDir, packName);
   if (pack.manifest.composedFrom) {
-    for (const subPackName of pack.manifest.composedFrom) { removedHooks.push(...removeLifecycleHooks(claudeDir, subPackName)); }
+    for (const subPackName of pack.manifest.composedFrom) {
+      removedHooks.push(...removeLifecycleHooks(claudeDir, subPackName));
+    }
   }
   return { removed, scripts: removedScripts, lifecycleHooks: removedHooks };
 }
@@ -203,12 +264,16 @@ export function isPackInstalled(
   let present = 0;
   for (const hook of pack.manifest.hooks) {
     total++;
-    if (existsSync(join(claudeDir, `hookify.${hook}.local.md`))) { present++; }
+    if (existsSync(join(claudeDir, `hookify.${hook}.local.md`))) {
+      present++;
+    }
   }
   if (pack.manifest.scripts) {
     for (const script of pack.manifest.scripts) {
       total++;
-      if (existsSync(join(claudeDir, script.targetDir, script.file))) { present++; }
+      if (existsSync(join(claudeDir, script.targetDir, script.file))) {
+        present++;
+      }
     }
   }
   if (pack.manifest.composedFrom) {
@@ -217,7 +282,9 @@ export function isPackInstalled(
       if (subPack?.manifest.scripts) {
         for (const script of subPack.manifest.scripts) {
           total++;
-          if (existsSync(join(claudeDir, script.targetDir, script.file))) { present++; }
+          if (existsSync(join(claudeDir, script.targetDir, script.file))) {
+            present++;
+          }
         }
       }
     }
@@ -230,7 +297,12 @@ export function isPackInstalled(
       for (const { packName: sourcePack, hook } of lcHooks) {
         total++;
         const eventHooks = hooksObj[hook.event];
-        if (Array.isArray(eventHooks) && eventHooks.some((h) => h.command === hook.command && h[PACK_MARKER] === sourcePack)) { present++; }
+        if (
+          Array.isArray(eventHooks) &&
+          eventHooks.some((h) => h.command === hook.command && h[PACK_MARKER] === sourcePack)
+        ) {
+          present++;
+        }
       }
     }
   }

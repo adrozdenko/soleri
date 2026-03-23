@@ -375,6 +375,5 @@ export function createChatTransportOps(state: ChatState): OpDefinition[] {
         return { responses, count: responses.length };
       },
     },
-
   ];
 }

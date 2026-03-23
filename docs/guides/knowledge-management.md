@@ -96,13 +96,13 @@ Quick captures get auto-enriched later by the curator.
 
 ### What to capture
 
-| Capture this | Skip this |
-|-------------|-----------|
-| Non-obvious gotchas | Things the type checker catches |
-| Patterns that worked | One-time config changes |
-| Anti-patterns that burned you | Values already in files |
-| Architectural decisions and why | Solved-and-done fixes |
-| Cross-cutting concerns | Ephemeral task details |
+| Capture this                    | Skip this                       |
+| ------------------------------- | ------------------------------- |
+| Non-obvious gotchas             | Things the type checker catches |
+| Patterns that worked            | One-time config changes         |
+| Anti-patterns that burned you   | Values already in files         |
+| Architectural decisions and why | Solved-and-done fixes           |
+| Cross-cutting concerns          | Ephemeral task details          |
 
 **Rule of thumb**: if you'd explain it to a new team member, capture it.
 
@@ -337,26 +337,26 @@ Set a preset:
 
 ### Every session
 
-| When | Op | Why |
-|------|-----|-----|
-| Start | `register` | Load project context |
+| When            | Op                      | Why                      |
+| --------------- | ----------------------- | ------------------------ |
+| Start           | `register`              | Load project context     |
 | Before deciding | `search` or `recommend` | Check existing knowledge |
-| After learning | `capture_knowledge` | Persist the insight |
-| End of session | `session_capture` | Save session context |
+| After learning  | `capture_knowledge`     | Persist the insight      |
+| End of session  | `session_capture`       | Save session context     |
 
 ### Weekly
 
-| When | Op | Why |
-|------|-----|-----|
-| Monday | `curator_health_audit` | Check vault quality |
-| When score < 70 | `curator_groom_all` | Clean up entries |
-| After grooming | `build_intelligence` | Rebuild brain scores |
+| When            | Op                     | Why                  |
+| --------------- | ---------------------- | -------------------- |
+| Monday          | `curator_health_audit` | Check vault quality  |
+| When score < 70 | `curator_groom_all`    | Clean up entries     |
+| After grooming  | `build_intelligence`   | Rebuild brain scores |
 
 ### Monthly
 
-| When | Op | Why |
-|------|-----|-----|
-| First of month | `curator_detect_duplicates` | Find redundancy |
-| After dedup | `curator_consolidate` (dry-run) | Plan cleanup |
-| After review | `curator_consolidate` (real) | Execute cleanup |
-| After cleanup | `radar_candidates` | Review pending captures |
+| When           | Op                              | Why                     |
+| -------------- | ------------------------------- | ----------------------- |
+| First of month | `curator_detect_duplicates`     | Find redundancy         |
+| After dedup    | `curator_consolidate` (dry-run) | Plan cleanup            |
+| After review   | `curator_consolidate` (real)    | Execute cleanup         |
+| After cleanup  | `radar_candidates`              | Review pending captures |

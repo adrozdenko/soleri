@@ -26,9 +26,11 @@ import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 const AGENT_ID = 'sq-agent';
 
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
       captured = handler as typeof captured;
@@ -66,8 +68,18 @@ async function opRaw(facade: string, opName: string, params: Record<string, unkn
 
 // ─── Helpers ─────────────────────────────────────────────
 
-const DOMAINS = ['frontend', 'backend', 'security', 'testing', 'devops',
-  'database', 'api-design', 'performance', 'monitoring', 'infrastructure'];
+const DOMAINS = [
+  'frontend',
+  'backend',
+  'security',
+  'testing',
+  'devops',
+  'database',
+  'api-design',
+  'performance',
+  'monitoring',
+  'infrastructure',
+];
 
 function makePattern(domain: string, index: number, vocabulary: string[]) {
   return {
@@ -169,7 +181,11 @@ describe('System Quality Tests', () => {
     });
 
     const semanticFacades = createSemanticFacades(runtime, AGENT_ID);
-    const domainFacades = createDomainFacades(runtime, AGENT_ID, ['frontend', 'backend', 'infrastructure']);
+    const domainFacades = createDomainFacades(runtime, AGENT_ID, [
+      'frontend',
+      'backend',
+      'infrastructure',
+    ]);
     const allFacades = [...semanticFacades, ...domainFacades];
 
     handlers = new Map();
@@ -199,7 +215,8 @@ describe('System Quality Tests', () => {
             type: 'pattern',
             domain: 'database',
             title: 'Use composite indexes for multi-column WHERE clauses',
-            description: 'When queries filter on multiple columns, a composite index matching the column order eliminates full table scans. Column order should follow selectivity — most selective first.',
+            description:
+              'When queries filter on multiple columns, a composite index matching the column order eliminates full table scans. Column order should follow selectivity — most selective first.',
             severity: 'critical',
             tags: ['database', 'indexing', 'optimization', 'query-plan'],
           },
@@ -207,7 +224,8 @@ describe('System Quality Tests', () => {
             type: 'pattern',
             domain: 'database',
             title: 'Enable query plan caching to avoid repeated parsing',
-            description: 'Prepared statements and query plan caching reduce CPU overhead from repeated query parsing. Parameterized queries also prevent SQL injection.',
+            description:
+              'Prepared statements and query plan caching reduce CPU overhead from repeated query parsing. Parameterized queries also prevent SQL injection.',
             severity: 'warning',
             tags: ['database', 'optimization', 'caching', 'prepared-statements'],
           },
@@ -215,7 +233,8 @@ describe('System Quality Tests', () => {
             type: 'pattern',
             domain: 'database',
             title: 'Partition large tables by date range for faster scans',
-            description: 'Range partitioning on timestamp columns allows the query planner to skip irrelevant partitions. Especially effective for time-series data with queries filtering by date.',
+            description:
+              'Range partitioning on timestamp columns allows the query planner to skip irrelevant partitions. Especially effective for time-series data with queries filtering by date.',
             severity: 'warning',
             tags: ['database', 'partitioning', 'optimization', 'time-series'],
           },
@@ -223,7 +242,8 @@ describe('System Quality Tests', () => {
             type: 'anti-pattern',
             domain: 'database',
             title: 'Avoid SELECT star in production queries',
-            description: 'SELECT * fetches all columns including BLOBs and unused fields, increasing I/O and network transfer. Always specify the exact columns needed.',
+            description:
+              'SELECT * fetches all columns including BLOBs and unused fields, increasing I/O and network transfer. Always specify the exact columns needed.',
             severity: 'critical',
             tags: ['database', 'query', 'optimization', 'anti-pattern'],
           },
@@ -231,7 +251,8 @@ describe('System Quality Tests', () => {
             type: 'pattern',
             domain: 'database',
             title: 'Use connection pooling to reduce connection overhead',
-            description: 'Connection pooling reuses database connections instead of creating new ones per request. PgBouncer or built-in pool managers reduce latency by 10-50x for short queries.',
+            description:
+              'Connection pooling reuses database connections instead of creating new ones per request. PgBouncer or built-in pool managers reduce latency by 10-50x for short queries.',
             severity: 'warning',
             tags: ['database', 'connection-pool', 'optimization', 'performance'],
           },
@@ -264,11 +285,12 @@ describe('System Quality Tests', () => {
 
       // At least one recommendation should reference database-related knowledge
       const dbRelated = recommendations.some(
-        r => r.pattern.toLowerCase().includes('database') ||
-             r.pattern.toLowerCase().includes('index') ||
-             r.pattern.toLowerCase().includes('query') ||
-             r.pattern.toLowerCase().includes('pool') ||
-             r.pattern.toLowerCase().includes('partition'),
+        (r) =>
+          r.pattern.toLowerCase().includes('database') ||
+          r.pattern.toLowerCase().includes('index') ||
+          r.pattern.toLowerCase().includes('query') ||
+          r.pattern.toLowerCase().includes('pool') ||
+          r.pattern.toLowerCase().includes('partition'),
       );
       expect(dbRelated).toBe(true);
     });
@@ -292,8 +314,14 @@ describe('System Quality Tests', () => {
         prompt: 'optimize database indexes and connection pooling',
         domain: 'database',
         tasks: [
-          { title: 'Audit existing indexes', description: 'Review EXPLAIN ANALYZE output for all slow queries' },
-          { title: 'Set up connection pooling', description: 'Configure PgBouncer with transaction mode' },
+          {
+            title: 'Audit existing indexes',
+            description: 'Review EXPLAIN ANALYZE output for all slow queries',
+          },
+          {
+            title: 'Set up connection pooling',
+            description: 'Configure PgBouncer with transaction mode',
+          },
         ],
       });
 
@@ -304,7 +332,7 @@ describe('System Quality Tests', () => {
       const decisions = plan.decisions as string[];
       expect(decisions.length).toBeGreaterThan(0);
       // Each decision is prefixed with "Brain pattern: ..."
-      const hasBrainPrefix = decisions.some(d => d.startsWith('Brain pattern:'));
+      const hasBrainPrefix = decisions.some((d) => d.startsWith('Brain pattern:'));
       expect(hasBrainPrefix).toBe(true);
     });
 
@@ -315,7 +343,8 @@ describe('System Quality Tests', () => {
             type: 'pattern',
             domain: 'performance',
             title: 'Use Redis with LRU eviction for application-level caching',
-            description: 'Redis with maxmemory-policy allkeys-lru provides automatic eviction of least recently used keys when memory fills up. Set TTL on all keys to prevent stale data.',
+            description:
+              'Redis with maxmemory-policy allkeys-lru provides automatic eviction of least recently used keys when memory fills up. Set TTL on all keys to prevent stale data.',
             severity: 'warning',
             tags: ['caching', 'redis', 'performance', 'lru'],
           },
@@ -323,7 +352,8 @@ describe('System Quality Tests', () => {
             type: 'pattern',
             domain: 'performance',
             title: 'Cache invalidation via pub-sub for distributed systems',
-            description: 'Use Redis pub/sub or event bus to broadcast cache invalidation events across service instances. Prevents serving stale data after writes.',
+            description:
+              'Use Redis pub/sub or event bus to broadcast cache invalidation events across service instances. Prevents serving stale data after writes.',
             severity: 'warning',
             tags: ['caching', 'distributed', 'pub-sub', 'invalidation'],
           },
@@ -344,22 +374,28 @@ describe('System Quality Tests', () => {
 
       // Should find the newly captured caching patterns
       const cachingRelated = recommendations.some(
-        r => r.pattern.toLowerCase().includes('caching') ||
-             r.pattern.toLowerCase().includes('redis') ||
-             r.pattern.toLowerCase().includes('cache') ||
-             r.pattern.toLowerCase().includes('lru'),
+        (r) =>
+          r.pattern.toLowerCase().includes('caching') ||
+          r.pattern.toLowerCase().includes('redis') ||
+          r.pattern.toLowerCase().includes('cache') ||
+          r.pattern.toLowerCase().includes('lru'),
       );
       expect(cachingRelated).toBe(true);
     });
 
     it('1.7 Vault search confirms both database and caching patterns exist', async () => {
-      const dbResults = await op('vault', 'search', { query: 'database index optimization query plan' });
+      const dbResults = await op('vault', 'search', {
+        query: 'database index optimization query plan',
+      });
       const dbArr = dbResults as unknown as Array<{ entry: { title: string }; score: number }>;
       expect(Array.isArray(dbArr)).toBe(true);
       expect(dbArr.length).toBeGreaterThan(0);
 
       const cacheResults = await op('vault', 'search', { query: 'redis caching lru eviction' });
-      const cacheArr = cacheResults as unknown as Array<{ entry: { title: string }; score: number }>;
+      const cacheArr = cacheResults as unknown as Array<{
+        entry: { title: string };
+        score: number;
+      }>;
       expect(Array.isArray(cacheArr)).toBe(true);
       expect(cacheArr.length).toBeGreaterThan(0);
     });
@@ -383,9 +419,7 @@ describe('System Quality Tests', () => {
         expect(res.captured).toBeGreaterThanOrEqual(entries.length - 1); // allow 1 possible dedup
 
         const results = res.results as Array<{ id: string; action: string }>;
-        const ids = results
-          .filter(r => r.action === 'capture')
-          .map(r => r.id);
+        const ids = results.filter((r) => r.action === 'capture').map((r) => r.id);
         patternIds.set(domain, ids);
       }
 
@@ -495,7 +529,11 @@ describe('System Quality Tests', () => {
 
     it('2.8 brain_strengths shows patterns sorted by actual strength', async () => {
       const res = await op('brain', 'brain_strengths', { limit: 30 });
-      const strengths = res as unknown as Array<{ pattern: string; strength: number; domain?: string }>;
+      const strengths = res as unknown as Array<{
+        pattern: string;
+        strength: number;
+        domain?: string;
+      }>;
       expect(Array.isArray(strengths)).toBe(true);
 
       // After 17 feedback entries, there must be at least 2 patterns with computed strengths
@@ -507,7 +545,7 @@ describe('System Quality Tests', () => {
       }
 
       // Strength values should NOT all be identical (they differ by feedback signals)
-      const uniqueStrengths = new Set(strengths.map(s => s.strength));
+      const uniqueStrengths = new Set(strengths.map((s) => s.strength));
       expect(uniqueStrengths.size).toBeGreaterThan(1);
     });
 
@@ -518,16 +556,21 @@ describe('System Quality Tests', () => {
         limit: 10,
       });
 
-      const results = res as unknown as Array<{ pattern: string; strength: number; domain?: string }>;
+      const results = res as unknown as Array<{
+        pattern: string;
+        strength: number;
+        domain?: string;
+      }>;
       expect(Array.isArray(results)).toBe(true);
       // With 5 frontend feedback entries, must return recommendations
       expect(results.length).toBeGreaterThan(0);
       // At least one recommendation should be from the frontend domain
-      const hasFrontend = results.some(r =>
-        r.pattern?.toLowerCase().includes('component') ||
-        r.pattern?.toLowerCase().includes('rendering') ||
-        r.pattern?.toLowerCase().includes('frontend') ||
-        r.domain === 'frontend',
+      const hasFrontend = results.some(
+        (r) =>
+          r.pattern?.toLowerCase().includes('component') ||
+          r.pattern?.toLowerCase().includes('rendering') ||
+          r.pattern?.toLowerCase().includes('frontend') ||
+          r.domain === 'frontend',
       );
       expect(hasFrontend).toBe(true);
     });
@@ -539,17 +582,22 @@ describe('System Quality Tests', () => {
         limit: 10,
       });
 
-      const results = res as unknown as Array<{ pattern: string; strength: number; domain?: string }>;
+      const results = res as unknown as Array<{
+        pattern: string;
+        strength: number;
+        domain?: string;
+      }>;
       expect(Array.isArray(results)).toBe(true);
       // With 3 security feedback entries, must return recommendations
       expect(results.length).toBeGreaterThan(0);
       // At least one recommendation should be from the security domain
-      const hasSecurity = results.some(r =>
-        r.pattern?.toLowerCase().includes('security') ||
-        r.pattern?.toLowerCase().includes('csrf') ||
-        r.pattern?.toLowerCase().includes('xss') ||
-        r.pattern?.toLowerCase().includes('encryption') ||
-        r.domain === 'security',
+      const hasSecurity = results.some(
+        (r) =>
+          r.pattern?.toLowerCase().includes('security') ||
+          r.pattern?.toLowerCase().includes('csrf') ||
+          r.pattern?.toLowerCase().includes('xss') ||
+          r.pattern?.toLowerCase().includes('encryption') ||
+          r.domain === 'security',
       );
       expect(hasSecurity).toBe(true);
     });
@@ -584,7 +632,6 @@ describe('System Quality Tests', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Section 3: LLM Graceful Degradation', () => {
-
     it('3.1 admin_health reports LLM availability status', async () => {
       const res = await op('admin', 'admin_health');
 
@@ -635,7 +682,10 @@ describe('System Quality Tests', () => {
         objective: 'Add input validation to all API endpoints',
         scope: 'Backend security hardening',
         tasks: [
-          { title: 'Add Zod schemas', description: 'Define validation schemas for all request bodies' },
+          {
+            title: 'Add Zod schemas',
+            description: 'Define validation schemas for all request bodies',
+          },
         ],
       });
 
@@ -665,8 +715,8 @@ describe('System Quality Tests', () => {
       expect(res.checks).toBeDefined();
       const checks = res.checks as Array<{ name: string; status: string; detail: string }>;
 
-      const llmOpenai = checks.find(c => c.name === 'llm_openai');
-      const llmAnthropic = checks.find(c => c.name === 'llm_anthropic');
+      const llmOpenai = checks.find((c) => c.name === 'llm_openai');
+      const llmAnthropic = checks.find((c) => c.name === 'llm_anthropic');
       expect(llmOpenai).toBeDefined();
       expect(llmAnthropic).toBeDefined();
       // LLM status depends on env: 'ok' if API keys present, 'warn' if not
@@ -683,7 +733,6 @@ describe('System Quality Tests', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Section 4: Search Quality Stress Test', () => {
-
     it('4.1 Seed vault with 50 patterns across 10 domains', async () => {
       for (const domain of DOMAINS) {
         const vocabs = DOMAIN_VOCAB[domain];
@@ -692,7 +741,9 @@ describe('System Quality Tests', () => {
 
         const res = await op('vault', 'capture_knowledge', { entries });
         // Some may be duplicated from Section 2 seeding — that's fine
-        expect((res.captured as number) + (res.duplicated as number ?? 0)).toBeGreaterThanOrEqual(1);
+        expect((res.captured as number) + ((res.duplicated as number) ?? 0)).toBeGreaterThanOrEqual(
+          1,
+        );
       }
 
       // Rebuild vocabulary for TF-IDF scoring with full corpus
@@ -706,31 +757,40 @@ describe('System Quality Tests', () => {
     it('4.2 Domain-specific search returns correct domain results', async () => {
       // Search for security-specific terms — should find security patterns
       const secRes = await op('vault', 'search', { query: 'csrf xss sanitization encryption' });
-      const secArr = secRes as unknown as Array<{ entry: { domain: string; title: string }; score: number }>;
+      const secArr = secRes as unknown as Array<{
+        entry: { domain: string; title: string };
+        score: number;
+      }>;
       expect(secArr.length).toBeGreaterThan(0);
 
       // Top results should be from security domain
       const top3 = secArr.slice(0, 3);
-      const securityCount = top3.filter(r => r.entry.domain === 'security').length;
+      const securityCount = top3.filter((r) => r.entry.domain === 'security').length;
       expect(securityCount).toBeGreaterThanOrEqual(1);
     });
 
     it('4.3 DevOps-specific search returns devops patterns', async () => {
       const res = await op('vault', 'search', { query: 'ci-cd pipeline container dockerfile' });
-      const arr = res as unknown as Array<{ entry: { domain: string; title: string }; score: number }>;
+      const arr = res as unknown as Array<{
+        entry: { domain: string; title: string };
+        score: number;
+      }>;
       expect(arr.length).toBeGreaterThan(0);
 
-      const devopsCount = arr.slice(0, 3).filter(r => r.entry.domain === 'devops').length;
+      const devopsCount = arr.slice(0, 3).filter((r) => r.entry.domain === 'devops').length;
       expect(devopsCount).toBeGreaterThanOrEqual(1);
     });
 
     it('4.4 Cross-domain search finds patterns from multiple domains', async () => {
       // "monitoring" appears in both monitoring and devops domains
       const res = await op('vault', 'search', { query: 'monitoring alerting health-check' });
-      const arr = res as unknown as Array<{ entry: { domain: string; title: string }; score: number }>;
+      const arr = res as unknown as Array<{
+        entry: { domain: string; title: string };
+        score: number;
+      }>;
       expect(arr.length).toBeGreaterThan(0);
 
-      const domains = new Set(arr.map(r => r.entry.domain));
+      const domains = new Set(arr.map((r) => r.entry.domain));
       // "monitoring alerting health-check" spans multiple domains (monitoring, devops, infrastructure)
       expect(domains.size).toBeGreaterThanOrEqual(2);
     });
@@ -743,8 +803,9 @@ describe('System Quality Tests', () => {
 
       // Should find the database index pattern
       const hasIndexPattern = arr.some(
-        r => r.entry.title.toLowerCase().includes('index') ||
-             r.entry.title.toLowerCase().includes('query'),
+        (r) =>
+          r.entry.title.toLowerCase().includes('index') ||
+          r.entry.title.toLowerCase().includes('query'),
       );
       expect(hasIndexPattern).toBe(true);
     });
@@ -770,9 +831,7 @@ describe('System Quality Tests', () => {
         }
 
         // Exact title match should have highest score
-        const exactMatch = arr.find(r =>
-          r.entry.title.includes('composite indexes'),
-        );
+        const exactMatch = arr.find((r) => r.entry.title.includes('composite indexes'));
         if (exactMatch) {
           expect(exactMatch.score).toBe(arr[0].score);
         }
@@ -785,7 +844,6 @@ describe('System Quality Tests', () => {
   // ═══════════════════════════════════════════════════════════
 
   describe('Section 5: Concurrent Operations', () => {
-
     it('5.1 10 concurrent vault captures — all succeed, no duplicates', async () => {
       const promises = Array.from({ length: 10 }, (_, i) =>
         op('vault', 'capture_quick', {
@@ -798,12 +856,12 @@ describe('System Quality Tests', () => {
       );
 
       const results = await Promise.all(promises);
-      const captured = results.filter(r => r.captured === true);
+      const captured = results.filter((r) => r.captured === true);
       // All 10 should succeed (titles are unique)
       expect(captured.length).toBe(10);
 
       // Verify each got a unique ID
-      const ids = new Set(captured.map(r => r.id as string));
+      const ids = new Set(captured.map((r) => r.id as string));
       expect(ids.size).toBe(10);
     });
 
@@ -879,7 +937,7 @@ describe('System Quality Tests', () => {
       // Get some entry IDs from vault
       const searchRes = await op('vault', 'search', { query: 'pattern' });
       const entries = searchRes as unknown as Array<{ entry: { id: string } }>;
-      const entryIds = entries.slice(0, 5).map(e => e.entry.id);
+      const entryIds = entries.slice(0, 5).map((e) => e.entry.id);
 
       if (entryIds.length >= 3) {
         const feedbackPromises = entryIds.map((id, i) =>
@@ -888,7 +946,7 @@ describe('System Quality Tests', () => {
             entryId: id,
             action: i % 2 === 0 ? 'accepted' : 'dismissed',
             source: 'search',
-            confidence: 0.7 + (i * 0.05),
+            confidence: 0.7 + i * 0.05,
           }),
         );
 

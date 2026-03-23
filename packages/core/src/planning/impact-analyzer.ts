@@ -31,21 +31,20 @@ export interface ImpactReport {
 // Constants
 // ---------------------------------------------------------------------------
 
-const CODE_EXTENSIONS = new Set([
-  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
-  '.vue', '.svelte',
-]);
+const CODE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.vue', '.svelte']);
 
-const TEST_PATTERNS = [
-  /\.test\./,
-  /\.spec\./,
-  /__tests__/,
-  /\.stories\./,
-];
+const TEST_PATTERNS = [/\.test\./, /\.spec\./, /__tests__/, /\.stories\./];
 
 const SKIP_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build', 'coverage',
-  '.next', '.nuxt', '.svelte-kit', '.turbo',
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  'coverage',
+  '.next',
+  '.nuxt',
+  '.svelte-kit',
+  '.turbo',
 ]);
 
 const MAX_FILES = 5000;
@@ -58,11 +57,7 @@ export class ImpactAnalyzer {
   /**
    * Analyze the downstream impact of modified files.
    */
-  analyzeImpact(
-    modifiedFiles: string[],
-    projectPath: string,
-    planScope?: string[],
-  ): ImpactReport {
+  analyzeImpact(modifiedFiles: string[], projectPath: string, planScope?: string[]): ImpactReport {
     if (modifiedFiles.length === 0 || !existsSync(projectPath)) {
       return emptyReport(modifiedFiles);
     }
@@ -72,11 +67,7 @@ export class ImpactAnalyzer {
     const untestedConsumers = filterUntested(consumers);
     const scopeViolations = detectScopeViolations(modifiedFiles, planScope);
     const riskLevel = assessRisk(consumers.length);
-    const recommendations = buildRecommendations(
-      consumers,
-      untestedConsumers,
-      scopeViolations,
-    );
+    const recommendations = buildRecommendations(consumers, untestedConsumers, scopeViolations);
 
     return {
       modifiedFiles,
@@ -166,18 +157,17 @@ function findConsumers(
 /**
  * Build regex-friendly stems from modified file paths.
  */
-function buildImportPatterns(
-  modifiedFiles: string[],
-  projectPath: string,
-): string[] {
-  return modifiedFiles.map((f) => {
-    const rel = f.startsWith('/') ? relative(projectPath, f) : f;
-    // Strip extension for import matching
-    const stem = rel.replace(/\.[^.]+$/, '');
-    // Also match the bare filename without extension
-    const bare = basename(rel).replace(/\.[^.]+$/, '');
-    return bare.length >= 3 ? bare : stem;
-  }).filter((p) => p.length >= 3);
+function buildImportPatterns(modifiedFiles: string[], projectPath: string): string[] {
+  return modifiedFiles
+    .map((f) => {
+      const rel = f.startsWith('/') ? relative(projectPath, f) : f;
+      // Strip extension for import matching
+      const stem = rel.replace(/\.[^.]+$/, '');
+      // Also match the bare filename without extension
+      const bare = basename(rel).replace(/\.[^.]+$/, '');
+      return bare.length >= 3 ? bare : stem;
+    })
+    .filter((p) => p.length >= 3);
 }
 
 /**
@@ -191,34 +181,28 @@ function matchImports(filePath: string, patterns: string[]): string[] {
     return [];
   }
 
-  const importRegex = /(?:import\s+.*?from\s+['"]([^'"]+)['"]|require\s*\(\s*['"]([^'"]+)['"]\s*\))/g;
+  const importRegex =
+    /(?:import\s+.*?from\s+['"]([^'"]+)['"]|require\s*\(\s*['"]([^'"]+)['"]\s*\))/g;
   const importPaths: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = importRegex.exec(content)) !== null) {
     importPaths.push(match[1] ?? match[2]);
   }
 
-  return patterns.filter((p) =>
-    importPaths.some((imp) => imp.includes(p)),
-  );
+  return patterns.filter((p) => importPaths.some((imp) => imp.includes(p)));
 }
 
 /**
  * Filter consumers that are NOT test files.
  */
 function filterUntested(consumers: AffectedConsumer[]): string[] {
-  return consumers
-    .map((c) => c.file)
-    .filter((f) => !TEST_PATTERNS.some((p) => p.test(f)));
+  return consumers.map((c) => c.file).filter((f) => !TEST_PATTERNS.some((p) => p.test(f)));
 }
 
 /**
  * Flag modified files not in the declared plan scope.
  */
-function detectScopeViolations(
-  modifiedFiles: string[],
-  planScope?: string[],
-): string[] {
+function detectScopeViolations(modifiedFiles: string[], planScope?: string[]): string[] {
   if (!planScope || planScope.length === 0) return [];
 
   return modifiedFiles.filter((f) => {
@@ -248,7 +232,10 @@ function buildRecommendations(
 
   if (consumers.length > 0) {
     recs.push(
-      `Run tests for ${consumers.length} affected consumer(s): ${consumers.map((c) => c.file).slice(0, 5).join(', ')}`,
+      `Run tests for ${consumers.length} affected consumer(s): ${consumers
+        .map((c) => c.file)
+        .slice(0, 5)
+        .join(', ')}`,
     );
   }
 

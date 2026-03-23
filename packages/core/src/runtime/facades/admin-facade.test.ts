@@ -244,10 +244,7 @@ describe('createAdminFacadeOps', () => {
 
   describe('admin_vault_size (from satellite)', () => {
     it('returns in-memory for :memory: vault', async () => {
-      const result = (await findOp(ops, 'admin_vault_size').handler({})) as Record<
-        string,
-        unknown
-      >;
+      const result = (await findOp(ops, 'admin_vault_size').handler({})) as Record<string, unknown>;
       expect(result.path).toBe(':memory:');
       expect(result.sizeHuman).toBe('in-memory');
     });

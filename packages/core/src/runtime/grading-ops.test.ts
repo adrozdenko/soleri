@@ -11,9 +11,25 @@ function makeMockRuntime() {
         score: 82,
         iteration: 1,
         gaps: [
-          { severity: 'major', category: 'scope', description: 'Missing scope', recommendation: 'Add scope', location: 'plan.scope' },
-          { severity: 'minor', category: 'detail', description: 'Low detail', recommendation: 'Add detail' },
-          { severity: 'critical', category: 'risk', description: 'No risk analysis', recommendation: 'Add risks' },
+          {
+            severity: 'major',
+            category: 'scope',
+            description: 'Missing scope',
+            recommendation: 'Add scope',
+            location: 'plan.scope',
+          },
+          {
+            severity: 'minor',
+            category: 'detail',
+            description: 'Low detail',
+            recommendation: 'Add detail',
+          },
+          {
+            severity: 'critical',
+            category: 'risk',
+            description: 'No risk analysis',
+            recommendation: 'Add risks',
+          },
         ],
       }),
       getCheckHistory: vi.fn().mockReturnValue([
@@ -77,7 +93,10 @@ describe('createGradingOps', () => {
     it('returns count and checks array', async () => {
       runtime = makeMockRuntime();
       ops = createGradingOps(runtime);
-      const result = (await findOp('plan_check_history').handler({ planId: 'p1' })) as Record<string, unknown>;
+      const result = (await findOp('plan_check_history').handler({ planId: 'p1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.planId).toBe('p1');
       expect(result.count).toBe(2);
       expect(result.checks).toHaveLength(2);
@@ -96,7 +115,10 @@ describe('createGradingOps', () => {
       runtime = makeMockRuntime();
       (runtime.planner.getLatestCheck as ReturnType<typeof vi.fn>).mockReturnValue(null);
       ops = createGradingOps(runtime);
-      const result = (await findOp('plan_latest_check').handler({ planId: 'p1' })) as Record<string, unknown>;
+      const result = (await findOp('plan_latest_check').handler({ planId: 'p1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.message).toBe('No checks found for this plan.');
     });
   });
@@ -115,7 +137,10 @@ describe('createGradingOps', () => {
     it('sorts gaps by severity and groups them', async () => {
       runtime = makeMockRuntime();
       ops = createGradingOps(runtime);
-      const result = (await findOp('plan_auto_improve').handler({ planId: 'p1' })) as Record<string, unknown>;
+      const result = (await findOp('plan_auto_improve').handler({ planId: 'p1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.grade).toBe('B');
       expect(result.score).toBe(82);
       expect(result.totalGaps).toBe(3);
@@ -130,10 +155,16 @@ describe('createGradingOps', () => {
     it('returns approve as nextAction when score >= 90', async () => {
       runtime = makeMockRuntime();
       (runtime.planner.grade as ReturnType<typeof vi.fn>).mockReturnValue({
-        grade: 'A', score: 92, iteration: 3, gaps: [],
+        grade: 'A',
+        score: 92,
+        iteration: 3,
+        gaps: [],
       });
       ops = createGradingOps(runtime);
-      const result = (await findOp('plan_auto_improve').handler({ planId: 'p1' })) as Record<string, unknown>;
+      const result = (await findOp('plan_auto_improve').handler({ planId: 'p1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.nextAction).toBe('approve');
       expect(result.totalGaps).toBe(0);
     });

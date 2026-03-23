@@ -32,12 +32,14 @@ describe('classifyEntry', () => {
   });
 
   it('classifies entry with valid LLM response', async () => {
-    const llm = mockLLM(JSON.stringify({
-      domain: 'security',
-      severity: 'critical',
-      tags: ['auth', 'jwt', 'security'],
-      confidence: 0.9,
-    }));
+    const llm = mockLLM(
+      JSON.stringify({
+        domain: 'security',
+        severity: 'critical',
+        tags: ['auth', 'jwt', 'security'],
+        confidence: 0.9,
+      }),
+    );
 
     const result = await classifyEntry(makeEntry({ title: 'Use JWT securely' }), llm);
     expect(result.classified).toBe(true);
@@ -75,7 +77,9 @@ describe('classifyEntry', () => {
   });
 
   it('passes entry fields to LLM prompt', async () => {
-    const llm = mockLLM(JSON.stringify({ domain: 'test', severity: 'warning', tags: [], confidence: 0.5 }));
+    const llm = mockLLM(
+      JSON.stringify({ domain: 'test', severity: 'warning', tags: [], confidence: 0.5 }),
+    );
     const entry = makeEntry({
       title: 'Specific Title',
       type: 'anti-pattern',
@@ -93,7 +97,9 @@ describe('classifyEntry', () => {
   });
 
   it('uses empty tags placeholder when entry has no tags', async () => {
-    const llm = mockLLM(JSON.stringify({ domain: 'test', severity: 'warning', tags: [], confidence: 0.5 }));
+    const llm = mockLLM(
+      JSON.stringify({ domain: 'test', severity: 'warning', tags: [], confidence: 0.5 }),
+    );
     const entry = makeEntry({ tags: [] });
 
     await classifyEntry(entry, llm);

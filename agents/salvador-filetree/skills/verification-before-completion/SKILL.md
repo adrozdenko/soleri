@@ -43,12 +43,12 @@ If any check reports problems, address before claiming completion.
 
 ## Common Failures
 
-| Claim | Requires | Not Sufficient |
-|-------|----------|----------------|
-| Tests pass | Test output: 0 failures | Previous run, "should pass" |
-| Build succeeds | Build command: exit 0 | Linter passing |
-| Bug fixed | Original symptom passes | "Code changed, assumed fixed" |
-| Requirements met | Line-by-line checklist | Tests passing alone |
+| Claim            | Requires                | Not Sufficient                |
+| ---------------- | ----------------------- | ----------------------------- |
+| Tests pass       | Test output: 0 failures | Previous run, "should pass"   |
+| Build succeeds   | Build command: exit 0   | Linter passing                |
+| Bug fixed        | Original symptom passes | "Code changed, assumed fixed" |
+| Requirements met | Line-by-line checklist  | Tests passing alone           |
 
 ## Red Flags — STOP
 
@@ -57,12 +57,12 @@ If any check reports problems, address before claiming completion.
 - About to commit/push/PR without verification
 - Relying on partial verification
 
-| Excuse | Reality |
-|--------|---------|
-| "Should work now" | RUN the verification |
-| "I'm confident" | Confidence is not evidence |
-| "Just this once" | No exceptions |
-| "Partial check is enough" | Partial proves nothing |
+| Excuse                    | Reality                    |
+| ------------------------- | -------------------------- |
+| "Should work now"         | RUN the verification       |
+| "I'm confident"           | Confidence is not evidence |
+| "Just this once"          | No exceptions              |
+| "Partial check is enough" | Partial proves nothing     |
 
 ## After Verification
 
@@ -77,9 +77,9 @@ Capture session summary: `salvador_core op:session_capture params: { summary: "<
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `admin_health` | Quick system health check |
-| `admin_diagnostic` | Comprehensive diagnostic |
-| `admin_vault_analytics` | Knowledge quality metrics |
-| `session_capture` | Persist verified completion context |
+| Op                      | When to Use                         |
+| ----------------------- | ----------------------------------- |
+| `admin_health`          | Quick system health check           |
+| `admin_diagnostic`      | Comprehensive diagnostic            |
+| `admin_vault_analytics` | Knowledge quality metrics           |
+| `session_capture`       | Persist verified completion context |

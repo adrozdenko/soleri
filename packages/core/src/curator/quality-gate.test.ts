@@ -31,12 +31,20 @@ describe('evaluateQuality', () => {
   });
 
   it('returns ACCEPT for high-quality entry', async () => {
-    const llm = mockLLM(JSON.stringify({
-      verdict: 'ACCEPT',
-      overallScore: 85,
-      scores: { novelty: 80, actionability: 90, specificity: 85, relevance: 80, informationDensity: 90 },
-      reasoning: 'High quality entry with specific guidance.',
-    }));
+    const llm = mockLLM(
+      JSON.stringify({
+        verdict: 'ACCEPT',
+        overallScore: 85,
+        scores: {
+          novelty: 80,
+          actionability: 90,
+          specificity: 85,
+          relevance: 80,
+          informationDensity: 90,
+        },
+        reasoning: 'High quality entry with specific guidance.',
+      }),
+    );
 
     const result = await evaluateQuality(makeEntry(), llm);
     expect(result.evaluated).toBe(true);
@@ -45,13 +53,21 @@ describe('evaluateQuality', () => {
   });
 
   it('returns REJECT for low-quality entry', async () => {
-    const llm = mockLLM(JSON.stringify({
-      verdict: 'REJECT',
-      overallScore: 30,
-      scores: { novelty: 10, actionability: 30, specificity: 40, relevance: 50, informationDensity: 20 },
-      reasoning: 'Too generic.',
-      rejectReasons: ['Low novelty', 'Not actionable'],
-    }));
+    const llm = mockLLM(
+      JSON.stringify({
+        verdict: 'REJECT',
+        overallScore: 30,
+        scores: {
+          novelty: 10,
+          actionability: 30,
+          specificity: 40,
+          relevance: 50,
+          informationDensity: 20,
+        },
+        reasoning: 'Too generic.',
+        rejectReasons: ['Low novelty', 'Not actionable'],
+      }),
+    );
 
     const result = await evaluateQuality(makeEntry(), llm);
     expect(result.evaluated).toBe(true);
@@ -87,24 +103,40 @@ describe('evaluateQuality', () => {
   });
 
   it('normalizes non-REJECT verdict to ACCEPT', async () => {
-    const llm = mockLLM(JSON.stringify({
-      verdict: 'MAYBE',
-      overallScore: 60,
-      scores: { novelty: 60, actionability: 60, specificity: 60, relevance: 60, informationDensity: 60 },
-      reasoning: 'Borderline entry.',
-    }));
+    const llm = mockLLM(
+      JSON.stringify({
+        verdict: 'MAYBE',
+        overallScore: 60,
+        scores: {
+          novelty: 60,
+          actionability: 60,
+          specificity: 60,
+          relevance: 60,
+          informationDensity: 60,
+        },
+        reasoning: 'Borderline entry.',
+      }),
+    );
 
     const result = await evaluateQuality(makeEntry(), llm);
     expect(result.verdict).toBe('ACCEPT');
   });
 
   it('includes optional entry fields in prompt', async () => {
-    const llm = mockLLM(JSON.stringify({
-      verdict: 'ACCEPT',
-      overallScore: 70,
-      scores: { novelty: 70, actionability: 70, specificity: 70, relevance: 70, informationDensity: 70 },
-      reasoning: 'OK.',
-    }));
+    const llm = mockLLM(
+      JSON.stringify({
+        verdict: 'ACCEPT',
+        overallScore: 70,
+        scores: {
+          novelty: 70,
+          actionability: 70,
+          specificity: 70,
+          relevance: 70,
+          informationDensity: 70,
+        },
+        reasoning: 'OK.',
+      }),
+    );
 
     const entry = makeEntry();
     entry.why = 'Because security matters';
@@ -120,12 +152,20 @@ describe('evaluateQuality', () => {
   });
 
   it('uses low temperature for consistent scoring', async () => {
-    const llm = mockLLM(JSON.stringify({
-      verdict: 'ACCEPT',
-      overallScore: 70,
-      scores: { novelty: 70, actionability: 70, specificity: 70, relevance: 70, informationDensity: 70 },
-      reasoning: 'OK.',
-    }));
+    const llm = mockLLM(
+      JSON.stringify({
+        verdict: 'ACCEPT',
+        overallScore: 70,
+        scores: {
+          novelty: 70,
+          actionability: 70,
+          specificity: 70,
+          relevance: 70,
+          informationDensity: 70,
+        },
+        reasoning: 'OK.',
+      }),
+    );
 
     await evaluateQuality(makeEntry(), llm);
 

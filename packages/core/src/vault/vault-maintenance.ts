@@ -111,10 +111,9 @@ export function archive(
   const reason = options.reason ?? `Archived: older than ${options.olderThanDays} days`;
 
   return provider.transaction(() => {
-    const candidates = provider.all<{ id: string }>(
-      'SELECT id FROM entries WHERE updated_at < ?',
-      [cutoff],
-    );
+    const candidates = provider.all<{ id: string }>('SELECT id FROM entries WHERE updated_at < ?', [
+      cutoff,
+    ]);
 
     if (candidates.length === 0) return { archived: 0 };
 
@@ -173,14 +172,10 @@ export function registerProject(
   return getProject(provider, path)!;
 }
 
-export function getProject(
-  provider: PersistenceProvider,
-  path: string,
-): ProjectInfo | null {
-  const row = provider.get<Record<string, unknown>>(
-    'SELECT * FROM projects WHERE path = ?',
-    [path],
-  );
+export function getProject(provider: PersistenceProvider, path: string): ProjectInfo | null {
+  const row = provider.get<Record<string, unknown>>('SELECT * FROM projects WHERE path = ?', [
+    path,
+  ]);
   if (!row) return null;
   return {
     path: row.path as string,

@@ -7,12 +7,32 @@
     "limits": [
       { "asset": "JavaScript", "maxSize": "200KB", "format": "gzipped", "severity": "Critical" },
       { "asset": "CSS", "maxSize": "50KB", "format": "gzipped", "severity": "Critical" },
-      { "asset": "Total Initial Bundle", "maxSize": "1MB", "format": "uncompressed", "severity": "Critical" }
+      {
+        "asset": "Total Initial Bundle",
+        "maxSize": "1MB",
+        "format": "uncompressed",
+        "severity": "Critical"
+      }
     ],
     "coreWebVitals": [
-      { "metric": "TTI", "target": "< 3.5s", "condition": "4G connection", "description": "Time to Interactive" },
-      { "metric": "FCP", "target": "< 1.5s", "condition": "4G connection", "description": "First Contentful Paint" },
-      { "metric": "LCP", "target": "< 2.5s", "condition": "4G connection", "description": "Largest Contentful Paint" }
+      {
+        "metric": "TTI",
+        "target": "< 3.5s",
+        "condition": "4G connection",
+        "description": "Time to Interactive"
+      },
+      {
+        "metric": "FCP",
+        "target": "< 1.5s",
+        "condition": "4G connection",
+        "description": "First Contentful Paint"
+      },
+      {
+        "metric": "LCP",
+        "target": "< 2.5s",
+        "condition": "4G connection",
+        "description": "Largest Contentful Paint"
+      }
     ],
     "monitoring": [
       "Run bundle analyzer before major releases",
@@ -21,9 +41,24 @@
     ],
     "codeSplitting": {
       "strategies": [
-        { "priority": 1, "strategy": "Route-based", "description": "Split by route/page", "candidates": "All page components" },
-        { "priority": 2, "strategy": "Component-based", "description": "Split large components not immediately visible", "candidates": "Modals, dialogs, charts, rich text editors, large data tables" },
-        { "priority": 3, "strategy": "Vendor-based", "description": "Separate third-party code", "candidates": "External libraries" }
+        {
+          "priority": 1,
+          "strategy": "Route-based",
+          "description": "Split by route/page",
+          "candidates": "All page components"
+        },
+        {
+          "priority": 2,
+          "strategy": "Component-based",
+          "description": "Split large components not immediately visible",
+          "candidates": "Modals, dialogs, charts, rich text editors, large data tables"
+        },
+        {
+          "priority": 3,
+          "strategy": "Vendor-based",
+          "description": "Separate third-party code",
+          "candidates": "External libraries"
+        }
       ],
       "loadingExample": "<Suspense fallback={<Skeleton />}>\n  <LazyComponent />\n</Suspense>",
       "violations": [
@@ -34,9 +69,17 @@
       ]
     },
     "tooling": {
-      "bundleAnalysis": ["webpack-bundle-analyzer", "vite-bundle-visualizer", "source-map-explorer"],
+      "bundleAnalysis": [
+        "webpack-bundle-analyzer",
+        "vite-bundle-visualizer",
+        "source-map-explorer"
+      ],
       "performanceTesting": ["Lighthouse", "WebPageTest", "Browser DevTools Performance tab"],
-      "monitoring": ["Core Web Vitals", "Real User Monitoring (RUM)", "Performance monitoring services"]
+      "monitoring": [
+        "Core Web Vitals",
+        "Real User Monitoring (RUM)",
+        "Performance monitoring services"
+      ]
     }
   },
   "loadTime": {
@@ -50,7 +93,11 @@
       "rule": "Split code to load only what's needed, when it's needed.",
       "strategies": [
         { "priority": 1, "strategy": "Route-based", "description": "Split by route/page" },
-        { "priority": 2, "strategy": "Component-based", "description": "Split large components not immediately visible" },
+        {
+          "priority": 2,
+          "strategy": "Component-based",
+          "description": "Split large components not immediately visible"
+        },
         { "priority": 3, "strategy": "Vendor-based", "description": "Separate third-party code" }
       ]
     },
@@ -76,7 +123,11 @@
       { "property": "transform", "safe": true, "reason": "GPU-accelerated, no layout/paint" },
       { "property": "opacity", "safe": true, "reason": "GPU-accelerated, no layout/paint" },
       { "property": "width, height", "safe": false, "reason": "Triggers layout recalculation" },
-      { "property": "top, left, right, bottom", "safe": false, "reason": "Triggers layout recalculation" },
+      {
+        "property": "top, left, right, bottom",
+        "safe": false,
+        "reason": "Triggers layout recalculation"
+      },
       { "property": "margin, padding", "safe": false, "reason": "Triggers layout recalculation" }
     ],
     "safeExamples": [
@@ -86,8 +137,16 @@
       "opacity: 0.5;"
     ],
     "durationLimits": [
-      { "type": "UI Feedback", "maxDuration": "300ms", "useCase": "Button clicks, hover states, micro-interactions" },
-      { "type": "Transitions", "maxDuration": "500ms", "useCase": "Page transitions, modal open/close" },
+      {
+        "type": "UI Feedback",
+        "maxDuration": "300ms",
+        "useCase": "Button clicks, hover states, micro-interactions"
+      },
+      {
+        "type": "Transitions",
+        "maxDuration": "500ms",
+        "useCase": "Page transitions, modal open/close"
+      },
       { "type": "Complex", "maxDuration": "1000ms", "useCase": "Multi-step animations" }
     ],
     "willChange": {
@@ -163,10 +222,26 @@
     "rule": "Users perceive delays. Provide appropriate feedback at each threshold.",
     "thresholds": [
       { "duration": "< 100ms", "perception": "Instant", "requiredFeedback": "None needed" },
-      { "duration": "100-400ms", "perception": "Slight delay", "requiredFeedback": "Subtle indicator (disable button, cursor change)" },
-      { "duration": "> 400ms", "perception": "Noticeable wait", "requiredFeedback": "Spinner or skeleton" },
-      { "duration": "> 1s", "perception": "Long operation", "requiredFeedback": "Progress indicator with percentage" },
-      { "duration": "> 10s", "perception": "Extended operation", "requiredFeedback": "Progress bar, status messages, cancel button" }
+      {
+        "duration": "100-400ms",
+        "perception": "Slight delay",
+        "requiredFeedback": "Subtle indicator (disable button, cursor change)"
+      },
+      {
+        "duration": "> 400ms",
+        "perception": "Noticeable wait",
+        "requiredFeedback": "Spinner or skeleton"
+      },
+      {
+        "duration": "> 1s",
+        "perception": "Long operation",
+        "requiredFeedback": "Progress indicator with percentage"
+      },
+      {
+        "duration": "> 10s",
+        "perception": "Extended operation",
+        "requiredFeedback": "Progress bar, status messages, cancel button"
+      }
     ],
     "dohertyThreshold": {
       "target": "400ms",

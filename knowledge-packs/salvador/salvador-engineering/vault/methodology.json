@@ -9,13 +9,7 @@
       "title": "Multi-phase weighted scoring with severity deductions",
       "severity": "warning",
       "description": "# Multi-phase weighted scoring with severity deductions\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nFlow quality is calculated via weighted scoring formulas defined in scoring/thresholds.yaml. Weighted-average: sum(scores[i] * weights[i]) / sum(weights). Pass-rate: passed/total * 100. Severity-weighted: 100 minus deductions (critical: -30, major: -15, minor: -5, info: 0). Each flow defines per-phase weights (e.g., developer.yaml: discovery 10%, design 20%, implementation 40%, validation 30%). Final grade: A+(95+), A(90+), B(80+), C(70+), D(60+), F(<60).\n\n## Example\n\n```typescript\nDeveloper flow: score = discovery(85)*0.10 + design(90)*0.20 + impl(75)*0.40 + validation(80)*0.30 = 80.5 → Grade B\n```\n\n## Why\n\nWeighted scoring prevents gaming — a perfect design score can't compensate for poor implementation when implementation weight is 40%.",
-      "tags": [
-        "scoring",
-        "weighted-average",
-        "severity",
-        "grades",
-        "quality-metrics"
-      ]
+      "tags": ["scoring", "weighted-average", "severity", "grades", "quality-metrics"]
     },
     {
       "id": "pattern-methodology-quick-universal-flow-gate-system-gate-score-checkpoint-b",
@@ -24,13 +18,7 @@
       "title": "Universal flow gate system: GATE, SCORE, CHECKPOINT, BRANCH",
       "severity": "critical",
       "description": "# Universal flow gate system: GATE, SCORE, CHECKPOINT, BRANCH\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nEvery flow step terminates with one of 4 gate types defined in scoring/thresholds.yaml. GATE: binary pass/fail, blocks on fail with no retry. SCORE: grades output 0-100 against a min threshold, up to 2 retries with BRANCH-back. CHECKPOINT: saves state for potential rollback, always passes. BRANCH: routes execution based on a condition (on-true/on-false paths). Gates compose into quality ladders: CHECKPOINT → work → SCORE → work → GATE.\n\n## Example\n\n```typescript\ndeveloper.yaml: discover(GATE) → design(SCORE min:70) → validate-design(SCORE min:80) → implement(CHECKPOINT) → validate-impl(SCORE min:80)\n```\n\n## Why\n\nGates enforce quality at each phase boundary. Without them, low-quality output from early phases compounds into failures in later phases.",
-      "tags": [
-        "gates",
-        "quality",
-        "flow-control",
-        "scoring",
-        "checkpoints"
-      ]
+      "tags": ["gates", "quality", "flow-control", "scoring", "checkpoints"]
     },
     {
       "id": "pattern-methodology-quick-intake-router-9-intent-classification-with-confide",
@@ -39,13 +27,7 @@
       "title": "INTAKE router: 9-intent classification with confidence scoring",
       "severity": "critical",
       "description": "# INTAKE router: 9-intent classification with confidence scoring\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nThe INTAKE router is the first step for any task. It extracts keywords from user text, matches against 9 intents (CREATE, FIX, REVIEW, PLAN, ENHANCE, DELIVER, INTEGRATE, TEST, UX_AUDIT), maps to modes, selects chain sequences via context-sensitive chain-mappings, and calculates confidence. HIGH confidence (95+): 2+ keywords AND intent match. MEDIUM (70-94): 1 keyword OR intent match. LOW (<70): falls back to DESIGN-MODE with clarification request.\n\n## Example\n\n```typescript\n'Fix the broken hover state on Button' → intent:FIX, mode:FIX-MODE, context:component, chains:[RECOVERY-flow], confidence:HIGH\n```\n\n## Why\n\nCorrect routing is the highest-leverage decision in the pipeline. Wrong intent → wrong mode → wrong flow → wrong output.",
-      "tags": [
-        "intake",
-        "routing",
-        "intent-classification",
-        "confidence",
-        "9-intents"
-      ]
+      "tags": ["intake", "routing", "intent-classification", "confidence", "9-intents"]
     }
   ]
 }

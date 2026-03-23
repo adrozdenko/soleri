@@ -21,9 +21,11 @@ import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 const AGENT_ID = 'e2e-concurrent';
 
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
@@ -99,14 +101,16 @@ describe('E2E: concurrent-and-performance', () => {
   it('should handle concurrent writes to the same facade', async () => {
     const capturePromises = Array.from({ length: 10 }, (_, i) =>
       callOp(`${AGENT_ID}_vault`, 'capture_knowledge', {
-        entries: [{
-          type: 'pattern',
-          domain: i % 2 === 0 ? 'frontend' : 'backend',
-          title: `Concurrent Pattern ${i}`,
-          description: `Pattern captured during concurrent write test number ${i}`,
-          severity: 'warning',
-          tags: ['concurrent', `batch-${i}`],
-        }],
+        entries: [
+          {
+            type: 'pattern',
+            domain: i % 2 === 0 ? 'frontend' : 'backend',
+            title: `Concurrent Pattern ${i}`,
+            description: `Pattern captured during concurrent write test number ${i}`,
+            severity: 'warning',
+            tags: ['concurrent', `batch-${i}`],
+          },
+        ],
       }),
     );
 
@@ -131,14 +135,16 @@ describe('E2E: concurrent-and-performance', () => {
       callOp(`${AGENT_ID}_brain`, 'brain_stats'),
       // Writes
       callOp(`${AGENT_ID}_vault`, 'capture_knowledge', {
-        entries: [{
-          type: 'pattern',
-          domain: 'frontend',
-          title: 'Read-Write Concurrent Test',
-          description: 'Entry written during concurrent read-write test',
-          severity: 'warning',
-          tags: ['concurrent', 'mixed'],
-        }],
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'frontend',
+            title: 'Read-Write Concurrent Test',
+            description: 'Entry written during concurrent read-write test',
+            severity: 'warning',
+            tags: ['concurrent', 'mixed'],
+          },
+        ],
       }),
       callOp(`${AGENT_ID}_brain`, 'record_feedback', {
         query: 'test',

@@ -52,34 +52,40 @@ Lists all facades and operations. Present them grouped by category with plain-la
 Organize capabilities by user goals, not technical names:
 
 **Knowledge & Memory**
+
 - Search the vault for patterns, anti-patterns, and architectural decisions
 - Capture new knowledge from the current session
 - Search across sessions and projects for relevant context
 - Curate: deduplicate, groom, resolve contradictions
 
 **Planning & Execution**
+
 - Create structured plans with vault context and brain recommendations
 - Split plans into tasks with complexity estimates
 - Track execution with drift detection
 - Complete with knowledge capture and session recording
 
 **Intelligence & Learning**
+
 - Brain learns from every session — patterns get stronger with use
 - Recommendations based on similar past work
 - Strength tracking: which patterns are proven vs experimental
 - Feedback loop: brain improves based on what works
 
 **Quality & Validation**
+
 - Health checks across all subsystems
 - Iterative validation loops with configurable targets
 - Governance: policies, proposals, quotas
 
 **Identity & Control**
+
 - Persona activation and deactivation
 - Intent routing: the agent classifies what you want and routes to the right workflow
 - Project registration and cross-project linking
 
 **Domain Knowledge** (varies by agent)
+
 - Each domain has: `get_patterns`, `search`, `get_entry`, `capture`, `remove`
 - Call `op:activate` to discover which domains are configured
 

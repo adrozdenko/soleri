@@ -25,18 +25,18 @@ Soleri already has pack infrastructure (`soleri-pack.json`, `PackRuntime`, `crea
 
 ### Existing Soleri Infrastructure (build on, don't reinvent)
 
-| Component | File | Status |
-|-----------|------|--------|
-| Pack manifest schema | `packages/core/src/packs/types.ts` | v1 exists, extensible |
-| PackRuntime interface | `packages/core/src/domain-packs/pack-runtime.ts` | Minimal (vault, projects, checks) |
-| DomainPack loader | `packages/core/src/domain-packs/` | Works, needs capability hooks |
-| createDomainFacades | `packages/core/src/runtime/domain-ops.ts` | Merges pack ops with 5-op fallback |
-| IntelligenceBundle | `packages/core/src/intelligence/types.ts` | Knowledge pack format |
-| Pack CLI | `packages/cli/src/commands/pack.ts` | list, install, remove |
-| Entry-point template | `packages/forge/src/templates/entry-point.ts` | Loads domain packs via onActivate |
-| Dispatch registry | `packages/core/src/flows/dispatch-registry.ts` | Routes tool names → facades |
-| Plan builder | `packages/core/src/flows/plan-builder.ts` | Converts chains → tool names |
-| Context router | `packages/core/src/flows/context-router.ts` | Dynamic step injection/skip |
+| Component             | File                                             | Status                             |
+| --------------------- | ------------------------------------------------ | ---------------------------------- |
+| Pack manifest schema  | `packages/core/src/packs/types.ts`               | v1 exists, extensible              |
+| PackRuntime interface | `packages/core/src/domain-packs/pack-runtime.ts` | Minimal (vault, projects, checks)  |
+| DomainPack loader     | `packages/core/src/domain-packs/`                | Works, needs capability hooks      |
+| createDomainFacades   | `packages/core/src/runtime/domain-ops.ts`        | Merges pack ops with 5-op fallback |
+| IntelligenceBundle    | `packages/core/src/intelligence/types.ts`        | Knowledge pack format              |
+| Pack CLI              | `packages/cli/src/commands/pack.ts`              | list, install, remove              |
+| Entry-point template  | `packages/forge/src/templates/entry-point.ts`    | Loads domain packs via onActivate  |
+| Dispatch registry     | `packages/core/src/flows/dispatch-registry.ts`   | Routes tool names → facades        |
+| Plan builder          | `packages/core/src/flows/plan-builder.ts`        | Converts chains → tool names       |
+| Context router        | `packages/core/src/flows/context-router.ts`      | Dynamic step injection/skip        |
 
 ## Proposal: Three-Layer Architecture
 
@@ -233,34 +233,34 @@ capabilities: z
       "provides": ["contrast-ratio", "wcag-level", "pass-fail"],
       "requires": ["foreground", "background"],
       "depends": ["color.parse"],
-      "knowledge": ["a11y-contrast-requirements"]
+      "knowledge": ["a11y-contrast-requirements"],
     },
     {
       "id": "color.parse",
       "description": "Parse color string to normalized format",
       "provides": ["parsed-color", "color-space"],
-      "requires": ["color-string"]
+      "requires": ["color-string"],
     },
     {
       "id": "color.suggest",
       "description": "Suggest accessible color alternatives",
       "provides": ["color-pairs", "suggestions"],
       "requires": ["base-color", "target-ratio"],
-      "depends": ["color.validate"]
+      "depends": ["color.validate"],
     },
     {
       "id": "token.check",
       "description": "Validate semantic token usage",
       "provides": ["valid", "suggestion", "priority-level"],
       "requires": ["token-value"],
-      "knowledge": ["color-token-priority"]
+      "knowledge": ["color-token-priority"],
     },
     {
       "id": "token.migrate",
       "description": "Migrate hardcoded values to semantic tokens",
       "provides": ["migrated-code", "replacements"],
       "requires": ["source-code"],
-      "depends": ["token.check"]
+      "depends": ["token.check"],
     },
     {
       "id": "component.scaffold",
@@ -268,15 +268,15 @@ capabilities: z
       "provides": ["component-files", "story-file", "test-file"],
       "requires": ["component-name", "component-type"],
       "depends": ["color.validate", "token.check"],
-      "knowledge": ["component-creation-workflow"]
-    }
+      "knowledge": ["component-creation-workflow"],
+    },
   ],
 
   "domains": ["design", "accessibility", "styling"],
   "facades": [],
   "vault": { "dir": "vault" },
   "skills": { "dir": "skills" },
-  "hooks": { "dir": "hooks" }
+  "hooks": { "dir": "hooks" },
 }
 ```
 
@@ -344,8 +344,7 @@ export class CapabilityRegistry {
       };
     }
 
-    const missingDeps = (cap.definition.depends ?? [])
-      .filter(dep => !this.capabilities.has(dep));
+    const missingDeps = (cap.definition.depends ?? []).filter((dep) => !this.capabilities.has(dep));
 
     if (missingDeps.length > 0) {
       return {
@@ -360,7 +359,7 @@ export class CapabilityRegistry {
       available: true,
       capabilityId,
       handler: cap.providers[0].handler, // highest priority provider
-      providers: cap.providers.map(p => p.packId),
+      providers: cap.providers.map((p) => p.packId),
       knowledge: cap.definition.knowledge ?? [],
     };
   }
@@ -383,8 +382,8 @@ export class CapabilityRegistry {
     const suggestions: PackSuggestion[] = [];
     for (const [packId, manifest] of this.packs) {
       const provides = (manifest.capabilities ?? [])
-        .filter(c => capabilityIds.includes(c.id))
-        .map(c => c.id);
+        .filter((c) => capabilityIds.includes(c.id))
+        .map((c) => c.id);
       if (provides.length > 0) {
         suggestions.push({ packId, provides });
       }
@@ -412,13 +411,13 @@ export class CapabilityRegistry {
       }
     }
 
-    const available = [...needed].filter(c => this.has(c));
-    const missing = [...needed].filter(c => !this.has(c));
+    const available = [...needed].filter((c) => this.has(c));
+    const missing = [...needed].filter((c) => !this.has(c));
 
     const blockingCaps = new Set(flow.onMissingCapability?.blocking ?? []);
-    const degraded = missing.map(c => ({
+    const degraded = missing.map((c) => ({
       capability: c,
-      impact: blockingCaps.has(c) ? 'blocking' as const : 'degraded' as const,
+      impact: blockingCaps.has(c) ? ('blocking' as const) : ('degraded' as const),
       suggestion: this.suggestPacksFor([c]),
     }));
 
@@ -427,7 +426,7 @@ export class CapabilityRegistry {
       available,
       missing,
       degraded,
-      canRunPartially: degraded.every(d => d.impact !== 'blocking'),
+      canRunPartially: degraded.every((d) => d.impact !== 'blocking'),
     };
   }
 }
@@ -526,44 +525,44 @@ Based on Soleri's **actual 26 chain names** (not Salvador's 87):
  */
 const CHAIN_TO_CAPABILITY: Record<string, string> = {
   // Vault & Knowledge
-  'vault-search':              'vault.search',
-  'vault-search-antipatterns':  'vault.search',
-  'memory-search':             'memory.search',
-  'playbook-search':           'vault.playbook',
+  'vault-search': 'vault.search',
+  'vault-search-antipatterns': 'vault.search',
+  'memory-search': 'memory.search',
+  'playbook-search': 'vault.playbook',
 
   // Brain
-  'brain-recommend':           'brain.recommend',
-  'brain-strengths':           'brain.strengths',
+  'brain-recommend': 'brain.recommend',
+  'brain-strengths': 'brain.strengths',
 
   // Components
-  'component-search':          'component.search',
-  'component-workflow':        'component.workflow',
-  'validate-component':        'component.validate',
+  'component-search': 'component.search',
+  'component-workflow': 'component.workflow',
+  'validate-component': 'component.validate',
 
   // Design
-  'contrast-check':            'color.validate',
-  'validate-tokens':           'token.check',
-  'design-rules-check':        'design.rules',
-  'recommend-design-system':   'design.recommend',
-  'recommend-palette':         'design.palette',
-  'recommend-style':           'design.style',
-  'recommend-typography':      'design.typography',
-  'get-stack-guidelines':      'stack.guidelines',
+  'contrast-check': 'color.validate',
+  'validate-tokens': 'token.check',
+  'design-rules-check': 'design.rules',
+  'recommend-design-system': 'design.recommend',
+  'recommend-palette': 'design.palette',
+  'recommend-style': 'design.style',
+  'recommend-typography': 'design.typography',
+  'get-stack-guidelines': 'stack.guidelines',
 
   // Architecture
-  'architecture-search':       'architecture.search',
-  'cognee-design-search':      'cognee.search',
+  'architecture-search': 'architecture.search',
+  'cognee-design-search': 'cognee.search',
 
   // Planning
-  'plan-create':               'plan.create',
+  'plan-create': 'plan.create',
 
   // Review & Quality
-  'review-report':             'review.report',
-  'accessibility-audit':       'a11y.audit',
-  'performance-audit':         'perf.audit',
-  'test-coverage-check':       'test.coverage',
-  'error-pattern-search':      'debug.patterns',
-  'delivery-checklist':        'deliver.checklist',
+  'review-report': 'review.report',
+  'accessibility-audit': 'a11y.audit',
+  'performance-audit': 'perf.audit',
+  'test-coverage-check': 'test.coverage',
+  'error-pattern-search': 'debug.patterns',
+  'delivery-checklist': 'deliver.checklist',
 };
 
 export function chainToCapability(chain: string): string | undefined {
@@ -583,32 +582,32 @@ triggers:
 
 steps:
   - id: discover
-    description: "Check for duplicates and gather context"
+    description: 'Check for duplicates and gather context'
     needs: [vault.search, component.search, brain.recommend]
-    chains: [vault-search, component-search, brain-recommend]  # deprecated, kept for migration
+    chains: [vault-search, component-search, brain-recommend] # deprecated, kept for migration
     gate:
       type: GATE
-      condition: "no-duplicate-found"
+      condition: 'no-duplicate-found'
       on-false: STOP
 
   - id: design
-    description: "Validate design decisions"
+    description: 'Validate design decisions'
     needs: [color.validate, token.check, design.rules]
-    chains: [contrast-check, validate-tokens, design-rules-check]  # deprecated
+    chains: [contrast-check, validate-tokens, design-rules-check] # deprecated
     parallel: true
 
   - id: implement
-    description: "Create the component"
+    description: 'Create the component'
     needs: [component.workflow]
-    chains: [component-workflow]  # deprecated
+    chains: [component-workflow] # deprecated
     gate:
       type: SCORE
-      condition: ">= 80"
+      condition: '>= 80'
 
   - id: validate
-    description: "Final validation"
+    description: 'Final validation'
     needs: [component.validate, a11y.audit]
-    chains: [validate-component, accessibility-audit]  # deprecated
+    chains: [validate-component, accessibility-audit] # deprecated
     parallel: true
 
 on-missing-capability:
@@ -654,11 +653,7 @@ async function executeStep(
     }
 
     // Build CapabilityContext
-    const context = await buildCapabilityContext(
-      resolved,
-      runtime,
-      registry,
-    );
+    const context = await buildCapabilityContext(resolved, runtime, registry);
 
     // Execute
     const result = await resolved.handler!(step.params ?? {}, context);
@@ -715,10 +710,10 @@ When two packs provide the same capability (e.g., both `design-system` and `bran
 ```typescript
 // Priority levels (higher = preferred)
 const PRIORITY = {
-  CORE: 100,      // core pack — always wins for core capabilities
-  USER: 75,       // user-installed packs — override domain defaults
-  DOMAIN: 50,     // domain packs from scaffolding
-  FALLBACK: 0,    // generic fallbacks
+  CORE: 100, // core pack — always wins for core capabilities
+  USER: 75, // user-installed packs — override domain defaults
+  DOMAIN: 50, // domain packs from scaffolding
+  FALLBACK: 0, // generic fallbacks
 };
 ```
 
@@ -727,7 +722,7 @@ const PRIORITY = {
   ```yaml
   # agent.config.yaml
   capability-overrides:
-    color.validate: brand-guardian  # force specific pack
+    color.validate: brand-guardian # force specific pack
   ```
 - Future: merge results from multiple providers (not in v1)
 
@@ -769,7 +764,11 @@ Every agent gets this. Non-removable. These capabilities map to the existing 13+
 
     // Identity & Routing
     { "id": "identity.activate", "provides": ["persona"], "requires": [] },
-    { "id": "identity.route", "provides": ["intent", "mode", "confidence"], "requires": ["prompt"] },
+    {
+      "id": "identity.route",
+      "provides": ["intent", "mode", "confidence"],
+      "requires": ["prompt"],
+    },
 
     // Cognee (hybrid search)
     { "id": "cognee.search", "provides": ["graph-results"], "requires": ["query"] },
@@ -779,8 +778,8 @@ Every agent gets this. Non-removable. These capabilities map to the existing 13+
     { "id": "admin.tools", "provides": ["tool-list"], "requires": [] },
 
     // Debug
-    { "id": "debug.patterns", "provides": ["error-patterns"], "requires": ["query"] }
-  ]
+    { "id": "debug.patterns", "provides": ["error-patterns"], "requires": ["query"] },
+  ],
 }
 ```
 
@@ -831,21 +830,21 @@ soleri agent validate
 
 Changes required by the 4-File Rule:
 
-| File | Change | LOC |
-|------|--------|-----|
-| `packages/core/src/capabilities/types.ts` | New file — all types | ~150 |
-| `packages/core/src/capabilities/registry.ts` | New file — CapabilityRegistry class | ~200 |
-| `packages/core/src/capabilities/chain-mapping.ts` | New file — v1→v2 chain bridge | ~60 |
-| `packages/core/src/capabilities/index.ts` | New file — barrel export | ~10 |
-| `packages/core/src/packs/types.ts` | Extend — add `capabilities` to schema | +15 |
-| `packages/core/src/flows/types.ts` | Extend — add `needs`, `onMissingCapability` | +20 |
-| `packages/core/src/flows/plan-builder.ts` | Refactor — resolve via registry, keep chain fallback | +50 |
-| `packages/core/src/flows/executor.ts` | Extend — buildCapabilityContext, executeStep v2 | +80 |
-| `packages/core/src/domain-packs/types.ts` | Extend — add `capabilities` factory to DomainPack | +5 |
-| `packages/forge/src/templates/entry-point.ts` | Extend — init registry, register packs, validate flows | +30 |
-| `packages/forge/src/templates/test-facades.ts` | Extend — test capability registration | +40 |
-| `packages/cli/src/commands/agent.ts` | Extend — `capabilities` + `validate` subcommands | +60 |
-| `packages/core/data/flows/*.flow.yaml` (8 files) | Migrate — add `needs:` alongside `chains:` | +50 |
+| File                                              | Change                                                 | LOC  |
+| ------------------------------------------------- | ------------------------------------------------------ | ---- |
+| `packages/core/src/capabilities/types.ts`         | New file — all types                                   | ~150 |
+| `packages/core/src/capabilities/registry.ts`      | New file — CapabilityRegistry class                    | ~200 |
+| `packages/core/src/capabilities/chain-mapping.ts` | New file — v1→v2 chain bridge                          | ~60  |
+| `packages/core/src/capabilities/index.ts`         | New file — barrel export                               | ~10  |
+| `packages/core/src/packs/types.ts`                | Extend — add `capabilities` to schema                  | +15  |
+| `packages/core/src/flows/types.ts`                | Extend — add `needs`, `onMissingCapability`            | +20  |
+| `packages/core/src/flows/plan-builder.ts`         | Refactor — resolve via registry, keep chain fallback   | +50  |
+| `packages/core/src/flows/executor.ts`             | Extend — buildCapabilityContext, executeStep v2        | +80  |
+| `packages/core/src/domain-packs/types.ts`         | Extend — add `capabilities` factory to DomainPack      | +5   |
+| `packages/forge/src/templates/entry-point.ts`     | Extend — init registry, register packs, validate flows | +30  |
+| `packages/forge/src/templates/test-facades.ts`    | Extend — test capability registration                  | +40  |
+| `packages/cli/src/commands/agent.ts`              | Extend — `capabilities` + `validate` subcommands       | +60  |
+| `packages/core/data/flows/*.flow.yaml` (8 files)  | Migrate — add `needs:` alongside `chains:`             | +50  |
 
 **Total: ~770 LOC** across 4 new files + 9 modified files.
 
@@ -888,26 +887,26 @@ Changes required by the 4-File Rule:
 
 ## Resolved Questions
 
-| Question | Decision | Rationale |
-|----------|----------|-----------|
-| **Pack registry location** | npm + local directory + built-in | npm for community, local for development, built-in for starters. Existing `soleri pack install` already supports all three. |
-| **Multi-provider resolution** | Priority-based (core=100, user=75, domain=50) with config override | Simple, predictable, explicit. Merge strategy deferred to v2. |
-| **Capability composition** | Yes, via `context.invoke()` | Capabilities can call each other. Registry prevents circular deps. |
-| **Hot reload** | Deferred to v2 | Restart required for now. Pack add/remove is a dev-time operation. |
-| **DomainPack vs manifest handlers** | Manifest declares, `onActivate()` registers | Manifest is static/serializable, handlers need runtime context. Both paths coexist. |
-| **Dual schema duration** | 2 major versions | `chains:` deprecated in v1.x, removed in v3.0. |
+| Question                            | Decision                                                           | Rationale                                                                                                                   |
+| ----------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| **Pack registry location**          | npm + local directory + built-in                                   | npm for community, local for development, built-in for starters. Existing `soleri pack install` already supports all three. |
+| **Multi-provider resolution**       | Priority-based (core=100, user=75, domain=50) with config override | Simple, predictable, explicit. Merge strategy deferred to v2.                                                               |
+| **Capability composition**          | Yes, via `context.invoke()`                                        | Capabilities can call each other. Registry prevents circular deps.                                                          |
+| **Hot reload**                      | Deferred to v2                                                     | Restart required for now. Pack add/remove is a dev-time operation.                                                          |
+| **DomainPack vs manifest handlers** | Manifest declares, `onActivate()` registers                        | Manifest is static/serializable, handlers need runtime context. Both paths coexist.                                         |
+| **Dual schema duration**            | 2 major versions                                                   | `chains:` deprecated in v1.x, removed in v3.0.                                                                              |
 
 ## Decision Record
 
-| Decision | Rationale |
-|----------|-----------|
-| Capabilities use namespaced IDs (`domain.action`) | Avoids collisions, self-documenting, enables wildcard queries |
-| Flows reference capabilities, not tools | Decouples flow logic from implementation |
-| Packs bundle knowledge with capabilities | Knowledge should travel with the code that uses it |
-| Core pack is non-removable | Every agent needs vault, brain, planning |
-| Missing capabilities degrade gracefully by default | Agents should work with partial packs |
-| `context.invoke()` enables capability composition | Capabilities can call each other without knowing implementations |
-| Manifest declares, onActivate registers handlers | Static metadata + async runtime registration coexist |
-| Priority-based multi-provider resolution | Simple, predictable, overridable |
-| Dual-schema migration (chains + needs) | Non-breaking rollout, 2-version deprecation window |
-| Context router preserved | Soleri's context-aware step injection is stronger than Salvador's composite chains — keep it |
+| Decision                                           | Rationale                                                                                    |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Capabilities use namespaced IDs (`domain.action`)  | Avoids collisions, self-documenting, enables wildcard queries                                |
+| Flows reference capabilities, not tools            | Decouples flow logic from implementation                                                     |
+| Packs bundle knowledge with capabilities           | Knowledge should travel with the code that uses it                                           |
+| Core pack is non-removable                         | Every agent needs vault, brain, planning                                                     |
+| Missing capabilities degrade gracefully by default | Agents should work with partial packs                                                        |
+| `context.invoke()` enables capability composition  | Capabilities can call each other without knowing implementations                             |
+| Manifest declares, onActivate registers handlers   | Static metadata + async runtime registration coexist                                         |
+| Priority-based multi-provider resolution           | Simple, predictable, overridable                                                             |
+| Dual-schema migration (chains + needs)             | Non-breaking rollout, 2-version deprecation window                                           |
+| Context router preserved                           | Soleri's context-aware step injection is stronger than Salvador's composite chains — keep it |

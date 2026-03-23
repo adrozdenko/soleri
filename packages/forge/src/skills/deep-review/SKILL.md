@@ -20,12 +20,14 @@ The user provides a **target**: file, module, directory, PR diff, or function. I
 ### Pass 1: Structural Analysis & Code Smells
 
 **Metrics** (gather by reading the code):
+
 - File length and function count
 - Cyclomatic complexity (nesting depth, branch count)
 - Dependency count — imports from how many modules?
 - Export surface area — how much is public vs. should be internal?
 
 **Structural Smells:**
+
 - **God file/class** — too many responsibilities, >300 lines with mixed concerns
 - **Long parameter lists** — function takes 5+ params (should be an object/config)
 - **Deep nesting** — 4+ levels of if/for/try/catch
@@ -34,11 +36,13 @@ The user provides a **target**: file, module, directory, PR diff, or function. I
 - **Boolean blindness** — functions with multiple boolean params (`fn(true, false, true)`)
 
 **Duplication Smells:**
+
 - Copy-paste with slight variations
 - Repeated conditional logic — same if-chain in 3+ places
 - Parallel structures that always change together
 
 **Temporal Smells** (check git history):
+
 - Files that always change together but live in different modules → missing abstraction
 - Functions that get patched repeatedly → wrong abstraction
 - High churn files → instability signal
@@ -52,16 +56,19 @@ Present findings before moving to Pass 2.
 ### Pass 2: Architectural Fitness
 
 **Dependency Direction:**
+
 - Do dependencies flow in the right direction? (Outer layers depend on inner, not reverse)
 - Are there circular dependencies?
 - Does the code reach across module boundaries it shouldn't?
 
 **Abstraction Level:**
+
 - Is this the right level of abstraction for the problem?
 - Over-engineered? (abstraction for one use case, premature generalization)
 - Under-engineered? (inline logic that should be extracted)
 
 **Cohesion & Coupling:**
+
 - Does everything in this module belong together? (high cohesion)
 - Is the module tangled with others? (low coupling desired)
 - Feature envy — does a function touch another module's internals more than its own?
@@ -78,23 +85,27 @@ If vault has relevant patterns, check alignment. If not, skip — this pass work
 ### Pass 3: Solution Quality Assessment
 
 **Simplification:**
+
 - Is there a simpler way to achieve the same result?
 - Could any abstraction be removed without loss?
 - Are there standard library/framework features that replace custom code?
 
 **Edge Cases:**
+
 - What inputs would break this?
 - Are error paths handled or just the happy path?
 - What happens with empty/null/undefined inputs?
 - Concurrency: race conditions, shared mutable state?
 
 **Performance:**
+
 - Any O(n²) or worse hidden in loops?
 - Unnecessary allocations, copies, or serialization?
 - N+1 query patterns?
 - Unbounded growth (arrays/maps that grow without limit)?
 
 **Evolutionary Fitness:**
+
 - How does this code age? Easy to modify in 6 months?
 - Does it create "gravity" — attracting more complexity over time?
 - Are extension points in the right places?
@@ -145,12 +156,12 @@ If vault has relevant patterns, check alignment. If not, skip — this pass work
 
 ## Severity Scale
 
-| Level | Meaning |
-|-------|---------|
-| ✅ | Clean — no action needed |
-| 💡 | Info — worth knowing, low priority |
-| ⚠️ | Warning — should fix, causes friction |
-| 🔴 | Critical — fix before shipping, causes bugs or blocks scaling |
+| Level | Meaning                                                       |
+| ----- | ------------------------------------------------------------- |
+| ✅    | Clean — no action needed                                      |
+| 💡    | Info — worth knowing, low priority                            |
+| ⚠️    | Warning — should fix, causes friction                         |
+| 🔴    | Critical — fix before shipping, causes bugs or blocks scaling |
 
 ## Capturing Learnings (Optional)
 
@@ -179,8 +190,8 @@ Only capture if genuinely reusable — not every review finding is vault-worthy.
 
 ## Quick Reference
 
-| Pass | Focus | Key Activities |
-|------|-------|----------------|
-| 1. Structural | Metrics + Smells | Read code, check complexity, find smells, check git history |
-| 2. Architecture | Fitness | Dependency direction, abstraction level, cohesion/coupling |
-| 3. Solution | Quality | Simplification, edge cases, performance, evolution |
+| Pass            | Focus            | Key Activities                                              |
+| --------------- | ---------------- | ----------------------------------------------------------- |
+| 1. Structural   | Metrics + Smells | Read code, check complexity, find smells, check git history |
+| 2. Architecture | Fitness          | Dependency direction, abstraction level, cohesion/coupling  |
+| 3. Solution     | Quality          | Simplification, edge cases, performance, evolution          |

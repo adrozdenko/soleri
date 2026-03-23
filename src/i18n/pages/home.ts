@@ -84,14 +84,24 @@ const content: Record<Locale, HomeContent> = {
         title: 'Project',
         domain: 'Scope',
         cls: 'gaudi',
-        capabilities: ['Project rules', 'Architecture decisions', 'Shared playbooks', 'Recent context'],
+        capabilities: [
+          'Project rules',
+          'Architecture decisions',
+          'Shared playbooks',
+          'Recent context',
+        ],
         ships: 'Link the knowledge that helps on this codebase.',
       },
       {
         title: 'Team',
         domain: 'Scope',
         cls: 'sentinel',
-        capabilities: ['Common standards', 'Review patterns', 'Reusable packs', 'Promoted learnings'],
+        capabilities: [
+          'Common standards',
+          'Review patterns',
+          'Reusable packs',
+          'Promoted learnings',
+        ],
         ships: 'Share what helps without maintaining a custom stack for each teammate.',
       },
     ],
@@ -110,8 +120,7 @@ const content: Record<Locale, HomeContent> = {
 <span class="comment">  ✓ CLAUDE.md regenerates on change</span>
 <span class="comment">  ✓ Claude Code token discovered (if available)</span>`,
     archTitle: 'Two layers, one maintainable setup',
-    archSubtitle:
-      'The folder defines the agent. The engine handles persistence and learning.',
+    archSubtitle: 'The folder defines the agent. The engine handles persistence and learning.',
     layers: [
       {
         label: 'Agent Folder',
@@ -162,7 +171,7 @@ const content: Record<Locale, HomeContent> = {
       <span class="ok">✓ Brain strength: 94% (12 сесій)</span>`,
     howTitle: 'Твій другий мозок.<br/>Завжди навчається.<br/>Ніколи не забуває.',
     howText:
-      '<strong>Сховище</strong> для довготривалої пам\'яті, <strong>Brain</strong> для навчання того, що працює, <strong>Memory</strong> що переноситься між сесіями та проєктами. Годуй знаннями — вони накопичуються.',
+      "<strong>Сховище</strong> для довготривалої пам'яті, <strong>Brain</strong> для навчання того, що працює, <strong>Memory</strong> що переноситься між сесіями та проєктами. Годуй знаннями — вони накопичуються.",
     engineTags: ['Сховище', 'Brain', 'Memory'],
     features: [
       {
@@ -257,8 +266,7 @@ const content: Record<Locale, HomeContent> = {
 <span class="comment"># Додайте ще знань</span>
 <span class="prompt">$</span> <span class="cmd">soleri pack</span> <span class="arg">install community/react-patterns</span>`,
     archTitle: 'Два шари, чітко розділені',
-    archSubtitle:
-      'Тека агента — це оболонка. Рушій знань — це мозок. Вони розвиваються незалежно.',
+    archSubtitle: 'Тека агента — це оболонка. Рушій знань — це мозок. Вони розвиваються незалежно.',
     layers: [
       {
         label: 'Тека агента',
@@ -266,11 +274,11 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         label: 'Доменні пакети',
-        text: 'Підключувані модулі експертизи. Додавай дизайн-системи, код-рев\'ю або власні домени без зміни теки агента.',
+        text: "Підключувані модулі експертизи. Додавай дизайн-системи, код-рев'ю або власні домени без зміни теки агента.",
       },
       {
         label: 'Рушій знань',
-        text: 'Один MCP-сервер (<code>@soleri/core</code>). Сховище, Brain, Куратор, Планувальник, Пам\'ять. Персистентний стан та навчання. Усі агенти використовують один рушій.',
+        text: "Один MCP-сервер (<code>@soleri/core</code>). Сховище, Brain, Куратор, Планувальник, Пам'ять. Персистентний стан та навчання. Усі агенти використовують один рушій.",
       },
       {
         label: 'Транспорти',
@@ -333,7 +341,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         title: 'Cartella = agente',
-        text: "Un agente è una cartella. Niente TypeScript, nessun passaggio di build. Il tuo editor AI lo legge nativamente. Il motore fornisce persistenza e apprendimento.",
+        text: 'Un agente è una cartella. Niente TypeScript, nessun passaggio di build. Il tuo editor AI lo legge nativamente. Il motore fornisce persistenza e apprendimento.',
         code: `<span class="key">my-agent/</span>           <span class="cmt"># l'agente È la cartella</span>
 ├── <span class="ok">agent.yaml</span>       <span class="cmt"># identità + configurazione</span>
 ├── <span class="key">instructions/</span>    <span class="cmt"># regole comportamentali</span>

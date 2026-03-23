@@ -88,7 +88,9 @@ describe('intake-facade', () => {
   describe('intake_ingest_book', () => {
     it('delegates to pipeline.ingestBook', async () => {
       const result = await executeOp(ops, 'intake_ingest_book', {
-        pdfPath: '/book.pdf', title: 'My Book', domain: 'design',
+        pdfPath: '/book.pdf',
+        title: 'My Book',
+        domain: 'design',
       });
       expect(result.success).toBe(true);
       const pipeline = runtime.intakePipeline as ReturnType<typeof makeMockIntakePipeline>;
@@ -125,12 +127,18 @@ describe('intake-facade', () => {
   describe('intake_preview', () => {
     it('delegates to pipeline.preview', async () => {
       const result = await executeOp(ops, 'intake_preview', {
-        pdfPath: '/x.pdf', title: 'T', domain: 'd', pageStart: 1, pageEnd: 10,
+        pdfPath: '/x.pdf',
+        title: 'T',
+        domain: 'd',
+        pageStart: 1,
+        pageEnd: 10,
       });
       expect(result.success).toBe(true);
       const pipeline = runtime.intakePipeline as ReturnType<typeof makeMockIntakePipeline>;
       expect(pipeline.preview).toHaveBeenCalledWith(
-        { pdfPath: '/x.pdf', title: 'T', domain: 'd' }, 1, 10,
+        { pdfPath: '/x.pdf', title: 'T', domain: 'd' },
+        1,
+        10,
       );
     });
   });
@@ -138,12 +146,15 @@ describe('intake-facade', () => {
   describe('ingest_url', () => {
     it('delegates to textIngester.ingestUrl', async () => {
       const result = await executeOp(ops, 'ingest_url', {
-        url: 'https://example.com', domain: 'test', tags: ['t1'],
+        url: 'https://example.com',
+        domain: 'test',
+        tags: ['t1'],
       });
       expect(result.success).toBe(true);
       const ingester = runtime.textIngester as ReturnType<typeof makeMockTextIngester>;
       expect(ingester.ingestUrl).toHaveBeenCalledWith('https://example.com', {
-        domain: 'test', tags: ['t1'],
+        domain: 'test',
+        tags: ['t1'],
       });
     });
   });
@@ -151,7 +162,9 @@ describe('intake-facade', () => {
   describe('ingest_text', () => {
     it('delegates to textIngester.ingestText', async () => {
       const result = await executeOp(ops, 'ingest_text', {
-        text: 'content', title: 'My Notes', sourceType: 'transcript',
+        text: 'content',
+        title: 'My Notes',
+        sourceType: 'transcript',
       });
       expect(result.success).toBe(true);
       const ingester = runtime.textIngester as ReturnType<typeof makeMockTextIngester>;
@@ -177,7 +190,9 @@ describe('intake-facade', () => {
       const rt = makeRuntime({ intakePipeline: null });
       const nullOps = captureOps(createIntakeFacadeOps(rt));
       const result = await executeOp(nullOps, 'intake_ingest_book', {
-        pdfPath: '/x.pdf', title: 'T', domain: 'd',
+        pdfPath: '/x.pdf',
+        title: 'T',
+        domain: 'd',
       });
       expect(result.success).toBe(true);
       const data = result.data as { error: string };

@@ -40,10 +40,10 @@ setup:
 # ─── Domain Packs ──────────────────────────
 packs:
   - name: design
-    package: "@soleri/domain-design"
+    package: '@soleri/domain-design'
   - name: component
-    package: "@soleri/domain-component"
+    package: '@soleri/domain-component'
   - name: design-qa
-    package: "@soleri/domain-design-qa"
+    package: '@soleri/domain-design-qa'
   - name: code-review
-    package: "@soleri/domain-code-review"
+    package: '@soleri/domain-code-review'

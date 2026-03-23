@@ -160,18 +160,22 @@
     "millersLaw": {
       "description": "Working memory holds approximately 7 items. Forms exceeding this threshold risk cognitive overload.",
       "thresholds": [
-        { "fieldCount": "≤ 5", "cognitiveLoad": "low", "userExperience": "Scan and complete quickly" },
-        { "fieldCount": "6-9", "cognitiveLoad": "medium", "userExperience": "Requires focused attention" },
+        {
+          "fieldCount": "≤ 5",
+          "cognitiveLoad": "low",
+          "userExperience": "Scan and complete quickly"
+        },
+        {
+          "fieldCount": "6-9",
+          "cognitiveLoad": "medium",
+          "userExperience": "Requires focused attention"
+        },
         { "fieldCount": "10+", "cognitiveLoad": "high", "userExperience": "Risk of overwhelm" }
       ]
     },
     "modalInterruptionCost": {
       "description": "Dialogs interrupt user flow. This interruption is only justified for quick confirmations, low-complexity actions, and secondary tasks.",
-      "justifiedFor": [
-        "Quick confirmations",
-        "Low-complexity actions",
-        "Secondary tasks"
-      ],
+      "justifiedFor": ["Quick confirmations", "Low-complexity actions", "Secondary tasks"],
       "conclusion": "Complex primary workflows deserve full-page focus."
     }
   },

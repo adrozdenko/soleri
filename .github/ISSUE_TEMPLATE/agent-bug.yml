@@ -1,14 +1,14 @@
-name: "Bug Report (Agent-Ready)"
-description: "Structured bug report optimized for AI coding agents"
-title: "bug: "
-labels: ["bug"]
+name: 'Bug Report (Agent-Ready)'
+description: 'Structured bug report optimized for AI coding agents'
+title: 'bug: '
+labels: ['bug']
 body:
   - type: input
     id: component
     attributes:
       label: Component
-      description: "Package or module (e.g. @soleri/core, @soleri/cli, @soleri/forge)"
-      placeholder: "@soleri/core"
+      description: 'Package or module (e.g. @soleri/core, @soleri/cli, @soleri/forge)'
+      placeholder: '@soleri/core'
     validations:
       required: true
 
@@ -28,7 +28,7 @@ body:
     id: objective
     attributes:
       label: "Objective (what's broken → what fixed looks like)"
-      placeholder: "Login returns 401 instead of session token when OAuth callback has valid code"
+      placeholder: 'Login returns 401 instead of session token when OAuth callback has valid code'
     validations:
       required: true
 
@@ -59,7 +59,7 @@ body:
     id: error_output
     attributes:
       label: Error Output
-      description: "Paste exact error messages, stack traces, or log output"
+      description: 'Paste exact error messages, stack traces, or log output'
       render: shell
 
   - type: textarea
@@ -109,7 +109,7 @@ body:
     id: verification
     attributes:
       label: Verification Commands
-      description: "Exact commands to verify the fix"
+      description: 'Exact commands to verify the fix'
       value: |
         ```bash
         npm test

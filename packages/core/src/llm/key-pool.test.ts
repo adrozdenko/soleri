@@ -222,9 +222,7 @@ describe('loadKeyPoolConfig', () => {
 
   it('should use env vars for providers missing from keys.json', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readFileSync).mockReturnValue(
-      JSON.stringify({ openai: ['sk-file'] }),
-    );
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ openai: ['sk-file'] }));
     process.env.ANTHROPIC_API_KEY = 'sk-env-ant';
 
     const config = loadKeyPoolConfig('test-agent');

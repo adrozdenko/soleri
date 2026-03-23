@@ -8,9 +8,7 @@
     "salvador": {
       "type": "stdio",
       "command": "node",
-      "args": [
-        "dist/index.js"
-      ]
+      "args": ["dist/index.js"]
     }
   },
   "agents": {
@@ -27,7 +25,5 @@
       "model": "claude-code-3.5-haiku"
     }
   },
-  "contextPaths": [
-    "AGENTS.md"
-  ]
+  "contextPaths": ["AGENTS.md"]
 }

@@ -6,8 +6,7 @@ name: Deliver Feature
 description: >
   Feature delivery workflow: validate code quality, check test coverage,
   assess performance, then execute the delivery workflow.
-version: "1.0.0"
-
+version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
   blocking: [vault.search]
@@ -35,10 +34,10 @@ steps:
       - code-validation-result
     gate:
       type: GATE
-      condition: "pass == true"
+      condition: 'pass == true'
       on-false:
         action: STOP
-        message: "Code validation failed. Fix issues before delivery."
+        message: 'Code validation failed. Fix issues before delivery.'
 
   - id: check-testing
     name: Check Test Coverage
@@ -50,10 +49,10 @@ steps:
       - test-results
     gate:
       type: GATE
-      condition: "coverage >= 80"
+      condition: 'coverage >= 80'
       on-false:
         action: STOP
-        message: "Test coverage below threshold. Add tests before delivery."
+        message: 'Test coverage below threshold. Add tests before delivery.'
 
   - id: check-performance
     name: Check Performance
@@ -82,7 +81,7 @@ steps:
         C: 75
       on-false:
         action: STOP
-        message: "Delivery score below threshold. Address issues before shipping."
+        message: 'Delivery score below threshold. Address issues before shipping.'
 
 scoring:
   weights:
@@ -90,16 +89,16 @@ scoring:
     testing: 0.25
     performance: 0.20
     delivery: 0.25
-  formula: "weighted-sum"
+  formula: 'weighted-sum'
 
 on-error:
   default:
     action: STOP
-    message: "Delivery flow encountered an error. Do not proceed."
+    message: 'Delivery flow encountered an error. Do not proceed.'
   max-retries: 1
   escalation:
     action: STOP
-    message: "Delivery flow failed. Manual review required."
+    message: 'Delivery flow failed. Manual review required.'
 
 metadata:
   author: soleri

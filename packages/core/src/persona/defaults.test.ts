@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  ITALIAN_CRAFTSPERSON,
-  PERSONA_TEMPLATES,
-  createDefaultPersona,
-} from './defaults.js';
+import { ITALIAN_CRAFTSPERSON, PERSONA_TEMPLATES, createDefaultPersona } from './defaults.js';
 
 describe('ITALIAN_CRAFTSPERSON', () => {
   it('uses italian-craftsperson template id', () => {

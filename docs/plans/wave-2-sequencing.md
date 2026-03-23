@@ -21,21 +21,23 @@ The auto-learning pipeline introduced bidirectional coupling between planner/orc
 ### `planning-extra-ops.ts` (~868 LOC)
 
 **Runtime destructuring (line 32):**
+
 ```typescript
 const { planner, vault, brain, brainIntelligence } = runtime;
 ```
 
 **Brain module calls:**
 
-| Method | Op | Purpose | Target sub-module (Wave 1A) |
-|--------|----|---------|-----------------------------|
-| `brainIntelligence.lifecycle({ action: 'start', ... })` | `plan_split` | Auto-start brain session linked to plan | `session-manager.ts` |
-| `brainIntelligence.getSessionByPlanId(planId)` | `plan_complete_lifecycle` | Find brain session for a plan | `auto-learning.ts` |
-| `brainIntelligence.lifecycle({ action: 'end', ... })` | `plan_complete_lifecycle` | End brain session on plan completion | `session-manager.ts` |
-| `brainIntelligence.extractKnowledge(sessionId)` | `plan_complete_lifecycle` | Trigger learning pipeline | `proposal-manager.ts` |
-| `brain.recordFeedback(objective, entryId, 'accepted')` | `plan_complete_lifecycle` | Record positive feedback for vault recommendations | `brain.ts` (Wave 1A) |
+| Method                                                  | Op                        | Purpose                                            | Target sub-module (Wave 1A) |
+| ------------------------------------------------------- | ------------------------- | -------------------------------------------------- | --------------------------- |
+| `brainIntelligence.lifecycle({ action: 'start', ... })` | `plan_split`              | Auto-start brain session linked to plan            | `session-manager.ts`        |
+| `brainIntelligence.getSessionByPlanId(planId)`          | `plan_complete_lifecycle` | Find brain session for a plan                      | `auto-learning.ts`          |
+| `brainIntelligence.lifecycle({ action: 'end', ... })`   | `plan_complete_lifecycle` | End brain session on plan completion               | `session-manager.ts`        |
+| `brainIntelligence.extractKnowledge(sessionId)`         | `plan_complete_lifecycle` | Trigger learning pipeline                          | `proposal-manager.ts`       |
+| `brain.recordFeedback(objective, entryId, 'accepted')`  | `plan_complete_lifecycle` | Record positive feedback for vault recommendations | `brain.ts` (Wave 1A)        |
 
 **Non-brain imports (independent):**
+
 - `z` from `zod`
 - `OpDefinition` from `../facades/types.js`
 - `AgentRuntime` from `./types.js`
@@ -46,26 +48,28 @@ const { planner, vault, brain, brainIntelligence } = runtime;
 ### `orchestrate-ops.ts` (~573 LOC)
 
 **Runtime destructuring (line 130):**
+
 ```typescript
 const { planner, brainIntelligence, vault } = runtime;
 ```
 
 **Brain module calls:**
 
-| Method | Op | Purpose | Target sub-module (Wave 1A) |
-|--------|----|---------|-----------------------------|
-| `brainIntelligence.recommend({ domain, task, limit })` | `orchestrate_plan` | Get brain recommendations for plan context | `strength-scorer.ts` |
-| `brainIntelligence.getSessionByPlanId(planId)` | `orchestrate_execute` | Reuse existing brain session from `plan_split` | `auto-learning.ts` |
-| `brainIntelligence.lifecycle({ action: 'start', ... })` | `orchestrate_execute` | Start new brain session if none exists | `session-manager.ts` |
-| `brainIntelligence.lifecycle({ action: 'end', ... })` | `orchestrate_complete` | End brain session | `session-manager.ts` |
-| `brainIntelligence.extractKnowledge(sessionId)` | `orchestrate_complete` | Trigger knowledge extraction | `proposal-manager.ts` |
-| `brainIntelligence.getSessionContext(limit)` | `orchestrate_status` | Get recent session context | `session-manager.ts` |
-| `brainIntelligence.recommend({ domain, limit })` | `orchestrate_status` | Get recommendations for status display | `strength-scorer.ts` |
-| `brainIntelligence.getStats()` | `orchestrate_status` | Brain statistics | `intelligence.ts` (facade) |
-| `brainIntelligence.lifecycle({ action: 'start'/'end', ... })` | `orchestrate_quick_capture` | Quick session lifecycle for capture | `session-manager.ts` |
-| `brainIntelligence.extractKnowledge(sessionId)` | `orchestrate_quick_capture` | Extract knowledge from quick session | `proposal-manager.ts` |
+| Method                                                        | Op                          | Purpose                                        | Target sub-module (Wave 1A) |
+| ------------------------------------------------------------- | --------------------------- | ---------------------------------------------- | --------------------------- |
+| `brainIntelligence.recommend({ domain, task, limit })`        | `orchestrate_plan`          | Get brain recommendations for plan context     | `strength-scorer.ts`        |
+| `brainIntelligence.getSessionByPlanId(planId)`                | `orchestrate_execute`       | Reuse existing brain session from `plan_split` | `auto-learning.ts`          |
+| `brainIntelligence.lifecycle({ action: 'start', ... })`       | `orchestrate_execute`       | Start new brain session if none exists         | `session-manager.ts`        |
+| `brainIntelligence.lifecycle({ action: 'end', ... })`         | `orchestrate_complete`      | End brain session                              | `session-manager.ts`        |
+| `brainIntelligence.extractKnowledge(sessionId)`               | `orchestrate_complete`      | Trigger knowledge extraction                   | `proposal-manager.ts`       |
+| `brainIntelligence.getSessionContext(limit)`                  | `orchestrate_status`        | Get recent session context                     | `session-manager.ts`        |
+| `brainIntelligence.recommend({ domain, limit })`              | `orchestrate_status`        | Get recommendations for status display         | `strength-scorer.ts`        |
+| `brainIntelligence.getStats()`                                | `orchestrate_status`        | Brain statistics                               | `intelligence.ts` (facade)  |
+| `brainIntelligence.lifecycle({ action: 'start'/'end', ... })` | `orchestrate_quick_capture` | Quick session lifecycle for capture            | `session-manager.ts`        |
+| `brainIntelligence.extractKnowledge(sessionId)`               | `orchestrate_quick_capture` | Extract knowledge from quick session           | `proposal-manager.ts`       |
 
 **Non-brain imports (independent):**
+
 - `z` from `zod`
 - `OpDefinition`, `FacadeConfig` from `../facades/types.js`
 - `AgentRuntime` from `./types.js`
@@ -82,14 +86,14 @@ const { planner, brainIntelligence, vault } = runtime;
 
 These are the `BrainIntelligence` methods consumed by the two blocked ops files, mapped to their Wave 1A decomposition targets:
 
-| Method | Used by | Decomposition target |
-|--------|---------|---------------------|
-| `lifecycle(input)` | Both | `session-manager.ts` |
-| `getSessionByPlanId(planId)` | Both | `auto-learning.ts` |
-| `extractKnowledge(sessionId)` | Both | `proposal-manager.ts` |
-| `recommend(context)` | `orchestrate-ops.ts` | `strength-scorer.ts` |
-| `getSessionContext(limit)` | `orchestrate-ops.ts` | `session-manager.ts` |
-| `getStats()` | `orchestrate-ops.ts` | `intelligence.ts` (facade) |
+| Method                        | Used by              | Decomposition target       |
+| ----------------------------- | -------------------- | -------------------------- |
+| `lifecycle(input)`            | Both                 | `session-manager.ts`       |
+| `getSessionByPlanId(planId)`  | Both                 | `auto-learning.ts`         |
+| `extractKnowledge(sessionId)` | Both                 | `proposal-manager.ts`      |
+| `recommend(context)`          | `orchestrate-ops.ts` | `strength-scorer.ts`       |
+| `getSessionContext(limit)`    | `orchestrate-ops.ts` | `session-manager.ts`       |
+| `getStats()`                  | `orchestrate-ops.ts` | `intelligence.ts` (facade) |
 
 Additionally, `planning-extra-ops.ts` uses `brain.recordFeedback()` from `brain.ts` (also Wave 1A scope).
 
@@ -99,10 +103,10 @@ Additionally, `planning-extra-ops.ts` uses `brain.recordFeedback()` from `brain.
 
 ### Blocked by Wave 1A (must wait)
 
-| File | LOC | Reason |
-|------|-----|--------|
+| File                    | LOC  | Reason                                                                                                         |
+| ----------------------- | ---- | -------------------------------------------------------------------------------------------------------------- |
 | `planning-extra-ops.ts` | ~868 | Uses `brainIntelligence.lifecycle()`, `.getSessionByPlanId()`, `.extractKnowledge()`, `brain.recordFeedback()` |
-| `orchestrate-ops.ts` | ~573 | Uses 6 distinct `brainIntelligence` methods across 5 ops |
+| `orchestrate-ops.ts`    | ~573 | Uses 6 distinct `brainIntelligence` methods across 5 ops                                                       |
 
 **Why they must wait:** These files integrate deeply with `BrainIntelligence` internals. After Wave 1A decomposes `intelligence.ts` into 5 files, the `BrainIntelligence` facade class will still exist but its internal structure changes. The ops files consume the public facade API (which stays stable), but:
 
@@ -116,18 +120,18 @@ Additionally, `planning-extra-ops.ts` uses `brain.recordFeedback()` from `brain.
 
 All other Wave 2B ops files have no brain dependency and can proceed independently:
 
-| File | LOC | Brain dependency |
-|------|-----|-----------------|
-| `admin-extra-ops.ts` | 853 | None (uses `brainIntelligence` only in status ops — read-only, stable API) |
-| `vault-extra-ops.ts` | 682 | None |
-| `admin-setup-ops.ts` | 664 | None |
-| `capture-ops.ts` | 567 | None |
-| `memory-extra-ops.ts` | 494 | None |
-| `vault-linking-ops.ts` | 491 | None |
-| `vault-sharing-ops.ts` | 431 | None |
-| `runtime.ts` | 342 | Constructs `BrainIntelligence` — depends on Wave 1A type exports |
-| `admin-ops.ts` | 307 | None |
-| All files < 300 LOC | — | None (except `session-briefing.ts` which reads brain data — read-only, stable) |
+| File                   | LOC | Brain dependency                                                               |
+| ---------------------- | --- | ------------------------------------------------------------------------------ |
+| `admin-extra-ops.ts`   | 853 | None (uses `brainIntelligence` only in status ops — read-only, stable API)     |
+| `vault-extra-ops.ts`   | 682 | None                                                                           |
+| `admin-setup-ops.ts`   | 664 | None                                                                           |
+| `capture-ops.ts`       | 567 | None                                                                           |
+| `memory-extra-ops.ts`  | 494 | None                                                                           |
+| `vault-linking-ops.ts` | 491 | None                                                                           |
+| `vault-sharing-ops.ts` | 431 | None                                                                           |
+| `runtime.ts`           | 342 | Constructs `BrainIntelligence` — depends on Wave 1A type exports               |
+| `admin-ops.ts`         | 307 | None                                                                           |
+| All files < 300 LOC    | —   | None (except `session-briefing.ts` which reads brain data — read-only, stable) |
 
 **Note on `admin-extra-ops.ts`:** While it references `brainIntelligence`, it only calls read-only status methods (`getStats()`, `recommend()`). These are stable facade methods that will survive decomposition unchanged. It can proceed.
 

@@ -48,11 +48,11 @@ function encodeTextFrame(text: string, masked = true): Buffer {
   if (len < 126) {
     header = Buffer.alloc(2);
     header[0] = 0x81; // FIN + TEXT
-    header[1] = masked ? (len | 0x80) : len;
+    header[1] = masked ? len | 0x80 : len;
   } else {
     header = Buffer.alloc(4);
     header[0] = 0x81;
-    header[1] = masked ? (126 | 0x80) : 126;
+    header[1] = masked ? 126 | 0x80 : 126;
     header.writeUInt16BE(len, 2);
   }
 
@@ -86,7 +86,8 @@ describe('WsMcpServer', () => {
     const httpServer = (server as unknown).server as Server | undefined;
     if (httpServer) {
       // Force immediate close of all tracked sockets
-      for (const conn of ((server as unknown).connections as Map<string, unknown>)?.values() ?? []) {
+      for (const conn of ((server as unknown).connections as Map<string, unknown>)?.values() ??
+        []) {
         conn.socket?.destroy();
       }
       ((server as unknown).connections as Map<string, unknown>)?.clear();
@@ -160,7 +161,9 @@ describe('WsMcpServer', () => {
       if (!addr || typeof addr === 'string') return;
 
       const wsKey = 'dGhlIHNhbXBsZSBub25jZQ==';
-      const expectedAccept = createHash('sha1').update(wsKey + WS_MAGIC).digest('base64');
+      const expectedAccept = createHash('sha1')
+        .update(wsKey + WS_MAGIC)
+        .digest('base64');
 
       const socket = connect(addr.port, '127.0.0.1');
       await new Promise<void>((resolve) => socket.on('connect', resolve));

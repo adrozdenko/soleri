@@ -36,7 +36,10 @@ describe('reconciliation-engine', () => {
     });
     it('floors at 0', () => {
       const items: DriftItem[] = Array.from({ length: 10 }, () => ({
-        type: 'skipped' as const, description: 'x', impact: 'high' as const, rationale: 'r',
+        type: 'skipped' as const,
+        description: 'x',
+        impact: 'high' as const,
+        rationale: 'r',
       }));
       expect(calculateDriftScore(items)).toBe(0);
     });
@@ -63,8 +66,22 @@ describe('reconciliation-engine', () => {
     });
     it('computes average duration from tasks with metrics', () => {
       const tasks: PlanTask[] = [
-        { id: 't1', title: '', description: '', status: 'completed', updatedAt: 0, metrics: { durationMs: 100 } },
-        { id: 't2', title: '', description: '', status: 'completed', updatedAt: 0, metrics: { durationMs: 200 } },
+        {
+          id: 't1',
+          title: '',
+          description: '',
+          status: 'completed',
+          updatedAt: 0,
+          metrics: { durationMs: 100 },
+        },
+        {
+          id: 't2',
+          title: '',
+          description: '',
+          status: 'completed',
+          updatedAt: 0,
+          metrics: { durationMs: 200 },
+        },
         { id: 't3', title: '', description: '', status: 'completed', updatedAt: 0 }, // no metrics
       ];
       const summary = computeExecutionSummary(tasks);

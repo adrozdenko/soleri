@@ -8,6 +8,7 @@ Some tasks aren't done when the code is written — they're done when the code p
 ## What a loop does
 
 A loop repeats a cycle: **do → validate → fix → validate** until either:
+
 - The validation score reaches a target (convergence)
 - The maximum number of iterations is reached (safety limit)
 - You cancel it
@@ -18,13 +19,13 @@ Each iteration records whether it passed, what the score was, and what changed. 
 
 Your agent ships with specialized modes for common tasks:
 
-| Mode | Target score | Max iterations | Use case |
-|------|-------------|----------------|----------|
-| **token-migration** | 95 | 20 | Migrate hardcoded colors to semantic tokens |
-| **contrast-fix** | all pass | 15 | Fix color contrast to meet WCAG thresholds |
-| **component-build** | 90 | 20 | Build something that passes all quality checks |
-| **plan-iteration** | grade A | 10 | Iterate on a plan until it reaches a target grade |
-| **custom** | — | 20 | Any task with a validation step you define |
+| Mode                | Target score | Max iterations | Use case                                          |
+| ------------------- | ------------ | -------------- | ------------------------------------------------- |
+| **token-migration** | 95           | 20             | Migrate hardcoded colors to semantic tokens       |
+| **contrast-fix**    | all pass     | 15             | Fix color contrast to meet WCAG thresholds        |
+| **component-build** | 90           | 20             | Build something that passes all quality checks    |
+| **plan-iteration**  | grade A      | 10             | Iterate on a plan until it reaches a target grade |
+| **custom**          | —            | 20             | Any task with a validation step you define        |
 
 ## Starting a loop
 
@@ -81,11 +82,13 @@ Loop history feeds into the brain. The brain learns which types of tasks typical
 ## When to use loops vs. manual iteration
 
 **Use a loop when:**
+
 - The task has a clear validation step (does this pass? what's the score?)
 - You want the agent to fix its own mistakes without your input
 - The task is repetitive — migrations, audits, batch fixes
 
 **Do it manually when:**
+
 - The validation is subjective (does this look good?)
 - You want to review each change before the next iteration
 - The task is exploratory with no clear "done" criteria

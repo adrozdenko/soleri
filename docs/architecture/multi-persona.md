@@ -48,14 +48,14 @@ personas:
 
 ### What Changes
 
-| Component | Change |
-|-----------|--------|
-| Identity manager | Support multiple loaded personas, one active |
-| Intent router | Route based on active persona's domains |
-| Vault search | Add persona-aware domain boosting |
-| Brain | Shared — no change |
-| Planner | Namespace plans by persona ID |
-| MCP tools | All tools available always — persona affects behavior, not tool list |
+| Component        | Change                                                               |
+| ---------------- | -------------------------------------------------------------------- |
+| Identity manager | Support multiple loaded personas, one active                         |
+| Intent router    | Route based on active persona's domains                              |
+| Vault search     | Add persona-aware domain boosting                                    |
+| Brain            | Shared — no change                                                   |
+| Planner          | Namespace plans by persona ID                                        |
+| MCP tools        | All tools available always — persona affects behavior, not tool list |
 
 ## Open Questions
 

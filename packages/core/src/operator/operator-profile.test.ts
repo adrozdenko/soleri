@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Vault } from '../vault/vault.js';
 import { OperatorProfileStore } from './operator-profile.js';
 import { SignalType } from './operator-types.js';
-import type { OperatorSignal, CommunicationSection, TechnicalContextSection } from './operator-types.js';
+import type {
+  OperatorSignal,
+  CommunicationSection,
+  TechnicalContextSection,
+} from './operator-types.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
@@ -83,7 +87,9 @@ describe('OperatorProfileStore', () => {
   });
 
   it('auto-creates profile when accumulating signals', () => {
-    store.accumulateSignals([makeSignal(SignalType.WorkRhythm, { pattern: 'burst', durationMinutes: 30, taskCount: 5 })]);
+    store.accumulateSignals([
+      makeSignal(SignalType.WorkRhythm, { pattern: 'burst', durationMinutes: 30, taskCount: 5 }),
+    ]);
     const profile = store.getProfile();
     expect(profile).not.toBeNull();
     expect(profile!.sessionCount).toBe(0);
@@ -127,7 +133,9 @@ describe('OperatorProfileStore', () => {
 
   it('parallel updateSection on different sections both succeed', () => {
     // Ensure profile exists
-    store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+    store.accumulateSignals([
+      makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+    ]);
 
     const commData: CommunicationSection = {
       style: 'concise',
@@ -157,7 +165,9 @@ describe('OperatorProfileStore', () => {
   // ─── correctSection ─────────────────────────────────────────────
 
   it('correctSection records history with correction trigger', () => {
-    store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+    store.accumulateSignals([
+      makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+    ]);
     const profileBefore = store.getProfile();
     expect(profileBefore).not.toBeNull();
 
@@ -183,7 +193,9 @@ describe('OperatorProfileStore', () => {
   // ─── snapshot ───────────────────────────────────────────────────
 
   it('creates history row with full profile JSON', () => {
-    store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+    store.accumulateSignals([
+      makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+    ]);
     const profile = store.getProfile();
     expect(profile).not.toBeNull();
 
@@ -205,7 +217,9 @@ describe('OperatorProfileStore', () => {
   });
 
   it('increments synthesis_version on snapshot', () => {
-    store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+    store.accumulateSignals([
+      makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+    ]);
 
     store.snapshot('synthesis');
     store.snapshot('synthesis');
@@ -219,7 +233,9 @@ describe('OperatorProfileStore', () => {
   // ─── deleteProfile ──────────────────────────────────────────────
 
   it('archives to history before deletion', () => {
-    store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+    store.accumulateSignals([
+      makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+    ]);
     const profile = store.getProfile();
     expect(profile).not.toBeNull();
     const profileId = profile!.id;
@@ -287,7 +303,9 @@ describe('OperatorProfileStore', () => {
   });
 
   it('returns section data after update', () => {
-    store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+    store.accumulateSignals([
+      makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+    ]);
     const commData: CommunicationSection = {
       style: 'detailed',
       signalWords: ['please'],

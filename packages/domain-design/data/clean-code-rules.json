@@ -6,10 +6,26 @@
   "naming": {
     "conventions": [
       { "thing": "Component", "convention": "PascalCase", "example": "UserProfileCard" },
-      { "thing": "Function", "convention": "camelCase, verb-first", "example": "parseSchemaField, formatCurrency" },
-      { "thing": "Constant", "convention": "SCREAMING_SNAKE", "example": "MAX_RETRIES, API_TIMEOUT_MS" },
-      { "thing": "Type/Interface", "convention": "PascalCase", "example": "UserProfile, ApiResponse" },
-      { "thing": "Boolean", "convention": "is/has/should prefix", "example": "isLoading, hasPermission, shouldRetry" }
+      {
+        "thing": "Function",
+        "convention": "camelCase, verb-first",
+        "example": "parseSchemaField, formatCurrency"
+      },
+      {
+        "thing": "Constant",
+        "convention": "SCREAMING_SNAKE",
+        "example": "MAX_RETRIES, API_TIMEOUT_MS"
+      },
+      {
+        "thing": "Type/Interface",
+        "convention": "PascalCase",
+        "example": "UserProfile, ApiResponse"
+      },
+      {
+        "thing": "Boolean",
+        "convention": "is/has/should prefix",
+        "example": "isLoading, hasPermission, shouldRetry"
+      }
     ],
     "test": "If someone reads this name 6 months from now, will they understand what it does without reading the implementation?",
     "standard": "Names express intent. No abbreviations. No mental mapping required."
@@ -38,8 +54,16 @@
   "file-limits": {
     "limits": [
       { "fileType": "Component", "maxLines": 300, "actionWhenExceeded": "Extract sub-components" },
-      { "fileType": "Dialog/Modal", "maxLines": 400, "actionWhenExceeded": "Extract content sections" },
-      { "fileType": "Types file", "maxLines": 400, "actionWhenExceeded": "Move utilities to separate file" },
+      {
+        "fileType": "Dialog/Modal",
+        "maxLines": 400,
+        "actionWhenExceeded": "Extract content sections"
+      },
+      {
+        "fileType": "Types file",
+        "maxLines": 400,
+        "actionWhenExceeded": "Move utilities to separate file"
+      },
       { "fileType": "Utils file", "maxLines": 150, "actionWhenExceeded": "Split by domain" }
     ],
     "godFileRule": "Any file >500 lines is a God File. Split immediately, no exceptions."
@@ -170,13 +194,31 @@
     }
   ],
   "gradingRubric": [
-    { "category": "Naming", "standard": "Names express intent. No abbreviations. No mental mapping required." },
-    { "category": "Function Design", "standard": "Each function does ONE thing. <20 lines ideal. Extract when >30." },
-    { "category": "Comments", "standard": "JSDoc for public APIs. Design notes for WHY. No apologetic comments." },
-    { "category": "Structure", "standard": "Logical top-to-bottom flow. Helpers first, then main component." },
-    { "category": "Error Handling", "standard": "No silent failures. Users see feedback. Structured error returns." },
+    {
+      "category": "Naming",
+      "standard": "Names express intent. No abbreviations. No mental mapping required."
+    },
+    {
+      "category": "Function Design",
+      "standard": "Each function does ONE thing. <20 lines ideal. Extract when >30."
+    },
+    {
+      "category": "Comments",
+      "standard": "JSDoc for public APIs. Design notes for WHY. No apologetic comments."
+    },
+    {
+      "category": "Structure",
+      "standard": "Logical top-to-bottom flow. Helpers first, then main component."
+    },
+    {
+      "category": "Error Handling",
+      "standard": "No silent failures. Users see feedback. Structured error returns."
+    },
     { "category": "Cleanliness", "standard": "No magic numbers. No duplication. No dead code." },
-    { "category": "SOLID", "standard": "Single Responsibility. Open for extension. Clear abstractions." }
+    {
+      "category": "SOLID",
+      "standard": "Single Responsibility. Open for extension. Clear abstractions."
+    }
   ],
   "source": "Uncle Bob's Clean Code, adapted for modern development"
 }

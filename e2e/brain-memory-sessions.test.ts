@@ -11,19 +11,17 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  createAgentRuntime,
-  createSemanticFacades,
-  registerFacade,
-} from '@soleri/core';
+import { createAgentRuntime, createSemanticFacades, registerFacade } from '@soleri/core';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 
 const AGENT_ID = 'e2e-brain-mem';
 
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
@@ -99,14 +97,16 @@ describe('E2E: brain-memory-sessions', () => {
     it('brain_feedback should record feedback with pattern and outcome', async () => {
       // Seed a vault entry first so we have a real entry ID
       const captureRes = await callOp(vault(), 'capture_knowledge', {
-        entries: [{
-          type: 'pattern',
-          domain: 'frontend',
-          title: 'State Management Pattern',
-          description: 'Use centralized state management for complex component trees',
-          severity: 'warning',
-          tags: ['react', 'state', 'architecture'],
-        }],
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'frontend',
+            title: 'State Management Pattern',
+            description: 'Use centralized state management for complex component trees',
+            severity: 'warning',
+            tags: ['react', 'state', 'architecture'],
+          },
+        ],
       });
       expect(captureRes.success).toBe(true);
 
@@ -428,14 +428,16 @@ describe('E2E: brain-memory-sessions', () => {
     it('memory_promote_to_global should mark a vault entry as global', async () => {
       // Capture a vault entry to promote
       const captureRes = await callOp(vault(), 'capture_knowledge', {
-        entries: [{
-          type: 'pattern',
-          domain: 'security',
-          title: 'Token Rotation on Refresh',
-          description: 'Always rotate authentication tokens on refresh to prevent replay attacks',
-          severity: 'critical',
-          tags: ['security', 'auth'],
-        }],
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'security',
+            title: 'Token Rotation on Refresh',
+            description: 'Always rotate authentication tokens on refresh to prevent replay attacks',
+            severity: 'critical',
+            tags: ['security', 'auth'],
+          },
+        ],
       });
       expect(captureRes.success).toBe(true);
 
@@ -482,7 +484,8 @@ describe('E2E: brain-memory-sessions', () => {
     it('session_capture should persist a session summary', async () => {
       const res = await callOp(memory(), 'session_capture', {
         projectPath: '/tmp/e2e-brain-mem',
-        summary: 'Implemented database connection pooling and ran performance benchmarks. Pool size of 20 optimal for current load.',
+        summary:
+          'Implemented database connection pooling and ran performance benchmarks. Pool size of 20 optimal for current load.',
         topics: ['database', 'performance', 'benchmarks'],
         filesModified: ['db-pool.ts', 'config.ts', 'benchmarks/pool.bench.ts'],
         toolsUsed: ['vault_search', 'brain_recommend', 'memory_capture'],
@@ -637,7 +640,11 @@ describe('E2E: brain-memory-sessions', () => {
         projectPath: '/tmp/e2e-decay',
       });
       expect(exportRes.success).toBe(true);
-      const exportData = exportRes.data as { exported: boolean; count: number; memories: unknown[] };
+      const exportData = exportRes.data as {
+        exported: boolean;
+        count: number;
+        memories: unknown[];
+      };
       expect(exportData.exported).toBe(true);
       expect(exportData.count).toBeGreaterThan(0);
     });
@@ -826,16 +833,50 @@ describe('E2E: brain-memory-sessions', () => {
   // This tests the COMPOUND EFFECT — each cycle makes the next one better.
 
   describe('Journey 7: Brain → Vault feedback loop (compound learning)', () => {
-
     // Step 1: Seed vault with multiple related patterns
     it('should seed vault with patterns across multiple domains', async () => {
       const patterns = [
-        { title: 'Use Error Boundaries at Route Level', domain: 'react', severity: 'critical', description: 'Wrap route components in error boundaries to prevent full-page crashes.' },
-        { title: 'Centralized Error Handler with Context', domain: 'architecture', severity: 'critical', description: 'Create a centralized error handling service that captures error context and stack traces.' },
-        { title: 'Exponential Backoff for API Retries', domain: 'architecture', severity: 'warning', description: 'Use exponential backoff with jitter for API retry logic. Start at 1s, max 30s.' },
-        { title: 'Skeleton Loading States', domain: 'react', severity: 'suggestion', description: 'Use skeleton screens instead of spinners. Match the layout of the content being loaded.' },
-        { title: 'Progressive Form Validation', domain: 'ux', severity: 'warning', description: 'Validate on blur, not on change. Show errors inline below fields.' },
-        { title: 'Catch-All Error Swallowing', domain: 'architecture', severity: 'critical', description: 'Never use empty catch blocks. Every catch must either re-throw or log with context.', type: 'anti-pattern' },
+        {
+          title: 'Use Error Boundaries at Route Level',
+          domain: 'react',
+          severity: 'critical',
+          description: 'Wrap route components in error boundaries to prevent full-page crashes.',
+        },
+        {
+          title: 'Centralized Error Handler with Context',
+          domain: 'architecture',
+          severity: 'critical',
+          description:
+            'Create a centralized error handling service that captures error context and stack traces.',
+        },
+        {
+          title: 'Exponential Backoff for API Retries',
+          domain: 'architecture',
+          severity: 'warning',
+          description:
+            'Use exponential backoff with jitter for API retry logic. Start at 1s, max 30s.',
+        },
+        {
+          title: 'Skeleton Loading States',
+          domain: 'react',
+          severity: 'suggestion',
+          description:
+            'Use skeleton screens instead of spinners. Match the layout of the content being loaded.',
+        },
+        {
+          title: 'Progressive Form Validation',
+          domain: 'ux',
+          severity: 'warning',
+          description: 'Validate on blur, not on change. Show errors inline below fields.',
+        },
+        {
+          title: 'Catch-All Error Swallowing',
+          domain: 'architecture',
+          severity: 'critical',
+          description:
+            'Never use empty catch blocks. Every catch must either re-throw or log with context.',
+          type: 'anti-pattern',
+        },
       ];
 
       for (const p of patterns) {
@@ -961,7 +1002,8 @@ describe('E2E: brain-memory-sessions', () => {
     // Step 8: Capture session — feeds everything back to brain
     it('should capture the session for the learning loop', async () => {
       const sessionRes = await callOp(memory(), 'session_capture', {
-        summary: 'Explored error handling patterns. Accepted error-boundary, error-handler, and retry-logic patterns. Dismissed loading-states as irrelevant. Built intelligence. Found compound improvement on second search cycle.',
+        summary:
+          'Explored error handling patterns. Accepted error-boundary, error-handler, and retry-logic patterns. Dismissed loading-states as irrelevant. Built intelligence. Found compound improvement on second search cycle.',
         knowledge: [
           'Error boundaries at route level prevent full-page crashes',
           'Centralized error handling with context improves debugging',
@@ -991,9 +1033,7 @@ describe('E2E: brain-memory-sessions', () => {
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBeGreaterThan(0);
       // Should find the "Catch-All Error Swallowing" anti-pattern
-      const hasCatchEntry = results.some(r =>
-        r.entry.title.toLowerCase().includes('catch'),
-      );
+      const hasCatchEntry = results.some((r) => r.entry.title.toLowerCase().includes('catch'));
       expect(hasCatchEntry).toBe(true);
     });
 
@@ -1046,9 +1086,9 @@ describe('E2E: brain-memory-sessions', () => {
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBeGreaterThan(0);
       // Should find the session captured in Step 8
-      const hasSession = results.some(r =>
-        r.summary.toLowerCase().includes('error') ||
-        r.summary.toLowerCase().includes('pattern'),
+      const hasSession = results.some(
+        (r) =>
+          r.summary.toLowerCase().includes('error') || r.summary.toLowerCase().includes('pattern'),
       );
       expect(hasSession).toBe(true);
     });

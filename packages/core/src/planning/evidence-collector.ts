@@ -146,10 +146,7 @@ export function collectVerificationGaps(
 /**
  * Check if a task modifies existing code (vs. creating new files).
  */
-function taskModifiesExistingCode(
-  task: PlanTask,
-  evidence: GitTaskEvidence[],
-): boolean {
+function taskModifiesExistingCode(task: PlanTask, evidence: GitTaskEvidence[]): boolean {
   const taskEvidence = evidence.find((e) => e.taskId === task.id);
   if (!taskEvidence) return false;
   return taskEvidence.matchedFiles.some((f) => f.status === 'modified');

@@ -42,9 +42,7 @@ vi.mock('./claude-md-helpers.js', () => ({
 }));
 
 vi.mock('../skills/sync-skills.js', () => ({
-  discoverSkills: vi.fn(() => [
-    { name: 'skill-1', path: '/mock/skills/skill-1' },
-  ]),
+  discoverSkills: vi.fn(() => [{ name: 'skill-1', path: '/mock/skills/skill-1' }]),
   syncSkillsToClaudeCode: vi.fn(() => ({
     installed: ['skill-1'],
     updated: [],
@@ -158,7 +156,8 @@ describe('createAdminSetupOps', () => {
     });
 
     it('updates existing agent sections', async () => {
-      mockFs['/some/project/CLAUDE.md'] = '# Project\n<!-- agent:test-agent -->\nOld\n<!-- /agent:test-agent -->';
+      mockFs['/some/project/CLAUDE.md'] =
+        '# Project\n<!-- agent:test-agent -->\nOld\n<!-- /agent:test-agent -->';
       const { hasSections } = await import('./claude-md-helpers.js');
       vi.mocked(hasSections).mockReturnValueOnce(true);
       const result = (await findOp(ops, 'admin_inject_claude_md').handler({

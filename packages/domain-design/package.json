@@ -2,6 +2,12 @@
   "name": "@soleri/domain-design",
   "version": "8.1.0",
   "description": "Design system intelligence domain pack for Soleri agents — WCAG contrast, token validation, design rules, and patterns.",
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "data",
+    "knowledge"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,11 +27,5 @@
   },
   "peerDependencies": {
     "@soleri/core": "^9.0.0"
-  },
-  "files": [
-    "dist",
-    "data",
-    "knowledge"
-  ],
-  "license": "Apache-2.0"
+  }
 }

@@ -9,13 +9,7 @@
       "title": "Morph-based mode switching for cross-flow collaboration",
       "severity": "warning",
       "description": "# Morph-based mode switching for cross-flow collaboration\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nFlows can morph into other modes at specific steps. The INTEGRATOR-flow morphs to design mode during the configure step (morph: design) to leverage design expertise for token configuration. Auto-morph injects review mode on validation steps in build/fix/deliver flows. Review-only flows (REVIEWER, ARCHITECT, UX-AUDITOR) are excluded from auto-morph to prevent infinite recursion. Morph preserves parent flow context while temporarily adopting the target mode's evaluation criteria.\n\n## Example\n\n```typescript\nINTEGRATOR-flow step 'configure' has morph: design → temporarily adopts The Painter's color/token expertise\n```\n\n## Why\n\nComplex tasks require multiple expertise domains. Morph enables delegation without abandoning the parent workflow context.",
-      "tags": [
-        "morph",
-        "mode-switching",
-        "cross-flow",
-        "collaboration",
-        "delegation"
-      ]
+      "tags": ["morph", "mode-switching", "cross-flow", "collaboration", "delegation"]
     },
     {
       "id": "pattern-leadership-quick-data-driven-architecture-all-logic-in-yaml-none-in",
@@ -24,13 +18,7 @@
       "title": "Data-driven architecture: all logic in YAML, none in code",
       "severity": "critical",
       "description": "# Data-driven architecture: all logic in YAML, none in code\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nSalvador's core architectural principle is 100% data-driven behavior. Routing logic lives in routing-config.yaml, workflow steps in flows/*.yaml, quality thresholds in scoring/thresholds.yaml, enforcement rules in rules/*.yaml. The runtime (intent-classifier.js, flow-parser.js) is a generic interpreter that reads YAML — it contains no domain knowledge. This means behavior changes are YAML edits, not code changes, and the entire system is auditable by reading config files.\n\n## Example\n\n```typescript\nAdding a new intent: edit routing-config.yaml (add intent + mode + chain-mapping). Zero code changes needed.\n```\n\n## Why\n\nData-driven architecture enables non-engineers to modify system behavior, makes changes auditable in version control, and eliminates code-level bugs in routing logic.",
-      "tags": [
-        "data-driven",
-        "yaml",
-        "architecture",
-        "separation-of-concerns",
-        "auditability"
-      ]
+      "tags": ["data-driven", "yaml", "architecture", "separation-of-concerns", "auditability"]
     },
     {
       "id": "pattern-leadership-quick-agent-persona-system-8-specialized-characters-for-",
@@ -39,12 +27,7 @@
       "title": "Agent persona system: 8 specialized characters for mode-specific guidance",
       "severity": "warning",
       "description": "# Agent persona system: 8 specialized characters for mode-specific guidance\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nEach Salvador mode has a dedicated persona that shapes the agent's focus and communication style. The Architect (Build), The Painter (Design), The Critic (Review), The Psychologist (UX), The Scientist (Test), The Curator (Deploy), The Surgeon (Fix), The Weaver (Integrate). Personas are defined in flow YAML metadata and activated via morph. Each persona brings domain-specific vocabulary and evaluation criteria.\n\n## Example\n\n```typescript\nflows/ux-auditor.yaml: metadata.persona: 'The Psychologist'. flows/recovery.yaml: metadata.persona: 'The Surgeon'.\n```\n\n## Why\n\nSpecialized personas improve output quality by constraining the agent's focus. The Critic reviews differently than The Architect builds.",
-      "tags": [
-        "personas",
-        "agent-modes",
-        "specialization",
-        "communication-style"
-      ]
+      "tags": ["personas", "agent-modes", "specialization", "communication-style"]
     }
   ]
 }

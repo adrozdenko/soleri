@@ -22,7 +22,9 @@ function mockLLM(response: string): LLMClient {
 
 function throwingLLM(error: Error): LLMClient {
   return {
-    complete: async () => { throw error; },
+    complete: async () => {
+      throw error;
+    },
     isAvailable: () => ({ openai: true, anthropic: false }),
     getRoutes: () => [],
   } as unknown as LLMClient;
@@ -34,15 +36,17 @@ function throwingLLM(error: Error): LLMClient {
 
 describe('classifyChunk', () => {
   it('parses valid JSON array response into ClassifiedItems', async () => {
-    const llm = mockLLM(JSON.stringify([
-      {
-        type: 'pattern',
-        title: 'Test Pattern',
-        description: 'A useful design pattern.',
-        tags: ['design', 'architecture'],
-        severity: 'suggestion',
-      },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        {
+          type: 'pattern',
+          title: 'Test Pattern',
+          description: 'A useful design pattern.',
+          tags: ['design', 'architecture'],
+          severity: 'suggestion',
+        },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'some text', 'page 1');
 
@@ -56,7 +60,9 @@ describe('classifyChunk', () => {
   });
 
   it('handles markdown fenced JSON responses', async () => {
-    const llm = mockLLM('```json\n[{"type":"pattern","title":"Fenced","description":"Inside fences.","tags":["test"],"severity":"warning"}]\n```');
+    const llm = mockLLM(
+      '```json\n[{"type":"pattern","title":"Fenced","description":"Inside fences.","tags":["test"],"severity":"warning"}]\n```',
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 
@@ -89,10 +95,24 @@ describe('classifyChunk', () => {
   });
 
   it('filters out items with invalid type', async () => {
-    const llm = mockLLM(JSON.stringify([
-      { type: 'invalid-type', title: 'Bad', description: 'Bad type', tags: [], severity: 'suggestion' },
-      { type: 'pattern', title: 'Good', description: 'Good item.', tags: [], severity: 'suggestion' },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        {
+          type: 'invalid-type',
+          title: 'Bad',
+          description: 'Bad type',
+          tags: [],
+          severity: 'suggestion',
+        },
+        {
+          type: 'pattern',
+          title: 'Good',
+          description: 'Good item.',
+          tags: [],
+          severity: 'suggestion',
+        },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 
@@ -101,11 +121,19 @@ describe('classifyChunk', () => {
   });
 
   it('filters out items missing required fields (title, description)', async () => {
-    const llm = mockLLM(JSON.stringify([
-      { type: 'pattern', title: '', description: 'No title', tags: [], severity: 'suggestion' },
-      { type: 'pattern', title: 'No desc', description: '', tags: [], severity: 'suggestion' },
-      { type: 'pattern', title: 'Valid', description: 'Valid item.', tags: [], severity: 'suggestion' },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        { type: 'pattern', title: '', description: 'No title', tags: [], severity: 'suggestion' },
+        { type: 'pattern', title: 'No desc', description: '', tags: [], severity: 'suggestion' },
+        {
+          type: 'pattern',
+          title: 'Valid',
+          description: 'Valid item.',
+          tags: [],
+          severity: 'suggestion',
+        },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 
@@ -115,9 +143,17 @@ describe('classifyChunk', () => {
 
   it('truncates title to 80 characters', async () => {
     const longTitle = 'A'.repeat(100);
-    const llm = mockLLM(JSON.stringify([
-      { type: 'pattern', title: longTitle, description: 'Desc.', tags: [], severity: 'suggestion' },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        {
+          type: 'pattern',
+          title: longTitle,
+          description: 'Desc.',
+          tags: [],
+          severity: 'suggestion',
+        },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 
@@ -126,26 +162,36 @@ describe('classifyChunk', () => {
   });
 
   it('caps tags at 5 and lowercases them', async () => {
-    const llm = mockLLM(JSON.stringify([
-      {
-        type: 'pattern',
-        title: 'Tagged',
-        description: 'Many tags.',
-        tags: ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'],
-        severity: 'suggestion',
-      },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        {
+          type: 'pattern',
+          title: 'Tagged',
+          description: 'Many tags.',
+          tags: ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'],
+          severity: 'suggestion',
+        },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 
     expect(result[0].tags).toHaveLength(5);
-    expect(result[0].tags.every(t => t === t.toLowerCase())).toBe(true);
+    expect(result[0].tags.every((t) => t === t.toLowerCase())).toBe(true);
   });
 
   it('defaults severity to suggestion for invalid values', async () => {
-    const llm = mockLLM(JSON.stringify([
-      { type: 'pattern', title: 'Bad Sev', description: 'Unknown sev.', tags: [], severity: 'unknown' },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        {
+          type: 'pattern',
+          title: 'Bad Sev',
+          description: 'Unknown sev.',
+          tags: [],
+          severity: 'unknown',
+        },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 
@@ -153,24 +199,40 @@ describe('classifyChunk', () => {
   });
 
   it('handles all valid severity values', async () => {
-    const llm = mockLLM(JSON.stringify([
-      { type: 'pattern', title: 'Critical', description: 'Crit.', tags: [], severity: 'critical' },
-      { type: 'pattern', title: 'Warning', description: 'Warn.', tags: [], severity: 'warning' },
-      { type: 'pattern', title: 'Suggestion', description: 'Sug.', tags: [], severity: 'suggestion' },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        {
+          type: 'pattern',
+          title: 'Critical',
+          description: 'Crit.',
+          tags: [],
+          severity: 'critical',
+        },
+        { type: 'pattern', title: 'Warning', description: 'Warn.', tags: [], severity: 'warning' },
+        {
+          type: 'pattern',
+          title: 'Suggestion',
+          description: 'Sug.',
+          tags: [],
+          severity: 'suggestion',
+        },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 
-    expect(result.map(r => r.severity)).toEqual(['critical', 'warning', 'suggestion']);
+    expect(result.map((r) => r.severity)).toEqual(['critical', 'warning', 'suggestion']);
   });
 
   it('filters out non-object items in the array', async () => {
-    const llm = mockLLM(JSON.stringify([
-      null,
-      42,
-      'string',
-      { type: 'pattern', title: 'Valid', description: 'OK.', tags: [], severity: 'suggestion' },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        null,
+        42,
+        'string',
+        { type: 'pattern', title: 'Valid', description: 'OK.', tags: [], severity: 'suggestion' },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 
@@ -179,9 +241,17 @@ describe('classifyChunk', () => {
   });
 
   it('filters non-string tags from the tags array', async () => {
-    const llm = mockLLM(JSON.stringify([
-      { type: 'pattern', title: 'Mixed Tags', description: 'OK.', tags: ['valid', 42, null, 'also-valid'], severity: 'suggestion' },
-    ]));
+    const llm = mockLLM(
+      JSON.stringify([
+        {
+          type: 'pattern',
+          title: 'Mixed Tags',
+          description: 'OK.',
+          tags: ['valid', 42, null, 'also-valid'],
+          severity: 'suggestion',
+        },
+      ]),
+    );
 
     const result = await classifyChunk(llm, 'text', 'cite');
 

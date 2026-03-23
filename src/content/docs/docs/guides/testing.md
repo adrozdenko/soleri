@@ -14,22 +14,22 @@ npm run test:e2e      # E2E integration tests (124 tests, 10 files)
 
 ## Test Layers
 
-| Layer | Command | Scope | Speed |
-|-------|---------|-------|-------|
-| **Unit** | `npm test` | Individual modules within each package | Fast (~10s) |
-| **E2E** | `npm run test:e2e` | Cross-package integration, real databases, real transports | Medium (~70s) |
-| **Smoke** | Manual | Full scaffold → build → run cycle with a real agent | Slow (~2min) |
+| Layer     | Command            | Scope                                                      | Speed         |
+| --------- | ------------------ | ---------------------------------------------------------- | ------------- |
+| **Unit**  | `npm test`         | Individual modules within each package                     | Fast (~10s)   |
+| **E2E**   | `npm run test:e2e` | Cross-package integration, real databases, real transports | Medium (~70s) |
+| **Smoke** | Manual             | Full scaffold → build → run cycle with a real agent        | Slow (~2min)  |
 
 ### When to run what
 
-| Changed | Unit | E2E | Smoke |
-|---------|------|-----|-------|
-| `@soleri/core` engine module | Yes | Yes | — |
-| `@soleri/core` facade | Yes | Yes | — |
-| `@soleri/forge` template | Yes | Yes | Yes |
-| `@soleri/cli` command | Yes | Yes | — |
-| Transport layer | — | Yes | — |
-| Before a release | Yes | Yes | Yes |
+| Changed                      | Unit | E2E | Smoke |
+| ---------------------------- | ---- | --- | ----- |
+| `@soleri/core` engine module | Yes  | Yes | —     |
+| `@soleri/core` facade        | Yes  | Yes | —     |
+| `@soleri/forge` template     | Yes  | Yes | Yes   |
+| `@soleri/cli` command        | Yes  | Yes | —     |
+| Transport layer              | —    | Yes | —     |
+| Before a release             | Yes  | Yes | Yes   |
 
 ## Unit Tests
 
@@ -54,18 +54,18 @@ npm run test:e2e
 
 ### What's covered
 
-| Test File | Tests | What it verifies |
-|-----------|-------|------------------|
-| `scaffold-and-build` | 7 | Template generates → npm install → TypeScript compiles |
-| `full-pipeline` | 20 | All 13+ engine facades through the dispatch layer |
-| `mcp-transport` | 7 | Over-the-wire MCP via real stdio subprocess |
-| `scaffold-edge-cases` | 10 | Many domains, telegram, tones, skills filter, duplicates |
-| `persistence` | 4 | Vault/brain/plan data survives runtime close/reopen |
-| `curator-brain-governance` | 25 | Health audits, learning loop, policy lifecycle, orchestrate |
-| `concurrent-and-performance` | 10 | Parallel facade calls, 500-entry bulk ops, latency bounds |
-| `cli-commands` | 12 | Non-interactive create, list, doctor, add-domain, governance |
-| `transports` | 15 | SessionManager, RateLimiter, HTTP/SSE, WebSocket |
-| `skills-and-domains` | 14 | SKILL.md frontmatter validation, domain data integrity |
+| Test File                    | Tests | What it verifies                                             |
+| ---------------------------- | ----- | ------------------------------------------------------------ |
+| `scaffold-and-build`         | 7     | Template generates → npm install → TypeScript compiles       |
+| `full-pipeline`              | 20    | All 13+ engine facades through the dispatch layer            |
+| `mcp-transport`              | 7     | Over-the-wire MCP via real stdio subprocess                  |
+| `scaffold-edge-cases`        | 10    | Many domains, telegram, tones, skills filter, duplicates     |
+| `persistence`                | 4     | Vault/brain/plan data survives runtime close/reopen          |
+| `curator-brain-governance`   | 25    | Health audits, learning loop, policy lifecycle, orchestrate  |
+| `concurrent-and-performance` | 10    | Parallel facade calls, 500-entry bulk ops, latency bounds    |
+| `cli-commands`               | 12    | Non-interactive create, list, doctor, add-domain, governance |
+| `transports`                 | 15    | SessionManager, RateLimiter, HTTP/SSE, WebSocket             |
+| `skills-and-domains`         | 14    | SKILL.md frontmatter validation, domain data integrity       |
 
 ### How E2E tests work
 
@@ -95,6 +95,7 @@ E2E tests live in the `e2e/` directory and use [Vitest](https://vitest.dev/). Th
 4. Clean up temp directories in `afterAll`
 
 **Tips:**
+
 - Use `:memory:` vaultPath for fast in-process tests
 - Use `tmpdir()` for file-backed tests that verify persistence
 - Set generous timeouts for scaffold tests (60s+ for `beforeAll`)

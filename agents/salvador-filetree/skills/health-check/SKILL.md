@@ -122,14 +122,14 @@ salvador_core op:governance_expire
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `admin_health` / `admin_diagnostic` | System health |
-| `admin_vault_analytics` / `admin_vault_size` | Vault metrics |
-| `curator_health_audit` | Quality score |
-| `curator_detect_duplicates` | Find duplicates |
-| `curator_contradictions` | Find conflicts |
-| `vault_age_report` | Stale entries |
-| `admin_search_insights` | Search miss analysis |
-| `curator_consolidate` | Full cleanup pipeline |
-| `brain_build_intelligence` | Rebuild after cleanup |
+| Op                                           | When to Use           |
+| -------------------------------------------- | --------------------- |
+| `admin_health` / `admin_diagnostic`          | System health         |
+| `admin_vault_analytics` / `admin_vault_size` | Vault metrics         |
+| `curator_health_audit`                       | Quality score         |
+| `curator_detect_duplicates`                  | Find duplicates       |
+| `curator_contradictions`                     | Find conflicts        |
+| `vault_age_report`                           | Stale entries         |
+| `admin_search_insights`                      | Search miss analysis  |
+| `curator_consolidate`                        | Full cleanup pipeline |
+| `brain_build_intelligence`                   | Rebuild after cleanup |

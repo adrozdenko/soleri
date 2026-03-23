@@ -75,8 +75,8 @@ describe('E2E: scaffold-edge-cases', () => {
     expect(result.success).toBe(true);
 
     // Check for telegram-related content in the generated files
-    const filesWithTelegram = result.filesCreated.filter(
-      (f) => f.toLowerCase().includes('telegram'),
+    const filesWithTelegram = result.filesCreated.filter((f) =>
+      f.toLowerCase().includes('telegram'),
     );
     expect(filesWithTelegram.length).toBeGreaterThan(0);
   });

@@ -210,7 +210,9 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
         logger.info(`Markdown sync: ${result.synced} entries synced, ${result.skipped} skipped`);
       }
     },
-    () => { /* best-effort — never block boot */ },
+    () => {
+      /* best-effort — never block boot */
+    },
   );
 
   // ─── Auto-signal pipeline wiring ───────────────────────────────────

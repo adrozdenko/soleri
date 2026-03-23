@@ -182,10 +182,7 @@ function buildHealthWarning(
  * Collect all acceptance criteria from a plan's tasks.
  * Returns empty array if plan not found or has no criteria (graceful skip).
  */
-function collectAcceptanceCriteria(
-  plannerRef: AgentRuntime['planner'],
-  planId: string,
-): string[] {
+function collectAcceptanceCriteria(plannerRef: AgentRuntime['planner'], planId: string): string[] {
   const plan = plannerRef.get(planId);
   if (!plan) return [];
   const criteria: string[] = [];
@@ -210,7 +207,8 @@ function captureRationalizationAntiPattern(
     vaultRef.add({
       id: `antipattern-rationalization-${Date.now()}`,
       title: 'Rationalization detected in completion claim',
-      description: `Detected rationalization patterns: ${patterns}. ` +
+      description:
+        `Detected rationalization patterns: ${patterns}. ` +
         `Items: ${report.items.map((i) => `"${i.phrase}" (${i.pattern})`).join('; ')}.`,
       type: 'anti-pattern',
       domain: 'planning',
@@ -247,7 +245,10 @@ export function createOrchestrateOps(
         'a pruned orchestration plan with gate-guarded steps.',
       auth: 'write',
       schema: z.object({
-        prompt: z.string().optional().describe('Natural language description of what to do (or use objective)'),
+        prompt: z
+          .string()
+          .optional()
+          .describe('Natural language description of what to do (or use objective)'),
         projectPath: z.string().optional().default('.').describe('Project root path'),
         // Legacy params — still accepted for backward compat
         objective: z.string().optional().describe('(Legacy) Plan objective — use prompt instead'),
@@ -277,9 +278,10 @@ export function createOrchestrateOps(
           recommendations = raw.map((r) => {
             // Look up vault entry ID by title for feedback tracking
             const entries = vault.search(r.pattern, { limit: 1 });
-            const entryId = entries.length > 0 && entries[0].entry.title === r.pattern
-              ? entries[0].entry.id
-              : undefined;
+            const entryId =
+              entries.length > 0 && entries[0].entry.title === r.pattern
+                ? entries[0].entry.id
+                : undefined;
             return { pattern: r.pattern, strength: r.strength, entryId };
           });
         } catch {
@@ -307,12 +309,10 @@ export function createOrchestrateOps(
         planStore.set(plan.planId, { plan, createdAt: Date.now() });
 
         // 5. Also create a planner plan for lifecycle tracking (backward compat)
-        const decisions = recommendations.map(
-          (r) => {
-            const base = `Brain pattern: ${r.pattern} (strength: ${r.strength.toFixed(1)})`;
-            return r.entryId ? `${base} [entryId:${r.entryId}]` : base;
-          },
-        );
+        const decisions = recommendations.map((r) => {
+          const base = `Brain pattern: ${r.pattern} (strength: ${r.strength.toFixed(1)})`;
+          return r.entryId ? `${base} [entryId:${r.entryId}]` : base;
+        });
         const tasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];
 
         // 5b. Extract GitHub issue context if prompt references #NNN
@@ -333,7 +333,8 @@ export function createOrchestrateOps(
           }
         }
 
-        const planObjective = (params as Record<string, unknown>)._enrichedObjective as string | undefined ?? prompt;
+        const planObjective =
+          ((params as Record<string, unknown>)._enrichedObjective as string | undefined) ?? prompt;
 
         let legacyPlan;
         try {
@@ -478,11 +479,21 @@ export function createOrchestrateOps(
           .optional()
           .default('completed')
           .describe('Plan outcome'),
-        summary: z.string().optional().describe('Completion summary — checked for rationalization language'),
+        summary: z
+          .string()
+          .optional()
+          .describe('Completion summary — checked for rationalization language'),
         toolsUsed: z.array(z.string()).optional().describe('Tools used during execution'),
         filesModified: z.array(z.string()).optional().describe('Files modified during execution'),
-        projectPath: z.string().optional().default('.').describe('Project root path for impact analysis'),
-        overrideRationalization: z.boolean().optional().default(false)
+        projectPath: z
+          .string()
+          .optional()
+          .default('.')
+          .describe('Project root path for impact analysis'),
+        overrideRationalization: z
+          .boolean()
+          .optional()
+          .default(false)
           .describe('Set true to bypass rationalization gate and impact warnings after review'),
       }),
       handler: async (params) => {
@@ -517,9 +528,7 @@ export function createOrchestrateOps(
           try {
             const analyzer = new ImpactAnalyzer();
             const planObj = planner.get(planId);
-            const scopeHints = planObj?.scope
-              ? [planObj.scope]
-              : undefined;
+            const scopeHints = planObj?.scope ? [planObj.scope] : undefined;
             impactReport = analyzer.analyzeImpact(
               filesModified,
               (params.projectPath as string) ?? '.',
@@ -710,11 +719,22 @@ export function createOrchestrateOps(
       auth: 'write',
       schema: z.object({
         planId: z.string().describe('ID of the plan to project to GitHub'),
-        projectPath: z.string().optional().default('.').describe('Project root path for git detection'),
+        projectPath: z
+          .string()
+          .optional()
+          .default('.')
+          .describe('Project root path for git detection'),
         milestone: z.number().optional().describe('GitHub milestone number to assign issues to'),
         labels: z.array(z.string()).optional().describe('Labels to apply to created issues'),
-        linkToIssue: z.number().optional().describe('Existing issue number to link plan to instead of creating new issues'),
-        dryRun: z.boolean().optional().default(false).describe('Preview what would be created without actually creating issues'),
+        linkToIssue: z
+          .number()
+          .optional()
+          .describe('Existing issue number to link plan to instead of creating new issues'),
+        dryRun: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe('Preview what would be created without actually creating issues'),
       }),
       handler: async (params) => {
         const planId = params.planId as string;
@@ -729,7 +749,9 @@ export function createOrchestrateOps(
         if (!plan) throw new Error(`Plan not found: ${planId}`);
 
         if (plan.tasks.length === 0) {
-          throw new Error('Plan has no tasks — run plan_split first to define tasks before projecting to GitHub');
+          throw new Error(
+            'Plan has no tasks — run plan_split first to define tasks before projecting to GitHub',
+          );
         }
 
         // 2. Detect GitHub context
@@ -807,7 +829,12 @@ export function createOrchestrateOps(
 
         // 6. Create issues per task (with duplicate detection)
         const created: Array<{ taskId: string; issueNumber: number; title: string }> = [];
-        const skipped: Array<{ taskId: string; title: string; existingIssue: number; reason: string }> = [];
+        const skipped: Array<{
+          taskId: string;
+          title: string;
+          existingIssue: number;
+          reason: string;
+        }> = [];
         const failed: Array<{ taskId: string; title: string; reason: string }> = [];
 
         for (const task of plan.tasks) {

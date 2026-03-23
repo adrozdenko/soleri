@@ -52,47 +52,47 @@ The single source of truth for agent identity and configuration.
 
 ```yaml
 # ─── Identity ──────────────────────────────
-id: my-agent                    # kebab-case, unique identifier
-name: My Agent                  # display name (max 50 chars)
-role: Expert in X               # one-line role (max 100 chars)
-description: >                  # what this agent does (10-500 chars)
+id: my-agent # kebab-case, unique identifier
+name: My Agent # display name (max 50 chars)
+role: Expert in X # one-line role (max 100 chars)
+description: > # what this agent does (10-500 chars)
   Detailed description of the agent's purpose
   and capabilities.
 
 # ─── Personality ───────────────────────────
-domains:                        # knowledge domains (1-20)
+domains: # knowledge domains (1-20)
   - design
   - accessibility
-principles:                     # core principles (1-10)
+principles: # core principles (1-10)
   - Vault is the single source of truth
   - Accessible by default
-tone: precise                   # precise | mentor | pragmatic
-greeting: >                     # optional — auto-generated if omitted
+tone: precise # precise | mentor | pragmatic
+greeting: > # optional — auto-generated if omitted
   Custom greeting message.
 
 # ─── Engine Configuration ──────────────────
 engine:
-  vault: ~/.my-agent/vault.db   # vault SQLite path (default: ~/.{id}/vault.db)
-  learning: true                # enable brain/learning loop (default: true)
-  cognee: false                 # enable vector search (default: false)
+  vault: ~/.my-agent/vault.db # vault SQLite path (default: ~/.{id}/vault.db)
+  learning: true # enable brain/learning loop (default: true)
+  cognee: false # enable vector search (default: false)
 
 # ─── Vault Connections ─────────────────────
-vaults:                         # optional — link to external vaults
+vaults: # optional — link to external vaults
   - name: shared-knowledge
     path: ~/.soleri/vault.db
-    priority: 0.6               # search weight 0-1 (default: 0.5)
+    priority: 0.6 # search weight 0-1 (default: 0.5)
 
 # ─── Client Setup ─────────────────────────
 setup:
-  target: opencode              # claude | codex | opencode | both | all
-  model: claude-code-sonnet-4   # primary model for the client
+  target: opencode # claude | codex | opencode | both | all
+  model: claude-code-sonnet-4 # primary model for the client
 
 # ─── Domain Packs ──────────────────────────
-packs:                          # optional — npm domain packs
+packs: # optional — npm domain packs
   - name: design
-    package: "@soleri/domain-design"
+    package: '@soleri/domain-design'
   - name: code-review
-    package: "@soleri/domain-code-review"
+    package: '@soleri/domain-code-review'
 ```
 
 ### .mcp.json (REQUIRED)
@@ -111,6 +111,7 @@ Points the LLM client to the Soleri Knowledge Engine server.
 ```
 
 The engine reads `agent.yaml` at startup to:
+
 - Connect to the specified vault
 - Load domain packs
 - Configure learning/cognee
@@ -130,6 +131,7 @@ instructions/_engine.md
 Markdown files that compose into CLAUDE.md. Each file is a self-contained section of behavioral rules.
 
 **Composition order:**
+
 1. `_engine.md` — auto-generated engine rules (vault-first, planning, output formatting, etc.)
 2. All other `*.md` files — sorted alphabetically by filename
 
@@ -138,6 +140,7 @@ Markdown files that compose into CLAUDE.md. Each file is a self-contained sectio
 **Example files:**
 
 `instructions/planning.md`:
+
 ```markdown
 # Planning Rules
 
@@ -147,6 +150,7 @@ Markdown files that compose into CLAUDE.md. Each file is a self-contained sectio
 ```
 
 `instructions/domain-design.md`:
+
 ```markdown
 # Design System Rules
 
@@ -165,29 +169,35 @@ Each workflow is a folder with up to 3 files:
 # Feature Development
 
 ## When to Use
+
 When building a new feature, adding functionality, or creating components.
 
 ## Steps
 
 ### 1. Understand
+
 - Search vault for existing patterns
 - Read relevant code
 - Clarify requirements with user
 
 ### 2. Plan
+
 - Create structured plan via op:orchestrate_plan
 - Wait for user approval
 
 ### 3. Build
+
 - Implement with vault-informed decisions
 - Follow existing patterns
 
 ### 4. Verify
+
 - Run tests
 - Check accessibility
 - Validate tokens
 
 ### 5. Ship
+
 - Capture knowledge to vault
 - Complete orchestration lifecycle
 ```
@@ -311,17 +321,19 @@ CLAUDE.md is **never manually edited**. It is composed from:
 On every new session: `{id}_core op:session_start params:{ projectPath: "." }`
 
 ## Essential Tools
-| Facade | Key Ops |
-|--------|---------|
-| `{id}_core` | `health`, `identity`, `register`, `activate` |
+
+| Facade       | Key Ops                                        |
+| ------------ | ---------------------------------------------- |
+| `{id}_core`  | `health`, `identity`, `register`, `activate`   |
 | `{id}_vault` | `search_intelligent`, `capture_knowledge`, ... |
-| `{id}_brain` | `recommend`, `strengths`, `feedback`, ... |
-| ... | ... |
+| `{id}_brain` | `recommend`, `strengths`, `feedback`, ...      |
+| ...          | ...                                            |
 ```
 
 ### Regeneration Triggers
 
 `soleri dev` watches these files and regenerates CLAUDE.md on change:
+
 - `agent.yaml`
 - `instructions/*.md`
 - `workflows/*/prompt.md`
@@ -354,6 +366,7 @@ The agent folder is the **shell**. The Soleri Knowledge Engine is the **brain**.
 ```
 
 The engine reads `agent.yaml` on startup to configure itself:
+
 - Which vault to connect
 - Which domain packs to load
 - Whether to enable cognee/learning

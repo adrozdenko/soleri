@@ -40,7 +40,8 @@ describe('Salvador Agent Smoke Test', () => {
       id: AGENT_ID,
       name: 'Salvador',
       role: 'Design System Intelligence',
-      description: 'Design system advisor with WCAG contrast, token validation, component patterns, and code review.',
+      description:
+        'Design system advisor with WCAG contrast, token validation, component patterns, and code review.',
       domains: ['design'],
       principles: [
         'Consistency over novelty',
@@ -76,20 +77,21 @@ describe('Salvador Agent Smoke Test', () => {
 
   it('should register 65+ domain ops from packs', () => {
     const domainFacades = allFacades.filter(
-      (f) => !f.name.startsWith(`${AGENT_ID}_vault`) &&
-             !f.name.startsWith(`${AGENT_ID}_plan`) &&
-             !f.name.startsWith(`${AGENT_ID}_brain`) &&
-             !f.name.startsWith(`${AGENT_ID}_memory`) &&
-             !f.name.startsWith(`${AGENT_ID}_admin`) &&
-             !f.name.startsWith(`${AGENT_ID}_curator`) &&
-             !f.name.startsWith(`${AGENT_ID}_loop`) &&
-             !f.name.startsWith(`${AGENT_ID}_orchestrate`) &&
-             !f.name.startsWith(`${AGENT_ID}_control`) &&
-             !f.name.startsWith(`${AGENT_ID}_cognee`) &&
-             !f.name.startsWith(`${AGENT_ID}_context`) &&
-             !f.name.startsWith(`${AGENT_ID}_agency`) &&
-             !f.name.startsWith(`${AGENT_ID}_chat`) &&
-             !f.name.startsWith(`${AGENT_ID}_playbook`),
+      (f) =>
+        !f.name.startsWith(`${AGENT_ID}_vault`) &&
+        !f.name.startsWith(`${AGENT_ID}_plan`) &&
+        !f.name.startsWith(`${AGENT_ID}_brain`) &&
+        !f.name.startsWith(`${AGENT_ID}_memory`) &&
+        !f.name.startsWith(`${AGENT_ID}_admin`) &&
+        !f.name.startsWith(`${AGENT_ID}_curator`) &&
+        !f.name.startsWith(`${AGENT_ID}_loop`) &&
+        !f.name.startsWith(`${AGENT_ID}_orchestrate`) &&
+        !f.name.startsWith(`${AGENT_ID}_control`) &&
+        !f.name.startsWith(`${AGENT_ID}_cognee`) &&
+        !f.name.startsWith(`${AGENT_ID}_context`) &&
+        !f.name.startsWith(`${AGENT_ID}_agency`) &&
+        !f.name.startsWith(`${AGENT_ID}_chat`) &&
+        !f.name.startsWith(`${AGENT_ID}_playbook`),
     );
 
     const totalDomainOps = domainFacades.reduce((sum, f) => sum + f.ops.length, 0);
@@ -100,7 +102,9 @@ describe('Salvador Agent Smoke Test', () => {
   // --- Design pack ops ---
 
   it('check_contrast should calculate WCAG ratio', async () => {
-    const designFacade = allFacades.find((f) => f.name.includes('design') && !f.name.includes('rules') && !f.name.includes('patterns'));
+    const designFacade = allFacades.find(
+      (f) => f.name.includes('design') && !f.name.includes('rules') && !f.name.includes('patterns'),
+    );
     const op = designFacade!.ops.find((o) => o.name === 'check_contrast')!;
     const result = (await op.handler({
       foreground: '#000000',
@@ -114,7 +118,9 @@ describe('Salvador Agent Smoke Test', () => {
   });
 
   it('validate_component_code should detect violations', async () => {
-    const designFacade = allFacades.find((f) => f.name.includes('design') && !f.name.includes('rules') && !f.name.includes('patterns'));
+    const designFacade = allFacades.find(
+      (f) => f.name.includes('design') && !f.name.includes('rules') && !f.name.includes('patterns'),
+    );
     const op = designFacade!.ops.find((o) => o.name === 'validate_component_code')!;
     const result = (await op.handler({
       code: '<div className="p-[13px] text-[15px]">Bad</div>',
@@ -195,7 +201,11 @@ describe('Salvador Agent Smoke Test', () => {
     const op = reviewFacade!.ops.find((o) => o.name === 'review_pr_design')!;
     const result = (await op.handler({
       files: [
-        { file: 'src/Button.tsx', additions: ['color: #FF0000;', 'background: #00FF00;'], deletions: [] },
+        {
+          file: 'src/Button.tsx',
+          additions: ['color: #FF0000;', 'background: #00FF00;'],
+          deletions: [],
+        },
         { file: 'README.md', additions: ['Updated docs'], deletions: [] },
       ],
     })) as { designFiles: number; issues: unknown[]; issuesFound: number };

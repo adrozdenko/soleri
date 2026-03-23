@@ -15,14 +15,33 @@ export interface AutoLinkConfig {
 }
 
 /** Updatable fields on an entry. */
-export type EntryUpdateFields = Partial<Pick<IntelligenceEntry,
-  'title' | 'description' | 'context' | 'example' | 'counterExample' | 'why' |
-  'tags' | 'appliesTo' | 'severity' | 'type' | 'domain' | 'validFrom' | 'validUntil'>>;
+export type EntryUpdateFields = Partial<
+  Pick<
+    IntelligenceEntry,
+    | 'title'
+    | 'description'
+    | 'context'
+    | 'example'
+    | 'counterExample'
+    | 'why'
+    | 'tags'
+    | 'appliesTo'
+    | 'severity'
+    | 'type'
+    | 'domain'
+    | 'validFrom'
+    | 'validUntil'
+  >
+>;
 
 /** Search/list filter options. */
 export interface EntryFilterOptions {
-  domain?: string; type?: string; severity?: string;
-  origin?: 'agent' | 'pack' | 'user'; limit?: number; includeExpired?: boolean;
+  domain?: string;
+  type?: string;
+  severity?: string;
+  origin?: 'agent' | 'pack' | 'user';
+  limit?: number;
+  includeExpired?: boolean;
 }
 
 export function autoLink(entryId: string, config: AutoLinkConfig): void {
@@ -32,10 +51,16 @@ export function autoLink(entryId: string, config: AutoLinkConfig): void {
     for (const s of suggestions) {
       config.linkManager.addLink(entryId, s.entryId, s.suggestedType, `auto: ${s.reason}`);
     }
-  } catch { /* best-effort */ }
+  } catch {
+    /* best-effort */
+  }
 }
 
-export function seed(provider: PersistenceProvider, entries: IntelligenceEntry[], alc: AutoLinkConfig): number {
+export function seed(
+  provider: PersistenceProvider,
+  entries: IntelligenceEntry[],
+  alc: AutoLinkConfig,
+): number {
   const sql = `
     INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until,content_hash,tier,origin)
     VALUES (@id,@type,@domain,@title,@severity,@description,@context,@example,@counterExample,@why,@tags,@appliesTo,@validFrom,@validUntil,@contentHash,@tier,@origin)
@@ -48,13 +73,23 @@ export function seed(provider: PersistenceProvider, entries: IntelligenceEntry[]
     let count = 0;
     for (const entry of entries) {
       provider.run(sql, {
-        id: entry.id, type: entry.type, domain: entry.domain, title: entry.title,
-        severity: entry.severity, description: entry.description,
-        context: entry.context ?? null, example: entry.example ?? null,
-        counterExample: entry.counterExample ?? null, why: entry.why ?? null,
-        tags: JSON.stringify(entry.tags), appliesTo: JSON.stringify(entry.appliesTo ?? []),
-        validFrom: entry.validFrom ?? null, validUntil: entry.validUntil ?? null,
-        contentHash: computeContentHash(entry), tier: entry.tier ?? 'agent', origin: entry.origin ?? 'agent',
+        id: entry.id,
+        type: entry.type,
+        domain: entry.domain,
+        title: entry.title,
+        severity: entry.severity,
+        description: entry.description,
+        context: entry.context ?? null,
+        example: entry.example ?? null,
+        counterExample: entry.counterExample ?? null,
+        why: entry.why ?? null,
+        tags: JSON.stringify(entry.tags),
+        appliesTo: JSON.stringify(entry.appliesTo ?? []),
+        validFrom: entry.validFrom ?? null,
+        validUntil: entry.validUntil ?? null,
+        contentHash: computeContentHash(entry),
+        tier: entry.tier ?? 'agent',
+        origin: entry.origin ?? 'agent',
       });
       count++;
     }
@@ -67,10 +102,13 @@ export function seed(provider: PersistenceProvider, entries: IntelligenceEntry[]
 }
 
 export function seedDedup(
-  provider: PersistenceProvider, entries: IntelligenceEntry[], alc: AutoLinkConfig,
+  provider: PersistenceProvider,
+  entries: IntelligenceEntry[],
+  alc: AutoLinkConfig,
 ): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
   return provider.transaction(() => {
-    const results: Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> = [];
+    const results: Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> =
+      [];
     for (const entry of entries) {
       const hash = computeContentHash(entry);
       const existing = findByContentHash(provider, hash);
@@ -86,24 +124,44 @@ export function seedDedup(
 }
 
 export function installPack(
-  provider: PersistenceProvider, entries: IntelligenceEntry[], alc: AutoLinkConfig,
+  provider: PersistenceProvider,
+  entries: IntelligenceEntry[],
+  alc: AutoLinkConfig,
 ): { installed: number; skipped: number } {
-  let installed = 0, skipped = 0;
+  let installed = 0,
+    skipped = 0;
   const tagged = entries.map((e) => ({ ...e, origin: 'pack' as const }));
   for (const r of seedDedup(provider, tagged, alc)) {
-    if (r.action === 'inserted') installed++; else skipped++;
+    if (r.action === 'inserted') installed++;
+    else skipped++;
   }
   return { installed, skipped };
 }
 
-export function search(provider: PersistenceProvider, query: string, options?: EntryFilterOptions): SearchResult[] {
+export function search(
+  provider: PersistenceProvider,
+  query: string,
+  options?: EntryFilterOptions,
+): SearchResult[] {
   const limit = options?.limit ?? 10;
   const filters: string[] = [];
   const fp: Record<string, unknown> = {};
-  if (options?.domain) { filters.push('e.domain = @domain'); fp.domain = options.domain; }
-  if (options?.type) { filters.push('e.type = @type'); fp.type = options.type; }
-  if (options?.severity) { filters.push('e.severity = @severity'); fp.severity = options.severity; }
-  if (options?.origin) { filters.push('e.origin = @origin'); fp.origin = options.origin; }
+  if (options?.domain) {
+    filters.push('e.domain = @domain');
+    fp.domain = options.domain;
+  }
+  if (options?.type) {
+    filters.push('e.type = @type');
+    fp.type = options.type;
+  }
+  if (options?.severity) {
+    filters.push('e.severity = @severity');
+    fp.severity = options.severity;
+  }
+  if (options?.origin) {
+    filters.push('e.origin = @origin');
+    fp.origin = options.origin;
+  }
   if (!options?.includeExpired) {
     const now = Math.floor(Date.now() / 1000);
     filters.push('(e.valid_until IS NULL OR e.valid_until > @now)');
@@ -125,7 +183,9 @@ export function search(provider: PersistenceProvider, query: string, options?: E
         { query, limit, ...fp },
       );
       return rows.map(rowToSearchResult);
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   }
 }
 
@@ -140,12 +200,27 @@ export function list(
 ): IntelligenceEntry[] {
   const filters: string[] = [];
   const params: Record<string, unknown> = {};
-  if (options?.domain) { filters.push('domain = @domain'); params.domain = options.domain; }
-  if (options?.type) { filters.push('type = @type'); params.type = options.type; }
-  if (options?.severity) { filters.push('severity = @severity'); params.severity = options.severity; }
-  if (options?.origin) { filters.push('origin = @origin'); params.origin = options.origin; }
+  if (options?.domain) {
+    filters.push('domain = @domain');
+    params.domain = options.domain;
+  }
+  if (options?.type) {
+    filters.push('type = @type');
+    params.type = options.type;
+  }
+  if (options?.severity) {
+    filters.push('severity = @severity');
+    params.severity = options.severity;
+  }
+  if (options?.origin) {
+    filters.push('origin = @origin');
+    params.origin = options.origin;
+  }
   if (options?.tags?.length) {
-    const c = options.tags.map((t, i) => { params[`tag${i}`] = `%"${t}"%`; return `tags LIKE @tag${i}`; });
+    const c = options.tags.map((t, i) => {
+      params[`tag${i}`] = `%"${t}"%`;
+      return `tags LIKE @tag${i}`;
+    });
     filters.push(`(${c.join(' OR ')})`);
   }
   if (!options?.includeExpired) {
@@ -164,10 +239,19 @@ export function list(
 
 export function stats(provider: PersistenceProvider): VaultStats {
   const total = provider.get<{ count: number }>('SELECT COUNT(*) as count FROM entries')!.count;
-  return { totalEntries: total, byType: gc(provider, 'type'), byDomain: gc(provider, 'domain'), bySeverity: gc(provider, 'severity') };
+  return {
+    totalEntries: total,
+    byType: gc(provider, 'type'),
+    byDomain: gc(provider, 'domain'),
+    bySeverity: gc(provider, 'severity'),
+  };
 }
 
-export function add(provider: PersistenceProvider, entry: IntelligenceEntry, alc: AutoLinkConfig): void {
+export function add(
+  provider: PersistenceProvider,
+  entry: IntelligenceEntry,
+  alc: AutoLinkConfig,
+): void {
   seed(provider, [entry], alc);
 }
 
@@ -175,38 +259,64 @@ export function remove(provider: PersistenceProvider, id: string): boolean {
   return provider.run('DELETE FROM entries WHERE id = ?', [id]).changes > 0;
 }
 
-export function update(provider: PersistenceProvider, id: string, fields: EntryUpdateFields, alc: AutoLinkConfig): IntelligenceEntry | null {
+export function update(
+  provider: PersistenceProvider,
+  id: string,
+  fields: EntryUpdateFields,
+  alc: AutoLinkConfig,
+): IntelligenceEntry | null {
   const existing = get(provider, id);
   if (!existing) return null;
   seed(provider, [{ ...existing, ...fields }], alc);
   return get(provider, id);
 }
 
-export function setTemporal(provider: PersistenceProvider, id: string, validFrom?: number, validUntil?: number): boolean {
+export function setTemporal(
+  provider: PersistenceProvider,
+  id: string,
+  validFrom?: number,
+  validUntil?: number,
+): boolean {
   const sets: string[] = [];
   const params: Record<string, unknown> = { id };
-  if (validFrom !== undefined) { sets.push('valid_from = @validFrom'); params.validFrom = validFrom; }
-  if (validUntil !== undefined) { sets.push('valid_until = @validUntil'); params.validUntil = validUntil; }
+  if (validFrom !== undefined) {
+    sets.push('valid_from = @validFrom');
+    params.validFrom = validFrom;
+  }
+  if (validUntil !== undefined) {
+    sets.push('valid_until = @validUntil');
+    params.validUntil = validUntil;
+  }
   if (sets.length === 0) return false;
   sets.push('updated_at = unixepoch()');
   return provider.run(`UPDATE entries SET ${sets.join(', ')} WHERE id = @id`, params).changes > 0;
 }
 
-export function findExpiring(provider: PersistenceProvider, withinDays: number): IntelligenceEntry[] {
+export function findExpiring(
+  provider: PersistenceProvider,
+  withinDays: number,
+): IntelligenceEntry[] {
   const now = Math.floor(Date.now() / 1000);
   const cutoff = now + withinDays * 86400;
-  return provider.all<Record<string, unknown>>(
-    'SELECT * FROM entries WHERE valid_until IS NOT NULL AND valid_until > @now AND valid_until <= @cutoff ORDER BY valid_until ASC',
-    { now, cutoff },
-  ).map(rowToEntry);
+  return provider
+    .all<Record<string, unknown>>(
+      'SELECT * FROM entries WHERE valid_until IS NOT NULL AND valid_until > @now AND valid_until <= @cutoff ORDER BY valid_until ASC',
+      { now, cutoff },
+    )
+    .map(rowToEntry);
 }
 
-export function findExpired(provider: PersistenceProvider, limit: number = 50): IntelligenceEntry[] {
+export function findExpired(
+  provider: PersistenceProvider,
+  limit: number = 50,
+): IntelligenceEntry[] {
   const now = Math.floor(Date.now() / 1000);
-  return provider.all<Record<string, unknown>>(
-    'SELECT * FROM entries WHERE valid_until IS NOT NULL AND valid_until <= @now ORDER BY valid_until DESC LIMIT @limit',
-    { now, limit },
-  ).map(rowToEntry);
+  return provider
+    .all<Record<string, unknown>>(
+      'SELECT * FROM entries WHERE valid_until IS NOT NULL AND valid_until <= @now ORDER BY valid_until DESC LIMIT @limit',
+      { now, limit },
+    )
+    .map(rowToEntry);
 }
 
 export function bulkRemove(provider: PersistenceProvider, ids: string[]): number {
@@ -225,45 +335,75 @@ export function getTags(provider: PersistenceProvider): Array<{ tag: string; cou
       counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
   }
-  return Array.from(counts.entries()).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count);
+  return Array.from(counts.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
-export function getDomains(provider: PersistenceProvider): Array<{ domain: string; count: number }> {
-  return provider.all('SELECT domain, COUNT(*) as count FROM entries GROUP BY domain ORDER BY count DESC');
+export function getDomains(
+  provider: PersistenceProvider,
+): Array<{ domain: string; count: number }> {
+  return provider.all(
+    'SELECT domain, COUNT(*) as count FROM entries GROUP BY domain ORDER BY count DESC',
+  );
 }
 
 export function getRecent(provider: PersistenceProvider, limit: number = 20): IntelligenceEntry[] {
-  return provider.all<Record<string, unknown>>('SELECT * FROM entries ORDER BY updated_at DESC LIMIT ?', [limit]).map(rowToEntry);
+  return provider
+    .all<Record<string, unknown>>('SELECT * FROM entries ORDER BY updated_at DESC LIMIT ?', [limit])
+    .map(rowToEntry);
 }
 
 export function findByContentHash(provider: PersistenceProvider, hash: string): string | null {
-  return provider.get<{ id: string }>('SELECT id FROM entries WHERE content_hash = @hash', { hash })?.id ?? null;
+  return (
+    provider.get<{ id: string }>('SELECT id FROM entries WHERE content_hash = @hash', { hash })
+      ?.id ?? null
+  );
 }
 
-export function contentHashStats(provider: PersistenceProvider): { total: number; hashed: number; uniqueHashes: number } {
+export function contentHashStats(provider: PersistenceProvider): {
+  total: number;
+  hashed: number;
+  uniqueHashes: number;
+} {
   const total = provider.get<{ c: number }>('SELECT COUNT(*) as c FROM entries')?.c ?? 0;
-  const hashed = provider.get<{ c: number }>('SELECT COUNT(*) as c FROM entries WHERE content_hash IS NOT NULL')?.c ?? 0;
-  const uniqueHashes = provider.get<{ c: number }>('SELECT COUNT(DISTINCT content_hash) as c FROM entries WHERE content_hash IS NOT NULL')?.c ?? 0;
+  const hashed =
+    provider.get<{ c: number }>('SELECT COUNT(*) as c FROM entries WHERE content_hash IS NOT NULL')
+      ?.c ?? 0;
+  const uniqueHashes =
+    provider.get<{ c: number }>(
+      'SELECT COUNT(DISTINCT content_hash) as c FROM entries WHERE content_hash IS NOT NULL',
+    )?.c ?? 0;
   return { total, hashed, uniqueHashes };
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 function gc(provider: PersistenceProvider, col: string): Record<string, number> {
-  const rows = provider.all<{ key: string; count: number }>(`SELECT ${col} as key, COUNT(*) as count FROM entries GROUP BY ${col}`);
+  const rows = provider.all<{ key: string; count: number }>(
+    `SELECT ${col} as key, COUNT(*) as count FROM entries GROUP BY ${col}`,
+  );
   return Object.fromEntries(rows.map((r) => [r.key, r.count]));
 }
 
 export function rowToEntry(row: Record<string, unknown>): IntelligenceEntry {
   return {
-    id: row.id as string, type: row.type as IntelligenceEntry['type'],
-    domain: row.domain as IntelligenceEntry['domain'], title: row.title as string,
-    severity: row.severity as IntelligenceEntry['severity'], description: row.description as string,
-    context: (row.context as string) ?? undefined, example: (row.example as string) ?? undefined,
-    counterExample: (row.counter_example as string) ?? undefined, why: (row.why as string) ?? undefined,
-    tags: JSON.parse((row.tags as string) || '[]'), appliesTo: JSON.parse((row.applies_to as string) || '[]'),
-    tier: (row.tier as IntelligenceEntry['tier']) ?? undefined, origin: (row.origin as IntelligenceEntry['origin']) ?? undefined,
-    validFrom: (row.valid_from as number) ?? undefined, validUntil: (row.valid_until as number) ?? undefined,
+    id: row.id as string,
+    type: row.type as IntelligenceEntry['type'],
+    domain: row.domain as IntelligenceEntry['domain'],
+    title: row.title as string,
+    severity: row.severity as IntelligenceEntry['severity'],
+    description: row.description as string,
+    context: (row.context as string) ?? undefined,
+    example: (row.example as string) ?? undefined,
+    counterExample: (row.counter_example as string) ?? undefined,
+    why: (row.why as string) ?? undefined,
+    tags: JSON.parse((row.tags as string) || '[]'),
+    appliesTo: JSON.parse((row.applies_to as string) || '[]'),
+    tier: (row.tier as IntelligenceEntry['tier']) ?? undefined,
+    origin: (row.origin as IntelligenceEntry['origin']) ?? undefined,
+    validFrom: (row.valid_from as number) ?? undefined,
+    validUntil: (row.valid_until as number) ?? undefined,
   };
 }
 
@@ -274,8 +414,12 @@ export function rowToSearchResult(row: Record<string, unknown>): SearchResult {
 
 /** Build FTS5 query from natural language: terms joined with OR for broad matching. */
 export function buildFtsQuery(query: string): string {
-  const terms = query.toLowerCase().split(/\s+/)
-    .filter((t) => t.length >= 2).map((t) => t.replace(/[^a-z0-9]/g, '')).filter(Boolean);
+  const terms = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length >= 2)
+    .map((t) => t.replace(/[^a-z0-9]/g, ''))
+    .filter(Boolean);
   if (terms.length === 0) return query;
   if (terms.length === 1) return terms[0];
   return terms.join(' OR ');

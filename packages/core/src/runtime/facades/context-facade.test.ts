@@ -21,7 +21,14 @@ function makeMockContextEngine() {
       total: 1,
     }),
     analyze: vi.fn().mockReturnValue({
-      entities: { files: ['src/app.ts'], functions: [], domains: ['general'], actions: ['build'], technologies: [], patterns: [] },
+      entities: {
+        files: ['src/app.ts'],
+        functions: [],
+        domains: ['general'],
+        actions: ['build'],
+        technologies: [],
+        patterns: [],
+      },
       knowledge: { items: [], total: 0 },
       confidence: 0.7,
       detectedDomains: ['general'],
@@ -47,7 +54,11 @@ describe('context-facade', () => {
   it('registers all 3 ops', () => {
     expect(ops.size).toBe(3);
     expect([...ops.keys()]).toEqual(
-      expect.arrayContaining(['context_extract_entities', 'context_retrieve_knowledge', 'context_analyze']),
+      expect.arrayContaining([
+        'context_extract_entities',
+        'context_retrieve_knowledge',
+        'context_analyze',
+      ]),
     );
   });
 
@@ -74,7 +85,9 @@ describe('context-facade', () => {
   // ─── context_retrieve_knowledge ────────────────────────────────
 
   it('context_retrieve_knowledge calls engine with prompt', async () => {
-    const result = await executeOp(ops, 'context_retrieve_knowledge', { prompt: 'contrast patterns' });
+    const result = await executeOp(ops, 'context_retrieve_knowledge', {
+      prompt: 'contrast patterns',
+    });
     expect(result.success).toBe(true);
     expect(mockEngine.retrieveKnowledge).toHaveBeenCalledWith('contrast patterns', undefined);
   });
@@ -100,7 +113,9 @@ describe('context-facade', () => {
   });
 
   it('context_analyze propagates engine errors', async () => {
-    mockEngine.analyze.mockImplementation(() => { throw new Error('Engine failure'); });
+    mockEngine.analyze.mockImplementation(() => {
+      throw new Error('Engine failure');
+    });
     const result = await executeOp(ops, 'context_analyze', { prompt: 'fail' });
     expect(result.success).toBe(false);
     expect(result.error).toContain('Engine failure');

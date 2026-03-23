@@ -229,10 +229,17 @@ export function hasCircularDependencies(
 import type { PlanTask, TaskStatus, Plan, PlanDecision } from './planner-types.js';
 
 export interface IterateChanges {
-  objective?: string; scope?: string; decisions?: (string | PlanDecision)[];
-  addTasks?: Array<{ title: string; description: string }>; removeTasks?: string[];
-  approach?: string; context?: string; success_criteria?: string[];
-  tool_chain?: string[]; flow?: string; target_mode?: string;
+  objective?: string;
+  scope?: string;
+  decisions?: (string | PlanDecision)[];
+  addTasks?: Array<{ title: string; description: string }>;
+  removeTasks?: string[];
+  approach?: string;
+  context?: string;
+  success_criteria?: string[];
+  tool_chain?: string[];
+  flow?: string;
+  target_mode?: string;
 }
 
 /**
@@ -261,8 +268,11 @@ export function applyIteration(plan: Plan, changes: IterateChanges): void {
     }, 0);
     for (let i = 0; i < changes.addTasks.length; i++) {
       plan.tasks.push({
-        id: `task-${maxIndex + i + 1}`, title: changes.addTasks[i].title,
-        description: changes.addTasks[i].description, status: 'pending' as TaskStatus, updatedAt: now,
+        id: `task-${maxIndex + i + 1}`,
+        title: changes.addTasks[i].title,
+        description: changes.addTasks[i].description,
+        status: 'pending' as TaskStatus,
+        updatedAt: now,
       });
     }
   }
@@ -295,23 +305,32 @@ export function applyTaskStatusUpdate(task: PlanTask, status: TaskStatus): void 
  * Create a new Plan object (factory). Does not persist.
  */
 export function createPlanObject(params: {
-  objective: string; scope: string;
+  objective: string;
+  scope: string;
   decisions?: (string | PlanDecision)[];
   tasks?: Array<{ title: string; description: string }>;
-  approach?: string; context?: string; success_criteria?: string[];
-  tool_chain?: string[]; flow?: string; target_mode?: string;
+  approach?: string;
+  context?: string;
+  success_criteria?: string[];
+  tool_chain?: string[];
+  flow?: string;
+  target_mode?: string;
   alternatives?: import('./planner-types.js').PlanAlternative[];
   initialStatus?: 'brainstorming' | 'draft';
 }): Plan {
   const now = Date.now();
   return {
     id: `plan-${now}-${Math.random().toString(36).slice(2, 8)}`,
-    objective: params.objective, scope: params.scope,
+    objective: params.objective,
+    scope: params.scope,
     status: params.initialStatus ?? 'draft',
     decisions: params.decisions ?? [],
     tasks: (params.tasks ?? []).map((t, i) => ({
-      id: `task-${i + 1}`, title: t.title, description: t.description,
-      status: 'pending' as TaskStatus, updatedAt: now,
+      id: `task-${i + 1}`,
+      title: t.title,
+      description: t.description,
+      status: 'pending' as TaskStatus,
+      updatedAt: now,
     })),
     ...(params.approach !== undefined && { approach: params.approach }),
     ...(params.context !== undefined && { context: params.context }),
@@ -320,25 +339,37 @@ export function createPlanObject(params: {
     ...(params.flow !== undefined && { flow: params.flow }),
     ...(params.target_mode !== undefined && { target_mode: params.target_mode }),
     ...(params.alternatives !== undefined && { alternatives: params.alternatives }),
-    checks: [], createdAt: now, updatedAt: now,
+    checks: [],
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
 export function applySplitTasks(
   plan: Plan,
-  tasks: Array<{ title: string; description: string; dependsOn?: string[]; acceptanceCriteria?: string[] }>,
+  tasks: Array<{
+    title: string;
+    description: string;
+    dependsOn?: string[];
+    acceptanceCriteria?: string[];
+  }>,
 ): void {
   const now = Date.now();
   plan.tasks = tasks.map((t, i) => ({
-    id: `task-${i + 1}`, title: t.title, description: t.description,
-    status: 'pending' as TaskStatus, dependsOn: t.dependsOn,
-    ...(t.acceptanceCriteria && { acceptanceCriteria: t.acceptanceCriteria }), updatedAt: now,
+    id: `task-${i + 1}`,
+    title: t.title,
+    description: t.description,
+    status: 'pending' as TaskStatus,
+    dependsOn: t.dependsOn,
+    ...(t.acceptanceCriteria && { acceptanceCriteria: t.acceptanceCriteria }),
+    updatedAt: now,
   }));
   const taskIds = new Set(plan.tasks.map((t) => t.id));
   for (const task of plan.tasks) {
     if (task.dependsOn) {
       for (const dep of task.dependsOn) {
-        if (!taskIds.has(dep)) throw new Error(`Task '${task.id}' depends on unknown task '${dep}'`);
+        if (!taskIds.has(dep))
+          throw new Error(`Task '${task.id}' depends on unknown task '${dep}'`);
       }
     }
   }

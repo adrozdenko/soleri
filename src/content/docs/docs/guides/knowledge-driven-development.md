@@ -56,12 +56,14 @@ Every cycle through this loop makes the next cycle better. That's the compound e
 The knowledge-driven approach isn't equally valuable for every situation:
 
 **High value:**
+
 - Teams with conventions, standards, and institutional knowledge
 - Projects that last months or years
 - Repeated workflows — migrations, component creation, deployments
 - Onboarding new team members to an existing codebase
 
 **Lower value:**
+
 - One-off scripts you'll never touch again
 - Solo weekend projects with no conventions to remember
 - Purely algorithmic work where the code speaks for itself

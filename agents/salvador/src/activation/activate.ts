@@ -59,7 +59,7 @@ export function activateAgent(runtime: AgentRuntime, projectPath: string): Activ
   const vaultHasEntries = stats.totalEntries > 0;
 
   // ─── Discover domains ─────────────────────────────────────
-  const configuredDomains: string[] = ["design","component","figma","code-review"];
+  const configuredDomains: string[] = ['design', 'component', 'figma', 'code-review'];
   const vaultDomains = Object.keys(stats.byDomain);
 
   // Merge configured + vault-discovered domains (dedup)
@@ -79,7 +79,7 @@ export function activateAgent(runtime: AgentRuntime, projectPath: string): Activ
       const lockData = JSON.parse(readFileSync(lockPath, 'utf-8'));
       if (lockData.packs) {
         for (const [id, entry] of Object.entries(lockData.packs)) {
-          installedPacks.push({ id, type: (entry as Record<string, string>).type ?? "unknown" });
+          installedPacks.push({ id, type: (entry as Record<string, string>).type ?? 'unknown' });
         }
       }
     }
@@ -94,7 +94,7 @@ export function activateAgent(runtime: AgentRuntime, projectPath: string): Activ
 
   // If the agent has grown beyond its birth domains, reflect that
   if (newDomains.length > 0) {
-    const formatted = newDomains.map((d) => d.replace(/-/g, " ")).join(", ");
+    const formatted = newDomains.map((d) => d.replace(/-/g, ' ')).join(', ');
     currentRole = `${PERSONA.role} (also covering ${formatted})`;
   }
 
@@ -108,29 +108,37 @@ export function activateAgent(runtime: AgentRuntime, projectPath: string): Activ
   if (stats.totalEntries > 0) {
     const domainSummary = capabilities
       .filter((c) => c.entries > 0)
-      .map((c) => `${c.entries} ${c.domain.replace(/-/g, " ")}`)
-      .join(", ");
+      .map((c) => `${c.entries} ${c.domain.replace(/-/g, ' ')}`)
+      .join(', ');
     greeting += ` Vault: ${stats.totalEntries} entries (${domainSummary}).`;
   }
 
   // ─── Next steps ───────────────────────────────────────────
   const nextSteps: string[] = [];
   if (!globalClaudeMdInjected && !claudeMdInjected) {
-    nextSteps.push('No CLAUDE.md configured — run inject_claude_md with global: true for all projects, or without for this project only');
+    nextSteps.push(
+      'No CLAUDE.md configured — run inject_claude_md with global: true for all projects, or without for this project only',
+    );
   } else if (!globalClaudeMdInjected) {
-    nextSteps.push('Global CLAUDE.md not configured — run inject_claude_md with global: true to enable activation in all projects');
+    nextSteps.push(
+      'Global CLAUDE.md not configured — run inject_claude_md with global: true to enable activation in all projects',
+    );
   }
   if (!vaultHasEntries) {
-    nextSteps.push('Vault is empty — start capturing knowledge with the domain capture ops, or install a knowledge pack with soleri pack install');
+    nextSteps.push(
+      'Vault is empty — start capturing knowledge with the domain capture ops, or install a knowledge pack with soleri pack install',
+    );
   }
 
   // Check for executing plans
-  const executingPlans = planner ? planner.getExecuting().map((p) => ({
-    id: p.id,
-    objective: p.objective,
-    tasks: p.tasks.length,
-    completed: p.tasks.filter((t) => t.status === 'completed').length,
-  })) : [];
+  const executingPlans = planner
+    ? planner.getExecuting().map((p) => ({
+        id: p.id,
+        objective: p.objective,
+        tasks: p.tasks.length,
+        completed: p.tasks.filter((t) => t.status === 'completed').length,
+      }))
+    : [];
   if (executingPlans.length > 0) {
     nextSteps.unshift(`${executingPlans.length} plan(s) in progress — use get_plan to review`);
   }
@@ -160,7 +168,8 @@ export function activateAgent(runtime: AgentRuntime, projectPath: string): Activ
       'Every pixel needs a reason',
       'Design for the edge case, not just the happy path',
     ],
-    session_instruction: `You are ${PERSONA.name}. Your origin role is ${PERSONA.role}, but you have grown — your current capabilities span: ${allDomains.join(', ')}. ` +
+    session_instruction:
+      `You are ${PERSONA.name}. Your origin role is ${PERSONA.role}, but you have grown — your current capabilities span: ${allDomains.join(', ')}. ` +
       'Adapt your expertise to match your actual knowledge. ' +
       'Reference patterns from the knowledge vault. Provide concrete examples. Flag anti-patterns with severity.',
     setup_status: {

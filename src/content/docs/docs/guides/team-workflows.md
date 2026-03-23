@@ -50,12 +50,12 @@ This is manual, but it happens rarely — only when two people edit the same ent
 
 Not everyone needs to capture everything. Define roles based on your team:
 
-| Role | What they capture | Why |
-|------|-------------------|-----|
-| **Tech lead** | Architecture decisions, anti-patterns from past incidents | These are high-severity patterns that shape the whole codebase |
-| **Senior devs** | Patterns from code reviews, solutions to recurring bugs | They see the same mistakes across PRs |
-| **All developers** | Patterns they discover during work | Fresh eyes catch things seniors miss |
-| **New team members** | Questions that were hard to answer, onboarding gaps | These become onboarding knowledge for the next hire |
+| Role                 | What they capture                                         | Why                                                            |
+| -------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
+| **Tech lead**        | Architecture decisions, anti-patterns from past incidents | These are high-severity patterns that shape the whole codebase |
+| **Senior devs**      | Patterns from code reviews, solutions to recurring bugs   | They see the same mistakes across PRs                          |
+| **All developers**   | Patterns they discover during work                        | Fresh eyes catch things seniors miss                           |
+| **New team members** | Questions that were hard to answer, onboarding gaps       | These become onboarding knowledge for the next hire            |
 
 The goal isn't to capture everything — it's to capture what matters. A vault with 50 well-chosen patterns is more valuable than 500 mediocre ones.
 
@@ -71,7 +71,7 @@ New team members benefit immediately from a mature knowledge base:
 > 2. Never store JWTs in localStorage — use httpOnly cookies
 > 3. Always set K8s resource limits on pods
 > 4. Use optimistic updates for form submissions
-> ...
+>    ...
 
 Instead of reading outdated wiki pages or asking busy colleagues, the new developer gets ranked, relevant knowledge immediately. The critical patterns surface first — the ones they absolutely need to know.
 
@@ -84,6 +84,7 @@ npx @soleri/cli governance --preset moderate
 ```
 
 The moderate preset:
+
 - **Auto-approves** suggestions — low-risk additions go straight to the vault
 - **Proposes** warnings and critical entries — someone reviews before they become active
 - **Enforces quotas** — prevents any one person from flooding the vault

@@ -87,12 +87,12 @@ If quality issues found: `op:curator_consolidate` then `op:brain_build_intellige
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `brain_stats` / `brain_strengths` | Metrics and patterns |
-| `vault_recent` | Recent captures |
-| `memory_topics` / `memory_stats` | Knowledge clusters |
-| `plan_stats` | Plan completion |
-| `admin_search_insights` | Search misses |
-| `curator_health_audit` | Vault quality |
-| `capture_knowledge` | Persist retrospective |
+| Op                                | When to Use           |
+| --------------------------------- | --------------------- |
+| `brain_stats` / `brain_strengths` | Metrics and patterns  |
+| `vault_recent`                    | Recent captures       |
+| `memory_topics` / `memory_stats`  | Knowledge clusters    |
+| `plan_stats`                      | Plan completion       |
+| `admin_search_insights`           | Search misses         |
+| `curator_health_audit`            | Vault quality         |
+| `capture_knowledge`               | Persist retrospective |

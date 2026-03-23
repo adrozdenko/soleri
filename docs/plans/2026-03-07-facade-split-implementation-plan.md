@@ -502,7 +502,8 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
     },
     {
       name: `${agentId}_orchestrate`,
-      description: 'Execution orchestration — project registration, playbooks, plan/execute/complete.',
+      description:
+        'Execution orchestration — project registration, playbooks, plan/execute/complete.',
       ops: createOrchestrateFacadeOps(runtime),
     },
     {
@@ -604,7 +605,8 @@ Change the facade assembly (lines 203-209):
 const coreOps = createCoreOps(runtime);
 const coreFacade = {
   name: '${config.id}_core',
-  description: 'Core operations — vault stats, cross-domain search, health check, identity, and activation system.',
+  description:
+    'Core operations — vault stats, cross-domain search, health check, identity, and activation system.',
   ops: [...coreOps, ...agentOps],
 };
 
@@ -612,7 +614,8 @@ const coreFacade = {
 const semanticFacades = createSemanticFacades(runtime, '${config.id}');
 const agentFacade = {
   name: '${config.id}_core',
-  description: 'Agent-specific operations — health, identity, activation, CLAUDE.md injection, setup.',
+  description:
+    'Agent-specific operations — health, identity, activation, CLAUDE.md injection, setup.',
   ops: agentOps,
 };
 ```
@@ -650,18 +653,10 @@ git commit -m "feat(forge): update entry-point template to use semantic facades 
 
 ```typescript
 // Before:
-import {
-  createAgentRuntime,
-  createCoreOps,
-  createDomainFacade,
-} from '@soleri/core';
+import { createAgentRuntime, createCoreOps, createDomainFacade } from '@soleri/core';
 
 // After:
-import {
-  createAgentRuntime,
-  createSemanticFacades,
-  createDomainFacade,
-} from '@soleri/core';
+import { createAgentRuntime, createSemanticFacades, createDomainFacade } from '@soleri/core';
 ```
 
 **Step 2: Replace the single core describe block with per-facade tests**
@@ -669,229 +664,268 @@ import {
 Replace the `describe('${config.id}_core', ...)` block (lines 60-541) with:
 
 ```typescript
-  describe('semantic facades', () => {
-    function buildSemanticFacades(): FacadeConfig[] {
-      return createSemanticFacades(runtime, '${config.id}');
-    }
+describe('semantic facades', () => {
+  function buildSemanticFacades(): FacadeConfig[] {
+    return createSemanticFacades(runtime, '${config.id}');
+  }
 
-    it('should create 10 semantic facades', () => {
-      const facades = buildSemanticFacades();
-      expect(facades).toHaveLength(10);
-      const names = facades.map(f => f.name);
-      expect(names).toContain('${config.id}_vault');
-      expect(names).toContain('${config.id}_plan');
-      expect(names).toContain('${config.id}_brain');
-      expect(names).toContain('${config.id}_memory');
-      expect(names).toContain('${config.id}_admin');
-      expect(names).toContain('${config.id}_curator');
-      expect(names).toContain('${config.id}_loop');
-      expect(names).toContain('${config.id}_orchestrate');
-      expect(names).toContain('${config.id}_control');
-      expect(names).toContain('${config.id}_cognee');
-    });
-
-    it('total ops across all facades should be 209', () => {
-      const facades = buildSemanticFacades();
-      const totalOps = facades.reduce((sum, f) => sum + f.ops.length, 0);
-      expect(totalOps).toBe(209);
-    });
+  it('should create 10 semantic facades', () => {
+    const facades = buildSemanticFacades();
+    expect(facades).toHaveLength(10);
+    const names = facades.map((f) => f.name);
+    expect(names).toContain('${config.id}_vault');
+    expect(names).toContain('${config.id}_plan');
+    expect(names).toContain('${config.id}_brain');
+    expect(names).toContain('${config.id}_memory');
+    expect(names).toContain('${config.id}_admin');
+    expect(names).toContain('${config.id}_curator');
+    expect(names).toContain('${config.id}_loop');
+    expect(names).toContain('${config.id}_orchestrate');
+    expect(names).toContain('${config.id}_control');
+    expect(names).toContain('${config.id}_cognee');
   });
 
-  describe('${config.id}_vault', () => {
-    function getFacade(): FacadeConfig {
-      return createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_vault')!;
-    }
+  it('total ops across all facades should be 209', () => {
+    const facades = buildSemanticFacades();
+    const totalOps = facades.reduce((sum, f) => sum + f.ops.length, 0);
+    expect(totalOps).toBe(209);
+  });
+});
 
-    it('should contain vault ops', () => {
-      const opNames = getFacade().ops.map(o => o.name);
-      expect(opNames).toContain('search');
-      expect(opNames).toContain('vault_stats');
-      expect(opNames).toContain('list_all');
-      expect(opNames).toContain('export');
-      expect(opNames).toContain('vault_get');
-      expect(opNames).toContain('vault_import');
-      expect(opNames).toContain('capture_knowledge');
-      expect(opNames).toContain('intake_ingest_book');
-    });
+describe('${config.id}_vault', () => {
+  function getFacade(): FacadeConfig {
+    return createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_vault',
+    )!;
+  }
 
-    it('search should query across all domains', async () => {
-      runtime.vault.seed([
-        makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
-        makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
-      ]);
-      runtime = createAgentRuntime({ agentId: '${config.id}', vaultPath: ':memory:', plansPath: join(plannerDir, 'plans2.json') });
-      runtime.vault.seed([
-        makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
-        makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
-      ]);
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_vault')!;
-      const searchOp = facade.ops.find(o => o.name === 'search')!;
-      const results = (await searchOp.handler({ query: 'pattern' })) as Array<{ entry: unknown; score: number }>;
-      expect(Array.isArray(results)).toBe(true);
-      expect(results.length).toBe(2);
-    });
-
-    it('vault_stats should return counts', async () => {
-      runtime.vault.seed([
-        makeEntry({ id: 'vs1', domain: 'd1', tags: ['x'] }),
-        makeEntry({ id: 'vs2', domain: 'd2', tags: ['y'] }),
-      ]);
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_vault')!;
-      const statsOp = facade.ops.find(o => o.name === 'vault_stats')!;
-      const stats = (await statsOp.handler({})) as { totalEntries: number };
-      expect(stats.totalEntries).toBe(2);
-    });
+  it('should contain vault ops', () => {
+    const opNames = getFacade().ops.map((o) => o.name);
+    expect(opNames).toContain('search');
+    expect(opNames).toContain('vault_stats');
+    expect(opNames).toContain('list_all');
+    expect(opNames).toContain('export');
+    expect(opNames).toContain('vault_get');
+    expect(opNames).toContain('vault_import');
+    expect(opNames).toContain('capture_knowledge');
+    expect(opNames).toContain('intake_ingest_book');
   });
 
-  describe('${config.id}_plan', () => {
-    it('should contain planning ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_plan')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('create_plan');
-      expect(opNames).toContain('get_plan');
-      expect(opNames).toContain('approve_plan');
-      expect(opNames).toContain('plan_iterate');
-      expect(opNames).toContain('plan_grade');
+  it('search should query across all domains', async () => {
+    runtime.vault.seed([
+      makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
+      makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
+    ]);
+    runtime = createAgentRuntime({
+      agentId: '${config.id}',
+      vaultPath: ':memory:',
+      plansPath: join(plannerDir, 'plans2.json'),
     });
-
-    it('create_plan should create a draft plan', async () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_plan')!;
-      const createOp = facade.ops.find(o => o.name === 'create_plan')!;
-      const result = (await createOp.handler({
-        objective: 'Add caching',
-        scope: 'api layer',
-        tasks: [{ title: 'Add Redis', description: 'Set up Redis client' }],
-      })) as { created: boolean; plan: { status: string } };
-      expect(result.created).toBe(true);
-      expect(result.plan.status).toBe('draft');
-    });
+    runtime.vault.seed([
+      makeEntry({ id: 'c1', domain: 'alpha', title: 'Alpha pattern', tags: ['a'] }),
+      makeEntry({ id: 'c2', domain: 'beta', title: 'Beta pattern', tags: ['b'] }),
+    ]);
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_vault',
+    )!;
+    const searchOp = facade.ops.find((o) => o.name === 'search')!;
+    const results = (await searchOp.handler({ query: 'pattern' })) as Array<{
+      entry: unknown;
+      score: number;
+    }>;
+    expect(Array.isArray(results)).toBe(true);
+    expect(results.length).toBe(2);
   });
 
-  describe('${config.id}_brain', () => {
-    it('should contain brain ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_brain')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('brain_stats');
-      expect(opNames).toContain('brain_strengths');
-      expect(opNames).toContain('brain_build_intelligence');
-      expect(opNames).toContain('brain_lifecycle');
-      expect(opNames).toContain('brain_decay_report');
-    });
+  it('vault_stats should return counts', async () => {
+    runtime.vault.seed([
+      makeEntry({ id: 'vs1', domain: 'd1', tags: ['x'] }),
+      makeEntry({ id: 'vs2', domain: 'd2', tags: ['y'] }),
+    ]);
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_vault',
+    )!;
+    const statsOp = facade.ops.find((o) => o.name === 'vault_stats')!;
+    const stats = (await statsOp.handler({})) as { totalEntries: number };
+    expect(stats.totalEntries).toBe(2);
+  });
+});
 
-    it('brain_stats should return intelligence stats', async () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_brain')!;
-      const statsOp = facade.ops.find(o => o.name === 'brain_stats')!;
-      const result = (await statsOp.handler({})) as { vocabularySize: number };
-      expect(result.vocabularySize).toBe(0);
-    });
+describe('${config.id}_plan', () => {
+  it('should contain planning ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_plan',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('create_plan');
+    expect(opNames).toContain('get_plan');
+    expect(opNames).toContain('approve_plan');
+    expect(opNames).toContain('plan_iterate');
+    expect(opNames).toContain('plan_grade');
   });
 
-  describe('${config.id}_memory', () => {
-    it('should contain memory ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_memory')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('memory_search');
-      expect(opNames).toContain('memory_capture');
-      expect(opNames).toContain('memory_promote_to_global');
-    });
+  it('create_plan should create a draft plan', async () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_plan',
+    )!;
+    const createOp = facade.ops.find((o) => o.name === 'create_plan')!;
+    const result = (await createOp.handler({
+      objective: 'Add caching',
+      scope: 'api layer',
+      tasks: [{ title: 'Add Redis', description: 'Set up Redis client' }],
+    })) as { created: boolean; plan: { status: string } };
+    expect(result.created).toBe(true);
+    expect(result.plan.status).toBe('draft');
+  });
+});
+
+describe('${config.id}_brain', () => {
+  it('should contain brain ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_brain',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('brain_stats');
+    expect(opNames).toContain('brain_strengths');
+    expect(opNames).toContain('brain_build_intelligence');
+    expect(opNames).toContain('brain_lifecycle');
+    expect(opNames).toContain('brain_decay_report');
   });
 
-  describe('${config.id}_admin', () => {
-    it('should contain admin ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_admin')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('admin_health');
-      expect(opNames).toContain('admin_tool_list');
-      expect(opNames).toContain('llm_rotate');
-      expect(opNames).toContain('render_prompt');
-    });
+  it('brain_stats should return intelligence stats', async () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_brain',
+    )!;
+    const statsOp = facade.ops.find((o) => o.name === 'brain_stats')!;
+    const result = (await statsOp.handler({})) as { vocabularySize: number };
+    expect(result.vocabularySize).toBe(0);
+  });
+});
+
+describe('${config.id}_memory', () => {
+  it('should contain memory ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_memory',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('memory_search');
+    expect(opNames).toContain('memory_capture');
+    expect(opNames).toContain('memory_promote_to_global');
+  });
+});
+
+describe('${config.id}_admin', () => {
+  it('should contain admin ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_admin',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('admin_health');
+    expect(opNames).toContain('admin_tool_list');
+    expect(opNames).toContain('llm_rotate');
+    expect(opNames).toContain('render_prompt');
+  });
+});
+
+describe('${config.id}_curator', () => {
+  it('should contain curator ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_curator',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('curator_status');
+    expect(opNames).toContain('curator_health_audit');
+    expect(opNames).toContain('curator_hybrid_contradictions');
   });
 
-  describe('${config.id}_curator', () => {
-    it('should contain curator ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_curator')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('curator_status');
-      expect(opNames).toContain('curator_health_audit');
-      expect(opNames).toContain('curator_hybrid_contradictions');
-    });
+  it('curator_status should return initialized', async () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_curator',
+    )!;
+    const statusOp = facade.ops.find((o) => o.name === 'curator_status')!;
+    const result = (await statusOp.handler({})) as { initialized: boolean };
+    expect(result.initialized).toBe(true);
+  });
+});
 
-    it('curator_status should return initialized', async () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_curator')!;
-      const statusOp = facade.ops.find(o => o.name === 'curator_status')!;
-      const result = (await statusOp.handler({})) as { initialized: boolean };
-      expect(result.initialized).toBe(true);
-    });
+describe('${config.id}_loop', () => {
+  it('should contain loop ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_loop',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('loop_start');
+    expect(opNames).toContain('loop_iterate');
+    expect(opNames).toContain('loop_cancel');
+  });
+});
+
+describe('${config.id}_orchestrate', () => {
+  it('should contain orchestrate ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_orchestrate',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('register');
+    expect(opNames).toContain('orchestrate_plan');
+    expect(opNames).toContain('project_get');
+    expect(opNames).toContain('playbook_list');
+  });
+});
+
+describe('${config.id}_control', () => {
+  it('should contain control and governance ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_control',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('get_identity');
+    expect(opNames).toContain('route_intent');
+    expect(opNames).toContain('governance_policy');
+    expect(opNames).toContain('governance_dashboard');
   });
 
-  describe('${config.id}_loop', () => {
-    it('should contain loop ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_loop')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('loop_start');
-      expect(opNames).toContain('loop_iterate');
-      expect(opNames).toContain('loop_cancel');
-    });
+  it('governance_policy should return default policy', async () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_control',
+    )!;
+    const policyOp = facade.ops.find((o) => o.name === 'governance_policy')!;
+    const result = (await policyOp.handler({ action: 'get', projectPath: '/test' })) as {
+      projectPath: string;
+      quotas: { maxEntriesTotal: number };
+    };
+    expect(result.projectPath).toBe('/test');
+    expect(result.quotas.maxEntriesTotal).toBe(500);
   });
+});
 
-  describe('${config.id}_orchestrate', () => {
-    it('should contain orchestrate ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_orchestrate')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('register');
-      expect(opNames).toContain('orchestrate_plan');
-      expect(opNames).toContain('project_get');
-      expect(opNames).toContain('playbook_list');
-    });
+describe('${config.id}_cognee', () => {
+  it('should contain cognee ops', () => {
+    const facade = createSemanticFacades(runtime, '${config.id}').find(
+      (f) => f.name === '${config.id}_cognee',
+    )!;
+    const opNames = facade.ops.map((o) => o.name);
+    expect(opNames).toContain('cognee_status');
+    expect(opNames).toContain('cognee_search');
+    expect(opNames).toContain('cognee_sync_status');
   });
+});
 
-  describe('${config.id}_control', () => {
-    it('should contain control and governance ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_control')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('get_identity');
-      expect(opNames).toContain('route_intent');
-      expect(opNames).toContain('governance_policy');
-      expect(opNames).toContain('governance_dashboard');
-    });
+describe('${config.id}_core (agent-specific)', () => {
+  // Agent-specific ops (health, identity, activate, inject_claude_md, setup)
+  // are tested via buildCoreFacade which is still created in entry-point.ts
+  // These are NOT in createSemanticFacades — they reference agent modules.
 
-    it('governance_policy should return default policy', async () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_control')!;
-      const policyOp = facade.ops.find(o => o.name === 'governance_policy')!;
-      const result = (await policyOp.handler({ action: 'get', projectPath: '/test' })) as {
-        projectPath: string;
-        quotas: { maxEntriesTotal: number };
-      };
-      expect(result.projectPath).toBe('/test');
-      expect(result.quotas.maxEntriesTotal).toBe(500);
-    });
+  it('agent ops should not appear in semantic facades', () => {
+    const facades = createSemanticFacades(runtime, '${config.id}');
+    const allOps = facades.flatMap((f) => f.ops.map((o) => o.name));
+    expect(allOps).not.toContain('health');
+    expect(allOps).not.toContain('identity');
+    expect(allOps).not.toContain('activate');
+    expect(allOps).not.toContain('inject_claude_md');
+    expect(allOps).not.toContain('setup');
   });
-
-  describe('${config.id}_cognee', () => {
-    it('should contain cognee ops', () => {
-      const facade = createSemanticFacades(runtime, '${config.id}').find(f => f.name === '${config.id}_cognee')!;
-      const opNames = facade.ops.map(o => o.name);
-      expect(opNames).toContain('cognee_status');
-      expect(opNames).toContain('cognee_search');
-      expect(opNames).toContain('cognee_sync_status');
-    });
-  });
-
-  describe('${config.id}_core (agent-specific)', () => {
-    // Agent-specific ops (health, identity, activate, inject_claude_md, setup)
-    // are tested via buildCoreFacade which is still created in entry-point.ts
-    // These are NOT in createSemanticFacades — they reference agent modules.
-
-    it('agent ops should not appear in semantic facades', () => {
-      const facades = createSemanticFacades(runtime, '${config.id}');
-      const allOps = facades.flatMap(f => f.ops.map(o => o.name));
-      expect(allOps).not.toContain('health');
-      expect(allOps).not.toContain('identity');
-      expect(allOps).not.toContain('activate');
-      expect(allOps).not.toContain('inject_claude_md');
-      expect(allOps).not.toContain('setup');
-    });
-  });
+});
 ```
 
 Keep the agent-specific tests (health, identity, activate, inject_claude_md, setup) — they test the 5 ops defined in entry-point.ts. Wrap them in a separate describe that builds just the agentFacade.
@@ -967,6 +1001,7 @@ Expected: Clean build.
 Run: `cd /tmp/test-facade-agent && npm test`
 
 Expected: All tests pass. Key assertions:
+
 - 10 semantic facades created
 - Total ops = 209 across semantic facades
 - Agent-specific ops not in semantic facades
@@ -1025,15 +1060,15 @@ git commit -am "fix: resolve remaining test failures from facade split (#167)"
 
 ## Summary
 
-| Task | What | Files |
-|------|------|-------|
-| 1-10 | Create 10 facade builder files | `runtime/facades/*.ts` |
-| 11 | Create assembler index | `runtime/facades/index.ts` |
-| 12 | Update core exports | `core/src/index.ts` |
-| 13 | Update entry-point template | `forge/src/templates/entry-point.ts` |
-| 14 | Update test-facades template | `forge/src/templates/test-facades.ts` |
-| 15 | Delete core-ops.ts | `runtime/core-ops.ts` |
-| 16 | Integration test — scaffold agent | (temp directory) |
-| 17 | Run full test suite | All packages |
+| Task | What                              | Files                                 |
+| ---- | --------------------------------- | ------------------------------------- |
+| 1-10 | Create 10 facade builder files    | `runtime/facades/*.ts`                |
+| 11   | Create assembler index            | `runtime/facades/index.ts`            |
+| 12   | Update core exports               | `core/src/index.ts`                   |
+| 13   | Update entry-point template       | `forge/src/templates/entry-point.ts`  |
+| 14   | Update test-facades template      | `forge/src/templates/test-facades.ts` |
+| 15   | Delete core-ops.ts                | `runtime/core-ops.ts`                 |
+| 16   | Integration test — scaffold agent | (temp directory)                      |
+| 17   | Run full test suite               | All packages                          |
 
 Total: 17 tasks, ~13 files created/modified, 1 file deleted.

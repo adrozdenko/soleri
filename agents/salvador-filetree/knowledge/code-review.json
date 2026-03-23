@@ -9,10 +9,7 @@
       "title": "code review domain seed",
       "severity": "suggestion",
       "description": "Seed entry for the code review domain. Replace or remove once real knowledge is captured.",
-      "tags": [
-        "code-review",
-        "seed"
-      ]
+      "tags": ["code-review", "seed"]
     }
   ]
 }

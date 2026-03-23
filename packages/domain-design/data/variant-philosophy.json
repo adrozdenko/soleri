@@ -215,11 +215,7 @@
         "Icon presence",
         "Full width"
       ],
-      "useVariantsFor": [
-        "Semantic meaning",
-        "Visual hierarchy",
-        "State representation"
-      ]
+      "useVariantsFor": ["Semantic meaning", "Visual hierarchy", "State representation"]
     },
     "maxVariantsRule": {
       "threshold": 7,

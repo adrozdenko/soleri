@@ -9,13 +9,7 @@
       "title": "Config cache reset pattern for test isolation",
       "severity": "warning",
       "description": "# Config cache reset pattern for test isolation\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nThe intent classifier caches parsed routing-config.yaml in a module-level variable for performance. Tests that modify routing behavior must call resetConfigCache() before each test to prevent cross-test contamination. This pattern applies to any module that caches config at import time. In vitest, use beforeEach(() => resetConfigCache()) in test setup. The flow-parser similarly caches loaded flows and must be tested with fresh imports or cache-busting.\n\n## Example\n\n```typescript\nimport { resetConfigCache } from '../runtime/intent-classifier.js'; beforeEach(() => resetConfigCache());\n```\n\n## Why\n\nModule-level caching is good for performance but creates hidden state in tests. Explicit cache reset ensures test independence.",
-      "tags": [
-        "testing",
-        "cache",
-        "isolation",
-        "config",
-        "vitest"
-      ]
+      "tags": ["testing", "cache", "isolation", "config", "vitest"]
     },
     {
       "id": "pattern-other-quick-domain-vocabulary-extension-pattern-for-new-proble",
@@ -24,12 +18,7 @@
       "title": "Domain vocabulary extension pattern for new problem spaces",
       "severity": "suggestion",
       "description": "# Domain vocabulary extension pattern for new problem spaces\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nNew domains are added by creating a YAML file in chains/domains/ following the ui-components.yaml template. Each domain defines: context-keywords (terms that trigger context detection), entity-synonyms (aliases like modal→dialog), classification levels, and chain-preferences (which chains are relevant per context). After adding a domain file, update routing-config.yaml context-keywords section to reference the new terms. No code changes needed — the runtime reads domains dynamically.\n\n## Example\n\n```typescript\nNew domain: domains/backend-api.yaml with keywords [endpoint, route, api, service, backend] and entity-synonyms [endpoint→route, handler→controller]\n```\n\n## Why\n\nDomain vocabularies make the system adaptable to new problem spaces without modifying core logic. Each domain is a pluggable knowledge module.",
-      "tags": [
-        "extensibility",
-        "domains",
-        "vocabulary",
-        "customization"
-      ]
+      "tags": ["extensibility", "domains", "vocabulary", "customization"]
     },
     {
       "id": "pattern-other-quick-escape-hatch-strategy-structured-recovery-from-stu",
@@ -38,13 +27,7 @@
       "title": "Escape hatch strategy: structured recovery from stuck states",
       "severity": "warning",
       "description": "# Escape hatch strategy: structured recovery from stuck states\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nSalvador defines explicit escape hatches in CLAUDE.md for common stuck states. 'Same error 3x' → change-approach (don't retry the same thing). 'Context growing' → make-smaller (decompose the task). 'Can't define done' → clarify-objective (stop and ask). 'Fighting the system' → step-back (reassess the approach). On final failure, escalate with structured task-format handoff. The recovery flow (flows/recovery.yaml) implements these as formal steps: diagnose → isolate → plan-fix → implement-fix → verify-fix → regression-check.\n\n## Example\n\n```typescript\nIF-STUCK: match 'same error 3x' → action: change-approach. match 'fighting system' → action: step-back.\n```\n\n## Why\n\nAutomated workflows without escape hatches spiral into infinite retries. Explicit recovery strategies bound failure modes.",
-      "tags": [
-        "escape-hatch",
-        "recovery",
-        "stuck",
-        "error-handling",
-        "resilience"
-      ]
+      "tags": ["escape-hatch", "recovery", "stuck", "error-handling", "resilience"]
     },
     {
       "id": "anti-pattern-other-below-threshold-loop-custom",
@@ -53,14 +36,8 @@
       "title": "Below-threshold loop-custom",
       "severity": "warning",
       "description": "# Below-threshold loop-custom\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 150 sessions.\nFlow: loop-custom\n## Anti-Pattern\n\nSession 2026-02-27-029a6dfc scored 30 (grade: F), which is below the acceptable threshold. Review the approach and gate failures for improvement opportunities.\n\n## Evidence\n\n- Observed in 150 sessions across flow `loop-custom`\n- Promoted: 2026-03-02\n- Source rule: `low-score`",
-      "tags": [
-        "low-score",
-        "loop-custom",
-        "custom"
-      ],
-      "appliesTo": [
-        "loop-custom"
-      ]
+      "tags": ["low-score", "loop-custom", "custom"],
+      "appliesTo": ["loop-custom"]
     },
     {
       "id": "pattern-other-efficient-custom-loop-passed-on-first-it",
@@ -69,16 +46,8 @@
       "title": "Efficient custom loop — passed on first iteration",
       "severity": "suggestion",
       "description": "# Efficient custom loop — passed on first iteration\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 46 sessions.\nFlow: loop-custom\n## Pattern\n\nSession 2026-02-27-01010a83 completed custom validation on the first try (score: 85, grade: B). The initial approach was sufficient without iteration.\n\n## Evidence\n\n- Observed in 46 sessions across flow `loop-custom`\n- Promoted: 2026-03-02\n- Source rule: `loop-completed-efficiently`",
-      "tags": [
-        "loop",
-        "efficient",
-        "first-try",
-        "custom",
-        "loop-custom"
-      ],
-      "appliesTo": [
-        "loop-custom"
-      ]
+      "tags": ["loop", "efficient", "first-try", "custom", "loop-custom"],
+      "appliesTo": ["loop-custom"]
     },
     {
       "id": "pattern-other-high-scoring-promote-hit-approach",
@@ -87,13 +56,8 @@
       "title": "High-scoring PROMOTE-HIT approach",
       "severity": "suggestion",
       "description": "# High-scoring PROMOTE-HIT approach\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 2 sessions.\nFlow: PROMOTE-HIT\n## Pattern\n\nSession 2026-03-02-59eab96e achieved a score of 95 (grade: A+). The approach used in this session produced excellent results.\n\n## Evidence\n\n- Observed in 2 sessions across flow `PROMOTE-HIT`\n- Promoted: 2026-03-02\n- Source rule: `excellent-score`",
-      "tags": [
-        "high-score",
-        "PROMOTE-HIT"
-      ],
-      "appliesTo": [
-        "PROMOTE-HIT"
-      ]
+      "tags": ["high-score", "PROMOTE-HIT"],
+      "appliesTo": ["PROMOTE-HIT"]
     },
     {
       "id": "pattern-other-successful-custom-loop-score-85",
@@ -102,16 +66,8 @@
       "title": "Successful custom loop (score: 85)",
       "severity": "suggestion",
       "description": "# Successful custom loop (score: 85)\n\n## Context\n\nAutomatically promoted from proposed knowledge after being observed in 46 sessions.\nFlow: loop-custom\n## Pattern\n\nSession 2026-02-27-01010a83 completed custom validation with a score of 85 (grade: B). This approach worked well for custom tasks.\n\n## Evidence\n\n- Observed in 46 sessions across flow `loop-custom`\n- Promoted: 2026-03-02\n- Source rule: `loop-good-score`",
-      "tags": [
-        "loop",
-        "success",
-        "good-score",
-        "custom",
-        "loop-custom"
-      ],
-      "appliesTo": [
-        "loop-custom"
-      ]
+      "tags": ["loop", "success", "good-score", "custom", "loop-custom"],
+      "appliesTo": ["loop-custom"]
     }
   ]
 }

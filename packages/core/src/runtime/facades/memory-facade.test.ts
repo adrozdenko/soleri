@@ -127,10 +127,16 @@ describe('memory-facade', () => {
 
   it('memory_list filters by type', async () => {
     await executeOp(ops, 'memory_capture', {
-      projectPath: '/test', type: 'lesson', context: 'c', summary: 'lesson',
+      projectPath: '/test',
+      type: 'lesson',
+      context: 'c',
+      summary: 'lesson',
     });
     await executeOp(ops, 'memory_capture', {
-      projectPath: '/test', type: 'preference', context: 'c', summary: 'pref',
+      projectPath: '/test',
+      type: 'preference',
+      context: 'c',
+      summary: 'pref',
     });
     const result = await executeOp(ops, 'memory_list', { type: 'lesson' });
     expect(result.success).toBe(true);
@@ -140,7 +146,10 @@ describe('memory-facade', () => {
 
   it('memory_list verbose returns full objects', async () => {
     await executeOp(ops, 'memory_capture', {
-      projectPath: '/test', type: 'lesson', context: 'c', summary: 'verbose list',
+      projectPath: '/test',
+      type: 'lesson',
+      context: 'c',
+      summary: 'verbose list',
     });
     const result = await executeOp(ops, 'memory_list', { verbose: true });
     expect(result.success).toBe(true);
@@ -192,9 +201,14 @@ describe('memory-facade', () => {
 
   it('memory_delete removes a memory', async () => {
     const captureResult = await executeOp(ops, 'memory_capture', {
-      projectPath: '/test', type: 'lesson', context: 'c', summary: 'to delete',
+      projectPath: '/test',
+      type: 'lesson',
+      context: 'c',
+      summary: 'to delete',
     });
-    const memoryId = ((captureResult.data as Record<string, unknown>).memory as Record<string, unknown>).id as string;
+    const memoryId = (
+      (captureResult.data as Record<string, unknown>).memory as Record<string, unknown>
+    ).id as string;
     const result = await executeOp(ops, 'memory_delete', { memoryId });
     expect(result.success).toBe(true);
     expect((result.data as Record<string, unknown>).deleted).toBe(true);

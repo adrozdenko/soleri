@@ -36,6 +36,7 @@ YOUR_AGENT_core op:loop_start
 ### Step 3: Execute Batch (default: first 3 tasks)
 
 For each task:
+
 1. `op:update_task` — mark `in_progress`
 2. Follow each step exactly
 3. Run verifications as specified
@@ -78,14 +79,14 @@ Capture mid-execution learnings with `op:capture_quick` as they happen — don't
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `get_plan` / `plan_list_tasks` / `plan_stats` | Load plan |
-| `update_task` | Mark task status |
-| `loop_start` / `loop_iterate` / `loop_complete` | Validation loop |
-| `plan_reconcile` | Post-execution drift report |
-| `plan_complete_lifecycle` | Extract knowledge, archive |
-| `session_capture` | Save session context |
-| `capture_quick` | Mid-execution learnings |
+| Op                                              | When to Use                 |
+| ----------------------------------------------- | --------------------------- |
+| `get_plan` / `plan_list_tasks` / `plan_stats`   | Load plan                   |
+| `update_task`                                   | Mark task status            |
+| `loop_start` / `loop_iterate` / `loop_complete` | Validation loop             |
+| `plan_reconcile`                                | Post-execution drift report |
+| `plan_complete_lifecycle`                       | Extract knowledge, archive  |
+| `session_capture`                               | Save session context        |
+| `capture_quick`                                 | Mid-execution learnings     |
 
 **Related skills:** writing-plans, verification-before-completion, test-driven-development

@@ -3,11 +3,7 @@
   "name": "Salvador Craft — Design & Accessibility",
   "version": "1.0.0",
   "description": "Design system intelligence, token priority, accessibility rules, UX patterns, component patterns, and styling enforcement. Extracted from Salvador's production vault.",
-  "domains": [
-    "design",
-    "accessibility",
-    "ux"
-  ],
+  "domains": ["design", "accessibility", "ux"],
   "vault": {
     "dir": "vault"
   }

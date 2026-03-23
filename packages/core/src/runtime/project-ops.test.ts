@@ -10,7 +10,10 @@ import type { AgentRuntime } from './types.js';
 /** Minimal in-memory project registry stub. */
 function makeProjectRegistryStub() {
   const projects = new Map<string, { id: string; name: string; lastAccessed: number }>();
-  const rules = new Map<string, Array<{ id: string; category: string; text: string; priority: number }>>();
+  const rules = new Map<
+    string,
+    Array<{ id: string; category: string; text: string; priority: number }>
+  >();
   const links: Array<{ sourceId: string; targetId: string; linkType: string }> = [];
   let ruleCounter = 0;
 
@@ -39,7 +42,10 @@ function makeProjectRegistryStub() {
     removeRule: (ruleId: string) => {
       for (const [, arr] of rules) {
         const idx = arr.findIndex((r) => r.id === ruleId);
-        if (idx >= 0) { arr.splice(idx, 1); return true; }
+        if (idx >= 0) {
+          arr.splice(idx, 1);
+          return true;
+        }
       }
       return false;
     },
@@ -52,14 +58,19 @@ function makeProjectRegistryStub() {
       let count = 0;
       for (let i = links.length - 1; i >= 0; i--) {
         const l = links[i];
-        if (l.sourceId === sourceId && l.targetId === targetId && (!linkType || l.linkType === linkType)) {
+        if (
+          l.sourceId === sourceId &&
+          l.targetId === targetId &&
+          (!linkType || l.linkType === linkType)
+        ) {
           links.splice(i, 1);
           count++;
         }
       }
       return count;
     },
-    getLinks: (projectId: string) => links.filter((l) => l.sourceId === projectId || l.targetId === projectId),
+    getLinks: (projectId: string) =>
+      links.filter((l) => l.sourceId === projectId || l.targetId === projectId),
     getLinkedProjects: (projectId: string) => {
       return links
         .filter((l) => l.sourceId === projectId || l.targetId === projectId)
@@ -181,7 +192,12 @@ describe('project-ops', () => {
       const { ops, registry } = setup();
       registry._seed('a', 'A');
       registry._seed('b', 'B');
-      await executeOp(ops, 'project_add_rule', { projectId: 'a', category: 'behavior', text: 'r1', priority: 0 });
+      await executeOp(ops, 'project_add_rule', {
+        projectId: 'a',
+        category: 'behavior',
+        text: 'r1',
+        priority: 0,
+      });
 
       const res = await executeOp(ops, 'project_list_rules');
       const data = res.data as { count: number; projects: Array<{ ruleCount: number }> };
@@ -207,7 +223,11 @@ describe('project-ops', () => {
       registry._seed('b', 'B');
       await executeOp(ops, 'project_link', { sourceId: 'a', targetId: 'b', linkType: 'parent' });
 
-      const res = await executeOp(ops, 'project_unlink', { sourceId: 'a', targetId: 'b', linkType: 'parent' });
+      const res = await executeOp(ops, 'project_unlink', {
+        sourceId: 'a',
+        targetId: 'b',
+        linkType: 'parent',
+      });
       expect((res.data as { removed: number }).removed).toBe(1);
     });
 

@@ -6,20 +6,26 @@
 
 import type { Plan } from './planner.js';
 import type { PlanGap } from './gap-types.js';
-import {
-  gap,
-  taskText,
-  decisionText,
-  decisionsText,
-  containsAny,
-} from './gap-patterns.js';
+import { gap, taskText, decisionText, decisionsText, containsAny } from './gap-patterns.js';
 
 // ─── Pattern Constants (Passes 5-8) ─────────────────────────────
 
 export const AMBIGUOUS_WORDS = [
-  'maybe', 'perhaps', 'might', 'could', 'some', 'etc', 'soon',
-  'simple', 'easy', 'appropriate', 'various', 'several',
-  'probably', 'possibly', 'somehow',
+  'maybe',
+  'perhaps',
+  'might',
+  'could',
+  'some',
+  'etc',
+  'soon',
+  'simple',
+  'easy',
+  'appropriate',
+  'various',
+  'several',
+  'probably',
+  'possibly',
+  'somehow',
 ];
 
 export const GENERIC_OBJECTIVE_PATTERNS = [
@@ -29,8 +35,13 @@ export const GENERIC_OBJECTIVE_PATTERNS = [
 ];
 
 export const RATIONALE_INDICATORS = [
-  'because', 'since', 'due to', 'in order to',
-  'so that', 'given that', 'as a result',
+  'because',
+  'since',
+  'due to',
+  'in order to',
+  'so that',
+  'given that',
+  'as a result',
 ];
 
 export const SHALLOW_INDICATORS = ['better', 'good', 'best', 'nice', 'great', 'improved'];
@@ -64,10 +75,12 @@ export function analyzeClarity(plan: Plan): PlanGap[] {
   if (found.length > 0) {
     gaps.push(
       gap(
-        'minor', 'clarity',
+        'minor',
+        'clarity',
         `Ambiguous language detected: ${found.slice(0, 5).join(', ')}${found.length > 5 ? ` (+${found.length - 5} more)` : ''}.`,
         'Replace vague terms with concrete, specific language.',
-        undefined, `ambiguous_words:${found.join(',')}`,
+        undefined,
+        `ambiguous_words:${found.join(',')}`,
       ),
     );
   }
@@ -76,10 +89,12 @@ export function analyzeClarity(plan: Plan): PlanGap[] {
   if (shortTasks.length > 0) {
     gaps.push(
       gap(
-        'minor', 'clarity',
+        'minor',
+        'clarity',
         `${shortTasks.length} task(s) with very short descriptions: ${shortTasks.map((t) => t.id).join(', ')}.`,
         'Add detailed descriptions to all tasks explaining what needs to be done.',
-        'tasks', 'short_task_descriptions',
+        'tasks',
+        'short_task_descriptions',
       ),
     );
   }
@@ -99,10 +114,12 @@ export function analyzeSemanticQuality(plan: Plan): PlanGap[] {
     if (isGeneric || words.length < 5) {
       gaps.push(
         gap(
-          'major', 'semantic-quality',
+          'major',
+          'semantic-quality',
           `Objective is too generic${words.length < 5 ? ` (${words.length} words)` : ''}: "${plan.objective.trim()}".`,
           'Expand the objective to describe the specific outcome, context, and constraints.',
-          'objective', 'generic_objective',
+          'objective',
+          'generic_objective',
         ),
       );
     }
@@ -111,19 +128,23 @@ export function analyzeSemanticQuality(plan: Plan): PlanGap[] {
   if (plan.tasks.length > 0 && plan.tasks.length < 3) {
     gaps.push(
       gap(
-        'minor', 'semantic-quality',
+        'minor',
+        'semantic-quality',
         `Only ${plan.tasks.length} task(s) — plan may lack sufficient breakdown.`,
         'Break down the work into 3-15 well-defined tasks for better tracking.',
-        'tasks', 'too_few_tasks',
+        'tasks',
+        'too_few_tasks',
       ),
     );
   } else if (plan.tasks.length > 20) {
     gaps.push(
       gap(
-        'major', 'semantic-quality',
+        'major',
+        'semantic-quality',
         `${plan.tasks.length} tasks — plan scope may be too large.`,
         'Split into multiple plans or consolidate related tasks to stay under 20.',
-        'tasks', 'too_many_tasks',
+        'tasks',
+        'too_many_tasks',
       ),
     );
   }
@@ -135,10 +156,12 @@ export function analyzeSemanticQuality(plan: Plan): PlanGap[] {
     if (hasShallow && !hasRationale) {
       gaps.push(
         gap(
-          'minor', 'semantic-quality',
+          'minor',
+          'semantic-quality',
           `Decision ${i + 1} uses subjective language without justification.`,
           'Replace "better/good/best" with concrete reasoning using "because/since/due to".',
-          `decisions[${i}]`, 'shallow_rationale',
+          `decisions[${i}]`,
+          'shallow_rationale',
         ),
       );
     }
@@ -153,10 +176,12 @@ export function analyzeSemanticQuality(plan: Plan): PlanGap[] {
   if (duplicates.length > 0) {
     gaps.push(
       gap(
-        'minor', 'semantic-quality',
+        'minor',
+        'semantic-quality',
         `Duplicate task titles: ${[...new Set(duplicates)].join(', ')}.`,
         'Give each task a unique, descriptive title.',
-        'tasks', 'duplicate_task_titles',
+        'tasks',
+        'duplicate_task_titles',
       ),
     );
   }
@@ -164,10 +189,12 @@ export function analyzeSemanticQuality(plan: Plan): PlanGap[] {
   if (plan.tasks.length >= 3 && plan.decisions.length === 0) {
     gaps.push(
       gap(
-        'major', 'semantic-quality',
+        'major',
+        'semantic-quality',
         `${plan.tasks.length} tasks but no decisions documented.`,
         'Document key decisions and their rationale — at least 1 per 3 tasks.',
-        'decisions', 'no_decisions',
+        'decisions',
+        'no_decisions',
       ),
     );
   }
@@ -196,20 +223,35 @@ export function analyzeKnowledgeDepth(plan: Plan): PlanGap[] {
 
   if (namedPatternCount >= 5) {
     gaps.push(
-      gap('bonus', 'knowledge-depth',
+      gap(
+        'bonus',
+        'knowledge-depth',
         `${namedPatternCount} vault pattern references across tasks — strong knowledge-informed plan.`,
-        '', 'tasks', 'vault_pattern_refs_high'),
+        '',
+        'tasks',
+        'vault_pattern_refs_high',
+      ),
     );
     gaps.push(
-      gap('bonus', 'knowledge-depth',
+      gap(
+        'bonus',
+        'knowledge-depth',
         'Vault pattern density indicates expert-level domain knowledge.',
-        '', 'tasks', 'vault_pattern_density'),
+        '',
+        'tasks',
+        'vault_pattern_density',
+      ),
     );
   } else if (namedPatternCount >= 2) {
     gaps.push(
-      gap('bonus', 'knowledge-depth',
+      gap(
+        'bonus',
+        'knowledge-depth',
         `${namedPatternCount} vault pattern references across tasks.`,
-        '', 'tasks', 'vault_pattern_refs_medium'),
+        '',
+        'tasks',
+        'vault_pattern_refs_medium',
+      ),
     );
   }
 
@@ -224,9 +266,14 @@ export function analyzeKnowledgeDepth(plan: Plan): PlanGap[] {
 
   if (plan.tasks.length > 0 && tasksWithCriteria / plan.tasks.length >= 0.8) {
     gaps.push(
-      gap('bonus', 'knowledge-depth',
+      gap(
+        'bonus',
+        'knowledge-depth',
         `${tasksWithCriteria}/${plan.tasks.length} tasks have acceptance criteria (${totalCriteria} total).`,
-        '', 'tasks', 'high_acceptance_criteria'),
+        '',
+        'tasks',
+        'high_acceptance_criteria',
+      ),
     );
   }
 
@@ -237,9 +284,14 @@ export function analyzeKnowledgeDepth(plan: Plan): PlanGap[] {
 
   if (indicatorHits >= 4) {
     gaps.push(
-      gap('bonus', 'knowledge-depth',
+      gap(
+        'bonus',
+        'knowledge-depth',
         `${indicatorHits} domain-specific knowledge indicators found (WCAG, ARIA, contrast ratios, touch targets, etc.).`,
-        '', 'tasks', 'domain_knowledge_indicators'),
+        '',
+        'tasks',
+        'domain_knowledge_indicators',
+      ),
     );
   }
 
@@ -248,9 +300,14 @@ export function analyzeKnowledgeDepth(plan: Plan): PlanGap[] {
       plan.tasks.reduce((sum, t) => sum + (t.description?.length ?? 0), 0) / plan.tasks.length;
     if (avgDescLength >= 80) {
       gaps.push(
-        gap('bonus', 'knowledge-depth',
+        gap(
+          'bonus',
+          'knowledge-depth',
           `Task descriptions average ${Math.round(avgDescLength)} chars — detailed and specific.`,
-          '', 'tasks', 'rich_task_descriptions'),
+          '',
+          'tasks',
+          'rich_task_descriptions',
+        ),
       );
     }
   }
@@ -266,30 +323,42 @@ export function analyzeAlternatives(plan: Plan): PlanGap[] {
 
   if (!alts || alts.length === 0) {
     gaps.push(
-      gap('major', 'alternative-analysis',
+      gap(
+        'major',
+        'alternative-analysis',
         'No alternatives considered — risk of tunnel vision.',
         'Add at least 2 rejected alternatives with pros, cons, and rejection rationale.',
-        'alternatives', 'no_alternatives'),
+        'alternatives',
+        'no_alternatives',
+      ),
     );
     return gaps;
   }
 
   if (alts.length < 2) {
     gaps.push(
-      gap('minor', 'alternative-analysis',
+      gap(
+        'minor',
+        'alternative-analysis',
         `Only ${alts.length} alternative explored — consider at least 2.`,
         'Add another rejected alternative to strengthen decision rationale.',
-        'alternatives', 'few_alternatives'),
+        'alternatives',
+        'few_alternatives',
+      ),
     );
   }
 
   for (let i = 0; i < alts.length; i++) {
     if (!alts[i].rejected_reason || alts[i].rejected_reason.trim().length === 0) {
       gaps.push(
-        gap('minor', 'alternative-analysis',
+        gap(
+          'minor',
+          'alternative-analysis',
           `Alternative ${i + 1} ("${alts[i].approach}") missing rejection rationale.`,
           'Explain why this alternative was rejected.',
-          `alternatives[${i}]`, 'missing_rejection_rationale'),
+          `alternatives[${i}]`,
+          'missing_rejection_rationale',
+        ),
       );
     }
   }

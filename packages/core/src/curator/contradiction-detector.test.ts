@@ -111,8 +111,18 @@ describe('contradiction-detector', () => {
 
     it('falls back to all patterns when searchFn returns empty', () => {
       const entries = [
-        makeEntry({ id: 'p1', type: 'pattern', title: 'Use inline styles', description: 'Inline.' }),
-        makeEntry({ id: 'ap1', type: 'anti-pattern', title: 'Avoid inline styles', description: 'No inline.' }),
+        makeEntry({
+          id: 'p1',
+          type: 'pattern',
+          title: 'Use inline styles',
+          description: 'Inline.',
+        }),
+        makeEntry({
+          id: 'ap1',
+          type: 'anti-pattern',
+          title: 'Avoid inline styles',
+          description: 'No inline.',
+        }),
       ];
 
       const searchFn = vi.fn().mockReturnValue([]);
@@ -125,8 +135,18 @@ describe('contradiction-detector', () => {
 
     it('falls back to all patterns when searchFn throws', () => {
       const entries = [
-        makeEntry({ id: 'p1', type: 'pattern', title: 'Use inline styles', description: 'Inline.' }),
-        makeEntry({ id: 'ap1', type: 'anti-pattern', title: 'Avoid inline styles', description: 'No inline.' }),
+        makeEntry({
+          id: 'p1',
+          type: 'pattern',
+          title: 'Use inline styles',
+          description: 'Inline.',
+        }),
+        makeEntry({
+          id: 'ap1',
+          type: 'anti-pattern',
+          title: 'Avoid inline styles',
+          description: 'No inline.',
+        }),
       ];
 
       const searchFn = vi.fn().mockImplementation(() => {
@@ -170,7 +190,12 @@ describe('contradiction-detector', () => {
     it('ignores entries that are neither pattern nor anti-pattern', () => {
       const entries = [
         makeEntry({ id: 'r1', type: 'rule', title: 'Use inline styles', description: 'Inline.' }),
-        makeEntry({ id: 'ap1', type: 'anti-pattern', title: 'Avoid inline styles', description: 'No inline.' }),
+        makeEntry({
+          id: 'ap1',
+          type: 'anti-pattern',
+          title: 'Avoid inline styles',
+          description: 'No inline.',
+        }),
       ];
       // Rules should not be compared against anti-patterns
       const results = findContradictions(entries, 0.1);

@@ -128,11 +128,7 @@ describe('installKnowledge', () => {
     const canonicalDir = join(tempDir, 'canonical');
     writeMdFiles(canonicalDir, { 'tagged.md': 'Tagged entry.' });
     const runtime = mockRuntime();
-    await installKnowledge(
-      mockPack({ knowledge: { canonical: 'canonical' } }),
-      runtime,
-      tempDir,
-    );
+    await installKnowledge(mockPack({ knowledge: { canonical: 'canonical' } }), runtime, tempDir);
     const addCall = (runtime.vault.add as unknown).mock.calls[0][0];
     expect(addCall.tags).toContain('pack:test-pack');
     expect(addCall.tags).toContain('tier:canonical');
@@ -144,11 +140,7 @@ describe('installKnowledge', () => {
     const curatedDir = join(tempDir, 'curated');
     writeMdFiles(curatedDir, { 'my-pattern.md': 'Content.' });
     const runtime = mockRuntime();
-    await installKnowledge(
-      mockPack({ knowledge: { curated: 'curated' } }),
-      runtime,
-      tempDir,
-    );
+    await installKnowledge(mockPack({ knowledge: { curated: 'curated' } }), runtime, tempDir);
     const addCall = (runtime.vault.add as unknown).mock.calls[0][0];
     expect(addCall.id).toBe('pack-test-pack-my-pattern');
   });

@@ -9,8 +9,18 @@ import { tmpdir } from 'node:os';
 
 /** Two well-structured alternatives to satisfy pass 8. */
 const TWO_ALTERNATIVES: PlanAlternative[] = [
-  { approach: 'Use alternative A', pros: ['Pro A'], cons: ['Con A'], rejected_reason: 'Not suitable for our use case' },
-  { approach: 'Use alternative B', pros: ['Pro B'], cons: ['Con B'], rejected_reason: 'Too complex for the scope' },
+  {
+    approach: 'Use alternative A',
+    pros: ['Pro A'],
+    cons: ['Con A'],
+    rejected_reason: 'Not suitable for our use case',
+  },
+  {
+    approach: 'Use alternative B',
+    pros: ['Pro B'],
+    cons: ['Con B'],
+    rejected_reason: 'Too complex for the scope',
+  },
 ];
 
 describe('Planner', () => {

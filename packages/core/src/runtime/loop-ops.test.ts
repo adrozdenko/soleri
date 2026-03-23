@@ -61,9 +61,15 @@ describe('createLoopOps', () => {
     ops = createLoopOps(runtime);
     const names = ops.map((o) => o.name);
     expect(names).toEqual([
-      'loop_start', 'loop_iterate', 'loop_iterate_gate',
-      'loop_status', 'loop_cancel', 'loop_history',
-      'loop_is_active', 'loop_complete', 'loop_anomaly_check',
+      'loop_start',
+      'loop_iterate',
+      'loop_iterate_gate',
+      'loop_status',
+      'loop_cancel',
+      'loop_history',
+      'loop_is_active',
+      'loop_complete',
+      'loop_anomaly_check',
     ]);
   });
 
@@ -72,7 +78,8 @@ describe('createLoopOps', () => {
       runtime = makeMockRuntime();
       ops = createLoopOps(runtime);
       const result = (await findOp('loop_start').handler({
-        mode: 'custom', prompt: 'fix the thing',
+        mode: 'custom',
+        prompt: 'fix the thing',
       })) as Record<string, unknown>;
 
       expect(runtime.loop.startLoop).toHaveBeenCalledWith(
@@ -108,7 +115,8 @@ describe('createLoopOps', () => {
       runtime = makeMockRuntime();
       ops = createLoopOps(runtime);
       const result = (await findOp('loop_iterate').handler({
-        passed: false, validationScore: 70,
+        passed: false,
+        validationScore: 70,
       })) as Record<string, unknown>;
 
       expect(result.iteration).toBe(1);
@@ -232,7 +240,9 @@ describe('createLoopOps', () => {
       const result = (await findOp('loop_anomaly_check').handler({})) as Record<string, unknown>;
       expect(result.active).toBe(true);
       expect(result.hasAnomalies).toBe(true);
-      expect((result.anomalies as string[]).some((a) => a.includes('consecutive failing'))).toBe(true);
+      expect((result.anomalies as string[]).some((a) => a.includes('consecutive failing'))).toBe(
+        true,
+      );
     });
   });
 });

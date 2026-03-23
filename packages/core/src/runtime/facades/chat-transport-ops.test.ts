@@ -53,9 +53,9 @@ vi.mock('../../chat/mcp-bridge.js', () => ({
 }));
 
 vi.mock('../../chat/output-compressor.js', () => ({
-  createOutputCompressor: vi.fn().mockReturnValue(
-    (_name: string, output: string, _max?: number) => output.slice(0, 10),
-  ),
+  createOutputCompressor: vi
+    .fn()
+    .mockReturnValue((_name: string, output: string, _max?: number) => output.slice(0, 10)),
 }));
 
 vi.mock('../../chat/voice.js', () => ({
@@ -115,12 +115,22 @@ describe('chat-transport-ops', () => {
     const names = ops.map((o) => o.name);
     expect(names).toEqual([
       'chat_chunk_response',
-      'chat_auth_init', 'chat_auth_check', 'chat_auth_authenticate',
-      'chat_auth_revoke', 'chat_auth_status',
-      'chat_bridge_init', 'chat_bridge_register', 'chat_bridge_list', 'chat_bridge_execute',
+      'chat_auth_init',
+      'chat_auth_check',
+      'chat_auth_authenticate',
+      'chat_auth_revoke',
+      'chat_auth_status',
+      'chat_bridge_init',
+      'chat_bridge_register',
+      'chat_bridge_list',
+      'chat_bridge_execute',
       'chat_compress_output',
-      'chat_voice_transcribe', 'chat_voice_synthesize',
-      'chat_queue_init', 'chat_queue_inbox', 'chat_queue_reply', 'chat_queue_drain',
+      'chat_voice_transcribe',
+      'chat_voice_synthesize',
+      'chat_queue_init',
+      'chat_queue_inbox',
+      'chat_queue_reply',
+      'chat_queue_drain',
     ]);
   });
 
@@ -129,7 +139,10 @@ describe('chat-transport-ops', () => {
   describe('chat_chunk_response', () => {
     it('chunks text and returns result', async () => {
       const op = findOp(ops, 'chat_chunk_response');
-      const result = (await op.handler({ text: 'hello world' })) as { chunks: string[]; count: number };
+      const result = (await op.handler({ text: 'hello world' })) as {
+        chunks: string[];
+        count: number;
+      };
       expect(result.chunks).toEqual(['chunk1', 'chunk2']);
       expect(result.count).toBe(2);
     });
@@ -150,7 +163,10 @@ describe('chat-transport-ops', () => {
 
   describe('chat_auth_check', () => {
     it('checks authentication status', async () => {
-      const result = await findOp(ops, 'chat_auth_check').handler({ userId: 'u1', storagePath: '/tmp/auth.json' });
+      const result = await findOp(ops, 'chat_auth_check').handler({
+        userId: 'u1',
+        storagePath: '/tmp/auth.json',
+      });
       expect(result).toEqual({ userId: 'u1', authenticated: true, lockedOut: false });
     });
   });
@@ -158,7 +174,9 @@ describe('chat-transport-ops', () => {
   describe('chat_auth_authenticate', () => {
     it('authenticates user with passphrase', async () => {
       const result = await findOp(ops, 'chat_auth_authenticate').handler({
-        userId: 'u1', passphrase: 'secret', storagePath: '/tmp/auth.json',
+        userId: 'u1',
+        passphrase: 'secret',
+        storagePath: '/tmp/auth.json',
       });
       expect(result).toEqual({ userId: 'u1', success: true, lockedOut: false });
       expect(mockAuthManager.authenticate).toHaveBeenCalledWith('u1', 'secret');
@@ -167,16 +185,22 @@ describe('chat-transport-ops', () => {
 
   describe('chat_auth_revoke', () => {
     it('revokes authentication', async () => {
-      const result = await findOp(ops, 'chat_auth_revoke').handler({ userId: 'u1', storagePath: '/tmp/auth.json' });
+      const result = await findOp(ops, 'chat_auth_revoke').handler({
+        userId: 'u1',
+        storagePath: '/tmp/auth.json',
+      });
       expect(result).toEqual({ revoked: true, userId: 'u1' });
     });
   });
 
   describe('chat_auth_status', () => {
     it('returns auth status', async () => {
-      const result = await findOp(ops, 'chat_auth_status').handler({ storagePath: '/tmp/auth.json' });
+      const result = await findOp(ops, 'chat_auth_status').handler({
+        storagePath: '/tmp/auth.json',
+      });
       expect(result).toEqual({
-        enabled: true, authenticatedCount: 1,
+        enabled: true,
+        authenticatedCount: 1,
         authenticatedUsers: [{ userId: 'u1', authenticatedAt: 1000 }],
       });
     });
@@ -194,7 +218,9 @@ describe('chat-transport-ops', () => {
   describe('chat_bridge_register', () => {
     it('registers a tool', async () => {
       const result = await findOp(ops, 'chat_bridge_register').handler({
-        name: 'my-tool', description: 'A tool', inputSchema: { type: 'object' },
+        name: 'my-tool',
+        description: 'A tool',
+        inputSchema: { type: 'object' },
       });
       expect(result).toEqual({ registered: true, name: 'my-tool', totalTools: 1 });
     });
@@ -207,27 +233,34 @@ describe('chat-transport-ops', () => {
 
     it('returns tools after init', async () => {
       await findOp(ops, 'chat_bridge_init').handler({});
-      expect(await findOp(ops, 'chat_bridge_list').handler({})).toEqual({ tools: [{ name: 'tool1' }], count: 1 });
+      expect(await findOp(ops, 'chat_bridge_list').handler({})).toEqual({
+        tools: [{ name: 'tool1' }],
+        count: 1,
+      });
     });
   });
 
   describe('chat_bridge_execute', () => {
     it('returns error when not initialized', async () => {
-      expect(await findOp(ops, 'chat_bridge_execute').handler({ name: 'tool1' }))
-        .toEqual({ output: 'Bridge not initialized', isError: true });
+      expect(await findOp(ops, 'chat_bridge_execute').handler({ name: 'tool1' })).toEqual({
+        output: 'Bridge not initialized',
+        isError: true,
+      });
     });
 
     it('executes tool after init', async () => {
       await findOp(ops, 'chat_bridge_init').handler({});
-      expect(await findOp(ops, 'chat_bridge_execute').handler({ name: 'tool1', input: { a: 1 } }))
-        .toEqual({ output: 'result' });
+      expect(
+        await findOp(ops, 'chat_bridge_execute').handler({ name: 'tool1', input: { a: 1 } }),
+      ).toEqual({ output: 'result' });
     });
   });
 
   describe('chat_compress_output', () => {
     it('compresses output', async () => {
       const result = (await findOp(ops, 'chat_compress_output').handler({
-        toolName: 'test', output: 'long output text here',
+        toolName: 'test',
+        output: 'long output text here',
       })) as { compressed: string; originalLength: number; compressedLength: number };
       expect(result.originalLength).toBe(21);
       expect(result.compressedLength).toBe(10);
@@ -239,7 +272,8 @@ describe('chat-transport-ops', () => {
   describe('chat_voice_transcribe', () => {
     it('transcribes audio', async () => {
       const result = await findOp(ops, 'chat_voice_transcribe').handler({
-        audioBase64: Buffer.from('test').toString('base64'), openaiApiKey: 'key-123',
+        audioBase64: Buffer.from('test').toString('base64'),
+        openaiApiKey: 'key-123',
       });
       expect(result).toEqual({ text: 'hello world', language: 'en' });
     });
@@ -248,7 +282,8 @@ describe('chat-transport-ops', () => {
   describe('chat_voice_synthesize', () => {
     it('synthesizes speech', async () => {
       const result = (await findOp(ops, 'chat_voice_synthesize').handler({
-        text: 'hello', openaiApiKey: 'key-123',
+        text: 'hello',
+        openaiApiKey: 'key-123',
       })) as Record<string, unknown>;
       expect(result.success).toBe(true);
       expect(result.audioBase64).toBeDefined();
@@ -259,14 +294,19 @@ describe('chat-transport-ops', () => {
 
   describe('chat_queue_init', () => {
     it('initializes queue', async () => {
-      expect(await findOp(ops, 'chat_queue_init').handler({ queueDir: '/tmp/queue' }))
-        .toEqual({ initialized: true, inbox: 2, outbox: 1 });
+      expect(await findOp(ops, 'chat_queue_init').handler({ queueDir: '/tmp/queue' })).toEqual({
+        initialized: true,
+        inbox: 2,
+        outbox: 1,
+      });
     });
   });
 
   describe('chat_queue_inbox', () => {
     it('reads inbox', async () => {
-      const result = (await findOp(ops, 'chat_queue_inbox').handler({ queueDir: '/tmp/queue' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'chat_queue_inbox').handler({
+        queueDir: '/tmp/queue',
+      })) as Record<string, unknown>;
       expect(result.count).toBe(1);
       expect(result.formatted).toBe('formatted');
     });
@@ -274,16 +314,23 @@ describe('chat-transport-ops', () => {
 
   describe('chat_queue_reply', () => {
     it('sends reply', async () => {
-      expect(await findOp(ops, 'chat_queue_reply').handler({
-        messageId: 'm1', chatId: 'chat-1', text: 'response', queueDir: '/tmp/queue',
-      })).toEqual({ sent: true, response: { id: 'r1' } });
+      expect(
+        await findOp(ops, 'chat_queue_reply').handler({
+          messageId: 'm1',
+          chatId: 'chat-1',
+          text: 'response',
+          queueDir: '/tmp/queue',
+        }),
+      ).toEqual({ sent: true, response: { id: 'r1' } });
     });
   });
 
   describe('chat_queue_drain', () => {
     it('drains outbox', async () => {
-      expect(await findOp(ops, 'chat_queue_drain').handler({ queueDir: '/tmp/queue' }))
-        .toEqual({ responses: [{ id: 'r1' }], count: 1 });
+      expect(await findOp(ops, 'chat_queue_drain').handler({ queueDir: '/tmp/queue' })).toEqual({
+        responses: [{ id: 'r1' }],
+        count: 1,
+      });
     });
   });
 });

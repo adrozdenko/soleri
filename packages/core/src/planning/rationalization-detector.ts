@@ -37,32 +37,38 @@ const PATTERNS: RationalizationPattern[] = [
   {
     name: 'out-of-scope',
     regex: /out\s+of\s+scope/i,
-    suggestion: 'If it was in the acceptance criteria, it is in scope. Remove from criteria or complete it.',
+    suggestion:
+      'If it was in the acceptance criteria, it is in scope. Remove from criteria or complete it.',
   },
   {
     name: 'follow-up-ticket',
     regex: /follow[- ]?up\s+(ticket|issue|pr|task)/i,
-    suggestion: 'Deferring to a follow-up means the criterion is unmet. Complete it now or revise the plan.',
+    suggestion:
+      'Deferring to a follow-up means the criterion is unmet. Complete it now or revise the plan.',
   },
   {
     name: 'pre-existing-issue',
     regex: /pre[- ]?existing\s+(issue|bug|problem)/i,
-    suggestion: 'Pre-existing or not, the criterion expects it resolved. Fix it or remove the criterion.',
+    suggestion:
+      'Pre-existing or not, the criterion expects it resolved. Fix it or remove the criterion.',
   },
   {
     name: 'over-engineering',
     regex: /over[- ]?engineering/i,
-    suggestion: 'Meeting acceptance criteria is not over-engineering. Implement what was agreed upon.',
+    suggestion:
+      'Meeting acceptance criteria is not over-engineering. Implement what was agreed upon.',
   },
   {
     name: 'separate-pr',
     regex: /separate\s+(pr|task|ticket|issue)/i,
-    suggestion: 'Splitting into a separate PR defers the work. Complete the criterion or update the plan.',
+    suggestion:
+      'Splitting into a separate PR defers the work. Complete the criterion or update the plan.',
   },
   {
     name: 'too-complex',
     regex: /too\s+complex\s+for\s+this\s+(task|pr|ticket|issue|scope)/i,
-    suggestion: 'Complexity was known at planning time. Revisit the plan or complete the criterion.',
+    suggestion:
+      'Complexity was known at planning time. Revisit the plan or complete the criterion.',
   },
 ];
 
@@ -91,11 +97,7 @@ export function detectRationalizations(
     if (!match) continue;
 
     // Find which criterion is being rationalized (nearest mention)
-    const criterion = findRelatedCriterion(
-      acceptanceCriteria,
-      completionClaim,
-      match.index,
-    );
+    const criterion = findRelatedCriterion(acceptanceCriteria, completionClaim, match.index);
 
     items.push({
       criterion,
@@ -114,11 +116,7 @@ export function detectRationalizations(
  * Find the acceptance criterion most related to the rationalization phrase
  * by checking which criterion text appears closest to the match position.
  */
-function findRelatedCriterion(
-  criteria: string[],
-  claim: string,
-  matchIndex: number,
-): string {
+function findRelatedCriterion(criteria: string[], claim: string, matchIndex: number): string {
   const claimLower = claim.toLowerCase();
   let bestCriterion = criteria[0];
   let bestDistance = Infinity;

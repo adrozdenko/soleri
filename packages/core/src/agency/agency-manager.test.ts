@@ -52,14 +52,16 @@ function makeCriticalDetector(): WarningDetector {
     extensions: ['.ts'],
     detect(filePath: string, content: string): Warning[] {
       if (content.includes('DANGER')) {
-        return [{
-          id: `danger-${filePath}`,
-          file: filePath,
-          line: 1,
-          severity: 'critical',
-          category: 'security',
-          message: 'DANGER keyword found',
-        }];
+        return [
+          {
+            id: `danger-${filePath}`,
+            file: filePath,
+            line: 1,
+            severity: 'critical',
+            category: 'security',
+            message: 'DANGER keyword found',
+          },
+        ];
       }
       return [];
     },
@@ -67,15 +69,17 @@ function makeCriticalDetector(): WarningDetector {
 }
 
 function seedVaultWithPattern(vault: Vault): void {
-  vault.seed([{
-    id: 'ts-pattern-1',
-    type: 'pattern',
-    domain: 'general',
-    title: 'TypeScript best practices',
-    severity: 'suggestion',
-    description: 'Follow typescript conventions',
-    tags: ['typescript'],
-  }]);
+  vault.seed([
+    {
+      id: 'ts-pattern-1',
+      type: 'pattern',
+      domain: 'general',
+      title: 'TypeScript best practices',
+      severity: 'suggestion',
+      description: 'Follow typescript conventions',
+      tags: ['typescript'],
+    },
+  ]);
 }
 
 describe('AgencyManager', () => {
@@ -92,7 +96,11 @@ describe('AgencyManager', () => {
   afterEach(() => {
     manager.disable();
     for (const d of tempDirs) {
-      try { rmSync(d, { recursive: true }); } catch { /* noop */ }
+      try {
+        rmSync(d, { recursive: true });
+      } catch {
+        /* noop */
+      }
     }
   });
 
@@ -187,7 +195,9 @@ describe('AgencyManager', () => {
       const badDetector: WarningDetector = {
         name: 'bad',
         extensions: ['.ts'],
-        detect() { throw new Error('boom'); },
+        detect() {
+          throw new Error('boom');
+        },
       };
       manager.registerDetector(badDetector);
       manager.registerDetector(makeDetector());
@@ -246,7 +256,9 @@ describe('AgencyManager', () => {
     });
 
     it('handles vault search failure gracefully', () => {
-      vi.spyOn(vault, 'search').mockImplementation(() => { throw new Error('db locked'); });
+      vi.spyOn(vault, 'search').mockImplementation(() => {
+        throw new Error('db locked');
+      });
       expect(manager.surfacePatterns('/project/a.ts')).toEqual([]);
       vi.restoreAllMocks();
     });
@@ -260,15 +272,17 @@ describe('AgencyManager', () => {
     });
 
     it('builds search terms from css extension', () => {
-      vault.seed([{
-        id: 'css-pattern',
-        type: 'pattern',
-        domain: 'styling',
-        title: 'CSS naming conventions',
-        severity: 'suggestion',
-        description: 'Follow css styling conventions',
-        tags: ['css', 'styling'],
-      }]);
+      vault.seed([
+        {
+          id: 'css-pattern',
+          type: 'pattern',
+          domain: 'styling',
+          title: 'CSS naming conventions',
+          severity: 'suggestion',
+          description: 'Follow css styling conventions',
+          tags: ['css', 'styling'],
+        },
+      ]);
       const p = manager.surfacePatterns('/project/styles/main.css');
       expect(p.length).toBeGreaterThan(0);
     });
@@ -303,7 +317,9 @@ describe('AgencyManager', () => {
     });
 
     it('returns null when action and target present at moderate confidence', () => {
-      expect(manager.generateClarification('create a new authentication module for the users', 0.5)).toBeNull();
+      expect(
+        manager.generateClarification('create a new authentication module for the users', 0.5),
+      ).toBeNull();
     });
   });
 
@@ -312,7 +328,7 @@ describe('AgencyManager', () => {
   describe('generateRichClarification', () => {
     it('detects broad scope words', () => {
       const qs = manager.generateRichClarification('refactor everything in the project');
-      const scope = qs.find(q => q.question.toLowerCase().includes('broad scope'));
+      const scope = qs.find((q) => q.question.toLowerCase().includes('broad scope'));
       expect(scope).toBeDefined();
       expect(scope!.urgency).toBe('recommended');
       expect(scope!.options!.length).toBeGreaterThan(0);
@@ -320,20 +336,22 @@ describe('AgencyManager', () => {
 
     it('detects vague short prompts', () => {
       const qs = manager.generateRichClarification('fix it');
-      const vague = qs.find(q => q.urgency === 'blocking');
+      const vague = qs.find((q) => q.urgency === 'blocking');
       expect(vague).toBeDefined();
       expect(vague!.options!.length).toBe(3);
     });
 
     it('detects destructive operations', () => {
       const qs = manager.generateRichClarification('delete all the test fixtures');
-      const destructive = qs.find(q => q.question.toLowerCase().includes('destructive'));
+      const destructive = qs.find((q) => q.question.toLowerCase().includes('destructive'));
       expect(destructive).toBeDefined();
       expect(destructive!.urgency).toBe('blocking');
     });
 
     it('returns empty for clear non-ambiguous prompts', () => {
-      const qs = manager.generateRichClarification('add a loading spinner to the dashboard header component');
+      const qs = manager.generateRichClarification(
+        'add a loading spinner to the dashboard header component',
+      );
       expect(qs).toEqual([]);
     });
 
@@ -423,7 +441,7 @@ describe('AgencyManager', () => {
   describe('generateSuggestions', () => {
     it('returns built-in first-session suggestion on fresh manager', () => {
       const suggestions = manager.generateSuggestions();
-      const firstSession = suggestions.find(s => s.rule === 'first-session');
+      const firstSession = suggestions.find((s) => s.rule === 'first-session');
       expect(firstSession).toBeDefined();
       expect(firstSession!.priority).toBe('low');
     });
@@ -455,7 +473,7 @@ describe('AgencyManager', () => {
         manager.scanFile(withTempFile(`f${i}.ts`, 'console.log("x")'));
       }
       const suggestions = manager.generateSuggestions();
-      const manyWarnings = suggestions.find(s => s.rule === 'many-warnings');
+      const manyWarnings = suggestions.find((s) => s.rule === 'many-warnings');
       expect(manyWarnings).toBeDefined();
       expect(manyWarnings!.priority).toBe('high');
     });
@@ -464,7 +482,7 @@ describe('AgencyManager', () => {
       manager.registerDetector(makeCriticalDetector());
       manager.scanFile(withTempFile('sec.ts', 'DANGER'));
       const suggestions = manager.generateSuggestions();
-      const critical = suggestions.find(s => s.rule === 'critical-warnings');
+      const critical = suggestions.find((s) => s.rule === 'critical-warnings');
       expect(critical).toBeDefined();
       expect(critical!.priority).toBe('high');
     });
@@ -477,7 +495,7 @@ describe('AgencyManager', () => {
       }
       manager.scanFile(withTempFile('danger.ts', 'DANGER'));
       const suggestions = manager.generateSuggestions();
-      const priorities = suggestions.map(s => s.priority);
+      const priorities = suggestions.map((s) => s.priority);
       const highIdx = priorities.indexOf('high');
       const lowIdx = priorities.indexOf('low');
       if (highIdx >= 0 && lowIdx >= 0) {
@@ -499,14 +517,16 @@ describe('AgencyManager', () => {
       };
       manager.registerSuggestionRule(custom);
       const suggestions = manager.generateSuggestions();
-      expect(suggestions.find(s => s.rule === 'always-fire')).toBeDefined();
+      expect(suggestions.find((s) => s.rule === 'always-fire')).toBeDefined();
     });
 
     it('survives a throwing suggestion rule', () => {
       const bad: SuggestionRule = {
         name: 'bad-rule',
         description: 'Throws',
-        condition: () => { throw new Error('boom'); },
+        condition: () => {
+          throw new Error('boom');
+        },
         generate: () => ({ rule: 'bad', title: '', description: '', priority: 'low' }),
       };
       manager.registerSuggestionRule(bad);

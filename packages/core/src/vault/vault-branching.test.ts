@@ -98,7 +98,9 @@ class BranchingMockDB implements PersistenceProvider {
     return fn();
   }
 
-  ftsSearch<T>(): T[] { return []; }
+  ftsSearch<T>(): T[] {
+    return [];
+  }
   ftsRebuild(): void {}
   close(): void {}
 
@@ -135,7 +137,7 @@ describe('VaultBranching', () => {
 
   it('throws when creating duplicate active branch', () => {
     branching.branch('feature-x');
-    expect(() => branching.branch('feature-x')).toThrow("already exists");
+    expect(() => branching.branch('feature-x')).toThrow('already exists');
   });
 
   // ── addOperation ────────────────────────────────────────────────────
@@ -159,14 +161,14 @@ describe('VaultBranching', () => {
 
   it('throws when adding to non-existent branch', () => {
     expect(() => branching.addOperation('missing', 'e1', 'add', makeEntry('e1'))).toThrow(
-      "does not exist",
+      'does not exist',
     );
   });
 
   it('throws when add/modify has no entry data', () => {
     branching.branch('b1');
-    expect(() => branching.addOperation('b1', 'e1', 'add')).toThrow("Entry data required");
-    expect(() => branching.addOperation('b1', 'e1', 'modify')).toThrow("Entry data required");
+    expect(() => branching.addOperation('b1', 'e1', 'add')).toThrow('Entry data required');
+    expect(() => branching.addOperation('b1', 'e1', 'modify')).toThrow('Entry data required');
   });
 
   // ── listEntries ─────────────────────────────────────────────────────
@@ -226,13 +228,13 @@ describe('VaultBranching', () => {
   });
 
   it('throws when merging non-existent branch', () => {
-    expect(() => branching.merge('missing')).toThrow("does not exist");
+    expect(() => branching.merge('missing')).toThrow('does not exist');
   });
 
   it('throws when merging already-merged branch', () => {
     branching.branch('b1');
     branching.merge('b1');
-    expect(() => branching.merge('b1')).toThrow("already merged");
+    expect(() => branching.merge('b1')).toThrow('already merged');
   });
 
   // ── deleteBranch ────────────────────────────────────────────────────

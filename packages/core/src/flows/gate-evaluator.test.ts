@@ -129,9 +129,12 @@ describe('evaluateGate', () => {
 
   describe('VERIFY type', () => {
     it('passes with verified findings', () => {
-      const verdict = evaluateGate({ type: 'VERIFY' }, {
-        verification: { findings: [{ proven: true }] },
-      });
+      const verdict = evaluateGate(
+        { type: 'VERIFY' },
+        {
+          verification: { findings: [{ proven: true }] },
+        },
+      );
       expect(verdict.passed).toBe(true);
       expect(verdict.action).toBe('CONTINUE');
     });
@@ -144,9 +147,12 @@ describe('evaluateGate', () => {
     });
 
     it('returns advisory when findings exist but none proven', () => {
-      const verdict = evaluateGate({ type: 'VERIFY' }, {
-        verification: { findings: [{ proven: false }] },
-      });
+      const verdict = evaluateGate(
+        { type: 'VERIFY' },
+        {
+          verification: { findings: [{ proven: false }] },
+        },
+      );
       expect(verdict.passed).toBe(true);
       expect(verdict.message).toContain('Advisory');
     });

@@ -16,8 +16,12 @@ function mockTagStore(): TagStore {
 
   return {
     getAlias: vi.fn((lower: string) => aliases.get(lower) ?? null),
-    insertCanonical: vi.fn((tag: string) => { canonicals.set(tag, null); }),
-    upsertAlias: vi.fn((alias: string, canonical: string) => { aliases.set(alias, canonical); }),
+    insertCanonical: vi.fn((tag: string) => {
+      canonicals.set(tag, null);
+    }),
+    upsertAlias: vi.fn((alias: string, canonical: string) => {
+      aliases.set(alias, canonical);
+    }),
     getCanonicalRows: vi.fn(() =>
       Array.from(canonicals.entries()).map(([tag, description]) => ({
         tag,
@@ -59,7 +63,11 @@ describe('tag-manager', () => {
 
     it('returns lowercased tag when no alias found', () => {
       const result = normalizeTag('MyCustomTag', store);
-      expect(result).toEqual({ original: 'MyCustomTag', normalized: 'mycustomtag', wasAliased: false });
+      expect(result).toEqual({
+        original: 'MyCustomTag',
+        normalized: 'mycustomtag',
+        wasAliased: false,
+      });
     });
 
     it('trims whitespace', () => {
@@ -92,7 +100,7 @@ describe('tag-manager', () => {
   describe('normalizeAndDedup', () => {
     it('deduplicates after normalization', () => {
       (store.getAlias as ReturnType<typeof vi.fn>)
-        .mockReturnValueOnce('styling')  // css -> styling
+        .mockReturnValueOnce('styling') // css -> styling
         .mockReturnValueOnce('styling'); // tailwind -> styling
       const { results, dedupedTags, changed } = normalizeAndDedup(['css', 'tailwind'], store);
       expect(results).toHaveLength(2);

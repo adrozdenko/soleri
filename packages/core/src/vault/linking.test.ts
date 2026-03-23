@@ -59,9 +59,7 @@ class LinkingMockDB implements PersistenceProvider {
     }
     if (sql.includes('DELETE FROM vault_links')) {
       const before = this.links.length;
-      this.links = this.links.filter(
-        (l) => !(l.source_id === p[0] && l.target_id === p[1]),
-      );
+      this.links = this.links.filter((l) => !(l.source_id === p[0] && l.target_id === p[1]));
       return { changes: before - this.links.length, lastInsertRowid: 0 };
     }
     return { changes: 0, lastInsertRowid: 0 };
@@ -71,9 +69,7 @@ class LinkingMockDB implements PersistenceProvider {
     const p = params ?? [];
     if (sql.includes('COUNT(*)')) {
       const id = p[0] as string;
-      const count = this.links.filter(
-        (l) => l.source_id === id || l.target_id === id,
-      ).length;
+      const count = this.links.filter((l) => l.source_id === id || l.target_id === id).length;
       return { count } as T;
     }
     if (sql.includes('FROM entries WHERE id')) {
@@ -83,7 +79,12 @@ class LinkingMockDB implements PersistenceProvider {
     if (sql.includes('title, description, type, tags')) {
       const entry = this.entries.find((e) => e.id === p[0]);
       if (!entry) return undefined;
-      return { title: entry.title, description: entry.description, type: entry.type, tags: entry.tags } as T;
+      return {
+        title: entry.title,
+        description: entry.description,
+        type: entry.type,
+        tags: entry.tags,
+      } as T;
     }
     return undefined;
   }
@@ -99,9 +100,7 @@ class LinkingMockDB implements PersistenceProvider {
     if (sql.includes('source_id IN')) {
       const half = p.length / 2;
       const ids = new Set(p.slice(0, half) as string[]);
-      return this.links.filter(
-        (l) => ids.has(l.source_id) || ids.has(l.target_id),
-      ) as T[];
+      return this.links.filter((l) => ids.has(l.source_id) || ids.has(l.target_id)) as T[];
     }
     if (sql.includes('NOT IN')) {
       const limit = p[0] as number;
@@ -125,8 +124,12 @@ class LinkingMockDB implements PersistenceProvider {
     return [];
   }
 
-  transaction<T>(fn: () => T): T { return fn(); }
-  ftsSearch<T>(): T[] { return []; }
+  transaction<T>(fn: () => T): T {
+    return fn();
+  }
+  ftsSearch<T>(): T[] {
+    return [];
+  }
   ftsRebuild(): void {}
   close(): void {}
 }
@@ -200,7 +203,9 @@ describe('LinkManager', () => {
   // ── traverse ────────────────────────────────────────────────────────
 
   it('returns empty for entry with no links', () => {
-    db.seedEntries([{ id: 'solo', title: 'Solo', type: 'pattern', domain: 'd', description: '', tags: '' }]);
+    db.seedEntries([
+      { id: 'solo', title: 'Solo', type: 'pattern', domain: 'd', description: '', tags: '' },
+    ]);
     expect(mgr.traverse('solo')).toEqual([]);
   });
 
@@ -293,8 +298,22 @@ describe('LinkManager', () => {
 
   it('suggests links based on FTS matches', () => {
     db.seedEntries([
-      { id: 'e1', title: 'Accessibility Pattern', type: 'pattern', domain: 'a11y', description: 'Screen reader support', tags: '' },
-      { id: 'e2', title: 'ARIA Rules', type: 'rule', domain: 'a11y', description: 'Always use ARIA labels', tags: '' },
+      {
+        id: 'e1',
+        title: 'Accessibility Pattern',
+        type: 'pattern',
+        domain: 'a11y',
+        description: 'Screen reader support',
+        tags: '',
+      },
+      {
+        id: 'e2',
+        title: 'ARIA Rules',
+        type: 'rule',
+        domain: 'a11y',
+        description: 'Always use ARIA labels',
+        tags: '',
+      },
     ]);
     const suggestions = mgr.suggestLinks('e1', 5);
     // e2 should be suggested (e1 is filtered as self)
@@ -329,8 +348,22 @@ describe('LinkManager', () => {
 
   it('dry run populates preview array', () => {
     db.seedEntries([
-      { id: 'orphan', title: 'Orphan', type: 'pattern', domain: 'd', description: 'test content', tags: '' },
-      { id: 'target', title: 'Target', type: 'rule', domain: 'd', description: 'test content', tags: '' },
+      {
+        id: 'orphan',
+        title: 'Orphan',
+        type: 'pattern',
+        domain: 'd',
+        description: 'test content',
+        tags: '',
+      },
+      {
+        id: 'target',
+        title: 'Target',
+        type: 'rule',
+        domain: 'd',
+        description: 'test content',
+        tags: '',
+      },
     ]);
     // Link target so orphan is the only orphan
     mgr.addLink('target', 'target', 'supports'); // self-link to exclude from orphans

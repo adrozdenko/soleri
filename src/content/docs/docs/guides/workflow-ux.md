@@ -12,6 +12,7 @@ Before making a UX decision, check what's been established:
 > **You:** "What do we know about form design?"
 >
 > **Agent:** _Found 5 entries:_
+>
 > 1. Show errors inline next to the field, not at the top (critical)
 > 2. Use optimistic updates for submissions — don't make users wait (pattern)
 > 3. Preserve input on validation error — never clear the form (critical)
@@ -21,6 +22,7 @@ Before making a UX decision, check what's been established:
 > **You:** "Any patterns for navigation?"
 >
 > **Agent:** _Found 3 entries:_
+>
 > 1. Breadcrumbs for anything deeper than 2 levels (pattern)
 > 2. Keep mobile navigation to 5 items max — Hick's Law (critical)
 > 3. Always show the current location visually — active state on nav items (pattern)
@@ -32,6 +34,7 @@ These are your team's design decisions — not generic UX advice, but choices ma
 > **You:** "Plan: redesign the settings page — it's grown to 40+ options across 6 categories, users can't find anything"
 >
 > **Agent:** _Plan created:_
+>
 > 1. Audit current settings — group by frequency of use
 > 2. Define information architecture — primary vs advanced settings
 > 3. Design navigation pattern for settings categories
@@ -79,15 +82,15 @@ The settings page redesign knowledge is now captured. Next time someone adds a n
 
 ## UX patterns worth capturing early
 
-| Area | What to capture |
-|------|----------------|
-| **Layout** | Grid system, spacing scale, responsive breakpoints |
-| **Navigation** | Menu structure, breadcrumb rules, mobile patterns |
-| **Forms** | Validation display, field ordering, error handling |
-| **Feedback** | Loading states, success/error messages, empty states |
-| **Interaction** | Touch targets, hover vs click, gesture conventions |
+| Area              | What to capture                                                |
+| ----------------- | -------------------------------------------------------------- |
+| **Layout**        | Grid system, spacing scale, responsive breakpoints             |
+| **Navigation**    | Menu structure, breadcrumb rules, mobile patterns              |
+| **Forms**         | Validation display, field ordering, error handling             |
+| **Feedback**      | Loading states, success/error messages, empty states           |
+| **Interaction**   | Touch targets, hover vs click, gesture conventions             |
 | **Accessibility** | Color contrast rules, focus management, screen reader patterns |
-| **Content** | Tone of voice, error message style, label conventions |
+| **Content**       | Tone of voice, error message style, label conventions          |
 
 ---
 

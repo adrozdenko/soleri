@@ -13,17 +13,11 @@ function makeMockVaultManager() {
   return {
     open: vi.fn(),
     disconnect: vi.fn().mockReturnValue(true),
-    listTiers: vi.fn().mockReturnValue([
-      { tier: 'agent', connected: true, entries: 25 },
-    ]),
-    search: vi.fn().mockReturnValue([
-      { id: 'e1', tier: 'agent', score: 0.9 },
-    ]),
+    listTiers: vi.fn().mockReturnValue([{ tier: 'agent', connected: true, entries: 25 }]),
+    search: vi.fn().mockReturnValue([{ id: 'e1', tier: 'agent', score: 0.9 }]),
     connect: vi.fn(),
     disconnectNamed: vi.fn().mockReturnValue(true),
-    listConnected: vi.fn().mockReturnValue([
-      { name: 'team-shared', priority: 0.5 },
-    ]),
+    listConnected: vi.fn().mockReturnValue([{ name: 'team-shared', priority: 0.5 }]),
   };
 }
 
@@ -69,7 +63,8 @@ describe('tier-ops', () => {
   describe('vault_connect', () => {
     it('connects a vault tier', async () => {
       const result = await executeOp(ops, 'vault_connect', {
-        tier: 'project', path: '/tmp/project.db',
+        tier: 'project',
+        path: '/tmp/project.db',
       });
       expect(result.success).toBe(true);
       const data = result.data as { connected: boolean; tier: string; path: string };
@@ -121,7 +116,8 @@ describe('tier-ops', () => {
   describe('vault_connect_source', () => {
     it('connects with default priority', async () => {
       const result = await executeOp(ops, 'vault_connect_source', {
-        name: 'team-kb', path: '/tmp/team.db',
+        name: 'team-kb',
+        path: '/tmp/team.db',
       });
       expect(result.success).toBe(true);
       const data = result.data as { connected: boolean; priority: number };
@@ -131,7 +127,9 @@ describe('tier-ops', () => {
 
     it('connects with custom priority', async () => {
       const result = await executeOp(ops, 'vault_connect_source', {
-        name: 'primary', path: '/tmp/p.db', priority: 1.5,
+        name: 'primary',
+        path: '/tmp/p.db',
+        priority: 1.5,
       });
       expect(result.success).toBe(true);
       const vm = runtime.vaultManager as ReturnType<typeof makeMockVaultManager>;

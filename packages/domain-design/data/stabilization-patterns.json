@@ -91,11 +91,7 @@
       },
       {
         "changeType": "Change Prop Types",
-        "examples": [
-          "`string` → `number`",
-          "`boolean` → `enum`",
-          "`ReactNode` → `string`"
-        ],
+        "examples": ["`string` → `number`", "`boolean` → `enum`", "`ReactNode` → `string`"],
         "mitigationStrategy": "Use union types to support both during transition"
       },
       {
@@ -111,10 +107,7 @@
     "mediumRisk": [
       {
         "changeType": "Change Default Values",
-        "examples": [
-          "variant default `outline` → `default`",
-          "size default `md` → `sm`"
-        ],
+        "examples": ["variant default `outline` → `default`", "size default `md` → `sm`"],
         "mitigationStrategy": "Document in changelog, provide migration guide"
       },
       {
@@ -308,13 +301,25 @@
       { "check": "Strict typing enabled", "validation": "No `any` types, full prop typing" },
       { "check": "Props interface exported", "validation": "Public type exports available" },
       { "check": "Ref forwarding implemented", "validation": "Forward ref pattern used" },
-      { "check": "Variant system clean", "validation": "No ternary chains, declarative variant logic" },
+      {
+        "check": "Variant system clean",
+        "validation": "No ternary chains, declarative variant logic"
+      },
       { "check": "Design tokens only", "validation": "No hardcoded colors, spacing, or sizes" },
-      { "check": "Accessibility complete", "validation": "ARIA labels, keyboard nav, focus management" }
+      {
+        "check": "Accessibility complete",
+        "validation": "ARIA labels, keyboard nav, focus management"
+      }
     ],
     "testingRequirements": [
-      { "check": "All-states demonstration exists", "validation": "Shows all variants, sizes, and states" },
-      { "check": "Dark mode coverage if applicable", "validation": "Dark background variations tested" },
+      {
+        "check": "All-states demonstration exists",
+        "validation": "Shows all variants, sizes, and states"
+      },
+      {
+        "check": "Dark mode coverage if applicable",
+        "validation": "Dark background variations tested"
+      },
       { "check": "Interaction tests", "validation": "Key interactions covered with automation" },
       { "check": "Visual regression baseline", "validation": "Snapshot comparison enabled" },
       { "check": "Accessibility audit", "validation": "Automated a11y testing passes" }
@@ -322,12 +327,18 @@
     "variantOptimization": [
       { "check": "3-5 variants maximum", "validation": "Remove unused or redundant variants" },
       { "check": "2-3 sizes maximum", "validation": "`sm`, `md`, `lg` only if needed" },
-      { "check": "Semantic variant names", "validation": "`default`, `outline`, `ghost`, `destructive`" },
+      {
+        "check": "Semantic variant names",
+        "validation": "`default`, `outline`, `ghost`, `destructive`"
+      },
       { "check": "Similar variants consolidated", "validation": "Merge subtle differences" }
     ],
     "documentation": [
       { "check": "Component type annotation", "validation": "Complexity level identified" },
-      { "check": "Test ID documentation", "validation": "Test selectors documented for automation" },
+      {
+        "check": "Test ID documentation",
+        "validation": "Test selectors documented for automation"
+      },
       { "check": "Props documented", "validation": "Each prop has description and examples" },
       { "check": "Usage examples", "validation": "Typical usage patterns demonstrated" }
     ]

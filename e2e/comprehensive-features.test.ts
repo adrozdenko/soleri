@@ -66,18 +66,104 @@ describe('Design: check_contrast', () => {
     expectLevel: string;
     ratioApprox: number;
   }> = [
-    { label: 'black on white (max)', fg: '#000000', bg: '#FFFFFF', expectPass: true, expectLevel: 'AAA', ratioApprox: 21 },
-    { label: 'white on white (min)', fg: '#FFFFFF', bg: '#FFFFFF', expectPass: false, expectLevel: 'Fail', ratioApprox: 1 },
-    { label: 'AA boundary (#767676)', fg: '#767676', bg: '#FFFFFF', expectPass: true, expectLevel: 'AA', ratioApprox: 4.54 },
-    { label: 'AAA boundary (#595959)', fg: '#595959', bg: '#FFFFFF', expectPass: true, expectLevel: 'AAA', ratioApprox: 7.0 },
-    { label: 'red on white', fg: '#DC2626', bg: '#FFFFFF', expectPass: true, expectLevel: 'AA', ratioApprox: 4.83 },
-    { label: 'white on black', fg: '#FFFFFF', bg: '#000000', expectPass: true, expectLevel: 'AAA', ratioApprox: 21 },
-    { label: 'blue on white', fg: '#1E40AF', bg: '#FFFFFF', expectPass: true, expectLevel: 'AAA', ratioApprox: 9.0 },
-    { label: 'light grey on white (fail)', fg: '#CCCCCC', bg: '#FFFFFF', expectPass: false, expectLevel: 'Fail', ratioApprox: 1.61 },
-    { label: 'dark grey on black (fail)', fg: '#333333', bg: '#000000', expectPass: false, expectLevel: 'Fail', ratioApprox: 1.79 },
-    { label: 'same color (red)', fg: '#FF0000', bg: '#FF0000', expectPass: false, expectLevel: 'Fail', ratioApprox: 1 },
-    { label: 'near-threshold fails for normal text', fg: '#888888', bg: '#FFFFFF', expectPass: false, ctx: 'text', expectLevel: 'AA-large', ratioApprox: 3.54 },
-    { label: 'near-threshold passes for large-text context', fg: '#888888', bg: '#FFFFFF', ctx: 'large-text', expectPass: true, expectLevel: 'AA-large', ratioApprox: 3.54 },
+    {
+      label: 'black on white (max)',
+      fg: '#000000',
+      bg: '#FFFFFF',
+      expectPass: true,
+      expectLevel: 'AAA',
+      ratioApprox: 21,
+    },
+    {
+      label: 'white on white (min)',
+      fg: '#FFFFFF',
+      bg: '#FFFFFF',
+      expectPass: false,
+      expectLevel: 'Fail',
+      ratioApprox: 1,
+    },
+    {
+      label: 'AA boundary (#767676)',
+      fg: '#767676',
+      bg: '#FFFFFF',
+      expectPass: true,
+      expectLevel: 'AA',
+      ratioApprox: 4.54,
+    },
+    {
+      label: 'AAA boundary (#595959)',
+      fg: '#595959',
+      bg: '#FFFFFF',
+      expectPass: true,
+      expectLevel: 'AAA',
+      ratioApprox: 7.0,
+    },
+    {
+      label: 'red on white',
+      fg: '#DC2626',
+      bg: '#FFFFFF',
+      expectPass: true,
+      expectLevel: 'AA',
+      ratioApprox: 4.83,
+    },
+    {
+      label: 'white on black',
+      fg: '#FFFFFF',
+      bg: '#000000',
+      expectPass: true,
+      expectLevel: 'AAA',
+      ratioApprox: 21,
+    },
+    {
+      label: 'blue on white',
+      fg: '#1E40AF',
+      bg: '#FFFFFF',
+      expectPass: true,
+      expectLevel: 'AAA',
+      ratioApprox: 9.0,
+    },
+    {
+      label: 'light grey on white (fail)',
+      fg: '#CCCCCC',
+      bg: '#FFFFFF',
+      expectPass: false,
+      expectLevel: 'Fail',
+      ratioApprox: 1.61,
+    },
+    {
+      label: 'dark grey on black (fail)',
+      fg: '#333333',
+      bg: '#000000',
+      expectPass: false,
+      expectLevel: 'Fail',
+      ratioApprox: 1.79,
+    },
+    {
+      label: 'same color (red)',
+      fg: '#FF0000',
+      bg: '#FF0000',
+      expectPass: false,
+      expectLevel: 'Fail',
+      ratioApprox: 1,
+    },
+    {
+      label: 'near-threshold fails for normal text',
+      fg: '#888888',
+      bg: '#FFFFFF',
+      expectPass: false,
+      ctx: 'text',
+      expectLevel: 'AA-large',
+      ratioApprox: 3.54,
+    },
+    {
+      label: 'near-threshold passes for large-text context',
+      fg: '#888888',
+      bg: '#FFFFFF',
+      ctx: 'large-text',
+      expectPass: true,
+      expectLevel: 'AA-large',
+      ratioApprox: 3.54,
+    },
   ];
 
   for (const tc of cases) {
@@ -140,8 +226,12 @@ describe('Design: get_color_pairs', () => {
 
   it('AAA filter returns fewer results than AA', async () => {
     const op = findOp('design', 'get_color_pairs');
-    const aaResult = (await op.handler({ background: '#FFFFFF', minLevel: 'AA' })) as { count: number };
-    const aaaResult = (await op.handler({ background: '#FFFFFF', minLevel: 'AAA' })) as { count: number };
+    const aaResult = (await op.handler({ background: '#FFFFFF', minLevel: 'AA' })) as {
+      count: number;
+    };
+    const aaaResult = (await op.handler({ background: '#FFFFFF', minLevel: 'AAA' })) as {
+      count: number;
+    };
     expect(aaaResult.count).toBeLessThanOrEqual(aaResult.count);
   });
 });
@@ -149,7 +239,10 @@ describe('Design: get_color_pairs', () => {
 describe('Design: validate_token', () => {
   it('accepts valid semantic token bg-surface', async () => {
     const op = findOp('design', 'validate_token');
-    const result = (await op.handler({ token: 'bg-surface' })) as { valid: boolean; verdict: string };
+    const result = (await op.handler({ token: 'bg-surface' })) as {
+      valid: boolean;
+      verdict: string;
+    };
     // May be ALLOWED or UNKNOWN depending on token rules data; should not be FORBIDDEN
     expect(result.verdict).not.toBe('FORBIDDEN');
   });
@@ -163,28 +256,40 @@ describe('Design: validate_token', () => {
 
   it('rejects forbidden Tailwind utility bg-blue-500', async () => {
     const op = findOp('design', 'validate_token');
-    const result = (await op.handler({ token: 'bg-blue-500' })) as { valid: boolean; verdict: string };
+    const result = (await op.handler({ token: 'bg-blue-500' })) as {
+      valid: boolean;
+      verdict: string;
+    };
     expect(result.valid).toBe(false);
     expect(result.verdict).toBe('FORBIDDEN');
   });
 
   it('rejects rgb() value', async () => {
     const op = findOp('design', 'validate_token');
-    const result = (await op.handler({ token: 'rgb(255,0,0)' })) as { valid: boolean; verdict: string };
+    const result = (await op.handler({ token: 'rgb(255,0,0)' })) as {
+      valid: boolean;
+      verdict: string;
+    };
     expect(result.valid).toBe(false);
     expect(result.verdict).toBe('FORBIDDEN');
   });
 
   it('rejects hsl() value', async () => {
     const op = findOp('design', 'validate_token');
-    const result = (await op.handler({ token: 'hsl(0,100%,50%)' })) as { valid: boolean; verdict: string };
+    const result = (await op.handler({ token: 'hsl(0,100%,50%)' })) as {
+      valid: boolean;
+      verdict: string;
+    };
     expect(result.valid).toBe(false);
     expect(result.verdict).toBe('FORBIDDEN');
   });
 
   it('handles unknown tokens gracefully', async () => {
     const op = findOp('design', 'validate_token');
-    const result = (await op.handler({ token: 'my-custom-thing' })) as { verdict: string; token: string };
+    const result = (await op.handler({ token: 'my-custom-thing' })) as {
+      verdict: string;
+      token: string;
+    };
     expect(result.token).toBe('my-custom-thing');
     expect(['ALLOWED', 'UNKNOWN']).toContain(result.verdict);
   });
@@ -471,8 +576,12 @@ describe('Design Patterns: check_container_pattern', () => {
   it('5 fields → dialog (sheet also accepted)', async () => {
     const facade = facades.find((f) => f.name.includes('design_patterns'));
     const op = facade!.ops.find((o) => o.name === 'check_container_pattern')!;
-    const dialogResult = (await op.handler({ fieldCount: 5, currentPattern: 'dialog' })) as { correct: boolean };
-    const sheetResult = (await op.handler({ fieldCount: 5, currentPattern: 'sheet' })) as { correct: boolean };
+    const dialogResult = (await op.handler({ fieldCount: 5, currentPattern: 'dialog' })) as {
+      correct: boolean;
+    };
+    const sheetResult = (await op.handler({ fieldCount: 5, currentPattern: 'sheet' })) as {
+      correct: boolean;
+    };
     expect(dialogResult.correct).toBe(true);
     expect(sheetResult.correct).toBe(true);
   });
@@ -710,10 +819,16 @@ describe('Component: detect_drift', () => {
           anotherProp: number;
         }
       `,
-    })) as { found: boolean; drifted: boolean; changes: Array<{ field: string; type: string; detail: string }> };
+    })) as {
+      found: boolean;
+      drifted: boolean;
+      changes: Array<{ field: string; type: string; detail: string }>;
+    };
     expect(result.found).toBe(true);
     expect(result.drifted).toBe(true);
-    expect(result.changes.some((c) => c.type === 'added' && c.detail.includes('newProp'))).toBe(true);
+    expect(result.changes.some((c) => c.type === 'added' && c.detail.includes('newProp'))).toBe(
+      true,
+    );
   });
 
   it('detects removed props', async () => {
@@ -811,10 +926,7 @@ describe('Component: sync_status', () => {
 
     const syncOp = findOp('component', 'sync_status');
     const result = (await syncOp.handler({
-      filePaths: [
-        'src/components/SyncedComp.tsx',
-        'src/components/UnregisteredComp.tsx',
-      ],
+      filePaths: ['src/components/SyncedComp.tsx', 'src/components/UnregisteredComp.tsx'],
     })) as {
       total: number;
       synced: number;
@@ -870,9 +982,7 @@ describe('Design QA: detect_token_drift', () => {
   it('all tokens match → healthScore 100', async () => {
     const op = findOp('design_qa', 'detect_token_drift');
     const result = (await op.handler({
-      tokens: [
-        { name: 'bg-primary', value: '#000' },
-      ],
+      tokens: [{ name: 'bg-primary', value: '#000' }],
       tokenMap: { 'bg-primary': '#000' },
     })) as { healthScore: number };
     expect(result.healthScore).toBe(100);
@@ -927,11 +1037,11 @@ describe('Design QA: accessibility_precheck', () => {
     const op = findOp('design_qa', 'accessibility_precheck');
     const result = (await op.handler({
       colorPairs: [
-        { foreground: '#000000', background: '#FFFFFF' },           // 21:1 pass
-        { foreground: '#FFFFFF', background: '#000000' },           // 21:1 pass
-        { foreground: '#CCCCCC', background: '#DDDDDD' },          // ~1.1:1 fail
-        { foreground: '#1E3A5F', background: '#FFFFFF' },          // high pass
-        { foreground: '#FF0000', background: '#00FF00' },          // questionable
+        { foreground: '#000000', background: '#FFFFFF' }, // 21:1 pass
+        { foreground: '#FFFFFF', background: '#000000' }, // 21:1 pass
+        { foreground: '#CCCCCC', background: '#DDDDDD' }, // ~1.1:1 fail
+        { foreground: '#1E3A5F', background: '#FFFFFF' }, // high pass
+        { foreground: '#FF0000', background: '#00FF00' }, // questionable
         { foreground: '#333333', background: '#FFFFFF', context: 'large-text' }, // 3:1 threshold
       ],
     })) as {
@@ -981,8 +1091,8 @@ describe('Design QA: handoff_audit', () => {
     const op = findOp('design_qa', 'handoff_audit');
     const result = (await op.handler({
       components: [
-        { name: 'Card' },                                    // missing everything
-        { name: 'Badge', description: 'Status badge' },      // missing props, variants
+        { name: 'Card' }, // missing everything
+        { name: 'Badge', description: 'Status badge' }, // missing props, variants
         { name: 'Modal', description: 'Dialog modal', props: ['open'], variants: ['default'] }, // complete
       ],
     })) as {
@@ -992,7 +1102,7 @@ describe('Design QA: handoff_audit', () => {
     };
 
     expect(result.total).toBe(3);
-    expect(result.audits[0].score).toBe(0);  // Card: nothing
+    expect(result.audits[0].score).toBe(0); // Card: nothing
     expect(result.audits[0].missing).toContain('description');
     expect(result.audits[0].missing).toContain('props');
     expect(result.audits[0].missing).toContain('variants');
@@ -1051,9 +1161,7 @@ describe('Code Review: review_pr_design', () => {
       files: [
         {
           file: 'src/components/Button.tsx',
-          additions: [
-            '<button className="bg-primary text-white px-4 py-2 rounded">OK</button>',
-          ],
+          additions: ['<button className="bg-primary text-white px-4 py-2 rounded">OK</button>'],
           deletions: [],
         },
       ],
@@ -1067,9 +1175,7 @@ describe('Code Review: check_architecture', () => {
   it('detects cross-feature import', async () => {
     const op = findOp('code_review', 'check_architecture');
     const result = (await op.handler({
-      imports: [
-        { fromFile: 'src/features/auth/login.ts', importPath: '../../features/users/api' },
-      ],
+      imports: [{ fromFile: 'src/features/auth/login.ts', importPath: '../../features/users/api' }],
     })) as { violationsFound: number; violations: Array<{ rule: string }>; verdict: string };
     expect(result.violationsFound).toBe(1);
     expect(result.violations[0].rule).toContain('Cross-feature');
@@ -1079,9 +1185,7 @@ describe('Code Review: check_architecture', () => {
   it('detects UI importing data layer', async () => {
     const op = findOp('code_review', 'check_architecture');
     const result = (await op.handler({
-      imports: [
-        { fromFile: 'src/components/UserCard.tsx', importPath: '../../services/user-api' },
-      ],
+      imports: [{ fromFile: 'src/components/UserCard.tsx', importPath: '../../services/user-api' }],
     })) as { violationsFound: number; violations: Array<{ rule: string; severity: string }> };
     expect(result.violationsFound).toBe(1);
     expect(result.violations[0].rule).toContain('data layer');
@@ -1091,9 +1195,7 @@ describe('Code Review: check_architecture', () => {
   it('detects services importing UI', async () => {
     const op = findOp('code_review', 'check_architecture');
     const result = (await op.handler({
-      imports: [
-        { fromFile: 'src/services/auth.ts', importPath: '../../components/LoginForm' },
-      ],
+      imports: [{ fromFile: 'src/services/auth.ts', importPath: '../../components/LoginForm' }],
     })) as { violationsFound: number; violations: Array<{ rule: string }> };
     expect(result.violationsFound).toBe(1);
     expect(result.violations[0].rule).toContain('Service layer importing from UI');
@@ -1137,7 +1239,9 @@ describe('Code Review: search_review_context', () => {
 
   it('finds results for "architecture" query', async () => {
     const op = findOp('code_review', 'search_review_context');
-    const result = (await op.handler({ query: 'cross feature import' })) as { resultsFound: number };
+    const result = (await op.handler({ query: 'cross feature import' })) as {
+      resultsFound: number;
+    };
     expect(result.resultsFound).toBeGreaterThan(0);
   });
 });
@@ -1214,7 +1318,9 @@ describe('Code Review: validate_page_styles', () => {
     expect(result.totalElements).toBe(3);
     expect(result.violationsFound).toBeGreaterThan(0);
     // Font size 13 not in scale
-    expect(result.violations.some((v) => v.element === 'p' && v.property === 'fontSize')).toBe(true);
+    expect(result.violations.some((v) => v.element === 'p' && v.property === 'fontSize')).toBe(
+      true,
+    );
     // Spacing 7 not in scale
     expect(result.violations.some((v) => v.element === 'p' && v.property === 'padding')).toBe(true);
     // Hardcoded colors
@@ -1240,13 +1346,13 @@ describe('Code Review: accessibility_audit', () => {
     const op = findOp('code_review', 'accessibility_audit');
     const result = (await op.handler({
       elements: [
-        { tag: 'button' },                                              // missing aria-label
-        { tag: 'input' },                                               // missing aria-label
-        { tag: 'a', ariaLabel: 'Home link' },                          // OK
-        { tag: 'div', tabIndex: 0 },                                    // focusable without role
+        { tag: 'button' }, // missing aria-label
+        { tag: 'input' }, // missing aria-label
+        { tag: 'a', ariaLabel: 'Home link' }, // OK
+        { tag: 'div', tabIndex: 0 }, // focusable without role
         { tag: 'span', tabIndex: 0, role: 'button', ariaLabel: 'OK' }, // OK
-        { tag: 'button', tabIndex: -1, ariaLabel: 'Hidden' },          // removed from tab order
-        { tag: 'p', contrastRatio: 2.5 },                              // bad contrast
+        { tag: 'button', tabIndex: -1, ariaLabel: 'Hidden' }, // removed from tab order
+        { tag: 'p', contrastRatio: 2.5 }, // bad contrast
       ],
     })) as {
       totalElements: number;
@@ -1257,7 +1363,9 @@ describe('Code Review: accessibility_audit', () => {
 
     expect(result.totalElements).toBe(7);
     expect(result.issuesFound).toBeGreaterThanOrEqual(4);
-    expect(result.issues.some((i) => i.tag === 'button' && i.issue.includes('aria-label'))).toBe(true);
+    expect(result.issues.some((i) => i.tag === 'button' && i.issue.includes('aria-label'))).toBe(
+      true,
+    );
     expect(result.issues.some((i) => i.tag === 'div' && i.issue.includes('role'))).toBe(true);
     expect(result.issues.some((i) => i.issue.includes('Contrast ratio'))).toBe(true);
     expect(result.issues.some((i) => i.issue.includes('tab order'))).toBe(true);
@@ -1294,9 +1402,7 @@ describe('Code Review: classify_visual_changes', () => {
   it('cosmetic-only → low risk', async () => {
     const op = findOp('code_review', 'classify_visual_changes');
     const result = (await op.handler({
-      changes: [
-        { element: '.text', property: 'color', before: '#000', after: '#111' },
-      ],
+      changes: [{ element: '.text', property: 'color', before: '#000', after: '#111' }],
     })) as { riskLevel: string };
     expect(result.riskLevel).toBe('low');
   });
@@ -1304,9 +1410,7 @@ describe('Code Review: classify_visual_changes', () => {
   it('behavioral-only → medium risk', async () => {
     const op = findOp('code_review', 'classify_visual_changes');
     const result = (await op.handler({
-      changes: [
-        { element: '.btn', property: 'cursor', before: 'default', after: 'pointer' },
-      ],
+      changes: [{ element: '.btn', property: 'cursor', before: 'default', after: 'pointer' }],
     })) as { riskLevel: string };
     expect(result.riskLevel).toBe('medium');
   });
@@ -1342,10 +1446,7 @@ describe('Code Review: validate_component_states', () => {
     const op = findOp('code_review', 'validate_component_states');
     const result = (await op.handler({
       component: 'Input',
-      states: [
-        { name: 'default' },
-        { name: 'focus' },
-      ],
+      states: [{ name: 'default' }, { name: 'focus' }],
     })) as { missingStates: string[]; coverage: number; verdict: string };
     expect(result.missingStates).toContain('hover');
     expect(result.missingStates).toContain('disabled');
@@ -1408,7 +1509,13 @@ describe('Flow Engine: loadAllFlows', () => {
 
 describe('Flow Engine: buildPlan', () => {
   it('BUILD intent produces plan with steps', async () => {
-    const plan = await buildPlan('BUILD', 'test-agent', '/tmp/test', runtime, 'Build a card component');
+    const plan = await buildPlan(
+      'BUILD',
+      'test-agent',
+      '/tmp/test',
+      runtime,
+      'Build a card component',
+    );
     expect(plan.intent).toBe('BUILD');
     expect(plan.flowId).toBe('BUILD-flow');
     expect(plan.steps.length).toBeGreaterThan(0);
@@ -1417,10 +1524,20 @@ describe('Flow Engine: buildPlan', () => {
   });
 
   it('FIX intent includes anti-pattern step', async () => {
-    const plan = await buildPlan('FIX', 'test-agent', '/tmp/test', runtime, 'Fix broken button colors');
+    const plan = await buildPlan(
+      'FIX',
+      'test-agent',
+      '/tmp/test',
+      runtime,
+      'Fix broken button colors',
+    );
     expect(plan.intent).toBe('FIX');
     expect(plan.flowId).toBe('FIX-flow');
-    expect(plan.steps.some((s) => s.id.includes('anti-pattern') || s.name.toLowerCase().includes('anti-pattern'))).toBe(true);
+    expect(
+      plan.steps.some(
+        (s) => s.id.includes('anti-pattern') || s.name.toLowerCase().includes('anti-pattern'),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -1436,7 +1553,10 @@ describe('Flow Engine: context detection', () => {
   });
 
   it('"Build a login form with validation" → form-component context', () => {
-    const contexts = detectContext('Build a login form with validation', { components: [], actions: [] });
+    const contexts = detectContext('Build a login form with validation', {
+      components: [],
+      actions: [],
+    });
     expect(contexts).toContain('form-component');
   });
 

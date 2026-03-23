@@ -58,8 +58,15 @@ describe('links-facade', () => {
 
   it('includes all expected op names', () => {
     const expected = [
-      'link_entries', 'unlink_entries', 'get_links', 'traverse',
-      'suggest_links', 'get_orphans', 'relink_vault', 'backfill_links', 'link_stats',
+      'link_entries',
+      'unlink_entries',
+      'get_links',
+      'traverse',
+      'suggest_links',
+      'get_orphans',
+      'relink_vault',
+      'backfill_links',
+      'link_stats',
     ];
     for (const name of expected) {
       expect(ops.has(name), `missing op: ${name}`).toBe(true);
@@ -85,7 +92,10 @@ describe('links-facade', () => {
   describe('link_entries', () => {
     it('creates a link via linkManager', async () => {
       const result = await executeOp(ops, 'link_entries', {
-        sourceId: 'a', targetId: 'b', linkType: 'extends', note: 'test',
+        sourceId: 'a',
+        targetId: 'b',
+        linkType: 'extends',
+        note: 'test',
       });
       expect(result.success).toBe(true);
       const data = result.data as { success: boolean };
@@ -98,7 +108,8 @@ describe('links-facade', () => {
   describe('unlink_entries', () => {
     it('removes a link', async () => {
       const result = await executeOp(ops, 'unlink_entries', {
-        sourceId: 'a', targetId: 'b',
+        sourceId: 'a',
+        targetId: 'b',
       });
       expect(result.success).toBe(true);
       const lm = runtime.linkManager as { removeLink: ReturnType<typeof vi.fn> };
@@ -145,7 +156,10 @@ describe('links-facade', () => {
   describe('backfill_links', () => {
     it('delegates to linkManager', async () => {
       const result = await executeOp(ops, 'backfill_links', {
-        threshold: 0.7, maxLinks: 3, dryRun: false, batchSize: 50,
+        threshold: 0.7,
+        maxLinks: 3,
+        dryRun: false,
+        batchSize: 50,
       });
       expect(result.success).toBe(true);
       const data = result.data as { created: number };
@@ -157,10 +171,10 @@ describe('links-facade', () => {
     it('returns graph statistics', async () => {
       const provider = (runtime.vault as { getProvider: ReturnType<typeof vi.fn> }).getProvider();
       vi.mocked(provider.get)
-        .mockReturnValueOnce({ c: 10 })  // totalLinks
-        .mockReturnValueOnce({ c: 50 })  // totalEntries
-        .mockReturnValueOnce({ c: 3 })   // orphans
-        .mockReturnValueOnce({ c: 5 });  // withNotes
+        .mockReturnValueOnce({ c: 10 }) // totalLinks
+        .mockReturnValueOnce({ c: 50 }) // totalEntries
+        .mockReturnValueOnce({ c: 3 }) // orphans
+        .mockReturnValueOnce({ c: 5 }); // withNotes
       vi.mocked(provider.all)
         .mockReturnValueOnce([{ link_type: 'extends', c: 7 }])
         .mockReturnValueOnce([{ title: 'Top', links: 5 }]);
@@ -176,7 +190,9 @@ describe('links-facade', () => {
   describe('relink_vault', () => {
     it('returns error when no LLM available', async () => {
       const result = await executeOp(ops, 'relink_vault', {
-        batchSize: 10, limit: 0, dryRun: false,
+        batchSize: 10,
+        limit: 0,
+        dryRun: false,
       });
       expect(result.success).toBe(true);
       const data = result.data as { success: boolean; error: string };

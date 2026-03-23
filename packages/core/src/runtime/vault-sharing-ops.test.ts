@@ -83,10 +83,7 @@ describe('createVaultSharingOps', () => {
     it('returns error when entry not found', async () => {
       const op = findOp(ops, 'vault_set_scope');
       vi.mocked(rt.vault.get).mockReturnValue(undefined as never);
-      const result = (await op.handler({ id: 'missing', tier: 'team' })) as Record<
-        string,
-        unknown
-      >;
+      const result = (await op.handler({ id: 'missing', tier: 'team' })) as Record<string, unknown>;
       expect(result.error).toContain('not found');
     });
 

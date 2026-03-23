@@ -366,7 +366,9 @@ export function createChatServiceOps(state: ChatState): OpDefinition[] {
       auth: 'read',
       handler: async () => {
         if (!state.browser) return { initialized: false, activeSessions: 0, sessions: [] };
-        const sessions = state.browser.listSessions().map((id) => (Object.assign({chatId:id}, state.browser! .getInfo(id))));
+        const sessions = state.browser
+          .listSessions()
+          .map((id) => Object.assign({ chatId: id }, state.browser!.getInfo(id)));
         return { initialized: true, activeSessions: state.browser.size, sessions };
       },
     },

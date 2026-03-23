@@ -56,9 +56,7 @@ export class ContextHealthMonitor {
 
   /** Check current context health status. */
   check(): ContextHealthStatus {
-    const estimatedTokens = Math.round(
-      this.totalPayloadSize * OVERHEAD_FACTOR,
-    );
+    const estimatedTokens = Math.round(this.totalPayloadSize * OVERHEAD_FACTOR);
     const estimatedFill = Math.min(estimatedTokens / CONTEXT_WINDOW, 1.0);
     const level = this.classifyLevel(estimatedFill);
 

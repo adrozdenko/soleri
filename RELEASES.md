@@ -8,24 +8,24 @@ Active release plan as of 2026-03-21. Source of truth for release sequencing, de
 v9.1.1 → v9.1 → v9.2 → v10.0
 ```
 
-| Release | Milestone | Issues | Status | Depends On | Release Checklist |
-|---------|-----------|--------|--------|------------|-------------------|
-| **v9.1.1** | Bug Fixes | 6 | Ready to ship | Nothing — independent | #274 |
-| **v9.1** | Core Refactoring Waves | 17 | In progress | Nothing — foundation | #275 |
-| **v9.2** | Operator Profile + Engine Hardening | 29 | **Shipped 2026-03-22** | v9.1 (stable runtime) | #276 |
-| **v10.0** | soleri.dev Platform | 17 | Future | Nothing — independent track | — |
+| Release    | Milestone                           | Issues | Status                 | Depends On                  | Release Checklist |
+| ---------- | ----------------------------------- | ------ | ---------------------- | --------------------------- | ----------------- |
+| **v9.1.1** | Bug Fixes                           | 6      | Ready to ship          | Nothing — independent       | #274              |
+| **v9.1**   | Core Refactoring Waves              | 17     | In progress            | Nothing — foundation        | #275              |
+| **v9.2**   | Operator Profile + Engine Hardening | 29     | **Shipped 2026-03-22** | v9.1 (stable runtime)       | #276              |
+| **v10.0**  | soleri.dev Platform                 | 17     | Future                 | Nothing — independent track | —                 |
 
 ## v9.1.1: Bug Fixes
 
 Ships independently. Patch release — no breaking changes.
 
-| # | Priority | Title |
-|---|----------|-------|
-| #260 | P1 | Persona template overrides identity layer on activation |
-| #261 | P2 | Morph op rejects all mode values — valid modes undocumented |
-| #262 | P2 | governance_policy set action fails with NOT NULL constraint |
-| #263 | P2 | Curator quality score flags cross-domain entries as duplicates |
-| #264 | P3 | complete_plan op description misleading — should guide to reconcile |
+| #    | Priority | Title                                                               |
+| ---- | -------- | ------------------------------------------------------------------- |
+| #260 | P1       | Persona template overrides identity layer on activation             |
+| #261 | P2       | Morph op rejects all mode values — valid modes undocumented         |
+| #262 | P2       | governance_policy set action fails with NOT NULL constraint         |
+| #263 | P2       | Curator quality score flags cross-domain entries as duplicates      |
+| #264 | P3       | complete_plan op description misleading — should guide to reconcile |
 
 ## v9.1: Core Refactoring Waves
 
@@ -54,15 +54,15 @@ Issues marked `critical-path` must complete before dependent work starts:
       → #252 (facades TDD)
 ```
 
-| Wave | Issues | Summary |
-|------|--------|---------|
-| 0 | #244, #245, #246, #247 | persistence/, migrations/, vault.ts, vault files |
-| 1 | #248, #249, #250, #251 | brain/, planner.ts, curator/, planning/ |
-| 2 | #252, #253, #254, #255 | facades, ops files, transport, engine |
-| 2.5 | #256 | governance, agency, context, loop (parallel) |
-| 3 | #257 | chat, flows, control, domain-packs |
-| 4 | #258 | 19 supporting modules |
-| Verify | #259 | Cleanup, E2E verification, coverage report |
+| Wave   | Issues                 | Summary                                          |
+| ------ | ---------------------- | ------------------------------------------------ |
+| 0      | #244, #245, #246, #247 | persistence/, migrations/, vault.ts, vault files |
+| 1      | #248, #249, #250, #251 | brain/, planner.ts, curator/, planning/          |
+| 2      | #252, #253, #254, #255 | facades, ops files, transport, engine            |
+| 2.5    | #256                   | governance, agency, context, loop (parallel)     |
+| 3      | #257                   | chat, flows, control, domain-packs               |
+| 4      | #258                   | 19 supporting modules                            |
+| Verify | #259                   | Cleanup, E2E verification, coverage report       |
 
 ## v9.2: Operator Profile — Personality Learning
 
@@ -79,11 +79,11 @@ New engine module. Blocked by v9.1 — needs stable runtime, facade registration
 
 ### Dependencies on v9.1
 
-| Issue | Blocked By | Reason |
-|-------|------------|--------|
-| #268 | #252 (Wave 2A: facades) | Facade registration pattern must be stable |
-| #269 | #255 (Wave 2D: engine) | ENGINE_MODULES array must be finalized |
-| #270 | #248 (Wave 1A: brain), #250 (Wave 1C: curator) | Signal pipeline hooks into brain/curator events |
+| Issue | Blocked By                                     | Reason                                          |
+| ----- | ---------------------------------------------- | ----------------------------------------------- |
+| #268  | #252 (Wave 2A: facades)                        | Facade registration pattern must be stable      |
+| #269  | #255 (Wave 2D: engine)                         | ENGINE_MODULES array must be finalized          |
+| #270  | #248 (Wave 1A: brain), #250 (Wave 1C: curator) | Signal pipeline hooks into brain/curator events |
 
 ## v10.0: soleri.dev Platform
 
@@ -104,28 +104,28 @@ Cloud platform — independent of engine releases. Foundation-first dependency c
 
 ### Execution Phases
 
-| Phase | Issues | Description |
-|-------|--------|-------------|
-| **Foundation** | #118, #100 | Backend API + registry abstraction |
-| **Auth** | #107 | Accounts, profiles, API keys |
-| **Registration** | #108, #109 | Agent connect + team management |
-| **Marketplace** | #110, #115, #117 | Storefront + security + legal |
-| **Commerce** | #111, #112, #113 | Pricing + dashboard + ratings |
-| **Advanced** | #106, #114 | Subscriptions + knowledge rental |
-| **Standalone** | #43, #91, #119, #230 | Registry, plugin marketplace, workbench, Postgres |
+| Phase            | Issues               | Description                                       |
+| ---------------- | -------------------- | ------------------------------------------------- |
+| **Foundation**   | #118, #100           | Backend API + registry abstraction                |
+| **Auth**         | #107                 | Accounts, profiles, API keys                      |
+| **Registration** | #108, #109           | Agent connect + team management                   |
+| **Marketplace**  | #110, #115, #117     | Storefront + security + legal                     |
+| **Commerce**     | #111, #112, #113     | Pricing + dashboard + ratings                     |
+| **Advanced**     | #106, #114           | Subscriptions + knowledge rental                  |
+| **Standalone**   | #43, #91, #119, #230 | Registry, plugin marketplace, workbench, Postgres |
 
 ## Labels
 
-| Label | Meaning |
-|-------|---------|
-| `P1` | Active work — current sprint |
-| `P2` | Backlog — next sprint |
-| `P3` | Nice to have |
-| `critical-path` | Blocks downstream work |
-| `core` | @soleri/core package |
-| `cli` | @soleri/cli package |
-| `forge` | @soleri/forge package |
-| `platform` | soleri.dev cloud platform |
+| Label           | Meaning                      |
+| --------------- | ---------------------------- |
+| `P1`            | Active work — current sprint |
+| `P2`            | Backlog — next sprint        |
+| `P3`            | Nice to have                 |
+| `critical-path` | Blocks downstream work       |
+| `core`          | @soleri/core package         |
+| `cli`           | @soleri/cli package          |
+| `forge`         | @soleri/forge package        |
+| `platform`      | soleri.dev cloud platform    |
 
 ## Release Rule
 

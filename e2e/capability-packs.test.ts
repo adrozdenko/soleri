@@ -43,7 +43,10 @@ import type {
 
 const AGENT_ID = 'e2e-caps';
 
-function makeHandler(name: string, behavior?: (params: Record<string, unknown>) => Record<string, unknown>): CapabilityHandler {
+function makeHandler(
+  name: string,
+  behavior?: (params: Record<string, unknown>) => Record<string, unknown>,
+): CapabilityHandler {
   return async (params) => ({
     success: true,
     data: behavior ? behavior(params) : { handler: name },
@@ -63,9 +66,11 @@ function makeCap(id: string, opts?: Partial<CapabilityDefinition>): CapabilityDe
 
 /** Capture MCP handler from a facade (same pattern as full-pipeline.test.ts) */
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
@@ -126,18 +131,27 @@ describe('Journey 1: Fresh agent has core capabilities', () => {
     registry = new CapabilityRegistry();
 
     const coreCaps = [
-      'vault.search', 'vault.capture', 'vault.playbook',
-      'brain.recommend', 'brain.strengths',
-      'memory.search', 'memory.capture',
-      'plan.create', 'plan.approve',
-      'orchestrate.plan', 'orchestrate.execute', 'orchestrate.complete',
-      'identity.activate', 'identity.route',
-      'admin.health', 'admin.tools',
+      'vault.search',
+      'vault.capture',
+      'vault.playbook',
+      'brain.recommend',
+      'brain.strengths',
+      'memory.search',
+      'memory.capture',
+      'plan.create',
+      'plan.approve',
+      'orchestrate.plan',
+      'orchestrate.execute',
+      'orchestrate.complete',
+      'identity.activate',
+      'identity.route',
+      'admin.health',
+      'admin.tools',
       'debug.patterns',
-    ].map(id => makeCap(id));
+    ].map((id) => makeCap(id));
 
     const coreHandlers = new Map<string, CapabilityHandler>();
-    coreCaps.forEach(c => coreHandlers.set(c.id, makeHandler(c.id)));
+    coreCaps.forEach((c) => coreHandlers.set(c.id, makeHandler(c.id)));
     registry.registerPack('core', coreCaps, coreHandlers, 100);
   });
 
@@ -165,7 +179,7 @@ describe('Journey 1: Fresh agent has core capabilities', () => {
     expect(handlers.size).toBeGreaterThan(10);
 
     // Key facades should be registered
-    const facadeNames = facades.map(f => f.name);
+    const facadeNames = facades.map((f) => f.name);
     expect(facadeNames).toContain(`${AGENT_ID}_vault`);
     expect(facadeNames).toContain(`${AGENT_ID}_admin`);
     expect(facadeNames).toContain(`${AGENT_ID}_brain`);
@@ -193,9 +207,9 @@ describe('Journey 2: Installing a pack adds capabilities', () => {
     registry = new CapabilityRegistry();
 
     // Core pack (always present)
-    const coreCaps = ['vault.search', 'brain.recommend', 'plan.create'].map(id => makeCap(id));
+    const coreCaps = ['vault.search', 'brain.recommend', 'plan.create'].map((id) => makeCap(id));
     const coreH = new Map<string, CapabilityHandler>();
-    coreCaps.forEach(c => coreH.set(c.id, makeHandler(c.id)));
+    coreCaps.forEach((c) => coreH.set(c.id, makeHandler(c.id)));
     registry.registerPack('core', coreCaps, coreH, 100);
   });
 
@@ -221,7 +235,7 @@ describe('Journey 2: Installing a pack adds capabilities', () => {
       }),
     ];
     const designH = new Map<string, CapabilityHandler>();
-    designCaps.forEach(c => designH.set(c.id, makeHandler(c.id)));
+    designCaps.forEach((c) => designH.set(c.id, makeHandler(c.id)));
 
     registry.registerPack('design-system', designCaps, designH, 50);
 
@@ -258,14 +272,21 @@ describe('Journey 3: Flow resolves capabilities correctly', () => {
 
     // Full stack: core + design
     const allCaps = [
-      'vault.search', 'memory.search', 'brain.recommend',
-      'component.search', 'component.workflow', 'component.validate',
-      'color.validate', 'token.check', 'design.rules', 'design.recommend',
+      'vault.search',
+      'memory.search',
+      'brain.recommend',
+      'component.search',
+      'component.workflow',
+      'component.validate',
+      'color.validate',
+      'token.check',
+      'design.rules',
+      'design.recommend',
       'architecture.search',
-    ].map(id => makeCap(id));
+    ].map((id) => makeCap(id));
 
     const allH = new Map<string, CapabilityHandler>();
-    allCaps.forEach(c => allH.set(c.id, makeHandler(c.id)));
+    allCaps.forEach((c) => allH.set(c.id, makeHandler(c.id)));
     registry.registerPack('full-stack', allCaps, allH);
   });
 
@@ -297,10 +318,17 @@ describe('Journey 3: Flow resolves capabilities correctly', () => {
     };
 
     const reg = new CapabilityRegistry();
-    reg.registerPack('design', [makeCap('color.validate')], new Map([['color.validate', contrastHandler]]));
+    reg.registerPack(
+      'design',
+      [makeCap('color.validate')],
+      new Map([['color.validate', contrastHandler]]),
+    );
 
     const resolved = reg.resolve('color.validate');
-    const result = await resolved.handler!({ foreground: '#000000', background: '#FFFFFF' }, {} as never);
+    const result = await resolved.handler!(
+      { foreground: '#000000', background: '#FFFFFF' },
+      {} as never,
+    );
 
     expect(result.success).toBe(true);
     expect(result.data.ratio).toBe(21);
@@ -318,7 +346,7 @@ describe('Journey 3: Flow resolves capabilities correctly', () => {
       makeCap('token.check'),
     ];
     const h = new Map<string, CapabilityHandler>();
-    caps.forEach(c => h.set(c.id, makeHandler(c.id)));
+    caps.forEach((c) => h.set(c.id, makeHandler(c.id)));
     reg.registerPack('design', caps, h);
 
     // All deps satisfied
@@ -338,9 +366,9 @@ describe('Journey 4: Missing capabilities degrade gracefully', () => {
   beforeAll(() => {
     registry = new CapabilityRegistry();
     // Only core — no design pack
-    const coreCaps = ['vault.search', 'brain.recommend', 'memory.search'].map(id => makeCap(id));
+    const coreCaps = ['vault.search', 'brain.recommend', 'memory.search'].map((id) => makeCap(id));
     const coreH = new Map<string, CapabilityHandler>();
-    coreCaps.forEach(c => coreH.set(c.id, makeHandler(c.id)));
+    coreCaps.forEach((c) => coreH.set(c.id, makeHandler(c.id)));
     registry.registerPack('core', coreCaps, coreH, 100);
   });
 
@@ -353,9 +381,9 @@ describe('Journey 4: Missing capabilities degrade gracefully', () => {
   it('flow with missing non-blocking capabilities can still run partially', () => {
     const validation = registry.validateFlow({
       steps: [
-        { needs: ['vault.search', 'brain.recommend'] },           // all available
-        { needs: ['color.validate', 'token.check'] },              // both missing
-        { needs: ['vault.search'] },                                // available
+        { needs: ['vault.search', 'brain.recommend'] }, // all available
+        { needs: ['color.validate', 'token.check'] }, // both missing
+        { needs: ['vault.search'] }, // available
       ],
       onMissingCapability: {
         default: 'skip-with-warning',
@@ -373,9 +401,7 @@ describe('Journey 4: Missing capabilities degrade gracefully', () => {
 
   it('flow with missing BLOCKING capability cannot run', () => {
     const validation = registry.validateFlow({
-      steps: [
-        { needs: ['vault.search', 'component.search'] },
-      ],
+      steps: [{ needs: ['vault.search', 'component.search'] }],
       onMissingCapability: {
         default: 'skip-with-warning',
         blocking: ['component.search'], // this is missing AND blocking
@@ -384,7 +410,7 @@ describe('Journey 4: Missing capabilities degrade gracefully', () => {
 
     expect(validation.valid).toBe(false);
     expect(validation.canRunPartially).toBe(false);
-    const blocked = validation.degraded.find(d => d.capability === 'component.search');
+    const blocked = validation.degraded.find((d) => d.capability === 'component.search');
     expect(blocked?.impact).toBe('blocking');
   });
 
@@ -408,7 +434,11 @@ describe('Journey 4: Missing capabilities degrade gracefully', () => {
     };
 
     const reg = new CapabilityRegistry();
-    reg.registerPack('broken', [makeCap('broken.handler')], new Map([['broken.handler', throwingHandler]]));
+    reg.registerPack(
+      'broken',
+      [makeCap('broken.handler')],
+      new Map([['broken.handler', throwingHandler]]),
+    );
 
     const resolved = reg.resolve('broken.handler');
     expect(resolved.available).toBe(true);
@@ -468,12 +498,28 @@ describe('Journey 6: Multi-provider priority resolution', () => {
     const registry = new CapabilityRegistry();
 
     // Design system pack at priority 50
-    const designHandler = makeHandler('design-system', () => ({ source: 'design-system', ratio: 4.5 }));
-    registry.registerPack('design-system', [makeCap('color.validate')], new Map([['color.validate', designHandler]]), 50);
+    const designHandler = makeHandler('design-system', () => ({
+      source: 'design-system',
+      ratio: 4.5,
+    }));
+    registry.registerPack(
+      'design-system',
+      [makeCap('color.validate')],
+      new Map([['color.validate', designHandler]]),
+      50,
+    );
 
     // Brand guardian pack at priority 75 (user-installed, should win)
-    const brandHandler = makeHandler('brand-guardian', () => ({ source: 'brand-guardian', ratio: 7.0 }));
-    registry.registerPack('brand-guardian', [makeCap('color.validate')], new Map([['color.validate', brandHandler]]), 75);
+    const brandHandler = makeHandler('brand-guardian', () => ({
+      source: 'brand-guardian',
+      ratio: 7.0,
+    }));
+    registry.registerPack(
+      'brand-guardian',
+      [makeCap('color.validate')],
+      new Map([['color.validate', brandHandler]]),
+      75,
+    );
 
     const resolved = registry.resolve('color.validate');
     expect(resolved.available).toBe(true);
@@ -489,10 +535,20 @@ describe('Journey 6: Multi-provider priority resolution', () => {
     const registry = new CapabilityRegistry();
 
     // Core at priority 100
-    registry.registerPack('core', [makeCap('vault.search')], new Map([['vault.search', makeHandler('core')]]), 100);
+    registry.registerPack(
+      'core',
+      [makeCap('vault.search')],
+      new Map([['vault.search', makeHandler('core')]]),
+      100,
+    );
 
     // Some pack tries to override vault.search at priority 50
-    registry.registerPack('override', [makeCap('vault.search')], new Map([['vault.search', makeHandler('override')]]), 50);
+    registry.registerPack(
+      'override',
+      [makeCap('vault.search')],
+      new Map([['vault.search', makeHandler('override')]]),
+      50,
+    );
 
     const resolved = registry.resolve('vault.search');
     expect(resolved.providers![0]).toBe('core'); // core wins
@@ -529,8 +585,14 @@ describe('Chain-to-capability v1 bridge', () => {
 
   it('flow validation should work with v1 chains via bridge', () => {
     const registry = new CapabilityRegistry();
-    registry.registerPack('core', [makeCap('vault.search'), makeCap('brain.recommend')],
-      new Map([['vault.search', makeHandler('vs')], ['brain.recommend', makeHandler('br')]]));
+    registry.registerPack(
+      'core',
+      [makeCap('vault.search'), makeCap('brain.recommend')],
+      new Map([
+        ['vault.search', makeHandler('vs')],
+        ['brain.recommend', makeHandler('br')],
+      ]),
+    );
 
     const validation = registry.validateFlow({
       steps: [{ chains: ['vault-search', 'brain-recommend'] }], // v1 format
@@ -547,14 +609,16 @@ describe('Pack manifest v2 schema', () => {
       id: 'design-system',
       name: 'Design System',
       version: '1.0.0',
-      capabilities: [{
-        id: 'color.validate',
-        description: 'Check contrast',
-        provides: ['ratio'],
-        requires: ['fg', 'bg'],
-        depends: ['color.parse'],
-        knowledge: ['a11y-contrast'],
-      }],
+      capabilities: [
+        {
+          id: 'color.validate',
+          description: 'Check contrast',
+          provides: ['ratio'],
+          requires: ['fg', 'bg'],
+          depends: ['color.parse'],
+          knowledge: ['a11y-contrast'],
+        },
+      ],
     });
     expect(result.success).toBe(true);
   });
@@ -575,7 +639,9 @@ describe('Pack manifest v2 schema', () => {
     const badIds = ['UPPER', 'no-period', 'a.b.c', '.leading', 'trailing.'];
     for (const id of badIds) {
       const result = packManifestSchema.safeParse({
-        id: 'test', name: 'Test', version: '1.0.0',
+        id: 'test',
+        name: 'Test',
+        version: '1.0.0',
         capabilities: [{ id, description: 'x', provides: [], requires: [] }],
       });
       expect(result.success).toBe(false);
@@ -592,7 +658,7 @@ describe('Flow YAML migration', () => {
   let flowFiles: string[] = [];
 
   beforeAll(() => {
-    flowFiles = readdirSync(flowsDir).filter(f => f.endsWith('.flow.yaml'));
+    flowFiles = readdirSync(flowsDir).filter((f) => f.endsWith('.flow.yaml'));
   });
 
   it('all 8 flow files should exist', () => {

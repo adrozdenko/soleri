@@ -23,27 +23,48 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const PACK_DEFS = {
   'salvador-craft': {
     name: 'Salvador Craft — Design & Accessibility',
-    description: 'Design system intelligence, token priority, accessibility rules, UX patterns, component patterns, and styling enforcement. Extracted from Salvador\'s production vault.',
+    description:
+      "Design system intelligence, token priority, accessibility rules, UX patterns, component patterns, and styling enforcement. Extracted from Salvador's production vault.",
     version: '1.0.0',
     domains: ['design', 'accessibility', 'ux'],
     categories: new Set([
-      'accessibility', 'components', 'design', 'design-tokens', 'styling', 'ux', 'ux-laws',
+      'accessibility',
+      'components',
+      'design',
+      'design-tokens',
+      'styling',
+      'ux',
+      'ux-laws',
     ]),
   },
   'salvador-engineering': {
     name: 'Salvador Engineering — Architecture & Tooling',
-    description: 'Architecture patterns, CLI tooling, TypeScript enforcement, testing strategies, security patterns, and methodology. Extracted from Salvador\'s production vault.',
+    description:
+      "Architecture patterns, CLI tooling, TypeScript enforcement, testing strategies, security patterns, and methodology. Extracted from Salvador's production vault.",
     version: '1.0.0',
     domains: ['architecture', 'tooling', 'testing', 'security'],
     categories: new Set([
-      'architecture', 'express', 'leadership', 'methodology', 'monorepo',
-      'other', 'performance', 'prisma', 'react', 'security', 'testing',
-      'tooling', 'typescript', 'communication', 'product-strategy',
+      'architecture',
+      'express',
+      'leadership',
+      'methodology',
+      'monorepo',
+      'other',
+      'performance',
+      'prisma',
+      'react',
+      'security',
+      'testing',
+      'tooling',
+      'typescript',
+      'communication',
+      'product-strategy',
     ]),
   },
   'salvador-uipro': {
     name: 'Salvador UI Pro — Design Reference Library',
-    description: '96 color palettes, 67 UI styles, 13 tech stacks, font pairings, chart recommendations, UX patterns, and landing page patterns. A comprehensive design reference library.',
+    description:
+      '96 color palettes, 67 UI styles, 13 tech stacks, font pairings, chart recommendations, UX patterns, and landing page patterns. A comprehensive design reference library.',
     version: '1.0.0',
     domains: ['ui-design'],
     categories: new Set([]), // matched by ID prefix instead
@@ -53,9 +74,9 @@ const PACK_DEFS = {
 
 // Noise filters: entries to exclude
 const NOISE_PATTERNS = [
-  /^pattern-.*-plan-gpt-/,                    // auto-captured plan step descriptions
-  /^pattern-.*-plan-approved-/,               // plan approval records
-  /capture-orchestrated-workflow-session$/,    // duplicate workflow sessions
+  /^pattern-.*-plan-gpt-/, // auto-captured plan step descriptions
+  /^pattern-.*-plan-approved-/, // plan approval records
+  /capture-orchestrated-workflow-session$/, // duplicate workflow sessions
 ];
 
 // ── YAML frontmatter parser (simple, no deps) ──────────────────────────
@@ -85,7 +106,11 @@ function parseFrontmatter(content) {
 
     // Parse arrays [a, b, c]
     if (val.startsWith('[') && val.endsWith(']')) {
-      val = val.slice(1, -1).split(',').map(s => s.trim()).filter(Boolean);
+      val = val
+        .slice(1, -1)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
 
     // Parse numbers
@@ -99,7 +124,7 @@ function parseFrontmatter(content) {
   if (tagBlockMatch) {
     meta.tags = tagBlockMatch[1]
       .split('\n')
-      .map(l => l.replace(/^\s+-\s+/, '').trim())
+      .map((l) => l.replace(/^\s+-\s+/, '').trim())
       .filter(Boolean);
   }
 
@@ -134,7 +159,8 @@ function toIntelligenceEntry(meta, body) {
     tags: Array.isArray(meta.tags) ? meta.tags : [],
   };
 
-  if (meta.applies_to) entry.appliesTo = Array.isArray(meta.applies_to) ? meta.applies_to : [meta.applies_to];
+  if (meta.applies_to)
+    entry.appliesTo = Array.isArray(meta.applies_to) ? meta.applies_to : [meta.applies_to];
   if (meta.tier === 'canonical') entry.tier = 'agent';
   if (meta.related_pattern) entry.context = `Related: ${meta.related_pattern}`;
 
@@ -143,14 +169,14 @@ function toIntelligenceEntry(meta, body) {
 
 function mapType(knowledgeType) {
   const map = {
-    'pattern': 'pattern',
+    pattern: 'pattern',
     'anti-pattern': 'anti-pattern',
-    'principle': 'rule',
-    'concept': 'rule',
-    'reference': 'pattern',
-    'workflow': 'playbook',
-    'idea': 'pattern',
-    'roadmap': 'pattern',
+    principle: 'rule',
+    concept: 'rule',
+    reference: 'pattern',
+    workflow: 'playbook',
+    idea: 'pattern',
+    roadmap: 'pattern',
   };
   return map[knowledgeType] || 'pattern';
 }

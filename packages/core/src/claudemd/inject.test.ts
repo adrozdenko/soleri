@@ -2,18 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import {
-  injectCLAUDEmd,
-  removeCLAUDEmd,
-  hasCLAUDEmdBlock,
-  extractUserZone,
-} from './inject.js';
-import {
-  OPEN_MARKER,
-  CLOSE_MARKER,
-  USER_ZONE_OPEN,
-  USER_ZONE_CLOSE,
-} from './compose.js';
+import { injectCLAUDEmd, removeCLAUDEmd, hasCLAUDEmdBlock, extractUserZone } from './inject.js';
+import { OPEN_MARKER, CLOSE_MARKER, USER_ZONE_OPEN, USER_ZONE_CLOSE } from './compose.js';
 
 function block(content: string): string {
   return `${OPEN_MARKER}\n${content}\n${CLOSE_MARKER}`;

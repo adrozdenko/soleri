@@ -67,7 +67,8 @@ function profileToMarkdown(profile: Record<string, unknown>): string {
     if (evidence.length > 0) {
       lines.push(`**Evidence (${evidence.length}):**`, '');
       for (const e of evidence.slice(0, 10)) {
-        const label = e.source === 'observed' ? '[observed]' : e.source === 'reported' ? '[reported]' : '';
+        const label =
+          e.source === 'observed' ? '[observed]' : e.source === 'reported' ? '[reported]' : '';
         lines.push(`- ${label} ${e.summary} (confidence: ${e.confidence}, ${e.timestamp})`);
       }
       lines.push('');
@@ -77,10 +78,17 @@ function profileToMarkdown(profile: Record<string, unknown>): string {
   return lines.join('\n');
 }
 
-function extractEvidence(obj: Record<string, unknown>): Array<{ summary: string; confidence: number; timestamp: string; source?: string }> {
+function extractEvidence(
+  obj: Record<string, unknown>,
+): Array<{ summary: string; confidence: number; timestamp: string; source?: string }> {
   const evidence = obj.evidence;
   if (!Array.isArray(evidence)) return [];
-  return evidence.filter((e) => e && typeof e === 'object' && 'summary' in e) as Array<{ summary: string; confidence: number; timestamp: string; source?: string }>;
+  return evidence.filter((e) => e && typeof e === 'object' && 'summary' in e) as Array<{
+    summary: string;
+    confidence: number;
+    timestamp: string;
+    source?: string;
+  }>;
 }
 
 // ─── Facade Creator ─────────────────────────────────────────────────

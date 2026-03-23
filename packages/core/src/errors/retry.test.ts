@@ -118,10 +118,7 @@ describe('retryWithPreset', () => {
 
   it('should call onRetry callback on each retry', async () => {
     const onRetry = vi.fn();
-    const fn = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('network fail'))
-      .mockResolvedValue('ok');
+    const fn = vi.fn().mockRejectedValueOnce(new Error('network fail')).mockResolvedValue('ok');
 
     const resultPromise = retryWithPreset(fn, 'fast', { onRetry });
     await vi.advanceTimersByTimeAsync(20_000);

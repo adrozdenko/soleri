@@ -73,9 +73,7 @@ describe('runAgentLoop', () => {
 
   describe('basic flow', () => {
     test('returns text on end_turn', async () => {
-      fetchMock.mockResolvedValueOnce(
-        anthropicResponse([{ type: 'text', text: 'Hello!' }]),
-      );
+      fetchMock.mockResolvedValueOnce(anthropicResponse([{ type: 'text', text: 'Hello!' }]));
 
       const result = await runAgentLoop(makeMessages('hi'), makeConfig());
       expect(result.text).toBe('Hello!');
@@ -87,9 +85,7 @@ describe('runAgentLoop', () => {
     });
 
     test('accumulates newMessages', async () => {
-      fetchMock.mockResolvedValueOnce(
-        anthropicResponse([{ type: 'text', text: 'reply' }]),
-      );
+      fetchMock.mockResolvedValueOnce(anthropicResponse([{ type: 'text', text: 'reply' }]));
 
       const result = await runAgentLoop(makeMessages('q'), makeConfig());
       expect(result.newMessages.length).toBeGreaterThanOrEqual(1);
@@ -111,20 +107,24 @@ describe('runAgentLoop', () => {
         ),
       );
       // Second call: LLM returns final text
-      fetchMock.mockResolvedValueOnce(
-        anthropicResponse([{ type: 'text', text: 'Found it!' }]),
-      );
+      fetchMock.mockResolvedValueOnce(anthropicResponse([{ type: 'text', text: 'Found it!' }]));
 
       const executorResults: string[] = [];
-      const executor = async (name: string, _input: Record<string, unknown>): Promise<ToolResult> => {
+      const executor = async (
+        name: string,
+        _input: Record<string, unknown>,
+      ): Promise<ToolResult> => {
         executorResults.push(name);
         return { output: `result for ${name}`, isError: false };
       };
 
-      const result = await runAgentLoop(makeMessages('search'), makeConfig({
-        tools: [{ name: 'search', description: 'Search', inputSchema: { type: 'object' } }],
-        executor,
-      }));
+      const result = await runAgentLoop(
+        makeMessages('search'),
+        makeConfig({
+          tools: [{ name: 'search', description: 'Search', inputSchema: { type: 'object' } }],
+          executor,
+        }),
+      );
 
       expect(result.iterations).toBe(2);
       expect(result.toolCalls).toBe(1);
@@ -139,16 +139,16 @@ describe('runAgentLoop', () => {
           'tool_use',
         ),
       );
-      fetchMock.mockResolvedValueOnce(
-        anthropicResponse([{ type: 'text', text: 'Done' }]),
-      );
+      fetchMock.mockResolvedValueOnce(anthropicResponse([{ type: 'text', text: 'Done' }]));
 
       const errors: string[] = [];
       const result = await runAgentLoop(
         makeMessages('go'),
         makeConfig({
           tools: [{ name: 'broken', description: 'Broken', inputSchema: { type: 'object' } }],
-          executor: async () => { throw new Error('tool failed'); },
+          executor: async () => {
+            throw new Error('tool failed');
+          },
         }),
         {
           onError: (err, ctx) => errors.push(`${ctx}: ${err.message}`),
@@ -254,9 +254,7 @@ describe('runAgentLoop', () => {
 
   describe('callbacks', () => {
     test('fires onIteration for each loop', async () => {
-      fetchMock.mockResolvedValueOnce(
-        anthropicResponse([{ type: 'text', text: 'ok' }]),
-      );
+      fetchMock.mockResolvedValueOnce(anthropicResponse([{ type: 'text', text: 'ok' }]));
 
       const iterations: number[] = [];
       await runAgentLoop(makeMessages('hi'), makeConfig(), {
@@ -273,9 +271,7 @@ describe('runAgentLoop', () => {
           'tool_use',
         ),
       );
-      fetchMock.mockResolvedValueOnce(
-        anthropicResponse([{ type: 'text', text: 'done' }]),
-      );
+      fetchMock.mockResolvedValueOnce(anthropicResponse([{ type: 'text', text: 'done' }]));
 
       const toolUses: string[] = [];
       const toolResults: string[] = [];
@@ -304,9 +300,9 @@ describe('runAgentLoop', () => {
     test('throws on non-retryable API error', async () => {
       fetchMock.mockResolvedValueOnce(anthropicError(400, 'bad request'));
 
-      await expect(
-        runAgentLoop(makeMessages('hi'), makeConfig()),
-      ).rejects.toThrow('Anthropic API error 400');
+      await expect(runAgentLoop(makeMessages('hi'), makeConfig())).rejects.toThrow(
+        'Anthropic API error 400',
+      );
     });
 
     test('fires onError callback before throwing', async () => {
@@ -326,9 +322,7 @@ describe('runAgentLoop', () => {
 
   describe('message sanitization', () => {
     test('strips leading assistant messages', async () => {
-      fetchMock.mockResolvedValueOnce(
-        anthropicResponse([{ type: 'text', text: 'ok' }]),
-      );
+      fetchMock.mockResolvedValueOnce(anthropicResponse([{ type: 'text', text: 'ok' }]));
 
       const messages: ChatMessage[] = [
         { role: 'assistant', content: 'orphan', timestamp: Date.now() },
@@ -344,9 +338,7 @@ describe('runAgentLoop', () => {
     });
 
     test('skips standalone tool messages', async () => {
-      fetchMock.mockResolvedValueOnce(
-        anthropicResponse([{ type: 'text', text: 'ok' }]),
-      );
+      fetchMock.mockResolvedValueOnce(anthropicResponse([{ type: 'text', text: 'ok' }]));
 
       const messages: ChatMessage[] = [
         { role: 'user', content: 'hello', timestamp: Date.now() },
@@ -365,18 +357,16 @@ describe('runAgentLoop', () => {
   describe('usage accumulation', () => {
     test('sums usage across iterations', async () => {
       fetchMock.mockResolvedValueOnce(
-        anthropicResponse(
-          [{ type: 'tool_use', id: 'tu_1', name: 'x', input: {} }],
-          'tool_use',
-          { input_tokens: 100, output_tokens: 50 },
-        ),
+        anthropicResponse([{ type: 'tool_use', id: 'tu_1', name: 'x', input: {} }], 'tool_use', {
+          input_tokens: 100,
+          output_tokens: 50,
+        }),
       );
       fetchMock.mockResolvedValueOnce(
-        anthropicResponse(
-          [{ type: 'text', text: 'done' }],
-          'end_turn',
-          { input_tokens: 150, output_tokens: 30 },
-        ),
+        anthropicResponse([{ type: 'text', text: 'done' }], 'end_turn', {
+          input_tokens: 150,
+          output_tokens: 30,
+        }),
       );
 
       const result = await runAgentLoop(

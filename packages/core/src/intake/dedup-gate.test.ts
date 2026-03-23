@@ -10,7 +10,7 @@ import type { ClassifiedItem } from './types.js';
 function mockVault(entries: Array<{ id: string; title: string; description: string }> = []): Vault {
   return {
     exportAll: () => ({
-      entries: entries.map(e => ({
+      entries: entries.map((e) => ({
         id: e.id,
         title: e.title,
         description: e.description,
@@ -49,17 +49,19 @@ describe('dedupItems — colocated', () => {
     const results = dedupItems(items, vault);
 
     expect(results).toHaveLength(2);
-    expect(results.every(r => !r.isDuplicate)).toBe(true);
-    expect(results.every(r => r.similarity === 0)).toBe(true);
-    expect(results.every(r => r.bestMatchId === undefined)).toBe(true);
+    expect(results.every((r) => !r.isDuplicate)).toBe(true);
+    expect(results.every((r) => r.similarity === 0)).toBe(true);
+    expect(results.every((r) => r.bestMatchId === undefined)).toBe(true);
   });
 
   it('detects exact duplicate text as duplicate', () => {
-    const vault = mockVault([{
-      id: 'existing-1',
-      title: 'Singleton Pattern',
-      description: 'The singleton pattern ensures a class has only one instance.',
-    }]);
+    const vault = mockVault([
+      {
+        id: 'existing-1',
+        title: 'Singleton Pattern',
+        description: 'The singleton pattern ensures a class has only one instance.',
+      },
+    ]);
 
     const items = [
       makeItem('Singleton Pattern', 'The singleton pattern ensures a class has only one instance.'),
@@ -74,14 +76,19 @@ describe('dedupItems — colocated', () => {
   });
 
   it('does not flag dissimilar items as duplicates', () => {
-    const vault = mockVault([{
-      id: 'existing-2',
-      title: 'Observer Pattern',
-      description: 'Observer defines one-to-many dependency for event-driven communication.',
-    }]);
+    const vault = mockVault([
+      {
+        id: 'existing-2',
+        title: 'Observer Pattern',
+        description: 'Observer defines one-to-many dependency for event-driven communication.',
+      },
+    ]);
 
     const items = [
-      makeItem('Circuit Breaker', 'A resilience pattern that prevents cascading failures in distributed systems.'),
+      makeItem(
+        'Circuit Breaker',
+        'A resilience pattern that prevents cascading failures in distributed systems.',
+      ),
     ];
 
     const results = dedupItems(items, vault);
@@ -103,17 +110,26 @@ describe('dedupItems — colocated', () => {
   });
 
   it('handles multiple items — some duplicate, some not', () => {
-    const vault = mockVault([{
-      id: 'v1',
-      title: 'Factory Method Pattern',
-      description: 'Factory method pattern provides interface for creating objects in a superclass.',
-    }]);
+    const vault = mockVault([
+      {
+        id: 'v1',
+        title: 'Factory Method Pattern',
+        description:
+          'Factory method pattern provides interface for creating objects in a superclass.',
+      },
+    ]);
 
     const items = [
       // Near-duplicate
-      makeItem('Factory Method Pattern', 'Factory method pattern provides interface for creating objects in a superclass.'),
+      makeItem(
+        'Factory Method Pattern',
+        'Factory method pattern provides interface for creating objects in a superclass.',
+      ),
       // Different
-      makeItem('Adapter Pattern', 'Adapter pattern allows incompatible interfaces to work together via a wrapper.'),
+      makeItem(
+        'Adapter Pattern',
+        'Adapter pattern allows incompatible interfaces to work together via a wrapper.',
+      ),
     ];
 
     const results = dedupItems(items, vault);

@@ -10,14 +10,16 @@ it('debug facade names', () => {
   const packs = [designPack, componentPack, designQaPack, codeReviewPack];
   console.log('\n=== PACK INFO ===');
   for (const p of packs) {
-    console.log(`  ${p.name}: domains=${JSON.stringify(p.domains)}, ops=${p.ops.length}, facades=${p.facades?.length ?? 0}`);
+    console.log(
+      `  ${p.name}: domains=${JSON.stringify(p.domains)}, ops=${p.ops.length}, facades=${p.facades?.length ?? 0}`,
+    );
   }
   const semantic = createSemanticFacades(runtime, 'test');
   const domain = createDomainFacades(runtime, 'test', ['design'], packs);
   const all = [...semantic, ...domain];
   console.log('\n=== ALL FACADES ===');
   for (const f of all) {
-    console.log(`  ${f.name} (${f.ops.length} ops): ${f.ops.map(o => o.name).join(', ')}`);
+    console.log(`  ${f.name} (${f.ops.length} ops): ${f.ops.map((o) => o.name).join(', ')}`);
   }
   console.log(`\nTotal: ${all.length} facades, ${all.reduce((s, f) => s + f.ops.length, 0)} ops`);
   runtime.close();

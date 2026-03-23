@@ -70,11 +70,17 @@ function createMockRuntime(): AgentRuntime {
   return {
     planner: {
       iterate: vi.fn(() => plan),
-      splitTasks: vi.fn(() => ({ ...plan, tasks: [plan.tasks[0], { id: 'task-2', title: 'Task 2' }] })),
+      splitTasks: vi.fn(() => ({
+        ...plan,
+        tasks: [plan.tasks[0], { id: 'task-2', title: 'Task 2' }],
+      })),
       reconcile: vi.fn(() => ({
         ...plan,
         status: 'reconciling',
-        reconciliation: { accuracy: 85, driftItems: [{ type: 'added', description: 'Extra test' }] },
+        reconciliation: {
+          accuracy: 85,
+          driftItems: [{ type: 'added', description: 'Extra test' }],
+        },
       })),
       get: vi.fn(() => plan),
       getDispatch: vi.fn(() => ({ task: plan.tasks[0], ready: true, unmetDeps: [] })),
@@ -147,14 +153,20 @@ describe('createPlanningExtraOps', () => {
         objective: 'New objective',
       })) as Record<string, unknown>;
       expect(result.iterated).toBe(true);
-      expect(runtime.planner.iterate).toHaveBeenCalledWith('plan-1', expect.objectContaining({ objective: 'New objective' }));
+      expect(runtime.planner.iterate).toHaveBeenCalledWith(
+        'plan-1',
+        expect.objectContaining({ objective: 'New objective' }),
+      );
     });
 
     it('returns error on failure', async () => {
       vi.mocked(runtime.planner.iterate).mockImplementation(() => {
         throw new Error('Not a draft');
       });
-      const result = (await findOp(ops, 'plan_iterate').handler({ planId: 'x' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'plan_iterate').handler({ planId: 'x' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.error).toBe('Not a draft');
     });
   });
@@ -569,9 +581,7 @@ describe('createPlanningExtraOps', () => {
     });
 
     it('purges specific plans by ID', async () => {
-      vi.mocked(runtime.planner.list).mockReturnValue([
-        makePlan({ id: 'plan-1' }),
-      ] as unknown);
+      vi.mocked(runtime.planner.list).mockReturnValue([makePlan({ id: 'plan-1' })] as unknown);
       const result = (await findOp(ops, 'plan_purge').handler({
         mode: 'specific',
         planIds: ['plan-1'],

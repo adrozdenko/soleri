@@ -9,13 +9,7 @@
       "title": "Color Token Priority",
       "severity": "critical",
       "description": "## Rule\n\nAll color usage MUST reference design tokens, never raw color values. The priority order is:\n\n1. **Semantic tokens (highest priority)** -- Tokens that convey meaning and intent.\n   - Examples: `text-primary`, `text-secondary`, `text-warning`, `text-error`, `bg-surface`, `bg-error`, `border-focus`, `icon-success`.\n   - Use these whenever the color communicates a specific purpose.\n\n2. **Contextual tokens** -- Tokens scoped to a component context.\n   - Examples: `button-bg-primary`, `input-border-default`, `card-bg`.\n   - Use when semantic tokens are too generic for a component's specific need.\n\n3. **Primitive tokens (lowest priority)** -- Named palette references.\n   - Examples: `blue-600`, `gray-100`.\n   - Use only when no semantic or contextual token fits, and document the reason.\n\n### Forbidden\n\nThe following are **never** permitted in source code:\n\n- Raw hex values: `#3B82F6`, `#fff`, `#000`\n- RGB/RGBA functions: `rgb(59, 130, 246)`, `rgba(0,0,0,0.5)`\n- HSL/HSLA functions: `hsl(217, 91%, 60%)`\n- Tailwind palette classes used as color decisions: `bg-blue-500`, `text-gray-700`\n- CSS named colors: `red`, `white`, `black`\n\n## Why\n\n1. **Theming** -- Semantic tokens decouple color intent from color value, enabling dark mode, high-contrast mode, and brand theming with zero code changes.\n2. **Consistency** -- When \"error\" always maps to the same token, the error color is guaranteed to be uniform across every component.\n3. **Accessibility** -- Token-level contrast validation ensures all usages meet WCAG requirements when the palette changes.\n4. **Maintainability** -- Changing a brand color updates one token definition rather than hundreds of scattered hex values.\n\n## Assertions\n\n- No source file may contain a literal hex color (`/#[0-9a-fA-F]{3,8}/`).\n- No source file may contain `rgb(`, `rgba(`, `hsl(`, or `hsla(` as a color value.\n- No Tailwind class matching `/bg-(red|blue|green|yellow|purple|pink|indigo|gray|slate|zinc|neutral|stone|orange|amber|emerald|teal|cyan|sky|violet|fuchsia|rose|lime)-\\d+/` may appear in component code.\n- Every color property in CSS/JSX must resolve to a design token reference.\n- Primitive token usage must include a code comment explaining why no semantic token fits.",
-      "tags": [
-        "color",
-        "tokens",
-        "semantic",
-        "design-tokens",
-        "theming"
-      ],
+      "tags": ["color", "tokens", "semantic", "design-tokens", "theming"],
       "tier": "agent"
     },
     {
@@ -25,12 +19,7 @@
       "title": "Spacing Scale",
       "severity": "critical",
       "description": "## Rule\n\nAll spacing values (margin, padding, gap) MUST use only the following scale:\n\n| Token   | Value |\n|---------|-------|\n| space-1 | 4px   |\n| space-2 | 8px   |\n| space-3 | 12px  |\n| space-4 | 16px  |\n| space-6 | 24px  |\n| space-8 | 32px  |\n\nNo other spacing values are permitted. Allowed values: **4, 8, 12, 16, 24, 32** (in pixels).\n\n- Use `space-1` (4px) for tight inline spacing (icon-to-label gaps, error message offset).\n- Use `space-2` (8px) for related element grouping (form fields within a group).\n- Use `space-3` (12px) for medium internal padding (card content insets).\n- Use `space-4` (16px) as the base unit for standard padding and gaps.\n- Use `space-6` (24px) for section separation within a view.\n- Use `space-8` (32px) for major section breaks and page-level margins.\n\n## Why\n\nA constrained spacing scale based on a 4px grid creates consistent visual rhythm across all screens and components. When every element snaps to the same spatial grid:\n\n1. **Visual consistency** -- Users perceive the interface as polished and intentional. Arbitrary values (e.g., 5px, 13px, 22px) create subtle misalignments that accumulate into visual noise.\n2. **Faster design decisions** -- Designers and developers choose from 6 values instead of infinite possibilities, reducing bikeshedding.\n3. **Predictable responsiveness** -- A base-4 scale divides evenly across common breakpoints and container sizes.\n4. **Maintainability** -- Changing the scale in one place propagates cleanly; random values require auditing every usage.\n\n## Assertions\n\n- No CSS property `margin`, `padding`, `gap`, `top`, `right`, `bottom`, `left`, `inset`, or `row-gap`/`column-gap` may contain a value outside the set `[4, 8, 12, 16, 24, 32]` (px) or their rem equivalents `[0.25, 0.5, 0.75, 1, 1.5, 2]`.\n- Zero (`0`) is always permitted (no spacing).\n- Negative margins are allowed only if the absolute value is in the allowed set.\n- Token names matching `/space-/` must resolve to one of the allowed values.",
-      "tags": [
-        "spacing",
-        "layout",
-        "rhythm",
-        "design-tokens"
-      ],
+      "tags": ["spacing", "layout", "rhythm", "design-tokens"],
       "tier": "agent"
     }
   ]

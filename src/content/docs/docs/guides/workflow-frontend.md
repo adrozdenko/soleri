@@ -12,6 +12,7 @@ Before building a component or touching UI logic, search for existing patterns:
 > **You:** "What do we know about modal components?"
 >
 > **Agent:** _Found 3 entries:_
+>
 > 1. Always trap focus inside modals (critical, accessibility)
 > 2. Close on Escape key and backdrop click (pattern)
 > 3. Restore focus to trigger element on close (pattern)
@@ -19,6 +20,7 @@ Before building a component or touching UI logic, search for existing patterns:
 > **You:** "Any anti-patterns for forms?"
 >
 > **Agent:** _Found 2 entries:_
+>
 > 1. Never disable the submit button without explanation (anti-pattern)
 > 2. Don't clear form on validation error — users lose their input (anti-pattern, critical)
 
@@ -31,6 +33,7 @@ For anything beyond a quick fix, plan it:
 > **You:** "Plan: build a notification banner with success, error, and warning variants, dismiss button, and auto-dismiss after 5 seconds"
 >
 > **Agent:** _Plan created:_
+>
 > 1. Define component API — props, variants, events
 > 2. Build base layout with semantic HTML
 > 3. Add variant styles for each state
@@ -83,14 +86,14 @@ The banner knowledge is now in the vault. Next time anyone on the team builds a 
 
 Start your vault with these high-value capture areas:
 
-| Area | What to capture |
-|------|----------------|
-| **Component API conventions** | Prop naming, variant patterns, composition approach |
-| **Accessibility** | Focus management, ARIA usage, keyboard navigation |
-| **State management** | When to use local vs global state, caching strategies |
-| **Responsive** | Breakpoint conventions, mobile-first rules, layout patterns |
-| **Animation** | Timing conventions, reduced-motion handling, performance limits |
-| **Error states** | Loading, empty, error UI patterns for each component type |
+| Area                          | What to capture                                                 |
+| ----------------------------- | --------------------------------------------------------------- |
+| **Component API conventions** | Prop naming, variant patterns, composition approach             |
+| **Accessibility**             | Focus management, ARIA usage, keyboard navigation               |
+| **State management**          | When to use local vs global state, caching strategies           |
+| **Responsive**                | Breakpoint conventions, mobile-first rules, layout patterns     |
+| **Animation**                 | Timing conventions, reduced-motion handling, performance limits |
+| **Error states**              | Loading, empty, error UI patterns for each component type       |
 
 ---
 

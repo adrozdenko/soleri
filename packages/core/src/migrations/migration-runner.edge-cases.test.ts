@@ -8,9 +8,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import Database from 'better-sqlite3';
 import { MigrationRunner } from './migration-runner.js';
-import {
-  createMigration,
-} from './migration-runner.test-helpers.js';
+import { createMigration } from './migration-runner.test-helpers.js';
 
 describe('MigrationRunner — edge cases', () => {
   let db: Database.Database;
@@ -302,10 +300,7 @@ describe('MigrationRunner — edge cases', () => {
     test('getPending consistent across runners sharing same db', () => {
       // Arrange
       const runner2 = new MigrationRunner(db);
-      const all = [
-        createMigration({ version: '1.0.0' }),
-        createMigration({ version: '2.0.0' }),
-      ];
+      const all = [createMigration({ version: '1.0.0' }), createMigration({ version: '2.0.0' })];
       runner.run([all[0]]);
 
       // Act

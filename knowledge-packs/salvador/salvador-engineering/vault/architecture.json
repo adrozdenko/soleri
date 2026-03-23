@@ -9,19 +9,8 @@
       "title": "Anteater + Salvador Integration Protocol",
       "severity": "critical",
       "description": "# Anteater + Salvador Integration Protocol\n\n## Context\n\nWhen Salvador is activated and user mentions design system generation, component creation, or Anteater\n\n## Pattern\n\nSalvador and Anteater form a three-pillar ecosystem: Anteater (Generator) creates design system projects with Claude infrastructure, Salvador Vault (Intelligence) stores canonical rules and workflows, Salvador-MCP (Runtime) provides 65+ validation tools. The pipeline flows: Vault → Anteater → MCP with feedback loop.\n\n## Example\n\n```typescript\n# Generate new project\nnpx @adrozdenko/anteater my-design-system --primary \"#1E3A5F\"\n\n# Add components with auto token transformation\nnpx @adrozdenko/anteater add button card dialog\n\n# With vault connection for latest rules\nnpx @adrozdenko/anteater my-project --vault ~/Desktop/salvador\n```\n\n## Why\n\nSalvador must know about Anteater to guide users through the complete design system workflow. Without this knowledge, Salvador cannot properly orchestrate the SIE (Simulated Interactive Environment) loop for component generation and validation.",
-      "tags": [
-        "anteater",
-        "salvador",
-        "ecosystem",
-        "protocol",
-        "design-system",
-        "cli"
-      ],
-      "appliesTo": [
-        "CLAUDE.md",
-        ".claude/agents/*",
-        "chains/flows/*"
-      ]
+      "tags": ["anteater", "salvador", "ecosystem", "protocol", "design-system", "cli"],
+      "appliesTo": ["CLAUDE.md", ".claude/agents/*", "chains/flows/*"]
     },
     {
       "id": "pattern-architecture-detailed-status-returns",
@@ -30,15 +19,8 @@
       "title": "Return detailed status objects instead of empty arrays on failure",
       "severity": "warning",
       "description": "# Return detailed status objects instead of empty arrays on failure\n\n## Context\n\nFunctions that scan directories or read config files should return status objects with distinct states\n\n## Pattern\n\nInstead of returning empty array on any failure, return { data: [], status: 'not_found' | 'empty' | 'error', message: string }. This allows callers to distinguish between 'directory missing', 'directory empty', and 'error reading directory'.\n\n## Example\n\n```typescript\nfunction getHooksFromDir(dir) {\n  if (!fs.existsSync(dir)) {\n    return { hooks: [], status: 'not_found', message: `Directory does not exist: ${dir}` };\n  }\n  // ... handle empty and error states too\n}\n```\n\n## Why\n\nSilent empty returns force users to guess why nothing was found. Detailed status enables clear error messages and recovery guidance.",
-      "tags": [
-        "cli",
-        "ux",
-        "error-handling",
-        "diagnostics"
-      ],
-      "appliesTo": [
-        "scripts/setup-project.js"
-      ]
+      "tags": ["cli", "ux", "error-handling", "diagnostics"],
+      "appliesTo": ["scripts/setup-project.js"]
     },
     {
       "id": "pattern-architecture-quick-chain-mappings-are-context-sensitive-same-mode-rou",
@@ -47,12 +29,7 @@
       "title": "Chain-mappings are context-sensitive — same mode routes to different chains",
       "severity": "warning",
       "description": "# Chain-mappings are context-sensitive — same mode routes to different chains\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nIn routing-config.yaml, chain-mappings are keyed by mode AND context. BUILD-MODE + component context → atomic chains (design-component, implement-component), while BUILD-MODE + feature context → DEVELOPER-flow. This means testing the full pipeline requires carefully choosing scenario text to target specific context keywords. Most flows are only reachable via 'feature' or 'default' contexts.\n\n## Example\n\n```typescript\nBUILD-MODE chain-mappings: component → [design-component, implement-component], feature → [DEVELOPER-flow], default → [DEVELOPER-flow]\n```\n\n## Why\n\nWithout understanding context sensitivity, test scenarios may route to atomic chains instead of flows, making flow expansion tests fail unexpectedly.",
-      "tags": [
-        "routing",
-        "chain-mappings",
-        "context-sensitive",
-        "testing"
-      ]
+      "tags": ["routing", "chain-mappings", "context-sensitive", "testing"]
     },
     {
       "id": "anti-pattern-architecture-quick-architect-flow-is-unreachable-via-text-based-routi",
@@ -61,12 +38,7 @@
       "title": "ARCHITECT-flow is unreachable via text-based routing",
       "severity": "warning",
       "description": "# ARCHITECT-flow is unreachable via text-based routing\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Anti-Pattern\n\nIn routing-config.yaml, VALIDATE-MODE maps 'audit' context to ARCHITECT-flow. However, 'audit' is NOT defined in context-keywords, so detectContext() can never return 'audit'. The only defined context keywords are: component, feature, story, test, style, api. This means ARCHITECT-flow is always bypassed in favor of REVIEWER-flow (the default for VALIDATE-MODE). To reach ARCHITECT-flow, an 'audit' context keyword would need to be added to routing-config.yaml.\n\n## Example (Bad)\n\n```typescript\nchain-mappings.VALIDATE-MODE.audit exists but context-keywords has no 'audit' entry\n```\n\n## Why It's Wrong\n\nDead configuration path. Architecture audits always fall through to REVIEWER-flow instead of ARCHITECT-flow.",
-      "tags": [
-        "routing",
-        "architect-flow",
-        "unreachable",
-        "context-keywords"
-      ]
+      "tags": ["routing", "architect-flow", "unreachable", "context-keywords"]
     },
     {
       "id": "pattern-architecture-capture-domainpack-architecture-decision-one-pack-multiple",
@@ -75,12 +47,7 @@
       "title": "DomainPack Architecture Decision: One Pack, Multiple Facades",
       "severity": "critical",
       "description": "# DomainPack Architecture Decision: One Pack, Multiple Facades\n\n## Context\n\nCaptured during development session on 2026-03-15\n\n## Pattern\n\nA single domain pack (npm package) can register multiple facades. The pack is the distribution unit (npm install), facades are the runtime unit (MCP tools). Example: @soleri/domain-design registers 3 facades (design, design-rules, design-patterns) from one package. This mirrors how npm scoped packages export multiple modules.\n\n## Example\n\n```typescript\nN/A\n```\n\n## Why\n\nSeparating distribution boundary (pack) from interface boundary (facade) enables both small single-facade packs and large multi-facade packs without interface changes. Avoids forcing artificial 1:1 pack-to-facade mapping.",
-      "tags": [
-        "soleri",
-        "domain-pack",
-        "facade",
-        "architecture-decision"
-      ]
+      "tags": ["soleri", "domain-pack", "facade", "architecture-decision"]
     },
     {
       "id": "pattern-architecture-capture-domainpack-primitive-implementation-complete-phase",
@@ -89,13 +56,7 @@
       "title": "DomainPack Primitive — Implementation Complete (Phase 1)",
       "severity": "critical",
       "description": "# DomainPack Primitive — Implementation Complete (Phase 1)\n\n## Context\n\nCaptured during development session on 2026-03-15\n\n## Pattern\n\nImplemented the DomainPack primitive in @soleri/core, @soleri/forge, and @soleri/cli. Key files: domain-packs/types.ts (DomainPack interface, KnowledgeManifest with 3 tiers, validation), domain-packs/loader.ts (dynamic import, topological dependency sort), runtime/domain-ops.ts (extended createDomainFacades with optional packs parameter, pack ops PRIMARY + standard 5 FALLBACK merge strategy). OCP guaranteed: no packs = identical behavior. One pack can register multiple facades via pack.facades[]. AgentConfig extended with domainPacks?: DomainPackRef[]. CLI command: soleri add-pack.\n\n## Example\n\n```typescript\nN/A\n```\n\n## Why\n\nFoundation for Phase 2: extracting Salvador domain intelligence (design, figma, github, playwright) into portable npm packages that any Soleri agent can install.",
-      "tags": [
-        "soleri",
-        "domain-pack",
-        "phase-1",
-        "architecture",
-        "implementation"
-      ]
+      "tags": ["soleri", "domain-pack", "phase-1", "architecture", "implementation"]
     },
     {
       "id": "principle-architecture-capture-architecture-decision-multi-process-agents-with-sh",
@@ -104,13 +65,7 @@
       "title": "Architecture Decision: Multi-Process Agents with Shared Vault Layer",
       "severity": "critical",
       "description": "# Architecture Decision: Multi-Process Agents with Shared Vault Layer\n\n## Context\n\nResolved from Open Source Gap: Single MCP Server vs Multiple. Three options evaluated: (A) multi-process standalone, (B) single engine with dynamic loading, (C) hybrid. Option A chosen. Rationale: MCP protocol favors multi-server (tool namespacing, UI grouping), standalone agents are portable (no engine dependency), Node.js+SQLite is cheap (~50MB per process), single-engine adds months of complexity (persona routing, context isolation, crash blast radius) for a problem nobody has yet.\n\n## Principle\n\nSoleri agents remain standalone MCP processes (1 agent = 1 process). Cross-agent intelligence is solved at the vault layer (~/.soleri/vault/ with domain namespacing), not the process layer. Config friction is solved via CLI commands (soleri install/uninstall). Single-engine dynamic persona loading is deferred until real user scaling pain is reported.\n\n## Example\n\nImplementation: (1) @soleri/core shared vault at ~/.soleri/vault/ with domain namespacing — all agents read/write, cross-pollinate via global pool. (2) CLI: soleri install <agent> / soleri uninstall <agent> manages claude_desktop_config.json entries. (3) forge auto-installs on scaffold.\n\n## Why\n\nAvoids premature architecture complexity. The two real sub-problems (cross-agent learning, config management) have simpler solutions: shared vault layer and CLI install commands. Single-engine only becomes necessary if MCP protocol adds multiplexing or real users report real scaling pain.",
-      "tags": [
-        "architecture-decision",
-        "mcp",
-        "multi-process",
-        "shared-vault",
-        "scalability"
-      ]
+      "tags": ["architecture-decision", "mcp", "multi-process", "shared-vault", "scalability"]
     },
     {
       "id": "principle-architecture-capture-editor-hooks-as-installable-plugins-not-creation-t",
@@ -119,14 +74,7 @@
       "title": "Editor hooks as installable plugins, not creation-time choice",
       "severity": "suggestion",
       "description": "# Editor hooks as installable plugins, not creation-time choice\n\n## Context\n\nCaptured during development session on 2026-03-03\n\n## Principle\n\nEditor-specific hooks (Claude Code, Cursor, VS Code) should be managed as installable plugins via `soleri hooks add <editor>` and `soleri hooks remove <editor>`, not baked in during `soleri create`. This keeps the forge modular — users can add/switch/stack editors anytime without recreating the agent. The create wizard may optionally suggest hooks, but they're always manageable independently after creation.\n\n## Example\n\n# Add editor hooks to existing agent\n\nsoleri hooks add claude-code # installs .claude/settings.json with vault-capture, session capture, routing\nsoleri hooks add cursor # future\nsoleri hooks remove claude-code # clean removal\nsoleri hooks list # show installed hook sets\n\n## Why\n\nSoleri's engine is modular and editor-agnostic. Locking editor choice at agent creation time contradicts that philosophy. Users may switch editors, use multiple editors, or add editor support later. A plugin model (`soleri hooks add claude-code`) matches the existing pattern of composable knowledge packs and domain modules.",
-      "tags": [
-        "forge",
-        "hooks",
-        "plugins",
-        "modularity",
-        "editor-agnostic",
-        "CLI"
-      ],
+      "tags": ["forge", "hooks", "plugins", "modularity", "editor-agnostic", "CLI"],
       "context": "Related: idea-architecture-capture-forge-should-scaffold-editor-specific-hooks-alongs"
     },
     {
@@ -173,14 +121,7 @@
       "title": "Soleri v7: File-Tree Architecture Shift — Two-Layer Split",
       "severity": "critical",
       "description": "# Soleri v7: File-Tree Architecture Shift — Two-Layer Split\n\n## Context\n\nCaptured during development session on 2026-03-16\n\n## Workflow\n\nMajor architectural decision to split Soleri from a monolithic coded framework into two layers: (1) File-Tree Layer — agent definitions as plain folder structures (agent.yaml, instructions/*.md, workflows/*, knowledge/*.json) that Claude Code reads natively, no TypeScript generation; (2) Knowledge Engine Layer — vault, brain, curator, learning, memory as a standalone MCP server with direct tool registration (no facade factory dispatch). Forge becomes a mkdir + template copier. CLAUDE.md is auto-generated from agent.yaml + instructions/, never manually edited. Motivated by the file-tree abstraction philosophy: every AI agent maps to folders with instructions + tools + data, and coded routing frameworks are wasted effort when the model + MCP handle routing natively.\n\n## Steps\n\nN/A\n\n## Why\n\nCurrent Soleri generates TypeScript projects with a facade dispatch layer on top of MCP — this is a routing layer on top of a routing layer. The knowledge engine (vault, brain, learning) is the real product; the scaffolding around it should be as thin as possible. File trees are the correct abstraction for agent definitions because Claude Code already reads files and follows markdown instructions natively.",
-      "tags": [
-        "soleri",
-        "architecture",
-        "file-tree",
-        "knowledge-engine",
-        "v7",
-        "breaking-change"
-      ]
+      "tags": ["soleri", "architecture", "file-tree", "knowledge-engine", "v7", "breaking-change"]
     },
     {
       "id": "idea-architecture-capture-forge-should-scaffold-editor-specific-hooks-alongs",

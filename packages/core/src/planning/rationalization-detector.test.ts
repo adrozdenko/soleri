@@ -31,10 +31,7 @@ describe('detectRationalizations', () => {
   });
 
   it('detects "follow-up PR" pattern', () => {
-    const report = detectRationalizations(
-      CRITERIA,
-      'Test coverage bump deferred to follow-up PR.',
-    );
+    const report = detectRationalizations(CRITERIA, 'Test coverage bump deferred to follow-up PR.');
     expect(report.detected).toBe(true);
     expect(report.items[0].pattern).toBe('follow-up-ticket');
   });
@@ -98,19 +95,13 @@ describe('detectRationalizations', () => {
   // ─── Case-insensitive matching ──────────────────────────────
 
   it('matches case-insensitively (uppercase)', () => {
-    const report = detectRationalizations(
-      CRITERIA,
-      'This is OUT OF SCOPE for the current work.',
-    );
+    const report = detectRationalizations(CRITERIA, 'This is OUT OF SCOPE for the current work.');
     expect(report.detected).toBe(true);
     expect(report.items[0].pattern).toBe('out-of-scope');
   });
 
   it('matches case-insensitively (mixed case)', () => {
-    const report = detectRationalizations(
-      CRITERIA,
-      'That is a Pre-Existing Issue we inherited.',
-    );
+    const report = detectRationalizations(CRITERIA, 'That is a Pre-Existing Issue we inherited.');
     expect(report.detected).toBe(true);
     expect(report.items[0].pattern).toBe('pre-existing-issue');
   });
@@ -118,10 +109,7 @@ describe('detectRationalizations', () => {
   // ─── Empty/skip cases ──────────────────────────────────────
 
   it('skips detection when acceptance criteria are empty', () => {
-    const report = detectRationalizations(
-      [],
-      'This is out of scope and a pre-existing issue.',
-    );
+    const report = detectRationalizations([], 'This is out of scope and a pre-existing issue.');
     expect(report.detected).toBe(false);
     expect(report.items).toHaveLength(0);
   });
@@ -158,10 +146,7 @@ describe('detectRationalizations', () => {
   // ─── Suggestion is always present ──────────────────────────
 
   it('provides actionable suggestions for each item', () => {
-    const report = detectRationalizations(
-      CRITERIA,
-      'This is out of scope and over-engineering.',
-    );
+    const report = detectRationalizations(CRITERIA, 'This is out of scope and over-engineering.');
     expect(report.detected).toBe(true);
     for (const item of report.items) {
       expect(item.suggestion).toBeTruthy();

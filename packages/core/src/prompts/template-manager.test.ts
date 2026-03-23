@@ -8,7 +8,10 @@ describe('TemplateManager', () => {
   let tempDir: string;
 
   beforeEach(() => {
-    tempDir = join(tmpdir(), `tmpl-mgr-colocated-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    tempDir = join(
+      tmpdir(),
+      `tmpl-mgr-colocated-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
     mkdirSync(tempDir, { recursive: true });
   });
 

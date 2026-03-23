@@ -72,7 +72,10 @@ beforeAll(async () => {
 
   // Wait for "Engine ready" message
   await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error(`Engine failed to start. stderr:\n${stderr}`)), 15_000);
+    const timeout = setTimeout(
+      () => reject(new Error(`Engine failed to start. stderr:\n${stderr}`)),
+      15_000,
+    );
     serverProcess.stderr?.on('data', (chunk) => {
       if (chunk.toString().includes('Engine ready')) {
         clearTimeout(timeout);
@@ -187,7 +190,8 @@ describe('E2E: file-tree agent', () => {
         params: {
           projectPath: '.',
           title: 'File-tree agents are faster',
-          description: 'File-tree agents skip the build step and are ready immediately after scaffolding.',
+          description:
+            'File-tree agents skip the build step and are ready immediately after scaffolding.',
           type: 'pattern',
           category: 'architecture',
           severity: 'suggestion',

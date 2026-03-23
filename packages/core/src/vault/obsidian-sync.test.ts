@@ -278,9 +278,12 @@ describe('ObsidianSync', () => {
     const sync = new ObsidianSync({ vault: mockVault });
     const result = sync.import(obsidianDir);
     expect(result.updated).toBe(1);
-    expect(mockVault.update).toHaveBeenCalledWith('existing', expect.objectContaining({
-      title: 'Updated Title',
-    }));
+    expect(mockVault.update).toHaveBeenCalledWith(
+      'existing',
+      expect.objectContaining({
+        title: 'Updated Title',
+      }),
+    );
   });
 
   it('skips files without title or description', () => {

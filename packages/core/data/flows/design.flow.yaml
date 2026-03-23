@@ -7,8 +7,7 @@ description: >
   Design workflow: search vault for existing design patterns, query Cognee knowledge graph
   for curated design intelligence, then provide a full design system recommendation
   (style + palette + typography + landing pattern + anti-patterns).
-version: "1.0.0"
-
+version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
   blocking: [vault.search]
@@ -89,12 +88,12 @@ scoring:
     design-system: 0.40
     stack-guidelines: 0.15
     brain-recommend: 0.20
-  formula: "weighted-sum"
+  formula: 'weighted-sum'
 
 on-error:
   default:
     action: CONTINUE
-    message: "Design recommendation step encountered an error. Continuing with available data."
+    message: 'Design recommendation step encountered an error. Continuing with available data.'
   max-retries: 1
 
 metadata:

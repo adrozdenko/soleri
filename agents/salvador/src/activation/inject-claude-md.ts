@@ -1,7 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { getClaudeMdContent, getClaudeMdMarker, getEngineRulesContent, getEngineRulesMarker } from './claude-md-content.js';
+import {
+  getClaudeMdContent,
+  getClaudeMdMarker,
+  getEngineRulesContent,
+  getEngineRulesMarker,
+} from './claude-md-content.js';
 
 export interface InjectResult {
   injected: boolean;
@@ -15,7 +20,11 @@ export interface InjectResult {
  * If the marker already exists, replaces the content between markers.
  * Otherwise appends (or creates the file).
  */
-function injectBlock(filePath: string, content: string, marker: string): 'created' | 'updated' | 'appended' | 'skipped' {
+function injectBlock(
+  filePath: string,
+  content: string,
+  marker: string,
+): 'created' | 'updated' | 'appended' | 'skipped' {
   const startMarker = '<!-- ' + marker + ' -->';
   const endMarker = '<!-- /' + marker + ' -->';
 
@@ -34,11 +43,16 @@ function injectBlock(filePath: string, content: string, marker: string): 'create
       if (currentBlock === content.trim()) return 'skipped';
     }
     if (endIdx === -1) {
-      const updated = existing.slice(0, startIdx) + content + '\n' + existing.slice(startIdx + startMarker.length);
+      const updated =
+        existing.slice(0, startIdx) +
+        content +
+        '\n' +
+        existing.slice(startIdx + startMarker.length);
       writeFileSync(filePath, updated, 'utf-8');
       return 'updated';
     }
-    const updated = existing.slice(0, startIdx) + content + existing.slice(endIdx + endMarker.length);
+    const updated =
+      existing.slice(0, startIdx) + content + existing.slice(endIdx + endMarker.length);
     writeFileSync(filePath, updated, 'utf-8');
     return 'updated';
   }

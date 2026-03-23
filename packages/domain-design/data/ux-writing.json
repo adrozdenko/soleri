@@ -246,21 +246,13 @@
         "Take responsibility",
         "Be specific"
       ],
-      "dont": [
-        "Blame the user",
-        "Use technical jargon",
-        "Be vague",
-        "Use negative tone"
-      ],
+      "dont": ["Blame the user", "Use technical jargon", "Be vague", "Use negative tone"],
       "examples": {
         "good": [
           "We couldn't save your changes. Please try again.",
           "Password must be at least 8 characters with one number."
         ],
-        "bad": [
-          "Error: Invalid input",
-          "You failed to complete the form correctly"
-        ]
+        "bad": ["Error: Invalid input", "You failed to complete the form correctly"]
       },
       "replacements": {
         "Invalid": "Check your [field name]",
@@ -288,10 +280,7 @@
           "No projects yet. Create your first one to get started.",
           "Your inbox is empty. You're all caught up!"
         ],
-        "bad": [
-          "No data",
-          "0 records found"
-        ]
+        "bad": ["No data", "0 records found"]
       }
     },
     "success": {
@@ -309,14 +298,8 @@
         "Overwhelm with info"
       ],
       "examples": {
-        "good": [
-          "Project created! Ready to add your first task?",
-          "Changes saved successfully."
-        ],
-        "bad": [
-          "Success",
-          "Transaction ID: 8492840294"
-        ]
+        "good": ["Project created! Ready to add your first task?", "Changes saved successfully."],
+        "bad": ["Success", "Transaction ID: 8492840294"]
       }
     },
     "forms": {
@@ -357,10 +340,7 @@
           "Loading your dashboard...",
           "Processing payment... This usually takes 3-5 seconds."
         ],
-        "bad": [
-          "Loading...",
-          "Executing database query..."
-        ]
+        "bad": ["Loading...", "Executing database query..."]
       }
     },
     "warnings": {

@@ -6,8 +6,7 @@ name: Code Review
 description: >
   Code review workflow: validate component code, check design rules and
   accessibility in parallel, then produce a consolidated review report.
-version: "1.0.0"
-
+version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
   blocking: [vault.search]
@@ -73,12 +72,12 @@ scoring:
     rules-check: 0.25
     accessibility: 0.25
     report: 0.20
-  formula: "weighted-sum"
+  formula: 'weighted-sum'
 
 on-error:
   default:
     action: CONTINUE
-    message: "Review step failed; continuing with remaining checks."
+    message: 'Review step failed; continuing with remaining checks.'
   max-retries: 1
 
 metadata:

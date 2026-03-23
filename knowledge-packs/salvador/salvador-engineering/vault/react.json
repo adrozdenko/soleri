@@ -9,16 +9,8 @@
       "title": "Tiered API Simulation for Stories",
       "severity": "warning",
       "description": "# Tiered API Simulation for Stories\n\n## Context\n\nWhen writing any story in a design system that involves data\n\n## Pattern\n\nUse a tiered approach: advisory for simple component stories, warning for page stories, strict for prototype-master stories. All tiers prefer API stores over inline mock data.\n\n## Example\n\n```typescript\n// Tier 1 - Simple components: inline data OK\nexport const ButtonVariants: Story = {\n  args: { label: 'Click me' }\n}\n\n// Tier 2 - Page stories: API store recommended\nimport { useUserStore } from '@/api/stores/userStore'\nexport const UsersPage: Story = {\n  render: () => {\n    const { users } = useUserStore()\n    return <UsersPageContent users={users} />\n  }\n}\n\n// Tier 3 - Prototype master: API store required\nimport { useTenantStore } from '@/api/stores/tenantStore'\nexport const Default: Story = {\n  render: () => {\n    const { tenants, isLoading, createTenant } = useTenantStore()\n    return <TenantsPage ... />\n  }\n}\n```\n\n## Why\n\nSimple Button stories don't need API complexity. Page stories benefit from realistic data flow. Prototype masters define contracts - no exceptions.",
-      "tags": [
-        "storybook",
-        "api-simulation",
-        "design-system",
-        "tiered-rules"
-      ],
-      "appliesTo": [
-        "src/**/*.stories.tsx",
-        "stories/**/*.stories.tsx"
-      ]
+      "tags": ["storybook", "api-simulation", "design-system", "tiered-rules"],
+      "appliesTo": ["src/**/*.stories.tsx", "stories/**/*.stories.tsx"]
     },
     {
       "id": "pattern-react-master-story-protocol",
@@ -27,16 +19,8 @@
       "title": "Master Story Protocol for Prototype Stories",
       "severity": "critical",
       "description": "# Master Story Protocol for Prototype Stories\n\n## Context\n\nWhen building prototype master stories (*-prototype-master.stories.tsx) that define page compositions\n\n## Pattern\n\nPrototype master stories must use API hooks (useApiStore, useQuery) instead of inline mock data. This ensures the frontend defines the API contract that backend implements.\n\n## Example\n\n```typescript\n// ✅ CORRECT: Use API store\nimport { useTenantStore } from '@/api/stores/tenantStore'\n\nexport const Default: Story = {\n  render: () => {\n    const { tenants, isLoading } = useTenantStore()\n    return <TenantsPage tenants={tenants} isLoading={isLoading} />\n  }\n}\n\n// ❌ FORBIDDEN: Inline mock data\nexport const Default: Story = {\n  args: {\n    tenants: [{ id: '1', name: 'Test' }]\n  }\n}\n```\n\n## Why\n\nAPI hooks define the contract between frontend and backend. When types are defined in stores, backend implements exactly those shapes - no drift between mock data and real API.",
-      "tags": [
-        "storybook",
-        "api-simulation",
-        "prototype",
-        "contract-first",
-        "handoff"
-      ],
-      "appliesTo": [
-        "src/stories/**/*-prototype-master.stories.tsx"
-      ]
+      "tags": ["storybook", "api-simulation", "prototype", "contract-first", "handoff"],
+      "appliesTo": ["src/stories/**/*-prototype-master.stories.tsx"]
     },
     {
       "id": "anti-pattern-react-inline-mock-data-in-prototype",
@@ -45,14 +29,8 @@
       "title": "Inline Mock Data in Prototype Stories",
       "severity": "critical",
       "description": "# Inline Mock Data in Prototype Stories\n\n## Context\n\nWhen writing prototype master stories\n\n## Anti-Pattern\n\nNever use inline mock data (const mockData = [...] or args: { data: [...] }) in prototype master stories. This creates drift between what frontend expects and what backend provides.\n\n## Example (Bad)\n\n```typescript\n// ❌ ANTI-PATTERN: Inline mock arrays\nconst mockTenants = [\n  { id: '1', name: 'Test Tenant' }\n]\n\nexport const Default: Story = {\n  args: { tenants: mockTenants }\n}\n```\n\n## Why It's Wrong\n\nInline mocks are invisible to backend teams, live only in story files, and inevitably drift from real API responses. API stores make the contract explicit and reusable.\n\n## Correct Approach\n\nSee: [master-story-protocol](../../patterns/react/master-story-protocol.md)",
-      "tags": [
-        "storybook",
-        "mock-data",
-        "anti-pattern"
-      ],
-      "appliesTo": [
-        "src/stories/**/*-prototype-master.stories.tsx"
-      ],
+      "tags": ["storybook", "mock-data", "anti-pattern"],
+      "appliesTo": ["src/stories/**/*-prototype-master.stories.tsx"],
       "context": "Related: master-story-protocol"
     },
     {
@@ -62,17 +40,8 @@
       "title": "SIE Loop: Simulated Interactive Environment for Component Development",
       "severity": "critical",
       "description": "# SIE Loop: Simulated Interactive Environment for Component Development\n\n## Context\n\nWhen creating or validating components in an Anteater-generated project\n\n## Pattern\n\nThe SIE Loop is a 6-phase iterative process: 1) Init (load Anteater context), 2) Generate (create with semantic tokens), 3) Observe (WCAG, CVD, hookify, code quality), 4) Reward (composite scoring: Anteater 40% + Hookify 30% + Salvador 25% + Tooling 5%), 5) Improve (fix by priority), 6) Finalize (validated output). Blocking hookify violations = instant fail (score 0).\n\n## Example\n\n```typescript\n# Priority order for improvements:\n1. hookify-blocks (fix blocking violations first)\n2. type-errors (then type safety)\n3. wcag-failures (then accessibility)\n4. token-violations (then token compliance)\n5. code-quality-issues (then clean code)\n6. story-gaps (then coverage)\n7. warnings (then warnings)\n```\n\n## Why\n\nThe SIE loop ensures components meet accessibility, token compliance, and code quality standards before being finalized. It provides measurable quality through composite scoring.",
-      "tags": [
-        "anteater",
-        "sie",
-        "component",
-        "validation",
-        "workflow"
-      ],
-      "appliesTo": [
-        "src/components/**/*.tsx",
-        "src/stories/**/*.stories.tsx"
-      ]
+      "tags": ["anteater", "sie", "component", "validation", "workflow"],
+      "appliesTo": ["src/components/**/*.tsx", "src/stories/**/*.stories.tsx"]
     }
   ]
 }

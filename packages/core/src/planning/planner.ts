@@ -11,19 +11,40 @@ export * from './reconciliation-engine.js';
 export * from './task-verifier.js';
 export * from './planner-types.js';
 import type {
-  TaskStatus, PlanTask, Plan, PlanStore, PlanCheck, PlannerOptions,
+  TaskStatus,
+  PlanTask,
+  Plan,
+  PlanStore,
+  PlanCheck,
+  PlannerOptions,
 } from './planner-types.js';
 import {
-  applyTransition, scoreToGrade, gradeToMinScore, PlanGradeRejectionError,
-  hasCircularDependencies, applyIteration, applySplitTasks, calculateScore,
-  applyTaskStatusUpdate, createPlanObject,
+  applyTransition,
+  scoreToGrade,
+  gradeToMinScore,
+  PlanGradeRejectionError,
+  hasCircularDependencies,
+  applyIteration,
+  applySplitTasks,
+  calculateScore,
+  applyTaskStatusUpdate,
+  createPlanObject,
 } from './plan-lifecycle.js';
 import type { PlanStatus, PlanGrade, IterateChanges } from './plan-lifecycle.js';
-import { buildReconciliationReport, buildAutoReconcileInput, computeExecutionSummary } from './reconciliation-engine.js';
+import {
+  buildReconciliationReport,
+  buildAutoReconcileInput,
+  computeExecutionSummary,
+} from './reconciliation-engine.js';
 import type { ReconcileInput } from './reconciliation-engine.js';
 import {
-  createEvidence, verifyTaskLogic, verifyPlanLogic, verifyDeliverablesLogic,
-  createDeliverable, buildSpecReviewPrompt, buildQualityReviewPrompt,
+  createEvidence,
+  verifyTaskLogic,
+  verifyPlanLogic,
+  verifyDeliverablesLogic,
+  createDeliverable,
+  buildSpecReviewPrompt,
+  buildQualityReviewPrompt,
 } from './task-verifier.js';
 
 export class Planner {
@@ -51,7 +72,9 @@ export class Planner {
       const store = JSON.parse(data) as PlanStore;
       for (const plan of store.plans) plan.checks = plan.checks ?? [];
       return store;
-    } catch { return { version: '1.0', plans: [] }; }
+    } catch {
+      return { version: '1.0', plans: [] };
+    }
   }
 
   private save(): void {
@@ -88,7 +111,9 @@ export class Planner {
     return this.store.plans.find((p) => p.id === planId) ?? null;
   }
 
-  list(): Plan[] { return [...this.store.plans]; }
+  list(): Plan[] {
+    return [...this.store.plans];
+  }
 
   remove(planId: string): boolean {
     const idx = this.store.plans.findIndex((p) => p.id === planId);
@@ -109,7 +134,12 @@ export class Planner {
     const plan = this.requirePlan(planId);
     const check = plan.latestCheck;
     if (check && check.score < gradeToMinScore(this.minGradeForApproval)) {
-      throw new PlanGradeRejectionError(check.grade, check.score, this.minGradeForApproval, check.gaps);
+      throw new PlanGradeRejectionError(
+        check.grade,
+        check.score,
+        this.minGradeForApproval,
+        check.gaps,
+      );
     }
     this.transition(plan, 'approved');
     this.save();
@@ -140,7 +170,9 @@ export class Planner {
   updateTask(planId: string, taskId: string, status: TaskStatus): Plan {
     const plan = this.requirePlan(planId);
     if (plan.status !== 'executing' && plan.status !== 'validating')
-      throw new Error(`Cannot update tasks on plan in '${plan.status}' status — must be 'executing' or 'validating'`);
+      throw new Error(
+        `Cannot update tasks on plan in '${plan.status}' status — must be 'executing' or 'validating'`,
+      );
     applyTaskStatusUpdate(this.requireTask(plan, taskId), status);
     plan.updatedAt = Date.now();
     this.save();
@@ -149,8 +181,14 @@ export class Planner {
 
   reconcile(planId: string, report: ReconcileInput): Plan {
     const plan = this.requirePlan(planId);
-    if (plan.status !== 'executing' && plan.status !== 'validating' && plan.status !== 'reconciling')
-      throw new Error(`Cannot reconcile plan in '${plan.status}' status — must be 'executing', 'validating', or 'reconciling'`);
+    if (
+      plan.status !== 'executing' &&
+      plan.status !== 'validating' &&
+      plan.status !== 'reconciling'
+    )
+      throw new Error(
+        `Cannot reconcile plan in '${plan.status}' status — must be 'executing', 'validating', or 'reconciling'`,
+      );
     plan.reconciliation = buildReconciliationReport(planId, report);
     plan.executionSummary = computeExecutionSummary(plan.tasks);
     if (plan.status === 'executing' || plan.status === 'validating') plan.status = 'reconciling';
@@ -173,7 +211,9 @@ export class Planner {
   autoReconcile(planId: string): Plan | null {
     const plan = this.requirePlan(planId);
     if (plan.status !== 'executing' && plan.status !== 'validating')
-      throw new Error(`Cannot auto-reconcile plan in '${plan.status}' status — must be 'executing' or 'validating'`);
+      throw new Error(
+        `Cannot auto-reconcile plan in '${plan.status}' status — must be 'executing' or 'validating'`,
+      );
     const result = buildAutoReconcileInput(plan.tasks);
     if (!result.canAutoReconcile || !result.input) return null;
     return this.reconcile(planId, result.input);
@@ -184,51 +224,81 @@ export class Planner {
   }
 
   getActive(): Plan[] {
-    return this.store.plans.filter((p) =>
-      p.status === 'brainstorming' || p.status === 'draft' || p.status === 'approved' ||
-      p.status === 'executing' || p.status === 'validating' || p.status === 'reconciling');
+    return this.store.plans.filter(
+      (p) =>
+        p.status === 'brainstorming' ||
+        p.status === 'draft' ||
+        p.status === 'approved' ||
+        p.status === 'executing' ||
+        p.status === 'validating' ||
+        p.status === 'reconciling',
+    );
   }
 
   iterate(planId: string, changes: IterateChanges): Plan {
     const plan = this.requirePlan(planId);
     if (plan.status !== 'draft' && plan.status !== 'brainstorming')
-      throw new Error(`Cannot iterate plan in '${plan.status}' status — must be 'draft' or 'brainstorming'`);
+      throw new Error(
+        `Cannot iterate plan in '${plan.status}' status — must be 'draft' or 'brainstorming'`,
+      );
     applyIteration(plan, changes);
     this.save();
     return plan;
   }
 
-  splitTasks(planId: string, tasks: Array<{
-    title: string; description: string; dependsOn?: string[]; acceptanceCriteria?: string[];
-  }>): Plan {
+  splitTasks(
+    planId: string,
+    tasks: Array<{
+      title: string;
+      description: string;
+      dependsOn?: string[];
+      acceptanceCriteria?: string[];
+    }>,
+  ): Plan {
     const plan = this.requirePlan(planId);
     if (plan.status !== 'brainstorming' && plan.status !== 'draft' && plan.status !== 'approved')
-      throw new Error(`Cannot split tasks on plan in '${plan.status}' status — must be 'brainstorming', 'draft', or 'approved'`);
+      throw new Error(
+        `Cannot split tasks on plan in '${plan.status}' status — must be 'brainstorming', 'draft', or 'approved'`,
+      );
     applySplitTasks(plan, tasks);
     this.save();
     return plan;
   }
 
-  addReview(planId: string, review: {
-    taskId?: string; reviewer: string;
-    outcome: 'approved' | 'rejected' | 'needs_changes'; comments: string;
-  }): Plan {
+  addReview(
+    planId: string,
+    review: {
+      taskId?: string;
+      reviewer: string;
+      outcome: 'approved' | 'rejected' | 'needs_changes';
+      comments: string;
+    },
+  ): Plan {
     const plan = this.requirePlan(planId);
     if (review.taskId) this.requireTask(plan, review.taskId);
     if (!plan.reviews) plan.reviews = [];
     plan.reviews.push({
-      planId, taskId: review.taskId, reviewer: review.reviewer,
-      outcome: review.outcome, comments: review.comments, reviewedAt: Date.now(),
+      planId,
+      taskId: review.taskId,
+      reviewer: review.reviewer,
+      outcome: review.outcome,
+      comments: review.comments,
+      reviewedAt: Date.now(),
     });
     plan.updatedAt = Date.now();
     this.save();
     return plan;
   }
 
-  setGitHubProjection(planId: string, projection: {
-    repo: string; milestone?: number;
-    issues: Array<{ taskId: string; issueNumber: number }>; projectedAt: number;
-  }): Plan {
+  setGitHubProjection(
+    planId: string,
+    projection: {
+      repo: string;
+      milestone?: number;
+      issues: Array<{ taskId: string; issueNumber: number }>;
+      projectedAt: number;
+    },
+  ): Plan {
     const plan = this.requirePlan(planId);
     plan.githubProjection = projection;
     plan.updatedAt = Date.now();
@@ -236,8 +306,13 @@ export class Planner {
     return plan;
   }
 
-  getDispatch(planId: string, taskId: string): {
-    task: PlanTask; unmetDependencies: PlanTask[]; ready: boolean;
+  getDispatch(
+    planId: string,
+    taskId: string,
+  ): {
+    task: PlanTask;
+    unmetDependencies: PlanTask[];
+    ready: boolean;
     deliverableStatus?: { count: number; staleCount: number };
   } {
     const plan = this.requirePlan(planId);
@@ -248,14 +323,21 @@ export class Planner {
       if (dep && dep.status !== 'completed') unmetDeps.push(dep);
     }
     return {
-      task, unmetDependencies: unmetDeps, ready: unmetDeps.length === 0,
+      task,
+      unmetDependencies: unmetDeps,
+      ready: unmetDeps.length === 0,
       ...(task.deliverables?.length && {
-        deliverableStatus: { count: task.deliverables.length, staleCount: task.deliverables.filter((d) => d.stale).length },
+        deliverableStatus: {
+          count: task.deliverables.length,
+          staleCount: task.deliverables.filter((d) => d.stale).length,
+        },
       }),
     };
   }
 
-  submitDeliverable(planId: string, taskId: string,
+  submitDeliverable(
+    planId: string,
+    taskId: string,
     deliverable: { type: 'file' | 'vault_entry' | 'url'; path: string; hash?: string },
   ): PlanTask {
     const plan = this.requirePlan(planId);
@@ -268,9 +350,15 @@ export class Planner {
     return task;
   }
 
-  verifyDeliverables(planId: string, taskId: string,
+  verifyDeliverables(
+    planId: string,
+    taskId: string,
     vault?: { get(id: string): unknown | null },
-  ): { verified: boolean; deliverables: import('./planner-types.js').TaskDeliverable[]; staleCount: number } {
+  ): {
+    verified: boolean;
+    deliverables: import('./planner-types.js').TaskDeliverable[];
+    staleCount: number;
+  } {
     const plan = this.requirePlan(planId);
     const task = this.requireTask(plan, taskId);
     const result = verifyDeliverablesLogic(task.deliverables ?? [], vault);
@@ -280,8 +368,14 @@ export class Planner {
     return result;
   }
 
-  submitEvidence(planId: string, taskId: string,
-    evidence: { criterion: string; content: string; type: import('./planner-types.js').TaskEvidence['type'] },
+  submitEvidence(
+    planId: string,
+    taskId: string,
+    evidence: {
+      criterion: string;
+      content: string;
+      type: import('./planner-types.js').TaskEvidence['type'];
+    },
   ): PlanTask {
     const plan = this.requirePlan(planId);
     const task = this.requireTask(plan, taskId);
@@ -292,8 +386,13 @@ export class Planner {
     return task;
   }
 
-  verifyTask(planId: string, taskId: string): {
-    verified: boolean; task: PlanTask; missingCriteria: string[];
+  verifyTask(
+    planId: string,
+    taskId: string,
+  ): {
+    verified: boolean;
+    task: PlanTask;
+    missingCriteria: string[];
     reviewStatus: 'approved' | 'rejected' | 'needs_changes' | 'no_reviews';
   } {
     const plan = this.requirePlan(planId);
@@ -312,35 +411,65 @@ export class Planner {
     return verifyPlanLogic(planId, this.requirePlan(planId).tasks);
   }
 
-  generateReviewSpec(planId: string, taskId: string): { prompt: string; task: PlanTask; plan: Plan } {
+  generateReviewSpec(
+    planId: string,
+    taskId: string,
+  ): { prompt: string; task: PlanTask; plan: Plan } {
     const plan = this.requirePlan(planId);
     const task = this.requireTask(plan, taskId);
     return { prompt: buildSpecReviewPrompt(task, plan.objective), task, plan };
   }
 
-  generateReviewQuality(planId: string, taskId: string): { prompt: string; task: PlanTask; plan: Plan } {
+  generateReviewQuality(
+    planId: string,
+    taskId: string,
+  ): { prompt: string; task: PlanTask; plan: Plan } {
     const plan = this.requirePlan(planId);
     const task = this.requireTask(plan, taskId);
     return { prompt: buildQualityReviewPrompt(task), task, plan };
   }
 
   archive(olderThanDays?: number): Plan[] {
-    const cutoff = olderThanDays !== undefined
-      ? Date.now() - olderThanDays * 24 * 60 * 60 * 1000 : Date.now() + 1;
-    const toArchive = this.store.plans.filter((p) => p.status === 'completed' && p.updatedAt < cutoff);
-    for (const plan of toArchive) { plan.status = 'archived'; plan.updatedAt = Date.now(); }
+    const cutoff =
+      olderThanDays !== undefined
+        ? Date.now() - olderThanDays * 24 * 60 * 60 * 1000
+        : Date.now() + 1;
+    const toArchive = this.store.plans.filter(
+      (p) => p.status === 'completed' && p.updatedAt < cutoff,
+    );
+    for (const plan of toArchive) {
+      plan.status = 'archived';
+      plan.updatedAt = Date.now();
+    }
     if (toArchive.length > 0) this.save();
     return toArchive;
   }
 
   stats(): {
-    total: number; byStatus: Record<PlanStatus, number>;
-    avgTasksPerPlan: number; totalTasks: number; tasksByStatus: Record<TaskStatus, number>;
+    total: number;
+    byStatus: Record<PlanStatus, number>;
+    avgTasksPerPlan: number;
+    totalTasks: number;
+    tasksByStatus: Record<TaskStatus, number>;
   } {
     const plans = this.store.plans;
-    const byStatus = { brainstorming: 0, draft: 0, approved: 0, executing: 0,
-      validating: 0, reconciling: 0, completed: 0, archived: 0 } as Record<PlanStatus, number>;
-    const tasksByStatus = { pending: 0, in_progress: 0, completed: 0, skipped: 0, failed: 0 } as Record<TaskStatus, number>;
+    const byStatus = {
+      brainstorming: 0,
+      draft: 0,
+      approved: 0,
+      executing: 0,
+      validating: 0,
+      reconciling: 0,
+      completed: 0,
+      archived: 0,
+    } as Record<PlanStatus, number>;
+    const tasksByStatus = {
+      pending: 0,
+      in_progress: 0,
+      completed: 0,
+      skipped: 0,
+      failed: 0,
+    } as Record<TaskStatus, number>;
     let totalTasks = 0;
     for (const p of plans) {
       byStatus[p.status]++;
@@ -348,7 +477,10 @@ export class Planner {
       for (const t of p.tasks) tasksByStatus[t.status]++;
     }
     return {
-      total: plans.length, byStatus, totalTasks, tasksByStatus,
+      total: plans.length,
+      byStatus,
+      totalTasks,
+      tasksByStatus,
       avgTasksPerPlan: plans.length > 0 ? Math.round((totalTasks / plans.length) * 100) / 100 : 0,
     };
   }
@@ -358,17 +490,25 @@ export class Planner {
     const gaps = runGapAnalysis(plan, this.gapOptions);
     if (hasCircularDependencies(plan.tasks)) {
       gaps.push({
-        id: `gap_${Date.now()}_circ`, severity: 'critical', category: 'structure',
+        id: `gap_${Date.now()}_circ`,
+        severity: 'critical',
+        category: 'structure',
         description: 'Circular dependencies detected among tasks.',
         recommendation: 'Remove circular dependency chains so tasks can be executed in order.',
-        location: 'tasks', _trigger: 'circular_dependencies',
+        location: 'tasks',
+        _trigger: 'circular_dependencies',
       });
     }
     const iteration = plan.checks.length + 1;
     const score = calculateScore(gaps, iteration);
     const check: PlanCheck = {
       checkId: `chk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      planId, grade: scoreToGrade(score), score, gaps, iteration, checkedAt: Date.now(),
+      planId,
+      grade: scoreToGrade(score),
+      score,
+      gaps,
+      iteration,
+      checkedAt: Date.now(),
     };
     plan.checks.push(check);
     plan.latestCheck = check;

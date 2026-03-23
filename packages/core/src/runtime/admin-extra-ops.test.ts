@@ -67,9 +67,7 @@ function createMockRuntime(): AgentRuntime {
         overall: 'healthy',
         subsystems: { vault: { status: 'healthy' }, brain: { status: 'healthy' } },
       })),
-      get: vi.fn((name: string) =>
-        name === 'vault' ? { status: 'healthy', failures: 0 } : null,
-      ),
+      get: vi.fn((name: string) => (name === 'vault' ? { status: 'healthy', failures: 0 } : null)),
     },
     flags: {
       getAll: vi.fn(() => ({
@@ -396,10 +394,7 @@ describe('createAdminExtraOps', () => {
 
   describe('admin_hot_reload', () => {
     it('reloads brain, vault FTS, and templates', async () => {
-      const result = (await findOp(ops, 'admin_hot_reload').handler({})) as Record<
-        string,
-        unknown
-      >;
+      const result = (await findOp(ops, 'admin_hot_reload').handler({})) as Record<string, unknown>;
       expect((result.reloaded as string[]).length).toBe(3);
       expect(result.brainTerms).toBe(500);
       expect(result.templateCount).toBe(2);
@@ -409,10 +404,7 @@ describe('createAdminExtraOps', () => {
       vi.mocked(runtime.vault.rebuildFtsIndex).mockImplementation(() => {
         throw new Error('fail');
       });
-      const result = (await findOp(ops, 'admin_hot_reload').handler({})) as Record<
-        string,
-        unknown
-      >;
+      const result = (await findOp(ops, 'admin_hot_reload').handler({})) as Record<string, unknown>;
       expect(result.reloaded).not.toContain('vault_fts');
     });
   });
@@ -455,10 +447,7 @@ describe('createAdminExtraOps', () => {
 
   describe('admin_list_flags', () => {
     it('returns all feature flags', async () => {
-      const result = (await findOp(ops, 'admin_list_flags').handler({})) as Record<
-        string,
-        unknown
-      >;
+      const result = (await findOp(ops, 'admin_list_flags').handler({})) as Record<string, unknown>;
       expect(result).toHaveProperty('auth-enforcement');
     });
   });
@@ -516,10 +505,7 @@ describe('createAdminExtraOps', () => {
 
   describe('admin_setup_run', () => {
     it('runs setup actions', async () => {
-      const result = (await findOp(ops, 'admin_setup_run').handler({})) as Record<
-        string,
-        unknown
-      >;
+      const result = (await findOp(ops, 'admin_setup_run').handler({})) as Record<string, unknown>;
       expect(result.setup).toBe(true);
       expect((result.actions as string[]).length).toBeGreaterThan(0);
     });

@@ -10,16 +10,16 @@ Improve CLI create wizard archetypes: multi-archetype selection with merge strat
 
 ## Scope
 
-| Included | Excluded |
-|----------|----------|
-| Multi-archetype selection (`p.multiselect`) | Premium vault-backed archetypes (#185, v7.1.0) |
-| Union merge strategy for domains/principles/skills | SRE/Ops archetype (future) |
-| Tone conflict resolution prompt | Changes to forge scaffolder |
-| 2 new free archetypes (Accessibility Guardian, Documentation Writer) | |
-| `tier` field on Archetype type | |
-| Domain-specific principle enrichment | |
-| Move `writing-plans` + `executing-plans` to core skills | |
-| Tone rationalization across archetypes | |
+| Included                                                             | Excluded                                       |
+| -------------------------------------------------------------------- | ---------------------------------------------- |
+| Multi-archetype selection (`p.multiselect`)                          | Premium vault-backed archetypes (#185, v7.1.0) |
+| Union merge strategy for domains/principles/skills                   | SRE/Ops archetype (future)                     |
+| Tone conflict resolution prompt                                      | Changes to forge scaffolder                    |
+| 2 new free archetypes (Accessibility Guardian, Documentation Writer) |                                                |
+| `tier` field on Archetype type                                       |                                                |
+| Domain-specific principle enrichment                                 |                                                |
+| Move `writing-plans` + `executing-plans` to core skills              |                                                |
+| Tone rationalization across archetypes                               |                                                |
 
 ## Design
 
@@ -53,15 +53,15 @@ Replace `p.select` with `p.multiselect` for archetype step. The `_custom` option
 
 **Merge strategy** when multiple archetypes selected:
 
-| Field | Strategy |
-|-------|----------|
-| domains | Union (deduplicated) |
-| principles | Union (deduplicated) |
-| skills | Union (deduplicated) |
-| tone | If all agree → use it; if disagree → prompt user to pick |
-| role | Always prompt user (too specific to merge) |
-| description | Always prompt user (too specific to merge) |
-| greeting | Auto-generate from name + role, or prompt for custom |
+| Field       | Strategy                                                 |
+| ----------- | -------------------------------------------------------- |
+| domains     | Union (deduplicated)                                     |
+| principles  | Union (deduplicated)                                     |
+| skills      | Union (deduplicated)                                     |
+| tone        | If all agree → use it; if disagree → prompt user to pick |
+| role        | Always prompt user (too specific to merge)               |
+| description | Always prompt user (too specific to merge)               |
+| greeting    | Auto-generate from name + role, or prompt for custom     |
 
 When a single archetype is selected, behavior is identical to today (pre-filled fields with Enter to accept).
 
@@ -88,6 +88,7 @@ Remove these two from `SKILL_CATEGORIES` optional lists.
 ### 4. New Free Archetypes — `archetypes.ts`
 
 **Accessibility Guardian**:
+
 - value: `accessibility-guardian`
 - Domains: `accessibility`, `frontend`
 - Principles: `wcag-compliance`, `semantic-html`, `keyboard-navigation`
@@ -96,6 +97,7 @@ Remove these two from `SKILL_CATEGORIES` optional lists.
 - Role: "Audits code for WCAG compliance and accessibility best practices"
 
 **Documentation Writer**:
+
 - value: `documentation-writer`
 - Domains: `documentation`, `developer-experience`
 - Principles: `clarity-over-completeness`, `example-driven`, `keep-current`
@@ -107,44 +109,45 @@ Remove these two from `SKILL_CATEGORIES` optional lists.
 
 Add ~10 new domain-specific principles to `PRINCIPLE_CATEGORIES`:
 
-| Category | New Principles |
-|----------|---------------|
-| Code Quality | `readable-over-clever`, `small-pr-scope` |
-| Security | `least-privilege`, `defense-in-depth` |
-| API Design | `backward-compatibility`, `consumer-driven-contracts` |
-| Testing | `deterministic-tests`, `test-at-boundaries` |
-| Operations | `infrastructure-as-code`, `blast-radius-awareness` |
-| Data | `schema-evolution`, `query-performance-first` |
-| Accessibility | `wcag-compliance`, `semantic-html`, `keyboard-navigation` |
+| Category      | New Principles                                                |
+| ------------- | ------------------------------------------------------------- |
+| Code Quality  | `readable-over-clever`, `small-pr-scope`                      |
+| Security      | `least-privilege`, `defense-in-depth`                         |
+| API Design    | `backward-compatibility`, `consumer-driven-contracts`         |
+| Testing       | `deterministic-tests`, `test-at-boundaries`                   |
+| Operations    | `infrastructure-as-code`, `blast-radius-awareness`            |
+| Data          | `schema-evolution`, `query-performance-first`                 |
+| Accessibility | `wcag-compliance`, `semantic-html`, `keyboard-navigation`     |
 | Documentation | `clarity-over-completeness`, `example-driven`, `keep-current` |
-| Frontend | `progressive-enhancement` |
+| Frontend      | `progressive-enhancement`                                     |
 
 Update each archetype's `defaults.principles` to use domain-specific principles instead of generic ones.
 
 ### 6. Tone Rationalization — `archetypes.ts`
 
-| Tone | Archetypes | Rationale |
-|------|-----------|-----------|
-| `precise` | Security Auditor, Accessibility Guardian, Database Architect | Audit/compliance roles need exactness |
-| `mentor` | Code Reviewer, Test Engineer, Documentation Writer | Teaching/guiding roles |
-| `pragmatic` | API Architect, DevOps Pilot, Full-Stack Assistant | Builder/integrator roles |
+| Tone        | Archetypes                                                   | Rationale                             |
+| ----------- | ------------------------------------------------------------ | ------------------------------------- |
+| `precise`   | Security Auditor, Accessibility Guardian, Database Architect | Audit/compliance roles need exactness |
+| `mentor`    | Code Reviewer, Test Engineer, Documentation Writer           | Teaching/guiding roles                |
+| `pragmatic` | API Architect, DevOps Pilot, Full-Stack Assistant            | Builder/integrator roles              |
 
 Change: Code Reviewer moves from `precise` → `mentor`.
 
 ### 7. New Domains — `playbook.ts`
 
 Add to `DOMAIN_OPTIONS`:
+
 - `accessibility` — "Web accessibility and WCAG compliance"
 - `documentation` — "Technical writing and API documentation"
 - `developer-experience` — "Developer tooling, onboarding, and ergonomics"
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `packages/cli/src/prompts/archetypes.ts` | Add `tier` field, 2 new archetypes, update principles/tones per archetype |
-| `packages/cli/src/prompts/create-wizard.ts` | `p.select` → `p.multiselect`, merge logic, tone conflict prompt |
-| `packages/cli/src/prompts/playbook.ts` | Move 2 skills to core, add ~10 new principles, add 3 new domains |
+| File                                        | Change                                                                    |
+| ------------------------------------------- | ------------------------------------------------------------------------- |
+| `packages/cli/src/prompts/archetypes.ts`    | Add `tier` field, 2 new archetypes, update principles/tones per archetype |
+| `packages/cli/src/prompts/create-wizard.ts` | `p.select` → `p.multiselect`, merge logic, tone conflict prompt           |
+| `packages/cli/src/prompts/playbook.ts`      | Move 2 skills to core, add ~10 new principles, add 3 new domains          |
 
 ## Testing
 

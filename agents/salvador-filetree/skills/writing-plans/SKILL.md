@@ -97,12 +97,12 @@ Offer execution choice: subagent-driven (this session) or parallel session with 
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `search_intelligent` | Find patterns before planning |
-| `brain_strengths` | Proven approaches |
-| `create_plan` | Create tracked plan |
-| `plan_grade` / `plan_auto_improve` | Grade and improve |
-| `plan_iterate` | Iterate with feedback |
-| `plan_split` | Split into tasks |
-| `approve_plan` | Lock in approved plan |
+| Op                                 | When to Use                   |
+| ---------------------------------- | ----------------------------- |
+| `search_intelligent`               | Find patterns before planning |
+| `brain_strengths`                  | Proven approaches             |
+| `create_plan`                      | Create tracked plan           |
+| `plan_grade` / `plan_auto_improve` | Grade and improve             |
+| `plan_iterate`                     | Iterate with feedback         |
+| `plan_split`                       | Split into tasks              |
+| `approve_plan`                     | Lock in approved plan         |

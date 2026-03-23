@@ -23,6 +23,7 @@ YOUR_AGENT_core op:curator_contradictions
 ```
 
 **What to look for:**
+
 - Two patterns that recommend opposite approaches for the same situation
 - An anti-pattern that contradicts an active pattern
 - Entries from different time periods with conflicting advice (the older one may be stale)
@@ -38,6 +39,7 @@ YOUR_AGENT_core op:vault_age_report
 ```
 
 **Indicators:**
+
 - Entries >60 days without access or update
 - Patterns referencing APIs, libraries, or versions that have changed
 - Entries tagged with technologies the project no longer uses
@@ -55,6 +57,7 @@ YOUR_AGENT_core op:curator_detect_duplicates
 ```
 
 **Indicators:**
+
 - Entries with zero inbound or outbound links
 - Entries never returned in search results (check search insights)
 - Entries with no tags or only generic tags
@@ -73,6 +76,7 @@ YOUR_AGENT_core op:curator_detect_duplicates
 ```
 
 **Indicators:**
+
 - High similarity scores between entries
 - Same tags and category but different titles
 - Entries captured in different sessions about the same topic
@@ -89,6 +93,7 @@ YOUR_AGENT_core op:curator_health_audit
 ```
 
 **Indicators:**
+
 - Description under 50 characters
 - No examples or context
 - Missing "why" — only states "what" without rationale
@@ -107,6 +112,7 @@ YOUR_AGENT_core op:vault_tags
 ```
 
 **Indicators:**
+
 - Near-duplicate categories (e.g., "error-handling" and "errors" and "exception-handling")
 - Categories with only 1-2 entries (too granular)
 - Tags used inconsistently (same concept, different tag names)
@@ -123,6 +129,7 @@ YOUR_AGENT_core op:brain_strengths
 ```
 
 **Indicators:**
+
 - Patterns with high initial strength that have decayed below 0.3
 - Patterns that were strong but haven't received positive feedback in >30 days
 - Patterns with mixed feedback (both positive and negative) — unresolved
@@ -131,13 +138,14 @@ YOUR_AGENT_core op:brain_strengths
 
 ### 8. Knowledge Gap Smells
 
-Areas where the vault *should* have knowledge but doesn't.
+Areas where the vault _should_ have knowledge but doesn't.
 
 ```
 YOUR_AGENT_core op:admin_search_insights
 ```
 
 **Indicators:**
+
 - Repeated search queries that return no results
 - Domains the project uses but vault has no entries for
 - Anti-patterns captured without corresponding patterns (what to do instead?)
@@ -166,11 +174,11 @@ YOUR_AGENT_core op:admin_search_insights
 
 For each smell category, assess severity:
 
-| Severity | Meaning |
-|----------|---------|
-| 🟢 Clean | No issues in this category |
-| 🟡 Minor | 1-3 instances, low impact |
-| 🟠 Moderate | Multiple instances, degrading quality |
+| Severity    | Meaning                                    |
+| ----------- | ------------------------------------------ |
+| 🟢 Clean    | No issues in this category                 |
+| 🟡 Minor    | 1-3 instances, low impact                  |
+| 🟠 Moderate | Multiple instances, degrading quality      |
 | 🔴 Critical | Widespread, actively causing bad decisions |
 
 ### Step 3: Present the Report
@@ -237,15 +245,15 @@ After fixes: `op:brain_build_intelligence` to rebuild with clean data.
 
 ## Quick Reference
 
-| Smell | Detection Op | Fix Op |
-|-------|-------------|--------|
-| Contradictions | `curator_contradictions` | `curator_resolve_contradiction` |
-| Staleness | `vault_age_report` | Review + archive/update |
-| Orphans | `admin_vault_analytics` | Link or archive |
-| Duplicates | `curator_detect_duplicates` | `curator_groom` (merge) |
-| Shallow entries | `curator_health_audit` | Enrich or archive |
-| Category drift | `vault_domains` + `vault_tags` | `curator_groom_all` |
-| Confidence decay | `brain_strengths` | Reinforce or retire |
-| Knowledge gaps | `admin_search_insights` | `capture_knowledge` |
+| Smell            | Detection Op                   | Fix Op                          |
+| ---------------- | ------------------------------ | ------------------------------- |
+| Contradictions   | `curator_contradictions`       | `curator_resolve_contradiction` |
+| Staleness        | `vault_age_report`             | Review + archive/update         |
+| Orphans          | `admin_vault_analytics`        | Link or archive                 |
+| Duplicates       | `curator_detect_duplicates`    | `curator_groom` (merge)         |
+| Shallow entries  | `curator_health_audit`         | Enrich or archive               |
+| Category drift   | `vault_domains` + `vault_tags` | `curator_groom_all`             |
+| Confidence decay | `brain_strengths`              | Reinforce or retire             |
+| Knowledge gaps   | `admin_search_insights`        | `capture_knowledge`             |
 
 **Related skills:** health-check (operational status), vault-curate (active cleanup), knowledge-harvest (fill gaps)

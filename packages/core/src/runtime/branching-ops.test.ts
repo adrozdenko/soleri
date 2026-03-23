@@ -63,7 +63,9 @@ describe('branching-ops', () => {
 
     it('returns error on duplicate branch', async () => {
       const vb = runtime.vaultBranching as ReturnType<typeof makeMockVaultBranching>;
-      vb.branch.mockImplementation(() => { throw new Error('Branch already exists'); });
+      vb.branch.mockImplementation(() => {
+        throw new Error('Branch already exists');
+      });
       const result = await executeOp(ops, 'vault_branch', { name: 'dup' });
       expect(result.success).toBe(true);
       const data = result.data as { error: string };
@@ -74,7 +76,9 @@ describe('branching-ops', () => {
   describe('vault_branch_add', () => {
     it('adds an operation to a branch', async () => {
       const result = await executeOp(ops, 'vault_branch_add', {
-        branchName: 'exp', entryId: 'e1', action: 'add',
+        branchName: 'exp',
+        entryId: 'e1',
+        action: 'add',
         entryData: { id: 'e1', title: 'New', type: 'pattern', domain: 'test' },
       });
       expect(result.success).toBe(true);
@@ -85,9 +89,13 @@ describe('branching-ops', () => {
 
     it('returns error on invalid branch', async () => {
       const vb = runtime.vaultBranching as ReturnType<typeof makeMockVaultBranching>;
-      vb.addOperation.mockImplementation(() => { throw new Error('Branch not found'); });
+      vb.addOperation.mockImplementation(() => {
+        throw new Error('Branch not found');
+      });
       const result = await executeOp(ops, 'vault_branch_add', {
-        branchName: 'missing', entryId: 'e1', action: 'remove',
+        branchName: 'missing',
+        entryId: 'e1',
+        action: 'remove',
       });
       expect(result.success).toBe(true);
       expect((result.data as { error: string }).error).toBe('Branch not found');
@@ -115,7 +123,9 @@ describe('branching-ops', () => {
 
     it('returns error on merge failure', async () => {
       const vb = runtime.vaultBranching as ReturnType<typeof makeMockVaultBranching>;
-      vb.merge.mockImplementation(() => { throw new Error('Conflict detected'); });
+      vb.merge.mockImplementation(() => {
+        throw new Error('Conflict detected');
+      });
       const result = await executeOp(ops, 'vault_merge_branch', { branchName: 'conflict' });
       expect(result.success).toBe(true);
       expect((result.data as { error: string }).error).toBe('Conflict detected');

@@ -21,6 +21,7 @@ You extract exactly three signal types:
 The operator revealed something about themselves — background, preferences, philosophy, or anecdotes.
 
 **Data shape:**
+
 ```json
 {
   "signalType": "personal_share",
@@ -42,6 +43,7 @@ The operator revealed something about themselves — background, preferences, ph
 The operator showed a preference for how they want to interact with the agent.
 
 **Data shape:**
+
 ```json
 {
   "signalType": "communication_pref",
@@ -61,6 +63,7 @@ The operator showed a preference for how they want to interact with the agent.
 The operator reacted to something the agent produced — positively, negatively, or with mixed feelings.
 
 **Data shape:**
+
 ```json
 {
   "signalType": "reaction_to_output",
@@ -83,6 +86,7 @@ The operator reacted to something the agent produced — positively, negatively,
 Only emit signals with confidence >= 0.4. If you are less than 40% sure, skip it.
 
 **Calibration guide:**
+
 - 0.4-0.5: Weak inference from indirect evidence. One data point.
 - 0.5-0.7: Reasonable inference from multiple indirect signals.
 - 0.7-0.85: Clear evidence but not explicitly stated.
@@ -97,6 +101,7 @@ For each signal you detect, call:
 ```
 
 With params:
+
 ```json
 {
   "signals": [

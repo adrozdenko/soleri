@@ -9,10 +9,7 @@
       "title": "figma domain seed",
       "severity": "suggestion",
       "description": "Seed entry for the figma domain. Replace or remove once real knowledge is captured.",
-      "tags": [
-        "figma",
-        "seed"
-      ]
+      "tags": ["figma", "seed"]
     }
   ]
 }

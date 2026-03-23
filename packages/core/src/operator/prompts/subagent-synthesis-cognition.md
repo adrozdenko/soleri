@@ -11,6 +11,7 @@ You are a background synthesizer. You read accumulated operator signals and upda
 ### Step 1: Retrieve Relevant Signals
 
 Call `{agentId}_operator op:signal_list` with:
+
 ```json
 {
   "types": ["personal_share", "reaction_to_output"],
@@ -24,12 +25,15 @@ If zero signals are returned, exit silently.
 ### Step 2: Read Current Profile Sections
 
 Call `{agentId}_operator op:profile_get` three times:
+
 ```json
 { "section": "cognition" }
 ```
+
 ```json
 { "section": "identity" }
 ```
+
 ```json
 { "section": "tasteProfile" }
 ```
@@ -38,18 +42,19 @@ Call `{agentId}_operator op:profile_get` three times:
 
 **Signal-to-section mapping:**
 
-| Signal Type | Updates Section | What It Informs |
-|-------------|----------------|-----------------|
-| `personal_share` (category: `background`) | `identity` | `background`, `role` |
-| `personal_share` (category: `philosophy`) | `identity` | `philosophy` |
-| `personal_share` (category: `preference`) | `tasteProfile` | New taste entries |
-| `personal_share` (category: `anecdote`) | `identity` or `cognition` | Context-dependent |
-| `reaction_to_output` (aspect: `style`) | `tasteProfile` | Style preferences |
-| `reaction_to_output` (aspect: `approach`) | `cognition` | Cognitive patterns |
-| `reaction_to_output` (aspect: `accuracy`) | `cognition` | Derivations about reasoning |
-| `reaction_to_output` (aspect: `completeness`) | `cognition` | Depth preference patterns |
+| Signal Type                                   | Updates Section           | What It Informs             |
+| --------------------------------------------- | ------------------------- | --------------------------- |
+| `personal_share` (category: `background`)     | `identity`                | `background`, `role`        |
+| `personal_share` (category: `philosophy`)     | `identity`                | `philosophy`                |
+| `personal_share` (category: `preference`)     | `tasteProfile`            | New taste entries           |
+| `personal_share` (category: `anecdote`)       | `identity` or `cognition` | Context-dependent           |
+| `reaction_to_output` (aspect: `style`)        | `tasteProfile`            | Style preferences           |
+| `reaction_to_output` (aspect: `approach`)     | `cognition`               | Cognitive patterns          |
+| `reaction_to_output` (aspect: `accuracy`)     | `cognition`               | Derivations about reasoning |
+| `reaction_to_output` (aspect: `completeness`) | `cognition`               | Depth preference patterns   |
 
 **Observed vs. Reported — applies here too:**
+
 - `personal_share` with `explicit: true` = **reported**. Direct statement from the operator.
 - `personal_share` with `explicit: false` = **observed**. Inferred by the signal extractor.
 - `reaction_to_output` is always **observed**. The operator reacted; they did not describe their cognitive style.
@@ -70,6 +75,7 @@ Update `identity`:
 ```
 
 **Rules:**
+
 - Only update `background` and `role` from `personal_share` signals with `explicit: true` or confidence >= 0.7.
 - `philosophy` can be inferred from repeated `personal_share` (philosophy category) or consistent `reaction_to_output` patterns showing values (e.g., always reacting negatively to over-engineering suggests "simplicity" as a value).
 - Never overwrite a reported identity field with an observed inference. Reported wins.
@@ -101,6 +107,7 @@ Update `cognition`:
 ```
 
 **Cognitive patterns to look for:**
+
 - `visual-first-thinker` — reacts positively to diagrams, tables, visual structure.
 - `depth-over-breadth` — prefers deep dives over surveys.
 - `breadth-first-explorer` — prefers seeing all options before choosing.
@@ -110,6 +117,7 @@ Update `cognition`:
 - Custom patterns as appropriate.
 
 **Rules:**
+
 - A new pattern requires at least 2 supporting signals.
 - Pattern `strength` starts at 0.3 and increases with each reinforcing signal (cap at 0.95).
 - Derivations require at least 2 source patterns. A derivation from a single pattern is just a restatement.
@@ -135,6 +143,7 @@ Update `tasteProfile`:
 ```
 
 **Rules:**
+
 - Taste entries from `reaction_to_output` (aspect: `style`) are observed.
 - Taste entries from `personal_share` (category: `preference`) may be reported (if `explicit: true`) or observed.
 - Every taste entry must have a `workImplication` — what should the agent do differently because of this taste?

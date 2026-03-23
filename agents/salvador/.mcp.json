@@ -2,9 +2,7 @@
   "mcpServers": {
     "salvador": {
       "command": "node",
-      "args": [
-        "dist/index.js"
-      ],
+      "args": ["dist/index.js"],
       "cwd": "."
     }
   }

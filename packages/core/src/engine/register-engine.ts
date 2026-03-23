@@ -127,8 +127,7 @@ export const ENGINE_MODULES: ModuleDef[] = [
   },
   {
     suffix: 'orchestrate',
-    description:
-      'Execution orchestration — session start, playbooks, plan/execute/complete.',
+    description: 'Execution orchestration — session start, playbooks, plan/execute/complete.',
     createOps: createOrchestrateFacadeOps,
   },
   {

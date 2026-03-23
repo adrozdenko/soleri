@@ -63,18 +63,8 @@ describe('CapabilityRegistry', () => {
         produced: [],
       });
 
-      registry.registerPack(
-        'fallback',
-        [def],
-        new Map([['vault.search', lowHandler]]),
-        0,
-      );
-      registry.registerPack(
-        'core',
-        [def],
-        new Map([['vault.search', highHandler]]),
-        100,
-      );
+      registry.registerPack('fallback', [def], new Map([['vault.search', lowHandler]]), 0);
+      registry.registerPack('core', [def], new Map([['vault.search', highHandler]]), 100);
 
       const resolved = registry.resolve('vault.search');
       expect(resolved.available).toBe(true);

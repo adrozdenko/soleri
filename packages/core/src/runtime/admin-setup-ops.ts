@@ -393,10 +393,17 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
         }
 
         // 2. Skills — use shared sync (same logic as engine startup)
-        let skillsResults: { installed: string[]; updated: string[]; skipped: string[]; failed: string[] };
+        let skillsResults: {
+          installed: string[];
+          updated: string[];
+          skipped: string[];
+          failed: string[];
+        };
         if (!hooksOnly && !settingsJsonOnly) {
           if (install) {
-            const agentName = runtime.persona?.name ?? config.agentId.charAt(0).toUpperCase() + config.agentId.slice(1);
+            const agentName =
+              runtime.persona?.name ??
+              config.agentId.charAt(0).toUpperCase() + config.agentId.slice(1);
             skillsResults = syncSkillsToClaudeCode(skillsSourceDirs, agentName);
           } else {
             // Dry run — just discover what would be synced

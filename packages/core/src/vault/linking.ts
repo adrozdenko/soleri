@@ -21,9 +21,35 @@ import type {
 
 // ── Stop words for keyword extraction ─────────────────────────────────
 const STOP_WORDS = new Set([
-  'the', 'and', 'for', 'with', 'from', 'this', 'that', 'are', 'was', 'not',
-  'but', 'have', 'has', 'use', 'can', 'will', 'all', 'each', 'than', 'its',
-  'more', 'when', 'into', 'also', 'any', 'may', 'only', 'should', 'which',
+  'the',
+  'and',
+  'for',
+  'with',
+  'from',
+  'this',
+  'that',
+  'are',
+  'was',
+  'not',
+  'but',
+  'have',
+  'has',
+  'use',
+  'can',
+  'will',
+  'all',
+  'each',
+  'than',
+  'its',
+  'more',
+  'when',
+  'into',
+  'also',
+  'any',
+  'may',
+  'only',
+  'should',
+  'which',
 ]);
 
 export class LinkManager {
@@ -165,7 +191,12 @@ export class LinkManager {
     nextFrontier.push(neighborId);
     const entry = this.getEntryMeta(neighborId);
     if (!entry) return;
-    result.push({ ...entry, linkType: link.linkType, linkDirection: direction, linkNote: link.note });
+    result.push({
+      ...entry,
+      linkType: link.linkType,
+      linkDirection: direction,
+      linkNote: link.note,
+    });
   }
 
   // ── Bulk Queries ────────────────────────────────────────────────────
@@ -239,7 +270,11 @@ export class LinkManager {
   ): Array<{ id: string; title: string; type: string; domain: string; rank: number }> {
     const queryTerms = keywords.join(' OR ');
     return this.provider.all<{
-      id: string; title: string; type: string; domain: string; rank: number;
+      id: string;
+      title: string;
+      type: string;
+      domain: string;
+      rank: number;
     }>(
       `SELECT e.id, e.title, e.type, e.domain, rank
        FROM entries_fts fts
@@ -285,7 +320,8 @@ export class LinkManager {
     const orphans = this.getOrphans(10000);
     let processed = 0;
     let linksCreated = 0;
-    const preview: Array<{ sourceId: string; targetId: string; linkType: string; score: number }> = [];
+    const preview: Array<{ sourceId: string; targetId: string; linkType: string; score: number }> =
+      [];
 
     for (let i = 0; i < orphans.length; i += batchSize) {
       const batch = orphans.slice(i, i + batchSize);
@@ -317,7 +353,12 @@ export class LinkManager {
     const qualifying = suggestions.filter((s) => s.score >= threshold).slice(0, maxLinks);
     for (const s of qualifying) {
       if (dryRun) {
-        preview.push({ sourceId: entryId, targetId: s.entryId, linkType: s.suggestedType, score: s.score });
+        preview.push({
+          sourceId: entryId,
+          targetId: s.entryId,
+          linkType: s.suggestedType,
+          score: s.score,
+        });
       } else {
         this.addLink(entryId, s.entryId, s.suggestedType);
       }

@@ -20,6 +20,7 @@ Before you write a single line of code, ask the agent what it already knows.
 > **You:** "What do we know about form validation?"
 >
 > **Agent:** _Found 4 entries:_
+>
 > 1. Always validate on both client and server (critical)
 > 2. Use optimistic updates for form submissions (pattern)
 > 3. Never trust client-side validation alone (anti-pattern)
@@ -38,6 +39,7 @@ For anything beyond a quick fix, ask the agent to plan it. The plan pulls in bra
 > **You:** "Plan: add email validation to the signup form with real-time feedback"
 >
 > **Agent:** _Plan created:_
+>
 > 1. Add validation schema for email field
 > 2. Implement real-time validation on input change
 > 3. Show inline error states
@@ -54,6 +56,7 @@ For a one-line bug fix or a quick question, skip this step. You don't need a pla
 Work normally. The agent is there when you need it — ask questions, check patterns, run reviews. You're in control.
 
 During work, the agent is useful for:
+
 - **Checking decisions** — "Does this approach match our patterns?"
 - **Running reviews** — "Review this endpoint against our standards"
 - **Running playbooks** — "Run the API endpoint review playbook on this code"
@@ -69,6 +72,7 @@ This is the most important step. When you learn something during the work — a 
 One sentence is enough. You can always enrich it later. The critical thing is that it's captured while it's fresh — not in your head, not in a PR comment, but in the vault where it will surface next time someone touches email validation.
 
 **What to capture:**
+
 - A bug you fixed and the root cause
 - A decision you made and why
 - A pattern you found that worked well
@@ -76,6 +80,7 @@ One sentence is enough. You can always enrich it later. The critical thing is th
 - Something that surprised you
 
 **What not to capture:**
+
 - Things that are obvious from the code itself
 - One-time configuration that won't recur
 - Generic knowledge that isn't specific to your project
@@ -106,12 +111,12 @@ Session 1 feels like talking to a blank slate. Session 20 feels like working wit
 
 ## Quick reference
 
-| Task size | What to do |
-|-----------|-----------|
-| **One-line fix** | Search → Work → Capture if you learned something |
-| **Small feature** | Search → Work → Capture |
-| **Medium feature** | Search → Plan → Work → Capture → Complete |
-| **Large feature** | Search → Plan → Work (with reviews) → Capture → Complete |
+| Task size          | What to do                                               |
+| ------------------ | -------------------------------------------------------- |
+| **One-line fix**   | Search → Work → Capture if you learned something         |
+| **Small feature**  | Search → Work → Capture                                  |
+| **Medium feature** | Search → Plan → Work → Capture → Complete                |
+| **Large feature**  | Search → Plan → Work (with reviews) → Capture → Complete |
 
 The workflow scales with the task. Don't overthink it — the important habits are **search first** and **capture when you learn**.
 

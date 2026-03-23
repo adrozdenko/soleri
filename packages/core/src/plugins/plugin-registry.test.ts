@@ -73,14 +73,16 @@ describe('PluginRegistry — colocated', () => {
     it('builds static facades from manifest when no index.js exists', async () => {
       const loaded = makeLoaded({
         manifest: makeManifest({
-          facades: [{
-            name: 'my_facade',
-            description: 'Test facade',
-            ops: [
-              { name: 'do_thing', description: 'Does a thing', auth: 'read' },
-              { name: 'admin_thing', description: 'Admin action', auth: 'admin' },
-            ],
-          }],
+          facades: [
+            {
+              name: 'my_facade',
+              description: 'Test facade',
+              ops: [
+                { name: 'do_thing', description: 'Does a thing', auth: 'read' },
+                { name: 'admin_thing', description: 'Admin action', auth: 'admin' },
+              ],
+            },
+          ],
         }),
       });
 
@@ -98,11 +100,13 @@ describe('PluginRegistry — colocated', () => {
     it('static facade ops return error message when called', async () => {
       const loaded = makeLoaded({
         manifest: makeManifest({
-          facades: [{
-            name: 'f',
-            description: '',
-            ops: [{ name: 'op1', description: '', auth: 'read' }],
-          }],
+          facades: [
+            {
+              name: 'f',
+              description: '',
+              ops: [{ name: 'op1', description: '', auth: 'read' }],
+            },
+          ],
         }),
       });
 
@@ -126,9 +130,9 @@ describe('PluginRegistry — colocated', () => {
     });
 
     it('throws for unregistered plugin', async () => {
-      await expect(
-        registry.activate('ghost', makeContext(makeLoaded())),
-      ).rejects.toThrow('not registered');
+      await expect(registry.activate('ghost', makeContext(makeLoaded()))).rejects.toThrow(
+        'not registered',
+      );
     });
 
     it('sets error status when index.js fails to load', async () => {
@@ -152,11 +156,13 @@ describe('PluginRegistry — colocated', () => {
     it('deactivates an active plugin and clears facades', async () => {
       const loaded = makeLoaded({
         manifest: makeManifest({
-          facades: [{
-            name: 'f',
-            description: '',
-            ops: [{ name: 'op', description: '', auth: 'read' }],
-          }],
+          facades: [
+            {
+              name: 'f',
+              description: '',
+              ops: [{ name: 'op', description: '', auth: 'read' }],
+            },
+          ],
         }),
       });
 
@@ -203,11 +209,13 @@ describe('PluginRegistry — colocated', () => {
       const active = makeLoaded({
         manifest: makeManifest({
           id: 'active-one',
-          facades: [{
-            name: 'af',
-            description: '',
-            ops: [{ name: 'aop', description: '', auth: 'read' }],
-          }],
+          facades: [
+            {
+              name: 'af',
+              description: '',
+              ops: [{ name: 'aop', description: '', auth: 'read' }],
+            },
+          ],
         }),
       });
       const inactive = makeLoaded({ manifest: makeManifest({ id: 'inactive-one' }) });
@@ -227,10 +235,14 @@ describe('PluginRegistry — colocated', () => {
           id: 'multi',
           facades: [
             { name: 'f1', description: '', ops: [{ name: 'a', description: '', auth: 'read' }] },
-            { name: 'f2', description: '', ops: [
-              { name: 'b', description: '', auth: 'write' },
-              { name: 'c', description: '', auth: 'admin' },
-            ]},
+            {
+              name: 'f2',
+              description: '',
+              ops: [
+                { name: 'b', description: '', auth: 'write' },
+                { name: 'c', description: '', auth: 'admin' },
+              ],
+            },
           ],
         }),
       });
@@ -240,7 +252,7 @@ describe('PluginRegistry — colocated', () => {
 
       const ops = registry.getActiveOps();
       expect(ops).toHaveLength(3);
-      expect(ops.map(o => o.name)).toEqual(['a', 'b', 'c']);
+      expect(ops.map((o) => o.name)).toEqual(['a', 'b', 'c']);
     });
 
     it('returns empty when no active plugins', () => {
@@ -265,8 +277,8 @@ describe('PluginRegistry — colocated', () => {
 
       const list = registry.list();
       expect(list).toHaveLength(2);
-      expect(list.find(p => p.id === 'a')!.status).toBe('active');
-      expect(list.find(p => p.id === 'b')!.status).toBe('registered');
+      expect(list.find((p) => p.id === 'a')!.status).toBe('active');
+      expect(list.find((p) => p.id === 'b')!.status).toBe('registered');
     });
   });
 });

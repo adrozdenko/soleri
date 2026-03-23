@@ -129,7 +129,12 @@ describe('github-projection', () => {
       ],
       tasks: [
         { id: 'task-1', title: 'Design auth schema', description: 'Create DB tables' },
-        { id: 'task-2', title: 'Implement login', description: 'Login endpoint', dependsOn: ['task-1'] },
+        {
+          id: 'task-2',
+          title: 'Implement login',
+          description: 'Login endpoint',
+          dependsOn: ['task-1'],
+        },
       ],
     };
 

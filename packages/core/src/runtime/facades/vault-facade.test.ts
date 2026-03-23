@@ -35,7 +35,9 @@ function makeMockVault() {
     getRecent: vi.fn().mockReturnValue([]),
     exportAll: vi.fn().mockReturnValue({ entries: [] }),
     getAgeReport: vi.fn().mockReturnValue({ buckets: [], oldestTimestamp: null }),
-    getDb: vi.fn().mockReturnValue({ prepare: vi.fn().mockReturnValue({ all: vi.fn().mockReturnValue([]) }) }),
+    getDb: vi
+      .fn()
+      .mockReturnValue({ prepare: vi.fn().mockReturnValue({ all: vi.fn().mockReturnValue([]) }) }),
     searchMemories: vi.fn().mockReturnValue([]),
     isAutoLinkEnabled: vi.fn().mockReturnValue(false),
     setTemporal: vi.fn().mockReturnValue(true),
@@ -53,17 +55,14 @@ function makeMockVault() {
 
 function makeMockBrain() {
   return {
-    intelligentSearch: vi.fn().mockResolvedValue([
-      { id: 'e1', title: 'Result 1', score: 0.9 },
-    ]),
-    scanSearch: vi.fn().mockResolvedValue([
-      { id: 'e1', title: 'Result 1', score: 0.8 },
-    ]),
-    loadEntries: vi.fn().mockReturnValue([
-      { id: 'e1', title: 'Full entry', type: 'pattern' },
-    ]),
+    intelligentSearch: vi.fn().mockResolvedValue([{ id: 'e1', title: 'Result 1', score: 0.9 }]),
+    scanSearch: vi.fn().mockResolvedValue([{ id: 'e1', title: 'Result 1', score: 0.8 }]),
+    loadEntries: vi.fn().mockReturnValue([{ id: 'e1', title: 'Full entry', type: 'pattern' }]),
     enrichAndCapture: vi.fn().mockReturnValue({
-      captured: true, id: 'cap-1', autoTags: ['auto'], duplicate: null,
+      captured: true,
+      id: 'cap-1',
+      autoTags: ['auto'],
+      duplicate: null,
     }),
     recordFeedback: vi.fn(),
   };
@@ -73,17 +72,11 @@ function makeMockVaultManager() {
   return {
     open: vi.fn(),
     disconnect: vi.fn().mockReturnValue(true),
-    listTiers: vi.fn().mockReturnValue([
-      { tier: 'agent', connected: true, entries: 25 },
-    ]),
-    search: vi.fn().mockReturnValue([
-      { id: 'e1', tier: 'agent', score: 0.9 },
-    ]),
+    listTiers: vi.fn().mockReturnValue([{ tier: 'agent', connected: true, entries: 25 }]),
+    search: vi.fn().mockReturnValue([{ id: 'e1', tier: 'agent', score: 0.9 }]),
     connect: vi.fn(),
     disconnectNamed: vi.fn().mockReturnValue(true),
-    listConnected: vi.fn().mockReturnValue([
-      { name: 'team-shared', priority: 0.5 },
-    ]),
+    listConnected: vi.fn().mockReturnValue([{ name: 'team-shared', priority: 0.5 }]),
   };
 }
 
@@ -181,7 +174,11 @@ describe('vault-facade', () => {
 
   it('includes core inline op names', () => {
     const coreOps = [
-      'search', 'load_entries', 'vault_stats', 'list_all', 'export',
+      'search',
+      'load_entries',
+      'vault_stats',
+      'list_all',
+      'export',
       'capture_enriched',
     ];
     for (const name of coreOps) {
@@ -191,7 +188,7 @@ describe('vault-facade', () => {
 
   it('includes satellite ops', () => {
     // Spot-check a few ops from each satellite module
-    expect(ops.has('vault_get')).toBe(true);        // vault-extra-ops
+    expect(ops.has('vault_get')).toBe(true); // vault-extra-ops
     expect(ops.has('capture_knowledge')).toBe(true); // capture-ops
     expect(ops.has('search_intelligent')).toBe(true); // capture-ops
     // link_entries moved to vault-linking-facade
@@ -216,32 +213,47 @@ describe('vault-facade', () => {
       expect(result.success).toBe(true);
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
       expect(brain.intelligentSearch).toHaveBeenCalledWith('tokens', {
-        domain: undefined, type: undefined, severity: undefined,
-        tags: undefined, limit: 10,
+        domain: undefined,
+        type: undefined,
+        severity: undefined,
+        tags: undefined,
+        limit: 10,
       });
     });
 
     it('uses scan mode when specified', async () => {
       const result = await executeOp(ops, 'search', {
-        query: 'tokens', mode: 'scan',
+        query: 'tokens',
+        mode: 'scan',
       });
       expect(result.success).toBe(true);
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
-      expect(brain.scanSearch).toHaveBeenCalledWith('tokens', expect.objectContaining({
-        limit: 10,
-      }));
+      expect(brain.scanSearch).toHaveBeenCalledWith(
+        'tokens',
+        expect.objectContaining({
+          limit: 10,
+        }),
+      );
       expect(brain.intelligentSearch).not.toHaveBeenCalled();
     });
 
     it('passes all filter params', async () => {
       await executeOp(ops, 'search', {
-        query: 'test', domain: 'design', type: 'pattern',
-        severity: 'critical', tags: ['a11y'], limit: 5, mode: 'full',
+        query: 'test',
+        domain: 'design',
+        type: 'pattern',
+        severity: 'critical',
+        tags: ['a11y'],
+        limit: 5,
+        mode: 'full',
       });
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
       expect(brain.intelligentSearch).toHaveBeenCalledWith('test', {
-        domain: 'design', type: 'pattern', severity: 'critical',
-        tags: ['a11y'], limit: 5,
+        domain: 'design',
+        type: 'pattern',
+        severity: 'critical',
+        tags: ['a11y'],
+        limit: 5,
       });
     });
   });
@@ -301,20 +313,26 @@ describe('vault-facade', () => {
     it('uses default pagination', async () => {
       await executeOp(ops, 'list_all', {});
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
-      expect(vault.list).toHaveBeenCalledWith(
-        expect.objectContaining({ limit: 20, offset: 0 }),
-      );
+      expect(vault.list).toHaveBeenCalledWith(expect.objectContaining({ limit: 20, offset: 0 }));
     });
 
     it('passes all filter params', async () => {
       await executeOp(ops, 'list_all', {
-        domain: 'design', type: 'pattern', severity: 'warning',
-        tags: ['a11y'], limit: 5, offset: 10,
+        domain: 'design',
+        type: 'pattern',
+        severity: 'warning',
+        tags: ['a11y'],
+        limit: 5,
+        offset: 10,
       });
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
       expect(vault.list).toHaveBeenCalledWith({
-        domain: 'design', type: 'pattern', severity: 'warning',
-        tags: ['a11y'], limit: 5, offset: 10,
+        domain: 'design',
+        type: 'pattern',
+        severity: 'warning',
+        tags: ['a11y'],
+        limit: 5,
+        offset: 10,
       });
     });
   });
@@ -345,8 +363,11 @@ describe('vault-facade', () => {
   describe('capture_enriched', () => {
     it('captures with LLM enrichment when successful', async () => {
       const result = await executeOp(ops, 'capture_enriched', {
-        title: 'Semantic tokens', description: 'Always use semantic tokens',
-        type: 'pattern', domain: 'design', tags: ['tokens'],
+        title: 'Semantic tokens',
+        description: 'Always use semantic tokens',
+        type: 'pattern',
+        domain: 'design',
+        tags: ['tokens'],
       });
       expect(result.success).toBe(true);
       const data = result.data as { captured: boolean; enriched: boolean; entryId: string };
@@ -356,10 +377,13 @@ describe('vault-facade', () => {
 
     it('falls back to basic capture when enrichment fails', async () => {
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
-      brain.enrichAndCapture.mockImplementation(() => { throw new Error('LLM unavailable'); });
+      brain.enrichAndCapture.mockImplementation(() => {
+        throw new Error('LLM unavailable');
+      });
 
       const result = await executeOp(ops, 'capture_enriched', {
-        title: 'Test entry', description: 'A test pattern to avoid problems',
+        title: 'Test entry',
+        description: 'A test pattern to avoid problems',
       });
       expect(result.success).toBe(true);
       const data = result.data as { captured: boolean; enriched: boolean };
@@ -369,34 +393,37 @@ describe('vault-facade', () => {
 
     it('infers anti-pattern type from description keywords', async () => {
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
-      brain.enrichAndCapture.mockImplementation(() => { throw new Error('LLM down'); });
+      brain.enrichAndCapture.mockImplementation(() => {
+        throw new Error('LLM down');
+      });
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
 
       await executeOp(ops, 'capture_enriched', {
         title: 'Avoid inline styles',
         description: "Don't use inline styles in components",
       });
-      expect(vault.add).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'anti-pattern' }),
-      );
+      expect(vault.add).toHaveBeenCalledWith(expect.objectContaining({ type: 'anti-pattern' }));
     });
 
     it('infers critical severity from keywords', async () => {
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
-      brain.enrichAndCapture.mockImplementation(() => { throw new Error('fail'); });
+      brain.enrichAndCapture.mockImplementation(() => {
+        throw new Error('fail');
+      });
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
 
       await executeOp(ops, 'capture_enriched', {
-        title: 'Security check', description: 'This is a critical security requirement',
+        title: 'Security check',
+        description: 'This is a critical security requirement',
       });
-      expect(vault.add).toHaveBeenCalledWith(
-        expect.objectContaining({ severity: 'critical' }),
-      );
+      expect(vault.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'critical' }));
     });
 
     it('auto-generates tags from title when none provided', async () => {
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
-      brain.enrichAndCapture.mockImplementation(() => { throw new Error('fail'); });
+      brain.enrichAndCapture.mockImplementation(() => {
+        throw new Error('fail');
+      });
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
 
       await executeOp(ops, 'capture_enriched', {
@@ -412,12 +439,17 @@ describe('vault-facade', () => {
 
     it('returns error on total failure', async () => {
       const brain = runtime.brain as ReturnType<typeof makeMockBrain>;
-      brain.enrichAndCapture.mockImplementation(() => { throw new Error('fail'); });
+      brain.enrichAndCapture.mockImplementation(() => {
+        throw new Error('fail');
+      });
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
-      vault.add.mockImplementation(() => { throw new Error('DB error'); });
+      vault.add.mockImplementation(() => {
+        throw new Error('DB error');
+      });
 
       const result = await executeOp(ops, 'capture_enriched', {
-        title: 'Test', description: 'Test',
+        title: 'Test',
+        description: 'Test',
       });
       expect(result.success).toBe(true);
       const data = result.data as { error: string };
@@ -439,12 +471,12 @@ describe('vault-facade', () => {
     it('includes moved ops from all new facades', () => {
       // Spot-check one op from each moved facade
       const movedOps = [
-        'vault_archive',    // archive
-        'vault_git_push',   // sync
+        'vault_archive', // archive
+        'vault_git_push', // sync
         'vault_submit_review', // review
-        'link_entries',     // links
-        'vault_branch',     // branching
-        'vault_connect',    // tier
+        'link_entries', // links
+        'vault_branch', // branching
+        'vault_connect', // tier
       ];
       for (const name of movedOps) {
         expect(ops.has(name), `missing compat stub: ${name}`).toBe(true);
@@ -461,15 +493,9 @@ describe('vault-facade', () => {
       expect(result.success).toBe(true);
 
       // Verify deprecation warning was logged
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[DEPRECATED]'),
-      );
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('vault_archive'),
-      );
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('archive'),
-      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[DEPRECATED]'));
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('vault_archive'));
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('archive'));
 
       // Verify the real handler was invoked
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
@@ -502,12 +528,14 @@ describe('vault-facade', () => {
     });
 
     it('preserves op metadata (name, description, auth, schema)', () => {
-      const original = [{
-        name: 'test_op',
-        description: 'A test op',
-        auth: 'write' as const,
-        handler: async () => ({ ok: true }),
-      }];
+      const original = [
+        {
+          name: 'test_op',
+          description: 'A test op',
+          auth: 'write' as const,
+          handler: async () => ({ ok: true }),
+        },
+      ];
       const wrapped = deprecateOps(original, 'new-facade');
       expect(wrapped).toHaveLength(1);
       expect(wrapped[0].name).toBe('test_op');
@@ -517,20 +545,19 @@ describe('vault-facade', () => {
 
     it('wraps handler to log warning and return original result', async () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const original = [{
-        name: 'moved_op',
-        description: 'Moved',
-        auth: 'read' as const,
-        handler: async () => ({ value: 42 }),
-      }];
+      const original = [
+        {
+          name: 'moved_op',
+          description: 'Moved',
+          auth: 'read' as const,
+          handler: async () => ({ value: 42 }),
+        },
+      ];
       const wrapped = deprecateOps(original, 'target-facade');
       const result = await wrapped[0].handler({});
       expect(result).toEqual({ value: 42 });
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('target-facade'),
-      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('target-facade'));
       warnSpy.mockRestore();
     });
   });
-
 });

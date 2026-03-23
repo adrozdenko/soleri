@@ -14,7 +14,9 @@ function setup() {
 function teardown() {
   try {
     rmSync(TMP, { recursive: true, force: true });
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 describe('ImpactAnalyzer', () => {
@@ -65,10 +67,7 @@ describe('ImpactAnalyzer', () => {
       join(TMP, 'src', 'components', 'b.ts'),
       "import { format } from '../utils/format';",
     );
-    writeFileSync(
-      join(TMP, 'src', 'components', 'c.ts'),
-      "const f = require('../utils/format');",
-    );
+    writeFileSync(join(TMP, 'src', 'components', 'c.ts'), "const f = require('../utils/format');");
 
     const report = analyzer.analyzeImpact(['src/utils/format.ts'], TMP);
 
@@ -100,11 +99,9 @@ describe('ImpactAnalyzer', () => {
   it('detects scope violations when files are outside plan scope', () => {
     writeFileSync(join(TMP, 'src', 'utils', 'misc.ts'), 'export const x = 1;');
 
-    const report = analyzer.analyzeImpact(
-      ['src/utils/misc.ts', 'src/components/button.ts'],
-      TMP,
-      ['components'],
-    );
+    const report = analyzer.analyzeImpact(['src/utils/misc.ts', 'src/components/button.ts'], TMP, [
+      'components',
+    ]);
 
     expect(report.scopeViolations).toContain('src/utils/misc.ts');
     expect(report.scopeViolations).not.toContain('src/components/button.ts');
@@ -134,11 +131,7 @@ describe('ImpactAnalyzer', () => {
   it('includes scope violation in recommendations', () => {
     writeFileSync(join(TMP, 'src', 'utils', 'oops.ts'), 'export const x = 1;');
 
-    const report = analyzer.analyzeImpact(
-      ['src/utils/oops.ts'],
-      TMP,
-      ['components'],
-    );
+    const report = analyzer.analyzeImpact(['src/utils/oops.ts'], TMP, ['components']);
 
     const recText = report.recommendations.join(' ');
     expect(recText).toContain('Scope violation');
@@ -148,10 +141,7 @@ describe('ImpactAnalyzer', () => {
 
   it('separates test files from untested consumers', () => {
     writeFileSync(join(TMP, 'src', 'utils', 'api.ts'), 'export const api = 1;');
-    writeFileSync(
-      join(TMP, 'src', 'components', 'page.ts'),
-      "import { api } from '../utils/api';",
-    );
+    writeFileSync(join(TMP, 'src', 'components', 'page.ts'), "import { api } from '../utils/api';");
     writeFileSync(
       join(TMP, 'src', '__tests__', 'api.test.ts'),
       "import { api } from '../utils/api';",
@@ -168,10 +158,7 @@ describe('ImpactAnalyzer', () => {
   // ─── Graceful when project path doesn't exist ──────────────
 
   it('returns low risk when project path does not exist', () => {
-    const report = analyzer.analyzeImpact(
-      ['src/foo.ts'],
-      '/nonexistent/path/12345',
-    );
+    const report = analyzer.analyzeImpact(['src/foo.ts'], '/nonexistent/path/12345');
 
     expect(report.riskLevel).toBe('low');
     expect(report.affectedConsumers).toHaveLength(0);

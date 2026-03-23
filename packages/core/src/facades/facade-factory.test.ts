@@ -88,12 +88,16 @@ describe('facade-factory dispatchOp — colocated', () => {
 
   it('catches handler exceptions and returns error response', async () => {
     const facade = createFacade({
-      ops: [{
-        name: 'failing_op',
-        description: 'Fails',
-        auth: 'read',
-        handler: async () => { throw new Error('Handler exploded'); },
-      }],
+      ops: [
+        {
+          name: 'failing_op',
+          description: 'Fails',
+          auth: 'read',
+          handler: async () => {
+            throw new Error('Handler exploded');
+          },
+        },
+      ],
     });
     const handler = captureHandler(facade);
 
@@ -105,12 +109,16 @@ describe('facade-factory dispatchOp — colocated', () => {
 
   it('catches non-Error throws and converts to string', async () => {
     const facade = createFacade({
-      ops: [{
-        name: 'string_throw',
-        description: 'Throws string',
-        auth: 'read',
-        handler: async () => { throw 'raw string error'; },
-      }],
+      ops: [
+        {
+          name: 'string_throw',
+          description: 'Throws string',
+          auth: 'read',
+          handler: async () => {
+            throw 'raw string error';
+          },
+        },
+      ],
     });
     const handler = captureHandler(facade);
 
@@ -128,13 +136,15 @@ describe('facade-factory dispatchOp — colocated', () => {
 describe('facade-factory schema validation — colocated', () => {
   it('validates params against op schema and rejects invalid', async () => {
     const facade = createFacade({
-      ops: [{
-        name: 'validated_op',
-        description: 'Has schema',
-        auth: 'read',
-        schema: z.object({ query: z.string(), limit: z.number() }),
-        handler: async (params) => ({ echo: params }),
-      }],
+      ops: [
+        {
+          name: 'validated_op',
+          description: 'Has schema',
+          auth: 'read',
+          schema: z.object({ query: z.string(), limit: z.number() }),
+          handler: async (params) => ({ echo: params }),
+        },
+      ],
     });
     const handler = captureHandler(facade);
 
@@ -146,13 +156,15 @@ describe('facade-factory schema validation — colocated', () => {
 
   it('passes validated params to handler', async () => {
     const facade = createFacade({
-      ops: [{
-        name: 'validated_op',
-        description: 'Has schema',
-        auth: 'read',
-        schema: z.object({ query: z.string(), limit: z.number().optional() }),
-        handler: async (params) => ({ echo: params }),
-      }],
+      ops: [
+        {
+          name: 'validated_op',
+          description: 'Has schema',
+          auth: 'read',
+          schema: z.object({ query: z.string(), limit: z.number().optional() }),
+          handler: async (params) => ({ echo: params }),
+        },
+      ],
     });
     const handler = captureHandler(facade);
 
@@ -164,12 +176,14 @@ describe('facade-factory schema validation — colocated', () => {
 
   it('passes raw params when no schema defined', async () => {
     const facade = createFacade({
-      ops: [{
-        name: 'no_schema',
-        description: 'No schema',
-        auth: 'read',
-        handler: async (params) => ({ echo: params }),
-      }],
+      ops: [
+        {
+          name: 'no_schema',
+          description: 'No schema',
+          auth: 'read',
+          handler: async (params) => ({ echo: params }),
+        },
+      ],
     });
     const handler = captureHandler(facade);
 
@@ -255,7 +269,9 @@ describe('registerAllFacades — colocated', () => {
   it('registers all facades on the server', () => {
     const registered: string[] = [];
     const mockServer = {
-      tool: (name: string) => { registered.push(name); },
+      tool: (name: string) => {
+        registered.push(name);
+      },
     };
 
     registerAllFacades(mockServer as never, [
@@ -270,7 +286,9 @@ describe('registerAllFacades — colocated', () => {
   it('accepts legacy function auth policy', () => {
     const registered: string[] = [];
     const mockServer = {
-      tool: (name: string) => { registered.push(name); },
+      tool: (name: string) => {
+        registered.push(name);
+      },
     };
 
     registerAllFacades(mockServer as never, [createFacade()], () => ({
@@ -284,12 +302,20 @@ describe('registerAllFacades — colocated', () => {
   it('promotes hot ops to standalone tools with agentId prefix', () => {
     const registered: string[] = [];
     const mockServer = {
-      tool: (name: string) => { registered.push(name); },
+      tool: (name: string) => {
+        registered.push(name);
+      },
     };
 
     const facade = createFacade({
       ops: [
-        { name: 'search', description: 'Search', auth: 'read', hot: true, handler: async () => ({}) },
+        {
+          name: 'search',
+          description: 'Search',
+          auth: 'read',
+          hot: true,
+          handler: async () => ({}),
+        },
         { name: 'delete', description: 'Delete', auth: 'admin', handler: async () => ({}) },
       ],
     });
@@ -304,7 +330,9 @@ describe('registerAllFacades — colocated', () => {
   it('promotes ops listed in hotOps option', () => {
     const registered: string[] = [];
     const mockServer = {
-      tool: (name: string) => { registered.push(name); },
+      tool: (name: string) => {
+        registered.push(name);
+      },
     };
 
     registerAllFacades(mockServer as never, [createFacade()], {
@@ -319,12 +347,20 @@ describe('registerAllFacades — colocated', () => {
   it('does not promote hot ops without agentId', () => {
     const registered: string[] = [];
     const mockServer = {
-      tool: (name: string) => { registered.push(name); },
+      tool: (name: string) => {
+        registered.push(name);
+      },
     };
 
     const facade = createFacade({
       ops: [
-        { name: 'search', description: 'Search', auth: 'read', hot: true, handler: async () => ({}) },
+        {
+          name: 'search',
+          description: 'Search',
+          auth: 'read',
+          hot: true,
+          handler: async () => ({}),
+        },
       ],
     });
 
@@ -344,20 +380,24 @@ describe('registerAllFacades — colocated', () => {
     };
 
     const facade = createFacade({
-      ops: [{
-        name: 'search',
-        description: 'Search',
-        auth: 'read',
-        hot: true,
-        schema: z.object({ query: z.string() }),
-        handler: async (params) => ({ results: [], query: (params as { query: string }).query }),
-      }],
+      ops: [
+        {
+          name: 'search',
+          description: 'Search',
+          auth: 'read',
+          hot: true,
+          schema: z.object({ query: z.string() }),
+          handler: async (params) => ({ results: [], query: (params as { query: string }).query }),
+        },
+      ],
     });
 
     registerAllFacades(mockServer as never, [facade], { agentId: 'agent' });
 
     expect(capturedHandler).not.toBeNull();
-    const result = await capturedHandler!({ query: 'hello' }) as { content: Array<{ text: string }> };
+    const result = (await capturedHandler!({ query: 'hello' })) as {
+      content: Array<{ text: string }>;
+    };
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.success).toBe(true);
     expect(parsed.data.query).toBe('hello');
@@ -374,18 +414,22 @@ describe('registerAllFacades — colocated', () => {
     };
 
     const facade = createFacade({
-      ops: [{
-        name: 'boom',
-        description: 'Explodes',
-        auth: 'read',
-        hot: true,
-        handler: async () => { throw new Error('Kaboom'); },
-      }],
+      ops: [
+        {
+          name: 'boom',
+          description: 'Explodes',
+          auth: 'read',
+          hot: true,
+          handler: async () => {
+            throw new Error('Kaboom');
+          },
+        },
+      ],
     });
 
     registerAllFacades(mockServer as never, [facade], { agentId: 'agent' });
 
-    const result = await capturedHandler!({}) as { content: Array<{ text: string }> };
+    const result = (await capturedHandler!({})) as { content: Array<{ text: string }> };
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.success).toBe(false);
     expect(parsed.error).toBe('Kaboom');
@@ -402,13 +446,15 @@ describe('registerAllFacades — colocated', () => {
     };
 
     const facade = createFacade({
-      ops: [{
-        name: 'admin_op',
-        description: 'Admin',
-        auth: 'admin',
-        hot: true,
-        handler: async () => ({ ok: true }),
-      }],
+      ops: [
+        {
+          name: 'admin_op',
+          description: 'Admin',
+          auth: 'admin',
+          hot: true,
+          handler: async () => ({ ok: true }),
+        },
+      ],
     });
 
     registerAllFacades(mockServer as never, [facade], {
@@ -416,7 +462,7 @@ describe('registerAllFacades — colocated', () => {
       authPolicy: () => ({ mode: 'enforce', callerLevel: 'read' }),
     });
 
-    const result = await capturedHandler!({}) as { content: Array<{ text: string }> };
+    const result = (await capturedHandler!({})) as { content: Array<{ text: string }> };
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.success).toBe(false);
     expect(parsed.error).toContain('requires admin');

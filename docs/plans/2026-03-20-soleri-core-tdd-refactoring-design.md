@@ -13,24 +13,24 @@ Refactor the entire `@soleri/core` package to follow clean code principles, achi
 
 ## Scope
 
-| Included | Excluded |
-|----------|----------|
-| `@soleri/core` — all 46 modules | `@soleri/cli`, `@soleri/forge`, `@soleri/engine` |
-| Colocated unit tests for every module | E2E test rewrite |
-| Migration of existing `src/__tests__/` to colocated files | Architectural changes (no package splitting) |
-| Decomposition of 6 files over 900 LOC | Public API changes (facade API stays identical) |
-| Vault knowledge capture (fill pattern gaps) | New features or capabilities |
-| Never-nester compliance across all code | Domain packs refactoring |
+| Included                                                  | Excluded                                         |
+| --------------------------------------------------------- | ------------------------------------------------ |
+| `@soleri/core` — all 46 modules                           | `@soleri/cli`, `@soleri/forge`, `@soleri/engine` |
+| Colocated unit tests for every module                     | E2E test rewrite                                 |
+| Migration of existing `src/__tests__/` to colocated files | Architectural changes (no package splitting)     |
+| Decomposition of 6 files over 900 LOC                     | Public API changes (facade API stays identical)  |
+| Vault knowledge capture (fill pattern gaps)               | New features or capabilities                     |
+| Never-nester compliance across all code                   | Domain packs refactoring                         |
 
 ## Strategy: Layered Safety Net
 
 The refactoring strategy adapts to file size and risk:
 
-| File Size | Strategy | Rationale |
-|-----------|----------|-----------|
-| **900+ LOC** (6 files) | Full Feathers: characterize → decompose → unit test | Hidden behavior lives here — needs characterization tests for safety |
-| **300-900 LOC** | Contract-first: design target interface, TDD against it | Well-understood enough to design target interfaces directly |
-| **< 300 LOC** | Direct TDD: write unit tests, refactor inline | Blast radius is tiny — safe to TDD directly |
+| File Size              | Strategy                                                | Rationale                                                            |
+| ---------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
+| **900+ LOC** (6 files) | Full Feathers: characterize → decompose → unit test     | Hidden behavior lives here — needs characterization tests for safety |
+| **300-900 LOC**        | Contract-first: design target interface, TDD against it | Well-understood enough to design target interfaces directly          |
+| **< 300 LOC**          | Direct TDD: write unit tests, refactor inline           | Blast radius is tiny — safe to TDD directly                          |
 
 ### Per-Module Protocol
 
@@ -64,22 +64,23 @@ Phase C: VERIFY
 
 All refactored code must comply with these rules:
 
-| Rule | Threshold | Enforcement |
-|------|-----------|-------------|
-| **Max nesting depth** | 2 levels | Extract to named function at level 3+ |
-| **Guard clauses** | Mandatory | Invert conditions, return/throw/continue early |
-| **No else-after-return** | Zero tolerance | oxlint `no-else-return` |
-| **Function length** | < 30 LOC (ideal < 15) | > 35 = critical smell |
-| **File length** | < 400 LOC | Decompose if exceeding |
-| **Extraction threshold** | Nested block > 5 lines | Extract to named pure function |
-| **Cyclomatic complexity** | < 10 per function | Flag and decompose |
-| **Parameters** | < 5 per function | Use options object above 3 |
-| **Single Responsibility** | File level | One concern per file |
-| **Dependency Injection** | Constructors | No `new ConcreteClass()` inside modules |
-| **No circular deps** | Zero tolerance | Module dependency flows one direction |
-| **Loop nesting** | Prefer `filter/map` | Use `continue` as guard in `for...of` |
+| Rule                      | Threshold              | Enforcement                                    |
+| ------------------------- | ---------------------- | ---------------------------------------------- |
+| **Max nesting depth**     | 2 levels               | Extract to named function at level 3+          |
+| **Guard clauses**         | Mandatory              | Invert conditions, return/throw/continue early |
+| **No else-after-return**  | Zero tolerance         | oxlint `no-else-return`                        |
+| **Function length**       | < 30 LOC (ideal < 15)  | > 35 = critical smell                          |
+| **File length**           | < 400 LOC              | Decompose if exceeding                         |
+| **Extraction threshold**  | Nested block > 5 lines | Extract to named pure function                 |
+| **Cyclomatic complexity** | < 10 per function      | Flag and decompose                             |
+| **Parameters**            | < 5 per function       | Use options object above 3                     |
+| **Single Responsibility** | File level             | One concern per file                           |
+| **Dependency Injection**  | Constructors           | No `new ConcreteClass()` inside modules        |
+| **No circular deps**      | Zero tolerance         | Module dependency flows one direction          |
+| **Loop nesting**          | Prefer `filter/map`    | Use `continue` as guard in `for...of`          |
 
 **Vault references:**
+
 - `typescript-1774041194727-ddn81w` — Never Nester rules
 - `typescript-1774043995779-g0rmzj` — DRY, KISS, YAGNI
 - `typescript-1774043995805-3momgt` — SOLID Principles
@@ -93,21 +94,25 @@ All refactored code must comply with these rules:
 All rules above derive from three foundational principles:
 
 **DRY — Don't Repeat Yourself**
+
 - 3+ lines duplicated across 2+ locations → extract to shared function (Rule of Three)
 - DRY applies to KNOWLEDGE, not syntax. Similar-looking code for different concepts stays separate.
 - Anti-pattern: catch-all `utils.ts` files. Shared functions belong in the module that owns the concept.
 
 **KISS — Keep It Simple, Stupid**
+
 - Function > class when possible. Sync > async when possible. Built-in > library when possible.
 - Litmus test: can a developer understand this function in 30 seconds without scrolling?
 - If you need a comment to explain WHAT (not WHY), the code is too complex.
 
 **YAGNI — You Aren't Gonna Need It**
+
 - No unused parameters "for future use." No abstract classes with one implementation.
 - During refactoring: extract exactly what current callers need. No speculative parameters.
 - Exception: DI interfaces ARE justified with one implementation — they enable testing (a current need).
 
 **SOLID Principles** (concrete enforcement):
+
 - **SRP:** One concept per file. If the name needs "And"/"Manager"/"Handler," it's doing too much.
 - **Open/Closed:** Strategy/DI instead of growing if/else chains. New passes addable without modifying runners.
 - **LSP:** Every `PersistenceProvider` implementation must actually implement all methods (no "not implemented" throws).
@@ -119,6 +124,7 @@ All rules above derive from three foundational principles:
 Tests are the specification. They define correct behavior with more authority than comments or documentation. A test that passes for the wrong reason is worse than no test.
 
 ### Naming Convention (mandatory)
+
 ```
 ✗ it('works')
 ✗ it('should work correctly')
@@ -128,16 +134,17 @@ Tests are the specification. They define correct behavior with more authority th
 ```
 
 ### Assertion Precision (mandatory)
+
 ```typescript
 // FORBIDDEN — vague assertions that hide bugs:
-expect(result).toBeTruthy();        // passes for [], 0, ' '
-expect(result).toBeDefined();       // passes for wrong type/shape
-expect(result).not.toBeNull();      // passes for wrong everything
+expect(result).toBeTruthy(); // passes for [], 0, ' '
+expect(result).toBeDefined(); // passes for wrong type/shape
+expect(result).not.toBeNull(); // passes for wrong everything
 
 // REQUIRED — precise assertions that catch regressions:
 expect(result.score).toBe(0.85);
 expect(results).toHaveLength(3);
-expect(results.map(r => r.id)).toEqual(['first', 'second', 'third']);
+expect(results.map((r) => r.id)).toEqual(['first', 'second', 'third']);
 expect(result).toMatchObject({ id: expect.any(String), score: expect.any(Number) });
 expect(() => vault.add(null)).toThrow(TypeError);
 ```
@@ -145,23 +152,26 @@ expect(() => vault.add(null)).toThrow(TypeError);
 **Quality gate:** Precision rate >= 90%. No more than 1 weak assertion (toBeTruthy/toBeDefined) per 10 test cases.
 
 ### Test Isolation (mandatory)
+
 ```typescript
 // Every test gets a fresh instance. No shared mutable state.
 let vault: Vault;
 
 beforeEach(() => {
-  vault = new Vault(':memory:');  // Fresh SQLite per test
+  vault = new Vault(':memory:'); // Fresh SQLite per test
 });
 
 afterEach(() => {
   vault.close();
 });
 ```
+
 - Module-level caches must be reset via `resetConfigCache()` pattern in `beforeEach`
 - Test order must not matter: `vitest --shuffle` must pass
 - No test reads data created by another test
 
 ### Factory Functions (mandatory per module)
+
 ```typescript
 // One makeX() factory per entity type. Defaults for everything, overrides for what matters.
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
@@ -178,6 +188,7 @@ function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntr
 ```
 
 ### Arrange-Act-Assert (mandatory structure)
+
 ```typescript
 it('returns entries filtered by domain', () => {
   // Arrange — set up preconditions
@@ -194,13 +205,13 @@ it('returns entries filtered by domain', () => {
 
 ### Mock vs Real Dependencies
 
-| Dependency Type | Strategy | Reason |
-|---|---|---|
-| SQLite (in-memory) | **REAL** `:memory:` | Fast, deterministic, tests real SQL |
-| File system | **REAL** with `os.tmpdir()` | Fast, tests real I/O |
-| LLM/API calls | **MOCK** | Slow, non-deterministic, costs money |
-| Time/Date | **INJECT** `() => Date.now()` | Deterministic assertions |
-| Other core modules | **REAL when fast**, MOCK when slow | Prefer integration over isolation |
+| Dependency Type    | Strategy                           | Reason                               |
+| ------------------ | ---------------------------------- | ------------------------------------ |
+| SQLite (in-memory) | **REAL** `:memory:`                | Fast, deterministic, tests real SQL  |
+| File system        | **REAL** with `os.tmpdir()`        | Fast, tests real I/O                 |
+| LLM/API calls      | **MOCK**                           | Slow, non-deterministic, costs money |
+| Time/Date          | **INJECT** `() => Date.now()`      | Deterministic assertions             |
+| Other core modules | **REAL when fast**, MOCK when slow | Prefer integration over isolation    |
 
 ### What Makes a Test Trustworthy
 
@@ -213,6 +224,7 @@ A test must fail for **exactly one reason**: the behavior it describes is broken
 ### Migration Quality Gate
 
 When migrating tests from `src/__tests__/` to colocated files:
+
 1. Migrate the test as-is (preserve existing assertions)
 2. Run it GREEN in the new location
 3. **Then raise the bar**: replace any weak assertions (toBeTruthy/toBeDefined) with precise ones
@@ -245,11 +257,11 @@ This is NOT just a file move. It is a quality upgrade.
 
 **Strategy:** Direct TDD
 
-| Task | Details |
-|------|---------|
-| Migrate tests | `src/__tests__/persistence.test.ts` (291 lines) → `persistence/sqlite-provider.test.ts` |
-| Add edge cases | Corrupt DB handling, concurrent access, WAL mode verification |
-| Minor refactor | Extract pragma setup → `applyPerformancePragmas()` |
+| Task           | Details                                                                                 |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Migrate tests  | `src/__tests__/persistence.test.ts` (291 lines) → `persistence/sqlite-provider.test.ts` |
+| Add edge cases | Corrupt DB handling, concurrent access, WAL mode verification                           |
+| Minor refactor | Extract pragma setup → `applyPerformancePragmas()`                                      |
 
 **Current state:** Clean abstraction, zero core deps, well-tested. Minimal work needed.
 
@@ -257,10 +269,10 @@ This is NOT just a file move. It is a quality upgrade.
 
 **Strategy:** Direct TDD
 
-| Task | Details |
-|------|---------|
-| Migrate tests | `src/__tests__/migration-runner.test.ts` (170 lines) → `migrations/migration-runner.test.ts` |
-| Add edge cases | Rollback failure paths, semver edge cases, concurrent migration attempts |
+| Task           | Details                                                                                      |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| Migrate tests  | `src/__tests__/migration-runner.test.ts` (170 lines) → `migrations/migration-runner.test.ts` |
+| Add edge cases | Rollback failure paths, semver edge cases, concurrent migration attempts                     |
 
 **Current state:** Solid implementation with verify/rollback support.
 
@@ -272,14 +284,15 @@ This is NOT just a file move. It is a quality upgrade.
 
 **Decomposition plan:**
 
-| New File | Responsibility | Methods | Est. LOC |
-|----------|---------------|---------|----------|
-| `vault-schema.ts` | Schema DDL, migrations, format versioning | `initialize()`, 6 `migrate*()`, `checkFormatVersion()` | ~270 |
-| `vault-entries.ts` | Entry CRUD, search, analytics, lifecycle | `seed`, `seedDedup`, `installPack`, `add`, `remove`, `update`, `get`, `list`, `search`, `stats`, `getTags`, `getDomains`, `getRecent`, `getAgeReport`, `findByContentHash`, `contentHashStats`, `findExpiring`, `findExpired`, `setTemporal`, `bulkRemove`, `archive`, `restore`, `exportAll` | ~400 |
-| `vault-memories.ts` | Memory CRUD, search, analytics, pruning | `captureMemory`, `getMemory`, `deleteMemory`, `searchMemories`, `listMemories`, `memoryStats`, `memoryStatsDetailed`, `exportMemories`, `importMemories`, `memoriesByProject`, `memoryTopics`, `pruneMemories`, `deduplicateMemories` | **~350-380** _(was ~300)_ |
-| `vault.ts` (facade) | Orchestrates sub-modules, project registry, maintenance | Constructor, project methods, `rebuildFtsIndex`, `optimize`, `close`, delegates to sub-modules | **~200-220** _(was ~250)_ |
+| New File            | Responsibility                                          | Methods                                                                                                                                                                                                                                                                                       | Est. LOC                  |
+| ------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `vault-schema.ts`   | Schema DDL, migrations, format versioning               | `initialize()`, 6 `migrate*()`, `checkFormatVersion()`                                                                                                                                                                                                                                        | ~270                      |
+| `vault-entries.ts`  | Entry CRUD, search, analytics, lifecycle                | `seed`, `seedDedup`, `installPack`, `add`, `remove`, `update`, `get`, `list`, `search`, `stats`, `getTags`, `getDomains`, `getRecent`, `getAgeReport`, `findByContentHash`, `contentHashStats`, `findExpiring`, `findExpired`, `setTemporal`, `bulkRemove`, `archive`, `restore`, `exportAll` | ~400                      |
+| `vault-memories.ts` | Memory CRUD, search, analytics, pruning                 | `captureMemory`, `getMemory`, `deleteMemory`, `searchMemories`, `listMemories`, `memoryStats`, `memoryStatsDetailed`, `exportMemories`, `importMemories`, `memoriesByProject`, `memoryTopics`, `pruneMemories`, `deduplicateMemories`                                                         | **~350-380** _(was ~300)_ |
+| `vault.ts` (facade) | Orchestrates sub-modules, project registry, maintenance | Constructor, project methods, `rebuildFtsIndex`, `optimize`, `close`, delegates to sub-modules                                                                                                                                                                                                | **~200-220** _(was ~250)_ |
 
 **Phases:**
+
 1. Write characterization tests for all **53** public methods (black-box) _(was 45)_
 2. Extract to 4 files, keeping characterization tests green
 3. Write unit tests for each new file
@@ -290,12 +303,12 @@ This is NOT just a file move. It is a quality upgrade.
 
 **Interface Segregation (ISP):** Define 3-4 narrow TypeScript interfaces that the `Vault` class implements:
 
-| Interface | Methods | Consumers |
-|---|---|---|
-| `VaultReader` | `search()`, `get()`, `list()`, `stats()` | Brain, StrengthScorer, most read-only consumers |
-| `VaultWriter` | `add()`, `update()`, `remove()`, `seed()` | Curator, capture ops |
-| `VaultMemory` | `captureMemory()`, `searchMemories()`, `listMemories()` | Memory ops, session capture |
-| `VaultMaintenance` | `rebuildFtsIndex()`, `optimize()`, `close()` | Admin ops |
+| Interface          | Methods                                                 | Consumers                                       |
+| ------------------ | ------------------------------------------------------- | ----------------------------------------------- |
+| `VaultReader`      | `search()`, `get()`, `list()`, `stats()`                | Brain, StrengthScorer, most read-only consumers |
+| `VaultWriter`      | `add()`, `update()`, `remove()`, `seed()`               | Curator, capture ops                            |
+| `VaultMemory`      | `captureMemory()`, `searchMemories()`, `listMemories()` | Memory ops, session capture                     |
+| `VaultMaintenance` | `rebuildFtsIndex()`, `optimize()`, `close()`            | Admin ops                                       |
 
 The `Vault` class implements all four: `class Vault implements VaultReader, VaultWriter, VaultMemory, VaultMaintenance`. Consumers receive the narrowest interface they need. This does NOT break the public API — it adds type safety on top of it. Benefits: (1) consumers can't use methods they shouldn't, (2) test mocks only need to implement 3-5 methods instead of 45.
 
@@ -303,18 +316,18 @@ The `Vault` class implements all four: `class Vault implements VaultReader, Vaul
 
 All already well-sized. Write colocated tests, migrate existing tests, apply never-nester rules.
 
-| File | LOC | Existing Tests | Action |
-|------|-----|----------------|--------|
-| `vault-manager.ts` | 237 | `vault-manager.test.ts` (238 lines) | Migrate + colocate |
-| `linking.ts` | 427 | (none colocated) | Write tests, never-nester refactor |
-| `vault-branching.ts` | 264 | `vault-branching.test.ts` (274 lines) | Migrate + colocate |
-| `git-vault-sync.ts` | 318 | `git-vault-sync.test.ts` (230 lines) | Migrate + colocate |
-| `obsidian-sync.ts` | 346 | `obsidian-sync.test.ts` | Migrate + colocate |
-| `scope-detector.ts` | 219 | `scope-detector.test.ts` | Migrate + colocate |
-| `knowledge-review.ts` | 221 | (none) | Write tests |
-| `playbook.ts` | 87 | (none) | Write tests |
-| `content-hash.ts` | 31 | (none) | Write tests |
-| **`vault-types.ts`** | **96** | **(none)** | **Write tests if runtime logic; audit types** _(added 2026-03-21)_ |
+| File                  | LOC    | Existing Tests                        | Action                                                             |
+| --------------------- | ------ | ------------------------------------- | ------------------------------------------------------------------ |
+| `vault-manager.ts`    | 237    | `vault-manager.test.ts` (238 lines)   | Migrate + colocate                                                 |
+| `linking.ts`          | 427    | (none colocated)                      | Write tests, never-nester refactor                                 |
+| `vault-branching.ts`  | 264    | `vault-branching.test.ts` (274 lines) | Migrate + colocate                                                 |
+| `git-vault-sync.ts`   | 318    | `git-vault-sync.test.ts` (230 lines)  | Migrate + colocate                                                 |
+| `obsidian-sync.ts`    | 346    | `obsidian-sync.test.ts`               | Migrate + colocate                                                 |
+| `scope-detector.ts`   | 219    | `scope-detector.test.ts`              | Migrate + colocate                                                 |
+| `knowledge-review.ts` | 221    | (none)                                | Write tests                                                        |
+| `playbook.ts`         | 87     | (none)                                | Write tests                                                        |
+| `content-hash.ts`     | 31     | (none)                                | Write tests                                                        |
+| **`vault-types.ts`**  | **96** | **(none)**                            | **Write tests if runtime logic; audit types** _(added 2026-03-21)_ |
 
 ### Wave 0 Parallelism
 
@@ -340,23 +353,23 @@ Worktree 4: other vault files (0D) ───────────────
 
 **Files in scope:**
 
-| File | LOC | Strategy | Existing Tests |
-|------|-----|----------|----------------|
-| `intelligence.ts` | **~1,453** _(was 1,303)_ | Full Feathers → decompose to **5 files** _(was 4)_ | `brain-intelligence.test.ts` (828 lines) |
-| `brain.ts` | 685 | Contract-first TDD | `brain.test.ts` (exists) |
-| `learning-radar.ts` | 340 | Contract-first TDD | (none — tested implicitly via second-brain-features) |
-| `knowledge-synthesizer.ts` | 216 | Direct TDD | (none — tested implicitly via second-brain-features) |
-| `types.ts` | 256 | No refactoring needed (type definitions) | N/A |
+| File                       | LOC                      | Strategy                                           | Existing Tests                                       |
+| -------------------------- | ------------------------ | -------------------------------------------------- | ---------------------------------------------------- |
+| `intelligence.ts`          | **~1,453** _(was 1,303)_ | Full Feathers → decompose to **5 files** _(was 4)_ | `brain-intelligence.test.ts` (828 lines)             |
+| `brain.ts`                 | 685                      | Contract-first TDD                                 | `brain.test.ts` (exists)                             |
+| `learning-radar.ts`        | 340                      | Contract-first TDD                                 | (none — tested implicitly via second-brain-features) |
+| `knowledge-synthesizer.ts` | 216                      | Direct TDD                                         | (none — tested implicitly via second-brain-features) |
+| `types.ts`                 | 256                      | No refactoring needed (type definitions)           | N/A                                                  |
 
 **`intelligence.ts` decomposition:** _(Updated 2026-03-21: 5 files, was 4. See #277)_
 
-| New File | Responsibility | Key Methods | Est. LOC |
-|----------|---------------|-------------|----------|
-| `strength-scorer.ts` | 4-component strength metric (usage, spread, success, recency) | `computeStrengths()`, `getStrengths()`, `recommend()` | ~200 |
-| `session-manager.ts` | Session lifecycle, quality scoring, archival | `lifecycle()`, `getSessionContext()`, `archiveSessions()`, `getSessionById()`, `listSessions()`, `computeSessionQuality()`, `replaySession()` | ~350 |
-| `proposal-manager.ts` | Knowledge proposal capture, confidence gating, vault promotion | `extractKnowledge()`, `resetExtracted()`, `getProposals()`, `promoteProposals()` | ~300 |
-| **`auto-learning.ts`** | **Auto-promote proposals, auto-build trigger, plan-session linking** | **`autoPromoteProposals()`, `maybeAutoBuildIntelligence()`, `getSessionByPlanId()`** | **~150** |
-| `intelligence.ts` (facade) | Orchestrates sub-modules, stats, export/import | Constructor, `buildIntelligence()`, `getStats()`, `export()`, `import()` | ~250 |
+| New File                   | Responsibility                                                       | Key Methods                                                                                                                                   | Est. LOC |
+| -------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `strength-scorer.ts`       | 4-component strength metric (usage, spread, success, recency)        | `computeStrengths()`, `getStrengths()`, `recommend()`                                                                                         | ~200     |
+| `session-manager.ts`       | Session lifecycle, quality scoring, archival                         | `lifecycle()`, `getSessionContext()`, `archiveSessions()`, `getSessionById()`, `listSessions()`, `computeSessionQuality()`, `replaySession()` | ~350     |
+| `proposal-manager.ts`      | Knowledge proposal capture, confidence gating, vault promotion       | `extractKnowledge()`, `resetExtracted()`, `getProposals()`, `promoteProposals()`                                                              | ~300     |
+| **`auto-learning.ts`**     | **Auto-promote proposals, auto-build trigger, plan-session linking** | **`autoPromoteProposals()`, `maybeAutoBuildIntelligence()`, `getSessionByPlanId()`**                                                          | **~150** |
+| `intelligence.ts` (facade) | Orchestrates sub-modules, stats, export/import                       | Constructor, `buildIntelligence()`, `getStats()`, `export()`, `import()`                                                                      | ~250     |
 
 **Never-nester focus:** The 6 extraction rules in `extractKnowledge()` — each rule becomes a named function: `detectRepeatedTools()`, `detectMultiFileEdits()`, `detectLongSessions()`, etc.
 
@@ -370,12 +383,12 @@ Worktree 4: other vault files (0D) ───────────────
 
 **Decomposition:**
 
-| New File | Responsibility | Key Methods | Est. LOC |
-|----------|---------------|-------------|----------|
-| `task-verifier.ts` | Evidence, deliverables, acceptance criteria | `submitDeliverable()`, `verifyDeliverables()`, `submitEvidence()`, `verifyTask()`, `verifyPlan()` | ~300 |
-| `reconciliation-engine.ts` | Drift calculation, auto-reconcile, accuracy | `reconcile()`, `autoReconcile()`, `calculateDriftScore()` | ~200 |
-| `plan-lifecycle.ts` | FSM transitions, task status, execution tracking | `approve()`, `startExecution()`, `updateTask()`, `startValidation()`, `startReconciliation()`, `complete()`, `iterate()`, `splitTasks()` | ~350 |
-| `planner.ts` (facade) | CRUD, dispatch, grading | Constructor, `create()`, `get()`, `list()`, `remove()`, `getDispatch()`, `gradeCheck()` | ~300 |
+| New File                   | Responsibility                                   | Key Methods                                                                                                                              | Est. LOC |
+| -------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `task-verifier.ts`         | Evidence, deliverables, acceptance criteria      | `submitDeliverable()`, `verifyDeliverables()`, `submitEvidence()`, `verifyTask()`, `verifyPlan()`                                        | ~300     |
+| `reconciliation-engine.ts` | Drift calculation, auto-reconcile, accuracy      | `reconcile()`, `autoReconcile()`, `calculateDriftScore()`                                                                                | ~200     |
+| `plan-lifecycle.ts`        | FSM transitions, task status, execution tracking | `approve()`, `startExecution()`, `updateTask()`, `startValidation()`, `startReconciliation()`, `complete()`, `iterate()`, `splitTasks()` | ~350     |
+| `planner.ts` (facade)      | CRUD, dispatch, grading                          | Constructor, `create()`, `get()`, `list()`, `remove()`, `getDispatch()`, `gradeCheck()`                                                  | ~300     |
 
 **Never-nester focus:** FSM transition validation and task dependency resolution — prime guard clause candidates.
 
@@ -388,6 +401,7 @@ Worktree 4: other vault files (0D) ───────────────
 **Strategy:** Full Feathers for `curator.ts` (949 LOC); Direct TDD for existing sub-files.
 
 **Pre-decomposition audit required:** The `curator/` directory already has partial decomposition:
+
 - `classifier.ts` (86 LOC) — entry classification helper
 - `quality-gate.ts` (127 LOC) — governance gating for consolidation
 - `types.ts` (114 LOC) — type definitions
@@ -396,12 +410,12 @@ The decomposition plan must account for these existing files to avoid duplicatio
 
 **`curator.ts` decomposition (949 LOC → 4 files):**
 
-| New File | Responsibility | Key Methods | Est. LOC |
-|----------|---------------|-------------|----------|
-| `duplicate-detector.ts` | TF-IDF cosine similarity, merge suggestions | `detectDuplicates()`, `buildVocabulary()` | ~200 |
-| `contradiction-detector.ts` | Pattern vs anti-pattern, 2-stage retrieval | `detectContradictions()`, `detectContradictionsHybrid()`, `resolveContradiction()` | ~250 |
-| `tag-manager.ts` | Alias mapping, canonicalization, normalization (audit against `classifier.ts` first) | `normalizeTag()`, `normalizeTags()`, `addTagAlias()`, `getCanonicalTags()` | ~150 |
-| `curator.ts` (facade) | Grooming, consolidation, health audit | `getStatus()`, `groom()`, `groomAll()`, `consolidate()`, `healthAudit()` | ~250 |
+| New File                    | Responsibility                                                                       | Key Methods                                                                        | Est. LOC |
+| --------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------- |
+| `duplicate-detector.ts`     | TF-IDF cosine similarity, merge suggestions                                          | `detectDuplicates()`, `buildVocabulary()`                                          | ~200     |
+| `contradiction-detector.ts` | Pattern vs anti-pattern, 2-stage retrieval                                           | `detectContradictions()`, `detectContradictionsHybrid()`, `resolveContradiction()` | ~250     |
+| `tag-manager.ts`            | Alias mapping, canonicalization, normalization (audit against `classifier.ts` first) | `normalizeTag()`, `normalizeTags()`, `addTagAlias()`, `getCanonicalTags()`         | ~150     |
+| `curator.ts` (facade)       | Grooming, consolidation, health audit                                                | `getStatus()`, `groom()`, `groomAll()`, `consolidate()`, `healthAudit()`           | ~250     |
 
 **Existing sub-files:** Write colocated tests for `classifier.ts`, `quality-gate.ts`, `types.ts`.
 
@@ -415,11 +429,11 @@ The decomposition plan must account for these existing files to avoid duplicatio
 
 **`gap-analysis.ts` (914 LOC → 3 files):**
 
-| New File | Responsibility | Est. LOC |
-|----------|---------------|----------|
-| `gap-patterns.ts` | 40+ keyword arrays, severity weights, category caps, constants | ~300 |
-| `gap-passes.ts` | 7 built-in analysis passes (structure, completeness, feasibility, risk, clarity, semantic, knowledge) | ~350 |
-| `gap-analysis.ts` (slimmed) | 3 factory functions + `runGapAnalysis()` orchestrator | ~250 |
+| New File                    | Responsibility                                                                                        | Est. LOC |
+| --------------------------- | ----------------------------------------------------------------------------------------------------- | -------- |
+| `gap-patterns.ts`           | 40+ keyword arrays, severity weights, category caps, constants                                        | ~300     |
+| `gap-passes.ts`             | 7 built-in analysis passes (structure, completeness, feasibility, risk, clarity, semantic, knowledge) | ~350     |
+| `gap-analysis.ts` (slimmed) | 3 factory functions + `runGapAnalysis()` orchestrator                                                 | ~250     |
 
 > Note: Original 2-file split left `gap-analysis.ts` at ~600 LOC, violating the 400 LOC rule. 3-way split keeps all files under 400.
 
@@ -454,73 +468,73 @@ The decomposition plan must account for these existing files to avoid duplicatio
 
 **Decomposition target: `chat-facade.ts` (918 LOC → 3 files)**
 
-| New File | Responsibility | Est. LOC |
-|----------|---------------|----------|
-| `chat-session.ts` | Session creation, context tracking, message history | ~250 |
-| `chat-transport.ts` | Transport normalization (MCP/HTTP/WS/Telegram) | ~250 |
-| `chat-facade.ts` (slimmed) | Dispatch, delegates to session + transport | ~300 |
+| New File                   | Responsibility                                      | Est. LOC |
+| -------------------------- | --------------------------------------------------- | -------- |
+| `chat-session.ts`          | Session creation, context tracking, message history | ~250     |
+| `chat-transport.ts`        | Transport normalization (MCP/HTTP/WS/Telegram)      | ~250     |
+| `chat-facade.ts` (slimmed) | Dispatch, delegates to session + transport          | ~300     |
 
 **Contract-first TDD (300-900 LOC):**
 
-| File | LOC | Has Tests |
-|------|-----|-----------|
-| `brain-facade.ts` | 532 | No |
-| `vault-facade.ts` | 508 | No |
-| `control-facade.ts` | 324 | No |
-| `agency-facade.ts` | 179 | No |
+| File                | LOC | Has Tests |
+| ------------------- | --- | --------- |
+| `brain-facade.ts`   | 532 | No        |
+| `vault-facade.ts`   | 508 | No        |
+| `control-facade.ts` | 324 | No        |
+| `agency-facade.ts`  | 179 | No        |
 
 **Direct TDD (< 300 LOC):**
 
-| File | LOC | Has Tests |
-|------|-----|-----------|
-| `curator-facade.ts` | 132 | No |
-| `memory-facade.ts` | 132 | No |
-| `plan-facade.ts` | 121 | No |
-| `admin-facade.ts` | 119 | No |
-| `index.ts` | 91 | No |
-| `orchestrate-facade.ts` | 68 | No |
-| `context-facade.ts` | 55 | No |
-| `loop-facade.ts` | 12 | No |
+| File                    | LOC | Has Tests |
+| ----------------------- | --- | --------- |
+| `curator-facade.ts`     | 132 | No        |
+| `memory-facade.ts`      | 132 | No        |
+| `plan-facade.ts`        | 121 | No        |
+| `admin-facade.ts`       | 119 | No        |
+| `index.ts`              | 91  | No        |
+| `orchestrate-facade.ts` | 68  | No        |
+| `context-facade.ts`     | 55  | No        |
+| `loop-facade.ts`        | 12  | No        |
 
 ### Wave 2B: `runtime/` ops files (28 files, 9,109 LOC)
 
 **Contract-first TDD (300-900 LOC):**
 
-| File | LOC | Has Tests | Notes |
-|------|-----|-----------|-------|
-| `admin-extra-ops.ts` | 853 | Yes | Largest ops file |
-| `planning-extra-ops.ts` | **~868** _(was 812, +56)_ | Yes | **Depends on Wave 1A brain decomposition** |
-| `vault-extra-ops.ts` | 682 | Yes | |
-| `admin-setup-ops.ts` | 664 | Yes | |
-| `capture-ops.ts` | 567 | Yes | |
-| `memory-extra-ops.ts` | 494 | Yes | |
-| `vault-linking-ops.ts` | 491 | No | |
-| `orchestrate-ops.ts` | **~573** _(was 487, +86)_ | Yes | **Depends on Wave 1A brain decomposition** |
-| `vault-sharing-ops.ts` | 431 | No | |
-| `runtime.ts` | 342 | Yes | |
-| `admin-ops.ts` | 307 | Yes | |
+| File                    | LOC                       | Has Tests | Notes                                      |
+| ----------------------- | ------------------------- | --------- | ------------------------------------------ |
+| `admin-extra-ops.ts`    | 853                       | Yes       | Largest ops file                           |
+| `planning-extra-ops.ts` | **~868** _(was 812, +56)_ | Yes       | **Depends on Wave 1A brain decomposition** |
+| `vault-extra-ops.ts`    | 682                       | Yes       |                                            |
+| `admin-setup-ops.ts`    | 664                       | Yes       |                                            |
+| `capture-ops.ts`        | 567                       | Yes       |                                            |
+| `memory-extra-ops.ts`   | 494                       | Yes       |                                            |
+| `vault-linking-ops.ts`  | 491                       | No        |                                            |
+| `orchestrate-ops.ts`    | **~573** _(was 487, +86)_ | Yes       | **Depends on Wave 1A brain decomposition** |
+| `vault-sharing-ops.ts`  | 431                       | No        |                                            |
+| `runtime.ts`            | 342                       | Yes       |                                            |
+| `admin-ops.ts`          | 307                       | Yes       |                                            |
 
 **Direct TDD (< 300 LOC):**
 
-| File | LOC | Has Tests |
-|------|-----|-----------|
-| `domain-ops.ts` | 281 | Yes |
-| `loop-ops.ts` | 277 | Yes |
-| `playbook-ops.ts` | 273 | No |
-| `plugin-ops.ts` | 261 | Yes |
-| `intake-ops.ts` | 228 | No |
-| `claude-md-helpers.ts` | 218 | No |
-| `project-ops.ts` | 202 | Yes |
-| `memory-cross-project-ops.ts` | 191 | Yes |
-| `session-briefing.ts` | **~206** _(was 175, +31)_ | No |
-| `curator-extra-ops.ts` | 168 | Yes |
-| `grading-ops.ts` | 130 | Yes |
-| `types.ts` | 128 | N/A |
-| `chain-ops.ts` | 121 | No |
-| `pack-ops.ts` | 110 | Yes |
-| `feature-flags.ts` | 101 | Yes |
-| `deprecation.ts` | 58 | Yes |
-| `telemetry-ops.ts` | 57 | No |
+| File                          | LOC                       | Has Tests |
+| ----------------------------- | ------------------------- | --------- |
+| `domain-ops.ts`               | 281                       | Yes       |
+| `loop-ops.ts`                 | 277                       | Yes       |
+| `playbook-ops.ts`             | 273                       | No        |
+| `plugin-ops.ts`               | 261                       | Yes       |
+| `intake-ops.ts`               | 228                       | No        |
+| `claude-md-helpers.ts`        | 218                       | No        |
+| `project-ops.ts`              | 202                       | Yes       |
+| `memory-cross-project-ops.ts` | 191                       | Yes       |
+| `session-briefing.ts`         | **~206** _(was 175, +31)_ | No        |
+| `curator-extra-ops.ts`        | 168                       | Yes       |
+| `grading-ops.ts`              | 130                       | Yes       |
+| `types.ts`                    | 128                       | N/A       |
+| `chain-ops.ts`                | 121                       | No        |
+| `pack-ops.ts`                 | 110                       | Yes       |
+| `feature-flags.ts`            | 101                       | Yes       |
+| `deprecation.ts`              | 58                        | Yes       |
+| `telemetry-ops.ts`            | 57                        | No        |
 
 ### Wave 2C: `transport/`
 
@@ -543,12 +557,12 @@ Direct TDD — small wrapper. Colocated tests, verify bootstrap sequence. Includ
 
 These modules depend on vault/brain/planning (Waves 0-1) but NOT on runtime facades:
 
-| Module | Strategy | Depends On |
-|--------|----------|------------|
+| Module        | Strategy       | Depends On                                  |
+| ------------- | -------------- | ------------------------------------------- |
 | `governance/` | Contract-first | vault (Wave 0), brain/intelligence (Wave 1) |
-| `agency/` | Contract-first | vault (Wave 0), context (Wave 2.5) |
-| `context/` | Contract-first | vault (Wave 0), llm |
-| `loop/` | Direct TDD | brain (Wave 1), vault (Wave 0) |
+| `agency/`     | Contract-first | vault (Wave 0), context (Wave 2.5)          |
+| `context/`    | Contract-first | vault (Wave 0), llm                         |
+| `loop/`       | Direct TDD     | brain (Wave 1), vault (Wave 0)              |
 
 **Parallelism:** 4 worktrees, running simultaneously with Wave 2.
 
@@ -559,12 +573,12 @@ These modules depend on vault/brain/planning (Waves 0-1) but NOT on runtime faca
 **Goal:** TDD the feature modules that depend on Wave 2 runtime layer.
 **Prerequisite:** Wave 2 complete.
 
-| Module | Strategy | Notes |
-|--------|----------|-------|
-| `chat/` | Contract-first | Depends on Wave 2A chat-facade decomposition |
-| `flows/` | Contract-first | Flow orchestration |
-| `control/` | Contract-first | Intent routing |
-| `domain-packs/` | Direct TDD | Pack infrastructure |
+| Module          | Strategy       | Notes                                        |
+| --------------- | -------------- | -------------------------------------------- |
+| `chat/`         | Contract-first | Depends on Wave 2A chat-facade decomposition |
+| `flows/`        | Contract-first | Flow orchestration                           |
+| `control/`      | Contract-first | Intent routing                               |
+| `domain-packs/` | Direct TDD     | Pack infrastructure                          |
 
 **Parallelism:** 4 worktrees.
 
@@ -575,27 +589,27 @@ These modules depend on vault/brain/planning (Waves 0-1) but NOT on runtime faca
 **Goal:** Complete coverage on remaining modules.
 **Prerequisite:** Wave 3 complete.
 
-| Module | Strategy |
-|--------|----------|
-| `prompts/` | Direct TDD |
-| `persona/` | Direct TDD |
-| `logging/` | Direct TDD |
-| `health/` | Direct TDD |
-| `plugins/` | Contract-first |
-| `queue/` | Direct TDD |
-| `streams/` | Direct TDD |
-| `events/` | Direct TDD |
-| `errors/` | Direct TDD |
-| `extensions/` | Direct TDD |
-| `capabilities/` | Direct TDD |
-| `enforcement/` | Direct TDD |
-| `intake/` | Contract-first |
-| `playbooks/` | Direct TDD |
-| `claudemd/` | Direct TDD |
-| `llm/` | Contract-first (mock LLM) |
-| `telemetry/` | Direct TDD |
-| `facades/facade-factory.ts` | Direct TDD |
-| `project/project-registry.ts` | Contract-first |
+| Module                        | Strategy                  |
+| ----------------------------- | ------------------------- |
+| `prompts/`                    | Direct TDD                |
+| `persona/`                    | Direct TDD                |
+| `logging/`                    | Direct TDD                |
+| `health/`                     | Direct TDD                |
+| `plugins/`                    | Contract-first            |
+| `queue/`                      | Direct TDD                |
+| `streams/`                    | Direct TDD                |
+| `events/`                     | Direct TDD                |
+| `errors/`                     | Direct TDD                |
+| `extensions/`                 | Direct TDD                |
+| `capabilities/`               | Direct TDD                |
+| `enforcement/`                | Direct TDD                |
+| `intake/`                     | Contract-first            |
+| `playbooks/`                  | Direct TDD                |
+| `claudemd/`                   | Direct TDD                |
+| `llm/`                        | Contract-first (mock LLM) |
+| `telemetry/`                  | Direct TDD                |
+| `facades/facade-factory.ts`   | Direct TDD                |
+| `project/project-registry.ts` | Contract-first            |
 
 **Parallelism:** Maximum — all independent. Final cleanup wave.
 
@@ -607,15 +621,15 @@ Runs continuously alongside all waves.
 
 ### Pre-Refactoring Captures Needed
 
-| Entry | Type | Status |
-|-------|------|--------|
-| Never Nester rules | rule | **DONE** ✓ `typescript-1774041194727-ddn81w` |
-| DRY, KISS, YAGNI | rule | **DONE** ✓ `typescript-1774043995779-g0rmzj` |
-| SOLID Principles | rule | **DONE** ✓ `typescript-1774043995805-3momgt` |
-| Characterization test patterns (Feathers) | pattern | **DONE** ✓ `testing-1774043995823-k3vmw7` |
-| Test Quality Standards | rule | **DONE** ✓ `testing-1774043995838-g604b6` |
-| DI & Testability Patterns | pattern | **DONE** ✓ `testing-1774043995851-czzlzy` |
-| Strangler Fig at class level | pattern | **DONE** ✓ `typescript-1774043995865-s49986` |
+| Entry                                     | Type    | Status                                       |
+| ----------------------------------------- | ------- | -------------------------------------------- |
+| Never Nester rules                        | rule    | **DONE** ✓ `typescript-1774041194727-ddn81w` |
+| DRY, KISS, YAGNI                          | rule    | **DONE** ✓ `typescript-1774043995779-g0rmzj` |
+| SOLID Principles                          | rule    | **DONE** ✓ `typescript-1774043995805-3momgt` |
+| Characterization test patterns (Feathers) | pattern | **DONE** ✓ `testing-1774043995823-k3vmw7`    |
+| Test Quality Standards                    | rule    | **DONE** ✓ `testing-1774043995838-g604b6`    |
+| DI & Testability Patterns                 | pattern | **DONE** ✓ `testing-1774043995851-czzlzy`    |
+| Strangler Fig at class level              | pattern | **DONE** ✓ `typescript-1774043995865-s49986` |
 
 ### During-Refactoring
 
@@ -626,6 +640,7 @@ Capture anti-patterns, surprising behaviors, and effective decomposition strateg
 ## Per-Module Definition of Done
 
 **Code quality:**
+
 - [ ] Never-nester rules: max 2 nesting levels, no else-after-return
 - [ ] Functions < 30 LOC (ideally < 15)
 - [ ] Files < 400 LOC
@@ -638,6 +653,7 @@ Capture anti-patterns, surprising behaviors, and effective decomposition strateg
 - [ ] `npm run lint` passes
 
 **Test quality (THE KING):**
+
 - [ ] All public methods have colocated unit tests
 - [ ] Characterization tests pass (for 900+ LOC files)
 - [ ] Test names are specifications: `it('returns [expected] when [condition]')`
@@ -653,6 +669,7 @@ Capture anti-patterns, surprising behaviors, and effective decomposition strateg
 ## Per-Worktree Gate (before opening PR)
 
 Before a worktree's PR is opened, the developer must run:
+
 ```bash
 npm test                    # All unit tests pass
 npm run typecheck           # No type errors
@@ -663,14 +680,14 @@ This catches regressions before they contaminate the wave branch. E2E runs after
 
 ## Global Safety Net
 
-| Check | When |
-|-------|------|
-| E2E suite: `npm run test:e2e` (10 files, 124 tests in `/e2e/`) | After each wave merges to main |
-| Unit suite: `npm test` | Before each PR + after wave merge |
-| `npm run typecheck` | Before each PR |
-| `npm run lint` | Before each PR |
-| `vitest --shuffle` | Before each PR (test order independence) |
-| Coverage report (`@vitest/coverage-v8`) | After Wave 4 — measure delta |
+| Check                                                          | When                                     |
+| -------------------------------------------------------------- | ---------------------------------------- |
+| E2E suite: `npm run test:e2e` (10 files, 124 tests in `/e2e/`) | After each wave merges to main           |
+| Unit suite: `npm test`                                         | Before each PR + after wave merge        |
+| `npm run typecheck`                                            | Before each PR                           |
+| `npm run lint`                                                 | Before each PR                           |
+| `vitest --shuffle`                                             | Before each PR (test order independence) |
+| Coverage report (`@vitest/coverage-v8`)                        | After Wave 4 — measure delta             |
 
 ## Wave Rollback Protocol
 
@@ -692,15 +709,15 @@ If E2E tests fail after a wave merge:
 
 ## Wave Summary
 
-| Wave | Scope | Strategy | Parallelism | Depends On |
-|------|-------|----------|-------------|------------|
-| **0** | persistence, vault, migrations | TDD + Feathers (vault.ts) | 4 worktrees | None |
-| **1** | brain (full), planner, curator, gap-analysis, evidence-collector | Feathers (900+ LOC) + Contract-first + Direct TDD | 4 worktrees | Wave 0 |
-| **2** | runtime facades (13 files), runtime ops (28 files), transport, engine | TDD + Feathers (chat-facade) | 8+ worktrees | Wave 1 (planning-extra-ops + orchestrate-ops wait for Wave 1A) |
-| **2.5** | governance, agency, context, loop | Contract-first / Direct TDD | 4 worktrees | Wave 1 (parallel with Wave 2) |
-| **3** | chat, flows, control, domain-packs | Contract-first / Direct TDD | 4 worktrees | Wave 2 |
-| **4** | 21 supporting modules (+paths.ts, +update-check.ts) | Direct TDD | Maximum | Wave 3 |
-| **continuous** | Vault knowledge capture | Ongoing | Parallel stream | None |
+| Wave           | Scope                                                                 | Strategy                                          | Parallelism     | Depends On                                                     |
+| -------------- | --------------------------------------------------------------------- | ------------------------------------------------- | --------------- | -------------------------------------------------------------- |
+| **0**          | persistence, vault, migrations                                        | TDD + Feathers (vault.ts)                         | 4 worktrees     | None                                                           |
+| **1**          | brain (full), planner, curator, gap-analysis, evidence-collector      | Feathers (900+ LOC) + Contract-first + Direct TDD | 4 worktrees     | Wave 0                                                         |
+| **2**          | runtime facades (13 files), runtime ops (28 files), transport, engine | TDD + Feathers (chat-facade)                      | 8+ worktrees    | Wave 1 (planning-extra-ops + orchestrate-ops wait for Wave 1A) |
+| **2.5**        | governance, agency, context, loop                                     | Contract-first / Direct TDD                       | 4 worktrees     | Wave 1 (parallel with Wave 2)                                  |
+| **3**          | chat, flows, control, domain-packs                                    | Contract-first / Direct TDD                       | 4 worktrees     | Wave 2                                                         |
+| **4**          | 21 supporting modules (+paths.ts, +update-check.ts)                   | Direct TDD                                        | Maximum         | Wave 3                                                         |
+| **continuous** | Vault knowledge capture                                               | Ongoing                                           | Parallel stream | None                                                           |
 
 ---
 
@@ -710,49 +727,49 @@ Post-feature audit conducted after new features were added between plan creation
 
 ### Changes Since Plan Creation
 
-| Commit | Feature | Impact |
-|--------|---------|--------|
+| Commit    | Feature                                                      | Impact                                                  |
+| --------- | ------------------------------------------------------------ | ------------------------------------------------------- |
 | `e22cda0` | Centralized `~/.soleri/` home + brain auto-learning pipeline | +150 LOC to intelligence.ts, new brain-planner coupling |
-| `6e5169a` | Bundle 17 skills with new agents | No refactoring impact |
-| `31aab23` | Creating-skills skill | No refactoring impact |
-| `e12b07b` | Automatic vault ingestion | No refactoring impact |
-| `4f3c87f` | Remove Postgres provider (#231) | Simplifies Wave 0A (persistence/) |
+| `6e5169a` | Bundle 17 skills with new agents                             | No refactoring impact                                   |
+| `31aab23` | Creating-skills skill                                        | No refactoring impact                                   |
+| `e12b07b` | Automatic vault ingestion                                    | No refactoring impact                                   |
+| `4f3c87f` | Remove Postgres provider (#231)                              | Simplifies Wave 0A (persistence/)                       |
 
 ### Wave 0 Drift
 
-| Issue | Finding | Action |
-|-------|---------|--------|
-| #244 (0A) | Postgres removal simplifies persistence — fewer constructor branches | No plan change needed |
-| #245 (0B) | No drift — exact match | No plan change needed |
+| Issue     | Finding                                                                      | Action                                 |
+| --------- | ---------------------------------------------------------------------------- | -------------------------------------- |
+| #244 (0A) | Postgres removal simplifies persistence — fewer constructor branches         | No plan change needed                  |
+| #245 (0B) | No drift — exact match                                                       | No plan change needed                  |
 | #246 (0C) | vault.ts has 53 public methods (was 45). vault-memories.ts target +50-80 LOC | Updated decomposition targets in issue |
-| #247 (0D) | New file `vault-types.ts` (96 LOC) not in plan | Added to scope (10 files, was 9) |
+| #247 (0D) | New file `vault-types.ts` (96 LOC) not in plan                               | Added to scope (10 files, was 9)       |
 
 ### Wave 1 Drift
 
-| Issue | Finding | Action |
-|-------|---------|--------|
+| Issue     | Finding                                                                              | Action                                          |
+| --------- | ------------------------------------------------------------------------------------ | ----------------------------------------------- |
 | #248 (1A) | intelligence.ts grew to ~1,453 LOC (+150). Auto-learning pipeline adds 3 new methods | Decomposition → 5 files (was 4). New issue #277 |
-| #248 (1A) | Bidirectional coupling: planner now writes to brain sessions | New sequencing constraint. Issue #278 |
+| #248 (1A) | Bidirectional coupling: planner now writes to brain sessions                         | New sequencing constraint. Issue #278           |
 
 ### Wave 2 Drift
 
-| Issue | Finding | Action |
-|-------|---------|--------|
-| #253 (2B) | planning-extra-ops.ts +56 LOC, orchestrate-ops.ts +86 LOC, session-briefing.ts +31 LOC | LOC updates in issue comment |
-| #253 (2B) | Brain-dependent ops must wait for Wave 1A | Sequencing constraint documented in #278 |
+| Issue     | Finding                                                                                | Action                                   |
+| --------- | -------------------------------------------------------------------------------------- | ---------------------------------------- |
+| #253 (2B) | planning-extra-ops.ts +56 LOC, orchestrate-ops.ts +86 LOC, session-briefing.ts +31 LOC | LOC updates in issue comment             |
+| #253 (2B) | Brain-dependent ops must wait for Wave 1A                                              | Sequencing constraint documented in #278 |
 
 ### Wave 4 Drift
 
-| Issue | Finding | Action |
-|-------|---------|--------|
-| #258 | 2 new modules: paths.ts (111 LOC), update-check.ts (111 LOC) | Added to Wave 4 scope (21 modules, was 19) |
+| Issue | Finding                                                      | Action                                     |
+| ----- | ------------------------------------------------------------ | ------------------------------------------ |
+| #258  | 2 new modules: paths.ts (111 LOC), update-check.ts (111 LOC) | Added to Wave 4 scope (21 modules, was 19) |
 
 ### New Issues Created
 
-| # | Title | Wave |
-|---|-------|------|
-| #277 | Brain auto-learning module extraction | 1A |
-| #278 | Wave 2 sequencing — planner/orchestrator ops depend on brain decomposition | 2 |
+| #    | Title                                                                      | Wave |
+| ---- | -------------------------------------------------------------------------- | ---- |
+| #277 | Brain auto-learning module extraction                                      | 1A   |
+| #278 | Wave 2 sequencing — planner/orchestrator ops depend on brain decomposition | 2    |
 
 ### Updated Parallelism Diagram (Wave 1 → Wave 2)
 

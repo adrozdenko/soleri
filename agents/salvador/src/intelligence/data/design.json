@@ -9,10 +9,7 @@
       "title": "design domain seed",
       "severity": "suggestion",
       "description": "Seed entry for the design domain. Replace or remove once real knowledge is captured.",
-      "tags": [
-        "design",
-        "seed"
-      ]
+      "tags": ["design", "seed"]
     }
   ]
 }

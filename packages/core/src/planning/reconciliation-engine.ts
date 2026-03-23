@@ -65,8 +65,7 @@ export function computeExecutionSummary(tasks: ReadonlyArray<PlanTask>): Executi
     tasksCompleted,
     tasksSkipped,
     tasksFailed,
-    avgTaskDurationMs:
-      tasksWithDuration > 0 ? Math.round(totalDurationMs / tasksWithDuration) : 0,
+    avgTaskDurationMs: tasksWithDuration > 0 ? Math.round(totalDurationMs / tasksWithDuration) : 0,
   };
 }
 

@@ -8,8 +8,18 @@ import { createTelemetryOps } from './telemetry-ops.js';
 import type { AgentRuntime } from './types.js';
 
 function makeTelemetryStub(
-  stats: { errorsByOp: Record<string, number>; slowestOps: Array<{ op: string; avgMs: number }>; avgDurationMs: number },
-  recent: Array<{ op: string; facade: string; success: boolean; error?: string; timestamp: number }>,
+  stats: {
+    errorsByOp: Record<string, number>;
+    slowestOps: Array<{ op: string; avgMs: number }>;
+    avgDurationMs: number;
+  },
+  recent: Array<{
+    op: string;
+    facade: string;
+    success: boolean;
+    error?: string;
+    timestamp: number;
+  }>,
 ) {
   return {
     getStats: () => stats,
@@ -28,7 +38,11 @@ describe('telemetry-ops', () => {
       const res = await executeOp(ops, 'telemetry_errors');
 
       expect(res.success).toBe(true);
-      const data = res.data as { errorCount: number; errorsByOp: Record<string, number>; recentErrors: unknown[] };
+      const data = res.data as {
+        errorCount: number;
+        errorsByOp: Record<string, number>;
+        recentErrors: unknown[];
+      };
       expect(data.errorCount).toBe(0);
       expect(data.recentErrors).toEqual([]);
       expect(data.errorsByOp).toEqual({});
@@ -49,7 +63,11 @@ describe('telemetry-ops', () => {
       const res = await executeOp(ops, 'telemetry_errors');
 
       expect(res.success).toBe(true);
-      const data = res.data as { errorCount: number; errorsByOp: Record<string, number>; recentErrors: Array<{ op: string }> };
+      const data = res.data as {
+        errorCount: number;
+        errorsByOp: Record<string, number>;
+        recentErrors: Array<{ op: string }>;
+      };
       expect(data.errorCount).toBe(3);
       expect(data.errorsByOp).toEqual({ vault_search: 2, plan_create: 1 });
       expect(data.recentErrors).toHaveLength(3);
@@ -58,7 +76,11 @@ describe('telemetry-ops', () => {
 
     it('caps recentErrors at 20', async () => {
       const recent = Array.from({ length: 30 }, (_, i) => ({
-        op: `op_${i}`, facade: 'test', success: false, error: 'err', timestamp: i,
+        op: `op_${i}`,
+        facade: 'test',
+        success: false,
+        error: 'err',
+        timestamp: i,
       }));
       const telemetry = makeTelemetryStub(
         { errorsByOp: {}, slowestOps: [], avgDurationMs: 0 },
@@ -90,7 +112,10 @@ describe('telemetry-ops', () => {
       const res = await executeOp(ops, 'telemetry_slow_ops', {});
 
       expect(res.success).toBe(true);
-      const data = res.data as { slowOps: Array<{ op: string; avgMs: number }>; avgDurationMs: number };
+      const data = res.data as {
+        slowOps: Array<{ op: string; avgMs: number }>;
+        avgDurationMs: number;
+      };
       expect(data.slowOps).toHaveLength(2);
       expect(data.slowOps.map((o) => o.op)).toEqual(['vault_search', 'plan_create']);
       expect(data.avgDurationMs).toBe(133);

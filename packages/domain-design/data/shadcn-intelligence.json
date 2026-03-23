@@ -71,7 +71,17 @@
       "category": "overlay",
       "installCmd": "npx shadcn@latest add alert-dialog",
       "dependencies": ["button"],
-      "subComponents": ["AlertDialog", "AlertDialogTrigger", "AlertDialogContent", "AlertDialogHeader", "AlertDialogFooter", "AlertDialogTitle", "AlertDialogDescription", "AlertDialogAction", "AlertDialogCancel"],
+      "subComponents": [
+        "AlertDialog",
+        "AlertDialogTrigger",
+        "AlertDialogContent",
+        "AlertDialogHeader",
+        "AlertDialogFooter",
+        "AlertDialogTitle",
+        "AlertDialogDescription",
+        "AlertDialogAction",
+        "AlertDialogCancel"
+      ],
       "features": ["Focus trap", "Escape to close", "Accessible"]
     },
     {
@@ -115,7 +125,15 @@
       "category": "navigation",
       "installCmd": "npx shadcn@latest add breadcrumb",
       "dependencies": [],
-      "subComponents": ["Breadcrumb", "BreadcrumbList", "BreadcrumbItem", "BreadcrumbLink", "BreadcrumbPage", "BreadcrumbSeparator", "BreadcrumbEllipsis"],
+      "subComponents": [
+        "Breadcrumb",
+        "BreadcrumbList",
+        "BreadcrumbItem",
+        "BreadcrumbLink",
+        "BreadcrumbPage",
+        "BreadcrumbSeparator",
+        "BreadcrumbEllipsis"
+      ],
       "features": ["Custom separators", "Responsive collapse", "Accessible navigation"]
     },
     {
@@ -127,7 +145,13 @@
       "installCmd": "npx shadcn@latest add button",
       "dependencies": [],
       "subComponents": ["Button"],
-      "features": ["Multiple variants", "Size options", "Icon support", "Loading state", "As child pattern"]
+      "features": [
+        "Multiple variants",
+        "Size options",
+        "Icon support",
+        "Loading state",
+        "As child pattern"
+      ]
     },
     {
       "name": "Button Group",
@@ -159,7 +183,14 @@
       "category": "data-display",
       "installCmd": "npx shadcn@latest add card",
       "dependencies": [],
-      "subComponents": ["Card", "CardHeader", "CardFooter", "CardTitle", "CardDescription", "CardContent"],
+      "subComponents": [
+        "Card",
+        "CardHeader",
+        "CardFooter",
+        "CardTitle",
+        "CardDescription",
+        "CardContent"
+      ],
       "features": ["Flexible layout", "Header/footer sections", "Content container"]
     },
     {
@@ -170,7 +201,13 @@
       "category": "data-display",
       "installCmd": "npx shadcn@latest add carousel",
       "dependencies": [],
-      "subComponents": ["Carousel", "CarouselContent", "CarouselItem", "CarouselPrevious", "CarouselNext"],
+      "subComponents": [
+        "Carousel",
+        "CarouselContent",
+        "CarouselItem",
+        "CarouselPrevious",
+        "CarouselNext"
+      ],
       "features": ["Swipe gestures", "Autoplay", "Embla Carousel"]
     },
     {
@@ -181,7 +218,13 @@
       "category": "data-display",
       "installCmd": "npx shadcn@latest add chart",
       "dependencies": [],
-      "subComponents": ["ChartContainer", "ChartTooltip", "ChartTooltipContent", "ChartLegend", "ChartLegendContent"],
+      "subComponents": [
+        "ChartContainer",
+        "ChartTooltip",
+        "ChartTooltipContent",
+        "ChartLegend",
+        "ChartLegendContent"
+      ],
       "features": ["Area charts", "Bar charts", "Line charts", "Pie charts", "Recharts integration"]
     },
     {
@@ -225,7 +268,17 @@
       "category": "navigation",
       "installCmd": "npx shadcn@latest add command",
       "dependencies": ["dialog"],
-      "subComponents": ["Command", "CommandDialog", "CommandInput", "CommandList", "CommandEmpty", "CommandGroup", "CommandItem", "CommandShortcut", "CommandSeparator"],
+      "subComponents": [
+        "Command",
+        "CommandDialog",
+        "CommandInput",
+        "CommandList",
+        "CommandEmpty",
+        "CommandGroup",
+        "CommandItem",
+        "CommandShortcut",
+        "CommandSeparator"
+      ],
       "features": ["Search filtering", "Keyboard shortcuts", "cmdk library"]
     },
     {
@@ -236,7 +289,22 @@
       "category": "navigation",
       "installCmd": "npx shadcn@latest add context-menu",
       "dependencies": [],
-      "subComponents": ["ContextMenu", "ContextMenuTrigger", "ContextMenuContent", "ContextMenuItem", "ContextMenuCheckboxItem", "ContextMenuRadioItem", "ContextMenuLabel", "ContextMenuSeparator", "ContextMenuShortcut", "ContextMenuGroup", "ContextMenuSub", "ContextMenuSubContent", "ContextMenuSubTrigger", "ContextMenuRadioGroup"],
+      "subComponents": [
+        "ContextMenu",
+        "ContextMenuTrigger",
+        "ContextMenuContent",
+        "ContextMenuItem",
+        "ContextMenuCheckboxItem",
+        "ContextMenuRadioItem",
+        "ContextMenuLabel",
+        "ContextMenuSeparator",
+        "ContextMenuShortcut",
+        "ContextMenuGroup",
+        "ContextMenuSub",
+        "ContextMenuSubContent",
+        "ContextMenuSubTrigger",
+        "ContextMenuRadioGroup"
+      ],
       "features": ["Nested menus", "Checkbox items", "Radio groups", "Keyboard navigation"]
     },
     {
@@ -269,7 +337,18 @@
       "category": "overlay",
       "installCmd": "npx shadcn@latest add dialog",
       "dependencies": [],
-      "subComponents": ["Dialog", "DialogPortal", "DialogOverlay", "DialogTrigger", "DialogClose", "DialogContent", "DialogHeader", "DialogFooter", "DialogTitle", "DialogDescription"],
+      "subComponents": [
+        "Dialog",
+        "DialogPortal",
+        "DialogOverlay",
+        "DialogTrigger",
+        "DialogClose",
+        "DialogContent",
+        "DialogHeader",
+        "DialogFooter",
+        "DialogTitle",
+        "DialogDescription"
+      ],
       "features": ["Focus trap", "Escape to close", "Backdrop click", "Accessible"]
     },
     {
@@ -280,7 +359,18 @@
       "category": "overlay",
       "installCmd": "npx shadcn@latest add drawer",
       "dependencies": [],
-      "subComponents": ["Drawer", "DrawerPortal", "DrawerOverlay", "DrawerTrigger", "DrawerClose", "DrawerContent", "DrawerHeader", "DrawerFooter", "DrawerTitle", "DrawerDescription"],
+      "subComponents": [
+        "Drawer",
+        "DrawerPortal",
+        "DrawerOverlay",
+        "DrawerTrigger",
+        "DrawerClose",
+        "DrawerContent",
+        "DrawerHeader",
+        "DrawerFooter",
+        "DrawerTitle",
+        "DrawerDescription"
+      ],
       "features": ["Swipe to dismiss", "Snap points", "Vaul library"]
     },
     {
@@ -291,7 +381,23 @@
       "category": "navigation",
       "installCmd": "npx shadcn@latest add dropdown-menu",
       "dependencies": [],
-      "subComponents": ["DropdownMenu", "DropdownMenuTrigger", "DropdownMenuContent", "DropdownMenuItem", "DropdownMenuCheckboxItem", "DropdownMenuRadioItem", "DropdownMenuLabel", "DropdownMenuSeparator", "DropdownMenuShortcut", "DropdownMenuGroup", "DropdownMenuPortal", "DropdownMenuSub", "DropdownMenuSubContent", "DropdownMenuSubTrigger", "DropdownMenuRadioGroup"],
+      "subComponents": [
+        "DropdownMenu",
+        "DropdownMenuTrigger",
+        "DropdownMenuContent",
+        "DropdownMenuItem",
+        "DropdownMenuCheckboxItem",
+        "DropdownMenuRadioItem",
+        "DropdownMenuLabel",
+        "DropdownMenuSeparator",
+        "DropdownMenuShortcut",
+        "DropdownMenuGroup",
+        "DropdownMenuPortal",
+        "DropdownMenuSub",
+        "DropdownMenuSubContent",
+        "DropdownMenuSubTrigger",
+        "DropdownMenuRadioGroup"
+      ],
       "features": ["Nested menus", "Checkbox items", "Radio groups", "Keyboard navigation"]
     },
     {
@@ -324,7 +430,16 @@
       "category": "forms",
       "installCmd": "npx shadcn@latest add form",
       "dependencies": ["label"],
-      "subComponents": ["Form", "FormField", "FormItem", "FormLabel", "FormControl", "FormDescription", "FormMessage", "useFormField"],
+      "subComponents": [
+        "Form",
+        "FormField",
+        "FormItem",
+        "FormLabel",
+        "FormControl",
+        "FormDescription",
+        "FormMessage",
+        "useFormField"
+      ],
       "features": ["React Hook Form", "Zod validation", "Accessible errors"]
     },
     {
@@ -412,7 +527,24 @@
       "category": "navigation",
       "installCmd": "npx shadcn@latest add menubar",
       "dependencies": [],
-      "subComponents": ["Menubar", "MenubarMenu", "MenubarTrigger", "MenubarContent", "MenubarItem", "MenubarSeparator", "MenubarLabel", "MenubarCheckboxItem", "MenubarRadioGroup", "MenubarRadioItem", "MenubarPortal", "MenubarSubContent", "MenubarSubTrigger", "MenubarGroup", "MenubarSub", "MenubarShortcut"],
+      "subComponents": [
+        "Menubar",
+        "MenubarMenu",
+        "MenubarTrigger",
+        "MenubarContent",
+        "MenubarItem",
+        "MenubarSeparator",
+        "MenubarLabel",
+        "MenubarCheckboxItem",
+        "MenubarRadioGroup",
+        "MenubarRadioItem",
+        "MenubarPortal",
+        "MenubarSubContent",
+        "MenubarSubTrigger",
+        "MenubarGroup",
+        "MenubarSub",
+        "MenubarShortcut"
+      ],
       "features": ["Multiple menus", "Keyboard navigation", "Nested submenus"]
     },
     {
@@ -434,7 +566,16 @@
       "category": "navigation",
       "installCmd": "npx shadcn@latest add navigation-menu",
       "dependencies": [],
-      "subComponents": ["NavigationMenu", "NavigationMenuList", "NavigationMenuItem", "NavigationMenuContent", "NavigationMenuTrigger", "NavigationMenuLink", "NavigationMenuIndicator", "NavigationMenuViewport"],
+      "subComponents": [
+        "NavigationMenu",
+        "NavigationMenuList",
+        "NavigationMenuItem",
+        "NavigationMenuContent",
+        "NavigationMenuTrigger",
+        "NavigationMenuLink",
+        "NavigationMenuIndicator",
+        "NavigationMenuViewport"
+      ],
       "features": ["Mega menu support", "Viewport animation", "Active indicator"]
     },
     {
@@ -445,7 +586,15 @@
       "category": "navigation",
       "installCmd": "npx shadcn@latest add pagination",
       "dependencies": [],
-      "subComponents": ["Pagination", "PaginationContent", "PaginationItem", "PaginationLink", "PaginationPrevious", "PaginationNext", "PaginationEllipsis"],
+      "subComponents": [
+        "Pagination",
+        "PaginationContent",
+        "PaginationItem",
+        "PaginationLink",
+        "PaginationPrevious",
+        "PaginationNext",
+        "PaginationEllipsis"
+      ],
       "features": ["Page numbers", "Prev/next links", "Ellipsis"]
     },
     {
@@ -511,7 +660,18 @@
       "category": "forms",
       "installCmd": "npx shadcn@latest add select",
       "dependencies": [],
-      "subComponents": ["Select", "SelectGroup", "SelectValue", "SelectTrigger", "SelectContent", "SelectLabel", "SelectItem", "SelectSeparator", "SelectScrollUpButton", "SelectScrollDownButton"],
+      "subComponents": [
+        "Select",
+        "SelectGroup",
+        "SelectValue",
+        "SelectTrigger",
+        "SelectContent",
+        "SelectLabel",
+        "SelectItem",
+        "SelectSeparator",
+        "SelectScrollUpButton",
+        "SelectScrollDownButton"
+      ],
       "features": ["Typeahead", "Groups", "Custom positioning"]
     },
     {
@@ -533,7 +693,18 @@
       "category": "overlay",
       "installCmd": "npx shadcn@latest add sheet",
       "dependencies": [],
-      "subComponents": ["Sheet", "SheetPortal", "SheetOverlay", "SheetTrigger", "SheetClose", "SheetContent", "SheetHeader", "SheetFooter", "SheetTitle", "SheetDescription"],
+      "subComponents": [
+        "Sheet",
+        "SheetPortal",
+        "SheetOverlay",
+        "SheetTrigger",
+        "SheetClose",
+        "SheetContent",
+        "SheetHeader",
+        "SheetFooter",
+        "SheetTitle",
+        "SheetDescription"
+      ],
       "features": ["Side positioning", "Slide animation", "Focus trap"]
     },
     {
@@ -544,7 +715,31 @@
       "category": "navigation",
       "installCmd": "npx shadcn@latest add sidebar",
       "dependencies": ["button", "separator", "sheet", "skeleton", "tooltip"],
-      "subComponents": ["Sidebar", "SidebarContent", "SidebarFooter", "SidebarGroup", "SidebarGroupAction", "SidebarGroupContent", "SidebarGroupLabel", "SidebarHeader", "SidebarInput", "SidebarInset", "SidebarMenu", "SidebarMenuAction", "SidebarMenuBadge", "SidebarMenuButton", "SidebarMenuItem", "SidebarMenuSkeleton", "SidebarMenuSub", "SidebarMenuSubButton", "SidebarMenuSubItem", "SidebarProvider", "SidebarRail", "SidebarSeparator", "SidebarTrigger"],
+      "subComponents": [
+        "Sidebar",
+        "SidebarContent",
+        "SidebarFooter",
+        "SidebarGroup",
+        "SidebarGroupAction",
+        "SidebarGroupContent",
+        "SidebarGroupLabel",
+        "SidebarHeader",
+        "SidebarInput",
+        "SidebarInset",
+        "SidebarMenu",
+        "SidebarMenuAction",
+        "SidebarMenuBadge",
+        "SidebarMenuButton",
+        "SidebarMenuItem",
+        "SidebarMenuSkeleton",
+        "SidebarMenuSub",
+        "SidebarMenuSubButton",
+        "SidebarMenuSubItem",
+        "SidebarProvider",
+        "SidebarRail",
+        "SidebarSeparator",
+        "SidebarTrigger"
+      ],
       "features": ["Collapsible", "Multiple variants", "Mobile responsive"]
     },
     {
@@ -610,7 +805,16 @@
       "category": "data-display",
       "installCmd": "npx shadcn@latest add table",
       "dependencies": [],
-      "subComponents": ["Table", "TableHeader", "TableBody", "TableFooter", "TableHead", "TableRow", "TableCell", "TableCaption"],
+      "subComponents": [
+        "Table",
+        "TableHeader",
+        "TableBody",
+        "TableFooter",
+        "TableHead",
+        "TableRow",
+        "TableCell",
+        "TableCaption"
+      ],
       "features": ["Responsive", "Striped rows", "Sortable headers"]
     },
     {
@@ -643,7 +847,16 @@
       "category": "feedback",
       "installCmd": "npx shadcn@latest add toast",
       "dependencies": [],
-      "subComponents": ["Toast", "ToastAction", "ToastClose", "ToastDescription", "ToastProvider", "ToastTitle", "ToastViewport", "Toaster"],
+      "subComponents": [
+        "Toast",
+        "ToastAction",
+        "ToastClose",
+        "ToastDescription",
+        "ToastProvider",
+        "ToastTitle",
+        "ToastViewport",
+        "Toaster"
+      ],
       "features": ["Auto dismiss", "Action buttons", "Swipe to dismiss"]
     },
     {

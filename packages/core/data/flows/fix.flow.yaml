@@ -6,8 +6,7 @@ name: Fix Issue
 description: >
   Issue fix workflow: search for known anti-patterns, gather error patterns
   in parallel, then validate the fix.
-version: "1.0.0"
-
+version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
   blocking: [vault.search]
@@ -65,20 +64,20 @@ steps:
       on-false:
         action: BRANCH
         goto: search-anti-patterns
-        message: "Fix validation below threshold. Re-examine anti-patterns."
+        message: 'Fix validation below threshold. Re-examine anti-patterns.'
 
 scoring:
   weights:
     anti-pattern-search: 0.25
     error-patterns: 0.25
     validation: 0.50
-  formula: "weighted-sum"
+  formula: 'weighted-sum'
 
 on-error:
   default:
     action: STOP
-    message: "Fix flow encountered an error."
-    recovery: "Retry from the failed step."
+    message: 'Fix flow encountered an error.'
+    recovery: 'Retry from the failed step.'
   max-retries: 2
 
 metadata:

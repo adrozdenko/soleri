@@ -7,7 +7,14 @@ import type { AgentRuntime } from '../types.js';
 // ─── Mock LoopManager ──────────────────────────────────────────────
 
 function makeMockLoop() {
-  const activeLoop: { id: string; config: Record<string, unknown>; iterations: unknown[]; status: string; startedAt: string; completedAt?: string } = {
+  const activeLoop: {
+    id: string;
+    config: Record<string, unknown>;
+    iterations: unknown[];
+    status: string;
+    startedAt: string;
+    completedAt?: string;
+  } = {
     id: 'loop-1',
     config: { mode: 'custom', prompt: 'test task', maxIterations: 20 },
     iterations: [],
@@ -16,7 +23,7 @@ function makeMockLoop() {
   };
 
   let isActive = false;
-  const history: typeof activeLoop[] = [];
+  const history: (typeof activeLoop)[] = [];
 
   return {
     startLoop: vi.fn().mockImplementation((config: Record<string, unknown>) => {
@@ -118,7 +125,10 @@ describe('loop-facade', () => {
   });
 
   it('loop_start uses mode-specific defaults for token-migration', async () => {
-    const result = await executeOp(ops, 'loop_start', { mode: 'token-migration', prompt: 'migrate tokens' });
+    const result = await executeOp(ops, 'loop_start', {
+      mode: 'token-migration',
+      prompt: 'migrate tokens',
+    });
     expect(result.success).toBe(true);
     const data = result.data as Record<string, unknown>;
     expect(data.maxIterations).toBe(20);
@@ -126,7 +136,11 @@ describe('loop-facade', () => {
   });
 
   it('loop_start respects custom maxIterations', async () => {
-    const result = await executeOp(ops, 'loop_start', { mode: 'custom', prompt: 'test', maxIterations: 5 });
+    const result = await executeOp(ops, 'loop_start', {
+      mode: 'custom',
+      prompt: 'test',
+      maxIterations: 5,
+    });
     expect(result.success).toBe(true);
     expect((result.data as Record<string, unknown>).maxIterations).toBe(5);
   });
@@ -144,7 +158,10 @@ describe('loop-facade', () => {
 
   it('loop_iterate records a failing iteration', async () => {
     await executeOp(ops, 'loop_start', { mode: 'custom', prompt: 'test' });
-    const result = await executeOp(ops, 'loop_iterate', { passed: false, validationResult: 'score too low' });
+    const result = await executeOp(ops, 'loop_iterate', {
+      passed: false,
+      validationResult: 'score too low',
+    });
     expect(result.success).toBe(true);
     expect((result.data as Record<string, unknown>).passed).toBe(false);
   });

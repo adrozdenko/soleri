@@ -97,8 +97,16 @@ describe('duplicate-detector', () => {
 
     it('detects duplicates with identical content', () => {
       const entries = [
-        makeEntry({ id: 'dup-1', title: 'Validate user input', description: 'Always validate user input before processing.' }),
-        makeEntry({ id: 'dup-2', title: 'Validate user input', description: 'Always validate user input before processing.' }),
+        makeEntry({
+          id: 'dup-1',
+          title: 'Validate user input',
+          description: 'Always validate user input before processing.',
+        }),
+        makeEntry({
+          id: 'dup-2',
+          title: 'Validate user input',
+          description: 'Always validate user input before processing.',
+        }),
       ];
       const results = detectDuplicates(entries, undefined, 0.3);
       expect(results.length).toBeGreaterThan(0);
@@ -107,8 +115,16 @@ describe('duplicate-detector', () => {
 
     it('does not flag unrelated entries', () => {
       const entries = [
-        makeEntry({ id: 'a', title: 'Database indexing strategies', description: 'Create indices on columns.' }),
-        makeEntry({ id: 'b', title: 'React component lifecycle', description: 'Use useEffect for side effects.' }),
+        makeEntry({
+          id: 'a',
+          title: 'Database indexing strategies',
+          description: 'Create indices on columns.',
+        }),
+        makeEntry({
+          id: 'b',
+          title: 'React component lifecycle',
+          description: 'Use useEffect for side effects.',
+        }),
       ];
       const results = detectDuplicates(entries, undefined, 0.8);
       expect(results.length).toBe(0);
@@ -117,7 +133,11 @@ describe('duplicate-detector', () => {
     it('filters by entryId when provided', () => {
       const entries = [
         makeEntry({ id: 'x', title: 'Authentication with JWT', description: 'Use JWT for auth.' }),
-        makeEntry({ id: 'y', title: 'JWT authentication pattern', description: 'Implement JWT auth.' }),
+        makeEntry({
+          id: 'y',
+          title: 'JWT authentication pattern',
+          description: 'Implement JWT auth.',
+        }),
         makeEntry({ id: 'z', title: 'Database pooling', description: 'Connection pools.' }),
       ];
       const results = detectDuplicates(entries, 'x', 0.3);
@@ -129,8 +149,18 @@ describe('duplicate-detector', () => {
 
     it('skips cross-domain pairs', () => {
       const entries = [
-        makeEntry({ id: '1', domain: 'design', title: 'Use semantic tokens', description: 'Always use semantic tokens.' }),
-        makeEntry({ id: '2', domain: 'architecture', title: 'Use semantic tokens', description: 'Always use semantic tokens.' }),
+        makeEntry({
+          id: '1',
+          domain: 'design',
+          title: 'Use semantic tokens',
+          description: 'Always use semantic tokens.',
+        }),
+        makeEntry({
+          id: '2',
+          domain: 'architecture',
+          title: 'Use semantic tokens',
+          description: 'Always use semantic tokens.',
+        }),
       ];
       const results = detectDuplicates(entries, undefined, 0.3);
       expect(results.length).toBe(0);
@@ -138,8 +168,18 @@ describe('duplicate-detector', () => {
 
     it('flags same-domain similar entries', () => {
       const entries = [
-        makeEntry({ id: '1', domain: 'design', title: 'Use semantic tokens for colors', description: 'Always use semantic tokens.' }),
-        makeEntry({ id: '2', domain: 'design', title: 'Use semantic tokens for color values', description: 'Prefer semantic color tokens.' }),
+        makeEntry({
+          id: '1',
+          domain: 'design',
+          title: 'Use semantic tokens for colors',
+          description: 'Always use semantic tokens.',
+        }),
+        makeEntry({
+          id: '2',
+          domain: 'design',
+          title: 'Use semantic tokens for color values',
+          description: 'Prefer semantic color tokens.',
+        }),
       ];
       const results = detectDuplicates(entries, undefined, 0.3);
       expect(results.length).toBeGreaterThan(0);
@@ -147,8 +187,16 @@ describe('duplicate-detector', () => {
 
     it('sets suggestMerge based on MERGE_SUGGESTION_THRESHOLD', () => {
       const entries = [
-        makeEntry({ id: 'a', title: 'Exact same title', description: 'Exact same description for merge test.' }),
-        makeEntry({ id: 'b', title: 'Exact same title', description: 'Exact same description for merge test.' }),
+        makeEntry({
+          id: 'a',
+          title: 'Exact same title',
+          description: 'Exact same description for merge test.',
+        }),
+        makeEntry({
+          id: 'b',
+          title: 'Exact same title',
+          description: 'Exact same description for merge test.',
+        }),
       ];
       const results = detectDuplicates(entries, undefined, 0.3);
       expect(results.length).toBeGreaterThan(0);
@@ -158,13 +206,27 @@ describe('duplicate-detector', () => {
 
     it('sorts matches by descending similarity', () => {
       const entries = [
-        makeEntry({ id: 'base', title: 'Use semantic tokens for colors', description: 'Tokens for styling.' }),
-        makeEntry({ id: 'close', title: 'Use semantic tokens for color values', description: 'Tokens for styling values.' }),
-        makeEntry({ id: 'far', title: 'Semantic approach to colors', description: 'Use semantic color approach.' }),
+        makeEntry({
+          id: 'base',
+          title: 'Use semantic tokens for colors',
+          description: 'Tokens for styling.',
+        }),
+        makeEntry({
+          id: 'close',
+          title: 'Use semantic tokens for color values',
+          description: 'Tokens for styling values.',
+        }),
+        makeEntry({
+          id: 'far',
+          title: 'Semantic approach to colors',
+          description: 'Use semantic color approach.',
+        }),
       ];
       const results = detectDuplicates(entries, 'base', 0.1);
       if (results.length > 0 && results[0].matches.length > 1) {
-        expect(results[0].matches[0].similarity).toBeGreaterThanOrEqual(results[0].matches[1].similarity);
+        expect(results[0].matches[0].similarity).toBeGreaterThanOrEqual(
+          results[0].matches[1].similarity,
+        );
       }
     });
 

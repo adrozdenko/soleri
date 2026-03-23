@@ -426,10 +426,18 @@
         { "state": "Error", "background": "Error 5% opacity" }
       ],
       "cellTypes": [
-        { "type": "Primary", "styling": "Medium weight, dark", "useFor": "Main identifier (name, title)" },
+        {
+          "type": "Primary",
+          "styling": "Medium weight, dark",
+          "useFor": "Main identifier (name, title)"
+        },
         { "type": "Secondary", "styling": "Small, muted", "useFor": "Supporting information" },
         { "type": "Badge", "styling": "Inline flex with gap", "useFor": "Status, priority, tags" },
-        { "type": "Action", "styling": "Right-aligned flex", "useFor": "Row actions (edit, delete)" },
+        {
+          "type": "Action",
+          "styling": "Right-aligned flex",
+          "useFor": "Row actions (edit, delete)"
+        },
         { "type": "Truncate", "styling": "Max width with ellipsis", "useFor": "Long text fields" }
       ],
       "sortingIndicators": [
@@ -484,9 +492,18 @@
       ],
       "responsiveUtilityClasses": [
         { "purpose": "Hide on mobile", "pattern": "Hidden by default, visible at sm breakpoint" },
-        { "purpose": "Show only on mobile", "pattern": "Visible by default, hidden at sm breakpoint" },
-        { "purpose": "Full width on mobile", "pattern": "Full width default, auto at sm breakpoint" },
-        { "purpose": "Stack on mobile", "pattern": "Column direction default, row at sm breakpoint" }
+        {
+          "purpose": "Show only on mobile",
+          "pattern": "Visible by default, hidden at sm breakpoint"
+        },
+        {
+          "purpose": "Full width on mobile",
+          "pattern": "Full width default, auto at sm breakpoint"
+        },
+        {
+          "purpose": "Stack on mobile",
+          "pattern": "Column direction default, row at sm breakpoint"
+        }
       ]
     },
     "accessibility": {

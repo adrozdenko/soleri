@@ -19,12 +19,14 @@ YOUR_AGENT_core op:route_intent
 ### 2. Search All Knowledge Sources
 
 **Vault** — previous decisions, patterns, anti-patterns:
+
 ```
 YOUR_AGENT_core op:search_intelligent
   params: { query: "<the decision or options>" }
 ```
 
 **Brain** — proven approaches:
+
 ```
 YOUR_AGENT_core op:brain_strengths
 YOUR_AGENT_core op:brain_recommend
@@ -32,6 +34,7 @@ YOUR_AGENT_core op:brain_recommend
 ```
 
 **Cross-project** — what other projects chose:
+
 ```
 YOUR_AGENT_core op:memory_cross_project_search
   params: { query: "<topic>", crossProject: true }
@@ -87,11 +90,11 @@ YOUR_AGENT_core op:capture_knowledge
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `route_intent` | Classify decision type |
-| `search_intelligent` | Find previous decisions |
-| `brain_strengths` / `brain_recommend` | Proven approaches |
-| `memory_cross_project_search` | Other projects' choices |
-| `memory_search` | Session context |
-| `capture_knowledge` | Persist the decision |
+| Op                                    | When to Use             |
+| ------------------------------------- | ----------------------- |
+| `route_intent`                        | Classify decision type  |
+| `search_intelligent`                  | Find previous decisions |
+| `brain_strengths` / `brain_recommend` | Proven approaches       |
+| `memory_cross_project_search`         | Other projects' choices |
+| `memory_search`                       | Session context         |
+| `capture_knowledge`                   | Persist the decision    |

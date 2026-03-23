@@ -2,6 +2,10 @@
   "name": "@soleri/domain-design-qa",
   "version": "8.1.0",
   "description": "Design QA domain pack for Soleri agents — token drift detection, hardcoded color detection, component sync, accessibility precheck, handoff audit.",
+  "license": "Apache-2.0",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,9 +24,5 @@
   },
   "peerDependencies": {
     "@soleri/core": "^9.0.0"
-  },
-  "files": [
-    "dist"
-  ],
-  "license": "Apache-2.0"
+  }
 }

@@ -9,13 +9,7 @@
       "title": "Arbitrary Tailwind value blocking to enforce token-only spacing",
       "severity": "critical",
       "description": "# Arbitrary Tailwind value blocking to enforce token-only spacing\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nThe forbidden-primitive-tokens rule in chains/rules/enforcement.yaml blocks arbitrary Tailwind values like w-[200px], p-[15px], shadow-[...], and !important. These bypass the design token system and create inconsistent spacing/sizing. Instead, use named Tailwind classes from the design token scale (p-2, gap-4, w-full) which map to the two-layer spacing system (4pt precision + 8pt rhythm). The rule fires as a blocking action on .tsx files.\n\n## Example\n\n```typescript\nBlocked: className='w-[200px] p-[15px]'. Fix: className='w-48 p-4' (uses token scale).\n```\n\n## Why\n\nArbitrary values create visual inconsistency and break theme portability. Token-only spacing ensures all components align to the same grid.",
-      "tags": [
-        "tailwind",
-        "arbitrary-values",
-        "spacing",
-        "tokens",
-        "enforcement"
-      ]
+      "tags": ["tailwind", "arbitrary-values", "spacing", "tokens", "enforcement"]
     },
     {
       "id": "pattern-styling-two-layer-spacing-system",
@@ -35,11 +29,7 @@
         "layout",
         "design-system"
       ],
-      "appliesTo": [
-        "all-components",
-        "layouts",
-        "typography"
-      ]
+      "appliesTo": ["all-components", "layouts", "typography"]
     },
     {
       "id": "pattern-styling-quick-token-enforcement-pyramid-blocked-forbidden-prefer",
@@ -48,13 +38,7 @@
       "title": "Token enforcement pyramid: blocked → forbidden → preferred layers",
       "severity": "critical",
       "description": "# Token enforcement pyramid: blocked → forbidden → preferred layers\n\n## Context\n\nCaptured during development session on 2026-02-21\n\n## Pattern\n\nSalvador enforces color/token usage via a 3-layer pyramid in chains/rules/enforcement.yaml. Layer 1 (Blocked): hardcoded #hex values, rgb(), rgba(), drop-shadow-*, arbitrary Tailwind values like w-[200px]. Layer 2 (Forbidden): primitive token names text-white, text-black, bg-white, bg-black, and direct primitive imports (import { PRIMARY }). Layer 3 (Preferred): semantic tokens text-error, bg-warning, border-accent. Each layer has increasing strictness from suggestion to blocking action.\n\n## Example\n\n```typescript\nBlocked: style={{ color: '#FF0000' }}. Forbidden: className='text-white'. Preferred: className='text-inverse'.\n```\n\n## Why\n\nThe pyramid provides graduated enforcement — hardcoded values are caught immediately, primitive tokens get warnings, and semantic tokens are the only path that passes all gates.",
-      "tags": [
-        "tokens",
-        "enforcement",
-        "pyramid",
-        "blocked",
-        "semantic-colors"
-      ]
+      "tags": ["tokens", "enforcement", "pyramid", "blocked", "semantic-colors"]
     }
   ]
 }

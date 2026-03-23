@@ -10,20 +10,18 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  createAgentRuntime,
-  createSemanticFacades,
-  registerFacade,
-} from '@soleri/core';
+import { createAgentRuntime, createSemanticFacades, registerFacade } from '@soleri/core';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 
 const AGENT_ID = 'e2e-operator';
 
 /** Capture the MCP handler from registerFacade without a real server */
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {

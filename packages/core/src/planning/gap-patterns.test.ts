@@ -30,13 +30,40 @@ function makePlan(overrides: Partial<Plan> = {}): Plan {
     scope: 'Auth module, middleware, and user service. Does not include OAuth providers.',
     status: 'draft',
     decisions: [
-      { decision: 'Use JWT for stateless auth', rationale: 'Because it scales horizontally without shared session store' },
+      {
+        decision: 'Use JWT for stateless auth',
+        rationale: 'Because it scales horizontally without shared session store',
+      },
     ],
     tasks: [
-      { id: 'task-1', title: 'Add JWT signing', description: 'Implement JWT sign/verify using built-in crypto module', status: 'pending', updatedAt: Date.now() },
-      { id: 'task-2', title: 'Add auth middleware', description: 'Create Express middleware that validates JWT from Authorization header', status: 'pending', updatedAt: Date.now() },
-      { id: 'task-3', title: 'Add login endpoint', description: 'POST /auth/login returns JWT after verifying credentials', status: 'pending', updatedAt: Date.now() },
-      { id: 'task-4', title: 'Add test coverage', description: 'Test JWT signing, middleware rejection, and login flow end-to-end', status: 'pending', updatedAt: Date.now() },
+      {
+        id: 'task-1',
+        title: 'Add JWT signing',
+        description: 'Implement JWT sign/verify using built-in crypto module',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
+      {
+        id: 'task-2',
+        title: 'Add auth middleware',
+        description: 'Create Express middleware that validates JWT from Authorization header',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
+      {
+        id: 'task-3',
+        title: 'Add login endpoint',
+        description: 'POST /auth/login returns JWT after verifying credentials',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
+      {
+        id: 'task-4',
+        title: 'Add test coverage',
+        description: 'Test JWT signing, middleware rejection, and login flow end-to-end',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
     ],
     checks: [],
     createdAt: Date.now(),
@@ -178,7 +205,9 @@ describe('Pass 1: Structure', () => {
   it('returns critical gap for missing objective', () => {
     const gaps = analyzeStructure(makePlan({ objective: '' }));
     expect(gaps.some((g) => g._trigger === 'missing_or_short_objective')).toBe(true);
-    expect(gaps.find((g) => g._trigger === 'missing_or_short_objective')?.severity).toBe('critical');
+    expect(gaps.find((g) => g._trigger === 'missing_or_short_objective')?.severity).toBe(
+      'critical',
+    );
   });
 
   it('returns critical gap for short objective', () => {
@@ -258,10 +287,37 @@ describe('Pass 3: Feasibility', () => {
   it('does not flag when tasks have dependsOn', () => {
     const plan = makePlan({
       tasks: [
-        { id: 't1', title: 'Setup', description: 'Setup project', status: 'pending', updatedAt: Date.now() },
-        { id: 't2', title: 'Build', description: 'Build feature', status: 'pending', dependsOn: ['t1'], updatedAt: Date.now() },
-        { id: 't3', title: 'Test', description: 'Test feature', status: 'pending', dependsOn: ['t2'], updatedAt: Date.now() },
-        { id: 't4', title: 'Deploy', description: 'Deploy to prod', status: 'pending', dependsOn: ['t3'], updatedAt: Date.now() },
+        {
+          id: 't1',
+          title: 'Setup',
+          description: 'Setup project',
+          status: 'pending',
+          updatedAt: Date.now(),
+        },
+        {
+          id: 't2',
+          title: 'Build',
+          description: 'Build feature',
+          status: 'pending',
+          dependsOn: ['t1'],
+          updatedAt: Date.now(),
+        },
+        {
+          id: 't3',
+          title: 'Test',
+          description: 'Test feature',
+          status: 'pending',
+          dependsOn: ['t2'],
+          updatedAt: Date.now(),
+        },
+        {
+          id: 't4',
+          title: 'Deploy',
+          description: 'Deploy to prod',
+          status: 'pending',
+          dependsOn: ['t3'],
+          updatedAt: Date.now(),
+        },
       ],
     });
     const gaps = analyzeFeasibility(plan);
@@ -271,8 +327,20 @@ describe('Pass 3: Feasibility', () => {
   it('does not flag when 3 or fewer tasks', () => {
     const plan = makePlan({
       tasks: [
-        { id: 't1', title: 'Task 1', description: 'Do something', status: 'pending', updatedAt: Date.now() },
-        { id: 't2', title: 'Task 2', description: 'Do another thing', status: 'pending', updatedAt: Date.now() },
+        {
+          id: 't1',
+          title: 'Task 1',
+          description: 'Do something',
+          status: 'pending',
+          updatedAt: Date.now(),
+        },
+        {
+          id: 't2',
+          title: 'Task 2',
+          description: 'Do another thing',
+          status: 'pending',
+          updatedAt: Date.now(),
+        },
       ],
     });
     const gaps = analyzeFeasibility(plan);
@@ -305,7 +373,13 @@ describe('Pass 4: Risk', () => {
       scope: 'Auth module only. Not including user service.',
       decisions: [{ decision: 'Use new pattern', rationale: 'Because it is cleaner code' }],
       tasks: [
-        { id: 't1', title: 'Refactor auth', description: 'Change the auth flow implementation', status: 'pending', updatedAt: Date.now() },
+        {
+          id: 't1',
+          title: 'Refactor auth',
+          description: 'Change the auth flow implementation',
+          status: 'pending',
+          updatedAt: Date.now(),
+        },
       ],
     });
     const gaps = analyzeRisk(plan);

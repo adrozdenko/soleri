@@ -15,12 +15,12 @@ When two projects are related, link them so they can search each other's vaults:
 
 Link types describe the relationship:
 
-| Type | Meaning | Direction |
-|------|---------|-----------|
-| **related** | Same domain or team | Bidirectional |
-| **parent** | This project derives from another | Unidirectional |
-| **child** | Another project derives from this one | Unidirectional |
-| **fork** | Code fork | Unidirectional |
+| Type        | Meaning                               | Direction      |
+| ----------- | ------------------------------------- | -------------- |
+| **related** | Same domain or team                   | Bidirectional  |
+| **parent**  | This project derives from another     | Unidirectional |
+| **child**   | Another project derives from this one | Unidirectional |
+| **fork**    | Code fork                             | Unidirectional |
 
 Once linked, cross-project search becomes available.
 
@@ -50,6 +50,7 @@ Some patterns are universal — they apply to every project you work on. Promote
 Global patterns work by adding a `_global` tag to the entry. Any project can find them in cross-project searches, regardless of whether the projects are linked.
 
 Good candidates for global promotion:
+
 - Security patterns that apply everywhere
 - Team conventions for code style, naming, commit messages
 - Infrastructure patterns shared across all services

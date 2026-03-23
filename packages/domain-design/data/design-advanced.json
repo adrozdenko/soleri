@@ -92,16 +92,60 @@
     "glassModel": {
       "principle": "Elements closer to page reveal more of underlying background",
       "transparency": [
-        { "depth": 1, "light": "bg-white/60", "dark": "bg-black/60", "blur": "8px", "visibility": "Minimal" },
-        { "depth": 2, "light": "bg-white/40", "dark": "bg-black/40", "blur": "4px", "visibility": "Low" },
-        { "depth": 3, "light": "bg-white/20", "dark": "bg-black/20", "blur": "2px", "visibility": "Medium" },
-        { "depth": 4, "light": "bg-white/10", "dark": "bg-black/10", "blur": "1px", "visibility": "High" }
+        {
+          "depth": 1,
+          "light": "bg-white/60",
+          "dark": "bg-black/60",
+          "blur": "8px",
+          "visibility": "Minimal"
+        },
+        {
+          "depth": 2,
+          "light": "bg-white/40",
+          "dark": "bg-black/40",
+          "blur": "4px",
+          "visibility": "Low"
+        },
+        {
+          "depth": 3,
+          "light": "bg-white/20",
+          "dark": "bg-black/20",
+          "blur": "2px",
+          "visibility": "Medium"
+        },
+        {
+          "depth": 4,
+          "light": "bg-white/10",
+          "dark": "bg-black/10",
+          "blur": "1px",
+          "visibility": "High"
+        }
       ],
       "borderShadowHierarchy": [
-        { "depth": 4, "glass": "bg-white/10 dark:bg-black/10", "border": "border-2 border-accent", "shadow": null },
-        { "depth": 3, "glass": "bg-white/20 dark:bg-black/20", "border": "border-2 border-accent", "shadow": "shadow-sm" },
-        { "depth": 2, "glass": "bg-white/40 dark:bg-black/40", "border": "border-2 border-accent", "shadow": "shadow-md" },
-        { "depth": 1, "glass": "bg-white/60 dark:bg-black/60", "border": "border-2 border-accent", "shadow": "shadow-lg" }
+        {
+          "depth": 4,
+          "glass": "bg-white/10 dark:bg-black/10",
+          "border": "border-2 border-accent",
+          "shadow": null
+        },
+        {
+          "depth": 3,
+          "glass": "bg-white/20 dark:bg-black/20",
+          "border": "border-2 border-accent",
+          "shadow": "shadow-sm"
+        },
+        {
+          "depth": 2,
+          "glass": "bg-white/40 dark:bg-black/40",
+          "border": "border-2 border-accent",
+          "shadow": "shadow-md"
+        },
+        {
+          "depth": 1,
+          "glass": "bg-white/60 dark:bg-black/60",
+          "border": "border-2 border-accent",
+          "shadow": "shadow-lg"
+        }
       ],
       "coloredGlass": {
         "rule": "Colored glass follows same opacity/blur rules. Border uses same color +20% opacity",
@@ -109,10 +153,34 @@
         "colors": ["warning", "error", "success", "info", "accent"],
         "examples": [
           { "depth": 4, "color": "warning", "bg": "bg-warning/10", "border": "border-warning/30" },
-          { "depth": 3, "color": "warning", "bg": "bg-warning/20", "border": "border-warning/40", "shadow": "shadow-sm" },
-          { "depth": 3, "color": "error", "bg": "bg-error/20", "border": "border-error/40", "shadow": "shadow-sm" },
-          { "depth": 2, "color": "success", "bg": "bg-success/40", "border": "border-success/60", "shadow": "shadow-md" },
-          { "depth": 3, "color": "info", "bg": "bg-info/20", "border": "border-info/40", "shadow": "shadow-sm" }
+          {
+            "depth": 3,
+            "color": "warning",
+            "bg": "bg-warning/20",
+            "border": "border-warning/40",
+            "shadow": "shadow-sm"
+          },
+          {
+            "depth": 3,
+            "color": "error",
+            "bg": "bg-error/20",
+            "border": "border-error/40",
+            "shadow": "shadow-sm"
+          },
+          {
+            "depth": 2,
+            "color": "success",
+            "bg": "bg-success/40",
+            "border": "border-success/60",
+            "shadow": "shadow-md"
+          },
+          {
+            "depth": 3,
+            "color": "info",
+            "bg": "bg-info/20",
+            "border": "border-info/40",
+            "shadow": "shadow-sm"
+          }
         ],
         "codeExamples": {
           "warningGlass": "className=\"bg-warning/20 backdrop-blur-[2px] border-2 border-warning/40 shadow-sm\"",
@@ -128,13 +196,37 @@
       }
     },
     "antiPatterns": [
-      { "pattern": "Page lighter than card", "why": "Inverts depth perception", "fix": "Use bg-page for page" },
-      { "pattern": "Elevated without shadow", "why": "Looks flat despite bg", "fix": "Add shadow-md or shadow-lg" },
-      { "pattern": "Raw colors for layers", "why": "Breaks dark mode", "fix": "Use semantic tokens" },
-      { "pattern": "Skip >2 shade steps", "why": "Jarring contrast", "fix": "Use intermediate layer" },
-      { "pattern": "Nested same-shade no border", "why": "Elements merge", "fix": "Add border or different shade" },
+      {
+        "pattern": "Page lighter than card",
+        "why": "Inverts depth perception",
+        "fix": "Use bg-page for page"
+      },
+      {
+        "pattern": "Elevated without shadow",
+        "why": "Looks flat despite bg",
+        "fix": "Add shadow-md or shadow-lg"
+      },
+      {
+        "pattern": "Raw colors for layers",
+        "why": "Breaks dark mode",
+        "fix": "Use semantic tokens"
+      },
+      {
+        "pattern": "Skip >2 shade steps",
+        "why": "Jarring contrast",
+        "fix": "Use intermediate layer"
+      },
+      {
+        "pattern": "Nested same-shade no border",
+        "why": "Elements merge",
+        "fix": "Add border or different shade"
+      },
       { "pattern": "Using bg-white for page", "why": "Wrong in dark mode", "fix": "Use bg-page" },
-      { "pattern": "Using bg-gray-* anywhere", "why": "Not a design system token", "fix": "Find semantic equivalent" }
+      {
+        "pattern": "Using bg-gray-* anywhere",
+        "why": "Not a design system token",
+        "fix": "Find semantic equivalent"
+      }
     ],
     "validationChecklist": [
       "Elevated elements have shadows",
@@ -157,22 +249,45 @@
     },
     "patterns": {
       "dialog": {
-        "useFor": ["Confirmations", "Simple forms (1-7 fields)", "Password entry", "Quick creation", "<30 sec completion"],
+        "useFor": [
+          "Confirmations",
+          "Simple forms (1-7 fields)",
+          "Password entry",
+          "Quick creation",
+          "<30 sec completion"
+        ],
         "complexity": "Low",
         "fields": "1-7"
       },
       "page": {
-        "useFor": ["Complex forms (8+ fields)", "Primary CRUD", "Data entry with sections", ">1 minute tasks", "Primary workflows"],
+        "useFor": [
+          "Complex forms (8+ fields)",
+          "Primary CRUD",
+          "Data entry with sections",
+          ">1 minute tasks",
+          "Primary workflows"
+        ],
         "complexity": "High",
         "fields": "8-12"
       },
       "wizard": {
-        "useFor": ["Multi-step processes", "Onboarding", "Provisioning", "Natural step divisions", "13+ fields"],
+        "useFor": [
+          "Multi-step processes",
+          "Onboarding",
+          "Provisioning",
+          "Natural step divisions",
+          "13+ fields"
+        ],
         "complexity": "Very High",
         "fields": "13+"
       },
       "sheet": {
-        "useFor": ["Preview/detail views", "Mobile interactions", "Filters", "Desktop Dialog → Mobile Sheet"],
+        "useFor": [
+          "Preview/detail views",
+          "Mobile interactions",
+          "Filters",
+          "Desktop Dialog → Mobile Sheet"
+        ],
         "complexity": "Medium",
         "fields": "Variable"
       }

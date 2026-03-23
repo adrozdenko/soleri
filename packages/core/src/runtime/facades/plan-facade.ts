@@ -24,7 +24,10 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       schema: z.object({
         objective: z.string().describe('What the plan aims to achieve'),
         scope: z.string().describe('Which parts of the codebase are affected'),
-        decisions: z.array(z.union([z.string(), z.object({ decision: z.string(), rationale: z.string() })])).optional().default([]),
+        decisions: z
+          .array(z.union([z.string(), z.object({ decision: z.string(), rationale: z.string() })]))
+          .optional()
+          .default([]),
         tasks: z
           .array(z.object({ title: z.string(), description: z.string() }))
           .optional()
@@ -47,7 +50,9 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           scope: params.scope as string,
           decisions: (params.decisions as string[]) ?? [],
           tasks: (params.tasks as Array<{ title: string; description: string }>) ?? [],
-          alternatives: params.alternatives as Array<{ approach: string; pros: string[]; cons: string[]; rejected_reason: string }> | undefined,
+          alternatives: params.alternatives as
+            | Array<{ approach: string; pros: string[]; cons: string[]; rejected_reason: string }>
+            | undefined,
         });
         return { created: true, plan };
       },

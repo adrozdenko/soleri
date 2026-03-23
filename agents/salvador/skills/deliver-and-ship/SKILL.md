@@ -114,10 +114,10 @@ Delivery is approved when all gates pass. If any gate fails, report the failure 
 
 ## Agent Tools Reference
 
-| Op | When to Use |
-|----|-------------|
-| `admin_health` | Verify agent/system health |
-| `memory_search` | Check for uncaptured session knowledge |
-| `brain_stats` | Review learning state |
-| `capture_knowledge` | Persist patterns before shipping |
-| `capture_quick` | Fast capture for simple learnings |
+| Op                  | When to Use                            |
+| ------------------- | -------------------------------------- |
+| `admin_health`      | Verify agent/system health             |
+| `memory_search`     | Check for uncaptured session knowledge |
+| `brain_stats`       | Review learning state                  |
+| `capture_knowledge` | Persist patterns before shipping       |
+| `capture_quick`     | Fast capture for simple learnings      |

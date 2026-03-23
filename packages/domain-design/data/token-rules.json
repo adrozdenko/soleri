@@ -2,9 +2,24 @@
   "tokenSelectionPriority": {
     "rule": "Semantic tokens first. Always prefer tokens that convey meaning.",
     "priority": [
-      { "rank": 1, "type": "Semantic", "examples": ["text-warning", "bg-error", "border-success"], "when": "Color conveys meaning" },
-      { "rank": 2, "type": "Contextual", "examples": ["text-primary", "bg-surface", "border-default"], "when": "UI structure (text, backgrounds)" },
-      { "rank": 3, "type": "Primitive", "examples": ["text-primary-500", "bg-error-200"], "when": "Only when neither above fits" }
+      {
+        "rank": 1,
+        "type": "Semantic",
+        "examples": ["text-warning", "bg-error", "border-success"],
+        "when": "Color conveys meaning"
+      },
+      {
+        "rank": 2,
+        "type": "Contextual",
+        "examples": ["text-primary", "bg-surface", "border-default"],
+        "when": "UI structure (text, backgrounds)"
+      },
+      {
+        "rank": 3,
+        "type": "Primitive",
+        "examples": ["text-primary-500", "bg-error-200"],
+        "when": "Only when neither above fits"
+      }
     ],
     "whySemantic": [
       "Self-documenting (code reads as intent)",

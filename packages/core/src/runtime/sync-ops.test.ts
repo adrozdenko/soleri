@@ -95,10 +95,7 @@ describe('createSyncOps', () => {
   describe('vault_git_push', () => {
     it('initializes sync and pushes entries', async () => {
       const op = findOp(ops, 'vault_git_push');
-      const result = (await op.handler({ repoDir: '/tmp/vault-repo' })) as Record<
-        string,
-        unknown
-      >;
+      const result = (await op.handler({ repoDir: '/tmp/vault-repo' })) as Record<string, unknown>;
       expect(result.pushed).toBe(5);
     });
   });
@@ -108,10 +105,7 @@ describe('createSyncOps', () => {
   describe('vault_git_pull', () => {
     it('pulls entries from git directory', async () => {
       const op = findOp(ops, 'vault_git_pull');
-      const result = (await op.handler({ repoDir: '/tmp/vault-repo' })) as Record<
-        string,
-        unknown
-      >;
+      const result = (await op.handler({ repoDir: '/tmp/vault-repo' })) as Record<string, unknown>;
       expect(result.imported).toBe(3);
     });
   });
@@ -121,10 +115,7 @@ describe('createSyncOps', () => {
   describe('vault_git_sync', () => {
     it('performs bidirectional sync', async () => {
       const op = findOp(ops, 'vault_git_sync');
-      const result = (await op.handler({ repoDir: '/tmp/vault-repo' })) as Record<
-        string,
-        unknown
-      >;
+      const result = (await op.handler({ repoDir: '/tmp/vault-repo' })) as Record<string, unknown>;
       expect(result.pushed).toBe(2);
       expect(result.pulled).toBe(1);
     });

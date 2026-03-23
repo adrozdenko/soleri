@@ -25,9 +25,11 @@ const AGENT_ID = 'e2e-pipeline';
 
 /** Capture the MCP handler from registerFacade without a real server */
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
@@ -123,14 +125,16 @@ describe('E2E: full-pipeline', () => {
 
   it('vault: capture_knowledge and search', async () => {
     const captureRes = await callOp(`${AGENT_ID}_vault`, 'capture_knowledge', {
-      entries: [{
-        type: 'pattern',
-        domain: 'frontend',
-        title: 'E2E Test Pattern',
-        description: 'A pattern captured during E2E testing',
-        severity: 'warning',
-        tags: ['e2e', 'testing'],
-      }],
+      entries: [
+        {
+          type: 'pattern',
+          domain: 'frontend',
+          title: 'E2E Test Pattern',
+          description: 'A pattern captured during E2E testing',
+          severity: 'warning',
+          tags: ['e2e', 'testing'],
+        },
+      ],
     });
     expect(captureRes.success).toBe(true);
 
@@ -180,7 +184,9 @@ describe('E2E: full-pipeline', () => {
     const planData = createRes.data as { plan: { id: string } };
     expect(planData.plan.id).toBeDefined();
 
-    const approveRes = await callOp(`${AGENT_ID}_plan`, 'approve_plan', { planId: planData.plan.id });
+    const approveRes = await callOp(`${AGENT_ID}_plan`, 'approve_plan', {
+      planId: planData.plan.id,
+    });
     expect(approveRes.success).toBe(true);
   });
 
@@ -300,14 +306,16 @@ describe('E2E: full-pipeline', () => {
 
   it('knowledge captured via vault should be findable via search', async () => {
     await callOp(`${AGENT_ID}_vault`, 'capture_knowledge', {
-      entries: [{
-        type: 'pattern',
-        domain: 'backend',
-        title: 'Database Connection Pooling',
-        description: 'Always use connection pooling for database access in production',
-        severity: 'warning',
-        tags: ['database', 'performance'],
-      }],
+      entries: [
+        {
+          type: 'pattern',
+          domain: 'backend',
+          title: 'Database Connection Pooling',
+          description: 'Always use connection pooling for database access in production',
+          severity: 'warning',
+          tags: ['database', 'performance'],
+        },
+      ],
     });
 
     await callOp(`${AGENT_ID}_brain`, 'rebuild_vocabulary');

@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CircuitBreaker, CircuitOpenError, computeDelay, retry, parseRateLimitHeaders } from './utils.js';
+import {
+  CircuitBreaker,
+  CircuitOpenError,
+  computeDelay,
+  retry,
+  parseRateLimitHeaders,
+} from './utils.js';
 import { LLMError } from './types.js';
 
 // ─── CircuitOpenError ───────────────────────────────────────────────
@@ -46,7 +52,11 @@ describe('CircuitBreaker', () => {
 
   it('should rethrow errors from the wrapped function', async () => {
     const cb = new CircuitBreaker({ name: 'test' });
-    await expect(cb.call(async () => { throw new Error('boom'); })).rejects.toThrow('boom');
+    await expect(
+      cb.call(async () => {
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
   });
 
   it('should not count non-retryable errors as failures', async () => {
@@ -54,7 +64,11 @@ describe('CircuitBreaker', () => {
     const nonRetryable = new Error('not retryable');
 
     for (let i = 0; i < 5; i++) {
-      await expect(cb.call(async () => { throw nonRetryable; })).rejects.toThrow();
+      await expect(
+        cb.call(async () => {
+          throw nonRetryable;
+        }),
+      ).rejects.toThrow();
     }
     expect(cb.getState().state).toBe('closed');
   });
@@ -63,8 +77,16 @@ describe('CircuitBreaker', () => {
     const cb = new CircuitBreaker({ name: 'test', failureThreshold: 2 });
     const retryableErr = new LLMError('rate limited', { retryable: true });
 
-    await expect(cb.call(async () => { throw retryableErr; })).rejects.toThrow();
-    await expect(cb.call(async () => { throw retryableErr; })).rejects.toThrow();
+    await expect(
+      cb.call(async () => {
+        throw retryableErr;
+      }),
+    ).rejects.toThrow();
+    await expect(
+      cb.call(async () => {
+        throw retryableErr;
+      }),
+    ).rejects.toThrow();
     expect(cb.isOpen()).toBe(true);
   });
 
@@ -72,7 +94,11 @@ describe('CircuitBreaker', () => {
     const cb = new CircuitBreaker({ name: 'test', failureThreshold: 1, resetTimeoutMs: 999_999 });
     const retryableErr = new LLMError('fail', { retryable: true });
 
-    await expect(cb.call(async () => { throw retryableErr; })).rejects.toThrow();
+    await expect(
+      cb.call(async () => {
+        throw retryableErr;
+      }),
+    ).rejects.toThrow();
     await expect(cb.call(async () => 'ok')).rejects.toThrow(CircuitOpenError);
   });
 
@@ -80,7 +106,11 @@ describe('CircuitBreaker', () => {
     const cb = new CircuitBreaker({ name: 'test', failureThreshold: 1, resetTimeoutMs: 10 });
     const retryableErr = new LLMError('fail', { retryable: true });
 
-    await expect(cb.call(async () => { throw retryableErr; })).rejects.toThrow();
+    await expect(
+      cb.call(async () => {
+        throw retryableErr;
+      }),
+    ).rejects.toThrow();
     expect(cb.isOpen()).toBe(true);
 
     // Wait for reset timeout
@@ -93,7 +123,11 @@ describe('CircuitBreaker', () => {
     const cb = new CircuitBreaker({ name: 'test', failureThreshold: 1, resetTimeoutMs: 10 });
     const retryableErr = new LLMError('fail', { retryable: true });
 
-    await expect(cb.call(async () => { throw retryableErr; })).rejects.toThrow();
+    await expect(
+      cb.call(async () => {
+        throw retryableErr;
+      }),
+    ).rejects.toThrow();
     await new Promise((r) => setTimeout(r, 20));
 
     const result = await cb.call(async () => 'recovered');
@@ -105,10 +139,18 @@ describe('CircuitBreaker', () => {
     const cb = new CircuitBreaker({ name: 'test', failureThreshold: 1, resetTimeoutMs: 10 });
     const retryableErr = new LLMError('fail', { retryable: true });
 
-    await expect(cb.call(async () => { throw retryableErr; })).rejects.toThrow();
+    await expect(
+      cb.call(async () => {
+        throw retryableErr;
+      }),
+    ).rejects.toThrow();
     await new Promise((r) => setTimeout(r, 20));
 
-    await expect(cb.call(async () => { throw retryableErr; })).rejects.toThrow();
+    await expect(
+      cb.call(async () => {
+        throw retryableErr;
+      }),
+    ).rejects.toThrow();
     expect(cb.getState().state).toBe('open');
   });
 
@@ -116,7 +158,11 @@ describe('CircuitBreaker', () => {
     const cb = new CircuitBreaker({ name: 'test', failureThreshold: 1, resetTimeoutMs: 999_999 });
     const retryableErr = new LLMError('fail', { retryable: true });
 
-    await expect(cb.call(async () => { throw retryableErr; })).rejects.toThrow();
+    await expect(
+      cb.call(async () => {
+        throw retryableErr;
+      }),
+    ).rejects.toThrow();
     expect(cb.isOpen()).toBe(true);
 
     cb.reset();
@@ -204,7 +250,9 @@ describe('retry', () => {
 
   it('should throw if maxAttempts < 1', async () => {
     vi.useRealTimers();
-    await expect(retry(async () => 'ok', { maxAttempts: 0 })).rejects.toThrow('maxAttempts must be >= 1');
+    await expect(retry(async () => 'ok', { maxAttempts: 0 })).rejects.toThrow(
+      'maxAttempts must be >= 1',
+    );
   });
 
   it('should throw non-retryable errors immediately', async () => {
@@ -227,9 +275,7 @@ describe('retry', () => {
   it('should succeed on retry after initial failures', async () => {
     vi.useRealTimers();
     const retryableErr = new LLMError('transient', { retryable: true });
-    const fn = vi.fn()
-      .mockRejectedValueOnce(retryableErr)
-      .mockResolvedValueOnce('recovered');
+    const fn = vi.fn().mockRejectedValueOnce(retryableErr).mockResolvedValueOnce('recovered');
 
     const result = await retry(fn, { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 1, jitter: 0 });
     expect(result).toBe('recovered');
@@ -240,9 +286,7 @@ describe('retry', () => {
     vi.useRealTimers();
     const retryableErr = new LLMError('transient', { retryable: true });
     const onRetry = vi.fn();
-    const fn = vi.fn()
-      .mockRejectedValueOnce(retryableErr)
-      .mockResolvedValueOnce('ok');
+    const fn = vi.fn().mockRejectedValueOnce(retryableErr).mockResolvedValueOnce('ok');
 
     await retry(fn, { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 1, jitter: 0, onRetry });
     expect(onRetry).toHaveBeenCalledTimes(1);

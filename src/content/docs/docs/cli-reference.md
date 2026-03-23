@@ -191,12 +191,12 @@ npx @soleri/cli extend <subcommand>
 
 **Subcommands:**
 
-| Subcommand       | Description                                      |
-| ---------------- | ------------------------------------------------ |
-| `init`           | Initialize extensions (legacy TypeScript agents only) |
-| `add-op <name>`  | Scaffold a custom op (legacy TypeScript agents only)  |
-| `add-facade <name>` | Scaffold a custom facade (legacy TypeScript agents only) |
-| `add-middleware <name>` | Scaffold a middleware (legacy TypeScript agents only) |
+| Subcommand              | Description                                              |
+| ----------------------- | -------------------------------------------------------- |
+| `init`                  | Initialize extensions (legacy TypeScript agents only)    |
+| `add-op <name>`         | Scaffold a custom op (legacy TypeScript agents only)     |
+| `add-facade <name>`     | Scaffold a custom facade (legacy TypeScript agents only) |
+| `add-middleware <name>` | Scaffold a middleware (legacy TypeScript agents only)    |
 
 **Examples:**
 
@@ -245,18 +245,18 @@ npx @soleri/cli pack <subcommand> [options]
 
 **Subcommands:**
 
-| Subcommand   | Description                          |
-| ------------ | ------------------------------------ |
-| `list`       | List available packs                 |
-| `install`    | Install a pack                       |
-| `uninstall`  | Remove a pack                        |
-| `validate`   | Validate a pack before installing    |
+| Subcommand  | Description                       |
+| ----------- | --------------------------------- |
+| `list`      | List available packs              |
+| `install`   | Install a pack                    |
+| `uninstall` | Remove a pack                     |
+| `validate`  | Validate a pack before installing |
 
 **Options:**
 
-| Flag           | Description                          |
-| -------------- | ------------------------------------ |
-| `--type <type>`| Pack type: `hooks`, `skills`, `knowledge`, `domains` |
+| Flag            | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `--type <type>` | Pack type: `hooks`, `skills`, `knowledge`, `domains` |
 
 ---
 
@@ -282,11 +282,11 @@ npx @soleri/cli agent <subcommand>
 
 **Subcommands:**
 
-| Subcommand | Description                          |
-| ---------- | ------------------------------------ |
-| `status`   | Show agent status and configuration  |
-| `update`   | Update agent to latest engine        |
-| `diff`     | Show differences from latest scaffold|
+| Subcommand | Description                           |
+| ---------- | ------------------------------------- |
+| `status`   | Show agent status and configuration   |
+| `update`   | Update agent to latest engine         |
+| `diff`     | Show differences from latest scaffold |
 
 ---
 

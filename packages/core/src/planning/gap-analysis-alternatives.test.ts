@@ -15,13 +15,40 @@ function makePlan(overrides: Partial<Plan> = {}): Plan {
     scope: 'Auth module, middleware, and user service. Does not include OAuth providers.',
     status: 'draft',
     decisions: [
-      { decision: 'Use JWT for stateless auth', rationale: 'Because it scales horizontally without shared session store' },
+      {
+        decision: 'Use JWT for stateless auth',
+        rationale: 'Because it scales horizontally without shared session store',
+      },
     ],
     tasks: [
-      { id: 'task-1', title: 'Add JWT signing', description: 'Implement JWT sign/verify using built-in crypto module', status: 'pending', updatedAt: Date.now() },
-      { id: 'task-2', title: 'Add auth middleware', description: 'Create Express middleware that validates JWT from Authorization header', status: 'pending', updatedAt: Date.now() },
-      { id: 'task-3', title: 'Add login endpoint', description: 'POST /auth/login returns JWT after verifying credentials', status: 'pending', updatedAt: Date.now() },
-      { id: 'task-4', title: 'Add test coverage', description: 'Test JWT signing, middleware rejection, and login flow end-to-end', status: 'pending', updatedAt: Date.now() },
+      {
+        id: 'task-1',
+        title: 'Add JWT signing',
+        description: 'Implement JWT sign/verify using built-in crypto module',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
+      {
+        id: 'task-2',
+        title: 'Add auth middleware',
+        description: 'Create Express middleware that validates JWT from Authorization header',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
+      {
+        id: 'task-3',
+        title: 'Add login endpoint',
+        description: 'POST /auth/login returns JWT after verifying credentials',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
+      {
+        id: 'task-4',
+        title: 'Add test coverage',
+        description: 'Test JWT signing, middleware rejection, and login flow end-to-end',
+        status: 'pending',
+        updatedAt: Date.now(),
+      },
     ],
     checks: [],
     createdAt: Date.now(),
@@ -148,12 +175,15 @@ describe('Pass 8: Alternative Analysis', () => {
 
   it('does not modify gaps from passes 1-7', () => {
     const plan = makePlan({
-      alternatives: [makeAlternative(), makeAlternative({
-        approach: 'Alternative B',
-        pros: ['Pro'],
-        cons: ['Con'],
-        rejected_reason: 'Not suitable',
-      })],
+      alternatives: [
+        makeAlternative(),
+        makeAlternative({
+          approach: 'Alternative B',
+          pros: ['Pro'],
+          cons: ['Con'],
+          rejected_reason: 'Not suitable',
+        }),
+      ],
     });
     const gapsWithAlts = runGapAnalysis(plan);
 

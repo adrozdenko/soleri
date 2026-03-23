@@ -61,7 +61,9 @@ describe('OperatorProfileStore (extended)', () => {
 
   describe('parallel section updates', () => {
     it('two concurrent updateSection for different sections both succeed', () => {
-      store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+      store.accumulateSignals([
+        makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+      ]);
 
       const commData: CommunicationSection = {
         style: 'formal',
@@ -88,7 +90,9 @@ describe('OperatorProfileStore (extended)', () => {
     });
 
     it('updating one section does not overwrite another', () => {
-      store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+      store.accumulateSignals([
+        makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+      ]);
 
       const identity: IdentitySection = {
         background: 'Senior engineer',
@@ -116,7 +120,9 @@ describe('OperatorProfileStore (extended)', () => {
 
   describe('profile snapshot', () => {
     it('creates history entry with correct version increment', () => {
-      store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+      store.accumulateSignals([
+        makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+      ]);
       const profileBefore = store.getProfile();
       expect(profileBefore!.version).toBe(0);
 
@@ -197,7 +203,9 @@ describe('OperatorProfileStore (extended)', () => {
     });
 
     it('lastSynthesis updates after snapshot', () => {
-      store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+      store.accumulateSignals([
+        makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+      ]);
       store.snapshot('synthesis');
       const stats = store.signalStats();
       expect(stats.lastSynthesis).not.toBeNull();
@@ -273,7 +281,9 @@ describe('OperatorProfileStore (extended)', () => {
 
   describe('delete profile archives to history', () => {
     it('archives profile snapshot before deletion', () => {
-      store.accumulateSignals([makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' })]);
+      store.accumulateSignals([
+        makeSignal(SignalType.CommandStyle, { style: 'terse', snippet: 'x' }),
+      ]);
       const identity: IdentitySection = {
         background: 'Architect',
         role: 'Principal',

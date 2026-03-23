@@ -21,12 +21,12 @@
     "url": "https://github.com/adrozdenko/soleri.git",
     "directory": "packages/core"
   },
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "bin": {
     "soleri-engine": "dist/engine/bin/soleri-engine.js"
   },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -69,10 +69,10 @@
       "optional": true
     }
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "optionalDependencies": {
     "pdf-parse": "^1.1.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

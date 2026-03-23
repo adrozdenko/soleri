@@ -13,6 +13,7 @@
 ### Task 1: Add new domains and principles to playbook
 
 **Files:**
+
 - Modify: `packages/cli/src/prompts/playbook.ts`
 
 **Step 1: Add `developer-experience` domain to `DOMAIN_OPTIONS` array**
@@ -160,6 +161,7 @@ git commit -m "feat(cli): add domain-specific principles, move planning skills t
 ### Task 2: Add tier field and 2 new archetypes
 
 **Files:**
+
 - Modify: `packages/cli/src/prompts/archetypes.ts`
 
 **Step 1: Add `tier` field to the `Archetype` interface**
@@ -281,6 +283,7 @@ git commit -m "feat(cli): add tier field, Accessibility Guardian and Documentati
 ### Task 3: Enrich existing archetype principles and rationalize tones
 
 **Files:**
+
 - Modify: `packages/cli/src/prompts/archetypes.ts`
 
 **Step 1: Update Code Reviewer archetype**
@@ -454,6 +457,7 @@ git commit -m "feat(cli): enrich archetype principles and rationalize tone assig
 ### Task 4: Implement multi-archetype selection in wizard
 
 **Files:**
+
 - Modify: `packages/cli/src/prompts/create-wizard.ts`
 
 **Step 1: Change archetype step from `p.select` to `p.multiselect`**
@@ -499,11 +503,12 @@ Also add the import for `Archetype` type at the top — it's already imported fr
 Replace line 65 (`const nameDefault = archetype ? archetype.label : undefined;`) with:
 
 ```typescript
-const nameDefault = selectedArchetypes.length === 1
-  ? selectedArchetypes[0].label
-  : selectedArchetypes.length > 1
-    ? selectedArchetypes.map((a) => a.label).join(' + ')
-    : undefined;
+const nameDefault =
+  selectedArchetypes.length === 1
+    ? selectedArchetypes[0].label
+    : selectedArchetypes.length > 1
+      ? selectedArchetypes.map((a) => a.label).join(' + ')
+      : undefined;
 ```
 
 **Step 4: Update the role step**
@@ -527,9 +532,10 @@ if (isCustom || selectedArchetypes.length > 1) {
   }
 
   const rolePrompt = (await p.text({
-    message: selectedArchetypes.length > 1
-      ? 'Combined role (describe what this multi-purpose agent does)'
-      : 'What does your agent do? (one sentence)',
+    message:
+      selectedArchetypes.length > 1
+        ? 'Combined role (describe what this multi-purpose agent does)'
+        : 'What does your agent do? (one sentence)',
     placeholder: 'Validates GraphQL schemas against federation rules',
     validate: (v) => {
       if (!v || v.length > 100) return 'Required (max 100 chars)';
@@ -574,9 +580,10 @@ if (isCustom || selectedArchetypes.length > 1) {
   }
 
   const descPrompt = (await p.text({
-    message: selectedArchetypes.length > 1
-      ? 'Combined description (what does this multi-purpose agent do?)'
-      : 'Describe your agent in detail',
+    message:
+      selectedArchetypes.length > 1
+        ? 'Combined description (what does this multi-purpose agent do?)'
+        : 'Describe your agent in detail',
     placeholder: 'This agent helps developers with...',
     validate: (v) => {
       if (!v || v.length < 10 || v.length > 500) return 'Required (10-500 chars)';
@@ -626,10 +633,7 @@ let defaultTone: 'precise' | 'mentor' | 'pragmatic';
 if (merged && merged.tones.length === 1) {
   defaultTone = merged.tones[0];
 } else if (merged && merged.tones.length > 1) {
-  p.note(
-    `Selected archetypes use different tones: ${merged.tones.join(', ')}`,
-    'Tone Conflict',
-  );
+  p.note(`Selected archetypes use different tones: ${merged.tones.join(', ')}`, 'Tone Conflict');
   defaultTone = 'pragmatic'; // neutral default when tones conflict
 } else {
   defaultTone = 'pragmatic';
@@ -649,9 +653,10 @@ const preselectedSkills = new Set(merged?.skills ?? []);
 Replace lines 331–333 (the `autoGreeting` logic) with:
 
 ```typescript
-const autoGreeting = selectedArchetypes.length === 1
-  ? selectedArchetypes[0].defaults.greetingTemplate(name)
-  : `Hello! I'm ${name}. I ${role[0].toLowerCase()}${role.slice(1)}.`;
+const autoGreeting =
+  selectedArchetypes.length === 1
+    ? selectedArchetypes[0].defaults.greetingTemplate(name)
+    : `Hello! I'm ${name}. I ${role[0].toLowerCase()}${role.slice(1)}.`;
 ```
 
 **Step 11: Verify the file compiles**
@@ -671,6 +676,7 @@ git commit -m "feat(cli): multi-archetype selection with union merge strategy"
 ### Task 5: Write tests
 
 **Files:**
+
 - Create: `packages/cli/src/__tests__/archetypes.test.ts`
 
 **Step 1: Write archetype validation tests**
@@ -678,7 +684,12 @@ git commit -m "feat(cli): multi-archetype selection with union merge strategy"
 ```typescript
 import { describe, expect, it } from 'vitest';
 import { ARCHETYPES } from '../prompts/archetypes.js';
-import { CORE_SKILLS, SKILL_CATEGORIES, DOMAIN_OPTIONS, PRINCIPLE_CATEGORIES } from '../prompts/playbook.js';
+import {
+  CORE_SKILLS,
+  SKILL_CATEGORIES,
+  DOMAIN_OPTIONS,
+  PRINCIPLE_CATEGORIES,
+} from '../prompts/playbook.js';
 
 const allDomainValues = DOMAIN_OPTIONS.map((d) => d.value);
 const allPrincipleValues = PRINCIPLE_CATEGORIES.flatMap((c) => c.options.map((o) => o.value));

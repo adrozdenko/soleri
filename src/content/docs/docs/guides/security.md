@@ -15,12 +15,12 @@ Out of the box: **zero network calls.**
 
 All agent data is stored in local files within your agent's directory:
 
-| Data | Storage | Format |
-|------|---------|--------|
-| Knowledge entries | SQLite database | `.db` file with FTS5 |
-| Brain state | JSON file | Strength scores, sessions, TF-IDF index |
-| Plans | JSON file | Plan history, reconciliation reports |
-| Configuration | TypeScript + JSON | Agent identity, domains, settings |
+| Data              | Storage           | Format                                  |
+| ----------------- | ----------------- | --------------------------------------- |
+| Knowledge entries | SQLite database   | `.db` file with FTS5                    |
+| Brain state       | JSON file         | Strength scores, sessions, TF-IDF index |
+| Plans             | JSON file         | Plan history, reconciliation reports    |
+| Configuration     | TypeScript + JSON | Agent identity, domains, settings       |
 
 These are regular files on your filesystem. You can back them up, version-control them, inspect them, or delete them. There's no hidden state, no external database, no cloud sync.
 
@@ -40,10 +40,10 @@ The agent receives data through tool parameters and returns data through tool re
 
 Every operation in your agent has an auth level that controls who can call it:
 
-| Level | Can do | Examples |
-|-------|--------|----------|
-| **read** | Query data, run searches, view stats | `search`, `vault_stats`, `brain_recommend` |
-| **write** | Add or modify data | `capture_knowledge`, `create_plan`, `approve_plan` |
+| Level     | Can do                                  | Examples                                                 |
+| --------- | --------------------------------------- | -------------------------------------------------------- |
+| **read**  | Query data, run searches, view stats    | `search`, `vault_stats`, `brain_recommend`               |
+| **write** | Add or modify data                      | `capture_knowledge`, `create_plan`, `approve_plan`       |
 | **admin** | Delete data, reset state, manage config | `vault_remove`, `admin_reset_cache`, `rollback_identity` |
 
 These levels are enforced at the tool registration layer. A read-only tool cannot modify vault data, regardless of what parameters are passed.
@@ -72,25 +72,27 @@ If you version-control your agent (including its data files), the knowledge base
 Two optional features do make network calls when configured:
 
 ### Cognee (vector search)
+
 If you enable Cognee integration, the agent sends text to a Cognee instance for vector embedding and knowledge graph storage. You control where Cognee runs — it can be local or hosted.
 
 ### LLM providers
+
 If you enable LLM-powered features (curator enrichment, knowledge extraction), the agent calls the configured LLM provider (Anthropic, OpenAI, etc.) with the specific text being processed. API keys are stored locally in your agent's configuration.
 
 Both are opt-in. Neither is required for core functionality. The vault, brain, planning, and all 160+ operations work without any external service.
 
 ## Summary
 
-| Question | Answer |
-|----------|--------|
-| Where is my data stored? | Local files in your agent directory |
-| Does the agent phone home? | No — zero network calls by default |
+| Question                     | Answer                                             |
+| ---------------------------- | -------------------------------------------------- |
+| Where is my data stored?     | Local files in your agent directory                |
+| Does the agent phone home?   | No — zero network calls by default                 |
 | Can the agent read my files? | No — it only receives data through tool parameters |
-| Can the agent run commands? | No — it only responds to MCP tool calls |
-| Is there telemetry? | No |
-| Can I inspect the data? | Yes — SQLite and JSON files, standard formats |
-| Can I delete everything? | Yes — delete the agent directory and it's gone |
-| Is sharing automatic? | No — you explicitly choose what to share |
+| Can the agent run commands?  | No — it only responds to MCP tool calls            |
+| Is there telemetry?          | No                                                 |
+| Can I inspect the data?      | Yes — SQLite and JSON files, standard formats      |
+| Can I delete everything?     | Yes — delete the agent directory and it's gone     |
+| Is sharing automatic?        | No — you explicitly choose what to share           |
 
 ---
 

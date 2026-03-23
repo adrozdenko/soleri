@@ -19,9 +19,7 @@ function makePlaybook(overrides: Partial<PlaybookDefinition> = {}): PlaybookDefi
     tags: [],
     matchIntents: ['BUILD'],
     matchKeywords: [],
-    gates: [
-      { phase: 'completion', requirement: 'Tests pass', checkType: 'test-pass' },
-    ],
+    gates: [{ phase: 'completion', requirement: 'Tests pass', checkType: 'test-pass' }],
     taskTemplates: [],
     toolInjections: ['search_intelligent'],
     verificationCriteria: ['All tests pass'],

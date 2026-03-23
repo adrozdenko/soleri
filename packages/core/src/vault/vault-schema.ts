@@ -87,7 +87,9 @@ function createCoreTables(provider: PersistenceProvider): void {
     );`);
 
   // Add memory columns if missing
-  const memCols = provider.all<{ name: string }>('PRAGMA table_info(memories)').map((r: { name: string }) => r.name);
+  const memCols = provider
+    .all<{ name: string }>('PRAGMA table_info(memories)')
+    .map((r: { name: string }) => r.name);
   if (!memCols.includes('intent')) {
     provider.execSql(`
       ALTER TABLE memories ADD COLUMN intent TEXT;
@@ -134,8 +136,12 @@ function migrateBrainSchema(provider: PersistenceProvider): void {
   const hasSource = columns.some((c: { name: string }) => c.name === 'source');
   if (!hasSource && columns.length > 0) {
     provider.transaction(() => {
-      provider.run(`CREATE TABLE brain_feedback_new (id INTEGER PRIMARY KEY AUTOINCREMENT, query TEXT NOT NULL, entry_id TEXT NOT NULL, action TEXT NOT NULL CHECK(action IN ('accepted', 'dismissed', 'modified', 'failed')), source TEXT NOT NULL DEFAULT 'search', confidence REAL NOT NULL DEFAULT 0.6, duration INTEGER, context TEXT NOT NULL DEFAULT '{}', reason TEXT, created_at INTEGER NOT NULL DEFAULT (unixepoch()))`);
-      provider.run(`INSERT INTO brain_feedback_new (id, query, entry_id, action, created_at) SELECT id, query, entry_id, action, created_at FROM brain_feedback`);
+      provider.run(
+        `CREATE TABLE brain_feedback_new (id INTEGER PRIMARY KEY AUTOINCREMENT, query TEXT NOT NULL, entry_id TEXT NOT NULL, action TEXT NOT NULL CHECK(action IN ('accepted', 'dismissed', 'modified', 'failed')), source TEXT NOT NULL DEFAULT 'search', confidence REAL NOT NULL DEFAULT 0.6, duration INTEGER, context TEXT NOT NULL DEFAULT '{}', reason TEXT, created_at INTEGER NOT NULL DEFAULT (unixepoch()))`,
+      );
+      provider.run(
+        `INSERT INTO brain_feedback_new (id, query, entry_id, action, created_at) SELECT id, query, entry_id, action, created_at FROM brain_feedback`,
+      );
       provider.run('DROP TABLE brain_feedback');
       provider.run('ALTER TABLE brain_feedback_new RENAME TO brain_feedback');
       provider.run('CREATE INDEX IF NOT EXISTS idx_brain_feedback_query ON brain_feedback(query)');
@@ -143,39 +149,90 @@ function migrateBrainSchema(provider: PersistenceProvider): void {
   }
   try {
     const sessionCols = provider.all<{ name: string }>('PRAGMA table_info(brain_sessions)');
-    if (sessionCols.length > 0 && !sessionCols.some((c: { name: string }) => c.name === 'extracted_at')) {
+    if (
+      sessionCols.length > 0 &&
+      !sessionCols.some((c: { name: string }) => c.name === 'extracted_at')
+    ) {
       provider.run('ALTER TABLE brain_sessions ADD COLUMN extracted_at TEXT');
     }
-  } catch { /* brain_sessions doesn't exist yet */ }
+  } catch {
+    /* brain_sessions doesn't exist yet */
+  }
 }
 
 function migrateTemporalSchema(provider: PersistenceProvider): void {
-  try { provider.run('ALTER TABLE entries ADD COLUMN valid_from INTEGER'); } catch { /* exists */ }
-  try { provider.run('ALTER TABLE entries ADD COLUMN valid_until INTEGER'); } catch { /* exists */ }
+  try {
+    provider.run('ALTER TABLE entries ADD COLUMN valid_from INTEGER');
+  } catch {
+    /* exists */
+  }
+  try {
+    provider.run('ALTER TABLE entries ADD COLUMN valid_until INTEGER');
+  } catch {
+    /* exists */
+  }
 }
 
 function migrateOriginColumn(provider: PersistenceProvider): void {
-  try { provider.run("ALTER TABLE entries ADD COLUMN origin TEXT NOT NULL DEFAULT 'user' CHECK(origin IN ('agent', 'pack', 'user'))"); } catch { /* exists */ }
+  try {
+    provider.run(
+      "ALTER TABLE entries ADD COLUMN origin TEXT NOT NULL DEFAULT 'user' CHECK(origin IN ('agent', 'pack', 'user'))",
+    );
+  } catch {
+    /* exists */
+  }
   provider.execSql('CREATE INDEX IF NOT EXISTS idx_entries_origin ON entries(origin)');
 }
 
 function migrateContentHash(provider: PersistenceProvider): void {
-  try { provider.run('ALTER TABLE entries ADD COLUMN content_hash TEXT'); } catch { /* exists */ }
-  provider.execSql('CREATE INDEX IF NOT EXISTS idx_entries_content_hash ON entries(content_hash) WHERE content_hash IS NOT NULL');
-  const unhashed = provider.all<{ id: string; type: string; domain: string; title: string; description: string; tags: string; example: string | null; counter_example: string | null }>(
+  try {
+    provider.run('ALTER TABLE entries ADD COLUMN content_hash TEXT');
+  } catch {
+    /* exists */
+  }
+  provider.execSql(
+    'CREATE INDEX IF NOT EXISTS idx_entries_content_hash ON entries(content_hash) WHERE content_hash IS NOT NULL',
+  );
+  const unhashed = provider.all<{
+    id: string;
+    type: string;
+    domain: string;
+    title: string;
+    description: string;
+    tags: string;
+    example: string | null;
+    counter_example: string | null;
+  }>(
     'SELECT id, type, domain, title, description, tags, example, counter_example FROM entries WHERE content_hash IS NULL',
   );
   if (unhashed.length > 0) {
     provider.transaction(() => {
       for (const row of unhashed) {
-        const hash = computeContentHash({ type: row.type, domain: row.domain, title: row.title, description: row.description, tags: JSON.parse(row.tags), example: row.example ?? undefined, counterExample: row.counter_example ?? undefined });
-        provider.run('UPDATE entries SET content_hash = @hash WHERE id = @id', { hash, id: row.id });
+        const hash = computeContentHash({
+          type: row.type,
+          domain: row.domain,
+          title: row.title,
+          description: row.description,
+          tags: JSON.parse(row.tags),
+          example: row.example ?? undefined,
+          counterExample: row.counter_example ?? undefined,
+        });
+        provider.run('UPDATE entries SET content_hash = @hash WHERE id = @id', {
+          hash,
+          id: row.id,
+        });
       }
     });
   }
 }
 
 function migrateTierColumn(provider: PersistenceProvider): void {
-  try { provider.run("ALTER TABLE entries ADD COLUMN tier TEXT DEFAULT 'agent'"); } catch { /* exists */ }
-  provider.execSql('CREATE INDEX IF NOT EXISTS idx_entries_tier ON entries(tier) WHERE tier IS NOT NULL');
+  try {
+    provider.run("ALTER TABLE entries ADD COLUMN tier TEXT DEFAULT 'agent'");
+  } catch {
+    /* exists */
+  }
+  provider.execSql(
+    'CREATE INDEX IF NOT EXISTS idx_entries_tier ON entries(tier) WHERE tier IS NOT NULL',
+  );
 }

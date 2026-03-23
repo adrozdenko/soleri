@@ -229,7 +229,11 @@
     },
 
     "concurrentCritical": {
-      "priority": ["Production impact (users, revenue)", "Workaround availability", "Order received"],
+      "priority": [
+        "Production impact (users, revenue)",
+        "Workaround availability",
+        "Order received"
+      ],
       "limitation": "Consumer B's SLA clock pauses while Consumer A's critical is resolved"
     },
 
@@ -429,8 +433,18 @@
 
     "roadmapInfluence": {
       "process": ["Request (issue tracker)", "Triage (shared need? fits patterns?)", "Prioritize"],
-      "highPriority": ["Multiple consumers need it", "Blocks production", "Security/accessibility fix", "Bug affecting all users"],
-      "lowPriority": ["Single consumer nice-to-have", "Visual preference", "Edge case optimization", "Already has workaround"]
+      "highPriority": [
+        "Multiple consumers need it",
+        "Blocks production",
+        "Security/accessibility fix",
+        "Bug affecting all users"
+      ],
+      "lowPriority": [
+        "Single consumer nice-to-have",
+        "Visual preference",
+        "Edge case optimization",
+        "Already has workaround"
+      ]
     },
 
     "i18n": {
@@ -498,8 +512,20 @@
 
     "busFactor": {
       "honest": "Full self-service onboarding hasn't been validated yet",
-      "selfServiceEnabled": ["Reading docs", "Browsing Storybook", "Copy-paste from adapters", "Using existing components", "Interface-First emergency builds"],
-      "requiresArchitect": ["New component development", "Breaking changes review", "Novel pattern design", "Token system modifications", "Architecture decisions"],
+      "selfServiceEnabled": [
+        "Reading docs",
+        "Browsing Storybook",
+        "Copy-paste from adapters",
+        "Using existing components",
+        "Interface-First emergency builds"
+      ],
+      "requiresArchitect": [
+        "New component development",
+        "Breaking changes review",
+        "Novel pattern design",
+        "Token system modifications",
+        "Architecture decisions"
+      ],
       "risk": "If architect leaves AND organization doesn't backfill → DS enters maintenance-only mode"
     },
 

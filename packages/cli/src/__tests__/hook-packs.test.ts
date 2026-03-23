@@ -27,7 +27,14 @@ describe('hook-packs', () => {
       const packs = listPacks();
       expect(packs.length).toBe(6);
       const names = packs.map((p) => p.name).sort();
-      expect(names).toEqual(['a11y', 'clean-commits', 'css-discipline', 'full', 'typescript-safety', 'yolo-safety']);
+      expect(names).toEqual([
+        'a11y',
+        'clean-commits',
+        'css-discipline',
+        'full',
+        'typescript-safety',
+        'yolo-safety',
+      ]);
     });
 
     it('should get a specific pack by name', () => {
@@ -46,7 +53,11 @@ describe('hook-packs', () => {
       const pack = getPack('full');
       expect(pack).not.toBeNull();
       expect(pack!.manifest.composedFrom).toEqual([
-        'typescript-safety', 'a11y', 'css-discipline', 'clean-commits', 'yolo-safety',
+        'typescript-safety',
+        'a11y',
+        'css-discipline',
+        'clean-commits',
+        'yolo-safety',
       ]);
       expect(pack!.manifest.hooks).toHaveLength(8);
     });
@@ -93,7 +104,16 @@ describe('hook-packs', () => {
       expect(result.installed).toHaveLength(8);
       expect(result.skipped).toEqual([]);
       const claudeDir = join(tempHome, '.claude');
-      for (const hook of ['no-any-types', 'no-console-log', 'no-important', 'no-inline-styles', 'semantic-html', 'focus-ring-required', 'ux-touch-targets', 'no-ai-attribution']) {
+      for (const hook of [
+        'no-any-types',
+        'no-console-log',
+        'no-important',
+        'no-inline-styles',
+        'semantic-html',
+        'focus-ring-required',
+        'ux-touch-targets',
+        'no-ai-attribution',
+      ]) {
         expect(existsSync(join(claudeDir, `hookify.${hook}.local.md`))).toBe(true);
       }
       expect(result.scripts).toHaveLength(1);

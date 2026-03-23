@@ -75,17 +75,17 @@ YOUR_AGENT_core op:capture_quick
 - Test passes immediately (testing existing behavior, not new)
 - Multiple behaviors in one test ("and" in name means split it)
 
-| Problem | Solution |
-|---------|----------|
-| Don't know how to test | Write wished-for API first |
-| Must mock everything | Code too coupled — use DI |
-| Test setup huge | Extract helpers or simplify design |
+| Problem                | Solution                           |
+| ---------------------- | ---------------------------------- |
+| Don't know how to test | Write wished-for API first         |
+| Must mock everything   | Code too coupled — use DI          |
+| Test setup huge        | Extract helpers or simplify design |
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `search_intelligent` | Find testing patterns |
-| `brain_strengths` | Proven testing approaches |
-| `loop_start` / `loop_iterate` / `loop_complete` | TDD cycle tracking |
-| `capture_quick` | Capture new testing patterns |
+| Op                                              | When to Use                  |
+| ----------------------------------------------- | ---------------------------- |
+| `search_intelligent`                            | Find testing patterns        |
+| `brain_strengths`                               | Proven testing approaches    |
+| `loop_start` / `loop_iterate` / `loop_complete` | TDD cycle tracking           |
+| `capture_quick`                                 | Capture new testing patterns |

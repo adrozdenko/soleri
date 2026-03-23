@@ -230,9 +230,9 @@ describe('IntentRouter', () => {
     });
 
     it('throws for unknown mode', () => {
-      expect(() =>
-        router.updateModeRules('NOPE-MODE' as OperationalMode, ['x']),
-      ).toThrow(/Unknown mode/);
+      expect(() => router.updateModeRules('NOPE-MODE' as OperationalMode, ['x'])).toThrow(
+        /Unknown mode/,
+      );
     });
   });
 

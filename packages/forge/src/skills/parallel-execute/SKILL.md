@@ -24,6 +24,7 @@ You MUST have an approved, split plan before using this skill. If no plan exists
 - Tasks touch different files/modules (low merge conflict risk)
 
 **Do NOT use when:**
+
 - All tasks are sequential (each depends on the previous)
 - Tasks modify the same files (high conflict risk)
 - Plan has fewer than 3 tasks (use executing-plans instead)
@@ -60,17 +61,21 @@ Present the wave plan to the user before starting:
 For each task in the current wave:
 
 1. Check readiness:
+
    ```
    YOUR_AGENT_core op:plan_dispatch params:{ planId: "<id>", taskId: "<taskId>" }
    ```
+
    Only dispatch tasks where `ready: true`.
 
 2. Mark as in_progress:
+
    ```
    YOUR_AGENT_core op:update_task params:{ planId: "<id>", taskIndex: <n>, status: "in_progress" }
    ```
 
 3. Gather vault context for the task:
+
    ```
    YOUR_AGENT_core op:search params:{ query: "<task topic>", mode: "scan" }
    ```
@@ -114,12 +119,15 @@ Use the Agent tool with `isolation: "worktree"` when tasks touch nearby files to
 As subagents complete, collect their results. For each completed task:
 
 1. **Run spec review** — spawn a reviewer subagent:
+
    ```
    YOUR_AGENT_core op:plan_review_spec params:{ planId: "<id>", taskId: "<taskId>" }
    ```
+
    Use the returned prompt to launch a spec-review Agent that reads the ACTUAL code changes (not the implementer's self-report).
 
 2. **Record spec review outcome:**
+
    ```
    YOUR_AGENT_core op:plan_review_outcome params:{
      planId: "<id>", taskId: "<taskId>",
@@ -130,12 +138,15 @@ As subagents complete, collect their results. For each completed task:
    ```
 
 3. **If spec passes, run quality review:**
+
    ```
    YOUR_AGENT_core op:plan_review_quality params:{ planId: "<id>", taskId: "<taskId>" }
    ```
+
    Launch a quality-review Agent with the returned prompt.
 
 4. **Record quality review outcome:**
+
    ```
    YOUR_AGENT_core op:plan_review_outcome params:{
      planId: "<id>", taskId: "<taskId>",
@@ -147,12 +158,12 @@ As subagents complete, collect their results. For each completed task:
 
 5. **Handle outcomes:**
 
-| Spec | Quality | Action |
-|------|---------|--------|
-| Pass | Pass | Mark task completed |
-| Fail | — | Dispatch fix subagent with failure feedback (max 2 retries) |
-| Pass | Critical issues | Dispatch targeted fix subagent (max 2 retries) |
-| Pass | Minor issues only | Mark completed, note issues for later |
+| Spec | Quality           | Action                                                      |
+| ---- | ----------------- | ----------------------------------------------------------- |
+| Pass | Pass              | Mark task completed                                         |
+| Fail | —                 | Dispatch fix subagent with failure feedback (max 2 retries) |
+| Pass | Critical issues   | Dispatch targeted fix subagent (max 2 retries)              |
+| Pass | Minor issues only | Mark completed, note issues for later                       |
 
 6. **Mark completed:**
    ```
@@ -164,6 +175,7 @@ As subagents complete, collect their results. For each completed task:
 After all tasks in a wave are complete (or failed after retries):
 
 1. Report wave results to the user:
+
    ```
    ## Wave N Complete
 
@@ -216,23 +228,23 @@ YOUR_AGENT_core op:session_capture params:{
 
 ## Subagent Isolation Rules
 
-| Situation | Isolation |
-|-----------|-----------|
-| Tasks touch completely different directories | No isolation needed |
-| Tasks touch files in the same package | Use `isolation: "worktree"` |
-| Tasks modify the same file | **Do NOT parallelize** — run sequentially |
+| Situation                                    | Isolation                                 |
+| -------------------------------------------- | ----------------------------------------- |
+| Tasks touch completely different directories | No isolation needed                       |
+| Tasks touch files in the same package        | Use `isolation: "worktree"`               |
+| Tasks modify the same file                   | **Do NOT parallelize** — run sequentially |
 
 When using worktree isolation, the controller must merge worktree changes back after review passes.
 
 ## Failure Handling
 
-| Failure | Response |
-|---------|----------|
-| Subagent reports blocker | Pause that task, continue others in the wave |
-| Spec review fails | Dispatch fix subagent with feedback (retry 1/2) |
-| Second retry fails | Mark task as `failed`, escalate to user |
-| Merge conflict from worktree | Resolve manually, then re-run quality review |
-| All tasks in wave fail | Stop execution, report to user |
+| Failure                      | Response                                        |
+| ---------------------------- | ----------------------------------------------- |
+| Subagent reports blocker     | Pause that task, continue others in the wave    |
+| Spec review fails            | Dispatch fix subagent with feedback (retry 1/2) |
+| Second retry fails           | Mark task as `failed`, escalate to user         |
+| Merge conflict from worktree | Resolve manually, then re-run quality review    |
+| All tasks in wave fail       | Stop execution, report to user                  |
 
 ## Capture Learnings
 
@@ -248,30 +260,32 @@ YOUR_AGENT_core op:capture_quick params:{
 ## When to Fall Back to Sequential
 
 **Switch to executing-plans skill mid-execution when:**
+
 - Subagents keep conflicting on shared files
 - Merge resolution is taking longer than the parallelization saves
 - User requests sequential execution
 
 ## Agent Tools Reference
 
-| Op | When to Use |
-|----|-------------|
-| `get_plan` | Load tracked plan |
-| `plan_list_tasks` | List all tasks with dependencies |
-| `plan_dispatch` | Check task readiness (dependencies met?) |
-| `update_task` | Mark tasks in_progress / completed / failed |
-| `plan_review_spec` | Generate spec compliance review prompt |
-| `plan_review_quality` | Generate code quality review prompt |
-| `plan_review_outcome` | Record review pass/fail result |
-| `plan_reconcile` | Post-execution drift analysis |
-| `plan_complete_lifecycle` | Extract knowledge, archive |
-| `session_capture` | Save session context |
-| `capture_quick` | Capture mid-execution learnings |
-| `search` | Vault lookup for task context |
+| Op                        | When to Use                                 |
+| ------------------------- | ------------------------------------------- |
+| `get_plan`                | Load tracked plan                           |
+| `plan_list_tasks`         | List all tasks with dependencies            |
+| `plan_dispatch`           | Check task readiness (dependencies met?)    |
+| `update_task`             | Mark tasks in_progress / completed / failed |
+| `plan_review_spec`        | Generate spec compliance review prompt      |
+| `plan_review_quality`     | Generate code quality review prompt         |
+| `plan_review_outcome`     | Record review pass/fail result              |
+| `plan_reconcile`          | Post-execution drift analysis               |
+| `plan_complete_lifecycle` | Extract knowledge, archive                  |
+| `session_capture`         | Save session context                        |
+| `capture_quick`           | Capture mid-execution learnings             |
+| `search`                  | Vault lookup for task context               |
 
 ## Integration
 
 **Required skills:**
+
 - writing-plans — Creates the plan this skill executes
 - verification-before-completion — Verify work before claiming completion
 - executing-plans — Fallback for sequential execution

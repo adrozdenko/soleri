@@ -79,11 +79,11 @@ Write validated design to `docs/plans/YYYY-MM-DD-<topic>-design.md` and commit. 
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `route_intent` | Classify work type |
-| `search_intelligent` | Search vault for prior art |
+| Op                             | When to Use                |
+| ------------------------------ | -------------------------- |
+| `route_intent`                 | Classify work type         |
+| `search_intelligent`           | Search vault for prior art |
 | `vault_tags` / `vault_domains` | Browse knowledge landscape |
-| `brain_strengths` | Check proven patterns |
-| `memory_cross_project_search` | Check other projects |
-| `capture_knowledge` | Persist design decision |
+| `brain_strengths`              | Check proven patterns      |
+| `memory_cross_project_search`  | Check other projects       |
+| `capture_knowledge`            | Persist design decision    |

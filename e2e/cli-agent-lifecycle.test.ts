@@ -8,14 +8,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  mkdirSync,
-  rmSync,
-  existsSync,
-  readFileSync,
-  writeFileSync,
-  readdirSync,
-} from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
@@ -143,7 +136,9 @@ describe('Journey 1: Scaffold → Build → Generated tests pass', () => {
       const totalFails = (stderr + stdout).match(/failed/g);
       if (capRegFails && totalFails) {
         // Allow if only CapabilityRegistry tests failed
-        console.warn('CapabilityRegistry tests failed in scaffolded agent (expected without domain packs)');
+        console.warn(
+          'CapabilityRegistry tests failed in scaffolded agent (expected without domain packs)',
+        );
       } else {
         console.error('Test stdout:', stdout);
         console.error('Test stderr:', stderr);
@@ -197,7 +192,10 @@ describe('Journey 2: Agent refresh', () => {
     const contentPath = join(agentDir, 'src', 'activation', 'claude-md-content.ts');
 
     // Simulate engine upgrade: clobber the content file
-    writeFileSync(contentPath, '// old content\nexport function getClaudeMdContent() { return "stale"; }\n');
+    writeFileSync(
+      contentPath,
+      '// old content\nexport function getClaudeMdContent() { return "stale"; }\n',
+    );
 
     // Regenerate using forge templates directly (same logic as `soleri agent refresh`)
     const newContent = generateClaudeMdTemplate(config);
@@ -299,7 +297,11 @@ describe('Journey 3: Agent diff', () => {
     const latestInject = generateInjectClaudeMd(config);
 
     // Write a modified version
-    writeFileSync(injectPath, latestInject.replace('injectClaudeMd', 'injectClaudeMdRenamed'), 'utf-8');
+    writeFileSync(
+      injectPath,
+      latestInject.replace('injectClaudeMd', 'injectClaudeMdRenamed'),
+      'utf-8',
+    );
 
     const currentContent = readFileSync(injectPath, 'utf-8');
     expect(currentContent).not.toBe(latestInject);
@@ -698,8 +700,17 @@ describe('Edge cases', () => {
 
   it('should scaffold with many domains (10+)', () => {
     const domains = [
-      'alpha', 'beta', 'gamma', 'delta', 'epsilon',
-      'zeta', 'eta', 'theta', 'iota', 'kappa', 'lambda',
+      'alpha',
+      'beta',
+      'gamma',
+      'delta',
+      'epsilon',
+      'zeta',
+      'eta',
+      'theta',
+      'iota',
+      'kappa',
+      'lambda',
     ];
 
     const result = scaffold({

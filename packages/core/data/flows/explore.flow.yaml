@@ -6,8 +6,7 @@ name: Explore Knowledge
 description: >
   Knowledge exploration workflow: search vault patterns, cross-project memory,
   brain pattern strengths, and playbooks to surface all relevant knowledge.
-version: "1.0.0"
-
+version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
   blocking: [vault.search]
@@ -67,12 +66,12 @@ scoring:
     memory-search: 0.25
     brain-check: 0.25
     playbook-check: 0.20
-  formula: "weighted-sum"
+  formula: 'weighted-sum'
 
 on-error:
   default:
     action: CONTINUE
-    message: "Exploration step failed; continuing with remaining sources."
+    message: 'Exploration step failed; continuing with remaining sources.'
   max-retries: 1
 
 metadata:

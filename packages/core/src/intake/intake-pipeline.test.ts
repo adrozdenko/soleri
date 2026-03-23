@@ -20,9 +20,11 @@ vi.mock('./content-classifier.js', () => ({
 }));
 
 vi.mock('./dedup-gate.js', () => ({
-  dedupItems: vi.fn().mockImplementation((items: unknown[]) =>
-    items.map((item) => ({ item, isDuplicate: false, similarity: 0 })),
-  ),
+  dedupItems: vi
+    .fn()
+    .mockImplementation((items: unknown[]) =>
+      items.map((item) => ({ item, isDuplicate: false, similarity: 0 })),
+    ),
 }));
 
 vi.mock('node:fs', () => ({

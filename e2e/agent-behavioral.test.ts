@@ -30,9 +30,11 @@ import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 const AGENT_ID = 'behav';
 
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
       captured = handler as typeof captured;
@@ -42,9 +44,12 @@ function captureHandler(facade: FacadeConfig) {
   return captured!;
 }
 
-function parseEnvelope(raw: { content: Array<{ type: string; text: string }> }): Record<string, unknown> {
+function parseEnvelope(raw: {
+  content: Array<{ type: string; text: string }>;
+}): Record<string, unknown> {
   const envelope = JSON.parse(raw.content[0].text);
-  if (envelope.success === false) return { _failed: true, _error: envelope.error, ...(envelope.data ?? {}) };
+  if (envelope.success === false)
+    return { _failed: true, _error: envelope.error, ...(envelope.data ?? {}) };
   return envelope.data as Record<string, unknown>;
 }
 
@@ -60,48 +65,70 @@ async function op(facade: string, opName: string, params: Record<string, unknown
 
 // ─── Helpers ─────────────────────────────────────────────
 
-async function capturePattern(title: string, description: string, domain: string, severity = 'warning') {
+async function capturePattern(
+  title: string,
+  description: string,
+  domain: string,
+  severity = 'warning',
+) {
   const res = await op('vault', 'capture_knowledge', {
-    entries: [{
-      type: 'pattern',
-      domain,
-      title,
-      description,
-      severity,
-      tags: [domain, 'behavioral-test'],
-    }],
+    entries: [
+      {
+        type: 'pattern',
+        domain,
+        title,
+        description,
+        severity,
+        tags: [domain, 'behavioral-test'],
+      },
+    ],
   });
   const results = res.results as Array<{ id: string }> | undefined;
   if (!results || results.length === 0) {
-    throw new Error(`capture_knowledge returned no results for "${title}". Response: ${JSON.stringify(res)}`);
+    throw new Error(
+      `capture_knowledge returned no results for "${title}". Response: ${JSON.stringify(res)}`,
+    );
   }
   return results[0].id;
 }
 
 async function captureAntiPattern(title: string, description: string, domain: string) {
   const res = await op('vault', 'capture_knowledge', {
-    entries: [{
-      type: 'anti-pattern',
-      domain,
-      title,
-      description,
-      severity: 'critical',
-      tags: [domain, 'behavioral-test'],
-    }],
+    entries: [
+      {
+        type: 'anti-pattern',
+        domain,
+        title,
+        description,
+        severity: 'critical',
+        tags: [domain, 'behavioral-test'],
+      },
+    ],
   });
   const results = res.results as Array<{ id: string }> | undefined;
   if (!results || results.length === 0) {
-    throw new Error(`capture_knowledge returned no results for "${title}". Response: ${JSON.stringify(res)}`);
+    throw new Error(
+      `capture_knowledge returned no results for "${title}". Response: ${JSON.stringify(res)}`,
+    );
   }
   return results[0].id;
 }
 
-async function searchVault(query: string): Promise<Array<{ entry: { id: string; title: string; type: string; domain: string }; score: number }>> {
+async function searchVault(
+  query: string,
+): Promise<
+  Array<{ entry: { id: string; title: string; type: string; domain: string }; score: number }>
+> {
   const res = await op('vault', 'search', { query });
   return (res as unknown as Array<{ entry: Record<string, string>; score: number }>) ?? [];
 }
 
-async function feedback(entryId: string, action: 'accepted' | 'dismissed', confidence: number, query = 'behavioral test') {
+async function feedback(
+  entryId: string,
+  action: 'accepted' | 'dismissed',
+  confidence: number,
+  query = 'behavioral test',
+) {
   return op('brain', 'brain_feedback', {
     query,
     entryId,
@@ -187,8 +214,8 @@ describe('Agent Behavioral Tests', () => {
       const topResult = results[0];
       expect(
         topResult.entry.title.toLowerCase().includes('retry') ||
-        topResult.entry.title.toLowerCase().includes('retries') ||
-        topResult.entry.title.toLowerCase().includes('backoff'),
+          topResult.entry.title.toLowerCase().includes('retries') ||
+          topResult.entry.title.toLowerCase().includes('backoff'),
       ).toBe(true);
     });
 
@@ -204,8 +231,8 @@ describe('Agent Behavioral Tests', () => {
     it('searching "error" should NOT rank CSS grid above error boundary', async () => {
       const results = await searchVault('error handling');
 
-      const errorIdx = results.findIndex(r => r.entry.id === errorBoundaryId);
-      const cssIdx = results.findIndex(r => r.entry.id === cssGridId);
+      const errorIdx = results.findIndex((r) => r.entry.id === errorBoundaryId);
+      const cssIdx = results.findIndex((r) => r.entry.id === cssGridId);
 
       // Error boundary should appear; CSS grid should not (or rank much lower)
       expect(errorIdx).toBeGreaterThanOrEqual(0);
@@ -241,7 +268,7 @@ describe('Agent Behavioral Tests', () => {
 
       // User consistently accepts the good pattern
       await feedback(goodPatternId, 'accepted', 0.95, 'input validation security');
-      await feedback(goodPatternId, 'accepted', 0.90, 'how to validate API input');
+      await feedback(goodPatternId, 'accepted', 0.9, 'how to validate API input');
       await feedback(goodPatternId, 'accepted', 0.85, 'server side security');
 
       // User consistently dismisses the bad pattern
@@ -262,14 +289,20 @@ describe('Agent Behavioral Tests', () => {
       const allStrengths = await op('brain', 'brain_strengths', {});
 
       // brain_strengths returns PatternStrength[] with { pattern (title), domain, strength, ... }
-      const patterns = (Array.isArray(allStrengths) ? allStrengths : allStrengths.patterns ?? []) as Array<{ pattern: string; strength: number }>;
+      const patterns = (
+        Array.isArray(allStrengths) ? allStrengths : (allStrengths.patterns ?? [])
+      ) as Array<{ pattern: string; strength: number }>;
 
       expect(Array.isArray(patterns)).toBe(true);
       expect(patterns.length).toBeGreaterThan(0);
 
       // Match by pattern title (PatternStrength uses entry title as the pattern key)
-      const goodStrength = patterns.find(p => p.pattern === 'Always validate user input on the server');
-      const badStrength = patterns.find(p => p.pattern === 'Use console.log for production error tracking');
+      const goodStrength = patterns.find(
+        (p) => p.pattern === 'Always validate user input on the server',
+      );
+      const badStrength = patterns.find(
+        (p) => p.pattern === 'Use console.log for production error tracking',
+      );
 
       // After 3 accepts and 2 dismissals, both patterns must appear in strengths
       expect(goodStrength).toBeDefined();
@@ -286,12 +319,18 @@ describe('Agent Behavioral Tests', () => {
       });
 
       // brain_recommend returns PatternStrength[] with { pattern (title), domain, strength, ... }
-      const recs = (Array.isArray(recommendations) ? recommendations : recommendations.recommendations ?? []) as Array<{ pattern: string }>;
+      const recs = (
+        Array.isArray(recommendations) ? recommendations : (recommendations.recommendations ?? [])
+      ) as Array<{ pattern: string }>;
 
       expect(recs.length).toBeGreaterThan(0);
 
-      const hasGoodPattern = recs.some(r => r.pattern === 'Always validate user input on the server');
-      const hasBadPattern = recs.some(r => r.pattern === 'Use console.log for production error tracking');
+      const hasGoodPattern = recs.some(
+        (r) => r.pattern === 'Always validate user input on the server',
+      );
+      const hasBadPattern = recs.some(
+        (r) => r.pattern === 'Use console.log for production error tracking',
+      );
 
       // Good pattern should be recommended; bad pattern should NOT
       expect(hasGoodPattern).toBe(true);
@@ -325,7 +364,7 @@ describe('Agent Behavioral Tests', () => {
 
       expect(results.length).toBeGreaterThan(0);
 
-      const circuitBreaker = results.find(r =>
+      const circuitBreaker = results.find((r) =>
         r.entry.title.toLowerCase().includes('circuit breaker'),
       );
       expect(circuitBreaker).toBeDefined();
@@ -336,7 +375,7 @@ describe('Agent Behavioral Tests', () => {
 
       expect(results.length).toBeGreaterThan(0);
 
-      const antiPattern = results.find(r => r.entry.type === 'anti-pattern');
+      const antiPattern = results.find((r) => r.entry.type === 'anti-pattern');
       expect(antiPattern).toBeDefined();
     });
 
@@ -354,8 +393,8 @@ describe('Agent Behavioral Tests', () => {
       const planData = plan.plan as Record<string, unknown>;
 
       const decisions = planData.decisions as string[];
-      expect(decisions.some(d => d.includes('circuit breaker'))).toBe(true);
-      expect(decisions.some(d => d.includes('thundering herd'))).toBe(true);
+      expect(decisions.some((d) => d.includes('circuit breaker'))).toBe(true);
+      expect(decisions.some((d) => d.includes('thundering herd'))).toBe(true);
     });
   });
 
@@ -423,30 +462,30 @@ describe('Agent Behavioral Tests', () => {
       const res = await op('vault', 'traverse', { entryId: authPatternId, depth: 1 });
       const connected = res.connectedEntries as Array<{ id: string }>;
 
-      expect(connected.find(c => c.id === rbacPatternId)).toBeDefined();
+      expect(connected.find((c) => c.id === rbacPatternId)).toBeDefined();
     });
 
     it('traversing from auth should find SQL injection (contradicts)', async () => {
       const res = await op('vault', 'traverse', { entryId: authPatternId, depth: 1 });
       const connected = res.connectedEntries as Array<{ id: string }>;
 
-      expect(connected.find(c => c.id === sqlInjectionId)).toBeDefined();
+      expect(connected.find((c) => c.id === sqlInjectionId)).toBeDefined();
     });
 
     it('traversing 2 hops from auth should find XSS (auth->RBAC->XSS)', async () => {
       const res = await op('vault', 'traverse', { entryId: authPatternId, depth: 2 });
       const connected = res.connectedEntries as Array<{ id: string }>;
 
-      expect(connected.find(c => c.id === xssAntiPatternId)).toBeDefined();
+      expect(connected.find((c) => c.id === xssAntiPatternId)).toBeDefined();
     });
 
     it('get_links should show contradicts links as incoming warnings', async () => {
       const links = await op('vault', 'get_links', { entryId: authPatternId });
       const incoming = links.incoming as Array<{ sourceId: string; linkType: string }>;
 
-      const contradictions = incoming.filter(l => l.linkType === 'contradicts');
+      const contradictions = incoming.filter((l) => l.linkType === 'contradicts');
       expect(contradictions.length).toBeGreaterThan(0);
-      expect(contradictions.some(c => c.sourceId === sqlInjectionId)).toBe(true);
+      expect(contradictions.some((c) => c.sourceId === sqlInjectionId)).toBe(true);
     });
   });
 
@@ -458,7 +497,8 @@ describe('Agent Behavioral Tests', () => {
   describe('Cross-session compound learning', () => {
     it('capture session 1 summary', async () => {
       const res = await op('memory', 'session_capture', {
-        summary: 'Implemented JWT auth with refresh token rotation. Used RBAC for authorization. Fixed SQL injection vulnerability.',
+        summary:
+          'Implemented JWT auth with refresh token rotation. Used RBAC for authorization. Fixed SQL injection vulnerability.',
         topics: ['security', 'authentication', 'authorization'],
         toolsUsed: ['capture_knowledge', 'link_entries', 'create_plan'],
       });
@@ -475,10 +515,11 @@ describe('Agent Behavioral Tests', () => {
       const results = await searchVault('authentication security patterns');
       expect(results.length).toBeGreaterThan(0);
 
-      const authRelated = results.filter(r =>
-        r.entry.title.toLowerCase().includes('auth') ||
-        r.entry.title.toLowerCase().includes('jwt') ||
-        r.entry.title.toLowerCase().includes('rbac'),
+      const authRelated = results.filter(
+        (r) =>
+          r.entry.title.toLowerCase().includes('auth') ||
+          r.entry.title.toLowerCase().includes('jwt') ||
+          r.entry.title.toLowerCase().includes('rbac'),
       );
       expect(authRelated.length).toBeGreaterThan(0);
     });
@@ -524,9 +565,10 @@ describe('Agent Behavioral Tests', () => {
       expect(results.length).toBeGreaterThan(0);
 
       const topThree = results.slice(0, 3);
-      const reactResults = topThree.filter(r =>
-        r.entry.title.toLowerCase().includes('react') ||
-        r.entry.title.toLowerCase().includes('render'),
+      const reactResults = topThree.filter(
+        (r) =>
+          r.entry.title.toLowerCase().includes('react') ||
+          r.entry.title.toLowerCase().includes('render'),
       );
       expect(reactResults.length).toBeGreaterThan(0);
     });
@@ -538,9 +580,9 @@ describe('Agent Behavioral Tests', () => {
       const topResult = results[0];
       expect(
         topResult.entry.title.toLowerCase().includes('database') ||
-        topResult.entry.title.toLowerCase().includes('index') ||
-        topResult.entry.title.toLowerCase().includes('pool') ||
-        topResult.entry.title.toLowerCase().includes('transaction'),
+          topResult.entry.title.toLowerCase().includes('index') ||
+          topResult.entry.title.toLowerCase().includes('pool') ||
+          topResult.entry.title.toLowerCase().includes('transaction'),
       ).toBe(true);
     });
 
@@ -551,9 +593,9 @@ describe('Agent Behavioral Tests', () => {
       const topResult = results[0];
       expect(
         topResult.entry.title.toLowerCase().includes('deploy') ||
-        topResult.entry.title.toLowerCase().includes('canary') ||
-        topResult.entry.title.toLowerCase().includes('blue-green') ||
-        topResult.entry.title.toLowerCase().includes('health'),
+          topResult.entry.title.toLowerCase().includes('canary') ||
+          topResult.entry.title.toLowerCase().includes('blue-green') ||
+          topResult.entry.title.toLowerCase().includes('health'),
       ).toBe(true);
     });
 
@@ -561,10 +603,11 @@ describe('Agent Behavioral Tests', () => {
       const results = await searchVault('secrets API keys rotate');
       expect(results.length).toBeGreaterThan(0);
 
-      const securityResults = results.filter(r =>
-        r.entry.title.toLowerCase().includes('secret') ||
-        r.entry.title.toLowerCase().includes('key') ||
-        r.entry.title.toLowerCase().includes('rate limit'),
+      const securityResults = results.filter(
+        (r) =>
+          r.entry.title.toLowerCase().includes('secret') ||
+          r.entry.title.toLowerCase().includes('key') ||
+          r.entry.title.toLowerCase().includes('rate limit'),
       );
       expect(securityResults.length).toBeGreaterThan(0);
     });
@@ -619,14 +662,42 @@ describe('Agent Behavioral Tests', () => {
 
   describe('Intent routing accuracy', () => {
     const testCases: Array<{ prompt: string; expectedIntent: string; description: string }> = [
-      { prompt: 'build me a user dashboard with charts', expectedIntent: 'build', description: 'explicit build' },
-      { prompt: 'create a new notification system', expectedIntent: 'build', description: 'create = build' },
-      { prompt: 'the login page crashes on mobile safari', expectedIntent: 'fix', description: 'crash = fix' },
+      {
+        prompt: 'build me a user dashboard with charts',
+        expectedIntent: 'build',
+        description: 'explicit build',
+      },
+      {
+        prompt: 'create a new notification system',
+        expectedIntent: 'build',
+        description: 'create = build',
+      },
+      {
+        prompt: 'the login page crashes on mobile safari',
+        expectedIntent: 'fix',
+        description: 'crash = fix',
+      },
       { prompt: 'fix the broken payment flow', expectedIntent: 'fix', description: 'explicit fix' },
-      { prompt: 'review the authentication implementation', expectedIntent: 'review', description: 'explicit review' },
-      { prompt: 'plan the database migration strategy', expectedIntent: 'plan', description: 'explicit plan' },
-      { prompt: 'optimize the bundle size to reduce load time', expectedIntent: 'improve', description: 'optimize = improve' },
-      { prompt: 'deploy to production and tag the release', expectedIntent: 'deliver', description: 'deploy = deliver' },
+      {
+        prompt: 'review the authentication implementation',
+        expectedIntent: 'review',
+        description: 'explicit review',
+      },
+      {
+        prompt: 'plan the database migration strategy',
+        expectedIntent: 'plan',
+        description: 'explicit plan',
+      },
+      {
+        prompt: 'optimize the bundle size to reduce load time',
+        expectedIntent: 'improve',
+        description: 'optimize = improve',
+      },
+      {
+        prompt: 'deploy to production and tag the release',
+        expectedIntent: 'deliver',
+        description: 'deploy = deliver',
+      },
     ];
 
     for (const tc of testCases) {

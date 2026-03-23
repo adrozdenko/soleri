@@ -74,10 +74,7 @@ describe('EnforcementRegistry', () => {
 
   describe('getEnabledRules', () => {
     it('excludes disabled rules', () => {
-      registry.addRules([
-        makeRule({ id: 'active' }),
-        makeRule({ id: 'disabled', enabled: false }),
-      ]);
+      registry.addRules([makeRule({ id: 'active' }), makeRule({ id: 'disabled', enabled: false })]);
       const enabled = registry.getEnabledRules();
       expect(enabled).toHaveLength(1);
       expect(enabled[0].id).toBe('active');
@@ -91,10 +88,7 @@ describe('EnforcementRegistry', () => {
 
   describe('getConfig', () => {
     it('returns config with only enabled rules', () => {
-      registry.addRules([
-        makeRule({ id: 'on' }),
-        makeRule({ id: 'off', enabled: false }),
-      ]);
+      registry.addRules([makeRule({ id: 'on' }), makeRule({ id: 'off', enabled: false })]);
       const config = registry.getConfig();
       expect(config.rules).toHaveLength(1);
       expect(config.rules[0].id).toBe('on');

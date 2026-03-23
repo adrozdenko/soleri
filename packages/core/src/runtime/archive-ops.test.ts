@@ -182,7 +182,10 @@ describe('createArchiveOps', () => {
 
   describe('vault_find_expired', () => {
     it('finds expired entries', async () => {
-      const result = (await findOp(ops, 'vault_find_expired').handler({})) as Record<string, unknown>;
+      const result = (await findOp(ops, 'vault_find_expired').handler({})) as Record<
+        string,
+        unknown
+      >;
       expect(result.count).toBe(1);
     });
   });

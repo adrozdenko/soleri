@@ -32,16 +32,16 @@ Scan the project root and identify:
 
 ### Package Managers & Dependencies
 
-| File | Stack | Install Command |
-|------|-------|-----------------|
-| `package.json` | Node.js | `npm install` / `yarn` / `pnpm install` (check for lockfile) |
-| `requirements.txt` | Python | `pip install -r requirements.txt` |
-| `pyproject.toml` | Python | `pip install -e .` or `poetry install` or `uv sync` |
-| `Pipfile` | Python | `pipenv install` |
-| `Cargo.toml` | Rust | `cargo build` |
-| `go.mod` | Go | `go mod download` |
-| `Gemfile` | Ruby | `bundle install` |
-| `composer.json` | PHP | `composer install` |
+| File               | Stack   | Install Command                                              |
+| ------------------ | ------- | ------------------------------------------------------------ |
+| `package.json`     | Node.js | `npm install` / `yarn` / `pnpm install` (check for lockfile) |
+| `requirements.txt` | Python  | `pip install -r requirements.txt`                            |
+| `pyproject.toml`   | Python  | `pip install -e .` or `poetry install` or `uv sync`          |
+| `Pipfile`          | Python  | `pipenv install`                                             |
+| `Cargo.toml`       | Rust    | `cargo build`                                                |
+| `go.mod`           | Go      | `go mod download`                                            |
+| `Gemfile`          | Ruby    | `bundle install`                                             |
+| `composer.json`    | PHP     | `composer install`                                           |
 
 **Lockfile priority:** If a lockfile exists (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Pipfile.lock`, `poetry.lock`), use the matching package manager. Don't mix.
 
@@ -55,41 +55,41 @@ Scan the project root and identify:
 
 ### Native Dependencies
 
-| Indicator | What It Means |
-|-----------|--------------|
-| `better-sqlite3`, `sqlite3` in deps | Needs C++ compiler |
-| `node-gyp` in deps or scripts | Needs Python 3 + C++ toolchain |
-| `sharp` in deps | Needs `libvips` |
+| Indicator                                | What It Means                          |
+| ---------------------------------------- | -------------------------------------- |
+| `better-sqlite3`, `sqlite3` in deps      | Needs C++ compiler                     |
+| `node-gyp` in deps or scripts            | Needs Python 3 + C++ toolchain         |
+| `sharp` in deps                          | Needs `libvips`                        |
 | `Cargo.toml` with `[build-dependencies]` | Needs Rust toolchain for build scripts |
-| `setup.py` with `ext_modules` | Needs C compiler for Python extensions |
+| `setup.py` with `ext_modules`            | Needs C compiler for Python extensions |
 
 ### Databases
 
-| File/Config | Database | Setup Needed |
-|-------------|----------|-------------|
-| `docker-compose.yml` with postgres/mysql | PostgreSQL/MySQL | Container + migrations |
-| `prisma/schema.prisma` | Prisma-managed | `npx prisma migrate dev` |
-| `drizzle.config.*` | Drizzle-managed | `npx drizzle-kit push` |
-| `alembic.ini` | SQLAlchemy | `alembic upgrade head` |
-| `config/database.yml` | Rails | `rails db:create db:migrate` |
+| File/Config                              | Database         | Setup Needed                 |
+| ---------------------------------------- | ---------------- | ---------------------------- |
+| `docker-compose.yml` with postgres/mysql | PostgreSQL/MySQL | Container + migrations       |
+| `prisma/schema.prisma`                   | Prisma-managed   | `npx prisma migrate dev`     |
+| `drizzle.config.*`                       | Drizzle-managed  | `npx drizzle-kit push`       |
+| `alembic.ini`                            | SQLAlchemy       | `alembic upgrade head`       |
+| `config/database.yml`                    | Rails            | `rails db:create db:migrate` |
 
 ### Infrastructure
 
-| File | What It Means |
-|------|--------------|
-| `docker-compose.yml` | Services to start with `docker compose up` |
-| `Dockerfile` | Can build container locally |
-| `Makefile` | Check for `setup`, `install`, `dev` targets |
-| `.tool-versions` / `.node-version` / `.nvmrc` | Required runtime version |
-| `turbo.json` / `nx.json` / `lerna.json` | Monorepo setup |
+| File                                          | What It Means                               |
+| --------------------------------------------- | ------------------------------------------- |
+| `docker-compose.yml`                          | Services to start with `docker compose up`  |
+| `Dockerfile`                                  | Can build container locally                 |
+| `Makefile`                                    | Check for `setup`, `install`, `dev` targets |
+| `.tool-versions` / `.node-version` / `.nvmrc` | Required runtime version                    |
+| `turbo.json` / `nx.json` / `lerna.json`       | Monorepo setup                              |
 
 ### IDE & Tool Integration
 
-| File | Integration |
-|------|------------|
-| `.vscode/` | VS Code settings, extensions |
-| `.mcp.json` / `mcp.json` | MCP server config |
-| `.editorconfig` | Cross-editor formatting |
+| File                     | Integration                  |
+| ------------------------ | ---------------------------- |
+| `.vscode/`               | VS Code settings, extensions |
+| `.mcp.json` / `mcp.json` | MCP server config            |
+| `.editorconfig`          | Cross-editor formatting      |
 
 ## Diagnosis Phase
 

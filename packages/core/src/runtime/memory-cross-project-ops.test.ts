@@ -8,9 +8,7 @@ function makeMockRuntime(overrides: Record<string, unknown> = {}) {
     vault: {
       get: vi.fn().mockReturnValue({ id: 'e1', tags: ['pattern'] }),
       update: vi.fn(),
-      searchMemories: vi.fn().mockReturnValue([
-        { id: 'm1', content: 'memory 1' },
-      ]),
+      searchMemories: vi.fn().mockReturnValue([{ id: 'm1', content: 'memory 1' }]),
       search: vi.fn().mockReturnValue([
         { entry: { id: 'g1', tags: ['_global'] }, score: 0.9 },
         { entry: { id: 'g2', tags: ['other'] }, score: 0.8 },
@@ -25,9 +23,9 @@ function makeMockRuntime(overrides: Record<string, unknown> = {}) {
         metadata: { memoryConfig: { crossProjectEnabled: true, extraPaths: ['/extra'] } },
       }),
       register: vi.fn(),
-      getLinkedProjects: vi.fn().mockReturnValue([
-        { project: { path: '/linked', name: 'linked-project' } },
-      ]),
+      getLinkedProjects: vi
+        .fn()
+        .mockReturnValue([{ project: { path: '/linked', name: 'linked-project' } }]),
     },
   } as unknown as AgentRuntime;
 }
@@ -60,7 +58,9 @@ describe('createMemoryCrossProjectOps', () => {
     it('promotes entry by adding _global tag', async () => {
       const runtime = makeMockRuntime();
       ops = createMemoryCrossProjectOps(runtime);
-      const result = (await findOp('memory_promote_to_global').handler({ entryId: 'e1' })) as Record<string, unknown>;
+      const result = (await findOp('memory_promote_to_global').handler({
+        entryId: 'e1',
+      })) as Record<string, unknown>;
       expect(result.promoted).toBe(true);
       expect(result.tags).toContain('_global');
       expect(runtime.vault.update).toHaveBeenCalledWith('e1', { tags: ['pattern', '_global'] });
@@ -69,7 +69,9 @@ describe('createMemoryCrossProjectOps', () => {
     it('returns error when entry not found', async () => {
       const runtime = makeMockRuntime({ get: vi.fn().mockReturnValue(null) });
       ops = createMemoryCrossProjectOps(runtime);
-      const result = (await findOp('memory_promote_to_global').handler({ entryId: 'missing' })) as Record<string, unknown>;
+      const result = (await findOp('memory_promote_to_global').handler({
+        entryId: 'missing',
+      })) as Record<string, unknown>;
       expect(result.promoted).toBe(false);
       expect(result.error).toContain('Entry not found');
     });
@@ -79,7 +81,9 @@ describe('createMemoryCrossProjectOps', () => {
         get: vi.fn().mockReturnValue({ id: 'e1', tags: ['_global'] }),
       });
       ops = createMemoryCrossProjectOps(runtime);
-      const result = (await findOp('memory_promote_to_global').handler({ entryId: 'e1' })) as Record<string, unknown>;
+      const result = (await findOp('memory_promote_to_global').handler({
+        entryId: 'e1',
+      })) as Record<string, unknown>;
       expect(result.promoted).toBe(false);
       expect(result.message).toContain('already promoted');
     });
@@ -132,12 +136,15 @@ describe('createMemoryCrossProjectOps', () => {
       const runtime = makeMockRuntime();
       ops = createMemoryCrossProjectOps(runtime);
       await findOp('memory_cross_project_search').handler({
-        query: 'test', projectPath: '/test',
+        query: 'test',
+        projectPath: '/test',
       });
 
       // Should search current project, linked project, and extra path
       const searchCalls = (runtime.vault.searchMemories as ReturnType<typeof vi.fn>).mock.calls;
-      const searchedPaths = searchCalls.map((c: unknown[]) => (c[1] as Record<string, unknown>).projectPath);
+      const searchedPaths = searchCalls.map(
+        (c: unknown[]) => (c[1] as Record<string, unknown>).projectPath,
+      );
       expect(searchedPaths).toContain('/test');
       expect(searchedPaths).toContain('/linked');
       expect(searchedPaths).toContain('/extra');
@@ -151,7 +158,8 @@ describe('createMemoryCrossProjectOps', () => {
       ]);
       ops = createMemoryCrossProjectOps(runtime);
       const result = (await findOp('memory_cross_project_search').handler({
-        query: 'test', projectPath: '/test',
+        query: 'test',
+        projectPath: '/test',
       })) as Record<string, unknown>;
 
       // linkedMemories should be empty because m1 was already in current results
@@ -162,12 +170,15 @@ describe('createMemoryCrossProjectOps', () => {
     it('skips linked search when cross-project disabled', async () => {
       const runtime = makeMockRuntime();
       (runtime.projectRegistry.getByPath as ReturnType<typeof vi.fn>).mockReturnValue({
-        id: 'proj-1', name: 'test', path: '/test',
+        id: 'proj-1',
+        name: 'test',
+        path: '/test',
         metadata: { memoryConfig: { crossProjectEnabled: false } },
       });
       ops = createMemoryCrossProjectOps(runtime);
       const result = (await findOp('memory_cross_project_search').handler({
-        query: 'test', projectPath: '/test',
+        query: 'test',
+        projectPath: '/test',
       })) as Record<string, unknown>;
 
       expect(runtime.projectRegistry.getLinkedProjects).not.toHaveBeenCalled();

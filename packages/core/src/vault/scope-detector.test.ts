@@ -90,9 +90,7 @@ describe('detectScope', () => {
   });
 
   it('detects agent tier for home directory paths', () => {
-    const result = detectScope(
-      makeInput({ description: 'Config lives in ~/dotfiles/zshrc' }),
-    );
+    const result = detectScope(makeInput({ description: 'Config lives in ~/dotfiles/zshrc' }));
     expect(result.tier).toBe('agent');
   });
 

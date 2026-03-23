@@ -6,8 +6,7 @@ name: Plan Feature
 description: >
   Feature planning workflow: search vault for prior art, brainstorm design
   approaches, then create a structured plan with a checkpoint gate for approval.
-version: "1.0.0"
-
+version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
   blocking: [vault.search]
@@ -63,19 +62,19 @@ steps:
       on-false:
         action: BRANCH
         goto: brainstorm
-        message: "Plan did not meet quality threshold. Re-brainstorm."
+        message: 'Plan did not meet quality threshold. Re-brainstorm.'
 
 scoring:
   weights:
     vault-search: 0.20
     brainstorm: 0.30
     plan-creation: 0.50
-  formula: "weighted-sum"
+  formula: 'weighted-sum'
 
 on-error:
   default:
     action: STOP
-    message: "Planning flow encountered an error."
+    message: 'Planning flow encountered an error.'
   max-retries: 1
 
 metadata:

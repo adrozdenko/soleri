@@ -6,7 +6,7 @@ const content: Record<Locale, PersonasContent> = {
   en: {
     title: 'Your Second Brain - Soleri',
     description:
-      "Build a second brain that compounds intelligence over time. Domain-separated knowledge, graph-connected, and always learning.",
+      'Build a second brain that compounds intelligence over time. Domain-separated knowledge, graph-connected, and always learning.',
     heroEyebrow: 'Your expertise deserves a permanent home',
     heroTitle: "Your second brain should compound intelligence. Scattered notes don't.",
     heroSubtitle:
@@ -152,11 +152,11 @@ const content: Record<Locale, PersonasContent> = {
   uk: {
     title: 'Твій другий мозок — Soleri',
     description:
-      'Побудуй другий мозок, що накопичує інтелект з часом. Знання, розділені за доменами, з\'єднані графом та завжди навчаються.',
+      "Побудуй другий мозок, що накопичує інтелект з часом. Знання, розділені за доменами, з'єднані графом та завжди навчаються.",
     heroEyebrow: 'Твоя експертиза заслуговує на постійний дім',
     heroTitle: 'Твій другий мозок має накопичувати інтелект. Розкидані нотатки — ні.',
     heroSubtitle:
-      'Єдине сховище, розділене за доменами, векторизоване та з\'єднане графом. Знання, які самоорганізуються та стають гострішими з кожною сесією.',
+      "Єдине сховище, розділене за доменами, векторизоване та з'єднане графом. Знання, які самоорганізуються та стають гострішими з кожною сесією.",
 
     // Section 1
     section1Title:
@@ -319,7 +319,7 @@ const content: Record<Locale, PersonasContent> = {
     description:
       'I file piatti e la ricerca per parole chiave non scalano. Soleri d\u00E0 al tuo agente un vault separato per dominio e connesso tramite grafo che accumula intelligenza nel tempo.',
     heroEyebrow: 'I file piatti e la ricerca per parole chiave non scalano',
-    heroTitle: "Il tuo secondo cervello dovrebbe accumulare intelligenza. Gli appunti sparsi no.",
+    heroTitle: 'Il tuo secondo cervello dovrebbe accumulare intelligenza. Gli appunti sparsi no.',
     heroSubtitle:
       'Un Vault unico, separato per dominio, vettorializzato e connesso a grafo. Conoscenza che si organizza da sola e resta sempre aggiornata.',
 

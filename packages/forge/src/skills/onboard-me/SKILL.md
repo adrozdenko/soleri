@@ -109,13 +109,13 @@ YOUR_AGENT_core op:vault_age_report
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `identity` / `project_get` | Project overview |
-| `project_list_rules` / `get_behavior_rules` | Conventions |
-| `vault_domains` / `vault_tags` | Knowledge landscape |
-| `search` (severity/type filters) | Critical rules, anti-patterns |
-| `search_intelligent` | Key decisions |
-| `brain_strengths` | Proven patterns |
-| `brain_global_patterns` | Cross-project patterns |
-| `admin_search_insights` | Knowledge gaps |
+| Op                                          | When to Use                   |
+| ------------------------------------------- | ----------------------------- |
+| `identity` / `project_get`                  | Project overview              |
+| `project_list_rules` / `get_behavior_rules` | Conventions                   |
+| `vault_domains` / `vault_tags`              | Knowledge landscape           |
+| `search` (severity/type filters)            | Critical rules, anti-patterns |
+| `search_intelligent`                        | Key decisions                 |
+| `brain_strengths`                           | Proven patterns               |
+| `brain_global_patterns`                     | Cross-project patterns        |
+| `admin_search_insights`                     | Knowledge gaps                |

@@ -13,12 +13,12 @@ Your agent's long-term knowledge store. SQLite database with full-text search, b
 
 **Entry structure:**
 
-| Field | Values |
-|-------|--------|
-| **Type** | `pattern`, `anti-pattern`, `rule`, `playbook`, `workflow`, `principle`, `reference` |
-| **Domain** | `frontend`, `backend`, `security`, or your custom domains |
-| **Severity** | `critical` (must follow), `warning` (should follow), `suggestion` (nice to have) |
-| **Tags** | Free-form labels for discovery |
+| Field        | Values                                                                              |
+| ------------ | ----------------------------------------------------------------------------------- |
+| **Type**     | `pattern`, `anti-pattern`, `rule`, `playbook`, `workflow`, `principle`, `reference` |
+| **Domain**   | `frontend`, `backend`, `security`, or your custom domains                           |
+| **Severity** | `critical` (must follow), `warning` (should follow), `suggestion` (nice to have)    |
+| **Tags**     | Free-form labels for discovery                                                      |
 
 **Common operations:**
 
@@ -35,6 +35,7 @@ Your agent's long-term knowledge store. SQLite database with full-text search, b
 Tracks which patterns actually work. Learns from usage, strengthens useful patterns, decays unused ones. _[Details →](/docs/guides/under-the-hood/#the-brain)_
 
 **What it does:**
+
 - Ranks search results by proven usefulness, not just keyword match
 - Surfaces recommendations when you create plans
 - Extracts patterns automatically from completed work sessions
@@ -149,21 +150,21 @@ Four ways to connect: **stdio** (your AI editor), **HTTP/SSE** (web), **WebSocke
 
 ## All 13 Facades
 
-| Facade | Ops | Primary purpose |
-|--------|-----|-----------------|
-| [Vault](/docs/capabilities/#vault) | 66 | Knowledge storage, search, branching, sharing |
-| [Admin](/docs/capabilities/#admin) | 56 | Health, telemetry, plugins, packs, accounts |
-| [Chat](/docs/capabilities/#chat) | 41 | Chat transport integration |
-| [Plan](/docs/capabilities/#plan) | 32 | Planning, grading, verification |
-| [Orchestrate](/docs/capabilities/#orchestrate) | 26 | Lifecycle, projects, playbooks |
-| [Brain](/docs/capabilities/#brain) | 23 | Learning, strength, recommendations |
-| [Memory](/docs/capabilities/#memory) | 15 | Cross-session, cross-project |
-| [Curator](/docs/capabilities/#curator) | 13 | Vault quality management |
-| [Control](/docs/capabilities/#control) | 13 | Identity, governance |
-| [Cognee](/docs/capabilities/#cognee) | 11 | Vector search, knowledge graph |
-| [Loop](/docs/capabilities/#loop) | 9 | Iterative validation |
-| [Agency](/docs/capabilities/#agency) | 8 | Proactive file watching |
-| [Context](/docs/capabilities/#context) | 3 | Entity extraction, analysis |
+| Facade                                         | Ops | Primary purpose                               |
+| ---------------------------------------------- | --- | --------------------------------------------- |
+| [Vault](/docs/capabilities/#vault)             | 66  | Knowledge storage, search, branching, sharing |
+| [Admin](/docs/capabilities/#admin)             | 56  | Health, telemetry, plugins, packs, accounts   |
+| [Chat](/docs/capabilities/#chat)               | 41  | Chat transport integration                    |
+| [Plan](/docs/capabilities/#plan)               | 32  | Planning, grading, verification               |
+| [Orchestrate](/docs/capabilities/#orchestrate) | 26  | Lifecycle, projects, playbooks                |
+| [Brain](/docs/capabilities/#brain)             | 23  | Learning, strength, recommendations           |
+| [Memory](/docs/capabilities/#memory)           | 15  | Cross-session, cross-project                  |
+| [Curator](/docs/capabilities/#curator)         | 13  | Vault quality management                      |
+| [Control](/docs/capabilities/#control)         | 13  | Identity, governance                          |
+| [Cognee](/docs/capabilities/#cognee)           | 11  | Vector search, knowledge graph                |
+| [Loop](/docs/capabilities/#loop)               | 9   | Iterative validation                          |
+| [Agency](/docs/capabilities/#agency)           | 8   | Proactive file watching                       |
+| [Context](/docs/capabilities/#context)         | 3   | Entity extraction, analysis                   |
 
 **Total: 200+ operations** plus 5 per domain.
 

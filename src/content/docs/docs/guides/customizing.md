@@ -1,6 +1,6 @@
 ---
 title: 'Customizing Your Agent'
-description: 'Shape your agent''s identity, add domains, configure hooks, upgrade, and set governance policies.'
+description: "Shape your agent's identity, add domains, configure hooks, upgrade, and set governance policies."
 ---
 
 Your agent ships with a default personality and starter knowledge. But the real power comes from making it yours — tuning its identity, adding domains that match your work, and setting up hooks that enforce your standards automatically.
@@ -55,13 +55,13 @@ Or capture knowledge interactively:
 
 Good domains are knowledge areas where you accumulate reusable patterns:
 
-| Good domains | Why |
-|-------------|-----|
-| `security` | Clear rules, critical patterns, compliance requirements |
-| `frontend` | Component conventions, accessibility standards |
-| `api-design` | Endpoint conventions, error formats, versioning rules |
-| `testing` | Test patterns, coverage standards, mocking approaches |
-| `infrastructure` | Deployment, scaling, monitoring patterns |
+| Good domains     | Why                                                     |
+| ---------------- | ------------------------------------------------------- |
+| `security`       | Clear rules, critical patterns, compliance requirements |
+| `frontend`       | Component conventions, accessibility standards          |
+| `api-design`     | Endpoint conventions, error formats, versioning rules   |
+| `testing`        | Test patterns, coverage standards, mocking approaches   |
+| `infrastructure` | Deployment, scaling, monitoring patterns                |
 
 Avoid domains that are too broad ("coding") or too narrow ("button-styles"). You want enough specificity that searches return relevant results, but enough breadth that the domain accumulates useful knowledge.
 
@@ -77,16 +77,16 @@ npx @soleri/cli hooks add-pack full
 
 This installs all available hooks:
 
-| Hook | What it catches |
-|------|----------------|
-| `no-console-log` | Leftover debug statements |
-| `no-any-types` | TypeScript `any` usage |
-| `no-important` | CSS `!important` declarations |
-| `no-inline-styles` | Inline `style=` attributes |
-| `semantic-html` | Non-semantic HTML elements |
+| Hook                  | What it catches                   |
+| --------------------- | --------------------------------- |
+| `no-console-log`      | Leftover debug statements         |
+| `no-any-types`        | TypeScript `any` usage            |
+| `no-important`        | CSS `!important` declarations     |
+| `no-inline-styles`    | Inline `style=` attributes        |
+| `semantic-html`       | Non-semantic HTML elements        |
 | `focus-ring-required` | Missing keyboard focus indicators |
-| `ux-touch-targets` | Touch targets smaller than 44px |
-| `no-ai-attribution` | AI attribution in commit messages |
+| `ux-touch-targets`    | Touch targets smaller than 44px   |
+| `no-ai-attribution`   | AI attribution in commit messages |
 
 ### Editor integration
 
@@ -151,10 +151,10 @@ The `manifest.json` declares the pack:
 
 ### Available tiers
 
-| Tier | Source | Cost |
-|------|--------|------|
-| **Starter** | Ships with every agent | Free |
-| **Community** | npm registry | Free |
+| Tier          | Source                 | Cost |
+| ------------- | ---------------------- | ---- |
+| **Starter**   | Ships with every agent | Free |
+| **Community** | npm registry           | Free |
 
 The starter pack gives your agent useful knowledge from day one. Community packs extend it with domain-specific expertise contributed by other developers.
 
@@ -195,11 +195,11 @@ npx @soleri/cli governance --preset permissive  # Auto-approve everything
 
 ### Preset defaults
 
-| Preset | Suggestions | Warnings | Critical | Quota |
-|--------|------------|----------|----------|-------|
-| **permissive** | Auto-approve | Auto-approve | Auto-approve | No limit |
-| **moderate** | Auto-approve | Propose for review | Propose for review | 50/domain |
-| **strict** | Propose for review | Propose for review | Propose for review | 30/domain |
+| Preset         | Suggestions        | Warnings           | Critical           | Quota     |
+| -------------- | ------------------ | ------------------ | ------------------ | --------- |
+| **permissive** | Auto-approve       | Auto-approve       | Auto-approve       | No limit  |
+| **moderate**   | Auto-approve       | Propose for review | Propose for review | 50/domain |
+| **strict**     | Propose for review | Propose for review | Propose for review | 30/domain |
 
 ### What governance controls
 
@@ -224,12 +224,12 @@ Link related projects to share knowledge across them:
 
 Link types:
 
-| Type | Meaning | Direction |
-|------|---------|-----------|
-| `related` | Same domain or team — both projects can search each other | Bidirectional |
-| `parent` | This project derives from another | Unidirectional |
-| `child` | Another project derives from this one | Unidirectional |
-| `fork` | Code fork | Unidirectional |
+| Type      | Meaning                                                   | Direction      |
+| --------- | --------------------------------------------------------- | -------------- |
+| `related` | Same domain or team — both projects can search each other | Bidirectional  |
+| `parent`  | This project derives from another                         | Unidirectional |
+| `child`   | Another project derives from this one                     | Unidirectional |
+| `fork`    | Code fork                                                 | Unidirectional |
 
 Linked projects are included in cross-project searches with weighted relevance. See [Cross-Project Knowledge](/docs/guides/cross-project-knowledge/) for the full guide.
 

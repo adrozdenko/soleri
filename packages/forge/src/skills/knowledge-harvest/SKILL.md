@@ -30,13 +30,13 @@ Focus extraction on gaps — skip what vault already covers.
 
 ### 3. Extract and Classify
 
-| Type | What to Look For |
-|------|-----------------|
-| **pattern** | Repeatable approaches that work |
-| **anti-pattern** | Known mistakes to avoid |
-| **decision** | Architectural choices with rationale |
-| **principle** | Guiding rules or heuristics |
-| **workflow** | Step-by-step procedures |
+| Type             | What to Look For                     |
+| ---------------- | ------------------------------------ |
+| **pattern**      | Repeatable approaches that work      |
+| **anti-pattern** | Known mistakes to avoid              |
+| **decision**     | Architectural choices with rationale |
+| **principle**    | Guiding rules or heuristics          |
+| **workflow**     | Step-by-step procedures              |
 
 For each: determine category, severity, and tags.
 
@@ -85,13 +85,13 @@ Optionally promote universal patterns: `op:memory_promote_to_global`.
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `search_intelligent` | Check existing knowledge |
-| `vault_tags` / `vault_domains` | See what's covered |
-| `capture_knowledge` | Capture each item |
-| `curator_detect_duplicates` | Post-harvest dedup |
-| `curator_groom_all` | Normalize entries |
-| `curator_contradictions` | Find conflicts |
-| `memory_promote_to_global` | Share cross-project |
-| `admin_vault_analytics` | Knowledge quality |
+| Op                             | When to Use              |
+| ------------------------------ | ------------------------ |
+| `search_intelligent`           | Check existing knowledge |
+| `vault_tags` / `vault_domains` | See what's covered       |
+| `capture_knowledge`            | Capture each item        |
+| `curator_detect_duplicates`    | Post-harvest dedup       |
+| `curator_groom_all`            | Normalize entries        |
+| `curator_contradictions`       | Find conflicts           |
+| `memory_promote_to_global`     | Share cross-project      |
+| `admin_vault_analytics`        | Knowledge quality        |

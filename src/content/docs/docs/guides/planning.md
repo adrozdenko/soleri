@@ -27,6 +27,7 @@ When you have a non-trivial task, ask the agent to plan it:
 >
 > **Objective:** Migrate user endpoints from REST to GraphQL
 > **Steps:**
+>
 > 1. Audit existing REST endpoints and their consumers
 > 2. Define GraphQL schema for user types and queries
 > 3. Implement resolvers backed by existing service layer
@@ -103,6 +104,7 @@ Every plan you run makes the next plan smarter. The brain doesn't just store inf
 If you find yourself planning similar work repeatedly, turn it into a playbook:
 
 > **You:** "Create a playbook called 'New API Endpoint' with these steps:
+>
 > 1. Define the route and request/response schema
 > 2. Implement the handler with input validation
 > 3. Add error handling for all failure cases

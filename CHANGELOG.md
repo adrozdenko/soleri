@@ -11,15 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 The monolithic vault facade (76+ ops) has been decomposed into 8 focused facades. The engine now registers **20 semantic modules** (up from 13).
 
-| New Facade | Ops | Purpose |
-|---|---|---|
-| `archive` | 12 | Archival, lifecycle, knowledge maintenance |
-| `sync` | 8 | Git, Obsidian, and pack sync |
-| `review` | 5 | Knowledge review workflow |
-| `intake` | 7 | Content ingestion — books, URLs, text, batch |
-| `links` | 9 | Entry linking, traversal, orphan detection |
-| `branching` | 5 | Vault branching — create, list, merge, delete |
-| `tier` | 7 | Multi-vault tiers — connect, disconnect, search |
+| New Facade  | Ops | Purpose                                         |
+| ----------- | --- | ----------------------------------------------- |
+| `archive`   | 12  | Archival, lifecycle, knowledge maintenance      |
+| `sync`      | 8   | Git, Obsidian, and pack sync                    |
+| `review`    | 5   | Knowledge review workflow                       |
+| `intake`    | 7   | Content ingestion — books, URLs, text, batch    |
+| `links`     | 9   | Entry linking, traversal, orphan detection      |
+| `branching` | 5   | Vault branching — create, list, merge, delete   |
+| `tier`      | 7   | Multi-vault tiers — connect, disconnect, search |
 
 - **Backward compat** — moved ops still dispatch via vault facade with deprecation warnings
 - **`createSemanticFacades()`** updated with all 20 modules
@@ -104,11 +104,11 @@ All TDD refactoring waves are closed. Every `@soleri/core` module now has coloca
 
 ### Published Packages
 
-| Package | Version |
-|---------|---------|
-| `@soleri/core` | 9.2.0 |
-| `@soleri/forge` | 9.2.0 |
-| `@soleri/cli` | 9.2.0 |
+| Package         | Version |
+| --------------- | ------- |
+| `@soleri/core`  | 9.2.0   |
+| `@soleri/forge` | 9.2.0   |
+| `@soleri/cli`   | 9.2.0   |
 
 ### Stats
 
@@ -143,11 +143,11 @@ All TDD refactoring waves are closed. Every `@soleri/core` module now has coloca
 
 ### Published Packages
 
-| Package | Version |
-|---------|---------|
-| `@soleri/core` | 9.1.1 |
-| `@soleri/forge` | 9.1.1 |
-| `@soleri/cli` | 9.1.1 |
+| Package         | Version |
+| --------------- | ------- |
+| `@soleri/core`  | 9.1.1   |
+| `@soleri/forge` | 9.1.1   |
+| `@soleri/cli`   | 9.1.1   |
 
 ### Stats
 

@@ -47,7 +47,11 @@
       "name": "Goal-Gradient Effect",
       "rule": "Users accelerate as they approach a goal",
       "application": "Show progress clearly, celebrate milestones, make completion feel achievable",
-      "tokens": ["Progress bars with percentage", "Step X of Y indicators", "Completion checkmarks"],
+      "tokens": [
+        "Progress bars with percentage",
+        "Step X of Y indicators",
+        "Completion checkmarks"
+      ],
       "violations": ["No progress indication", "Hidden step count", "No milestone feedback"]
     },
     {
@@ -61,7 +65,11 @@
       "name": "Serial Position Effect",
       "rule": "First and last items are remembered best",
       "application": "Place most important items at start or end of lists",
-      "tokens": ["Primary nav at start/end", "Key actions first/last", "Important options at edges"],
+      "tokens": [
+        "Primary nav at start/end",
+        "Key actions first/last",
+        "Important options at edges"
+      ],
       "violations": ["Critical items buried in middle", "Random ordering", "No priority placement"]
     },
     {
@@ -75,7 +83,12 @@
       "name": "Aesthetic-Usability Effect",
       "rule": "Aesthetically pleasing designs are perceived as more usable",
       "application": "Invest in visual polish, consistent styling builds trust",
-      "tokens": ["Consistent spacing", "Harmonious colors", "Refined typography", "Smooth animations"],
+      "tokens": [
+        "Consistent spacing",
+        "Harmonious colors",
+        "Refined typography",
+        "Smooth animations"
+      ],
       "violations": ["Inconsistent styling", "Jarring transitions", "Neglected visual details"]
     },
     {
@@ -83,21 +96,34 @@
       "rule": "Be liberal in what you accept, conservative in what you send",
       "application": "Accept varied input formats, provide clear normalized output",
       "tokens": ["Flexible date parsing", "Phone format tolerance", "Case-insensitive search"],
-      "violations": ["Rigid input requirements", "Rejecting valid variations", "No input normalization"]
+      "violations": [
+        "Rigid input requirements",
+        "Rejecting valid variations",
+        "No input normalization"
+      ]
     },
     {
       "name": "Tesler's Law",
       "rule": "Complexity cannot be eliminated, only moved",
       "application": "Move complexity to the system, not the user",
       "tokens": ["Smart defaults", "Auto-detection", "Progressive disclosure"],
-      "violations": ["Exposing system complexity", "Too many required fields", "No sensible defaults"]
+      "violations": [
+        "Exposing system complexity",
+        "Too many required fields",
+        "No sensible defaults"
+      ]
     },
     {
       "name": "Cognitive Load",
       "rule": "Mental effort is finite - reduce unnecessary cognitive burden",
       "application": "Minimize choices, use recognition over recall, maintain context",
       "tokens": ["Clear labels", "Visible options", "Contextual help", "Reduced form fields"],
-      "violations": ["Information overload", "Hidden options", "Requiring memorization", "Dense layouts"]
+      "violations": [
+        "Information overload",
+        "Hidden options",
+        "Requiring memorization",
+        "Dense layouts"
+      ]
     },
     {
       "name": "Occam's Razor",
@@ -136,22 +162,42 @@
   "visualHierarchy": {
     "principle": "The mind seeks contrast. Without contrast, there is no hierarchy. Without hierarchy, everything competes for attention.",
     "contrastTypes": [
-      { "type": "Size", "rule": "Big + Small — size difference creates importance ranking", "example": "text-2xl title vs text-sm body" },
-      { "type": "Weight", "rule": "Light + Bold — weight difference creates emphasis without changing size", "example": "font-normal vs font-semibold at same size" },
-      { "type": "Length", "rule": "Short + Shorter — progressive reduction signals hierarchy levels", "example": "3-word heading, 1-line description, multi-line body" }
+      {
+        "type": "Size",
+        "rule": "Big + Small — size difference creates importance ranking",
+        "example": "text-2xl title vs text-sm body"
+      },
+      {
+        "type": "Weight",
+        "rule": "Light + Bold — weight difference creates emphasis without changing size",
+        "example": "font-normal vs font-semibold at same size"
+      },
+      {
+        "type": "Length",
+        "rule": "Short + Shorter — progressive reduction signals hierarchy levels",
+        "example": "3-word heading, 1-line description, multi-line body"
+      }
     ],
     "rules": {
       "negativeSpace": {
         "name": "Rule 1: Negative Space",
         "principle": "More space = faster scanning. Less space = more cognitive work.",
         "application": "Whitespace is not wasted space — it is a functional element that accelerates comprehension",
-        "violations": ["Dense layouts with no breathing room", "Cramming content to save scroll", "Treating whitespace as waste"]
+        "violations": [
+          "Dense layouts with no breathing room",
+          "Cramming content to save scroll",
+          "Treating whitespace as waste"
+        ]
       },
       "fontHierarchy": {
         "name": "Rule 2: Font Hierarchy",
         "principle": "Use weight for emphasis, not size. Less words, more space. One point per view.",
         "application": "Limit to 2-3 font weights per view. Remove words until meaning breaks. Each screen has one takeaway.",
-        "violations": ["5+ font sizes in one view", "Weight uniformity (everything same weight)", "Multiple competing messages per screen"]
+        "violations": [
+          "5+ font sizes in one view",
+          "Weight uniformity (everything same weight)",
+          "Multiple competing messages per screen"
+        ]
       }
     }
   },
@@ -204,11 +250,7 @@
     },
     "modal": {
       "laws": ["Fitts's Law", "Cognitive Load"],
-      "requirements": [
-        "Easy-to-reach close button",
-        "Single clear purpose",
-        "Don't nest modals"
-      ]
+      "requirements": ["Easy-to-reach close button", "Single clear purpose", "Don't nest modals"]
     },
     "list": {
       "laws": ["Miller's Law", "Proximity"],
@@ -220,11 +262,7 @@
     },
     "loading": {
       "laws": ["Doherty Threshold", "Zeigarnik Effect"],
-      "requirements": [
-        ">400ms show spinner",
-        ">1s show progress",
-        "Maintain context during load"
-      ]
+      "requirements": [">400ms show spinner", ">1s show progress", "Maintain context during load"]
     },
     "progress-bar": {
       "laws": ["Goal-Gradient Effect", "Zeigarnik Effect"],
@@ -322,10 +360,7 @@
       "allUsers": "Show all actions, disable if no permission",
       "roleSpecific": "Show only actions user's role can see (no gaps)"
     },
-    "violations": [
-      "Hiding buttons creates visual gaps",
-      "Permission check shows empty space"
-    ]
+    "violations": ["Hiding buttons creates visual gaps", "Permission check shows empty space"]
   },
   "lawsByAtomicLevel": {
     "ATOM": {
@@ -336,26 +371,70 @@
     },
     "MOLECULE": {
       "description": "Grouped atoms - input handling, response time, progress feedback",
-      "primary": ["Miller's Law", "Hick's Law", "Cognitive Load", "Postel's Law", "Doherty Threshold", "Goal-Gradient Effect"],
+      "primary": [
+        "Miller's Law",
+        "Hick's Law",
+        "Cognitive Load",
+        "Postel's Law",
+        "Doherty Threshold",
+        "Goal-Gradient Effect"
+      ],
       "inherited": ["Fitts's Law", "Von Restorff Effect", "Aesthetic-Usability Effect"],
       "focus": "Chunking, option limits, input flexibility, loading states, progress"
     },
     "ORGANISM": {
       "description": "Complex sections - task completion and complexity management",
       "primary": ["Zeigarnik Effect", "Serial Position Effect", "Tesler's Law"],
-      "inherited": ["Miller's Law", "Hick's Law", "Cognitive Load", "Postel's Law", "Doherty Threshold", "Goal-Gradient Effect", "Fitts's Law", "Von Restorff Effect", "Aesthetic-Usability Effect"],
+      "inherited": [
+        "Miller's Law",
+        "Hick's Law",
+        "Cognitive Load",
+        "Postel's Law",
+        "Doherty Threshold",
+        "Goal-Gradient Effect",
+        "Fitts's Law",
+        "Von Restorff Effect",
+        "Aesthetic-Usability Effect"
+      ],
       "focus": "Incomplete tasks, ordering, complexity hiding"
     },
     "TEMPLATE": {
       "description": "Page layouts - conventions and user expectations",
       "primary": ["Jakob's Law"],
-      "inherited": ["Zeigarnik Effect", "Serial Position Effect", "Tesler's Law", "Miller's Law", "Hick's Law", "Cognitive Load", "Postel's Law", "Doherty Threshold", "Goal-Gradient Effect", "Fitts's Law", "Von Restorff Effect", "Aesthetic-Usability Effect"],
+      "inherited": [
+        "Zeigarnik Effect",
+        "Serial Position Effect",
+        "Tesler's Law",
+        "Miller's Law",
+        "Hick's Law",
+        "Cognitive Load",
+        "Postel's Law",
+        "Doherty Threshold",
+        "Goal-Gradient Effect",
+        "Fitts's Law",
+        "Von Restorff Effect",
+        "Aesthetic-Usability Effect"
+      ],
       "focus": "Layout conventions, user expectations"
     },
     "PAGE": {
       "description": "Full experiences - journey design and simplicity",
       "primary": ["Peak-End Rule", "Occam's Razor"],
-      "inherited": ["Jakob's Law", "Zeigarnik Effect", "Serial Position Effect", "Tesler's Law", "Miller's Law", "Hick's Law", "Cognitive Load", "Postel's Law", "Doherty Threshold", "Goal-Gradient Effect", "Fitts's Law", "Von Restorff Effect", "Aesthetic-Usability Effect"],
+      "inherited": [
+        "Jakob's Law",
+        "Zeigarnik Effect",
+        "Serial Position Effect",
+        "Tesler's Law",
+        "Miller's Law",
+        "Hick's Law",
+        "Cognitive Load",
+        "Postel's Law",
+        "Doherty Threshold",
+        "Goal-Gradient Effect",
+        "Fitts's Law",
+        "Von Restorff Effect",
+        "Aesthetic-Usability Effect"
+      ],
       "focus": "Memorable moments, feature scope, simplicity"
     }
   }

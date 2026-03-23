@@ -221,7 +221,8 @@ export function extractFromRadar(candidate: RadarCandidate): OperatorSignal[] {
       signalType: SignalType.Frustration,
       source: 'learning_radar',
       data: {
-        level: candidate.confidence >= 0.7 ? 'high' : candidate.confidence >= 0.5 ? 'moderate' : 'mild',
+        level:
+          candidate.confidence >= 0.7 ? 'high' : candidate.confidence >= 0.5 ? 'moderate' : 'mild',
         trigger: candidate.sourceQuery ?? candidate.title,
         context: candidate.context ?? candidate.description,
       },

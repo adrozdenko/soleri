@@ -57,7 +57,11 @@ function createMockProvider(): PersistenceProvider {
           row.completed_at = new Date().toISOString();
         }
       }
-      if (sql.includes('UPDATE') && sql.includes("status = 'pending'") && sql.includes('retry_count')) {
+      if (
+        sql.includes('UPDATE') &&
+        sql.includes("status = 'pending'") &&
+        sql.includes('retry_count')
+      ) {
         const id = p[0] as string;
         const row = rows.get(id);
         if (row) {
@@ -144,15 +148,7 @@ describe('JobQueue', () => {
       queue.enqueue('groom');
       expect(provider.run).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO job_queue'),
-        expect.arrayContaining([
-          expect.any(String),
-          'groom',
-          null,
-          '{}',
-          '[]',
-          null,
-          3,
-        ]),
+        expect.arrayContaining([expect.any(String), 'groom', null, '{}', '[]', null, 3]),
       );
     });
 
@@ -219,10 +215,10 @@ describe('JobQueue', () => {
       const id = queue.enqueue('groom');
       queue.dequeue();
       queue.complete(id);
-      expect(provider.run).toHaveBeenCalledWith(
-        expect.stringContaining("status = 'completed'"),
-        [null, id],
-      );
+      expect(provider.run).toHaveBeenCalledWith(expect.stringContaining("status = 'completed'"), [
+        null,
+        id,
+      ]);
     });
   });
 

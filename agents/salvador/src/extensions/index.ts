@@ -23,17 +23,14 @@ export default function loadExtensions(runtime: AgentRuntime): AgentExtensions {
     // ops: [
     //   myCustomOp(runtime),
     // ],
-
     // ── Custom facades (registered as separate MCP tools) ──────────
     // facades: [
     //   myFacade(runtime),
     // ],
-
     // ── Middleware (wraps ALL ops across ALL facades) ───────────────
     // middleware: [
     //   auditLogger,
     // ],
-
     // ── Lifecycle hooks ────────────────────────────────────────────
     // hooks: {
     //   onStartup: async (rt) => {

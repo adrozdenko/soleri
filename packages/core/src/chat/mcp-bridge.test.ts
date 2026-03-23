@@ -108,7 +108,9 @@ describe('McpToolBridge', () => {
     test('catches handler errors', async () => {
       bridge.register({
         ...makeTool('broken'),
-        handler: async () => { throw new Error('kaboom'); },
+        handler: async () => {
+          throw new Error('kaboom');
+        },
       });
       const result = await bridge.execute('broken', {});
       expect(result.isError).toBe(true);
@@ -119,7 +121,10 @@ describe('McpToolBridge', () => {
       let received: Record<string, unknown> = {};
       bridge.register({
         ...makeTool('capture'),
-        handler: async (input) => { received = input; return 'ok'; },
+        handler: async (input) => {
+          received = input;
+          return 'ok';
+        },
       });
       await bridge.execute('capture', { foo: 'bar' });
       expect(received).toEqual({ foo: 'bar' });

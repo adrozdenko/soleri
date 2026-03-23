@@ -90,9 +90,18 @@ describe('archive-facade', () => {
 
   it('includes all expected op names', () => {
     const expected = [
-      'vault_archive', 'vault_restore', 'vault_optimize', 'vault_backup',
-      'vault_age_report', 'vault_set_temporal', 'vault_find_expiring', 'vault_find_expired',
-      'knowledge_audit', 'knowledge_health', 'knowledge_merge', 'knowledge_reorganize',
+      'vault_archive',
+      'vault_restore',
+      'vault_optimize',
+      'vault_backup',
+      'vault_age_report',
+      'vault_set_temporal',
+      'vault_find_expiring',
+      'vault_find_expired',
+      'knowledge_audit',
+      'knowledge_health',
+      'knowledge_merge',
+      'knowledge_reorganize',
     ];
     for (const name of expected) {
       expect(ops.has(name), `missing op: ${name}`).toBe(true);
@@ -121,7 +130,8 @@ describe('archive-facade', () => {
   describe('vault_archive', () => {
     it('archives old entries', async () => {
       const result = await executeOp(ops, 'vault_archive', {
-        olderThanDays: 90, reason: 'cleanup',
+        olderThanDays: 90,
+        reason: 'cleanup',
       });
       expect(result.success).toBe(true);
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
@@ -178,7 +188,9 @@ describe('archive-facade', () => {
   describe('vault_set_temporal', () => {
     it('sets temporal fields', async () => {
       const result = await executeOp(ops, 'vault_set_temporal', {
-        id: 'entry-1', validFrom: 1000, validUntil: 2000,
+        id: 'entry-1',
+        validFrom: 1000,
+        validUntil: 2000,
       });
       expect(result.success).toBe(true);
       const data = result.data as { updated: boolean };
@@ -251,7 +263,8 @@ describe('archive-facade', () => {
         .mockReturnValueOnce(makeEntry({ id: 'remove', tags: ['b'] }));
 
       const result = await executeOp(ops, 'knowledge_merge', {
-        keepId: 'keep', removeId: 'remove',
+        keepId: 'keep',
+        removeId: 'remove',
       });
       expect(result.success).toBe(true);
       const data = result.data as { merged: boolean; keptId: string };
@@ -263,7 +276,8 @@ describe('archive-facade', () => {
       const vault = runtime.vault as ReturnType<typeof makeMockVault>;
       vault.get.mockReturnValue(null);
       const result = await executeOp(ops, 'knowledge_merge', {
-        keepId: 'x', removeId: 'y',
+        keepId: 'x',
+        removeId: 'y',
       });
       expect(result.success).toBe(true);
       const data = result.data as { error: string };

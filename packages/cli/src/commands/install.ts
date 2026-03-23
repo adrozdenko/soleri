@@ -145,9 +145,10 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
     const engine = resolveEngineBin();
     servers[agentId] = {
       type: 'local',
-      command: engine.command === 'node'
-        ? ['node', engine.bin, '--agent', join(agentDir, 'agent.yaml')]
-        : ['npx', '-y', '@soleri/engine', '--agent', join(agentDir, 'agent.yaml')],
+      command:
+        engine.command === 'node'
+          ? ['node', engine.bin, '--agent', join(agentDir, 'agent.yaml')]
+          : ['npx', '-y', '@soleri/engine', '--agent', join(agentDir, 'agent.yaml')],
     };
   } else {
     servers[agentId] = {
@@ -234,7 +235,9 @@ export function registerInstall(program: Command): void {
         if (engine.command === 'node') {
           p.log.info(`Detected file-tree agent (v7) — using resolved engine at ${engine.bin}`);
         } else {
-          p.log.warn(`Could not resolve @soleri/core locally — falling back to npx (slower startup)`);
+          p.log.warn(
+            `Could not resolve @soleri/core locally — falling back to npx (slower startup)`,
+          );
           p.log.info(`For instant startup: npm install -g @soleri/cli`);
         }
       }

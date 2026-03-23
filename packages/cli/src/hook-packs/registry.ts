@@ -35,8 +35,12 @@ export interface HookPackManifest {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-function getBuiltinRoot(): string { return __dirname; }
-function getLocalRoot(): string { return join(process.cwd(), '.soleri', 'hook-packs'); }
+function getBuiltinRoot(): string {
+  return __dirname;
+}
+function getLocalRoot(): string {
+  return join(process.cwd(), '.soleri', 'hook-packs');
+}
 
 function scanPacksDir(root: string, source: 'built-in' | 'local'): HookPackManifest[] {
   if (!existsSync(root)) return [];
@@ -50,7 +54,9 @@ function scanPacksDir(root: string, source: 'built-in' | 'local'): HookPackManif
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as HookPackManifest;
       manifest.source = source;
       packs.push(manifest);
-    } catch { /* Skip malformed manifests */ }
+    } catch {
+      /* Skip malformed manifests */
+    }
   }
   return packs;
 }
@@ -72,7 +78,9 @@ export function getPack(name: string): { manifest: HookPackManifest; dir: string
       const manifest = JSON.parse(readFileSync(localManifest, 'utf-8')) as HookPackManifest;
       manifest.source = 'local';
       return { manifest, dir: localDir };
-    } catch { /* Fall through */ }
+    } catch {
+      /* Fall through */
+    }
   }
   const builtinDir = join(getBuiltinRoot(), name);
   const builtinManifest = join(builtinDir, 'manifest.json');
@@ -81,7 +89,9 @@ export function getPack(name: string): { manifest: HookPackManifest; dir: string
     const manifest = JSON.parse(readFileSync(builtinManifest, 'utf-8')) as HookPackManifest;
     manifest.source = 'built-in';
     return { manifest, dir: builtinDir };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export function getInstalledPacks(): string[] {
@@ -94,14 +104,18 @@ export function getInstalledPacks(): string[] {
         const allScripts = pack.scripts.every((script) =>
           existsSync(join(claudeDir, script.targetDir, script.file)),
         );
-        if (allScripts) { installed.push(pack.name); }
+        if (allScripts) {
+          installed.push(pack.name);
+        }
       }
       continue;
     }
     const allPresent = pack.hooks.every((hook) =>
       existsSync(join(claudeDir, `hookify.${hook}.local.md`)),
     );
-    if (allPresent) { installed.push(pack.name); }
+    if (allPresent) {
+      installed.push(pack.name);
+    }
   }
   return installed;
 }

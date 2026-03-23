@@ -169,7 +169,9 @@ async function main(): Promise<void> {
     const syncResult = syncSkillsToClaudeCode([skillsDir], config.name as string);
     const total = syncResult.installed.length + syncResult.updated.length;
     if (total > 0) {
-      console.error(`${tag} Skills synced: ${syncResult.installed.length} new, ${syncResult.updated.length} updated`);
+      console.error(
+        `${tag} Skills synced: ${syncResult.installed.length} new, ${syncResult.updated.length} updated`,
+      );
     }
   }
 

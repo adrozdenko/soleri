@@ -10,20 +10,18 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  createAgentRuntime,
-  createSemanticFacades,
-  registerFacade,
-} from '@soleri/core';
+import { createAgentRuntime, createSemanticFacades, registerFacade } from '@soleri/core';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
 
 const AGENT_ID = 'e2e-cca';
 
 /** Capture the MCP handler from registerFacade without a real server */
 function captureHandler(facade: FacadeConfig) {
-  let captured: ((args: { op: string; params: Record<string, unknown> }) => Promise<{
-    content: Array<{ type: string; text: string }>;
-  }>) | null = null;
+  let captured:
+    | ((args: { op: string; params: Record<string, unknown> }) => Promise<{
+        content: Array<{ type: string; text: string }>;
+      }>)
+    | null = null;
 
   const mockServer = {
     tool: (_name: string, _desc: string, _schema: unknown, handler: unknown) => {
@@ -282,7 +280,9 @@ describe('E2E: chat-context-agency', () => {
     });
 
     it('should compress verbose output', async () => {
-      const verbose = JSON.stringify({ results: Array.from({ length: 100 }, (_, i) => ({ id: i, data: 'x'.repeat(100) })) });
+      const verbose = JSON.stringify({
+        results: Array.from({ length: 100 }, (_, i) => ({ id: i, data: 'x'.repeat(100) })),
+      });
       const res = await callOp(`${AGENT_ID}_chat`, 'chat_compress_output', {
         toolName: 'test-tool',
         output: verbose,
@@ -313,7 +313,7 @@ describe('E2E: chat-context-agency', () => {
       expect(data).toBeDefined();
       expect(data.entities.length).toBeGreaterThan(0);
       // Should detect file path, action (fix), and technology (typescript)
-      const types = new Set(data.entities.map(e => e.type));
+      const types = new Set(data.entities.map((e) => e.type));
       const hasRelevantEntity = types.has('file') || types.has('action') || types.has('technology');
       expect(hasRelevantEntity).toBe(true);
     });
@@ -321,14 +321,16 @@ describe('E2E: chat-context-agency', () => {
     it('should retrieve knowledge for a query', async () => {
       // First seed some vault data
       await callOp(`${AGENT_ID}_vault`, 'capture_knowledge', {
-        entries: [{
-          type: 'pattern',
-          domain: 'frontend',
-          title: 'Context Test Pattern',
-          description: 'A pattern for testing context retrieval',
-          severity: 'suggestion',
-          tags: ['context', 'testing'],
-        }],
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'frontend',
+            title: 'Context Test Pattern',
+            description: 'A pattern for testing context retrieval',
+            severity: 'suggestion',
+            tags: ['context', 'testing'],
+          },
+        ],
       });
 
       const res = await callOp(`${AGENT_ID}_context`, 'context_retrieve_knowledge', {
@@ -359,14 +361,16 @@ describe('E2E: chat-context-agency', () => {
     it('context retrieval should be isolated per domain', async () => {
       // Capture frontend-specific knowledge
       await callOp(`${AGENT_ID}_vault`, 'capture_knowledge', {
-        entries: [{
-          type: 'pattern',
-          domain: 'frontend',
-          title: 'React Context Hook Pattern',
-          description: 'Use custom hooks to wrap React context for type safety',
-          severity: 'suggestion',
-          tags: ['react', 'hooks'],
-        }],
+        entries: [
+          {
+            type: 'pattern',
+            domain: 'frontend',
+            title: 'React Context Hook Pattern',
+            description: 'Use custom hooks to wrap React context for type safety',
+            severity: 'suggestion',
+            tags: ['react', 'hooks'],
+          },
+        ],
       });
 
       // Search with frontend domain filter
@@ -375,8 +379,12 @@ describe('E2E: chat-context-agency', () => {
         domain: 'frontend',
       });
       expect(frontendRes.success).toBe(true);
-      const frontendData = frontendRes.data as { results?: Array<{ domain?: string }> } | Array<{ domain?: string }>;
-      const frontendResults = Array.isArray(frontendData) ? frontendData : (frontendData.results ?? []);
+      const frontendData = frontendRes.data as
+        | { results?: Array<{ domain?: string }> }
+        | Array<{ domain?: string }>;
+      const frontendResults = Array.isArray(frontendData)
+        ? frontendData
+        : (frontendData.results ?? []);
 
       // Search with backend domain filter — should get fewer/no React-related results
       const backendRes = await callOp(`${AGENT_ID}_context`, 'context_retrieve_knowledge', {
@@ -384,7 +392,9 @@ describe('E2E: chat-context-agency', () => {
         domain: 'backend',
       });
       expect(backendRes.success).toBe(true);
-      const backendData = backendRes.data as { results?: Array<{ domain?: string }> } | Array<{ domain?: string }>;
+      const backendData = backendRes.data as
+        | { results?: Array<{ domain?: string }> }
+        | Array<{ domain?: string }>;
       const backendResults = Array.isArray(backendData) ? backendData : (backendData.results ?? []);
 
       // Frontend search should return more results than backend for a React query
@@ -466,7 +476,12 @@ describe('E2E: chat-context-agency', () => {
       expect(res.success).toBe(true);
       // generateClarification returns { question, reason, options? } or { clarificationNeeded: false }
       // "fix it" has action "fix" but only 2 words (no target), so confidence < 0.3 triggers clarification
-      const data = res.data as { question?: string; reason?: string; options?: string[]; clarificationNeeded?: boolean };
+      const data = res.data as {
+        question?: string;
+        reason?: string;
+        options?: string[];
+        clarificationNeeded?: boolean;
+      };
       const hasClarification = !!data.question || data.clarificationNeeded === false;
       // With "fix it" at confidence 0.3: has action ("fix") but no target (2 words < 4),
       // so it returns a clarification question

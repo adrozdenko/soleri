@@ -75,9 +75,7 @@ describe('resolveToken', () => {
   });
 
   it('throws for unknown token', () => {
-    expect(() => resolveToken('unknown-token', emptyProject())).toThrow(
-      /Cannot resolve token/,
-    );
+    expect(() => resolveToken('unknown-token', emptyProject())).toThrow(/Cannot resolve token/);
   });
 
   it('throws for unknown color scale', () => {

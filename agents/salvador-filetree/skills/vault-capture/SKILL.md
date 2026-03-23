@@ -25,13 +25,13 @@ If similar entry exists, update it instead of creating a duplicate.
 
 ### 2. Classify the Knowledge
 
-| Type | Description |
-|------|-------------|
-| **pattern** | Works and should be repeated |
-| **anti-pattern** | Fails and should be avoided |
-| **workflow** | Steps for a specific task |
-| **principle** | Guiding rule or heuristic |
-| **decision** | Architectural choice with rationale |
+| Type             | Description                         |
+| ---------------- | ----------------------------------- |
+| **pattern**      | Works and should be repeated        |
+| **anti-pattern** | Fails and should be avoided         |
+| **workflow**     | Steps for a specific task           |
+| **principle**    | Guiding rule or heuristic           |
+| **decision**     | Architectural choice with rationale |
 
 ### 3. Capture
 
@@ -76,11 +76,11 @@ For cross-project knowledge: `op:memory_promote_to_global params: { entryId: "<i
 
 ## Quick Reference
 
-| Op | When to Use |
-|----|-------------|
-| `search_intelligent` | Check for duplicates |
-| `capture_knowledge` / `capture_quick` | Persist to vault |
-| `curator_groom` / `curator_enrich` | Post-capture quality |
-| `curator_contradictions` | Find conflicts |
-| `memory_promote_to_global` | Share cross-project |
-| `admin_health` | Verify health |
+| Op                                    | When to Use          |
+| ------------------------------------- | -------------------- |
+| `search_intelligent`                  | Check for duplicates |
+| `capture_knowledge` / `capture_quick` | Persist to vault     |
+| `curator_groom` / `curator_enrich`    | Post-capture quality |
+| `curator_contradictions`              | Find conflicts       |
+| `memory_promote_to_global`            | Share cross-project  |
+| `admin_health`                        | Verify health        |

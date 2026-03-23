@@ -105,7 +105,10 @@ export async function syncAllToMarkdown(
   for (const entry of entries) {
     const domain = entry.domain || '_general';
     const slug = titleToSlug(entry.title);
-    if (!slug) { skipped++; continue; }
+    if (!slug) {
+      skipped++;
+      continue;
+    }
 
     const filePath = join(knowledgeDir, 'vault', domain, `${slug}.md`);
     if (existsSync(filePath)) {

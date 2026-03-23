@@ -51,14 +51,19 @@ describe('createIntakeOps', () => {
     it('intake_ingest_book returns error', async () => {
       const ops = createIntakeOps(null);
       const result = (await findOp(ops, 'intake_ingest_book').handler({
-        pdfPath: '/test.pdf', title: 'T', domain: 'd',
+        pdfPath: '/test.pdf',
+        title: 'T',
+        domain: 'd',
       })) as Record<string, unknown>;
       expect(result.error).toBe('Intake pipeline not configured');
     });
 
     it('intake_process returns error', async () => {
       const ops = createIntakeOps(null);
-      const result = (await findOp(ops, 'intake_process').handler({ jobId: 'j1' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'intake_process').handler({ jobId: 'j1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.error).toBe('Intake pipeline not configured');
     });
 
@@ -71,7 +76,11 @@ describe('createIntakeOps', () => {
     it('intake_preview returns error', async () => {
       const ops = createIntakeOps(null);
       const result = (await findOp(ops, 'intake_preview').handler({
-        pdfPath: '/x.pdf', title: 'T', domain: 'd', pageStart: 1, pageEnd: 5,
+        pdfPath: '/x.pdf',
+        title: 'T',
+        domain: 'd',
+        pageStart: 1,
+        pageEnd: 5,
       })) as Record<string, unknown>;
       expect(result.error).toBe('Intake pipeline not configured');
     });
@@ -80,14 +89,17 @@ describe('createIntakeOps', () => {
   describe('when textIngester is null', () => {
     it('ingest_url returns error', async () => {
       const ops = createIntakeOps(makeMockPipeline() as never, null);
-      const result = (await findOp(ops, 'ingest_url').handler({ url: 'https://example.com' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'ingest_url').handler({
+        url: 'https://example.com',
+      })) as Record<string, unknown>;
       expect(result.error).toContain('Text ingester not configured');
     });
 
     it('ingest_text returns error', async () => {
       const ops = createIntakeOps(makeMockPipeline() as never, null);
       const result = (await findOp(ops, 'ingest_text').handler({
-        text: 'hello', title: 'T',
+        text: 'hello',
+        title: 'T',
       })) as Record<string, unknown>;
       expect(result.error).toContain('Text ingester not configured');
     });
@@ -106,10 +118,20 @@ describe('createIntakeOps', () => {
       const pipeline = makeMockPipeline();
       const ops = createIntakeOps(pipeline as never);
       const result = await findOp(ops, 'intake_ingest_book').handler({
-        pdfPath: '/book.pdf', title: 'My Book', domain: 'design', author: 'Author', chunkPageSize: 15, tags: ['tag1'],
+        pdfPath: '/book.pdf',
+        title: 'My Book',
+        domain: 'design',
+        author: 'Author',
+        chunkPageSize: 15,
+        tags: ['tag1'],
       });
       expect(pipeline.ingestBook).toHaveBeenCalledWith({
-        pdfPath: '/book.pdf', title: 'My Book', domain: 'design', author: 'Author', chunkPageSize: 15, tags: ['tag1'],
+        pdfPath: '/book.pdf',
+        title: 'My Book',
+        domain: 'design',
+        author: 'Author',
+        chunkPageSize: 15,
+        tags: ['tag1'],
       });
       expect(result).toEqual({ jobId: 'j1', chunks: 5 });
     });
@@ -128,7 +150,10 @@ describe('createIntakeOps', () => {
     it('returns job and chunks when jobId provided', async () => {
       const pipeline = makeMockPipeline();
       const ops = createIntakeOps(pipeline as never);
-      const result = (await findOp(ops, 'intake_status').handler({ jobId: 'j1' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'intake_status').handler({ jobId: 'j1' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.job).toEqual({ id: 'j1', status: 'active' });
       expect(result.chunks).toHaveLength(2);
     });
@@ -137,7 +162,10 @@ describe('createIntakeOps', () => {
       const pipeline = makeMockPipeline();
       pipeline.getJob.mockReturnValue(null);
       const ops = createIntakeOps(pipeline as never);
-      const result = (await findOp(ops, 'intake_status').handler({ jobId: 'missing' })) as Record<string, unknown>;
+      const result = (await findOp(ops, 'intake_status').handler({ jobId: 'missing' })) as Record<
+        string,
+        unknown
+      >;
       expect(result.error).toContain('Job not found');
     });
 
@@ -154,10 +182,16 @@ describe('createIntakeOps', () => {
       const pipeline = makeMockPipeline();
       const ops = createIntakeOps(pipeline as never);
       await findOp(ops, 'intake_preview').handler({
-        pdfPath: '/x.pdf', title: 'T', domain: 'd', pageStart: 1, pageEnd: 10,
+        pdfPath: '/x.pdf',
+        title: 'T',
+        domain: 'd',
+        pageStart: 1,
+        pageEnd: 10,
       });
       expect(pipeline.preview).toHaveBeenCalledWith(
-        { pdfPath: '/x.pdf', title: 'T', domain: 'd' }, 1, 10,
+        { pdfPath: '/x.pdf', title: 'T', domain: 'd' },
+        1,
+        10,
       );
     });
   });
@@ -167,9 +201,14 @@ describe('createIntakeOps', () => {
       const ingester = makeMockTextIngester();
       const ops = createIntakeOps(makeMockPipeline() as never, ingester as never);
       const result = await findOp(ops, 'ingest_url').handler({
-        url: 'https://example.com', domain: 'test', tags: ['t1'],
+        url: 'https://example.com',
+        domain: 'test',
+        tags: ['t1'],
       });
-      expect(ingester.ingestUrl).toHaveBeenCalledWith('https://example.com', { domain: 'test', tags: ['t1'] });
+      expect(ingester.ingestUrl).toHaveBeenCalledWith('https://example.com', {
+        domain: 'test',
+        tags: ['t1'],
+      });
       expect(result).toEqual({ ingested: 3, duplicates: 1 });
     });
   });
@@ -179,7 +218,13 @@ describe('createIntakeOps', () => {
       const ingester = makeMockTextIngester();
       const ops = createIntakeOps(makeMockPipeline() as never, ingester as never);
       await findOp(ops, 'ingest_text').handler({
-        text: 'content', title: 'My Notes', sourceType: 'transcript', url: 'https://x.com', author: 'A', domain: 'd', tags: ['t'],
+        text: 'content',
+        title: 'My Notes',
+        sourceType: 'transcript',
+        url: 'https://x.com',
+        author: 'A',
+        domain: 'd',
+        tags: ['t'],
       });
       expect(ingester.ingestText).toHaveBeenCalledWith(
         'content',
@@ -200,8 +245,16 @@ describe('createIntakeOps', () => {
         ],
       });
       expect(ingester.ingestBatch).toHaveBeenCalledWith([
-        { text: 'a', source: { type: 'article', title: 'A', url: undefined, author: undefined }, opts: { domain: 'x', tags: undefined } },
-        { text: 'b', source: { type: 'notes', title: 'B', url: undefined, author: undefined }, opts: { domain: undefined, tags: undefined } },
+        {
+          text: 'a',
+          source: { type: 'article', title: 'A', url: undefined, author: undefined },
+          opts: { domain: 'x', tags: undefined },
+        },
+        {
+          text: 'b',
+          source: { type: 'notes', title: 'B', url: undefined, author: undefined },
+          opts: { domain: undefined, tags: undefined },
+        },
       ]);
     });
   });

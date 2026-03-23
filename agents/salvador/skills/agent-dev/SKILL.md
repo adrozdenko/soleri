@@ -15,7 +15,7 @@ Develop the agent's own internals with the vault as the primary source of truth.
 
 ## When to Use
 
-Any time the work target is the agent's own codebase: adding tools, extending facades, modifying vault operations, brain features, skills, or transport. Not for projects that merely *use* the agent.
+Any time the work target is the agent's own codebase: adding tools, extending facades, modifying vault operations, brain features, skills, or transport. Not for projects that merely _use_ the agent.
 
 ## Core Principle
 

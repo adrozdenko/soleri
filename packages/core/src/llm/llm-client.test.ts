@@ -7,10 +7,7 @@ import { LLMError } from './types.js';
 // HELPERS
 // =============================================================================
 
-function makeClient(opts?: {
-  openaiKeys?: string[];
-  anthropicKeys?: string[];
-}): LLMClient {
+function makeClient(opts?: { openaiKeys?: string[]; anthropicKeys?: string[] }): LLMClient {
   const openai = new KeyPool({ keys: opts?.openaiKeys ?? [] });
   const anthropic = new KeyPool({ keys: opts?.anthropicKeys ?? [] });
   return new LLMClient(openai, anthropic);
