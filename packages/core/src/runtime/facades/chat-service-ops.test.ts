@@ -90,8 +90,16 @@ vi.mock('../../chat/browser-session.js', () => ({
 }));
 
 // Needed via chat-state imports
-vi.mock('../../chat/chat-session.js', () => ({ ChatSessionManager: class {} }));
-vi.mock('../../chat/auth-manager.js', () => ({ ChatAuthManager: class {} }));
+vi.mock('../../chat/chat-session.js', () => ({
+  ChatSessionManager: class {
+    _stub = true;
+  },
+}));
+vi.mock('../../chat/auth-manager.js', () => ({
+  ChatAuthManager: class {
+    _stub = true;
+  },
+}));
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
