@@ -25,7 +25,15 @@ const mockAuthManager = {
 };
 
 vi.mock('../../chat/auth-manager.js', () => ({
-  ChatAuthManager: vi.fn().mockImplementation(() => mockAuthManager),
+  ChatAuthManager: class {
+    enabled = mockAuthManager.enabled;
+    authenticatedCount = mockAuthManager.authenticatedCount;
+    isAuthenticated = mockAuthManager.isAuthenticated;
+    isLockedOut = mockAuthManager.isLockedOut;
+    authenticate = mockAuthManager.authenticate;
+    revoke = mockAuthManager.revoke;
+    listAuthenticated = mockAuthManager.listAuthenticated;
+  },
 }));
 
 const mockBridge = {
@@ -36,7 +44,12 @@ const mockBridge = {
 };
 
 vi.mock('../../chat/mcp-bridge.js', () => ({
-  McpToolBridge: vi.fn().mockImplementation(() => mockBridge),
+  McpToolBridge: class {
+    size = mockBridge.size;
+    register = mockBridge.register;
+    listTools = mockBridge.listTools;
+    execute = mockBridge.execute;
+  },
 }));
 
 vi.mock('../../chat/output-compressor.js', () => ({
@@ -63,7 +76,14 @@ const mockQueue = {
 };
 
 vi.mock('../../chat/queue.js', () => ({
-  MessageQueue: vi.fn().mockImplementation(() => mockQueue),
+  MessageQueue: class {
+    inboxCount = mockQueue.inboxCount;
+    outboxCount = mockQueue.outboxCount;
+    readInbox = mockQueue.readInbox;
+    formatInbox = mockQueue.formatInbox;
+    sendResponse = mockQueue.sendResponse;
+    drainOutbox = mockQueue.drainOutbox;
+  },
 }));
 
 // Needed via chat-state imports
