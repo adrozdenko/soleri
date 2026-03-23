@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  core:
+    name: Build & Test Core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run test --workspace=@soleri/core
+      - run: npm run typecheck --workspace=@soleri/core
+
+  forge:
+    name: Build & Test Forge
+    needs: core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run build --workspace=@soleri/forge
+      - run: npm run test --workspace=@soleri/forge
+      - run: npm run typecheck --workspace=@soleri/forge
+
+  cli:
+    name: Build & Test CLI
+    needs: forge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run build --workspace=@soleri/forge
+      - run: npm run build --workspace=@soleri/cli
+      - run: npm run test --workspace=@soleri/cli
+      - run: npm run typecheck --workspace=@soleri/cli
+
+  create-soleri:
+    name: Build create-soleri
+    needs: cli
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run build --workspace=@soleri/forge
+      - run: npm run build --workspace=@soleri/cli
+      - run: npm run build --workspace=create-soleri
+      - run: npm run typecheck --workspace=create-soleri
+
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+
+      - name: Lint (oxlint)
+        run: npm run lint
+
+      - name: Format check (oxfmt)
+        run: npm run format:check
+
+      - name: Secret scan
+        run: npm run secrets:check
+
+      - name: Markdown lint
+        run: npm run lint:md
+
+      - name: Spell check
+        run: npm run lint:spell
+
+      - name: Dead code (knip)
+        run: npm run deadcode:knip
+
+  website:
+    name: Validate Website Content
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate i18n content files exist
+        run: |
+          for file in home getting-started how-it-works personas teams; do
+            test -f "src/i18n/pages/${file}.ts" || { echo "Missing src/i18n/pages/${file}.ts"; exit 1; }
+          done
+          echo "All i18n content files present."
+
+      - name: Validate docs exist
+        run: |
+          for file in getting-started your-agent capabilities extending cli-reference; do
+            test -f "src/content/docs/docs/${file}.md" || { echo "Missing docs/${file}.md"; exit 1; }
+          done
+          echo "All doc files present."
