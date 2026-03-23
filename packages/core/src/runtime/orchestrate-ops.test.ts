@@ -1,7 +1,16 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createOrchestrateOps } from './orchestrate-ops.js';
 import { assessTaskComplexity } from '../planning/task-complexity-assessor.js';
 import type { AgentRuntime } from './types.js';
+
+vi.mock('node:fs', () => ({
+  default: {
+    mkdirSync: vi.fn(),
+    writeFileSync: vi.fn(),
+  },
+}));
 
 // ---------------------------------------------------------------------------
 // Mocks for external modules
@@ -494,6 +503,8 @@ describe('createOrchestrateOps', () => {
       const compoundSignalsMock = vi.fn();
       (rt as Record<string, unknown>).operatorContextStore = {
         compoundSignals: compoundSignalsMock,
+        hasDrifted: vi.fn().mockReturnValue(false),
+        renderContextFile: vi.fn(),
       };
       ops = createOrchestrateOps(rt);
 
@@ -524,6 +535,8 @@ describe('createOrchestrateOps', () => {
       const compoundSignalsMock = vi.fn();
       (rt as Record<string, unknown>).operatorContextStore = {
         compoundSignals: compoundSignalsMock,
+        hasDrifted: vi.fn().mockReturnValue(false),
+        renderContextFile: vi.fn(),
       };
       ops = createOrchestrateOps(rt);
 
@@ -566,6 +579,114 @@ describe('createOrchestrateOps', () => {
       // Should complete normally without errors
       expect(result).toHaveProperty('plan');
       expect(result).toHaveProperty('session');
+    });
+
+    it('orchestrate_complete re-renders context file when drift detected', async () => {
+      const compoundSignalsMock = vi.fn();
+      const hasDriftedMock = vi.fn().mockReturnValue(true);
+      const renderContextFileMock = vi.fn().mockReturnValue('# Operator Context\n\n**Expertise:** typescript (expert, 1 sessions, confidence 0.90).');
+      (rt as Record<string, unknown>).operatorContextStore = {
+        compoundSignals: compoundSignalsMock,
+        hasDrifted: hasDriftedMock,
+        renderContextFile: renderContextFileMock,
+      };
+      rt.config.agentDir = '/tmp/test-agent';
+      ops = createOrchestrateOps(rt);
+
+      const op = findOp(ops, 'orchestrate_complete');
+      await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        operatorSignals: {
+          expertise: [{ topic: 'typescript', level: 'expert', confidence: 0.9 }],
+          corrections: [],
+          interests: [],
+          patterns: [],
+        },
+      });
+
+      expect(compoundSignalsMock).toHaveBeenCalled();
+      expect(hasDriftedMock).toHaveBeenCalled();
+      expect(renderContextFileMock).toHaveBeenCalled();
+      expect(fs.mkdirSync).toHaveBeenCalledWith(
+        path.join('/tmp/test-agent', 'instructions'),
+        { recursive: true },
+      );
+      expect(fs.writeFileSync).toHaveBeenCalledWith(
+        path.join('/tmp/test-agent', 'instructions', 'operator-context.md'),
+        '# Operator Context\n\n**Expertise:** typescript (expert, 1 sessions, confidence 0.90).',
+        'utf-8',
+      );
+    });
+
+    it('orchestrate_complete skips file write when no agentDir', async () => {
+      const compoundSignalsMock = vi.fn();
+      const hasDriftedMock = vi.fn().mockReturnValue(true);
+      const renderContextFileMock = vi.fn().mockReturnValue('# Operator Context');
+      (rt as Record<string, unknown>).operatorContextStore = {
+        compoundSignals: compoundSignalsMock,
+        hasDrifted: hasDriftedMock,
+        renderContextFile: renderContextFileMock,
+      };
+      // agentDir is NOT set
+      delete (rt.config as Record<string, unknown>).agentDir;
+      ops = createOrchestrateOps(rt);
+
+      vi.mocked(fs.mkdirSync).mockClear();
+      vi.mocked(fs.writeFileSync).mockClear();
+
+      const op = findOp(ops, 'orchestrate_complete');
+      await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        operatorSignals: {
+          expertise: [{ topic: 'react', level: 'intermediate' }],
+          corrections: [],
+          interests: [],
+          patterns: [],
+        },
+      });
+
+      expect(compoundSignalsMock).toHaveBeenCalled();
+      expect(hasDriftedMock).toHaveBeenCalled();
+      // Should NOT write to disk since agentDir is missing
+      expect(fs.mkdirSync).not.toHaveBeenCalled();
+      expect(fs.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('orchestrate_complete skips file write when no drift', async () => {
+      const compoundSignalsMock = vi.fn();
+      const hasDriftedMock = vi.fn().mockReturnValue(false);
+      const renderContextFileMock = vi.fn();
+      (rt as Record<string, unknown>).operatorContextStore = {
+        compoundSignals: compoundSignalsMock,
+        hasDrifted: hasDriftedMock,
+        renderContextFile: renderContextFileMock,
+      };
+      rt.config.agentDir = '/tmp/test-agent';
+      ops = createOrchestrateOps(rt);
+
+      vi.mocked(fs.mkdirSync).mockClear();
+      vi.mocked(fs.writeFileSync).mockClear();
+
+      const op = findOp(ops, 'orchestrate_complete');
+      await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        operatorSignals: {
+          expertise: [],
+          corrections: [],
+          interests: [],
+          patterns: [],
+        },
+      });
+
+      expect(compoundSignalsMock).toHaveBeenCalled();
+      expect(hasDriftedMock).toHaveBeenCalled();
+      // No drift means no file write
+      expect(renderContextFileMock).not.toHaveBeenCalled();
+      expect(fs.mkdirSync).not.toHaveBeenCalled();
+      expect(fs.writeFileSync).not.toHaveBeenCalled();
     });
 
     it('assessment result includes non-empty reasoning for complex tasks', () => {

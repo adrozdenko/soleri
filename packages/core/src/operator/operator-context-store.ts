@@ -31,6 +31,12 @@ import {
 
 const DEFAULT_CONFIDENCE = 0.5;
 
+/** Patterns that indicate the user is prohibiting / stopping something. */
+const DONT_PATTERNS = /^(don't|do not|stop|never|no |avoid |quit )/i;
+
+/** Patterns that indicate the user is reversing a previous prohibition. */
+const DO_PATTERNS = /^(actually,? ?|you can |feel free |go ahead |it's fine |is fine |start )/i;
+
 /** Regex to detect declined-category content in signal text fields. */
 const DECLINED_RE = new RegExp(`\\b(${DECLINED_CATEGORIES.join('|')})\\b`, 'i');
 
@@ -129,6 +135,8 @@ export class OperatorContextStore {
       }
       for (const sig of signals.corrections) {
         if (this.isDeclined(sig.rule, sig.quote)) continue;
+        // If this correction undoes an existing one, deactivate it and skip storage
+        if (this.tryUndoCorrection(sig.rule)) continue;
         this.compoundCorrection(sig, sessionId);
       }
       for (const sig of signals.interests) {
@@ -450,6 +458,98 @@ export class OperatorContextStore {
     }
     return false;
   }
+
+  /**
+   * Check all active corrections for an undo match. If found, deactivate the
+   * existing correction and return `true` (meaning: the new signal is a
+   * reversal, not a new rule to store).
+   */
+  private tryUndoCorrection(rule: string): boolean {
+    const newNorm = normalizeCorrection(rule);
+    const activeCorrections = this.provider.all<ContextRow>(
+      "SELECT * FROM operator_context WHERE type = 'correction' AND active = 1",
+    );
+
+    for (const row of activeCorrections) {
+      const item = JSON.parse(row.value) as CorrectionItem;
+      const existingNorm = normalizeCorrection(item.rule);
+
+      if (isUndoCorrection(newNorm, existingNorm)) {
+        // Deactivate the old correction
+        const deactivated = { ...item, active: false };
+        this.provider.run(
+          'UPDATE operator_context SET value = ?, active = 0, last_observed = ? WHERE id = ?',
+          [JSON.stringify(deactivated), Date.now(), row.id],
+        );
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+// =============================================================================
+// UNDO DETECTION HELPERS (exported for testing)
+// =============================================================================
+
+export interface NormalizedCorrection {
+  topic: string;
+  direction: 'do' | 'dont';
+}
+
+/**
+ * Extract the core topic and direction from a correction rule.
+ *
+ * "don't summarize" → { topic: "summarize", direction: "dont" }
+ * "actually, summaries are fine" → { topic: "summaries are fine", direction: "do" }
+ */
+export function normalizeCorrection(rule: string): NormalizedCorrection {
+  let direction: 'do' | 'dont' = 'dont';
+  let topic = rule.toLowerCase().trim();
+
+  if (DONT_PATTERNS.test(topic)) {
+    direction = 'dont';
+    topic = topic.replace(DONT_PATTERNS, '').trim();
+  } else if (DO_PATTERNS.test(topic)) {
+    direction = 'do';
+    topic = topic.replace(DO_PATTERNS, '').trim();
+  }
+
+  // Strip trailing punctuation and common filler for comparison
+  topic = topic.replace(/[.!?]+$/, '').trim();
+
+  return { topic, direction };
+}
+
+/**
+ * Two corrections are an undo pair when they share a topic (fuzzy substring
+ * match) but have opposite directions.
+ */
+export function isUndoCorrection(
+  a: NormalizedCorrection,
+  b: NormalizedCorrection,
+): boolean {
+  if (a.direction === b.direction) return false;
+
+  // Exact match
+  if (a.topic === b.topic) return true;
+
+  // Fuzzy: one topic is a substring of the other (covers "summarize" vs
+  // "summaries are fine" — we check if either contains the first significant
+  // word of the other).
+  const aWords = significantWords(a.topic);
+  const bWords = significantWords(b.topic);
+
+  // At least one significant word must overlap
+  return aWords.some((w) => bWords.includes(w));
+}
+
+/** Extract meaningful words (>= 4 chars) for fuzzy topic matching. */
+function significantWords(topic: string): string[] {
+  return topic
+    .split(/\s+/)
+    .filter((w) => w.length >= 4)
+    .map((w) => w.replace(/(?:ing|ies|ise|ize|es|s)$/, '')); // crude stemming
 }
 
 // =============================================================================

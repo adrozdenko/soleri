@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Vault } from '../vault/vault.js';
-import { OperatorContextStore } from './operator-context-store.js';
+import { OperatorContextStore, normalizeCorrection, isUndoCorrection } from './operator-context-store.js';
 import { DECLINED_CATEGORIES } from './operator-context-types.js';
 import type {
   OperatorSignals,
@@ -573,6 +573,134 @@ describe('OperatorContextStore', () => {
       expect(ctx.corrections).toHaveLength(1);
       expect(ctx.interests).toHaveLength(2);
       expect(ctx.patterns).toHaveLength(1);
+    });
+  });
+
+  // ─── Correction Undo Detection ──────────────────────────────────
+
+  describe('correction undo detection', () => {
+    it('deactivates correction when undo detected', () => {
+      // First: "don't summarize"
+      store.compoundSignals(
+        { ...emptySignals(), corrections: [makeCorrection({ rule: "don't summarize" })] },
+        's1',
+      );
+      expect(store.getContext().corrections).toHaveLength(1);
+      expect(store.getContext().corrections[0].active).toBe(true);
+
+      // Then: "actually, summaries are fine"
+      store.compoundSignals(
+        { ...emptySignals(), corrections: [makeCorrection({ rule: 'actually, summaries are fine' })] },
+        's2',
+      );
+
+      // The original correction should be deactivated, and the undo should NOT be stored
+      const ctx = store.getContext();
+      expect(ctx.corrections).toHaveLength(0);
+    });
+
+    it('undo detection handles various phrasings', () => {
+      const pairs: [string, string][] = [
+        ["no emoji", "you can use emoji again"],
+        ["stop using bullet points", "actually, bullet points are fine"],
+        ["don't use abbreviations", "feel free to use abbreviations"],
+        ["avoid long explanations", "go ahead with long explanations"],
+        ["never use slang", "it's fine to use slang"],
+      ];
+
+      for (const [original, undo] of pairs) {
+        const freshVault = new Vault(':memory:');
+        const freshStore = new OperatorContextStore(freshVault.getProvider());
+
+        freshStore.compoundSignals(
+          { ...emptySignals(), corrections: [makeCorrection({ rule: original })] },
+          's1',
+        );
+        expect(freshStore.getContext().corrections).toHaveLength(1);
+
+        freshStore.compoundSignals(
+          { ...emptySignals(), corrections: [makeCorrection({ rule: undo })] },
+          's2',
+        );
+        expect(freshStore.getContext().corrections).toHaveLength(0);
+
+        freshVault.close();
+      }
+    });
+
+    it('undo only deactivates matching topic — unrelated corrections unaffected', () => {
+      store.compoundSignals(
+        {
+          ...emptySignals(),
+          corrections: [
+            makeCorrection({ rule: "don't summarize" }),
+            makeCorrection({ rule: 'always use semicolons' }),
+          ],
+        },
+        's1',
+      );
+      expect(store.getContext().corrections).toHaveLength(2);
+
+      // Undo only the summarize correction
+      store.compoundSignals(
+        { ...emptySignals(), corrections: [makeCorrection({ rule: 'actually, summaries are fine' })] },
+        's2',
+      );
+
+      const ctx = store.getContext();
+      expect(ctx.corrections).toHaveLength(1);
+      expect(ctx.corrections[0].rule).toBe('always use semicolons');
+    });
+
+    it('deactivated corrections do not appear in rendered file', () => {
+      store.compoundSignals(
+        {
+          ...emptySignals(),
+          corrections: [
+            makeCorrection({ rule: "don't summarize" }),
+            makeCorrection({ rule: 'no emoji' }),
+          ],
+        },
+        's1',
+      );
+      const beforeRender = store.renderContextFile();
+      expect(beforeRender).toContain("don't summarize");
+      expect(beforeRender).toContain('no emoji');
+
+      // Undo "don't summarize"
+      store.compoundSignals(
+        { ...emptySignals(), corrections: [makeCorrection({ rule: 'actually, summaries are fine' })] },
+        's2',
+      );
+
+      const afterRender = store.renderContextFile();
+      expect(afterRender).not.toContain("don't summarize");
+      expect(afterRender).toContain('no emoji');
+    });
+  });
+
+  // ─── normalizeCorrection unit tests ─────────────────────────────
+
+  describe('normalizeCorrection', () => {
+    it('extracts topic and direction correctly for dont patterns', () => {
+      expect(normalizeCorrection("don't summarize")).toEqual({ topic: 'summarize', direction: 'dont' });
+      expect(normalizeCorrection('stop using emoji')).toEqual({ topic: 'using emoji', direction: 'dont' });
+      expect(normalizeCorrection('never use slang')).toEqual({ topic: 'use slang', direction: 'dont' });
+      expect(normalizeCorrection('no abbreviations')).toEqual({ topic: 'abbreviations', direction: 'dont' });
+      expect(normalizeCorrection('avoid long answers')).toEqual({ topic: 'long answers', direction: 'dont' });
+    });
+
+    it('extracts topic and direction correctly for do patterns', () => {
+      expect(normalizeCorrection('actually, summaries are fine')).toEqual({ topic: 'summaries are fine', direction: 'do' });
+      expect(normalizeCorrection('you can use emoji again')).toEqual({ topic: 'use emoji again', direction: 'do' });
+      expect(normalizeCorrection('feel free to abbreviate')).toEqual({ topic: 'to abbreviate', direction: 'do' });
+      expect(normalizeCorrection('go ahead with bullet points')).toEqual({ topic: 'with bullet points', direction: 'do' });
+    });
+
+    it('defaults to dont direction for unrecognized prefixes', () => {
+      const result = normalizeCorrection('use semicolons');
+      expect(result.direction).toBe('dont');
+      expect(result.topic).toBe('use semicolons');
     });
   });
 });

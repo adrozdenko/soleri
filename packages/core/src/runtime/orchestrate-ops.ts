@@ -9,6 +9,8 @@
  *   - orchestrate_quick_capture: one-call knowledge capture without full planning
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
 import type { OpDefinition, FacadeConfig } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
@@ -629,6 +631,15 @@ export function createOrchestrateOps(
         const signals = params.operatorSignals as OperatorSignals | undefined;
         if (signals && runtime.operatorContextStore) {
           runtime.operatorContextStore.compoundSignals(signals, sessionId);
+
+          // Re-render operator context file if profile drifted
+          const agentDir = runtime.config.agentDir;
+          if (runtime.operatorContextStore.hasDrifted() && agentDir) {
+            const content = runtime.operatorContextStore.renderContextFile();
+            const contextPath = path.join(agentDir, 'instructions', 'operator-context.md');
+            fs.mkdirSync(path.dirname(contextPath), { recursive: true });
+            fs.writeFileSync(contextPath, content, 'utf-8');
+          }
         }
 
         return {
