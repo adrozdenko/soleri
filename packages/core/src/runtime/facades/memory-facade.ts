@@ -45,17 +45,15 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           limit: (params.limit as number) ?? 10,
         });
         if (params.verbose) {
-          return { results: memories, total: memories.length };
+          return memories;
         }
-        return {
-          results: memories.map((m) => ({
-            id: m.id,
-            summary: truncateSummary(m.summary || m.context),
-            score: null,
-            project: m.projectPath,
-          })),
-          total: memories.length,
-        };
+        return memories.map((m) => ({
+          id: m.id,
+          type: m.type,
+          summary: truncateSummary(m.summary || m.context),
+          score: null,
+          project: m.projectPath,
+        }));
       },
     },
     {
@@ -117,13 +115,13 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           return { memories, stats };
         }
         return {
-          entries: memories.map((m) => ({
+          memories: memories.map((m) => ({
             id: m.id,
             summary: truncateSummary(m.summary || m.context),
             project: m.projectPath,
             createdAt: m.createdAt,
           })),
-          total: stats.total,
+          stats,
         };
       },
     },

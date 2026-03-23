@@ -8,7 +8,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import type { AgentYaml } from './agent-schema.js';
+import { AgentYamlSchema, type AgentYaml } from './agent-schema.js';
 import { ENGINE_MODULE_MANIFEST, CORE_KEY_OPS } from '@soleri/core/module-manifest';
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ export function composeClaudeMd(agentDir: string, tools?: ToolEntry[]): Composed
 
   // 1. Read agent.yaml
   const agentYamlPath = join(agentDir, 'agent.yaml');
-  const agentYaml = parseYaml(readFileSync(agentYamlPath, 'utf-8')) as AgentYaml;
+  const agentYaml = AgentYamlSchema.parse(parseYaml(readFileSync(agentYamlPath, 'utf-8')));
   sources.push(agentYamlPath);
 
   const sections: string[] = [];

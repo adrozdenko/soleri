@@ -26,6 +26,7 @@ import {
   generateInjectClaudeMd,
   generateSkills,
 } from '@soleri/forge/lib';
+import { composeClaudeMd, getEngineRulesContent } from '@soleri/forge/lib';
 import type { AgentConfig } from '@soleri/forge/lib';
 import { detectAgent } from '../utils/agent-context.js';
 import { installClaude } from './install.js';
@@ -194,7 +195,31 @@ export function registerAgent(program: Command): void {
         return;
       }
 
-      // Reconstruct AgentConfig from the existing agent
+      // ─── File-tree agent (v7+) ────────────────────────────────
+      if (ctx.format === 'filetree') {
+        const enginePath = join(ctx.agentPath, 'instructions', '_engine.md');
+        const claudeMdPath = join(ctx.agentPath, 'CLAUDE.md');
+
+        if (opts.dryRun) {
+          p.log.info(`Would regenerate: ${enginePath}`);
+          p.log.info(`Would regenerate: ${claudeMdPath}`);
+          p.log.info(`Agent: ${ctx.agentId} (file-tree format)`);
+          return;
+        }
+
+        // 1. Regenerate _engine.md from latest shared-rules
+        mkdirSync(join(ctx.agentPath, 'instructions'), { recursive: true });
+        writeFileSync(enginePath, getEngineRulesContent(), 'utf-8');
+        p.log.success(`Regenerated ${enginePath}`);
+
+        // 2. Recompose CLAUDE.md from agent.yaml + instructions + workflows + skills
+        const result = composeClaudeMd(ctx.agentPath);
+        writeFileSync(claudeMdPath, result.content, 'utf-8');
+        p.log.success(`Regenerated ${claudeMdPath} (${result.sources.length} sources, ${result.content.length} bytes)`);
+        return;
+      }
+
+      // ─── Legacy TypeScript agent ──────────────────────────────
       const config = readAgentConfig(ctx.agentPath, ctx.agentId);
       if (!config) {
         p.log.error('Could not read agent config from persona.ts and entry point.');
@@ -216,7 +241,6 @@ export function registerAgent(program: Command): void {
         p.log.info(`Agent: ${config.name} (${config.domains.length} domains)`);
         p.log.info(`Domains: ${config.domains.join(', ')}`);
         if (skillFiles.length > 0) {
-          // Check which skills are new vs existing
           const newSkills = skillFiles.filter(
             ([relPath]) => !existsSync(join(ctx.agentPath, relPath)),
           );
