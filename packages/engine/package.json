@@ -20,8 +20,7 @@
   },
   "dependencies": {
     "@soleri/core": "^9.0.1",
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "yaml": "^2.7.0"
+    "@modelcontextprotocol/sdk": "^1.12.1"
   },
   "engines": {
     "node": ">=18.0.0"
