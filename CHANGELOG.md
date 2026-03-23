@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v9.3.1 — 2026-03-23 — Persona Overlay Mode & Task Auto-Assessment
+
+### Persona Overlay Mode (#325)
+
+Agents now drive the full cycle through their MCP tools when activated — not Claude with tools on the side.
+
+- **Tool-first routing** — vault search before training data, brain recommend before guessing, planning before coding
+- **Self-healing discovery** — agent calls `admin_tool_list` after activation or compaction to refresh capabilities
+- **Dynamic intent signals** — all 20 engine modules declare `intentSignals` mapping natural phrases to ops
+- **Character persistence** — persona voice survives context compaction (rules live in CLAUDE.md)
+
+### Task Complexity Auto-Assessment (#331)
+
+Agents autonomously decide whether to plan or execute directly — but always capture knowledge.
+
+- **TaskComplexityAssessor** — pure function with 6 weighted signals (file count, cross-cutting, dependencies, design decisions, parent context, multi-domain). Score ≥ 40 → complex, < 40 → simple.
+- **Plan-optional `orchestrate_complete`** — works without a preceding plan, still captures vault + session + brain feedback
+- **Non-negotiable knowledge trail** — `orchestrate_complete` runs for ALL tasks, simple or complex
+- **Routing rules** in shared-rules.ts — assess → route → always complete
+
+### CI Fixes
+
+- Class-based vitest mocks for GH Actions Node 22 ESM compatibility
+- Relaxed vault scaling test thresholds for slow CI runners
+- knip dead code check non-blocking, CLI test timeout resolved
+
 ## v9.3.0 — 2026-03-23 — Vault Facade Split, TDD Completion & Dead Code Cleanup
 
 ### Vault Facade Split
