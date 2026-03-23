@@ -8,6 +8,18 @@ description: Install Soleri, create your first agent, and connect it to your AI 
 - **Node.js 18+** — check with `node -v`
 - **An MCP-compatible AI editor** — OpenCode, Claude Code, Cursor, or similar
 - **npm** — ships with Node.js
+- **Build tools** (Linux only) — Soleri uses `better-sqlite3` which requires native compilation:
+  ```bash
+  # Ubuntu / Debian
+  sudo apt-get install -y build-essential python3
+
+  # Fedora / RHEL
+  sudo dnf groupinstall "Development Tools" && sudo dnf install python3
+
+  # Alpine
+  apk add build-base python3
+  ```
+  macOS and Windows users: Xcode Command Line Tools and Visual Studio Build Tools are typically already installed.
 
 ## Create Your Agent
 
