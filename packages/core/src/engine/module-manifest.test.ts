@@ -89,6 +89,49 @@ describe('ENGINE_MODULE_MANIFEST', () => {
     expect(testEntry.suffix).toBe('test');
     expect(testEntry.conditional).toBeUndefined();
   });
+
+  it('intentSignals is optional and a Record<string, string> when present', () => {
+    for (const entry of ENGINE_MODULE_MANIFEST) {
+      if (entry.intentSignals !== undefined) {
+        expect(typeof entry.intentSignals).toBe('object');
+        for (const [phrase, op] of Object.entries(entry.intentSignals)) {
+          expect(typeof phrase).toBe('string');
+          expect(phrase.length).toBeGreaterThan(0);
+          expect(typeof op).toBe('string');
+          expect(op.length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it('every module has intentSignals defined', () => {
+    for (const entry of ENGINE_MODULE_MANIFEST) {
+      expect(entry.intentSignals).toBeDefined();
+      expect(Object.keys(entry.intentSignals!).length).toBeGreaterThanOrEqual(2);
+      expect(Object.keys(entry.intentSignals!).length).toBeLessThanOrEqual(6);
+    }
+  });
+
+  it('intentSignals values reference known keyOps or valid op names', () => {
+    for (const entry of ENGINE_MODULE_MANIFEST) {
+      if (entry.intentSignals) {
+        for (const op of Object.values(entry.intentSignals)) {
+          // Op should be a non-empty snake_case string
+          expect(op).toMatch(/^[a-z][a-z0-9_]*$/);
+        }
+      }
+    }
+  });
+
+  it('intentSignals phrases are unique across all modules', () => {
+    const allPhrases: string[] = [];
+    for (const entry of ENGINE_MODULE_MANIFEST) {
+      if (entry.intentSignals) {
+        allPhrases.push(...Object.keys(entry.intentSignals));
+      }
+    }
+    expect(new Set(allPhrases).size).toBe(allPhrases.length);
+  });
 });
 
 describe('CORE_KEY_OPS', () => {

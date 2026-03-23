@@ -133,6 +133,29 @@ describe('createAdminOps', () => {
       expect(grouped.vault).toContain('vault_search');
     });
 
+    it('returns routing hints in grouped mode', async () => {
+      const op = findOp(ops, 'admin_tool_list');
+      const allOps = [
+        { name: 'admin_health', description: 'Health check', auth: 'read' },
+      ];
+      const result = (await op.handler({ _allOps: allOps })) as Record<string, unknown>;
+      const routing = result.routing as Record<string, string>;
+      expect(routing).toBeDefined();
+      expect(typeof routing).toBe('object');
+      // Spot-check a few known intent signals
+      expect(routing['search knowledge']).toBe('vault.search_intelligent');
+      expect(routing['plan this']).toBe('plan.create_plan');
+      expect(routing['health check']).toBe('admin.admin_health');
+    });
+
+    it('returns routing hints in fallback mode', async () => {
+      const op = findOp(ops, 'admin_tool_list');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      const routing = result.routing as Record<string, string>;
+      expect(routing).toBeDefined();
+      expect(Object.keys(routing).length).toBeGreaterThan(0);
+    });
+
     it('returns verbose format when verbose=true', async () => {
       const op = findOp(ops, 'admin_tool_list');
       const allOps = [{ name: 'admin_health', description: 'Health check', auth: 'read' }];

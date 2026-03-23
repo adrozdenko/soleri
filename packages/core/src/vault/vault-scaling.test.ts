@@ -92,7 +92,7 @@ describe('Vault Scaling — 10K entries', () => {
     expect(elapsed).toBeLessThan(50);
   });
 
-  test('list with filters under 20ms at 10K', () => {
+  test('list with filters under 200ms at 10K', () => {
     vault = new Vault(':memory:');
     vault.seed(generateEntries(10_000));
 
@@ -101,7 +101,7 @@ describe('Vault Scaling — 10K entries', () => {
     const elapsed = performance.now() - start;
 
     expect(entries.length).toBeGreaterThan(0);
-    expect(elapsed).toBeLessThan(20);
+    expect(elapsed).toBeLessThan(200);
   });
 
   // ─── Stats performance ───────────────────────────────

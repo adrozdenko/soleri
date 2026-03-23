@@ -10,6 +10,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import { ENGINE_MODULE_MANIFEST } from '../engine/module-manifest.js';
 
 /**
  * Resolve the @soleri/core package.json version.
@@ -113,6 +114,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           return {
             count: allOps.length,
             ops: grouped,
+            routing: buildRoutingHints(),
           };
         }
         // Fallback — just describe admin ops
@@ -130,6 +132,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
               'admin_diagnostic',
             ],
           },
+          routing: buildRoutingHints(),
         };
       },
     },
@@ -319,6 +322,22 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+/**
+ * Build a flat routing map from ENGINE_MODULE_MANIFEST intentSignals.
+ * Keys are natural-language phrases, values are `{suffix}.{op}` paths.
+ */
+function buildRoutingHints(): Record<string, string> {
+  const routing: Record<string, string> = {};
+  for (const mod of ENGINE_MODULE_MANIFEST) {
+    if (mod.intentSignals) {
+      for (const [phrase, op] of Object.entries(mod.intentSignals)) {
+        routing[phrase] = `${mod.suffix}.${op}`;
+      }
+    }
+  }
+  return routing;
 }
 
 function formatUptime(seconds: number): string {
