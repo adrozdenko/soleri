@@ -29,10 +29,11 @@ describe('ENGINE_MODULE_MANIFEST', () => {
     expect(suffixes).toContain('agency');
     expect(suffixes).toContain('chat');
     expect(suffixes).toContain('operator');
+    expect(suffixes).toContain('intake');
   });
 
-  it('has exactly 16 modules', () => {
-    expect(ENGINE_MODULE_MANIFEST).toHaveLength(16);
+  it('has exactly 20 modules', () => {
+    expect(ENGINE_MODULE_MANIFEST).toHaveLength(20);
   });
 
   it('has no duplicate suffixes', () => {
@@ -118,7 +119,7 @@ describe('manifest order stability', () => {
     expect(ENGINE_MODULE_MANIFEST[0].suffix).toBe('vault');
   });
 
-  it('review is the last module', () => {
-    expect(ENGINE_MODULE_MANIFEST[ENGINE_MODULE_MANIFEST.length - 1].suffix).toBe('review');
+  it('tier is the last module', () => {
+    expect(ENGINE_MODULE_MANIFEST[ENGINE_MODULE_MANIFEST.length - 1].suffix).toBe('tier');
   });
 });

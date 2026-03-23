@@ -88,9 +88,9 @@ describe('E2E: full-pipeline', () => {
 
   // --- Facade Registration ---
 
-  it('should register all 14 facades (12 semantic + 2 domain)', () => {
-    expect(facades.length).toBe(14);
-    expect(handlers.size).toBe(14);
+  it('should register all 22 facades (20 semantic + 2 domain)', () => {
+    expect(facades.length).toBe(22);
+    expect(handlers.size).toBe(22);
   });
 
   it('should have correct facade names', () => {

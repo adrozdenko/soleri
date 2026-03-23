@@ -39,6 +39,10 @@ import { createOperatorFacadeOps } from '../runtime/facades/operator-facade.js';
 import { createArchiveFacadeOps } from '../runtime/facades/archive-facade.js';
 import { createSyncFacadeOps } from '../runtime/facades/sync-facade.js';
 import { createReviewFacadeOps } from '../runtime/facades/review-facade.js';
+import { createIntakeFacadeOps } from '../runtime/facades/intake-facade.js';
+import { createLinksFacadeOps } from '../runtime/facades/links-facade.js';
+import { createBranchingFacadeOps } from '../runtime/facades/branching-facade.js';
+import { createTierFacadeOps } from '../runtime/facades/tier-facade.js';
 import { createDomainFacade } from '../runtime/domain-ops.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -88,7 +92,7 @@ interface ModuleDef {
 export const ENGINE_MODULES: ModuleDef[] = [
   {
     suffix: 'vault',
-    description: 'Knowledge management — search, CRUD, import/export, intake, sharing, linking.',
+    description: 'Knowledge management — search, CRUD, capture, sharing scope.',
     createOps: createVaultFacadeOps,
   },
   {
@@ -166,6 +170,26 @@ export const ENGINE_MODULES: ModuleDef[] = [
     suffix: 'review',
     description: 'Knowledge review workflow.',
     createOps: createReviewFacadeOps,
+  },
+  {
+    suffix: 'intake',
+    description: 'Content ingestion — books, URLs, text, batch import.',
+    createOps: createIntakeFacadeOps,
+  },
+  {
+    suffix: 'links',
+    description: 'Entry linking — create, traverse, suggest, orphan detection.',
+    createOps: createLinksFacadeOps,
+  },
+  {
+    suffix: 'branching',
+    description: 'Vault branching — create, list, merge, delete branches.',
+    createOps: createBranchingFacadeOps,
+  },
+  {
+    suffix: 'tier',
+    description: 'Multi-vault tiers — connect, disconnect, search across sources.',
+    createOps: createTierFacadeOps,
   },
 ];
 

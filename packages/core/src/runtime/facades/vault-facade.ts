@@ -1,24 +1,31 @@
 /**
  * Vault facade — knowledge management ops.
- * search, CRUD, import/export, intake, sharing, linking.
+ * search, CRUD, capture, sharing scope.
  * Archival and lifecycle ops are in archive-facade.ts.
  * Sync ops (git, obsidian, packs) are in sync-facade.ts.
  * Review ops are in review-facade.ts.
+ *
+ * Backward-compat stubs are appended at the end for ops that moved
+ * to new facades, so existing agents/CLAUDE.md files keep working.
  */
 
 import { z } from 'zod';
 import type { OpDefinition } from '../../facades/types.js';
 import type { IntelligenceEntry } from '../../intelligence/types.js';
-import type { VaultTier } from '../../vault/vault-types.js';
 import type { AgentRuntime } from '../types.js';
 import { createVaultExtraOps } from '../vault-extra-ops.js';
 import { createCaptureOps } from '../capture-ops.js';
-import { createIntakeOps } from '../intake-ops.js';
 import { createVaultSharingOps } from '../vault-sharing-ops.js';
+import { createArchiveOps } from '../archive-ops.js';
+import { createSyncOps } from '../sync-ops.js';
+import { createReviewOps } from '../review-ops.js';
 import { createVaultLinkingOps } from '../vault-linking-ops.js';
+import { createBranchingOps } from '../branching-ops.js';
+import { createTierOps } from '../tier-ops.js';
+import { deprecationWarning } from '../deprecation.js';
 
 export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, intakePipeline, textIngester, vaultManager } = runtime;
+  const { vault, brain } = runtime;
 
   return [
     // ─── Search / Vault (inline from core-ops.ts) ───────────────
@@ -253,201 +260,38 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
 
-    // ─── Multi-vault ops ────────────────────────────────────────
-    {
-      name: 'vault_connect',
-      description:
-        'Connect an additional vault tier (project or team). Opens a separate SQLite database.',
-      auth: 'admin',
-      schema: z.object({
-        tier: z.enum(['project', 'team']).describe('Vault tier to connect'),
-        path: z.string().describe('Path to the SQLite database file'),
-      }),
-      handler: async (params) => {
-        const tier = params.tier as VaultTier;
-        const path = params.path as string;
-        vaultManager.open(tier, path);
-        return { connected: true, tier, path };
-      },
-    },
-    {
-      name: 'vault_disconnect',
-      description: 'Disconnect a vault tier. Cannot disconnect the agent tier.',
-      auth: 'admin',
-      schema: z.object({
-        tier: z.enum(['project', 'team']).describe('Vault tier to disconnect'),
-      }),
-      handler: async (params) => {
-        const tier = params.tier as VaultTier;
-        const removed = vaultManager.disconnect(tier);
-        return { disconnected: removed, tier };
-      },
-    },
-    {
-      name: 'vault_tiers',
-      description: 'List all vault tiers with connection status and entry counts.',
-      auth: 'read',
-      handler: async () => {
-        return { tiers: vaultManager.listTiers() };
-      },
-    },
-    {
-      name: 'vault_search_all',
-      description:
-        'Search across all connected vault tiers with priority-weighted cascading. Agent tier results ranked highest.',
-      auth: 'read',
-      schema: z.object({
-        query: z.string(),
-        limit: z.number().optional(),
-      }),
-      handler: async (params) => {
-        const results = vaultManager.search(params.query as string, (params.limit as number) ?? 20);
-        return { results, count: results.length };
-      },
-    },
-
-    // ─── Named vault connections ────────────────────────────────
-    {
-      name: 'vault_connect_source',
-      description:
-        'Connect a named vault source (e.g., shared team knowledge base) with a configurable search priority.',
-      auth: 'admin',
-      schema: z.object({
-        name: z.string().describe('Unique name for this vault connection'),
-        path: z.string().describe('Path to the SQLite database file'),
-        priority: z
-          .number()
-          .min(0)
-          .max(2)
-          .optional()
-          .describe('Search priority weight (default: 0.5)'),
-      }),
-      handler: async (params) => {
-        const name = params.name as string;
-        const path = params.path as string;
-        const priority = (params.priority as number) ?? 0.5;
-        vaultManager.connect(name, path, priority);
-        return { connected: true, name, path, priority };
-      },
-    },
-    {
-      name: 'vault_disconnect_source',
-      description: 'Disconnect a named vault source.',
-      auth: 'admin',
-      schema: z.object({
-        name: z.string().describe('Name of the vault connection to remove'),
-      }),
-      handler: async (params) => {
-        const name = params.name as string;
-        const removed = vaultManager.disconnectNamed(name);
-        return { disconnected: removed, name };
-      },
-    },
-    {
-      name: 'vault_list_sources',
-      description: 'List all dynamically connected vault sources with their priorities.',
-      auth: 'read',
-      handler: async () => {
-        return { sources: vaultManager.listConnected() };
-      },
-    },
-
-    // ─── Branching ─────────────────────────────────────────────
-    {
-      name: 'vault_branch',
-      description:
-        'Create a named vault branch for experimentation. Changes can be reviewed and merged later.',
-      auth: 'write',
-      schema: z.object({
-        name: z.string().describe('Unique branch name'),
-      }),
-      handler: async (params) => {
-        const { vaultBranching } = runtime;
-        try {
-          vaultBranching.branch(params.name as string);
-          return { created: true, name: params.name };
-        } catch (err) {
-          return { error: (err as Error).message };
-        }
-      },
-    },
-    {
-      name: 'vault_branch_add',
-      description: 'Add an operation (add/modify/remove) to a vault branch.',
-      auth: 'write',
-      schema: z.object({
-        branchName: z.string().describe('Branch to add the operation to'),
-        entryId: z.string().describe('Entry ID'),
-        action: z.enum(['add', 'modify', 'remove']).describe('Operation type'),
-        entryData: z
-          .record(z.unknown())
-          .optional()
-          .describe('Full entry data (required for add/modify)'),
-      }),
-      handler: async (params) => {
-        const { vaultBranching } = runtime;
-        try {
-          vaultBranching.addOperation(
-            params.branchName as string,
-            params.entryId as string,
-            params.action as 'add' | 'modify' | 'remove',
-            params.entryData as IntelligenceEntry | undefined,
-          );
-          return {
-            added: true,
-            branchName: params.branchName,
-            entryId: params.entryId,
-            action: params.action,
-          };
-        } catch (err) {
-          return { error: (err as Error).message };
-        }
-      },
-    },
-    {
-      name: 'vault_branch_list',
-      description: 'List all vault branches with entry counts and merge status.',
-      auth: 'read',
-      handler: async () => {
-        const { vaultBranching } = runtime;
-        return { branches: vaultBranching.listBranches() };
-      },
-    },
-    {
-      name: 'vault_merge_branch',
-      description: 'Merge a branch into the main vault. Branch entries win on conflict.',
-      auth: 'admin',
-      schema: z.object({
-        branchName: z.string().describe('Branch to merge'),
-      }),
-      handler: async (params) => {
-        const { vaultBranching } = runtime;
-        try {
-          return vaultBranching.merge(params.branchName as string);
-        } catch (err) {
-          return { error: (err as Error).message };
-        }
-      },
-    },
-    {
-      name: 'vault_delete_branch',
-      description: 'Delete a vault branch and all its operations.',
-      auth: 'admin',
-      schema: z.object({
-        branchName: z.string().describe('Branch to delete'),
-      }),
-      handler: async (params) => {
-        const { vaultBranching } = runtime;
-        const deleted = vaultBranching.deleteBranch(params.branchName as string);
-        return { deleted, branchName: params.branchName };
-      },
-    },
-
     // ─── Satellite ops ───────────────────────────────────────────
     ...createVaultExtraOps(runtime),
     ...createCaptureOps(runtime),
-    ...createIntakeOps(intakePipeline, textIngester),
     ...createVaultSharingOps(runtime),
-    ...createVaultLinkingOps(runtime),
+
+    // ─── Backward-compat stubs for ops that moved to new facades ─
+    ...deprecateOps(createArchiveOps(runtime), 'archive'),
+    ...deprecateOps(createSyncOps(runtime), 'sync'),
+    ...deprecateOps(createReviewOps(runtime), 'review'),
+    ...deprecateOps(createVaultLinkingOps(runtime), 'links'),
+    ...deprecateOps(createBranchingOps(runtime), 'branching'),
+    ...deprecateOps(createTierOps(runtime), 'tier'),
   ];
+}
+
+// ─── Deprecation wrapper ────────────────────────────────────────────
+
+/**
+ * Wrap an array of ops with deprecation warnings.
+ * Each op's handler logs a one-time warning before forwarding to the real handler.
+ */
+export function deprecateOps(ops: OpDefinition[], newFacade: string): OpDefinition[] {
+  return ops.map((op) => ({
+    ...op,
+    handler: async (params: Record<string, unknown>) => {
+      deprecationWarning({
+        name: op.name,
+        since: '0.5.0',
+        replacement: `${newFacade}.${op.name}`,
+        message: `Op "${op.name}" has moved to the ${newFacade} facade. Update your calls.`,
+      });
+      return op.handler(params);
+    },
+  }));
 }

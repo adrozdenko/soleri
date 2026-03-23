@@ -95,7 +95,7 @@ When building a new feature, adding functionality, or creating components.
     tools: `tools:
   - soleri_vault op:search_intelligent
   - soleri_vault op:capture_knowledge
-  - soleri_vault op:link_entries
+  - soleri_links op:link_entries
   - soleri_plan op:create_plan
   - soleri_plan op:approve_plan
   - soleri_brain op:recommend

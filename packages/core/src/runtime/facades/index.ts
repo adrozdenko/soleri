@@ -20,6 +20,13 @@ import { createContextFacadeOps } from './context-facade.js';
 import { createAgencyFacadeOps } from './agency-facade.js';
 import { createChatFacadeOps } from './chat-facade.js';
 import { createOperatorFacadeOps } from './operator-facade.js';
+import { createArchiveFacadeOps } from './archive-facade.js';
+import { createSyncFacadeOps } from './sync-facade.js';
+import { createReviewFacadeOps } from './review-facade.js';
+import { createIntakeFacadeOps } from './intake-facade.js';
+import { createLinksFacadeOps } from './links-facade.js';
+import { createBranchingFacadeOps } from './branching-facade.js';
+import { createTierFacadeOps } from './tier-facade.js';
 
 export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
   const facades: FacadeConfig[] = [
@@ -90,6 +97,41 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       name: `${agentId}_operator`,
       description: 'Operator profile — personality learning, signals, adaptation.',
       ops: createOperatorFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_archive`,
+      description: 'Archival, lifecycle, and knowledge maintenance.',
+      ops: createArchiveFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_sync`,
+      description: 'Git, Obsidian, and pack sync operations.',
+      ops: createSyncFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_review`,
+      description: 'Knowledge review workflow.',
+      ops: createReviewFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_intake`,
+      description: 'Content ingestion — books, URLs, text, batch import.',
+      ops: createIntakeFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_links`,
+      description: 'Entry linking — create, traverse, suggest, orphan detection.',
+      ops: createLinksFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_branching`,
+      description: 'Vault branching — create, list, merge, delete branches.',
+      ops: createBranchingFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_tier`,
+      description: 'Multi-vault tiers — connect, disconnect, search across sources.',
+      ops: createTierFacadeOps(runtime),
     },
   ];
 

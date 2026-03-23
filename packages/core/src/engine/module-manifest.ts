@@ -25,7 +25,7 @@ export interface ModuleManifestEntry {
 export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
   {
     suffix: 'vault',
-    description: 'Knowledge management — search, CRUD, import/export, intake, sharing, linking.',
+    description: 'Knowledge management — search, CRUD, capture, sharing scope.',
     keyOps: ['search_intelligent', 'capture_knowledge', 'capture_quick'],
   },
   {
@@ -103,6 +103,26 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
     suffix: 'review',
     description: 'Knowledge review workflow.',
     keyOps: ['vault_submit_review', 'vault_approve', 'vault_reject'],
+  },
+  {
+    suffix: 'intake',
+    description: 'Content ingestion — books, URLs, text, batch import.',
+    keyOps: ['intake_ingest_book', 'ingest_url', 'ingest_text', 'ingest_batch'],
+  },
+  {
+    suffix: 'links',
+    description: 'Entry linking — create, traverse, suggest, orphan detection.',
+    keyOps: ['link_entries', 'traverse', 'suggest_links', 'get_orphans'],
+  },
+  {
+    suffix: 'branching',
+    description: 'Vault branching — create, list, merge, delete branches.',
+    keyOps: ['vault_branch', 'vault_branch_list', 'vault_merge_branch'],
+  },
+  {
+    suffix: 'tier',
+    description: 'Multi-vault tiers — connect, disconnect, search across sources.',
+    keyOps: ['vault_connect_source', 'vault_search_all', 'vault_list_sources'],
   },
 ];
 

@@ -6,10 +6,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createVaultFacadeOps } from './vault-facade.js';
+import { createVaultFacadeOps, deprecateOps } from './vault-facade.js';
 import { captureOps, executeOp } from '../../engine/test-helpers.js';
 import type { CapturedOp } from '../../engine/test-helpers.js';
 import type { AgentRuntime } from '../types.js';
+import { resetDeprecationWarnings } from '../deprecation.js';
 
 // ─── Mock factories ──────────────────────────────────────────────────
 
@@ -175,16 +176,13 @@ describe('vault-facade', () => {
   it('registers ops from all groups', () => {
     // The facade includes inline ops + satellite ops from 5 modules.
     // We check the inline ops explicitly, satellite ops just need to exist.
-    expect(ops.size).toBeGreaterThan(30);
+    expect(ops.size).toBeGreaterThan(20);
   });
 
   it('includes core inline op names', () => {
     const coreOps = [
       'search', 'load_entries', 'vault_stats', 'list_all', 'export',
-      'capture_enriched', 'vault_connect', 'vault_disconnect', 'vault_tiers',
-      'vault_search_all', 'vault_connect_source', 'vault_disconnect_source',
-      'vault_list_sources', 'vault_branch', 'vault_branch_add',
-      'vault_branch_list', 'vault_merge_branch', 'vault_delete_branch',
+      'capture_enriched',
     ];
     for (const name of coreOps) {
       expect(ops.has(name), `missing op: ${name}`).toBe(true);
@@ -196,7 +194,7 @@ describe('vault-facade', () => {
     expect(ops.has('vault_get')).toBe(true);        // vault-extra-ops
     expect(ops.has('capture_knowledge')).toBe(true); // capture-ops
     expect(ops.has('search_intelligent')).toBe(true); // capture-ops
-    expect(ops.has('link_entries')).toBe(true);       // vault-linking-ops
+    // link_entries moved to vault-linking-facade
   });
 
   // ─── Auth levels ─────────────────────────────────────────────────
@@ -208,18 +206,6 @@ describe('vault-facade', () => {
     expect(ops.get('list_all')!.auth).toBe('read');
     expect(ops.get('export')!.auth).toBe('read');
     expect(ops.get('capture_enriched')!.auth).toBe('write');
-    expect(ops.get('vault_connect')!.auth).toBe('admin');
-    expect(ops.get('vault_disconnect')!.auth).toBe('admin');
-    expect(ops.get('vault_tiers')!.auth).toBe('read');
-    expect(ops.get('vault_search_all')!.auth).toBe('read');
-    expect(ops.get('vault_connect_source')!.auth).toBe('admin');
-    expect(ops.get('vault_disconnect_source')!.auth).toBe('admin');
-    expect(ops.get('vault_list_sources')!.auth).toBe('read');
-    expect(ops.get('vault_branch')!.auth).toBe('write');
-    expect(ops.get('vault_branch_add')!.auth).toBe('write');
-    expect(ops.get('vault_branch_list')!.auth).toBe('read');
-    expect(ops.get('vault_merge_branch')!.auth).toBe('admin');
-    expect(ops.get('vault_delete_branch')!.auth).toBe('admin');
   });
 
   // ─── search ────────────────────────────────────────────────────────
@@ -439,193 +425,112 @@ describe('vault-facade', () => {
     });
   });
 
-  // ─── Multi-vault ops ──────────────────────────────────────────────
-
-  describe('vault_connect', () => {
-    it('connects a vault tier', async () => {
-      const result = await executeOp(ops, 'vault_connect', {
-        tier: 'project', path: '/tmp/project.db',
-      });
-      expect(result.success).toBe(true);
-      const data = result.data as { connected: boolean; tier: string; path: string };
-      expect(data.connected).toBe(true);
-      expect(data.tier).toBe('project');
-      expect(data.path).toBe('/tmp/project.db');
-    });
-  });
-
-  describe('vault_disconnect', () => {
-    it('disconnects a vault tier', async () => {
-      const result = await executeOp(ops, 'vault_disconnect', { tier: 'team' });
-      expect(result.success).toBe(true);
-      const data = result.data as { disconnected: boolean; tier: string };
-      expect(data.disconnected).toBe(true);
-      expect(data.tier).toBe('team');
-    });
-  });
-
-  describe('vault_tiers', () => {
-    it('lists vault tiers', async () => {
-      const result = await executeOp(ops, 'vault_tiers', {});
-      expect(result.success).toBe(true);
-      const data = result.data as { tiers: Array<{ tier: string }> };
-      expect(data.tiers).toHaveLength(1);
-      expect(data.tiers[0].tier).toBe('agent');
-    });
-  });
-
-  describe('vault_search_all', () => {
-    it('searches across all tiers', async () => {
-      const result = await executeOp(ops, 'vault_search_all', { query: 'tokens' });
-      expect(result.success).toBe(true);
-      const data = result.data as { results: unknown[]; count: number };
-      expect(data.count).toBe(1);
-      const vm = runtime.vaultManager as ReturnType<typeof makeMockVaultManager>;
-      expect(vm.search).toHaveBeenCalledWith('tokens', 20);
-    });
-
-    it('passes custom limit', async () => {
-      await executeOp(ops, 'vault_search_all', { query: 'test', limit: 5 });
-      const vm = runtime.vaultManager as ReturnType<typeof makeMockVaultManager>;
-      expect(vm.search).toHaveBeenCalledWith('test', 5);
-    });
-  });
-
-  // ─── Named vault connections ───────────────────────────────────────
-
-  describe('vault_connect_source', () => {
-    it('connects with default priority', async () => {
-      const result = await executeOp(ops, 'vault_connect_source', {
-        name: 'team-kb', path: '/tmp/team.db',
-      });
-      expect(result.success).toBe(true);
-      const data = result.data as { connected: boolean; priority: number };
-      expect(data.connected).toBe(true);
-      expect(data.priority).toBe(0.5);
-    });
-
-    it('connects with custom priority', async () => {
-      const result = await executeOp(ops, 'vault_connect_source', {
-        name: 'primary', path: '/tmp/p.db', priority: 1.5,
-      });
-      expect(result.success).toBe(true);
-      const vm = runtime.vaultManager as ReturnType<typeof makeMockVaultManager>;
-      expect(vm.connect).toHaveBeenCalledWith('primary', '/tmp/p.db', 1.5);
-    });
-  });
-
-  describe('vault_disconnect_source', () => {
-    it('disconnects a named source', async () => {
-      const result = await executeOp(ops, 'vault_disconnect_source', {
-        name: 'team-kb',
-      });
-      expect(result.success).toBe(true);
-      const data = result.data as { disconnected: boolean; name: string };
-      expect(data.disconnected).toBe(true);
-      expect(data.name).toBe('team-kb');
-    });
-  });
-
-  describe('vault_list_sources', () => {
-    it('lists connected sources', async () => {
-      const result = await executeOp(ops, 'vault_list_sources', {});
-      expect(result.success).toBe(true);
-      const data = result.data as { sources: Array<{ name: string }> };
-      expect(data.sources).toHaveLength(1);
-      expect(data.sources[0].name).toBe('team-shared');
-    });
-  });
-
-  // ─── Branching ────────────────────────────────────────────────────
-
-  describe('vault_branch', () => {
-    it('creates a branch', async () => {
-      const result = await executeOp(ops, 'vault_branch', { name: 'experiment' });
-      expect(result.success).toBe(true);
-      const data = result.data as { created: boolean; name: string };
-      expect(data.created).toBe(true);
-      expect(data.name).toBe('experiment');
-    });
-
-    it('returns error on duplicate branch', async () => {
-      const vb = runtime.vaultBranching as ReturnType<typeof makeMockVaultBranching>;
-      vb.branch.mockImplementation(() => { throw new Error('Branch already exists'); });
-      const result = await executeOp(ops, 'vault_branch', { name: 'dup' });
-      expect(result.success).toBe(true);
-      const data = result.data as { error: string };
-      expect(data.error).toBe('Branch already exists');
-    });
-  });
-
-  describe('vault_branch_add', () => {
-    it('adds an operation to a branch', async () => {
-      const result = await executeOp(ops, 'vault_branch_add', {
-        branchName: 'exp', entryId: 'e1', action: 'add',
-        entryData: { id: 'e1', title: 'New', type: 'pattern', domain: 'test' },
-      });
-      expect(result.success).toBe(true);
-      const data = result.data as { added: boolean; action: string };
-      expect(data.added).toBe(true);
-      expect(data.action).toBe('add');
-    });
-
-    it('returns error on invalid branch', async () => {
-      const vb = runtime.vaultBranching as ReturnType<typeof makeMockVaultBranching>;
-      vb.addOperation.mockImplementation(() => { throw new Error('Branch not found'); });
-      const result = await executeOp(ops, 'vault_branch_add', {
-        branchName: 'missing', entryId: 'e1', action: 'remove',
-      });
-      expect(result.success).toBe(true);
-      expect((result.data as { error: string }).error).toBe('Branch not found');
-    });
-  });
-
-  describe('vault_branch_list', () => {
-    it('lists all branches', async () => {
-      const result = await executeOp(ops, 'vault_branch_list', {});
-      expect(result.success).toBe(true);
-      const data = result.data as { branches: Array<{ name: string }> };
-      expect(data.branches).toHaveLength(1);
-      expect(data.branches[0].name).toBe('experiment');
-    });
-  });
-
-  describe('vault_merge_branch', () => {
-    it('merges a branch', async () => {
-      const result = await executeOp(ops, 'vault_merge_branch', {
-        branchName: 'experiment',
-      });
-      expect(result.success).toBe(true);
-      const data = result.data as { merged: boolean; applied: number };
-      expect(data.merged).toBe(true);
-      expect(data.applied).toBe(3);
-    });
-
-    it('returns error on merge failure', async () => {
-      const vb = runtime.vaultBranching as ReturnType<typeof makeMockVaultBranching>;
-      vb.merge.mockImplementation(() => { throw new Error('Conflict detected'); });
-      const result = await executeOp(ops, 'vault_merge_branch', {
-        branchName: 'conflict',
-      });
-      expect(result.success).toBe(true);
-      expect((result.data as { error: string }).error).toBe('Conflict detected');
-    });
-  });
-
-  describe('vault_delete_branch', () => {
-    it('deletes a branch', async () => {
-      const result = await executeOp(ops, 'vault_delete_branch', {
-        branchName: 'experiment',
-      });
-      expect(result.success).toBe(true);
-      const data = result.data as { deleted: boolean; branchName: string };
-      expect(data.deleted).toBe(true);
-      expect(data.branchName).toBe('experiment');
-    });
-  });
-
   // ─── Obsidian ops ──────────────────────────────────────────────────
   // ObsidianSync is instantiated inside the handler, so we test param passing
   // and that the handler doesn't throw. Full ObsidianSync tests are elsewhere.
+
+  // ─── Backward-compat stubs ──────────────────────────────────────────
+
+  describe('backward-compat deprecated stubs', () => {
+    beforeEach(() => {
+      resetDeprecationWarnings();
+    });
+
+    it('includes moved ops from all new facades', () => {
+      // Spot-check one op from each moved facade
+      const movedOps = [
+        'vault_archive',    // archive
+        'vault_git_push',   // sync
+        'vault_submit_review', // review
+        'link_entries',     // links
+        'vault_branch',     // branching
+        'vault_connect',    // tier
+      ];
+      for (const name of movedOps) {
+        expect(ops.has(name), `missing compat stub: ${name}`).toBe(true);
+      }
+    });
+
+    it('logs deprecation warning and forwards to real handler', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      // vault_archive is from archive-facade — call it via vault facade compat
+      const result = await executeOp(ops, 'vault_archive', {
+        olderThanDays: 90,
+      });
+      expect(result.success).toBe(true);
+
+      // Verify deprecation warning was logged
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[DEPRECATED]'),
+      );
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('vault_archive'),
+      );
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('archive'),
+      );
+
+      // Verify the real handler was invoked
+      const vault = runtime.vault as ReturnType<typeof makeMockVault>;
+      expect(vault.archive).toHaveBeenCalled();
+
+      warnSpy.mockRestore();
+    });
+
+    it('only logs deprecation warning once per op', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      await executeOp(ops, 'vault_archive', { olderThanDays: 30 });
+      await executeOp(ops, 'vault_archive', { olderThanDays: 60 });
+
+      // deprecationWarning deduplicates by op name
+      const archiveWarnings = warnSpy.mock.calls.filter(
+        (call) => typeof call[0] === 'string' && call[0].includes('vault_archive'),
+      );
+      expect(archiveWarnings).toHaveLength(1);
+
+      warnSpy.mockRestore();
+    });
+  });
+
+  // ─── deprecateOps utility ───────────────────────────────────────────
+
+  describe('deprecateOps', () => {
+    beforeEach(() => {
+      resetDeprecationWarnings();
+    });
+
+    it('preserves op metadata (name, description, auth, schema)', () => {
+      const original = [{
+        name: 'test_op',
+        description: 'A test op',
+        auth: 'write' as const,
+        handler: async () => ({ ok: true }),
+      }];
+      const wrapped = deprecateOps(original, 'new-facade');
+      expect(wrapped).toHaveLength(1);
+      expect(wrapped[0].name).toBe('test_op');
+      expect(wrapped[0].description).toBe('A test op');
+      expect(wrapped[0].auth).toBe('write');
+    });
+
+    it('wraps handler to log warning and return original result', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const original = [{
+        name: 'moved_op',
+        description: 'Moved',
+        auth: 'read' as const,
+        handler: async () => ({ value: 42 }),
+      }];
+      const wrapped = deprecateOps(original, 'target-facade');
+      const result = await wrapped[0].handler({});
+      expect(result).toEqual({ value: 42 });
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('target-facade'),
+      );
+      warnSpy.mockRestore();
+    });
+  });
 
 });
