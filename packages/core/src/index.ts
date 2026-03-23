@@ -335,6 +335,14 @@ export {
 } from './planning/gap-types.js';
 export type { GapSeverity, GapCategory, PlanGap } from './planning/gap-types.js';
 
+// ─── Task Complexity Assessor ────────────────────────────────────────
+export { assessTaskComplexity } from './planning/task-complexity-assessor.js';
+export type {
+  AssessmentInput,
+  AssessmentSignal,
+  AssessmentResult,
+} from './planning/task-complexity-assessor.js';
+
 // ─── GitHub Projection ───────────────────────────────────────────────
 export {
   parseGitHubRemote,

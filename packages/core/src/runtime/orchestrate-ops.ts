@@ -472,7 +472,7 @@ export function createOrchestrateOps(
         'end brain session, and clean up.',
       auth: 'write',
       schema: z.object({
-        planId: z.string().describe('ID of the executing plan to complete'),
+        planId: z.string().optional().describe('ID of the executing plan to complete (optional for direct tasks)'),
         sessionId: z.string().describe('ID of the brain session to end'),
         outcome: z
           .enum(['completed', 'abandoned', 'partial'])
@@ -497,7 +497,7 @@ export function createOrchestrateOps(
           .describe('Set true to bypass rationalization gate and impact warnings after review'),
       }),
       handler: async (params) => {
-        const planId = params.planId as string;
+        const planId = params.planId as string | undefined;
         const sessionId = params.sessionId as string;
         const outcome = (params.outcome as string) ?? 'completed';
         const completionSummary = (params.summary as string) ?? '';
@@ -505,20 +505,21 @@ export function createOrchestrateOps(
         const filesModified = (params.filesModified as string[]) ?? [];
         const overrideRationalization = (params.overrideRationalization as boolean) ?? false;
 
-        // Anti-rationalization gate: check completion summary before completing
-        if (outcome === 'completed' && !overrideRationalization) {
-          const criteria = collectAcceptanceCriteria(planner, planId);
-          if (criteria.length > 0 && completionSummary) {
-            const report = detectRationalizations(criteria, completionSummary);
-            if (report.detected) {
-              captureRationalizationAntiPattern(vault, report);
-              return {
-                blocked: true,
-                reason: 'Rationalization language detected in completion summary',
-                rationalization: report,
-                hint: 'Address the unmet criteria, or set overrideRationalization: true to bypass this gate.',
-              };
-            }
+        // Look up plan — optional for direct tasks that skipped planning
+        const planObj = planId ? planner.get(planId) : null;
+
+        // Anti-rationalization gate: only if we have acceptance criteria from a plan
+        const criteria = planObj && planId ? collectAcceptanceCriteria(planner, planId) : [];
+        if (outcome === 'completed' && criteria.length > 0 && completionSummary && !overrideRationalization) {
+          const report = detectRationalizations(criteria, completionSummary);
+          if (report.detected) {
+            captureRationalizationAntiPattern(vault, report);
+            return {
+              blocked: true,
+              reason: 'Rationalization language detected in completion summary',
+              rationalization: report,
+              hint: 'Address the unmet criteria, or set overrideRationalization: true to bypass this gate.',
+            };
           }
         }
 
@@ -527,7 +528,6 @@ export function createOrchestrateOps(
         if (filesModified.length > 0) {
           try {
             const analyzer = new ImpactAnalyzer();
-            const planObj = planner.get(planId);
             const scopeHints = planObj?.scope ? [planObj.scope] : undefined;
             impactReport = analyzer.analyzeImpact(
               filesModified,
@@ -549,10 +549,19 @@ export function createOrchestrateOps(
           }
         }
 
-        // Complete the planner plan (legacy lifecycle)
-        const plan = planner.complete(planId);
+        // Complete the planner plan (legacy lifecycle) — only if plan exists
+        let completedPlan;
+        if (planObj && planId) {
+          completedPlan = planner.complete(planId);
+        } else {
+          completedPlan = {
+            id: planId ?? `direct-${Date.now()}`,
+            status: 'completed',
+            objective: completionSummary || 'Direct execution',
+          };
+        }
 
-        // End brain session
+        // End brain session — runs regardless of plan existence
         const session = brainIntelligence.lifecycle({
           action: 'end',
           sessionId,
@@ -562,7 +571,7 @@ export function createOrchestrateOps(
           filesModified,
         });
 
-        // Extract knowledge
+        // Extract knowledge — runs regardless of plan existence
         let extraction = null;
         try {
           extraction = brainIntelligence.extractKnowledge(sessionId);
@@ -572,27 +581,29 @@ export function createOrchestrateOps(
 
         // Run flow-engine epilogue if we have a flow plan
         let epilogueResult = null;
-        const entry = planStore.get(planId);
-        if (entry) {
-          try {
-            const dispatch = buildDispatch(agentId, runtime, facades);
-            const summary = `${outcome}: ${entry.plan.summary}. Tools: ${toolsUsed.join(', ') || 'none'}. Files: ${filesModified.join(', ') || 'none'}.`;
-            epilogueResult = await runEpilogue(
-              dispatch,
-              entry.plan.context.probes,
-              entry.plan.context.projectPath,
-              summary,
-            );
-          } catch {
-            // Epilogue is best-effort
-          }
+        if (planId) {
+          const entry = planStore.get(planId);
+          if (entry) {
+            try {
+              const dispatch = buildDispatch(agentId, runtime, facades);
+              const summary = `${outcome}: ${entry.plan.summary}. Tools: ${toolsUsed.join(', ') || 'none'}. Files: ${filesModified.join(', ') || 'none'}.`;
+              epilogueResult = await runEpilogue(
+                dispatch,
+                entry.plan.context.probes,
+                entry.plan.context.projectPath,
+                summary,
+              );
+            } catch {
+              // Epilogue is best-effort
+            }
 
-          // Clean up plan store
-          planStore.delete(planId);
+            // Clean up plan store
+            planStore.delete(planId);
+          }
         }
 
         return {
-          plan,
+          plan: completedPlan,
           session,
           extraction,
           epilogue: epilogueResult,

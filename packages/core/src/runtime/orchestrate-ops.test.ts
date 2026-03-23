@@ -241,6 +241,73 @@ describe('createOrchestrateOps', () => {
       await op.handler({ planId: 'plan-1', sessionId: 'session-1' });
       expect(rt.brainIntelligence.extractKnowledge).toHaveBeenCalledWith('session-1');
     });
+
+    it('works without a preceding plan', async () => {
+      const op = findOp(ops, 'orchestrate_complete');
+      const result = (await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        summary: 'Fixed a typo in the README',
+      })) as Record<string, unknown>;
+
+      // Should not call planner.complete
+      expect(rt.planner.complete).not.toHaveBeenCalled();
+
+      // Should return a lightweight completion record
+      const plan = result.plan as Record<string, unknown>;
+      expect(plan.status).toBe('completed');
+      expect(plan.objective).toBe('Fixed a typo in the README');
+    });
+
+    it('captures knowledge even without plan', async () => {
+      const op = findOp(ops, 'orchestrate_complete');
+      await op.handler({
+        sessionId: 'session-1',
+        summary: 'Refactored utility function',
+      });
+
+      // Brain session end and knowledge extraction still run
+      expect(rt.brainIntelligence.lifecycle).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'end', sessionId: 'session-1' }),
+      );
+      expect(rt.brainIntelligence.extractKnowledge).toHaveBeenCalledWith('session-1');
+    });
+
+    it('skips anti-rationalization gate when no criteria', async () => {
+      const { detectRationalizations } = await import('../planning/rationalization-detector.js');
+      const op = findOp(ops, 'orchestrate_complete');
+
+      await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        summary: 'This was basically done already',
+      });
+
+      // detectRationalizations should never be called since there are no criteria
+      expect(detectRationalizations).not.toHaveBeenCalled();
+      // Should still complete successfully
+      expect(rt.brainIntelligence.lifecycle).toHaveBeenCalled();
+    });
+
+    it('still runs brain session end without plan', async () => {
+      const op = findOp(ops, 'orchestrate_complete');
+      const result = (await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        toolsUsed: ['grep', 'edit'],
+        filesModified: [],
+      })) as Record<string, unknown>;
+
+      expect(rt.brainIntelligence.lifecycle).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'end',
+          sessionId: 'session-1',
+          planOutcome: 'completed',
+          toolsUsed: ['grep', 'edit'],
+        }),
+      );
+      expect(result.session).toBeDefined();
+    });
   });
 
   // ─── orchestrate_status ───────────────────────────────────────
