@@ -799,3 +799,24 @@ export type {
   ProfileSnapshot,
   OperatorProfileHistory,
 } from './operator/operator-types.js';
+
+// ─── Operator Context (Adaptive Persona) ────────────────────────────
+export { OperatorContextStore } from './operator/operator-context-store.js';
+export { DECLINED_CATEGORIES } from './operator/operator-context-types.js';
+export type {
+  OperatorSignals,
+  ExpertiseSignal,
+  CorrectionSignal,
+  InterestSignal,
+  WorkPatternSignal,
+  OperatorContext,
+  ExpertiseItem,
+  CorrectionItem,
+  InterestItem,
+  WorkPatternItem,
+  ExpertiseLevel,
+  SignalScope,
+  PatternFrequency,
+  ContextItemType,
+  DeclinedCategory,
+} from './operator/operator-context-types.js';

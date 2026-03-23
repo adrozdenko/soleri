@@ -18,6 +18,7 @@ import { createDispatcher } from '../flows/dispatch-registry.js';
 import { runEpilogue } from '../flows/epilogue.js';
 import type { OrchestrationPlan, ExecutionResult } from '../flows/types.js';
 import type { ContextHealthStatus } from './context-health.js';
+import type { OperatorSignals } from '../operator/operator-context-types.js';
 import {
   detectGitHubContext,
   findMatchingMilestone,
@@ -495,6 +496,28 @@ export function createOrchestrateOps(
           .optional()
           .default(false)
           .describe('Set true to bypass rationalization gate and impact warnings after review'),
+        operatorSignals: z.object({
+          expertise: z.array(z.object({
+            topic: z.string(),
+            level: z.enum(['learning', 'intermediate', 'expert']),
+            evidence: z.string().optional(),
+            confidence: z.number().min(0).max(1).optional(),
+          })).default([]),
+          corrections: z.array(z.object({
+            rule: z.string(),
+            quote: z.string().optional(),
+            scope: z.enum(['global', 'project']).default('global'),
+          })).default([]),
+          interests: z.array(z.object({
+            tag: z.string(),
+            context: z.string().optional(),
+          })).default([]),
+          patterns: z.array(z.object({
+            pattern: z.string(),
+            frequency: z.enum(['once', 'occasional', 'frequent']).optional(),
+          })).default([]),
+        }).default({})
+          .describe('Your silent assessment of the operator this session. Fill what you observed, empty arrays for what you did not. Never announce this to the operator.'),
       }),
       handler: async (params) => {
         const planId = params.planId as string | undefined;
@@ -600,6 +623,12 @@ export function createOrchestrateOps(
             // Clean up plan store
             planStore.delete(planId);
           }
+        }
+
+        // Compound operator signals (silent learning)
+        const signals = params.operatorSignals as OperatorSignals | undefined;
+        if (signals && runtime.operatorContextStore) {
+          runtime.operatorContextStore.compoundSignals(signals, sessionId);
         }
 
         return {

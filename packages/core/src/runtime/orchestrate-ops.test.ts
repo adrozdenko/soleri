@@ -490,6 +490,84 @@ describe('createOrchestrateOps', () => {
       expect(result.reasoning.length).toBeGreaterThan(0);
     });
 
+    it('orchestrate_complete compounds operator signals when provided', async () => {
+      const compoundSignalsMock = vi.fn();
+      (rt as Record<string, unknown>).operatorContextStore = {
+        compoundSignals: compoundSignalsMock,
+      };
+      ops = createOrchestrateOps(rt);
+
+      const op = findOp(ops, 'orchestrate_complete');
+      await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        operatorSignals: {
+          expertise: [{ topic: 'typescript', level: 'expert', confidence: 0.9 }],
+          corrections: [{ rule: 'use conventional commits', scope: 'global' }],
+          interests: [{ tag: 'coffee' }],
+          patterns: [{ pattern: 'prefers small PRs', frequency: 'frequent' }],
+        },
+      });
+
+      expect(compoundSignalsMock).toHaveBeenCalledWith(
+        {
+          expertise: [{ topic: 'typescript', level: 'expert', confidence: 0.9 }],
+          corrections: [{ rule: 'use conventional commits', scope: 'global' }],
+          interests: [{ tag: 'coffee' }],
+          patterns: [{ pattern: 'prefers small PRs', frequency: 'frequent' }],
+        },
+        'session-1',
+      );
+    });
+
+    it('orchestrate_complete handles empty operator signals gracefully', async () => {
+      const compoundSignalsMock = vi.fn();
+      (rt as Record<string, unknown>).operatorContextStore = {
+        compoundSignals: compoundSignalsMock,
+      };
+      ops = createOrchestrateOps(rt);
+
+      const op = findOp(ops, 'orchestrate_complete');
+      await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        operatorSignals: {},
+      });
+
+      // Empty object with default arrays should be passed through
+      expect(compoundSignalsMock).toHaveBeenCalledTimes(1);
+      const [passedSignals, passedSessionId] = compoundSignalsMock.mock.calls[0];
+      expect(passedSessionId).toBe('session-1');
+      // Zod defaults produce empty arrays for each field
+      expect(passedSignals).toBeDefined();
+      expect(Array.isArray(passedSignals.expertise ?? [])).toBe(true);
+      expect(Array.isArray(passedSignals.corrections ?? [])).toBe(true);
+      expect(Array.isArray(passedSignals.interests ?? [])).toBe(true);
+      expect(Array.isArray(passedSignals.patterns ?? [])).toBe(true);
+    });
+
+    it('orchestrate_complete works when operatorContextStore not available', async () => {
+      // Ensure no operatorContextStore on runtime (backward compat)
+      delete (rt as Record<string, unknown>).operatorContextStore;
+      ops = createOrchestrateOps(rt);
+
+      const op = findOp(ops, 'orchestrate_complete');
+      const result = (await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        operatorSignals: {
+          expertise: [{ topic: 'react', level: 'intermediate' }],
+          corrections: [],
+          interests: [],
+          patterns: [],
+        },
+      })) as Record<string, unknown>;
+
+      // Should complete normally without errors
+      expect(result).toHaveProperty('plan');
+      expect(result).toHaveProperty('session');
+    });
+
     it('assessment result includes non-empty reasoning for complex tasks', () => {
       const result = assessTaskComplexity({
         prompt: 'add authentication across all API routes',

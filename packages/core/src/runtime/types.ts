@@ -34,6 +34,7 @@ import type { ChainRunner } from '../flows/chain-runner.js';
 import type { JobQueue } from '../queue/job-queue.js';
 import type { PipelineRunner } from '../queue/pipeline-runner.js';
 import type { OperatorProfileStore } from '../operator/operator-profile.js';
+import type { OperatorContextStore } from '../operator/operator-context-store.js';
 import type { ContextHealthMonitor } from './context-health.js';
 
 /**
@@ -121,6 +122,8 @@ export interface AgentRuntime {
   pipelineRunner: PipelineRunner;
   /** Operator profile — personality learning, signals, adaptation. */
   operatorProfile: OperatorProfileStore;
+  /** Operator context store — compounding signals into stable operator profile. */
+  operatorContextStore?: OperatorContextStore;
   /** Agent persona — defines character, voice, and cultural texture. */
   persona: import('../persona/types.js').PersonaConfig;
   /** Generated persona system instructions for LLM context. */
