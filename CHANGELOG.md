@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v9.3.0 — 2026-03-23 — Vault Facade Split, TDD Completion & Dead Code Cleanup
+
+### Vault Facade Split
+
+The monolithic vault facade (76+ ops) has been decomposed into 8 focused facades. The engine now registers **20 semantic modules** (up from 13).
+
+| New Facade | Ops | Purpose |
+|---|---|---|
+| `archive` | 12 | Archival, lifecycle, knowledge maintenance |
+| `sync` | 8 | Git, Obsidian, and pack sync |
+| `review` | 5 | Knowledge review workflow |
+| `intake` | 7 | Content ingestion — books, URLs, text, batch |
+| `links` | 9 | Entry linking, traversal, orphan detection |
+| `branching` | 5 | Vault branching — create, list, merge, delete |
+| `tier` | 7 | Multi-vault tiers — connect, disconnect, search |
+
+- **Backward compat** — moved ops still dispatch via vault facade with deprecation warnings
+- **`createSemanticFacades()`** updated with all 20 modules
+- **E2E tests** updated for new facade count (22 = 20 semantic + 2 domain)
+
+### TDD Refactoring Complete (Waves 1-4 + Post-Cleanup)
+
+All TDD refactoring waves are closed. Every `@soleri/core` module now has colocated tests.
+
+- **184 test files, 3,669 tests, zero failures**
+- **`src/__tests__/` directory deleted** — 71 duplicates removed, 20 orphans relocated to colocated locations
+- **135 lint errors fixed** across 38 files
+- **4 monoliths decomposed:**
+  - `planner.ts` 1,556 → 392 LOC (+ plan-lifecycle, task-verifier, reconciliation-engine)
+  - `curator.ts` 951 → 287 LOC (+ duplicate-detector, contradiction-detector, tag-manager, health-audit, metadata-enricher)
+  - `gap-analysis.ts` 967 → 299 LOC (+ gap-patterns, gap-passes)
+  - `chat-facade.ts` 918 → 27 LOC (+ chat-session-ops, chat-transport-ops, chat-service-ops)
+
+### Dead Code Cleanup
+
+- Removed 4 unused files: `strength-scorer.ts`, `engine/index.ts`, `persona/index.ts`, `vault-interfaces.ts`
+- Removed unused dep `yaml` from `packages/engine`
+- Removed unused devDep `@soleri/tokens` from root
+
+### Features
+
+- **Auto-rebuild brain intelligence** after feedback accumulation
+- **Deep-review and vault-smells skills** added
+- **Parallel-execute skill** for concurrent subagent dispatch
+
+### DX
+
+- **Linux build tools** documented in getting-started (better-sqlite3 requires `build-essential`)
+- **Streamlined skill definitions** across all 18+ skills
+
 ## v9.2.0 — 2026-03-22 — Operator Profile, Engine Hardening & TDD Refactoring
 
 ### Operator Profile — Personality Learning System

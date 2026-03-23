@@ -82,8 +82,8 @@ Two layers, cleanly separated:
 │  Agent Folder     agent.yaml · instructions/ · workflows/ │
 │  (the shell)      knowledge/ · skills/ · CLAUDE.md (auto) │
 ├─────────────────────────────────────────────────────────┤
-│  Knowledge Engine vault · brain · curator · planner       │
-│  (the brain)      memory · learning · domain packs        │
+│  Knowledge Engine 20 modules: vault · brain · curator · planner │
+│  (the brain)      memory · archive · sync · review · links … │
 ├─────────────────────────────────────────────────────────┤
 │  Transports       MCP · HTTP/SSE · WebSocket · Telegram   │
 └─────────────────────────────────────────────────────────┘
@@ -142,11 +142,11 @@ npx @soleri/cli install-knowledge ./bundles/react-patterns
 ## Testing
 
 ```bash
-npm test                # Unit tests (core, forge, CLI)
-npm run test:e2e        # E2E tests (800+ tests across 26 files)
+npm test                # Unit tests — 184 files, 3,669 tests
+npm run test:e2e        # E2E tests — 800+ tests across 27 files
 ```
 
-The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), scaffold pipeline, all engine modules, over-the-wire MCP transport, data persistence, concurrency, CLI commands, and domain pack validation.
+The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), all 20 engine modules across 8 vault-family facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, and domain pack validation.
 
 ## Contributing
 
