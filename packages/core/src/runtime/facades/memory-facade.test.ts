@@ -67,7 +67,8 @@ describe('memory-facade', () => {
   it('memory_search returns empty for no matches', async () => {
     const result = await executeOp(ops, 'memory_search', { query: 'nonexistent' });
     expect(result.success).toBe(true);
-    expect((result.data as Record<string, unknown>).total).toBe(0);
+    const data = result.data as unknown[];
+    expect(data.length).toBe(0);
   });
 
   it('memory_search finds captured memories', async () => {
@@ -79,7 +80,8 @@ describe('memory-facade', () => {
     });
     const result = await executeOp(ops, 'memory_search', { query: 'token migration' });
     expect(result.success).toBe(true);
-    expect((result.data as Record<string, unknown>).total).toBeGreaterThanOrEqual(1);
+    const data = result.data as unknown[];
+    expect(data.length).toBeGreaterThanOrEqual(1);
   });
 
   it('memory_search returns summaries by default', async () => {
@@ -91,9 +93,9 @@ describe('memory-facade', () => {
     });
     const result = await executeOp(ops, 'memory_search', { query: 'short summary' });
     expect(result.success).toBe(true);
-    const data = result.data as { results: Array<{ summary: string }> };
-    expect(data.results[0]).toHaveProperty('summary');
-    expect(data.results[0]).not.toHaveProperty('context');
+    const data = result.data as Array<{ summary: string }>;
+    expect(data[0]).toHaveProperty('summary');
+    expect(data[0]).not.toHaveProperty('context');
   });
 
   it('memory_search returns full objects with verbose:true', async () => {
@@ -105,8 +107,8 @@ describe('memory-facade', () => {
     });
     const result = await executeOp(ops, 'memory_search', { query: 'verbose test', verbose: true });
     expect(result.success).toBe(true);
-    const data = result.data as { results: Array<Record<string, unknown>> };
-    expect(data.results[0]).toHaveProperty('context');
+    const data = result.data as Array<Record<string, unknown>>;
+    expect(data[0]).toHaveProperty('context');
   });
 
   // ─── memory_list ───────────────────────────────────────────────
@@ -120,9 +122,9 @@ describe('memory-facade', () => {
     });
     const result = await executeOp(ops, 'memory_list', {});
     expect(result.success).toBe(true);
-    const data = result.data as { entries: unknown[]; total: number };
-    expect(data.total).toBeGreaterThanOrEqual(1);
-    expect(data.entries.length).toBeGreaterThanOrEqual(1);
+    const data = result.data as { memories: unknown[]; stats: { total: number } };
+    expect(data.stats.total).toBeGreaterThanOrEqual(1);
+    expect(data.memories.length).toBeGreaterThanOrEqual(1);
   });
 
   it('memory_list filters by type', async () => {
@@ -140,8 +142,8 @@ describe('memory-facade', () => {
     });
     const result = await executeOp(ops, 'memory_list', { type: 'lesson' });
     expect(result.success).toBe(true);
-    const data = result.data as { entries: unknown[]; total: number };
-    expect(data.entries.length).toBe(1);
+    const data = result.data as { memories: unknown[]; stats: Record<string, unknown> };
+    expect(data.memories.length).toBe(1);
   });
 
   it('memory_list verbose returns full objects', async () => {
