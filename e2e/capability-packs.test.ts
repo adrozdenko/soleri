@@ -174,16 +174,35 @@ describe('Journey 1: Fresh agent has core capabilities', () => {
   });
 
   it('real runtime should have facades wired correctly', () => {
-    // Verify facades exist for the agent
-    expect(facades.length).toBeGreaterThan(10);
-    expect(handlers.size).toBeGreaterThan(10);
+    // 20 semantic facades + 2 domain facades (design, testing) = 22
+    expect(facades.length).toBe(22);
+    expect(handlers.size).toBe(22);
 
-    // Key facades should be registered
+    // All 20 semantic facades should be registered
     const facadeNames = facades.map((f) => f.name);
     expect(facadeNames).toContain(`${AGENT_ID}_vault`);
     expect(facadeNames).toContain(`${AGENT_ID}_admin`);
     expect(facadeNames).toContain(`${AGENT_ID}_brain`);
     expect(facadeNames).toContain(`${AGENT_ID}_plan`);
+    expect(facadeNames).toContain(`${AGENT_ID}_orchestrate`);
+    expect(facadeNames).toContain(`${AGENT_ID}_memory`);
+    expect(facadeNames).toContain(`${AGENT_ID}_curator`);
+    expect(facadeNames).toContain(`${AGENT_ID}_loop`);
+    expect(facadeNames).toContain(`${AGENT_ID}_control`);
+    expect(facadeNames).toContain(`${AGENT_ID}_context`);
+    expect(facadeNames).toContain(`${AGENT_ID}_agency`);
+    expect(facadeNames).toContain(`${AGENT_ID}_chat`);
+    expect(facadeNames).toContain(`${AGENT_ID}_operator`);
+    expect(facadeNames).toContain(`${AGENT_ID}_archive`);
+    expect(facadeNames).toContain(`${AGENT_ID}_sync`);
+    expect(facadeNames).toContain(`${AGENT_ID}_review`);
+    expect(facadeNames).toContain(`${AGENT_ID}_intake`);
+    expect(facadeNames).toContain(`${AGENT_ID}_links`);
+    expect(facadeNames).toContain(`${AGENT_ID}_branching`);
+    expect(facadeNames).toContain(`${AGENT_ID}_tier`);
+    // Domain facades
+    expect(facadeNames).toContain(`${AGENT_ID}_design`);
+    expect(facadeNames).toContain(`${AGENT_ID}_testing`);
   });
 
   it('capabilities should be grouped by domain', () => {
@@ -191,7 +210,17 @@ describe('Journey 1: Fresh agent has core capabilities', () => {
     expect(grouped.has('vault')).toBe(true);
     expect(grouped.has('brain')).toBe(true);
     expect(grouped.has('plan')).toBe(true);
-    expect(grouped.get('vault')!.length).toBeGreaterThanOrEqual(2);
+    expect(grouped.has('memory')).toBe(true);
+    expect(grouped.has('orchestrate')).toBe(true);
+    expect(grouped.has('identity')).toBe(true);
+    expect(grouped.has('admin')).toBe(true);
+    expect(grouped.has('debug')).toBe(true);
+    // vault domain has 3 capabilities: vault.search, vault.capture, vault.playbook
+    expect(grouped.get('vault')!.length).toBe(3);
+    // brain domain has 2 capabilities: brain.recommend, brain.strengths
+    expect(grouped.get('brain')!.length).toBe(2);
+    // plan domain has 2 capabilities: plan.create, plan.approve
+    expect(grouped.get('plan')!.length).toBe(2);
   });
 });
 
@@ -300,9 +329,19 @@ describe('Journey 3: Flow resolves capabilities correctly', () => {
       onMissingCapability: buildFlow['on-missing-capability'],
     });
 
-    expect(validation.available.length).toBeGreaterThan(5);
+    // Build flow needs 9 capabilities, all registered in the full-stack pack
+    expect(validation.valid).toBe(true);
+    expect(validation.missing).toHaveLength(0);
+    expect(validation.available.length).toBe(9);
     expect(validation.available).toContain('vault.search');
+    expect(validation.available).toContain('memory.search');
     expect(validation.available).toContain('component.search');
+    expect(validation.available).toContain('design.recommend');
+    expect(validation.available).toContain('architecture.search');
+    expect(validation.available).toContain('brain.recommend');
+    expect(validation.available).toContain('component.workflow');
+    expect(validation.available).toContain('component.validate');
+    expect(validation.available).toContain('token.check');
   });
 
   it('capability handler should receive params and return result', async () => {
@@ -458,7 +497,8 @@ describe('Journey 5: New user onboarding', () => {
     const { getAllBuiltinPlaybooks, getBuiltinPlaybook } = await import('@soleri/core');
 
     const all = getAllBuiltinPlaybooks();
-    expect(all.length).toBeGreaterThanOrEqual(7); // 6 original + onboarding
+    // 7 built-in: tdd, brainstorming, code-review, subagent-execution, systematic-debugging, verification, onboarding
+    expect(all.length).toBe(7);
 
     const onboarding = getBuiltinPlaybook('generic-onboarding');
     expect(onboarding).toBeDefined();
@@ -480,7 +520,8 @@ describe('Journey 5: New user onboarding', () => {
     });
 
     const result = seedDefaultPlaybooks(rt.vault);
-    expect(result.seeded).toBeGreaterThanOrEqual(7);
+    // 7 built-in playbooks should all seed successfully
+    expect(result.seeded).toBe(7);
     expect(result.errors).toBe(0);
 
     rt.close();

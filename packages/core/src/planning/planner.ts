@@ -235,15 +235,17 @@ export class Planner {
     );
   }
 
-  iterate(planId: string, changes: IterateChanges): Plan {
+  iterate(planId: string, changes: IterateChanges): { plan: Plan; mutated: number } {
     const plan = this.requirePlan(planId);
     if (plan.status !== 'draft' && plan.status !== 'brainstorming')
       throw new Error(
         `Cannot iterate plan in '${plan.status}' status — must be 'draft' or 'brainstorming'`,
       );
-    applyIteration(plan, changes);
-    this.save();
-    return plan;
+    const mutated = applyIteration(plan, changes);
+    if (mutated > 0) {
+      this.save();
+    }
+    return { plan, mutated };
   }
 
   splitTasks(

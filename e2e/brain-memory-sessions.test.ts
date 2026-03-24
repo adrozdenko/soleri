@@ -88,10 +88,29 @@ describe('E2E: brain-memory-sessions', () => {
       const data = res.data as {
         vocabularySize: number;
         feedbackCount: number;
-        intelligence: Record<string, unknown>;
+        weights: { semantic: number; vector: number; severity: number; temporalDecay: number; tagOverlap: number; domainMatch: number };
+        intelligence: {
+          strengths: number;
+          sessions: number;
+          activeSessions: number;
+          proposals: number;
+          promotedProposals: number;
+          globalPatterns: number;
+          domainProfiles: number;
+        };
       };
-      expect(typeof data.vocabularySize).toBe('number');
-      expect(data.intelligence).toBeDefined();
+      expect(data.vocabularySize).toBe(0);
+      expect(data.feedbackCount).toBe(0);
+      expect(typeof data.weights.semantic).toBe('number');
+      expect(typeof data.weights.vector).toBe('number');
+      expect(typeof data.weights.severity).toBe('number');
+      expect(typeof data.weights.temporalDecay).toBe('number');
+      expect(typeof data.weights.tagOverlap).toBe('number');
+      expect(typeof data.weights.domainMatch).toBe('number');
+      expect(data.intelligence.strengths).toBe(0);
+      expect(data.intelligence.sessions).toBe(0);
+      expect(data.intelligence.activeSessions).toBe(0);
+      expect(data.intelligence.proposals).toBe(0);
     });
 
     it('brain_feedback should record feedback with pattern and outcome', async () => {
@@ -127,23 +146,49 @@ describe('E2E: brain-memory-sessions', () => {
         reason: 'Exactly what I needed for the component tree',
       });
       expect(res.success).toBe(true);
-      const data = res.data as { query: string; entryId: string; action: string };
+      const data = res.data as {
+        id: number;
+        query: string;
+        entryId: string;
+        action: string;
+        source: string;
+        confidence: number;
+        reason: string | null;
+        createdAt: number;
+      };
+      expect(data.id).toBeGreaterThan(0);
       expect(data.query).toBe('state management pattern');
+      expect(data.entryId).toBe(entryId);
       expect(data.action).toBe('accepted');
+      expect(data.source).toBe('search');
+      expect(data.confidence).toBe(0.85);
+      expect(data.reason).toBe('Exactly what I needed for the component tree');
+      expect(typeof data.createdAt).toBe('number');
     });
 
     it('brain_stats should reflect recorded feedback', async () => {
       const res = await callOp(brain(), 'brain_stats');
       expect(res.success).toBe(true);
-      const data = res.data as { feedbackCount: number };
-      expect(data.feedbackCount).toBeGreaterThanOrEqual(1);
+      const data = res.data as { feedbackCount: number; vocabularySize: number };
+      expect(data.feedbackCount).toBe(1);
+      expect(typeof data.vocabularySize).toBe('number');
     });
 
     it('brain_feedback_stats should show counts by action and source', async () => {
       const res = await callOp(brain(), 'brain_feedback_stats');
       expect(res.success).toBe(true);
-      const data = res.data as Record<string, unknown>;
-      expect(data).toBeDefined();
+      const data = res.data as {
+        total: number;
+        byAction: Record<string, number>;
+        bySource: Record<string, number>;
+        acceptanceRate: number;
+        averageConfidence: number;
+      };
+      expect(data.total).toBe(1);
+      expect(data.byAction.accepted).toBe(1);
+      expect(data.bySource.search).toBe(1);
+      expect(data.acceptanceRate).toBe(1);
+      expect(data.averageConfidence).toBe(0.85);
     });
 
     it('brain_recommend with context should return recommendations (may be empty)', async () => {
@@ -153,13 +198,35 @@ describe('E2E: brain-memory-sessions', () => {
         limit: 5,
       });
       expect(res.success).toBe(true);
-      expect(Array.isArray(res.data)).toBe(true);
+      const recs = res.data as Array<Record<string, unknown>>;
+      expect(Array.isArray(recs)).toBe(true);
+      // Each recommendation, if any, must have the PatternStrength shape
+      for (const rec of recs) {
+        expect(typeof rec.pattern).toBe('string');
+        expect(typeof rec.strength).toBe('number');
+        expect(typeof rec.domain).toBe('string');
+      }
     });
 
     it('brain_strengths should list patterns with strength scores', async () => {
       const res = await callOp(brain(), 'brain_strengths', { limit: 10 });
       expect(res.success).toBe(true);
-      expect(Array.isArray(res.data)).toBe(true);
+      const strengths = res.data as Array<Record<string, unknown>>;
+      expect(Array.isArray(strengths)).toBe(true);
+      // Each strength entry must have full PatternStrength fields
+      for (const s of strengths) {
+        expect(typeof s.pattern).toBe('string');
+        expect(typeof s.domain).toBe('string');
+        expect(typeof s.strength).toBe('number');
+        expect(typeof s.usageScore).toBe('number');
+        expect(typeof s.spreadScore).toBe('number');
+        expect(typeof s.successScore).toBe('number');
+        expect(typeof s.recencyScore).toBe('number');
+        expect(typeof s.usageCount).toBe('number');
+        expect(typeof s.uniqueContexts).toBe('number');
+        expect(typeof s.successRate).toBe('number');
+        expect(typeof s.lastUsed).toBe('string');
+      }
     });
   });
 
@@ -252,8 +319,14 @@ describe('E2E: brain-memory-sessions', () => {
     it('build_intelligence should process accumulated data', async () => {
       const res = await callOp(brain(), 'brain_build_intelligence');
       expect(res.success).toBe(true);
-      const data = res.data as Record<string, unknown>;
-      expect(data).toBeDefined();
+      const data = res.data as {
+        strengthsComputed: number;
+        globalPatterns: number;
+        domainProfiles: number;
+      };
+      expect(data.strengthsComputed).toBeGreaterThan(0);
+      expect(typeof data.globalPatterns).toBe('number');
+      expect(typeof data.domainProfiles).toBe('number');
     });
 
     it('brain_recommend should now return relevant recommendations', async () => {
@@ -264,12 +337,22 @@ describe('E2E: brain-memory-sessions', () => {
       });
       expect(res.success).toBe(true);
       const recommendations = res.data as Array<{
-        pattern?: string;
-        name?: string;
-        strength?: number;
-        score?: number;
+        pattern: string;
+        domain: string;
+        strength: number;
+        usageScore: number;
+        spreadScore: number;
+        successScore: number;
+        recencyScore: number;
       }>;
       expect(Array.isArray(recommendations)).toBe(true);
+      // After seeding feedback, recommendations should exist
+      expect(recommendations.length).toBeGreaterThan(0);
+      for (const rec of recommendations) {
+        expect(typeof rec.pattern).toBe('string');
+        expect(typeof rec.strength).toBe('number');
+        expect(rec.strength).toBeGreaterThan(0);
+      }
     });
 
     it('brain_strengths should reflect accumulated feedback', async () => {
@@ -277,14 +360,45 @@ describe('E2E: brain-memory-sessions', () => {
         limit: 20,
       });
       expect(res.success).toBe(true);
-      const strengths = res.data as Array<{ name?: string; strength?: number; score?: number }>;
+      const strengths = res.data as Array<{
+        pattern: string;
+        domain: string;
+        strength: number;
+        usageCount: number;
+        successRate: number;
+        lastUsed: string;
+      }>;
       expect(Array.isArray(strengths)).toBe(true);
+      expect(strengths.length).toBeGreaterThan(0);
+      // Verify each has correct shape and non-negative strength
+      for (const s of strengths) {
+        expect(typeof s.pattern).toBe('string');
+        expect(s.pattern.length).toBeGreaterThan(0);
+        expect(typeof s.strength).toBe('number');
+        expect(s.strength).toBeGreaterThanOrEqual(0);
+        expect(typeof s.usageCount).toBe('number');
+        expect(typeof s.successRate).toBe('number');
+      }
     });
 
     it('brain_global_patterns should return cross-domain patterns', async () => {
       const res = await callOp(brain(), 'brain_global_patterns', { limit: 10 });
       expect(res.success).toBe(true);
-      expect(Array.isArray(res.data)).toBe(true);
+      const patterns = res.data as Array<{
+        pattern: string;
+        domains: string[];
+        totalStrength: number;
+        avgStrength: number;
+        domainCount: number;
+      }>;
+      expect(Array.isArray(patterns)).toBe(true);
+      for (const p of patterns) {
+        expect(typeof p.pattern).toBe('string');
+        expect(Array.isArray(p.domains)).toBe(true);
+        expect(typeof p.totalStrength).toBe('number');
+        expect(typeof p.avgStrength).toBe('number');
+        expect(p.domainCount).toBeGreaterThanOrEqual(1);
+      }
     });
   });
 
@@ -312,9 +426,20 @@ describe('E2E: brain-memory-sessions', () => {
         query: 'database connection pool timeout',
       });
       expect(res.success).toBe(true);
-      const results = res.data as Array<{ id: string; summary: string }>;
+      const results = res.data as Array<{
+        id: string;
+        type: string;
+        summary: string;
+        score: null;
+        project: string;
+      }>;
       expect(results.length).toBeGreaterThan(0);
-      expect(results.some((r) => r.summary.includes('connection pool'))).toBe(true);
+      // Verify the truncated summary shape from the handler
+      const match = results.find((r) => r.summary.includes('connection pool'));
+      expect(match).toBeDefined();
+      expect(match!.type).toBe('lesson');
+      expect(match!.project).toBe('/tmp/e2e-brain-mem');
+      expect(match!.score).toBeNull();
     });
 
     it('memory_capture should store a preference in different category', async () => {
@@ -344,16 +469,33 @@ describe('E2E: brain-memory-sessions', () => {
     it('memory_list should return all captured memories', async () => {
       const res = await callOp(memory(), 'memory_list', {});
       expect(res.success).toBe(true);
-      const data = res.data as { memories: unknown[]; stats: Record<string, unknown> };
+      const data = res.data as {
+        memories: Array<{ id: string; summary: string; project: string; createdAt: number }>;
+        stats: Record<string, unknown>;
+      };
       expect(data.memories.length).toBeGreaterThanOrEqual(2);
+      // Verify each memory in the list has truncated summary shape
+      for (const m of data.memories) {
+        expect(typeof m.id).toBe('string');
+        expect(typeof m.summary).toBe('string');
+        expect(typeof m.createdAt).toBe('number');
+      }
       expect(data.stats).toBeDefined();
     });
 
     it('memory_stats should show counts by type', async () => {
       const res = await callOp(memory(), 'memory_stats', {});
       expect(res.success).toBe(true);
-      const data = res.data as Record<string, unknown>;
-      expect(data).toBeDefined();
+      const data = res.data as {
+        total: number;
+        byType: Record<string, number>;
+        oldest: number | null;
+        newest: number | null;
+      };
+      expect(data.total).toBeGreaterThanOrEqual(2);
+      expect(typeof data.byType).toBe('object');
+      expect(data.byType.lesson).toBeGreaterThanOrEqual(1);
+      expect(data.byType.preference).toBeGreaterThanOrEqual(1);
     });
 
     it('memory_topics should list all topics with counts', async () => {
@@ -514,8 +656,29 @@ describe('E2E: brain-memory-sessions', () => {
         context: 'Building a new dashboard component',
       });
       expect(res.success).toBe(true);
-      const data = res.data as { id: string };
+      const data = res.data as {
+        id: string;
+        startedAt: string;
+        endedAt: string | null;
+        domain: string | null;
+        context: string | null;
+        toolsUsed: string[];
+        filesModified: string[];
+        planId: string | null;
+        planOutcome: string | null;
+        extractedAt: string | null;
+      };
       expect(data.id).toBeDefined();
+      expect(data.id.length).toBeGreaterThan(0);
+      expect(data.startedAt).toBeDefined();
+      expect(data.endedAt).toBeNull();
+      expect(data.domain).toBe('frontend');
+      expect(data.context).toBe('Building a new dashboard component');
+      expect(data.toolsUsed).toEqual([]);
+      expect(data.filesModified).toEqual([]);
+      expect(data.planId).toBeNull();
+      expect(data.planOutcome).toBeNull();
+      expect(data.extractedAt).toBeNull();
     });
 
     it('brain_lifecycle end should close the session with metadata', async () => {
@@ -535,6 +698,21 @@ describe('E2E: brain-memory-sessions', () => {
         planOutcome: 'completed',
       });
       expect(endRes.success).toBe(true);
+      const endData = endRes.data as {
+        id: string;
+        startedAt: string;
+        endedAt: string | null;
+        domain: string | null;
+        toolsUsed: string[];
+        filesModified: string[];
+        planOutcome: string | null;
+      };
+      expect(endData.id).toBe(sessionId);
+      expect(endData.endedAt).not.toBeNull();
+      expect(endData.domain).toBe('backend');
+      expect(endData.toolsUsed).toEqual(['vault_search', 'brain_recommend', 'memory_capture']);
+      expect(endData.filesModified).toEqual(['api/routes.ts', 'api/middleware.ts']);
+      expect(endData.planOutcome).toBe('completed');
     });
 
     it('session_list should include completed sessions', async () => {
@@ -542,8 +720,13 @@ describe('E2E: brain-memory-sessions', () => {
         active: false,
       });
       expect(res.success).toBe(true);
-      const data = res.data as { sessions: Array<{ id: string }>; count: number };
+      const data = res.data as { sessions: Array<{ id: string; endedAt: string | null }>; count: number };
       expect(data.count).toBeGreaterThan(0);
+      expect(data.sessions.length).toBe(data.count);
+      // All returned sessions should be completed (endedAt is set)
+      for (const session of data.sessions) {
+        expect(session.endedAt).not.toBeNull();
+      }
     });
 
     it('session_get should retrieve a specific session', async () => {
@@ -556,8 +739,22 @@ describe('E2E: brain-memory-sessions', () => {
         sessionId: sessions[0].id,
       });
       expect(res.success).toBe(true);
-      const data = res.data as { id: string; domain?: string };
+      const data = res.data as {
+        id: string;
+        startedAt: string;
+        endedAt: string | null;
+        domain: string | null;
+        context: string | null;
+        toolsUsed: string[];
+        filesModified: string[];
+        planId: string | null;
+        planOutcome: string | null;
+        extractedAt: string | null;
+      };
       expect(data.id).toBe(sessions[0].id);
+      expect(typeof data.startedAt).toBe('string');
+      expect(Array.isArray(data.toolsUsed)).toBe(true);
+      expect(Array.isArray(data.filesModified)).toBe(true);
     });
 
     it('session_quality should compute a quality score', async () => {
@@ -572,8 +769,22 @@ describe('E2E: brain-memory-sessions', () => {
         sessionId: sessions[0].id,
       });
       expect(res.success).toBe(true);
-      const data = res.data as { score?: number; quality?: number; dimensions?: unknown };
-      expect(data).toBeDefined();
+      const data = res.data as {
+        sessionId: string;
+        overall: number;
+        completeness: number;
+        artifactDensity: number;
+        toolEngagement: number;
+        outcomeClarity: number;
+      };
+      expect(data.sessionId).toBe(sessions[0].id);
+      expect(typeof data.overall).toBe('number');
+      expect(data.overall).toBeGreaterThanOrEqual(0);
+      expect(data.overall).toBeLessThanOrEqual(100);
+      expect(typeof data.completeness).toBe('number');
+      expect(typeof data.artifactDensity).toBe('number');
+      expect(typeof data.toolEngagement).toBe('number');
+      expect(typeof data.outcomeClarity).toBe('number');
     });
 
     it('session_replay should return session data with enrichment', async () => {
@@ -587,8 +798,21 @@ describe('E2E: brain-memory-sessions', () => {
         sessionId: sessions[0].id,
       });
       expect(res.success).toBe(true);
-      const data = res.data as { session?: unknown; quality?: unknown };
-      expect(data).toBeDefined();
+      const data = res.data as {
+        session: { id: string; startedAt: string; endedAt: string | null };
+        quality: { sessionId: string; overall: number };
+        proposals: Array<Record<string, unknown>>;
+        durationMinutes: number | null;
+      };
+      expect(data.session.id).toBe(sessions[0].id);
+      expect(typeof data.session.startedAt).toBe('string');
+      expect(data.quality.sessionId).toBe(sessions[0].id);
+      expect(typeof data.quality.overall).toBe('number');
+      expect(Array.isArray(data.proposals)).toBe(true);
+      // durationMinutes should be a number (session was ended) or null
+      if (data.session.endedAt) {
+        expect(typeof data.durationMinutes).toBe('number');
+      }
     });
   });
 
@@ -601,8 +825,12 @@ describe('E2E: brain-memory-sessions', () => {
         limit: 10,
       });
       expect(res.success).toBe(true);
-      const data = res.data as { results: unknown[]; count: number };
-      expect(data.count).toBeGreaterThanOrEqual(0);
+      const data = res.data as {
+        results: Array<Record<string, unknown>>;
+        count: number;
+      };
+      expect(typeof data.count).toBe('number');
+      expect(data.count).toBe(data.results.length);
       expect(Array.isArray(data.results)).toBe(true);
     });
 
@@ -680,8 +908,16 @@ describe('E2E: brain-memory-sessions', () => {
         action: 'dismissed',
       });
       expect(res.success).toBe(true);
-      const data = res.data as { recorded: boolean };
+      const data = res.data as {
+        recorded: boolean;
+        query: string;
+        entryId: string;
+        action: string;
+      };
       expect(data.recorded).toBe(true);
+      expect(data.query).toBe('test query');
+      expect(data.entryId).toBe('some-entry-id');
+      expect(data.action).toBe('dismissed');
     });
 
     it('memory_search with empty query should handle gracefully', async () => {
@@ -749,8 +985,9 @@ describe('E2E: brain-memory-sessions', () => {
         sessionId: 'non-existent-session-999',
       });
       expect(res.success).toBe(true);
-      const data = res.data as { error?: string };
-      expect(data.error).toBeDefined();
+      const data = res.data as { error: string; sessionId: string };
+      expect(data.error).toBe('Session not found');
+      expect(data.sessionId).toBe('non-existent-session-999');
     });
 
     it('memory_delete with non-existent ID should report not found', async () => {
@@ -758,8 +995,9 @@ describe('E2E: brain-memory-sessions', () => {
         memoryId: 'non-existent-memory-id',
       });
       expect(res.success).toBe(true);
-      const data = res.data as { deleted: boolean; error?: string };
+      const data = res.data as { deleted: boolean; error: string };
       expect(data.deleted).toBe(false);
+      expect(data.error).toContain('not found');
     });
 
     it('memory_promote_to_global with non-existent entry should report not found', async () => {
@@ -767,8 +1005,9 @@ describe('E2E: brain-memory-sessions', () => {
         entryId: 'non-existent-entry-id',
       });
       expect(res.success).toBe(true);
-      const data = res.data as { promoted: boolean; error?: string };
+      const data = res.data as { promoted: boolean; error: string };
       expect(data.promoted).toBe(false);
+      expect(data.error).toContain('not found');
     });
 
     it('brain_lifecycle end without start should handle gracefully', async () => {
@@ -793,6 +1032,36 @@ describe('E2E: brain-memory-sessions', () => {
     it('memory_deduplicate should run without errors on clean data', async () => {
       const res = await callOp(memory(), 'memory_deduplicate', {});
       expect(res.success).toBe(true);
+      const data = res.data as { removed: number; groups: number };
+      expect(typeof data.removed).toBe('number');
+    });
+
+    it('memory_capture with missing required fields should fail validation', async () => {
+      const res = await callOp(memory(), 'memory_capture', {
+        // Missing type, context, summary
+        projectPath: '/tmp/test',
+      });
+      // Zod schema validation should catch missing required fields
+      expect(res.success).toBe(false);
+    });
+
+    it('session_capture without summary or conversationContext should report error', async () => {
+      const res = await callOp(memory(), 'session_capture', {
+        projectPath: '/tmp/test',
+        // Missing both summary and conversationContext
+      });
+      expect(res.success).toBe(true);
+      const data = res.data as { captured: boolean; error: string };
+      expect(data.captured).toBe(false);
+      expect(data.error).toContain('summary');
+    });
+
+    it('memory_delete with no ID should report error', async () => {
+      const res = await callOp(memory(), 'memory_delete', {});
+      expect(res.success).toBe(true);
+      const data = res.data as { deleted: boolean; error: string };
+      expect(data.deleted).toBe(false);
+      expect(data.error).toContain('required');
     });
 
     it('concurrent brain feedback should not corrupt', async () => {
@@ -959,9 +1228,17 @@ describe('E2E: brain-memory-sessions', () => {
       expect(rebuildRes.success).toBe(true);
 
       const buildRes = await callOp(brain(), 'brain_build_intelligence', {});
-      // After seeding 6 patterns and recording 4+ feedback entries,
-      // build_intelligence should succeed
       expect(buildRes.success).toBe(true);
+      const data = buildRes.data as {
+        strengthsComputed: number;
+        globalPatterns: number;
+        domainProfiles: number;
+      };
+      // After seeding 6 patterns and recording 4+ feedback entries,
+      // strengths should have been computed
+      expect(data.strengthsComputed).toBeGreaterThan(0);
+      expect(typeof data.globalPatterns).toBe('number');
+      expect(typeof data.domainProfiles).toBe('number');
     });
 
     // Step 5: Brain should now recommend error patterns for similar context
@@ -1018,9 +1295,23 @@ describe('E2E: brain-memory-sessions', () => {
       const stats = await callOp(brain(), 'brain_stats', {});
       expect(stats.success).toBe(true);
 
-      const data = stats.data as { feedbackCount: number };
+      const data = stats.data as {
+        feedbackCount: number;
+        vocabularySize: number;
+        weights: Record<string, number>;
+        intelligence: {
+          strengths: number;
+          sessions: number;
+          activeSessions: number;
+          proposals: number;
+        };
+      };
       // After multiple feedback entries across cycles, feedbackCount must be >= expected
       expect(data.feedbackCount).toBeGreaterThanOrEqual(5);
+      expect(data.vocabularySize).toBeGreaterThan(0);
+      expect(typeof data.weights).toBe('object');
+      // Intelligence pipeline was built — strengths must be populated
+      expect(data.intelligence.strengths).toBeGreaterThan(0);
     });
 
     // Step 10: Verify the anti-pattern was captured and is searchable

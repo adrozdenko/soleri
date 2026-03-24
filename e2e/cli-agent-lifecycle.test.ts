@@ -358,10 +358,15 @@ describe('Journey 4: Generated entry-point structure', () => {
     expect(entryPoint).toContain('seedDefaultPlaybooks');
   });
 
-  it('should not import CapabilityRegistry without domain packs', () => {
-    // CapabilityRegistry is conditionally added only when domain packs are configured
-    // Journey 4b tests the domain-pack variant
-    expect(entryPoint).toContain('createSemanticFacades');
+  it('should not use domain pack runtime without domain packs', () => {
+    // CapabilityRegistry is always imported as a type, but domain-pack-specific
+    // runtime code (loadDomainPacksFromConfig, createPackRuntime) is conditional.
+    // Journey 4b tests the domain-pack variant with these imports.
+    expect(entryPoint).not.toContain('loadDomainPacksFromConfig');
+    expect(entryPoint).not.toContain('createPackRuntime');
+    // Should not instantiate CapabilityRegistry or call registerPack/validateFlow
+    expect(entryPoint).not.toContain('capabilityRegistry.registerPack');
+    expect(entryPoint).not.toContain('capabilityRegistry.validateFlow');
   });
 
   it('should have a main() function', () => {
@@ -497,6 +502,11 @@ describe('Journey 5: Generated test file structure', () => {
     expect(testFile).toContain('createAgentRuntime');
     expect(testFile).toContain('describe');
     expect(testFile).toContain('expect');
+    expect(testFile).toContain("from 'vitest'");
+    expect(testFile).toContain('createSemanticFacades');
+    expect(testFile).toContain('createDomainFacades');
+    expect(testFile).toContain('beforeEach');
+    expect(testFile).toContain('afterEach');
   });
 
   it('should use the correct agent ID throughout', () => {
@@ -757,9 +767,9 @@ describe('Edge cases', () => {
 
     expect(result.success).toBe(true);
 
-    // Package.json name should be sanitized
+    // Package.json name should be the agent ID (kebab-case)
     const pkg = JSON.parse(readFileSync(join(result.agentDir, 'package.json'), 'utf-8'));
-    expect(pkg.name).toBeDefined();
+    expect(pkg.name).toBe('special-chars');
     // npm package names must be lowercase, no special chars
     expect(pkg.name).toMatch(/^[@a-z0-9][\w\-./]*$/);
   });

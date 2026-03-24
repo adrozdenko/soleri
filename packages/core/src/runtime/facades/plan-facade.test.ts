@@ -239,6 +239,66 @@ describe('plan-facade', () => {
     expect(data.iterated).toBe(true);
   });
 
+  it('plan_iterate with decisions persists them', async () => {
+    const createResult = await executeOp(ops, 'create_plan', {
+      objective: 'Decisions test',
+      scope: 'test',
+    });
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
+
+    const result = await executeOp(ops, 'plan_iterate', {
+      planId,
+      decisions: [{ decision: 'Use FTS5', rationale: 'Performance' }],
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as { iterated: boolean; plan: Record<string, unknown> };
+    expect(data.iterated).toBe(true);
+    const decisions = data.plan.decisions as Array<Record<string, string>>;
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0].decision).toBe('Use FTS5');
+  });
+
+  it('plan_iterate with alternatives persists them', async () => {
+    const createResult = await executeOp(ops, 'create_plan', {
+      objective: 'Alternatives test',
+      scope: 'test',
+    });
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
+
+    const result = await executeOp(ops, 'plan_iterate', {
+      planId,
+      alternatives: [
+        { approach: 'Alt A', pros: ['fast'], cons: ['fragile'], rejected_reason: 'Too risky' },
+        { approach: 'Alt B', pros: ['safe'], cons: ['slow'], rejected_reason: 'Too slow' },
+      ],
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as { iterated: boolean; plan: Record<string, unknown> };
+    expect(data.iterated).toBe(true);
+    const alternatives = data.plan.alternatives as Array<Record<string, unknown>>;
+    expect(alternatives).toHaveLength(2);
+    expect(alternatives[0].approach).toBe('Alt A');
+  });
+
+  it('plan_iterate with no effective changes returns iterated: false', async () => {
+    const createResult = await executeOp(ops, 'create_plan', {
+      objective: 'No-op test',
+      scope: 'test',
+    });
+    const planId = ((createResult.data as Record<string, unknown>).plan as Record<string, unknown>)
+      .id as string;
+
+    const result = await executeOp(ops, 'plan_iterate', {
+      planId,
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as { iterated: boolean; reason?: string };
+    expect(data.iterated).toBe(false);
+    expect(data.reason).toBe('no changes detected');
+  });
+
   // ─── plan_stats ────────────────────────────────────────────────
 
   it('plan_stats returns statistics', async () => {

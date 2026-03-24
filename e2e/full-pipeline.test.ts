@@ -123,6 +123,7 @@ describe('E2E: full-pipeline', () => {
     expect(res.success).toBe(true);
     expect(res.op).toBe('search');
     expect(res.facade).toBe(`${AGENT_ID}_vault`);
+    expect(res.data).toEqual([]);
   });
 
   it('vault: capture_knowledge and search', async () => {
@@ -159,6 +160,20 @@ describe('E2E: full-pipeline', () => {
   it('brain: brain_stats should return learning metrics', async () => {
     const res = await callOp(`${AGENT_ID}_brain`, 'brain_stats');
     expect(res.success).toBe(true);
+    const stats = res.data as {
+      vocabularySize: number;
+      feedbackCount: number;
+      weights: Record<string, number>;
+      intelligence: { strengths: number; sessions: number; activeSessions: number };
+    };
+    // Vocabulary may be non-zero if prior tests captured vault entries
+    expect(typeof stats.vocabularySize).toBe('number');
+    expect(stats.vocabularySize).toBeGreaterThanOrEqual(0);
+    expect(typeof stats.feedbackCount).toBe('number');
+    expect(stats.feedbackCount).toBeGreaterThanOrEqual(0);
+    expect(stats.weights).toBeDefined();
+    expect(stats.intelligence).toBeDefined();
+    expect(stats.intelligence.strengths).toBe(0);
   });
 
   it('brain: record_feedback should accept feedback', async () => {
@@ -205,9 +220,13 @@ describe('E2E: full-pipeline', () => {
     expect(captureRes.success).toBe(true);
 
     const searchRes = await callOp(`${AGENT_ID}_memory`, 'memory_search', {
-      query: 'E2E tests pipeline',
+      query: 'E2E testing lesson',
     });
     expect(searchRes.success).toBe(true);
+    const memories = searchRes.data as Array<{ id: string; type: string; summary: string }>;
+    expect(memories.length).toBeGreaterThan(0);
+    // The captured content should appear in the search results (summary is truncated)
+    expect(memories.some((m) => m.summary.includes('E2E'))).toBe(true);
   });
 
   // --- Admin Facade ---
@@ -215,8 +234,23 @@ describe('E2E: full-pipeline', () => {
   it('admin: admin_health should report status', async () => {
     const res = await callOp(`${AGENT_ID}_admin`, 'admin_health');
     expect(res.success).toBe(true);
-    const health = res.data as { status: string };
-    expect(health.status).toBeDefined();
+    const health = res.data as {
+      status: string;
+      vault: { entries: number; domains: string[] };
+      llm: { openai: boolean; anthropic: boolean };
+      brain: { vocabularySize: number; feedbackCount: number };
+      curator: { initialized: boolean };
+    };
+    expect(health.status).toBe('ok');
+    expect(health.vault).toBeDefined();
+    expect(typeof health.vault.entries).toBe('number');
+    expect(Array.isArray(health.vault.domains)).toBe(true);
+    expect(health.llm).toBeDefined();
+    expect(typeof health.llm.openai).toBe('boolean');
+    expect(typeof health.llm.anthropic).toBe('boolean');
+    expect(health.brain).toBeDefined();
+    expect(typeof health.brain.vocabularySize).toBe('number');
+    expect(health.curator).toBeDefined();
   });
 
   it('admin: admin_tool_list should enumerate registered ops', async () => {
@@ -225,6 +259,20 @@ describe('E2E: full-pipeline', () => {
     const data = res.data as { count: number; ops: Record<string, string[]> };
     expect(data.count).toBeGreaterThan(0);
     expect(Object.keys(data.ops).length).toBeGreaterThan(0);
+
+    // Flatten all op names to verify specific known ops exist
+    const allOps = Object.values(data.ops).flat();
+    // Admin ops (always present — from fallback or full list)
+    expect(allOps).toContain('admin_health');
+    expect(allOps).toContain('admin_tool_list');
+    expect(allOps).toContain('admin_config');
+    expect(allOps).toContain('admin_diagnostic');
+    // Verify ops map is grouped by facade prefix
+    expect(data.ops).toBeDefined();
+    expect(typeof data.ops).toBe('object');
+    // The 'admin' group should exist
+    expect(data.ops['admin']).toBeDefined();
+    expect(data.ops['admin'].length).toBeGreaterThanOrEqual(8);
   });
 
   // --- Curator Facade ---
@@ -234,6 +282,8 @@ describe('E2E: full-pipeline', () => {
     expect(res.success).toBe(true);
     const audit = res.data as { score: number };
     expect(typeof audit.score).toBe('number');
+    expect(audit.score).toBeGreaterThanOrEqual(0);
+    expect(audit.score).toBeLessThanOrEqual(100);
   });
 
   // --- Loop Facade ---
@@ -244,12 +294,29 @@ describe('E2E: full-pipeline', () => {
       prompt: 'E2E loop test',
     });
     expect(startRes.success).toBe(true);
+    const startData = startRes.data as { started: boolean; loopId: string; mode: string };
+    expect(startData.started).toBe(true);
+    expect(startData.loopId).toBeDefined();
+    expect(startData.mode).toBe('custom');
 
     const statusRes = await callOp(`${AGENT_ID}_loop`, 'loop_status');
     expect(statusRes.success).toBe(true);
+    const statusData = statusRes.data as { active: boolean; loop: unknown };
+    expect(statusData.active).toBe(true);
+    expect(statusData.loop).not.toBeNull();
 
     const cancelRes = await callOp(`${AGENT_ID}_loop`, 'loop_cancel');
     expect(cancelRes.success).toBe(true);
+    const cancelData = cancelRes.data as { cancelled: boolean; status: string };
+    expect(cancelData.cancelled).toBe(true);
+    expect(cancelData.status).toBe('cancelled');
+
+    // After cancel, loop should no longer be active
+    const statusAfterCancel = await callOp(`${AGENT_ID}_loop`, 'loop_status');
+    expect(statusAfterCancel.success).toBe(true);
+    const afterCancelData = statusAfterCancel.data as { active: boolean; loop: unknown };
+    expect(afterCancelData.active).toBe(false);
+    expect(afterCancelData.loop).toBeNull();
   });
 
   // --- Control Facade ---
@@ -259,8 +326,20 @@ describe('E2E: full-pipeline', () => {
       prompt: 'Fix this broken button',
     });
     expect(res.success).toBe(true);
-    const intent = res.data as { intent: string };
-    expect(intent.intent).toBeDefined();
+    const intent = res.data as {
+      intent: string;
+      mode: string;
+      confidence: number;
+      method: string;
+      matchedKeywords: string[];
+    };
+    // "Fix" and "broken" are both FIX-MODE keywords
+    expect(intent.intent).toBe('fix');
+    expect(intent.mode).toBe('FIX-MODE');
+    expect(intent.confidence).toBeGreaterThan(0);
+    expect(intent.method).toBe('keyword');
+    expect(intent.matchedKeywords).toContain('fix');
+    expect(intent.matchedKeywords).toContain('broken');
   });
 
   it('control: get_identity should return agent identity', async () => {
@@ -268,13 +347,25 @@ describe('E2E: full-pipeline', () => {
       agentId: AGENT_ID,
     });
     expect(res.success).toBe(true);
+    const identity = res.data as { agentId: string; found?: boolean };
+    // Identity may or may not exist yet, but agentId must match in the response
+    if ('found' in identity && identity.found === false) {
+      expect(identity.agentId).toBe(AGENT_ID);
+    } else {
+      expect(identity.agentId).toBe(AGENT_ID);
+    }
   });
 
   // --- Domain Facades ---
 
-  it('domain: search on empty domain should return empty results', async () => {
+  it('domain: search should return results scoped to the domain', async () => {
     const res = await callOp(`${AGENT_ID}_frontend`, 'search', { query: 'component pattern' });
     expect(res.success).toBe(true);
+    const results = res.data as Array<{ entry: { domain: string } }>;
+    // All results (if any) should be scoped to the frontend domain
+    for (const r of results) {
+      expect(r.entry.domain).toBe('frontend');
+    }
   });
 
   it('domain: capture and retrieve domain-specific knowledge', async () => {

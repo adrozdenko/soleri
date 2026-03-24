@@ -617,6 +617,43 @@ export function listAgents(parentDir: string): AgentInfo[] {
 
   for (const name of entries) {
     const dir = join(parentDir, name);
+
+    // File-tree (v7) agents have agent.yaml
+    const agentYamlPath = join(dir, 'agent.yaml');
+    if (existsSync(agentYamlPath)) {
+      try {
+        const yamlContent = readFileSync(agentYamlPath, 'utf-8');
+        // Simple YAML parsing for id/name/role — avoid adding a dependency
+        const idMatch = yamlContent.match(/^id:\s*(.+)$/m);
+        const nameMatch = yamlContent.match(/^name:\s*(.+)$/m);
+        const roleMatch = yamlContent.match(/^role:\s*(.+)$/m);
+
+        const knowledgeDir = join(dir, 'knowledge');
+        let domains: string[] = [];
+        try {
+          domains = readdirSync(knowledgeDir)
+            .filter((f) => f.endsWith('.json'))
+            .map((f) => f.replace('.json', ''));
+        } catch {
+          /* no knowledge dir */
+        }
+
+        agents.push({
+          id: idMatch?.[1]?.trim() ?? name,
+          name: nameMatch?.[1]?.trim() ?? name,
+          role: roleMatch?.[1]?.trim() ?? '',
+          path: dir,
+          domains,
+          hasNodeModules: false,
+          hasDistDir: false,
+        });
+        continue;
+      } catch {
+        /* skip malformed agent.yaml */
+      }
+    }
+
+    // Legacy (v6) agents have package.json
     const pkgPath = join(dir, 'package.json');
     if (!existsSync(pkgPath)) continue;
 

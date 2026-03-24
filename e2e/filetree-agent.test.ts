@@ -214,9 +214,13 @@ describe('E2E: file-tree agent', () => {
 
     const searched = JSON.parse((searchResult.content as Array<{ text: string }>)[0].text);
     expect(searched.success).toBe(true);
+    const results = searched.data as Array<{ entry: { title: string }; score: number }>;
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].entry.title).toContain('File-tree agents are faster');
+    expect(results[0].score).toBeGreaterThan(0);
   });
 
-  it('should call brain stats', async () => {
+  it('should call brain stats and return vocabulary, feedback, weights, intelligence', async () => {
     const result = await client.callTool({
       name: 'e2e-filetree_brain',
       arguments: { op: 'brain_stats', params: {} },
@@ -224,10 +228,18 @@ describe('E2E: file-tree agent', () => {
 
     const data = JSON.parse((result.content as Array<{ text: string }>)[0].text);
     expect(data.success).toBe(true);
-    expect(data.data).toBeDefined();
+    expect(typeof data.data.vocabularySize).toBe('number');
+    expect(typeof data.data.feedbackCount).toBe('number');
+    expect(data.data.weights).toBeDefined();
+    expect(typeof data.data.weights.semantic).toBe('number');
+    expect(typeof data.data.weights.severity).toBe('number');
+    expect(typeof data.data.weights.tagOverlap).toBe('number');
+    expect(data.data.intelligence).toBeDefined();
+    expect(typeof data.data.intelligence.strengths).toBe('number');
+    expect(typeof data.data.intelligence.sessions).toBe('number');
   });
 
-  it('should create a plan', async () => {
+  it('should create a plan with id, grade, status, and lifecycle', async () => {
     const result = await client.callTool({
       name: 'e2e-filetree_plan',
       arguments: {
@@ -241,10 +253,14 @@ describe('E2E: file-tree agent', () => {
 
     const data = JSON.parse((result.content as Array<{ text: string }>)[0].text);
     expect(data.success).toBe(true);
-    expect(data.data).toBeDefined();
+    expect(data.data.plan).toBeDefined();
+    expect(typeof data.data.plan.id).toBe('string');
+    expect(data.data.plan.id.length).toBeGreaterThan(0);
+    expect(data.data.plan.status).toBe('draft');
+    expect(data.data.plan.objective).toBe('Validate file-tree agent works end-to-end');
   });
 
-  it('should call curator status', async () => {
+  it('should call curator status and return initialized flag and table counts', async () => {
     const result = await client.callTool({
       name: 'e2e-filetree_curator',
       arguments: { op: 'curator_status', params: {} },
@@ -252,6 +268,15 @@ describe('E2E: file-tree agent', () => {
 
     const data = JSON.parse((result.content as Array<{ text: string }>)[0].text);
     expect(data.success).toBe(true);
+    expect(data.data.initialized).toBe(true);
+    expect(typeof data.data.tables.entry_state).toBe('number');
+    expect(typeof data.data.tables.tag_canonical).toBe('number');
+    expect(typeof data.data.tables.tag_alias).toBe('number');
+    expect(typeof data.data.tables.changelog).toBe('number');
+    expect(typeof data.data.tables.contradictions).toBe('number');
+    // tag_canonical and tag_alias should have seeded data
+    expect(data.data.tables.tag_canonical).toBeGreaterThan(0);
+    expect(data.data.tables.tag_alias).toBeGreaterThan(0);
   });
 
   it('should return error for unknown ops', async () => {

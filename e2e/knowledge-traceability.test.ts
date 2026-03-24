@@ -145,12 +145,16 @@ describe('Knowledge Traceability', () => {
       expect(res.captured).toBe(1);
       expect(res.proposed).toBe(0);
       expect(res.rejected).toBe(0);
+      expect(res.duplicated).toBe(0);
 
-      const results = res.results as Array<{ id: string; action: string }>;
+      const results = res.results as Array<{ id: string; action: string; scope?: { tier: string; confidence: string; reason: string } }>;
       expect(results.length).toBe(1);
-      expect(results[0].id).toBeDefined();
+      expect(results[0].action).toBe('capture');
       expect(typeof results[0].id).toBe('string');
       expect(results[0].id.length).toBeGreaterThan(0);
+      // Scope detection should be present
+      expect(results[0].scope).toBeDefined();
+      expect(typeof results[0].scope!.tier).toBe('string');
 
       state.knowledgeId = results[0].id;
     });
@@ -169,7 +173,14 @@ describe('Knowledge Traceability', () => {
 
       // capture_quick returns { captured, id, governance, scope }
       expect(res.captured).toBe(true);
-      expect(res.id).toBeDefined();
+      expect(typeof res.id).toBe('string');
+      expect((res.id as string).length).toBeGreaterThan(0);
+      const gov = res.governance as { action: string };
+      expect(gov.action).toBe('capture');
+      expect(res.scope).toBeDefined();
+      const scope = res.scope as { tier: string; confidence: string; reason: string };
+      expect(typeof scope.tier).toBe('string');
+      expect(typeof scope.reason).toBe('string');
     });
 
     it('capture the anti-pattern', async () => {
@@ -308,6 +319,13 @@ describe('Knowledge Traceability', () => {
       });
 
       expect(res.success).toBe(true);
+      const link = res.link as { sourceId: string; targetId: string; linkType: string; note: string };
+      expect(link.sourceId).toBe(state.antiId);
+      expect(link.targetId).toBe(state.knowledgeId);
+      expect(link.linkType).toBe('contradicts');
+      expect(link.note).toBe('Client-only validation contradicts server-side validation requirement');
+      expect(typeof res.sourceLinkCount).toBe('number');
+      expect(res.sourceLinkCount as number).toBeGreaterThanOrEqual(1);
     });
 
     it('link pattern to related pattern (supports)', async () => {
@@ -319,25 +337,38 @@ describe('Knowledge Traceability', () => {
       });
 
       expect(res.success).toBe(true);
+      const link = res.link as { sourceId: string; targetId: string; linkType: string; note: string };
+      expect(link.sourceId).toBe(state.knowledgeId);
+      expect(link.targetId).toBe(state.relatedId);
+      expect(link.linkType).toBe('supports');
+      expect(typeof res.sourceLinkCount).toBe('number');
+      expect(res.sourceLinkCount as number).toBeGreaterThanOrEqual(1);
     });
 
     it('get_links should show both links', async () => {
       const res = await op('vault', 'get_links', { entryId: state.knowledgeId });
 
-      const outgoing = res.outgoing as Array<{ targetId: string; linkType: string }>;
-      const incoming = res.incoming as Array<{ sourceId: string; linkType: string }>;
+      // Verify the return shape matches handler: { entryId, outgoing, incoming, totalLinks }
+      expect(res.entryId).toBe(state.knowledgeId);
+
+      const outgoing = res.outgoing as Array<{ targetId: string; linkType: string; note?: string }>;
+      const incoming = res.incoming as Array<{ sourceId: string; linkType: string; note?: string }>;
 
       // Outgoing: knowledgeId → relatedId (supports)
-      expect(
-        outgoing.some((l) => l.targetId === state.relatedId && l.linkType === 'supports'),
-      ).toBe(true);
+      const supportsLink = outgoing.find(
+        (l) => l.targetId === state.relatedId && l.linkType === 'supports',
+      );
+      expect(supportsLink).toBeDefined();
 
       // Incoming: antiId → knowledgeId (contradicts)
-      expect(
-        incoming.some((l) => l.sourceId === state.antiId && l.linkType === 'contradicts'),
-      ).toBe(true);
+      const contradictsLink = incoming.find(
+        (l) => l.sourceId === state.antiId && l.linkType === 'contradicts',
+      );
+      expect(contradictsLink).toBeDefined();
 
-      expect(res.totalLinks).toBeGreaterThanOrEqual(2);
+      // totalLinks = outgoing.length + incoming.length (manual links + auto-links)
+      expect(res.totalLinks).toBe(outgoing.length + incoming.length);
+      expect(res.totalLinks as number).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -349,7 +380,12 @@ describe('Knowledge Traceability', () => {
     it('traverse from pattern should find anti-pattern AND related', async () => {
       const res = await op('vault', 'traverse', { entryId: state.knowledgeId, depth: 1 });
 
+      // Verify traverse return shape: { entryId, depth, connectedEntries, totalConnected }
+      expect(res.entryId).toBe(state.knowledgeId);
+      expect(res.depth).toBe(1);
+
       const connected = res.connectedEntries as Array<{ id: string; linkType: string }>;
+      expect(res.totalConnected).toBe(connected.length);
 
       expect(connected.length).toBeGreaterThanOrEqual(2);
       expect(connected.some((c) => c.id === state.antiId)).toBe(true);
@@ -359,7 +395,10 @@ describe('Knowledge Traceability', () => {
     it('traverse from anti-pattern should find the pattern it contradicts', async () => {
       const res = await op('vault', 'traverse', { entryId: state.antiId, depth: 1 });
 
+      expect(res.entryId).toBe(state.antiId);
+      expect(res.depth).toBe(1);
       const connected = res.connectedEntries as Array<{ id: string }>;
+      expect(res.totalConnected).toBe(connected.length);
       expect(connected.some((c) => c.id === state.knowledgeId)).toBe(true);
     });
   });
@@ -378,9 +417,14 @@ describe('Knowledge Traceability', () => {
         confidence: 0.95,
       });
 
-      expect(res.id).toBeDefined();
+      // brain_feedback returns full FeedbackEntry
+      expect(typeof res.id).toBe('number');
       expect(res.action).toBe('accepted');
       expect(res.entryId).toBe(state.knowledgeId);
+      expect(res.query).toBe('how to secure API endpoints');
+      expect(res.source).toBe('search');
+      expect(res.confidence).toBe(0.95);
+      expect(typeof res.createdAt).toBe('number');
     });
 
     it('record negative feedback on the anti-pattern (it was helpful as a WARNING)', async () => {
@@ -416,7 +460,13 @@ describe('Knowledge Traceability', () => {
 
     it('feedback count should reflect all recorded feedback', async () => {
       const stats = await op('brain', 'brain_stats');
+      expect(typeof stats.feedbackCount).toBe('number');
       expect(stats.feedbackCount as number).toBeGreaterThanOrEqual(4);
+      expect(typeof stats.vocabularySize).toBe('number');
+      // Intelligence sub-object should exist
+      const intelligence = stats.intelligence as { sessions: number; strengths: number };
+      expect(typeof intelligence.sessions).toBe('number');
+      expect(typeof intelligence.strengths).toBe('number');
     });
   });
 
@@ -428,13 +478,15 @@ describe('Knowledge Traceability', () => {
     it('rebuild vocabulary from vault entries', async () => {
       const res = await op('brain', 'rebuild_vocabulary');
       expect(res.rebuilt).toBe(true);
+      expect(typeof res.vocabularySize).toBe('number');
       expect(res.vocabularySize as number).toBeGreaterThan(0);
     });
 
     it('build intelligence from accumulated feedback', async () => {
       const res = await op('brain', 'brain_build_intelligence');
-      // Intelligence building processes feedback into pattern strengths
-      expect(res.strengthsComputed).toBeDefined();
+      // Intelligence building returns { strengthsComputed: number }
+      expect(typeof res.strengthsComputed).toBe('number');
+      expect(res.strengthsComputed as number).toBeGreaterThan(0);
     });
 
     it('brain_strengths should show JWT pattern with non-zero strength', async () => {
@@ -540,10 +592,15 @@ describe('Knowledge Traceability', () => {
 
       expect(res.created).toBe(true);
       const plan = res.plan as Record<string, unknown>;
+      expect(typeof plan.id).toBe('string');
+      expect(plan.status).toBe('draft');
+      expect(plan.objective).toBe('Secure the user authentication API endpoints');
       state.planId = plan.id as string;
 
       // Plan should capture the vault-informed decisions
       const decisions = plan.decisions as string[];
+      expect(Array.isArray(decisions)).toBe(true);
+      expect(decisions.length).toBe(3);
       expect(decisions.some((d) => d.includes('JWT'))).toBe(true);
       expect(decisions.some((d) => d.includes('rate limiting'))).toBe(true);
       expect(decisions.some((d) => d.includes('anti-pattern'))).toBe(true);
@@ -555,17 +612,26 @@ describe('Knowledge Traceability', () => {
         projectPath: '.',
       });
 
-      // Orchestrate should create a plan
-      const plan = res.plan as Record<string, unknown> | undefined;
-      expect(plan).toBeDefined();
-      if (plan) {
-        expect(plan.id).toBeDefined();
-      }
+      // Orchestrate should create a plan with proper shape
+      const plan = res.plan as Record<string, unknown>;
+      expect(typeof plan.id).toBe('string');
+      expect(typeof plan.objective).toBe('string');
 
-      // Check if recommendations were provided from vault/brain
-      const recommendations = res.recommendations as Array<Record<string, unknown>> | undefined;
-      // Orchestrate consults vault — recommendations should exist (even if empty)
-      expect(recommendations).toBeDefined();
+      // Flow metadata
+      const flow = res.flow as Record<string, unknown>;
+      expect(typeof flow.planId).toBe('string');
+      expect(typeof flow.intent).toBe('string');
+      expect(typeof flow.stepsCount).toBe('number');
+
+      // Recommendations from vault/brain
+      const recommendations = res.recommendations as Array<{ pattern: string; strength: number }>;
+      expect(Array.isArray(recommendations)).toBe(true);
+      // Vault has security patterns, so recommendations should be populated
+      expect(recommendations.length).toBeGreaterThan(0);
+      for (const r of recommendations) {
+        expect(typeof r.pattern).toBe('string');
+        expect(typeof r.strength).toBe('number');
+      }
     });
   });
 
@@ -583,15 +649,25 @@ describe('Knowledge Traceability', () => {
       });
 
       expect(res.captured).toBe(true);
+      // session_capture returns { captured, memory, message }
+      expect(typeof res.message).toBe('string');
+      expect(res.message).toBe('Session summary saved to memory.');
+      const memory = res.memory as Record<string, unknown>;
+      expect(memory).toBeDefined();
+      expect(typeof memory.id).toBe('string');
     });
 
     it('memory search should find the session', async () => {
       const res = await op('memory', 'memory_search', { query: 'JWT authentication security' });
 
-      // Memory search returns results
-      const results = Array.isArray(res) ? res : ((res as Record<string, unknown>).results ?? []);
+      // memory_search returns array of { id, type, summary, score, project }
+      const results = res as unknown as Array<{ id: string; type: string; summary: string; score: unknown; project: string }>;
+      expect(Array.isArray(results)).toBe(true);
+      expect(results.length).toBeGreaterThan(0);
       // The session summary mentions JWT — should be findable
-      expect(results).toBeDefined();
+      const found = results.find((r) => r.summary?.includes('JWT') || r.summary?.includes('jwt'));
+      expect(found).toBeDefined();
+      expect(found!.type).toBe('session');
     });
 
     it('vault knowledge should still be intact after session capture', async () => {
@@ -736,9 +812,14 @@ describe('Knowledge Traceability', () => {
       const traversal = await op('vault', 'traverse', { entryId: id, depth: 1 });
       expect(traversal.entryId).toBe(id);
 
-      // Brain feedback references it
+      // Brain feedback stats should be populated
       const stats = await op('brain', 'brain_feedback_stats');
-      expect(stats).toBeDefined();
+      expect(typeof stats.total).toBe('number');
+      expect(stats.total as number).toBeGreaterThanOrEqual(4);
+      const byAction = stats.byAction as Record<string, number>;
+      expect(byAction.accepted).toBeGreaterThanOrEqual(1);
+      expect(typeof stats.acceptanceRate).toBe('number');
+      expect(typeof stats.averageConfidence).toBe('number');
     });
 
     it('vault should have all 3 entries, all properly typed', async () => {

@@ -57,9 +57,36 @@ describe('E2E: skills-and-domains', () => {
     expect(existsSync(join(agentDir, 'skills'))).toBe(true);
   });
 
-  it('should have 10+ built-in skills', () => {
+  it('should have exactly 20 built-in skills', () => {
     const skillDirs = readdirSync(join(agentDir, 'skills'), { encoding: 'utf-8' });
-    expect(skillDirs.length).toBeGreaterThanOrEqual(10);
+    expect(skillDirs.length).toBe(20);
+
+    // Verify all expected skill names are present
+    const expectedSkills = [
+      'brain-debrief',
+      'brainstorming',
+      'code-patrol',
+      'context-resume',
+      'deep-review',
+      'executing-plans',
+      'fix-and-learn',
+      'health-check',
+      'knowledge-harvest',
+      'onboard-me',
+      'parallel-execute',
+      'retrospective',
+      'second-opinion',
+      'systematic-debugging',
+      'test-driven-development',
+      'vault-capture',
+      'vault-navigator',
+      'vault-smells',
+      'verification-before-completion',
+      'writing-plans',
+    ];
+    for (const skill of expectedSkills) {
+      expect(skillDirs, `Missing expected skill: ${skill}`).toContain(skill);
+    }
   });
 
   it('every skill should have a SKILL.md file', () => {
@@ -229,8 +256,10 @@ describe('E2E: skills-and-domains', () => {
     const skillsDir = join(result.agentDir, 'skills');
     if (existsSync(skillsDir)) {
       const dirs = readdirSync(skillsDir, { encoding: 'utf-8' });
-      // Should have at most the selected skills
-      expect(dirs.length).toBeLessThanOrEqual(3); // Some tolerance for naming variations
+      // Should have exactly the selected skills
+      expect(dirs.length).toBe(2);
+      expect(dirs).toContain('vault-capture');
+      expect(dirs).toContain('brainstorming');
     }
   });
 });

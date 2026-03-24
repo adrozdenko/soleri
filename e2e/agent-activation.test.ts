@@ -487,14 +487,16 @@ describe('E2E: agent-activation', () => {
       });
     });
 
-    it('should return current with role and domains', () => {
-      expect(activationData.current.role).toContain(AGENT_ROLE);
-      expect(activationData.current.domains).toContain('testing');
-      expect(activationData.current.domains).toContain('quality');
+    it('should return current with exact role and domains', () => {
+      // Fresh agent with no extra vault domains — role should be exact
+      expect(activationData.current.role).toBe(AGENT_ROLE);
+      expect(activationData.current.domains).toEqual(['testing', 'quality']);
     });
 
-    it('should have greeting that includes agent name', () => {
-      expect(activationData.current.greeting).toContain(AGENT_NAME);
+    it('should have greeting with exact format for fresh agent', () => {
+      expect(activationData.current.greeting).toBe(
+        `Hello! I'm ${AGENT_NAME}. ${AGENT_ROLE} ready to help.`,
+      );
     });
 
     it('should show setup_status with no CLAUDE.md injected', () => {
@@ -507,50 +509,48 @@ describe('E2E: agent-activation', () => {
       expect(activationData.setup_status.vault_entry_count).toBe(0);
     });
 
-    it('should suggest injecting CLAUDE.md in next_steps', () => {
-      const claudeMdStep = activationData.next_steps.find((s) =>
-        s.toLowerCase().includes('claude.md'),
+    it('should suggest injecting CLAUDE.md in next_steps with exact text', () => {
+      expect(activationData.next_steps).toContainEqual(
+        'No CLAUDE.md configured — run inject_claude_md with global: true for all projects, or without for this project only',
       );
-      expect(claudeMdStep).toBeDefined();
     });
 
-    it('should suggest capturing knowledge when vault is empty', () => {
-      const vaultStep = activationData.next_steps.find((s) =>
-        s.toLowerCase().includes('vault is empty'),
+    it('should suggest capturing knowledge when vault is empty with exact text', () => {
+      expect(activationData.next_steps).toContainEqual(
+        'Vault is empty — start capturing knowledge with the domain capture ops, or install a knowledge pack with soleri pack install',
       );
-      expect(vaultStep).toBeDefined();
     });
 
-    it('should list core capabilities in what_you_can_do', () => {
+    it('should list exactly 7 core capabilities in what_you_can_do for fresh agent', () => {
       const caps = activationData.current.what_you_can_do;
-      expect(caps.length).toBeGreaterThanOrEqual(7);
-      expect(caps.some((c) => c.includes('vault'))).toBe(true);
-      expect(caps.some((c) => c.includes('plan'))).toBe(true);
-      expect(caps.some((c) => c.includes('brain') || c.includes('Learn'))).toBe(true);
-      expect(caps.some((c) => c.includes('memory') || c.includes('Remember'))).toBe(true);
-      expect(caps.some((c) => c.includes('knowledge') || c.includes('Capture'))).toBe(true);
-      expect(caps.some((c) => c.includes('loop') || c.includes('validation'))).toBe(true);
-      expect(caps.some((c) => c.includes('Orchestrate') || c.includes('workflow'))).toBe(true);
+      expect(caps).toHaveLength(7);
+      expect(caps).toEqual([
+        'Search and traverse a connected knowledge graph (vault) before every decision',
+        'Create structured plans with approval gates and drift reconciliation',
+        'Learn from sessions — brain tracks pattern strengths and recommends approaches',
+        'Remember across conversations and projects (cross-project memory)',
+        'Capture knowledge as typed entries with Zettelkasten links',
+        'Run iterative validation loops until quality targets are met',
+        'Orchestrate multi-step workflows: plan → execute → capture',
+      ]);
     });
 
-    it('should suggest installing packs when vault is empty', () => {
-      const suggestions = activationData.current.growth_suggestions;
-      expect(suggestions.some((s) => s.toLowerCase().includes('pack'))).toBe(true);
-    });
-
-    it('should suggest capturing patterns when vault has few entries', () => {
-      const suggestions = activationData.current.growth_suggestions;
-      expect(suggestions.some((s) => s.toLowerCase().includes('few entries'))).toBe(true);
+    it('should have exact growth suggestions for fresh agent', () => {
+      expect(activationData.current.growth_suggestions).toEqual([
+        'Vault has few entries — start capturing patterns to build your knowledge base',
+        'No packs installed — try: soleri pack install <name> to add domain intelligence',
+        'Available starter packs: soleri pack available',
+      ]);
     });
 
     it('should return guidelines matching agent principles', () => {
       expect(activationData.guidelines).toEqual(AGENT_PRINCIPLES);
     });
 
-    it('should return session_instruction mentioning agent name and domains', () => {
-      expect(activationData.session_instruction).toContain(AGENT_NAME);
-      expect(activationData.session_instruction).toContain('testing');
-      expect(activationData.session_instruction).toContain('quality');
+    it('should return exact session_instruction with name, role, and domains', () => {
+      expect(activationData.session_instruction).toBe(
+        `You are ${AGENT_NAME}. Your origin role is ${AGENT_ROLE}, but you have grown — your current capabilities span: testing, quality. Adapt your expertise to match your actual knowledge. Reference patterns from the knowledge vault. Provide concrete examples. Flag anti-patterns with severity.`,
+      );
     });
 
     it('should have no executing plans on fresh agent', () => {
@@ -622,51 +622,57 @@ describe('E2E: agent-activation', () => {
       activationData = res.data as ActivationResult;
     });
 
-    it('should reflect vault entry count in setup_status', () => {
+    it('should reflect exact vault entry count in setup_status', () => {
       expect(activationData.setup_status.vault_has_entries).toBe(true);
-      expect(activationData.setup_status.vault_entry_count).toBeGreaterThanOrEqual(3);
+      expect(activationData.setup_status.vault_entry_count).toBe(3);
     });
 
-    it('should include vault-discovered domains beyond configured ones', () => {
-      expect(activationData.current.domains).toContain('testing');
-      expect(activationData.current.domains).toContain('quality');
-      expect(activationData.current.domains).toContain('performance');
+    it('should include exact domain list with vault-discovered domains', () => {
+      // Configured: testing, quality. Vault-discovered: performance.
+      expect(activationData.current.domains).toEqual(
+        expect.arrayContaining(['testing', 'quality', 'performance']),
+      );
+      expect(activationData.current.domains).toHaveLength(3);
     });
 
-    it('should reflect vault entry count in greeting', () => {
-      expect(activationData.current.greeting).toContain('Vault:');
-      expect(activationData.current.greeting).toMatch(/\d+ entries/);
+    it('should reflect exact vault entry count and domain summary in greeting', () => {
+      expect(activationData.current.greeting).toContain('Vault: 3 entries');
+      expect(activationData.current.greeting).toContain('1 testing');
+      expect(activationData.current.greeting).toContain('1 quality');
+      expect(activationData.current.greeting).toContain('1 performance');
     });
 
-    it('should show domain-specific capabilities with entry counts', () => {
+    it('should show domain-specific capabilities with exact entry counts', () => {
       const caps = activationData.current.capabilities;
-      const testingCap = caps.find((c) => c.domain === 'testing');
-      const qualityCap = caps.find((c) => c.domain === 'quality');
-      const perfCap = caps.find((c) => c.domain === 'performance');
-
-      expect(testingCap).toBeDefined();
-      expect(testingCap!.entries).toBeGreaterThanOrEqual(1);
-      expect(qualityCap).toBeDefined();
-      expect(qualityCap!.entries).toBeGreaterThanOrEqual(1);
-      expect(perfCap).toBeDefined();
-      expect(perfCap!.entries).toBeGreaterThanOrEqual(1);
+      expect(caps).toEqual(
+        expect.arrayContaining([
+          { domain: 'testing', entries: 1 },
+          { domain: 'quality', entries: 1 },
+          { domain: 'performance', entries: 1 },
+        ]),
+      );
+      expect(caps).toHaveLength(3);
     });
 
-    it('should mention new domains in what_you_can_do', () => {
+    it('should include domain-specific entries in what_you_can_do', () => {
       const caps = activationData.current.what_you_can_do;
-      expect(caps.some((c) => c.includes('testing'))).toBe(true);
+      // Should have 7 core + domain-specific entries for domains with vault entries
+      expect(caps).toContainEqual('testing: 1 patterns and knowledge entries');
+      expect(caps).toContainEqual('quality: 1 patterns and knowledge entries');
+      expect(caps).toContainEqual('performance: 1 patterns and knowledge entries');
+      expect(caps).toHaveLength(10); // 7 core + 3 domain-specific
     });
 
-    it('should reflect expanded role when new domains are discovered', () => {
-      // The role should mention the new 'performance' domain
-      expect(activationData.current.role).toContain('performance');
+    it('should reflect expanded role with exact format when new domains are discovered', () => {
+      expect(activationData.current.role).toBe(
+        `${AGENT_ROLE} (also covering performance)`,
+      );
     });
 
     it('should not suggest vault is empty in next_steps anymore', () => {
-      const vaultEmptyStep = activationData.next_steps.find((s) =>
-        s.toLowerCase().includes('vault is empty'),
-      );
-      expect(vaultEmptyStep).toBeUndefined();
+      for (const step of activationData.next_steps) {
+        expect(step.toLowerCase()).not.toContain('vault is empty');
+      }
     });
   });
 
@@ -675,7 +681,7 @@ describe('E2E: agent-activation', () => {
   // ═══════════════════════════════════════════════════════════════════
 
   describe('Journey 3: CLAUDE.md injection', () => {
-    it('should inject CLAUDE.md into project directory', async () => {
+    it('should inject CLAUDE.md into project directory with full result', async () => {
       const res = await callOp(`${AGENT_ID}_core`, 'inject_claude_md', {
         projectPath: projectDir,
       });
@@ -683,6 +689,8 @@ describe('E2E: agent-activation', () => {
       const data = res.data as InjectResult;
       expect(data.injected).toBe(true);
       expect(data.action).toBe('created');
+      expect(data.engineRules).toBe(true);
+      expect(data.path).toBe(join(projectDir, 'CLAUDE.md'));
     });
 
     it('should create CLAUDE.md with engine rules', () => {
@@ -715,15 +723,15 @@ describe('E2E: agent-activation', () => {
       expect(content).toContain(AGENT_ROLE);
     });
 
-    it('should be idempotent — second injection does not duplicate content', async () => {
+    it('should be idempotent — second injection returns updated action with no duplicates', async () => {
       const res = await callOp(`${AGENT_ID}_core`, 'inject_claude_md', {
         projectPath: projectDir,
       });
       expect(res.success).toBe(true);
       const data = res.data as InjectResult;
       expect(data.injected).toBe(true);
-      // Should be 'updated' or similar — not creating duplicate
-      expect(['updated', 'appended']).toContain(data.action);
+      expect(data.action).toBe('updated');
+      expect(data.engineRules).toBe(false);
 
       // Verify no duplicate markers
       const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf-8');
@@ -788,13 +796,14 @@ describe('E2E: agent-activation', () => {
       expect(data.deactivated).toBe(true);
     });
 
-    it('should return cleanup message mentioning agent name', async () => {
+    it('should return exact cleanup message', async () => {
       const res = await callOp(`${AGENT_ID}_core`, 'activate', {
         deactivate: true,
       });
       const data = res.data as DeactivationResult;
-      expect(data.message).toContain(AGENT_NAME);
-      expect(data.message).toContain('deactivated');
+      expect(data.message).toBe(
+        `Goodbye! ${AGENT_NAME} persona deactivated. Reverting to default behavior.`,
+      );
     });
   });
 
@@ -829,30 +838,29 @@ describe('E2E: agent-activation', () => {
       expect(approveData.executing).toBe(true);
     });
 
-    it('should detect executing plans on activation', async () => {
+    it('should detect executing plans on activation with exact shape', async () => {
       const res = await callOp(`${AGENT_ID}_core`, 'activate', {
         projectPath: projectDir,
       });
       expect(res.success).toBe(true);
       const data = res.data as ActivationResult;
 
-      expect(data.executing_plans.length).toBeGreaterThanOrEqual(1);
-      const plan = data.executing_plans.find((p) => p.id === planId);
-      expect(plan).toBeDefined();
-      expect(plan!.objective).toBe('Validate plan detection during activation');
-      expect(plan!.tasks).toBe(2);
+      expect(data.executing_plans).toHaveLength(1);
+      expect(data.executing_plans[0]).toEqual({
+        id: planId,
+        objective: 'Validate plan detection during activation',
+        tasks: 2,
+        completed: 0,
+      });
     });
 
-    it('should include plan reminder in next_steps', async () => {
+    it('should include exact plan reminder in next_steps', async () => {
       const res = await callOp(`${AGENT_ID}_core`, 'activate', {
         projectPath: projectDir,
       });
       const data = res.data as ActivationResult;
 
-      const planStep = data.next_steps.find(
-        (s) => s.toLowerCase().includes('plan') && s.toLowerCase().includes('progress'),
-      );
-      expect(planStep).toBeDefined();
+      expect(data.next_steps[0]).toBe('1 plan(s) in progress — use get_plan to review');
     });
   });
 
@@ -902,7 +910,7 @@ describe('E2E: agent-activation', () => {
       expect(data.setup_status.claude_md_injected).toBe(true);
     });
 
-    it('should be idempotent — double activation returns same structure', async () => {
+    it('should return consistent response shape across multiple activations', async () => {
       const res1 = await callOp(`${AGENT_ID}_core`, 'activate', {
         projectPath: projectDir,
       });
@@ -916,13 +924,17 @@ describe('E2E: agent-activation', () => {
       const data1 = res1.data as ActivationResult;
       const data2 = res2.data as ActivationResult;
 
-      // Same structure and values
-      expect(data1.activated).toBe(data2.activated);
+      // Exact structural equality — not just "same shape"
+      expect(data1.activated).toBe(true);
+      expect(data2.activated).toBe(true);
       expect(data1.origin).toEqual(data2.origin);
       expect(data1.current.role).toBe(data2.current.role);
       expect(data1.current.domains).toEqual(data2.current.domains);
+      expect(data1.current.capabilities).toEqual(data2.current.capabilities);
       expect(data1.setup_status).toEqual(data2.setup_status);
       expect(data1.guidelines).toEqual(data2.guidelines);
+      expect(data1.session_instruction).toBe(data2.session_instruction);
+      expect(data1.executing_plans).toEqual(data2.executing_plans);
     });
 
     it('should discover new domains from vault that were not in config', async () => {
@@ -955,21 +967,99 @@ describe('E2E: agent-activation', () => {
       expect(res.error).toContain('Unknown operation');
     });
 
-    it('health op should work alongside activation', async () => {
+    it('health op should return exact structure alongside activation', async () => {
       const res = await callOp(`${AGENT_ID}_core`, 'health');
       expect(res.success).toBe(true);
-      const data = res.data as { status: string; agent: { name: string; role: string } };
+      const data = res.data as {
+        status: string;
+        agent: { name: string; role: string };
+        vault: { entries: number; domains: string[] };
+      };
       expect(data.status).toBe('ok');
-      expect(data.agent.name).toBe(AGENT_NAME);
-      expect(data.agent.role).toBe(AGENT_ROLE);
+      expect(data.agent).toEqual({ name: AGENT_NAME, role: AGENT_ROLE });
+      expect(data.vault.entries).toBe(3);
+      expect(data.vault.domains).toEqual(
+        expect.arrayContaining(['testing', 'quality', 'performance']),
+      );
     });
 
-    it('identity op should return seeded identity after activation', async () => {
+    it('identity op should return full seeded identity after activation', async () => {
       const res = await callOp(`${AGENT_ID}_core`, 'identity');
       expect(res.success).toBe(true);
-      const data = res.data as { name: string; role: string };
+      const data = res.data as {
+        agentId: string;
+        name: string;
+        role: string;
+        description: string;
+        personality: string[];
+        version: number;
+      };
+      expect(data.agentId).toBe(AGENT_ID);
       expect(data.name).toBe(AGENT_NAME);
       expect(data.role).toBe(AGENT_ROLE);
+      expect(data.description).toBe(AGENT_DESCRIPTION);
+      expect(data.personality).toEqual(AGENT_PRINCIPLES);
+      expect(data.version).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Negative tests
+  // ═══════════════════════════════════════════════════════════════════
+
+  describe('Negative tests', () => {
+    it('double activation should be idempotent — same structure both times', async () => {
+      const res1 = await callOp(`${AGENT_ID}_core`, 'activate', {
+        projectPath: projectDir,
+      });
+      const res2 = await callOp(`${AGENT_ID}_core`, 'activate', {
+        projectPath: projectDir,
+      });
+      expect(res1.success).toBe(true);
+      expect(res2.success).toBe(true);
+
+      const data1 = res1.data as ActivationResult;
+      const data2 = res2.data as ActivationResult;
+      expect(data1.activated).toBe(true);
+      expect(data2.activated).toBe(true);
+      expect(data1.origin).toEqual(data2.origin);
+      expect(data1.current.role).toBe(data2.current.role);
+      expect(data1.current.domains).toEqual(data2.current.domains);
+      expect(data1.current.capabilities).toEqual(data2.current.capabilities);
+      expect(data1.setup_status).toEqual(data2.setup_status);
+      expect(data1.guidelines).toEqual(data2.guidelines);
+      expect(data1.session_instruction).toBe(data2.session_instruction);
+    });
+
+    it('deactivation when not activated should handle gracefully', async () => {
+      // Deactivate first to ensure clean state
+      await callOp(`${AGENT_ID}_core`, 'activate', { deactivate: true });
+      // Deactivate again — should not throw
+      const res = await callOp(`${AGENT_ID}_core`, 'activate', { deactivate: true });
+      expect(res.success).toBe(true);
+      const data = res.data as DeactivationResult;
+      expect(data.deactivated).toBe(true);
+      expect(data.message).toBe(
+        `Goodbye! ${AGENT_NAME} persona deactivated. Reverting to default behavior.`,
+      );
+    });
+
+    it('identity request for non-existent agentId should return PERSONA fallback', async () => {
+      // The identity op in our test facade always falls back to PERSONA for the configured agent.
+      // But the underlying identityManager.getIdentity for a different ID returns null.
+      const wrongId = 'nonexistent-agent-xyz';
+      const identity = runtime.identityManager.getIdentity(wrongId);
+      expect(identity).toBeNull();
+    });
+
+    it('activation with missing projectPath should use default', async () => {
+      const res = await callOp(`${AGENT_ID}_core`, 'activate', {});
+      expect(res.success).toBe(true);
+      const data = res.data as ActivationResult;
+      expect(data.activated).toBe(true);
+      // Should still return valid structure
+      expect(data.origin.name).toBe(AGENT_NAME);
+      expect(data.current.domains.length).toBeGreaterThanOrEqual(2);
     });
   });
 

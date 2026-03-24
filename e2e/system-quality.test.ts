@@ -259,10 +259,15 @@ describe('System Quality Tests', () => {
         ],
       });
 
-      expect(res.captured).toBeGreaterThanOrEqual(5);
+      expect(res.captured).toBe(5);
+      expect(res.proposed).toBe(0);
+      expect(res.rejected).toBe(0);
       const results = res.results as Array<{ id: string; action: string }>;
       expect(results.length).toBe(5);
       for (const r of results) {
+        expect(r.action).toBe('capture');
+        expect(typeof r.id).toBe('string');
+        expect(r.id.length).toBeGreaterThan(0);
         dbPatternIds.push(r.id);
       }
     });
@@ -274,12 +279,20 @@ describe('System Quality Tests', () => {
         domain: 'database',
       });
 
-      expect(res.plan).toBeDefined();
-      expect(res.flow).toBeDefined();
-      expect(res.recommendations).toBeDefined();
+      const plan = res.plan as Record<string, unknown>;
+      expect(plan).toBeDefined();
+      expect(typeof plan.id).toBe('string');
+      expect(typeof plan.objective).toBe('string');
+
+      const flow = res.flow as Record<string, unknown>;
+      expect(flow).toBeDefined();
+      expect(typeof flow.planId).toBe('string');
+      expect(typeof flow.intent).toBe('string');
+      expect(typeof flow.stepsCount).toBe('number');
 
       const recommendations = res.recommendations as Array<{ pattern: string; strength: number }>;
-      // orchestrate_plan searches vault when brain has no recommendations (lines 188-199 of orchestrate-ops.ts)
+      expect(Array.isArray(recommendations)).toBe(true);
+      // orchestrate_plan searches vault when brain has no recommendations
       // It falls back to vault.search and returns patterns with strength=50
       expect(recommendations.length).toBeGreaterThan(0);
 
@@ -293,6 +306,10 @@ describe('System Quality Tests', () => {
           r.pattern.toLowerCase().includes('partition'),
       );
       expect(dbRelated).toBe(true);
+
+      // Vault fallback recommendations have strength=50
+      const vaultFallback = recommendations.filter((r) => r.strength === 50);
+      expect(vaultFallback.length).toBeGreaterThan(0);
     });
 
     it('1.3 orchestrate_plan flow has correct intent detection', async () => {
@@ -302,11 +319,13 @@ describe('System Quality Tests', () => {
       });
 
       const flow = res.flow as Record<string, unknown>;
-      expect(flow.intent).toBeDefined();
       // "optimize" should match ENHANCE intent
       expect(flow.intent).toBe('ENHANCE');
-      expect(flow.planId).toBeDefined();
+      expect(typeof flow.planId).toBe('string');
       expect(typeof flow.stepsCount).toBe('number');
+      expect(flow.stepsCount as number).toBeGreaterThanOrEqual(0);
+      expect(typeof flow.flowId).toBe('string');
+      expect(Array.isArray(flow.warnings)).toBe(true);
     });
 
     it('1.4 Plan decisions include brain/vault pattern strings', async () => {
@@ -326,14 +345,18 @@ describe('System Quality Tests', () => {
       });
 
       const plan = res.plan as Record<string, unknown>;
-      expect(plan.id).toBeDefined();
-      // Decisions are populated from recommendations (line 208-210 of orchestrate-ops.ts)
-      expect(plan.decisions).toBeDefined();
+      expect(typeof plan.id).toBe('string');
+      expect(typeof plan.objective).toBe('string');
+      // Decisions are populated from recommendations (orchestrate-ops.ts)
       const decisions = plan.decisions as string[];
+      expect(Array.isArray(decisions)).toBe(true);
       expect(decisions.length).toBeGreaterThan(0);
-      // Each decision is prefixed with "Brain pattern: ..."
+      // Each decision is prefixed with "Brain pattern: <title> (strength: N.N)"
       const hasBrainPrefix = decisions.some((d) => d.startsWith('Brain pattern:'));
       expect(hasBrainPrefix).toBe(true);
+      // Decisions contain strength scores
+      const hasStrength = decisions.some((d) => /\(strength: \d+\.\d\)/.test(d));
+      expect(hasStrength).toBe(true);
     });
 
     it('1.5 Capture new caching knowledge', async () => {
@@ -360,7 +383,14 @@ describe('System Quality Tests', () => {
         ],
       });
 
-      expect(res.captured).toBeGreaterThanOrEqual(2);
+      expect(res.captured).toBe(2);
+      expect(res.proposed).toBe(0);
+      expect(res.rejected).toBe(0);
+      const results = res.results as Array<{ id: string; action: string }>;
+      expect(results.length).toBe(2);
+      for (const r of results) {
+        expect(r.action).toBe('capture');
+      }
     });
 
     it('1.6 orchestrate_plan for "add caching layer" includes new caching knowledge', async () => {
@@ -369,8 +399,15 @@ describe('System Quality Tests', () => {
         domain: 'performance',
       });
 
-      const recommendations = res.recommendations as Array<{ pattern: string; strength: number }>;
+      const recommendations = res.recommendations as Array<{ pattern: string; strength: number; entryId?: string }>;
+      expect(Array.isArray(recommendations)).toBe(true);
       expect(recommendations.length).toBeGreaterThan(0);
+
+      // Verify recommendation shape: each has pattern and strength
+      for (const r of recommendations) {
+        expect(typeof r.pattern).toBe('string');
+        expect(typeof r.strength).toBe('number');
+      }
 
       // Should find the newly captured caching patterns
       const cachingRelated = recommendations.some(
@@ -522,8 +559,8 @@ describe('System Quality Tests', () => {
 
     it('2.7 Build intelligence from accumulated feedback', async () => {
       const res = await op('brain', 'brain_build_intelligence');
-      expect(res.strengthsComputed).toBeDefined();
       expect(typeof res.strengthsComputed).toBe('number');
+      // After 17 feedback entries across multiple patterns, strength computation must produce results
       expect(res.strengthsComputed as number).toBeGreaterThan(0);
     });
 
@@ -616,14 +653,24 @@ describe('System Quality Tests', () => {
     it('2.12 brain_feedback_stats shows correct action distribution', async () => {
       const res = await op('brain', 'brain_feedback_stats');
 
-      expect(res.total).toBeGreaterThanOrEqual(17);
+      expect(typeof res.total).toBe('number');
+      expect(res.total as number).toBeGreaterThanOrEqual(17);
       const byAction = res.byAction as Record<string, number>;
       expect(byAction.accepted).toBeGreaterThanOrEqual(12); // 5 + 3 + 4
       expect(byAction.dismissed).toBeGreaterThanOrEqual(5); // 3 + 2
-      expect(res.acceptanceRate).toBeDefined();
+      // acceptanceRate = accepted / total, so 12/17 ≈ 0.706
       expect(typeof res.acceptanceRate).toBe('number');
-      expect(res.acceptanceRate as number).toBeGreaterThan(0);
+      expect(res.acceptanceRate as number).toBeGreaterThan(0.5);
       expect(res.acceptanceRate as number).toBeLessThanOrEqual(1);
+      // bySource should also be populated
+      const bySource = res.bySource as Record<string, number>;
+      expect(typeof bySource).toBe('object');
+      expect(bySource.search).toBeGreaterThanOrEqual(1);
+      expect(bySource.recommendation).toBeGreaterThanOrEqual(1);
+      // averageConfidence should be between 0 and 1
+      expect(typeof res.averageConfidence).toBe('number');
+      expect(res.averageConfidence as number).toBeGreaterThan(0);
+      expect(res.averageConfidence as number).toBeLessThanOrEqual(1);
     });
   });
 
@@ -636,11 +683,22 @@ describe('System Quality Tests', () => {
       const res = await op('admin', 'admin_health');
 
       expect(res.status).toBe('ok');
-      expect(res.llm).toBeDefined();
+      // Vault stats
+      const vault = res.vault as { entries: number; domains: string[] };
+      expect(typeof vault.entries).toBe('number');
+      expect(vault.entries).toBeGreaterThan(0);
+      expect(Array.isArray(vault.domains)).toBe(true);
+      // LLM availability
       const llm = res.llm as { openai: boolean; anthropic: boolean };
-      // In test environment, no API keys are configured
       expect(typeof llm.openai).toBe('boolean');
       expect(typeof llm.anthropic).toBe('boolean');
+      // Brain stats
+      const brain = res.brain as { vocabularySize: number; feedbackCount: number };
+      expect(typeof brain.vocabularySize).toBe('number');
+      expect(typeof brain.feedbackCount).toBe('number');
+      // Curator
+      const curator = res.curator as { initialized: boolean };
+      expect(typeof curator.initialized).toBe('boolean');
     });
 
     it('3.2 brain_recommend works without LLM — returns TF-IDF results', async () => {
@@ -662,8 +720,14 @@ describe('System Quality Tests', () => {
 
       expect(res.intent).toBe('fix');
       expect(res.mode).toBe('FIX-MODE');
+      expect(typeof res.confidence).toBe('number');
       expect(res.confidence as number).toBeGreaterThan(0);
-      // Keyword-based routing, no LLM needed
+      expect(res.method).toBe('keyword');
+      expect(Array.isArray(res.matchedKeywords)).toBe(true);
+      const matched = res.matchedKeywords as string[];
+      expect(matched.length).toBeGreaterThan(0);
+      // "fix" and "broken" should be among matched keywords
+      expect(matched.some((k) => k === 'fix' || k === 'broken')).toBe(true);
     });
 
     it('3.4 Vault search works without LLM — pure FTS5', async () => {
@@ -691,40 +755,60 @@ describe('System Quality Tests', () => {
 
       expect(res.created).toBe(true);
       const plan = res.plan as Record<string, unknown>;
-      expect(plan.id).toBeDefined();
+      expect(typeof plan.id).toBe('string');
       expect(plan.status).toBe('draft');
+      expect(typeof plan.objective).toBe('string');
+      expect(plan.objective).toBe('Add input validation to all API endpoints');
     });
 
     it('3.6 llm_status op reports correct state', async () => {
       const res = await op('brain', 'llm_status');
 
-      expect(res.providers).toBeDefined();
       const providers = res.providers as Record<string, { available: boolean; keyPool: unknown }>;
-      expect(providers.openai).toBeDefined();
-      expect(providers.anthropic).toBeDefined();
       expect(typeof providers.openai.available).toBe('boolean');
       expect(typeof providers.anthropic.available).toBe('boolean');
-      expect(res.routes).toBeDefined();
-      expect(Array.isArray(res.routes)).toBe(true);
+      // In test env, no API keys — keyPool should be null
+      // (or have status if keys are configured)
+      expect(providers.openai.keyPool === null || typeof providers.openai.keyPool === 'object').toBe(
+        true,
+      );
+      const routes = res.routes as Array<unknown>;
+      expect(Array.isArray(routes)).toBe(true);
     });
 
     it('3.7 admin_diagnostic reports LLM provider status', async () => {
       const res = await op('admin', 'admin_diagnostic');
 
-      expect(res.overall).toBeDefined();
-      expect(res.checks).toBeDefined();
+      // Overall is derived from check statuses
+      expect(['healthy', 'degraded', 'unhealthy']).toContain(res.overall);
+      expect(typeof res.summary).toBe('string');
       const checks = res.checks as Array<{ name: string; status: string; detail: string }>;
+      expect(Array.isArray(checks)).toBe(true);
 
-      const llmOpenai = checks.find((c) => c.name === 'llm_openai');
-      const llmAnthropic = checks.find((c) => c.name === 'llm_anthropic');
-      expect(llmOpenai).toBeDefined();
-      expect(llmAnthropic).toBeDefined();
+      // Verify all expected check names are present
+      const checkNames = checks.map((c) => c.name);
+      expect(checkNames).toContain('vault');
+      expect(checkNames).toContain('brain_vocabulary');
+      expect(checkNames).toContain('brain_intelligence');
+      expect(checkNames).toContain('llm_openai');
+      expect(checkNames).toContain('llm_anthropic');
+      expect(checkNames).toContain('curator');
+
+      // Verify check shapes
+      for (const check of checks) {
+        expect(['ok', 'warn', 'error']).toContain(check.status);
+        expect(typeof check.detail).toBe('string');
+        expect(check.detail.length).toBeGreaterThan(0);
+      }
+
+      const llmOpenai = checks.find((c) => c.name === 'llm_openai')!;
+      const llmAnthropic = checks.find((c) => c.name === 'llm_anthropic')!;
       // LLM status depends on env: 'ok' if API keys present, 'warn' if not
-      expect(['ok', 'warn']).toContain(llmOpenai!.status);
-      expect(['ok', 'warn']).toContain(llmAnthropic!.status);
-      // Detail should describe the state
-      expect(llmOpenai!.detail).toBeDefined();
-      expect(typeof llmOpenai!.detail).toBe('string');
+      expect(['ok', 'warn']).toContain(llmOpenai.status);
+      expect(['ok', 'warn']).toContain(llmAnthropic.status);
+      // Detail describes the state
+      expect(llmOpenai.detail).toMatch(/keys/i);
+      expect(llmAnthropic.detail).toMatch(/keys/i);
     });
   });
 
@@ -860,8 +944,16 @@ describe('System Quality Tests', () => {
       // All 10 should succeed (titles are unique)
       expect(captured.length).toBe(10);
 
-      // Verify each got a unique ID
-      const ids = new Set(captured.map((r) => r.id as string));
+      // Verify each got a unique ID with correct shape
+      const ids = new Set<string>();
+      for (const r of captured) {
+        expect(typeof r.id).toBe('string');
+        expect((r.id as string).length).toBeGreaterThan(0);
+        const gov = r.governance as { action: string };
+        expect(gov.action).toBe('capture');
+        expect(typeof r.scope).toBe('object');
+        ids.add(r.id as string);
+      }
       expect(ids.size).toBe(10);
     });
 
@@ -925,7 +1017,9 @@ describe('System Quality Tests', () => {
       for (const res of plans) {
         expect(res.created).toBe(true);
         const plan = res.plan as Record<string, unknown>;
-        expect(plan.id).toBeDefined();
+        expect(typeof plan.id).toBe('string');
+        expect(plan.status).toBe('draft');
+        expect(typeof plan.objective).toBe('string');
         ids.add(plan.id as string);
       }
 
@@ -973,9 +1067,12 @@ describe('System Quality Tests', () => {
       ]);
 
       for (const res of orchPromises) {
-        expect(res.plan).toBeDefined();
-        expect(res.flow).toBeDefined();
-        expect(res.recommendations).toBeDefined();
+        const plan = res.plan as Record<string, unknown>;
+        expect(typeof plan.id).toBe('string');
+        const flow = res.flow as Record<string, unknown>;
+        expect(typeof flow.planId).toBe('string');
+        expect(typeof flow.intent).toBe('string');
+        expect(Array.isArray(res.recommendations)).toBe(true);
       }
 
       // Plans should have different IDs

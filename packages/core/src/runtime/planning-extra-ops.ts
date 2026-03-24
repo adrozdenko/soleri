@@ -37,7 +37,7 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'plan_iterate',
       description:
-        'Revise a draft plan — change objective, scope, decisions, or add/remove tasks. Only works on draft plans.',
+        'Revise a draft plan — change objective, scope, decisions, alternatives, or add/remove tasks. Only works on draft plans.',
       auth: 'write',
       schema: z.object({
         planId: z.string().describe('ID of the draft plan to iterate on'),
@@ -49,6 +49,17 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           .describe(
             'New decisions list (replaces existing) — strings or {decision, rationale} objects',
           ),
+        alternatives: z
+          .array(
+            z.object({
+              approach: z.string().describe('The alternative approach considered'),
+              pros: z.array(z.string()).describe('Advantages of this approach'),
+              cons: z.array(z.string()).describe('Disadvantages of this approach'),
+              rejected_reason: z.string().describe('Why this alternative was rejected'),
+            }),
+          )
+          .optional()
+          .describe('Rejected alternative approaches (replaces existing)'),
         addTasks: z
           .array(z.object({ title: z.string(), description: z.string() }))
           .optional()
@@ -57,13 +68,21 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
       }),
       handler: async (params) => {
         try {
-          const plan = planner.iterate(params.planId as string, {
+          const { plan, mutated } = planner.iterate(params.planId as string, {
             objective: params.objective as string | undefined,
             scope: params.scope as string | undefined,
             decisions: params.decisions as string[] | undefined,
+            alternatives: params.alternatives as
+              | Array<{ approach: string; pros: string[]; cons: string[]; rejected_reason: string }>
+              | undefined,
             addTasks: params.addTasks as Array<{ title: string; description: string }> | undefined,
             removeTasks: params.removeTasks as string[] | undefined,
           });
+
+          if (mutated === 0) {
+            return { iterated: false, reason: 'no changes detected', plan };
+          }
+
           return { iterated: true, plan };
         } catch (err) {
           return { error: (err as Error).message };
@@ -139,20 +158,16 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           .describe('Specific drift items — differences between plan and reality'),
       }),
       handler: async (params) => {
-        try {
-          const plan = planner.reconcile(params.planId as string, {
-            actualOutcome: params.actualOutcome as string,
-            driftItems: params.driftItems as DriftItem[] | undefined,
-          });
-          return {
-            reconciled: true,
-            accuracy: plan.reconciliation!.accuracy,
-            driftCount: plan.reconciliation!.driftItems.length,
-            plan,
-          };
-        } catch (err) {
-          return { error: (err as Error).message };
-        }
+        const plan = planner.reconcile(params.planId as string, {
+          actualOutcome: params.actualOutcome as string,
+          driftItems: params.driftItems as DriftItem[] | undefined,
+        });
+        return {
+          reconciled: true,
+          accuracy: plan.reconciliation!.accuracy,
+          driftCount: plan.reconciliation!.driftItems.length,
+          plan,
+        };
       },
     },
 

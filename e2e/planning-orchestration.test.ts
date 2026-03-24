@@ -350,16 +350,25 @@ describe('E2E: planning-orchestration', () => {
         flow: { planId: string; intent: string; stepsCount: number; warnings: string[] };
       };
 
-      // Plan should exist
+      // Plan should exist with plan- prefix (legacy planner plan)
       expect(data.plan).toBeDefined();
       expect(data.plan.id).toBeDefined();
+      expect(data.plan.id).toMatch(/^plan-/);
+      expect(data.plan.objective).toContain('notification');
       orchPlanId = data.plan.id;
 
-      // Flow info should be present
+      // Flow info should be present with BUILD intent (prompt starts with "Build")
       expect(data.flow).toBeDefined();
-      expect(data.flow.intent).toBeDefined();
-      expect(typeof data.flow.stepsCount).toBe('number');
+      expect(data.flow.intent).toBe('BUILD');
+      expect(data.flow.flowId).toBe('BUILD-flow');
+      // 3 steps kept (vault-search, recommend, validate), 3 skipped (check-duplicates, get-architecture, get-workflow)
+      // Pruning is probe-based: vault=true, brain=false, designSystem=false
+      expect(data.flow.stepsCount).toBe(3);
+      expect(data.flow.skippedCount).toBe(3);
       expect(Array.isArray(data.flow.warnings)).toBe(true);
+      // estimatedTools is a count of total tool calls across kept steps
+      expect(typeof data.flow.estimatedTools).toBe('number');
+      expect(data.flow.estimatedTools).toBeGreaterThanOrEqual(0);
     });
 
     it('orchestrate_execute should track execution', async () => {
@@ -378,12 +387,18 @@ describe('E2E: planning-orchestration', () => {
       expect(res.success).toBe(true);
       const data = res.data as {
         plan: { id: string; status: string };
-        session: { id: string };
+        session: { id: string; domain?: string };
       };
 
+      // Legacy path: planner transitions plan to executing
       expect(data.plan).toBeDefined();
+      expect(data.plan.status).toBe('executing');
+      expect(data.plan.id).toBe(orchPlanId);
+      // Brain session is created with the domain we specified
       expect(data.session).toBeDefined();
       expect(data.session.id).toBeDefined();
+      expect(typeof data.session.id).toBe('string');
+      expect(data.session.id.length).toBeGreaterThan(0);
       sessionId = data.session.id;
     });
 
@@ -459,10 +474,11 @@ describe('E2E: planning-orchestration', () => {
 
       // orchestrate_complete on an already-completed plan should fail with
       // an Invalid transition error — planner.complete() cannot transition
-      // from 'completed' to 'completed'. This is the correct behavior:
-      // the lifecycle was already finalized by plan_reconcile.
+      // from 'completed' to 'completed' (only reconciling → completed is valid).
+      // This is correct: the lifecycle was already finalized by plan_reconcile.
       expect(res.success).toBe(false);
       expect(res.error).toContain('Invalid transition');
+      expect(res.error).toContain('completed');
     });
   });
 
@@ -545,13 +561,20 @@ describe('E2E: planning-orchestration', () => {
       expect(data.matched).toBe(true);
       expect(data.genericMatch).toBeDefined();
       expect(data.genericMatch!.id).toBe('generic-code-review');
+      expect(data.genericMatch!.score).toBeGreaterThanOrEqual(10); // REVIEW intent match = 10 points
 
-      // Verify playbook structure
+      // Code-review playbook has exactly 3 gates
       expect(Array.isArray(data.gates)).toBe(true);
-      expect(data.gates.length).toBeGreaterThan(0);
-      expect(data.gates[0].phase).toBeDefined();
-      expect(data.gates[0].requirement).toBeDefined();
+      expect(data.gates.length).toBe(3);
+      expect(data.gates[0].phase).toBe('pre-execution');
+      expect(data.gates[0].checkType).toBe('review-context');
+      expect(data.gates[1].phase).toBe('post-task');
+      expect(data.gates[1].checkType).toBe('review-grading-complete');
+      expect(data.gates[2].phase).toBe('completion');
+      expect(data.gates[2].checkType).toBe('review-verdict');
+      // Code-review playbook has empty toolInjections
       expect(Array.isArray(data.toolInjections)).toBe(true);
+      expect(data.toolInjections).toHaveLength(0);
     });
   });
 
@@ -678,9 +701,11 @@ describe('E2E: planning-orchestration', () => {
       await callOp(planFacade, 'approve_plan', { planId: id });
 
       // Try to approve again — should fail (approved -> approved is not a valid transition)
+      // Valid from approved is only: executing
       const res = await callOp(planFacade, 'approve_plan', { planId: id });
       expect(res.success).toBe(false);
       expect(res.error).toContain('Invalid transition');
+      expect(res.error).toContain('approved');
     });
 
     it('complete a plan that was never executed should fail', async () => {
@@ -691,10 +716,12 @@ describe('E2E: planning-orchestration', () => {
       });
       const id = (createRes.data as { plan: { id: string } }).plan.id;
 
-      // Try to complete without approving or executing
+      // Try to complete without approving or executing — draft → completed is invalid
+      // Valid from draft is only: approved
       const res = await callOp(planFacade, 'complete_plan', { planId: id });
       expect(res.success).toBe(false);
       expect(res.error).toContain('Invalid transition');
+      expect(res.error).toContain('draft');
     });
 
     it('multiple plans in parallel should track independently', async () => {
@@ -852,11 +879,26 @@ describe('E2E: planning-orchestration', () => {
       const data = res.data as {
         total: number;
         byStatus: Record<string, number>;
+        avgTasksPerPlan: number;
         totalTasks: number;
+        tasksByStatus: Record<string, number>;
       };
-      expect(data.total).toBeGreaterThan(0);
+      // Multiple plans created by earlier journeys
+      expect(data.total).toBeGreaterThanOrEqual(7);
+      // byStatus should have all lifecycle states
       expect(data.byStatus).toBeDefined();
+      expect(typeof data.byStatus.draft).toBe('number');
+      expect(typeof data.byStatus.approved).toBe('number');
+      expect(typeof data.byStatus.completed).toBe('number');
+      // Should include completed plans from Journey 1 and 5
+      expect(data.byStatus.completed).toBeGreaterThanOrEqual(2);
+      // Task aggregates
       expect(typeof data.totalTasks).toBe('number');
+      expect(data.totalTasks).toBeGreaterThan(0);
+      expect(typeof data.avgTasksPerPlan).toBe('number');
+      // tasksByStatus should have all task states
+      expect(typeof data.tasksByStatus.pending).toBe('number');
+      expect(typeof data.tasksByStatus.completed).toBe('number');
     });
 
     it('get_plan without ID should list all active plans', async () => {
@@ -881,7 +923,9 @@ describe('E2E: planning-orchestration', () => {
         status: 'completed',
       });
       expect(res.success).toBe(false);
+      // Planner enforces: tasks can only be updated on executing or validating plans
       expect(res.error).toContain('Cannot update tasks');
+      expect(res.error).toContain("'draft'");
     });
 
     it('orchestrate_status should return combined overview', async () => {
@@ -891,13 +935,36 @@ describe('E2E: planning-orchestration', () => {
 
       expect(res.success).toBe(true);
       const data = res.data as {
-        activePlans: unknown[];
-        vaultStats: { totalEntries: number };
-        brainStats: unknown;
+        activePlans: Array<{ id: string; status: string }>;
+        vaultStats: { totalEntries: number; byDomain: Record<string, number> };
+        brainStats: {
+          strengths: number;
+          sessions: number;
+          activeSessions: number;
+          proposals: number;
+          promotedProposals: number;
+          globalPatterns: number;
+          domainProfiles: number;
+        };
+        recommendations: Array<{ pattern: string; strength: number }>;
+        sessionContext: { recentSessions: unknown[] };
+        flowPlans: unknown[];
       };
       expect(Array.isArray(data.activePlans)).toBe(true);
-      expect(data.vaultStats).toBeDefined();
-      expect(data.brainStats).toBeDefined();
+      // vaultStats should have the expected shape
+      expect(typeof data.vaultStats.totalEntries).toBe('number');
+      expect(data.vaultStats.totalEntries).toBeGreaterThanOrEqual(0);
+      expect(data.vaultStats.byDomain).toBeDefined();
+      // brainStats should have all fields from BrainIntelligenceStats
+      expect(typeof data.brainStats.sessions).toBe('number');
+      expect(typeof data.brainStats.activeSessions).toBe('number');
+      expect(typeof data.brainStats.strengths).toBe('number');
+      expect(typeof data.brainStats.proposals).toBe('number');
+      expect(typeof data.brainStats.globalPatterns).toBe('number');
+      // recommendations is an array (may be empty for fresh brain)
+      expect(Array.isArray(data.recommendations)).toBe(true);
+      // flowPlans tracks orchestration-created plans
+      expect(Array.isArray(data.flowPlans)).toBe(true);
     });
 
     it('plan_split with invalid dependency should fail', async () => {
@@ -912,9 +979,11 @@ describe('E2E: planning-orchestration', () => {
         tasks: [{ title: 'Task A', description: 'First task', dependsOn: ['task-99'] }],
       });
 
-      expect(res.success).toBe(true); // Op succeeds but returns error in data
-      const data = res.data as { error?: string };
+      // plan_split catches the error and returns it in data (no throw at facade level)
+      expect(res.success).toBe(true);
+      const data = res.data as { error: string };
       expect(data.error).toContain('unknown task');
+      expect(data.error).toContain('task-99');
     });
 
     it('plan_complete_lifecycle on non-completed plan should return error', async () => {
@@ -929,9 +998,12 @@ describe('E2E: planning-orchestration', () => {
         patterns: ['This should not work'],
       });
 
-      expect(res.success).toBe(true); // Op succeeds but returns error in data
-      const data = res.data as { error?: string };
+      // plan_complete_lifecycle catches the error and returns it in data (no throw at facade level)
+      expect(res.success).toBe(true);
+      const data = res.data as { error: string };
+      // Plan is in 'draft' status, must be 'completed' for knowledge capture
       expect(data.error).toContain('must be completed');
+      expect(data.error).toContain("'draft'");
     });
 
     it('orchestrate_quick_capture should capture without full lifecycle', async () => {
@@ -943,9 +1015,23 @@ describe('E2E: planning-orchestration', () => {
       });
 
       expect(res.success).toBe(true);
-      const data = res.data as { session: { id: string } };
+      const data = res.data as {
+        session: { id: string; domain: string; endedAt: string | null; startedAt: string };
+        extraction: null | { proposals: unknown[] };
+      };
+      // Session should be created and ended in one call
       expect(data.session).toBeDefined();
       expect(data.session.id).toBeDefined();
+      expect(typeof data.session.id).toBe('string');
+      // Session was started and ended in one orchestrate_quick_capture call
+      expect(data.session.startedAt).toBeDefined();
+      expect(typeof data.session.startedAt).toBe('string');
+      expect(data.session.endedAt).toBeDefined();
+      expect(typeof data.session.endedAt).toBe('string');
+      expect(data.session.domain).toBe('frontend');
+      // extraction is null when not enough signal (fresh brain)
+      // but the field should be present
+      expect('extraction' in data).toBe(true);
     });
   });
 });

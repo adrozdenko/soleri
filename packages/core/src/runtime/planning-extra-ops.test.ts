@@ -69,7 +69,7 @@ function createMockRuntime(): AgentRuntime {
 
   return {
     planner: {
-      iterate: vi.fn(() => plan),
+      iterate: vi.fn(() => ({ plan, mutated: 1 })),
       splitTasks: vi.fn(() => ({
         ...plan,
         tasks: [plan.tasks[0], { id: 'task-2', title: 'Task 2' }],
@@ -156,6 +156,50 @@ describe('createPlanningExtraOps', () => {
       expect(runtime.planner.iterate).toHaveBeenCalledWith(
         'plan-1',
         expect.objectContaining({ objective: 'New objective' }),
+      );
+    });
+
+    it('returns iterated: false when no changes detected', async () => {
+      vi.mocked(runtime.planner.iterate).mockReturnValue({
+        plan: makePlan() as unknown,
+        mutated: 0,
+      } as unknown);
+      const result = (await findOp(ops, 'plan_iterate').handler({
+        planId: 'plan-1',
+      })) as Record<string, unknown>;
+      expect(result.iterated).toBe(false);
+      expect(result.reason).toBe('no changes detected');
+    });
+
+    it('passes alternatives to planner.iterate', async () => {
+      const result = (await findOp(ops, 'plan_iterate').handler({
+        planId: 'plan-1',
+        alternatives: [
+          { approach: 'Alt A', pros: ['fast'], cons: ['fragile'], rejected_reason: 'Too risky' },
+        ],
+      })) as Record<string, unknown>;
+      expect(result.iterated).toBe(true);
+      expect(runtime.planner.iterate).toHaveBeenCalledWith(
+        'plan-1',
+        expect.objectContaining({
+          alternatives: [
+            expect.objectContaining({ approach: 'Alt A' }),
+          ],
+        }),
+      );
+    });
+
+    it('passes decisions to planner.iterate', async () => {
+      const result = (await findOp(ops, 'plan_iterate').handler({
+        planId: 'plan-1',
+        decisions: [{ decision: 'Use FTS5', rationale: 'Performance' }],
+      })) as Record<string, unknown>;
+      expect(result.iterated).toBe(true);
+      expect(runtime.planner.iterate).toHaveBeenCalledWith(
+        'plan-1',
+        expect.objectContaining({
+          decisions: [{ decision: 'Use FTS5', rationale: 'Performance' }],
+        }),
       );
     });
 

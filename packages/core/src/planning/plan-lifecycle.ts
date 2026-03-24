@@ -240,26 +240,61 @@ export interface IterateChanges {
   tool_chain?: string[];
   flow?: string;
   target_mode?: string;
+  alternatives?: import('./planner-types.js').PlanAlternative[];
 }
 
 /**
  * Apply iteration changes to a plan (mutates in place).
  * Caller is responsible for status validation and persistence.
+ * Returns the number of fields actually mutated (0 = no-op).
  */
-export function applyIteration(plan: Plan, changes: IterateChanges): void {
+export function applyIteration(plan: Plan, changes: IterateChanges): number {
   const now = Date.now();
-  if (changes.objective !== undefined) plan.objective = changes.objective;
-  if (changes.scope !== undefined) plan.scope = changes.scope;
-  if (changes.decisions !== undefined) plan.decisions = changes.decisions;
-  if (changes.approach !== undefined) plan.approach = changes.approach;
-  if (changes.context !== undefined) plan.context = changes.context;
-  if (changes.success_criteria !== undefined) plan.success_criteria = changes.success_criteria;
-  if (changes.tool_chain !== undefined) plan.tool_chain = changes.tool_chain;
-  if (changes.flow !== undefined) plan.flow = changes.flow;
-  if (changes.target_mode !== undefined) plan.target_mode = changes.target_mode;
+  let mutated = 0;
+  if (changes.objective !== undefined) {
+    plan.objective = changes.objective;
+    mutated++;
+  }
+  if (changes.scope !== undefined) {
+    plan.scope = changes.scope;
+    mutated++;
+  }
+  if (changes.decisions !== undefined) {
+    plan.decisions = changes.decisions;
+    mutated++;
+  }
+  if (changes.approach !== undefined) {
+    plan.approach = changes.approach;
+    mutated++;
+  }
+  if (changes.context !== undefined) {
+    plan.context = changes.context;
+    mutated++;
+  }
+  if (changes.success_criteria !== undefined) {
+    plan.success_criteria = changes.success_criteria;
+    mutated++;
+  }
+  if (changes.tool_chain !== undefined) {
+    plan.tool_chain = changes.tool_chain;
+    mutated++;
+  }
+  if (changes.flow !== undefined) {
+    plan.flow = changes.flow;
+    mutated++;
+  }
+  if (changes.target_mode !== undefined) {
+    plan.target_mode = changes.target_mode;
+    mutated++;
+  }
+  if (changes.alternatives !== undefined) {
+    plan.alternatives = changes.alternatives;
+    mutated++;
+  }
   if (changes.removeTasks?.length) {
     const removeSet = new Set(changes.removeTasks);
     plan.tasks = plan.tasks.filter((t) => !removeSet.has(t.id));
+    mutated++;
   }
   if (changes.addTasks?.length) {
     const maxIndex = plan.tasks.reduce((max, t) => {
@@ -275,8 +310,12 @@ export function applyIteration(plan: Plan, changes: IterateChanges): void {
         updatedAt: now,
       });
     }
+    mutated++;
   }
-  plan.updatedAt = now;
+  if (mutated > 0) {
+    plan.updatedAt = now;
+  }
+  return mutated;
 }
 
 /**
