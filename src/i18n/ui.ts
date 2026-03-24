@@ -92,6 +92,8 @@ export function getNavLinks(locale: Locale) {
     { href: `${prefix}how-it-works.html`, label: t(locale, 'nav.how') },
     { href: `${prefix}teams.html`, label: t(locale, 'nav.teams') },
     { href: '/docs/', label: t(locale, 'nav.docs') },
+    { href: `${prefix}articles.html`, label: t(locale, 'nav.articles') },
+    { href: `${prefix}community.html`, label: t(locale, 'nav.community') },
     { href: `${prefix}getting-started.html`, label: t(locale, 'nav.start') },
   ];
 }
