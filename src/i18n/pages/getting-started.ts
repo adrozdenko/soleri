@@ -166,56 +166,37 @@ const content: Record<Locale, GettingStartedContent> = {
     title: 'Початок роботи - Soleri',
     description:
       "Від нуля до другого мозку за п'ять хвилин. Встановіть Soleri, побудуйте свій перший мозок та починайте накопичувати знання.",
-    eyebrow: "Від нуля до другого мозку за п'ять хвилин",
-    heroTitle: 'Ваш другий мозок починає розумним. Далі стає лише розумнішим.',
-    heroSubtitle: 'Три кроки. Жодних файлів конфігурації. Жодних API-ключів.',
+    eyebrow: 'Створіть теку агента та підключіть за лічені хвилини',
+    heroTitle: 'Налаштуйте свого першого агента Soleri.',
+    heroSubtitle:
+      'Три кроки: створіть теку, зареєструйте в редакторі та запустіть рушій. Автоматичне виявлення токена Claude Code працює за наявності.',
     steps: [
       {
-        title: 'Встановіть',
-        text: 'Один глобальний пакет npm. І все.',
-        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g @soleri/cli</span>`,
+        title: 'Створіть теку агента',
+        text: 'Використовуйте npm create або CLI напряму. Результат — звичайна тека з agent.yaml, instructions, workflows, knowledge та skills.',
+        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>`,
         isInstallCmd: true,
       },
       {
-        title: 'Створіть свого агента',
-        text: 'Керований майстер проведе вас через кожний крок — оберіть архетип, назвіть агента, виберіть домени, принципи та тон. Ваш агент — це тека, готова одразу.',
-        code: `<span class="prompt">$</span> <span class="cmd">soleri create</span>
+        title: 'Зареєструйте в редакторі',
+        text: 'З нової теки зареєструйте MCP-сервер для Claude Code, Codex, OpenCode або всіх підтримуваних цілей.',
+        code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
 
-<span class="cmt">◆ Який тип агента?     Security Auditor</span>
-<span class="cmt">◆ Ім'я:                Sentinel</span>
-<span class="cmt">◆ ID агента:           sentinel</span>
-<span class="cmt">◆ Домени:              security, code-review</span>
-<span class="cmt">◆ Принципи:            Security first, Zero trust...</span>
-<span class="cmt">◆ Тон:                 Precise</span>
-
-<span class="ok">✓</span> Створено agent.yaml
-<span class="ok">✓</span> Згенеровано instructions/, workflows/, knowledge/
-<span class="ok">✓</span> Автоматично зібрано CLAUDE.md
-<span class="ok">✓</span> Готово — без етапу збірки
-
-<span class="cmt">Запустіть: soleri install && soleri dev</span>`,
+<span class="ok">✓</span> Виявлено файловий агент
+<span class="ok">✓</span> Зареєстровано my-agent у <span class="val">~/.claude.json</span>
+<span class="ok">✓</span> Лаунчер створено`,
         isInstallCmd: false,
       },
       {
-        title: 'Активуйте та розвивайте',
-        text: 'Зареєструйте рушій, привітайтеся в your editor. Ваш агент активується, захоплює знання під час роботи та стає розумнішим з часом.',
-        code: `<span class="cmt"># Зареєструйте та запустіть рушій</span>
-<span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># реєстрація MCP-сервера</span>
-<span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># запуск рушія + спостереження за файлами</span>
+        title: 'Запустіть рушій',
+        text: 'Запустіть рушій під час роботи. Він спостерігає за файлами агента та перегенеровує інструкційний файл редактора при зміні теки.',
+        code: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>
 
-<span class="cmt"># В your editor — активуйте персону</span>
-<span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
-
-<span class="ok">✓</span> Персону активовано     <span class="val">Sentinel — Security Auditor</span>
-<span class="ok">✓</span> Сховище готове          <span class="val">зростатиме під час роботи</span>
-<span class="ok">✓</span> Мозок працює           <span class="val">навчається з кожної сесії</span>
-
-<span class="cmt"># Перевірте стан</span>
-<span class="prompt">$</span> <span class="cmd">soleri doctor</span>
-
-<span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
-<span class="ok">✓</span> Агент       <span class="val">файлова тека, зареєстровано</span>
-<span class="ok">✓</span> Рушій       <span class="val">підключено, 326 операцій</span>`,
+<span class="ok">✓</span> MCP-сервер працює
+<span class="ok">✓</span> Спостереження за agent.yaml, instructions/, workflows/, knowledge/
+<span class="ok">✓</span> CLAUDE.md перегенеровується при змінах
+<span class="ok">✓</span> Токен Claude Code знайдено <span class="cmt">(якщо доступний)</span>`,
         isInstallCmd: false,
       },
     ],
@@ -353,57 +334,37 @@ const content: Record<Locale, GettingStartedContent> = {
     title: 'Inizia - Soleri',
     description:
       'Da zero a un sistema di apprendimento in cinque minuti. Installa Soleri, crea il tuo primo agente e inizia ad accumulare conoscenza.',
-    eyebrow: 'Da zero a un secondo cervello in cinque minuti',
-    heroTitle: 'Il tuo secondo cervello parte intelligente. Diventa solo più intelligente.',
+    eyebrow: 'Crea una cartella agente e collegala in pochi minuti',
+    heroTitle: 'Configura il tuo primo agente Soleri.',
     heroSubtitle:
-      'Tre passaggi. Nessun file di configurazione da scrivere. Nessuna chiave API richiesta.',
+      'Tre passaggi: crea la cartella, registrala nel tuo editor e avvia il motore. La scoperta automatica del token Claude Code funziona quando disponibile.',
     steps: [
       {
-        title: 'Installa',
-        text: 'Un solo pacchetto global npm. Tutto qui.',
-        code: `<span class="prompt">$</span> <span class="cmd">npm install</span> <span class="arg">-g @soleri/cli</span>`,
+        title: "Crea la cartella dell'agente",
+        text: 'Usa la scorciatoia npm create o il CLI direttamente. Il risultato è una cartella semplice con agent.yaml, instructions, workflows, knowledge e skills.',
+        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>`,
         isInstallCmd: true,
       },
       {
-        title: 'Crea il tuo agente',
-        text: "Il wizard guidato ti accompagna passo dopo passo — scegli un archetipo, dai un nome al tuo agente, seleziona domini, principi e tono. Il tuo agente è una cartella, pronta all'istante.",
-        code: `<span class="prompt">$</span> <span class="cmd">soleri create</span>
+        title: 'Registralo nel tuo editor',
+        text: 'Dalla nuova cartella, registra il server MCP per Claude Code, Codex, OpenCode o tutti i target supportati.',
+        code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
 
-<span class="cmt">◆ Tipo di agente?      Security Auditor</span>
-<span class="cmt">◆ Nome:                Sentinel</span>
-<span class="cmt">◆ ID agente:           sentinel</span>
-<span class="cmt">◆ Domini:              security, code-review</span>
-<span class="cmt">◆ Principi:            Security first, Zero trust...</span>
-<span class="cmt">◆ Tono:                Precise</span>
-
-<span class="ok">✓</span> Creato agent.yaml
-<span class="ok">✓</span> Generati instructions/, workflows/, knowledge/
-<span class="ok">✓</span> CLAUDE.md composto automaticamente
-<span class="ok">✓</span> Pronto — nessun passaggio di build
-
-<span class="cmt">Esegui: soleri install && soleri dev</span>`,
+<span class="ok">✓</span> Rilevato agente file-tree
+<span class="ok">✓</span> Registrato my-agent in <span class="val">~/.claude.json</span>
+<span class="ok">✓</span> Launcher creato`,
         isInstallCmd: false,
       },
       {
-        title: 'Attiva e fai crescere',
-        text: 'Registra il motore, saluta in your editor. Il tuo agente si attiva, cattura conoscenza mentre lavori e diventa più intelligente nel tempo.',
-        code: `<span class="cmt"># Registra e avvia il motore</span>
-<span class="prompt">$</span> <span class="cmd">soleri install</span>       <span class="cmt"># registra server MCP</span>
-<span class="prompt">$</span> <span class="cmd">soleri dev</span>           <span class="cmt"># avvia motore + osserva file</span>
+        title: 'Avvia il motore',
+        text: "Avvia il motore mentre lavori. Osserva i file dell'agente e rigenera il file di istruzioni dell'editor quando la cartella cambia.",
+        code: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>
 
-<span class="cmt"># In your editor — attiva la persona</span>
-<span class="prompt">></span> <span class="cmd">Hello, Sentinel!</span>
-
-<span class="ok">✓</span> Persona attivata       <span class="val">Sentinel — Security Auditor</span>
-<span class="ok">✓</span> Vault pronto           <span class="val">cresce mentre lavori</span>
-<span class="ok">✓</span> Cervello attivo        <span class="val">impara da ogni sessione</span>
-
-<span class="cmt"># Verifica che tutto funzioni</span>
-<span class="prompt">$</span> <span class="cmd">soleri doctor</span>
-
-<span class="ok">✓</span> Node.js     <span class="val">v22.x</span>
-<span class="ok">✓</span> Agente      <span class="val">file-tree, registrato</span>
-<span class="ok">✓</span> Motore      <span class="val">connesso, 326 operazioni</span>`,
+<span class="ok">✓</span> Server MCP in esecuzione
+<span class="ok">✓</span> Osservando agent.yaml, instructions/, workflows/, knowledge/
+<span class="ok">✓</span> CLAUDE.md si rigenera ad ogni modifica
+<span class="ok">✓</span> Token Claude Code scoperto <span class="cmt">(se disponibile)</span>`,
         isInstallCmd: false,
       },
     ],
