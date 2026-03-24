@@ -2,7 +2,7 @@
 /**
  * Comprehensive E2E tests for the interactive create wizard.
  *
- * Tests all 7 archetypes, custom path, custom greeting, custom domains/principles,
+ * Tests custom path, custom greeting, custom domains/principles,
  * hook pack selection, cancel flows, and decline flows.
  *
  * Run: node packages/cli/src/__tests__/wizard-e2e.mjs

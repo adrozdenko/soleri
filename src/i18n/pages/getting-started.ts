@@ -45,29 +45,6 @@ const content: Record<Locale, GettingStartedContent> = {
       sectionTitle: 'Wizard Reference',
       sectionSubtitle:
         "Everything the wizard offers at each step — so you know what you're choosing before you choose it.",
-      archetypes: {
-        title: 'Archetypes',
-        description:
-          'Pick an archetype to pre-fill role, domains, principles, skills, and greeting. Or choose "Create Custom" for full control with guided examples.',
-        options: [
-          {
-            name: 'Code Reviewer',
-            hint: 'Catches bugs, enforces patterns, reviews PRs before merge',
-          },
-          {
-            name: 'Security Auditor',
-            hint: 'OWASP Top 10, dependency scanning, secrets detection',
-          },
-          { name: 'API Architect', hint: 'REST/GraphQL design, contract validation, versioning' },
-          { name: 'Test Engineer', hint: 'Test generation, coverage analysis, TDD workflow' },
-          { name: 'DevOps Pilot', hint: 'CI/CD pipelines, infrastructure, deployment automation' },
-          { name: 'Database Architect', hint: 'Schema design, migrations, query optimization' },
-          {
-            name: 'Full-Stack Assistant',
-            hint: 'General-purpose dev helper across the entire stack',
-          },
-        ],
-      },
       domains: {
         title: 'Domains',
         description:
@@ -111,7 +88,7 @@ const content: Record<Locale, GettingStartedContent> = {
       skills: {
         title: 'Skills',
         description:
-          'Skills are capabilities your agent can use during sessions. Core skills are always included; optional skills are selected per archetype or manually.',
+          'Skills are capabilities your agent can use during sessions. Core skills are always included; optional skills are selected during setup or added later.',
         options: [
           { name: 'writing-plans', hint: 'Structured multi-step planning before code changes' },
           { name: 'executing-plans', hint: 'Execute approved plans with review checkpoints' },
@@ -140,8 +117,6 @@ const content: Record<Locale, GettingStartedContent> = {
       coreSkillsNote:
         'Always included: brainstorming, systematic-debugging, verification-before-completion, health-check, context-resume',
       stepLabel: 'Step',
-      prefillsNote:
-        'Picking an archetype pre-fills domains, principles, skills, and tone. Choose "Create Custom" to set each one yourself.',
     },
     nextTitle: 'Keep going',
     nextLinks: [
@@ -204,29 +179,6 @@ const content: Record<Locale, GettingStartedContent> = {
       sectionTitle: 'Довідник майстра',
       sectionSubtitle:
         'Усе, що пропонує майстер на кожному кроці — щоб ви знали, що обираєте, ще до вибору.',
-      archetypes: {
-        title: 'Архетипи',
-        description:
-          'Оберіть архетип для автозаповнення ролі, доменів, принципів, навичок та привітання. Або оберіть "Створити власний" для повного контролю з прикладами.',
-        options: [
-          {
-            name: 'Code Reviewer',
-            hint: "Знаходить баги, перевіряє патерни, рев'ю PR перед мержем",
-          },
-          {
-            name: 'Security Auditor',
-            hint: 'OWASP Top 10, сканування залежностей, виявлення секретів',
-          },
-          {
-            name: 'API Architect',
-            hint: 'REST/GraphQL дизайн, валідація контрактів, версіонування',
-          },
-          { name: 'Test Engineer', hint: 'Генерація тестів, аналіз покриття, TDD робочий процес' },
-          { name: 'DevOps Pilot', hint: 'CI/CD пайплайни, інфраструктура, автоматизація деплою' },
-          { name: 'Database Architect', hint: 'Проєктування схем, міграції, оптимізація запитів' },
-          { name: 'Full-Stack Assistant', hint: 'Універсальний помічник для всього стеку' },
-        ],
-      },
       domains: {
         title: 'Домени',
         description:
@@ -276,7 +228,7 @@ const content: Record<Locale, GettingStartedContent> = {
       skills: {
         title: 'Навички',
         description:
-          'Навички — це можливості, які ваш агент може використовувати під час сесій. Базові навички включені завжди; додаткові обираються за архетипом або вручну.',
+          'Навички — це можливості, які ваш агент може використовувати під час сесій. Базові навички включені завжди; додаткові обираються під час налаштування або додаються пізніше.',
         options: [
           {
             name: 'writing-plans',
@@ -308,8 +260,6 @@ const content: Record<Locale, GettingStartedContent> = {
       coreSkillsNote:
         'Завжди включені: brainstorming, systematic-debugging, verification-before-completion, health-check, context-resume',
       stepLabel: 'Крок',
-      prefillsNote:
-        'Обравши архетип, ви автоматично заповнюєте домени, принципи, навички та тон. Оберіть "Створити власний" для повного контролю.',
     },
     nextTitle: 'Продовжуйте',
     nextLinks: [
@@ -372,29 +322,6 @@ const content: Record<Locale, GettingStartedContent> = {
       sectionTitle: 'Riferimento del wizard',
       sectionSubtitle:
         'Tutto ciò che il wizard offre ad ogni passo — per sapere cosa stai scegliendo prima di sceglierlo.',
-      archetypes: {
-        title: 'Archetipi',
-        description:
-          'Scegli un archetipo per precompilare ruolo, domini, principi, skill e saluto. Oppure scegli "Crea personalizzato" per il pieno controllo con esempi guidati.',
-        options: [
-          {
-            name: 'Code Reviewer',
-            hint: 'Trova bug, verifica pattern, revisiona PR prima del merge',
-          },
-          {
-            name: 'Security Auditor',
-            hint: 'OWASP Top 10, scansione dipendenze, rilevamento segreti',
-          },
-          {
-            name: 'API Architect',
-            hint: 'Design REST/GraphQL, validazione contratti, versionamento',
-          },
-          { name: 'Test Engineer', hint: 'Generazione test, analisi copertura, workflow TDD' },
-          { name: 'DevOps Pilot', hint: 'Pipeline CI/CD, infrastruttura, automazione deploy' },
-          { name: 'Database Architect', hint: 'Design schema, migrazioni, ottimizzazione query' },
-          { name: 'Full-Stack Assistant', hint: "Assistente generico per l'intero stack" },
-        ],
-      },
       domains: {
         title: 'Domini',
         description:
@@ -444,7 +371,7 @@ const content: Record<Locale, GettingStartedContent> = {
       skills: {
         title: 'Skill',
         description:
-          'Le skill sono capacità che il tuo agente può usare durante le sessioni. Le skill core sono sempre incluse; quelle opzionali si selezionano per archetipo o manualmente.',
+          'Le skill sono capacità che il tuo agente può usare durante le sessioni. Le skill core sono sempre incluse; quelle opzionali si selezionano durante la configurazione o si aggiungono in seguito.',
         options: [
           {
             name: 'writing-plans',
@@ -479,8 +406,6 @@ const content: Record<Locale, GettingStartedContent> = {
       coreSkillsNote:
         'Sempre incluse: brainstorming, systematic-debugging, verification-before-completion, health-check, context-resume',
       stepLabel: 'Passo',
-      prefillsNote:
-        'Scegliendo un archetipo si precompilano domini, principi, skill e tono. Scegli "Crea personalizzato" per impostare tutto manualmente.',
     },
     nextTitle: 'Continua',
     nextLinks: [
@@ -530,14 +455,12 @@ interface WizardSection {
 interface WizardRef {
   sectionTitle: string;
   sectionSubtitle: string;
-  archetypes: WizardSection;
   domains: WizardSection;
   principles: WizardSection;
   skills: WizardSection;
   tones: WizardSection;
   coreSkillsNote: string;
   stepLabel: string;
-  prefillsNote: string;
 }
 
 interface GettingStartedContent {

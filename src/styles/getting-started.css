@@ -282,39 +282,6 @@
   max-width: 600px;
 }
 
-/* Archetype primary group */
-.ref-group-primary {
-  margin-top: 32px;
-  padding: 24px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--accent-teal);
-  background: var(--surface);
-}
-
-.ref-options-archetypes {
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-}
-
-.ref-option-archetype {
-  border-color: var(--neutral-700-60);
-  padding: 14px 16px;
-}
-
-.ref-option-archetype .ref-option-name {
-  font-size: 14px;
-}
-
-.ref-prefills-note {
-  margin-top: 14px;
-  font-size: 12px;
-  color: var(--muted);
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--code-bg);
-  border: 1px solid var(--neutral-700-60);
-  line-height: 1.6;
-}
-
 /* Standard option cards */
 .ref-options {
   display: grid;
