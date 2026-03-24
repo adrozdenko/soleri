@@ -220,6 +220,90 @@ function composeWorkflowIndex(workflowsDir: string): string | null {
   return lines.join('\n');
 }
 
+/** Skill categories for grouping in the CLAUDE.md index. */
+const SKILL_CATEGORIES: Record<string, { label: string; skills: string[] }> = {
+  getting_started: {
+    label: 'Getting Started',
+    skills: ['agent-guide', 'agent-persona', 'onboard-me', 'env-setup', 'context-resume'],
+  },
+  planning: {
+    label: 'Planning & Execution',
+    skills: ['brainstorming', 'writing-plans', 'executing-plans', 'parallel-execute'],
+  },
+  building: {
+    label: 'Building & Fixing',
+    skills: [
+      'test-driven-development',
+      'systematic-debugging',
+      'fix-and-learn',
+      'agent-dev',
+      'code-patrol',
+    ],
+  },
+  knowledge: {
+    label: 'Knowledge & Learning',
+    skills: [
+      'vault-capture',
+      'vault-navigator',
+      'vault-curate',
+      'vault-smells',
+      'knowledge-harvest',
+      'brain-debrief',
+    ],
+  },
+  quality: {
+    label: 'Quality & Delivery',
+    skills: [
+      'verification-before-completion',
+      'deep-review',
+      'deliver-and-ship',
+      'health-check',
+      'mcp-doctor',
+    ],
+  },
+  reflection: {
+    label: 'Reflection & Research',
+    skills: ['retrospective', 'second-opinion'],
+  },
+};
+
+/**
+ * Extract the description from SKILL.md frontmatter.
+ * Handles both single-line and multi-line YAML folded scalars (>).
+ */
+function extractSkillDescription(content: string): string | null {
+  // Match the frontmatter block
+  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!fmMatch) return null;
+
+  const fm = fmMatch[1];
+
+  // Try parsing the description field — handles both inline and folded (>) forms
+  const descIdx = fm.indexOf('description:');
+  if (descIdx === -1) return null;
+
+  const afterDesc = fm.slice(descIdx + 'description:'.length);
+  const restLines = afterDesc.split('\n');
+
+  // Single-line: "description: some text"
+  const firstLine = restLines[0].trim();
+  if (firstLine && firstLine !== '>' && firstLine !== '|') {
+    return firstLine;
+  }
+
+  // Multi-line folded scalar (> or |): collect indented continuation lines
+  const parts: string[] = [];
+  for (let i = 1; i < restLines.length; i++) {
+    const line = restLines[i];
+    // Stop at next YAML key or end of frontmatter
+    if (line.match(/^\S/) || line.trim() === '---') break;
+    const trimmed = line.trim();
+    if (trimmed) parts.push(trimmed);
+  }
+
+  return parts.length > 0 ? parts.join(' ') : null;
+}
+
 function composeSkillsIndex(skillsDir: string): string | null {
   const dirs = readdirSync(skillsDir, { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -227,18 +311,51 @@ function composeSkillsIndex(skillsDir: string): string | null {
 
   if (dirs.length === 0) return null;
 
-  const lines: string[] = ['## Available Skills', ''];
-
+  // Collect all available skills with descriptions
+  const skillMap = new Map<string, string>();
   for (const dir of dirs) {
     const skillPath = join(skillsDir, dir.name, 'SKILL.md');
     if (existsSync(skillPath)) {
       const content = readFileSync(skillPath, 'utf-8');
-      // Extract description from frontmatter if present
-      const descMatch = content.match(/^description:\s*(.+)$/m);
-      const desc = descMatch ? descMatch[1].trim() : dir.name;
-      lines.push(`- **${dir.name}**: ${desc}`);
+      const desc = extractSkillDescription(content) ?? dir.name;
+      skillMap.set(dir.name, desc);
     }
   }
 
-  return lines.join('\n');
+  if (skillMap.size === 0) return null;
+
+  const lines: string[] = [
+    '## Available Skills',
+    '',
+    'Skills are specialized workflows that activate automatically when you describe a matching task.',
+    'Each skill provides a structured, step-by-step approach backed by vault knowledge and brain patterns.',
+    '',
+  ];
+
+  // Group skills into categories
+  const categorized = new Set<string>();
+
+  for (const [_key, category] of Object.entries(SKILL_CATEGORIES)) {
+    const categorySkills = category.skills.filter((s) => skillMap.has(s));
+    if (categorySkills.length === 0) continue;
+
+    lines.push(`### ${category.label}`, '');
+    for (const skill of categorySkills) {
+      lines.push(`- **${skill}**: ${skillMap.get(skill)!}`);
+      categorized.add(skill);
+    }
+    lines.push('');
+  }
+
+  // Any uncategorized skills go into an "Other" section
+  const uncategorized = [...skillMap.keys()].filter((s) => !categorized.has(s)).sort();
+  if (uncategorized.length > 0) {
+    lines.push('### Other', '');
+    for (const skill of uncategorized) {
+      lines.push(`- **${skill}**: ${skillMap.get(skill)!}`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n').trimEnd();
 }

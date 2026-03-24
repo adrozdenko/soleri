@@ -200,19 +200,56 @@ export function registerAgent(program: Command): void {
         const enginePath = join(ctx.agentPath, 'instructions', '_engine.md');
         const claudeMdPath = join(ctx.agentPath, 'CLAUDE.md');
 
+        // Generate skills from latest forge templates
+        const skillFiles = opts.skipSkills
+          ? []
+          : generateSkills({ id: ctx.agentId } as AgentConfig);
+
         if (opts.dryRun) {
           p.log.info(`Would regenerate: ${enginePath}`);
           p.log.info(`Would regenerate: ${claudeMdPath}`);
+          if (skillFiles.length > 0) {
+            const newSkills = skillFiles.filter(
+              ([relPath]) => !existsSync(join(ctx.agentPath, relPath)),
+            );
+            const updatedSkills = skillFiles.filter(([relPath]) =>
+              existsSync(join(ctx.agentPath, relPath)),
+            );
+            p.log.info(
+              `Skills: ${skillFiles.length} total (${newSkills.length} new, ${updatedSkills.length} updated)`,
+            );
+            for (const [relPath] of newSkills) {
+              p.log.info(`  + ${relPath}`);
+            }
+          }
           p.log.info(`Agent: ${ctx.agentId} (file-tree format)`);
           return;
         }
 
-        // 1. Regenerate _engine.md from latest shared-rules
+        // 1. Sync skills from forge templates
+        if (skillFiles.length > 0) {
+          let newCount = 0;
+          let updatedCount = 0;
+          for (const [relPath, content] of skillFiles) {
+            const fullPath = join(ctx.agentPath, relPath);
+            const dirPath = dirname(fullPath);
+            const isNew = !existsSync(fullPath);
+            mkdirSync(dirPath, { recursive: true });
+            writeFileSync(fullPath, content, 'utf-8');
+            if (isNew) newCount++;
+            else updatedCount++;
+          }
+          p.log.success(
+            `Synced ${skillFiles.length} skills (${newCount} new, ${updatedCount} updated)`,
+          );
+        }
+
+        // 2. Regenerate _engine.md from latest shared-rules
         mkdirSync(join(ctx.agentPath, 'instructions'), { recursive: true });
         writeFileSync(enginePath, getEngineRulesContent(), 'utf-8');
         p.log.success(`Regenerated ${enginePath}`);
 
-        // 2. Recompose CLAUDE.md from agent.yaml + instructions + workflows + skills
+        // 3. Recompose CLAUDE.md from agent.yaml + instructions + workflows + skills
         const result = composeClaudeMd(ctx.agentPath);
         writeFileSync(claudeMdPath, result.content, 'utf-8');
         p.log.success(
