@@ -99,7 +99,7 @@ function discoverHookifyFiles(dir: string): Array<{ name: string; path: string }
 // ─── Settings.json Hook Merging ───────────────────────────────────────
 
 interface SettingsHook {
-  type: 'prompt' | 'agent';
+  type: 'prompt' | 'agent' | 'command';
   prompt?: string;
   command?: string;
   timeout?: number;
@@ -108,6 +108,17 @@ interface SettingsHook {
 interface SettingsHookGroup {
   matcher: string;
   hooks: SettingsHook[];
+}
+
+/**
+ * Build a shell command that checks if the agent's MCP server is configured
+ * in the current project's .mcp.json before emitting an instruction.
+ * This ensures hooks are globally safe — they no-op in projects without the agent.
+ */
+function buildConditionalHookCommand(agentId: string, instruction: string): string {
+  // Escape single quotes in instruction for safe shell embedding
+  const escaped = instruction.replace(/'/g, "'\\''");
+  return `root=$(git rev-parse --show-toplevel 2>/dev/null || echo "."); if grep -q '"${agentId}"' "$root/.mcp.json" 2>/dev/null; then echo '${escaped}'; fi`;
 }
 
 /** Default lifecycle hooks for any Soleri agent */
@@ -120,9 +131,12 @@ function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookG
         matcher: '',
         hooks: [
           {
-            type: 'prompt',
-            prompt: `Call ${marker}admin op:admin_health to verify agent is ready. Do not show the result unless there are errors.`,
-            timeout: 15000,
+            type: 'command',
+            command: buildConditionalHookCommand(
+              agentId,
+              `Call ${marker}admin op:admin_health to verify agent is ready. Do not show the result unless there are errors.`,
+            ),
+            timeout: 5000,
           },
         ],
       },
@@ -132,9 +146,12 @@ function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookG
         matcher: '',
         hooks: [
           {
-            type: 'agent',
-            prompt: `Call ${marker}memory op:session_capture with a brief summary of the current session before context is compacted.`,
-            timeout: 30000,
+            type: 'command',
+            command: buildConditionalHookCommand(
+              agentId,
+              `Call ${marker}memory op:session_capture with a brief summary of the current session before context is compacted.`,
+            ),
+            timeout: 5000,
           },
         ],
       },
@@ -144,9 +161,12 @@ function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookG
         matcher: '',
         hooks: [
           {
-            type: 'agent',
-            prompt: `Call ${marker}memory op:session_capture with a structured summary of what was accomplished, then check ${marker}loop op:loop_status — if a loop is active, remind the user.`,
-            timeout: 30000,
+            type: 'command',
+            command: buildConditionalHookCommand(
+              agentId,
+              `Call ${marker}memory op:session_capture with a structured summary of what was accomplished, then check ${marker}loop op:loop_status — if a loop is active, remind the user.`,
+            ),
+            timeout: 5000,
           },
         ],
       },
