@@ -183,31 +183,18 @@ npx @soleri/cli governance [options]
 
 ### extend
 
-Manage agent extensions — custom ops, facades, and middleware.
+:::caution[File-tree agents only need files]
+The `extend` subcommands (`init`, `add-op`, `add-facade`, `add-middleware`) applied to the legacy TypeScript agent format and are **no longer supported**.
 
-```bash
-npx @soleri/cli extend <subcommand>
-```
-
-**Subcommands:**
-
-| Subcommand              | Description                                              |
-| ----------------------- | -------------------------------------------------------- |
-| `init`                  | Initialize extensions (legacy TypeScript agents only)    |
-| `add-op <name>`         | Scaffold a custom op (legacy TypeScript agents only)     |
-| `add-facade <name>`     | Scaffold a custom facade (legacy TypeScript agents only) |
-| `add-middleware <name>` | Scaffold a middleware (legacy TypeScript agents only)    |
-
-**Examples:**
-
-```bash
-npx @soleri/cli extend init
-npx @soleri/cli extend add-op summarize_pr
-npx @soleri/cli extend add-facade github
-npx @soleri/cli extend add-middleware audit-logger
-```
+File-tree agents extend through plain files:
+- **Instructions** → add `.md` files to `instructions/`
+- **Workflows** → add folders to `workflows/`
+- **Knowledge** → drop JSON bundles in `knowledge/`
+- **Skills** → add `SKILL.md` files to `skills/`
+- **Domains** → use `npx @soleri/cli add-domain <name>`
 
 See [Extending Your Agent](/docs/extending/) for full documentation.
+:::
 
 ---
 

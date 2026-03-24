@@ -9,7 +9,7 @@ Soleri uses three layers of testing to ensure every engine feature works correct
 
 ```bash
 npm test              # Unit tests (core, forge, CLI)
-npm run test:e2e      # E2E integration tests (124 tests, 10 files)
+npm run test:e2e      # E2E integration tests (800+ tests, 28 files)
 ```
 
 ## Test Layers
@@ -54,18 +54,36 @@ npm run test:e2e
 
 ### What's covered
 
-| Test File                    | Tests | What it verifies                                             |
-| ---------------------------- | ----- | ------------------------------------------------------------ |
-| `scaffold-and-build`         | 7     | Template generates → npm install → TypeScript compiles       |
-| `full-pipeline`              | 20    | All 13+ engine facades through the dispatch layer            |
-| `mcp-transport`              | 7     | Over-the-wire MCP via real stdio subprocess                  |
-| `scaffold-edge-cases`        | 10    | Many domains, telegram, tones, skills filter, duplicates     |
-| `persistence`                | 4     | Vault/brain/plan data survives runtime close/reopen          |
-| `curator-brain-governance`   | 25    | Health audits, learning loop, policy lifecycle, orchestrate  |
-| `concurrent-and-performance` | 10    | Parallel facade calls, 500-entry bulk ops, latency bounds    |
-| `cli-commands`               | 12    | Non-interactive create, list, doctor, add-domain, governance |
-| `transports`                 | 15    | SessionManager, RateLimiter, HTTP/SSE, WebSocket             |
-| `skills-and-domains`         | 14    | SKILL.md frontmatter validation, domain data integrity       |
+| Test File                    | What it verifies                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| `agent-activation`           | Activation lifecycle and identity injection of scaffolded agents                   |
+| `agent-behavioral`           | Captured knowledge appears in searches, feedback affects pattern ranking            |
+| `agent-simulation`           | Simulates a user's first week with a Soleri agent as sequential behavior specs     |
+| `brain-memory-sessions`      | Brain learning loop, intelligence building, memory capture/search, session lifecycle|
+| `capability-packs`           | Pack installation, capability resolution, graceful degradation, CLI integration    |
+| `chat-context-agency`        | Chat, context, agency, control facades plus pack/hook lifecycle                    |
+| `cli-agent-lifecycle`        | CLI agent management (scaffold, build, refresh, diff), generated code compiles     |
+| `cli-commands`               | Non-interactive create, list, doctor, add-domain, governance                       |
+| `comprehensive-features`     | Every op across all 4 domain packs plus flow engine with realistic inputs          |
+| `concurrent-and-performance` | Concurrent facade calls without race conditions, vault search at 1000+ entries     |
+| `curator-brain-governance`   | Curator grooming, health audits, brain feedback loop, governance lifecycle          |
+| `debug-facades`              | Facade assembly, op registration, schema correctness across domain packs           |
+| `error-paths`                | Negative scenarios: invalid ops, missing params, nonexistent resources              |
+| `filetree-agent`             | Full v7 file-tree agent architecture (scaffold → engine → MCP → ops)               |
+| `full-pipeline`              | All 13+ engine facades through the dispatch layer                                  |
+| `knowledge-traceability`     | Single knowledge piece traced through every system touchpoint                      |
+| `mcp-transport`              | Over-the-wire MCP via real stdio subprocess                                        |
+| `operator-profile`           | Operator facade ops (personality learning, signals, adaptation)                    |
+| `parity-salvador-soleri`     | Salvador MCP vs Soleri domain packs output parity for 8 critical ops               |
+| `persistence`                | Vault/brain/plan data survives runtime close/reopen                                |
+| `planning-orchestration`     | Planning lifecycle, orchestration pipeline, playbook matching, drift reconciliation|
+| `scaffold-and-build`         | Template generates → npm install → TypeScript compiles                             |
+| `scaffold-edge-cases`        | Many domains, telegram, tones, skills filter, edge configurations                  |
+| `skills-and-domains`         | SKILL.md frontmatter validation, domain data integrity                             |
+| `smoke-salvador-agent`       | Salvador agent with all 4 domain packs boots, registers ops, executes them         |
+| `system-quality`             | Vault-informed orchestration, brain recommendation quality at scale                |
+| `transports`                 | HTTP/SSE and WebSocket transport layers, session management, rate limiting          |
+| `vault-zettelkasten`         | Zettelkasten user journeys: capture → search → link → traverse → orphan detection  |
 
 ### How E2E tests work
 

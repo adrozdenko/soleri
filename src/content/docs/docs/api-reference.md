@@ -4,7 +4,7 @@ description: Every facade operation with parameters, auth levels, and usage exam
 ---
 
 :::note
-This page will be auto-generated from Zod schemas in a future release ([v5.6.0 milestone](https://github.com/adrozdenko/soleri/milestone/30)). For now, it covers the most commonly used operations with their parameters.
+This page will be auto-generated from Zod schemas in a future release. For now, it covers the most commonly used operations with their parameters.
 :::
 
 ## How Facades Work

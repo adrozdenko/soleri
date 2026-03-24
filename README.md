@@ -142,8 +142,8 @@ npx @soleri/cli install-knowledge ./bundles/react-patterns
 ## Testing
 
 ```bash
-npm test                # Unit tests — 184 files, 3,669 tests
-npm run test:e2e        # E2E tests — 800+ tests across 27 files
+npm test                # Unit tests — 305 files
+npm run test:e2e        # E2E tests — 800+ tests across 28 files
 ```
 
 The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), all 20 engine modules across 8 vault-family facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, and domain pack validation.
@@ -167,5 +167,5 @@ From fixing typos to building domain modules — see [CONTRIBUTING.md](CONTRIBUT
 </p>
 
 <p align="center">
-  <a href="https://soleri.dev">soleri.dev</a> · <a href="https://www.npmjs.com/package/soleri">npm</a> · <a href="https://github.com/adrozdenko/soleri/issues">Issues</a> · <a href="https://github.com/adrozdenko/soleri/discussions">Discussions</a>
+  <a href="https://soleri.ai">soleri.ai</a> · <a href="https://www.npmjs.com/package/soleri">npm</a> · <a href="https://github.com/adrozdenko/soleri/issues">Issues</a> · <a href="https://github.com/adrozdenko/soleri/discussions">Discussions</a>
 </p>
