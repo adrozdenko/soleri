@@ -634,6 +634,7 @@ const designPatternsOps = [
 const pack: DomainPack = {
   name: 'design',
   version: '1.0.0',
+  tier: 'default',
   domains: ['design'],
   ops: designOps,
   facades: [

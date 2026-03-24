@@ -23,11 +23,20 @@ import { z } from 'zod';
 // MANIFEST SCHEMA
 // =============================================================================
 
+// ---------------------------------------------------------------------------
+// Pack Tiers — determines visibility, licensing, and install behavior
+// ---------------------------------------------------------------------------
+
+export const PACK_TIERS = ['default', 'community', 'premium'] as const;
+export type PackTier = (typeof PACK_TIERS)[number];
+
 export const packManifestSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/, 'Pack ID must be lowercase alphanumeric with hyphens'),
   name: z.string().min(1),
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must be semver (x.y.z)'),
   description: z.string().optional().default(''),
+  /** Pack tier: 'default' (ships with engine), 'community' (free, npm), 'premium' (unlocked today, gated later) */
+  tier: z.enum(PACK_TIERS).optional().default('community'),
   /** Domains this pack covers */
   domains: z.array(z.string()).optional().default([]),
   /** Minimum engine version required (semver range) */

@@ -68,6 +68,13 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
         // Hooks: pack-level
         const packHooks = packs.flatMap((p) => p.hooks);
 
+        // Tier breakdown
+        const tierCounts = { default: 0, community: 0, premium: 0 };
+        for (const pk of packs) {
+          const t = (pk.manifest as { tier?: string })?.tier ?? 'community';
+          if (t in tierCounts) tierCounts[t as keyof typeof tierCounts]++;
+        }
+
         return {
           status: 'ok',
           vault: { entries: vaultStats.totalEntries, domains: Object.keys(vaultStats.byDomain) },
@@ -86,6 +93,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
             count: packHooks.length,
             packs: packHooks,
           },
+          packTiers: tierCounts,
         };
       },
     },

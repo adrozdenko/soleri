@@ -408,6 +408,7 @@ const ops = [
 const pack: DomainPack = {
   name: 'component',
   version: '1.0.0',
+  tier: 'default',
   domains: ['component'],
   ops,
   onActivate: async (narrowedRuntime: PackRuntime) => {

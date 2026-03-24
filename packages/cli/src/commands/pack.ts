@@ -13,6 +13,18 @@ import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import { PackLockfile, inferPackType, resolvePack, checkNpmVersion } from '@soleri/core';
 import type { LockEntry, PackSource } from '@soleri/core';
+
+// ─── Tier display helpers ────────────────────────────────────────────
+
+const TIER_BADGES: Record<string, string> = {
+  default: '[default]',
+  community: '[community]',
+  premium: '[premium]',
+};
+
+function tierBadge(tier?: string): string {
+  return TIER_BADGES[tier ?? 'community'] ?? '[community]';
+}
 import { detectAgent } from '../utils/agent-context.js';
 
 const LOCKFILE_NAME = 'soleri.lock';
@@ -45,13 +57,17 @@ export function registerPack(program: Command): void {
   pack
     .command('list')
     .option('--type <type>', 'Filter by pack type (hooks, skills, knowledge, domain, bundle)')
+    .option('--tier <tier>', 'Filter by tier (default, community, premium)')
     .description('List installed packs')
-    .action((opts: { type?: string }) => {
+    .action((opts: { type?: string; tier?: string }) => {
       const lockfile = new PackLockfile(getLockfilePath());
       let entries = lockfile.list();
 
       if (opts.type) {
         entries = entries.filter((e) => e.type === opts.type);
+      }
+      if (opts.tier) {
+        entries = entries.filter((e) => (e.tier ?? 'community') === opts.tier);
       }
 
       if (entries.length === 0) {
@@ -61,9 +77,10 @@ export function registerPack(program: Command): void {
 
       p.log.info(`${entries.length} pack(s) installed:\n`);
       for (const entry of entries) {
-        const badge =
+        const source =
           entry.source === 'built-in' ? ' [built-in]' : entry.source === 'npm' ? ' [npm]' : '';
-        console.log(`  ${entry.id}@${entry.version}  ${entry.type}${badge}`);
+        const tier = ` ${tierBadge(entry.tier)}`;
+        console.log(`  ${entry.id}@${entry.version}  ${entry.type}${tier}${source}`);
         if (entry.vaultEntries > 0) console.log(`    vault: ${entry.vaultEntries} entries`);
         if (entry.skills.length > 0) console.log(`    skills: ${entry.skills.join(', ')}`);
         if (entry.hooks.length > 0) console.log(`    hooks: ${entry.hooks.join(', ')}`);
@@ -163,6 +180,7 @@ export function registerPack(program: Command): void {
             skills,
             hooks,
             facadesRegistered: (manifest.facades?.length ?? 0) > 0,
+            tier: manifest.tier ?? 'community',
           };
 
           lockfile.set(entry);
@@ -219,9 +237,14 @@ export function registerPack(program: Command): void {
         return;
       }
 
+      const tierLabel = entry.tier ?? 'community';
+      const tierNote =
+        tierLabel === 'premium' ? ' (currently unlocked — premium platform coming soon)' : '';
+
       console.log(`\n  Pack:      ${entry.id}`);
       console.log(`  Version:   ${entry.version}`);
       console.log(`  Type:      ${entry.type}`);
+      console.log(`  Tier:      ${tierLabel}${tierNote}`);
       console.log(`  Source:    ${entry.source}`);
       console.log(`  Directory: ${entry.directory}`);
       console.log(`  Installed: ${entry.installedAt}`);
@@ -378,7 +401,16 @@ export function registerPack(program: Command): void {
         return;
       }
 
-      let total = 0;
+      // Collect all packs with their tier
+      const allPacks: Array<{
+        id: string;
+        version: string;
+        description: string;
+        domains: string;
+        tier: string;
+        category: string;
+      }> = [];
+
       for (const baseDir of searchDirs) {
         const categories = readdirSync(baseDir, { withFileTypes: true })
           .filter((d) => d.isDirectory())
@@ -390,18 +422,19 @@ export function registerPack(program: Command): void {
             (d) => d.isDirectory() && existsSync(join(categoryDir, d.name, 'soleri-pack.json')),
           );
 
-          if (packs.length === 0) continue;
-
-          console.log(`\n  ${category}/`);
           for (const pk of packs) {
             try {
               const manifest = JSON.parse(
                 readFileSync(join(categoryDir, pk.name, 'soleri-pack.json'), 'utf-8'),
               );
-              const domains = (manifest.domains as string[])?.join(', ') || '—';
-              console.log(`    ${manifest.id}@${manifest.version}  ${manifest.description || ''}`);
-              console.log(`      domains: ${domains}`);
-              total++;
+              allPacks.push({
+                id: manifest.id,
+                version: manifest.version,
+                description: manifest.description || '',
+                domains: (manifest.domains as string[])?.join(', ') || '—',
+                tier: manifest.tier ?? 'community',
+                category,
+              });
             } catch {
               // skip malformed packs
             }
@@ -409,11 +442,31 @@ export function registerPack(program: Command): void {
         }
       }
 
-      if (total === 0) {
+      if (allPacks.length === 0) {
         p.log.info('No packs found.');
-      } else {
-        console.log(`\n  ${total} pack(s) available.\n`);
+        return;
       }
+
+      // Group by tier and display
+      const tierOrder: Array<{ key: string; label: string }> = [
+        { key: 'default', label: 'Default (included with Soleri)' },
+        { key: 'community', label: 'Community (free)' },
+        { key: 'premium', label: 'Premium (included — premium platform coming soon)' },
+      ];
+
+      for (const { key, label } of tierOrder) {
+        const tierPacks = allPacks.filter((pk) => pk.tier === key);
+        if (tierPacks.length === 0) continue;
+
+        console.log(`\n  ${label}`);
+        console.log(`  ${'─'.repeat(label.length)}`);
+        for (const pk of tierPacks) {
+          console.log(`    ${pk.id}@${pk.version}  ${pk.description}`);
+          console.log(`      domains: ${pk.domains}`);
+        }
+      }
+
+      console.log(`\n  ${allPacks.length} pack(s) available.\n`);
     });
 
   // ─── create ─────────────────────────────────────────────────
@@ -441,6 +494,18 @@ export function registerPack(program: Command): void {
       });
       if (p.isCancel(description)) return;
 
+      const tier = await p.select({
+        message: 'Pack tier:',
+        options: [
+          { value: 'community', label: 'Community — free, published to npm' },
+          {
+            value: 'premium',
+            label: 'Premium — requires Soleri platform account (coming soon)',
+          },
+        ],
+      });
+      if (p.isCancel(tier)) return;
+
       const author = await p.text({ message: 'Author:', placeholder: '@username' });
       if (p.isCancel(author)) return;
 
@@ -454,6 +519,7 @@ export function registerPack(program: Command): void {
         id: name,
         version: '1.0.0',
         description: description || '',
+        tier: tier || 'community',
         author: author || '',
         license: 'MIT',
         soleri: '>=2.0.0',

@@ -39,10 +39,13 @@ export interface LockEntry {
   facadesRegistered: boolean;
   /** Compatible @soleri/core version range (from manifest "soleri" field) */
   soleriRange?: string;
+  /** Pack tier: default (ships with engine), community (free), premium (unlocked today) */
+  tier?: PackTier;
 }
 
 export type PackType = 'hooks' | 'skills' | 'knowledge' | 'domain' | 'bundle';
 export type PackSource = 'built-in' | 'local' | 'npm';
+export type PackTier = 'default' | 'community' | 'premium';
 
 export interface LockfileData {
   /** Lockfile format version */

@@ -67,12 +67,17 @@ export interface PackSkillDefinition {
 // DomainPack — the main interface
 // ---------------------------------------------------------------------------
 
+/** Pack tier: determines visibility, licensing, and install behavior */
+export type DomainPackTier = 'default' | 'community' | 'premium';
+
 /** The contract every domain pack must implement. */
 export interface DomainPack {
   /** Unique pack name (e.g., 'design', 'security-intelligence') */
   name: string;
   /** Semver version */
   version: string;
+  /** Tier: 'default' (ships with engine), 'community' (free, npm), 'premium' (unlocked today, gated later) */
+  tier?: DomainPackTier;
   /** Domains this pack claims. Ops inject into these domain facades. */
   domains: string[];
   /** Custom operations with real logic — injected into claimed domain facades. */
@@ -115,6 +120,8 @@ export interface DomainPackRef {
   package: string;
   /** Optional version constraint */
   version?: string;
+  /** Pack tier (inherited from pack if not set) */
+  tier?: DomainPackTier;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,6 +155,7 @@ const packSkillSchema = z.object({
 const domainPackSchema = z.object({
   name: z.string().min(1),
   version: z.string().min(1),
+  tier: z.enum(['default', 'community', 'premium']).optional(),
   domains: z.array(z.string().min(1)).min(1),
   ops: z.array(
     z.object({

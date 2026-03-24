@@ -844,6 +844,7 @@ const playwrightOps = [
 const pack: DomainPack = {
   name: 'code-review',
   version: '1.0.0',
+  tier: 'default',
   domains: ['code-review'],
   ops: [...githubOps, ...playwrightOps],
   onActivate: async (narrowedRuntime: PackRuntime) => {

@@ -519,6 +519,7 @@ const designQaOps = [
 const pack: DomainPack = {
   name: 'design-qa',
   version: '1.0.0',
+  tier: 'default',
   domains: ['design-qa'],
   ops: designQaOps,
   onActivate: async (narrowedRuntime: PackRuntime) => {

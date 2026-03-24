@@ -627,6 +627,7 @@ export type {
   LockEntry,
   PackType,
   PackSource,
+  PackTier,
   LockfileData,
   ResolvedPack,
   ResolveOptions,
