@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import { ENGINE_MODULE_MANIFEST } from '../engine/module-manifest.js';
+import { discoverSkills } from '../skills/sync-skills.js';
 
 /**
  * Resolve the @soleri/core package.json version.
@@ -42,19 +43,30 @@ function getCoreVersion(): string {
  * Groups: health (1–2), introspection (4), diagnostics (2), mutation (1).
  */
 export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, brainIntelligence, llmClient, curator } = runtime;
+  const { vault, brain, brainIntelligence, llmClient, curator, packInstaller } = runtime;
 
   return [
     // ─── Health ──────────────────────────────────────────────────────
     {
       name: 'admin_health',
-      description: 'Comprehensive agent health check — vault, LLM, brain status.',
+      description: 'Comprehensive agent health check — vault, LLM, brain, skills, hooks status.',
       auth: 'read',
       handler: async () => {
         const vaultStats = vault.stats();
         const llmAvailable = llmClient.isAvailable();
         const brainStats = brain.getStats();
         const curatorStatus = curator.getStatus();
+
+        // Skills: agent-level + pack-level
+        const agentDir = runtime.config.agentDir;
+        const agentSkillsDirs = agentDir ? [join(agentDir, 'skills')] : [];
+        const agentSkills = discoverSkills(agentSkillsDirs);
+        const packs = packInstaller.list();
+        const packSkills = packs.flatMap((p) => p.skills);
+        const allSkillNames = [...agentSkills.map((s) => s.name), ...packSkills];
+
+        // Hooks: pack-level
+        const packHooks = packs.flatMap((p) => p.hooks);
 
         return {
           status: 'ok',
@@ -65,6 +77,15 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
             feedbackCount: brainStats.feedbackCount,
           },
           curator: { initialized: curatorStatus.initialized },
+          skills: {
+            count: allSkillNames.length,
+            agent: agentSkills.map((s) => s.name),
+            packs: packSkills,
+          },
+          hooks: {
+            count: packHooks.length,
+            packs: packHooks,
+          },
         };
       },
     },
@@ -329,6 +350,45 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
         } catch (err) {
           checks.push({
             name: 'curator',
+            status: 'error',
+            detail: err instanceof Error ? err.message : String(err),
+          });
+        }
+
+        // 7. Skills
+        try {
+          const agentDir = runtime.config.agentDir;
+          const skillsDirs = agentDir ? [join(agentDir, 'skills')] : [];
+          const agentSkills = discoverSkills(skillsDirs);
+          const installedPacks = packInstaller.list();
+          const packSkillCount = installedPacks.reduce((sum, p) => sum + p.skills.length, 0);
+          const totalSkills = agentSkills.length + packSkillCount;
+          const skillStatus = totalSkills > 0 ? 'ok' : agentDir ? 'warn' : 'ok';
+          checks.push({
+            name: 'skills',
+            status: skillStatus,
+            detail: `${totalSkills} skills (${agentSkills.length} agent, ${packSkillCount} pack)`,
+          });
+        } catch (err) {
+          checks.push({
+            name: 'skills',
+            status: 'error',
+            detail: err instanceof Error ? err.message : String(err),
+          });
+        }
+
+        // 8. Hooks
+        try {
+          const installedPacks = packInstaller.list();
+          const packHookCount = installedPacks.reduce((sum, p) => sum + p.hooks.length, 0);
+          checks.push({
+            name: 'hooks',
+            status: 'ok',
+            detail: `${packHookCount} hooks from ${installedPacks.length} packs`,
+          });
+        } catch (err) {
+          checks.push({
+            name: 'hooks',
             status: 'error',
             detail: err instanceof Error ? err.message : String(err),
           });

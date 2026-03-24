@@ -35,6 +35,9 @@ function mockRuntime(): AgentRuntime {
     curator: {
       getStatus: vi.fn().mockReturnValue({ initialized: true }),
     },
+    packInstaller: {
+      list: vi.fn().mockReturnValue([]),
+    },
     contextHealth: {
       check: vi.fn().mockReturnValue({
         level: 'green',
@@ -97,6 +100,50 @@ describe('createAdminOps', () => {
       const llm = result.llm as Record<string, boolean>;
       expect(llm.openai).toBe(true);
       expect(llm.anthropic).toBe(false);
+    });
+
+    it('reports skills status', async () => {
+      const op = findOp(ops, 'admin_health');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      const skills = result.skills as Record<string, unknown>;
+      expect(skills).toBeDefined();
+      expect(skills.count).toBe(0);
+      expect(skills.agent).toEqual([]);
+      expect(skills.packs).toEqual([]);
+    });
+
+    it('reports hooks status', async () => {
+      const op = findOp(ops, 'admin_health');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      const hooks = result.hooks as Record<string, unknown>;
+      expect(hooks).toBeDefined();
+      expect(hooks.count).toBe(0);
+      expect(hooks.packs).toEqual([]);
+    });
+
+    it('includes pack skills and hooks when packs are installed', async () => {
+      vi.mocked(rt.packInstaller.list).mockReturnValue([
+        {
+          id: 'test-pack',
+          manifest: {} as never,
+          directory: '/tmp/pack',
+          status: 'installed',
+          vaultEntries: 5,
+          skills: ['my-skill', 'another-skill'],
+          hooks: ['my-hook'],
+          facadesRegistered: false,
+          installedAt: Date.now(),
+        },
+      ]);
+      const updatedOps = createAdminOps(rt);
+      const op = findOp(updatedOps, 'admin_health');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      const skills = result.skills as Record<string, unknown>;
+      expect(skills.count).toBe(2);
+      expect(skills.packs).toEqual(['my-skill', 'another-skill']);
+      const hooks = result.hooks as Record<string, unknown>;
+      expect(hooks.count).toBe(1);
+      expect(hooks.packs).toEqual(['my-hook']);
     });
   });
 
@@ -327,7 +374,7 @@ describe('createAdminOps', () => {
       expect(result).toHaveProperty('checks');
       expect(result).toHaveProperty('summary');
       const checks = result.checks as Array<Record<string, string>>;
-      expect(checks.length).toBeGreaterThanOrEqual(5);
+      expect(checks.length).toBeGreaterThanOrEqual(8);
     });
 
     it('reports degraded when LLM unavailable', async () => {
