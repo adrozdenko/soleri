@@ -182,9 +182,7 @@ describe('createPlanningExtraOps', () => {
       expect(runtime.planner.iterate).toHaveBeenCalledWith(
         'plan-1',
         expect.objectContaining({
-          alternatives: [
-            expect.objectContaining({ approach: 'Alt A' }),
-          ],
+          alternatives: [expect.objectContaining({ approach: 'Alt A' })],
         }),
       );
     });
