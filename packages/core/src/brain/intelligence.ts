@@ -775,14 +775,32 @@ export class BrainIntelligence {
       }
     }
 
-    // Rule 3: Plan completed — moderate confidence to avoid auto-promoting generic entries
+    // Rule 3: Plan completed — parse session.context for actionable title + dynamic confidence
     if (session.planId && session.planOutcome === 'completed') {
       rulesApplied.push('plan_completed');
+      const ctx = session.context ?? '';
+      const objective = this.extractObjective(ctx);
+      const hasScope = /scope|included|excluded/i.test(ctx);
+      const hasCriteria = /criteria|acceptance|verification/i.test(ctx);
+      const confidence =
+        ctx.length > 0
+          ? hasScope && hasCriteria
+            ? 0.85
+            : hasScope || hasCriteria
+              ? 0.8
+              : 0.75
+          : 0.5;
+      const title = objective
+        ? `Workflow: ${objective.slice(0, 80)}`
+        : `Successful plan: ${session.planId}`;
+      const description = objective
+        ? `Completed: ${objective}${hasScope ? '. Scope and constraints documented in session context.' : ''}`
+        : `Plan ${session.planId} completed successfully. This workflow can be reused for similar tasks.`;
       proposals.push(
         this.createProposal(sessionId, 'plan_completed', 'workflow', {
-          title: `Successful plan: ${session.planId}`,
-          description: `Plan ${session.planId} completed successfully. This workflow can be reused for similar tasks.`,
-          confidence: 0.65,
+          title,
+          description,
+          confidence,
         }),
       );
     }
@@ -1349,6 +1367,23 @@ export class BrainIntelligence {
       promoted: row.promoted === 1,
       createdAt: row.created_at,
     };
+  }
+
+  /**
+   * Extract the objective from session context — first meaningful sentence or line.
+   * Returns empty string if context is empty or unparseable.
+   */
+  private extractObjective(context: string): string {
+    if (!context || context.trim().length === 0) return '';
+    // Try to find an "Objective:" line
+    const objMatch = context.match(/objective[:\s]+(.+)/i);
+    if (objMatch) return objMatch[1].trim().replace(/\s+/g, ' ');
+    // Fall back to first non-empty line
+    const firstLine = context
+      .split('\n')
+      .map((l) => l.trim())
+      .find((l) => l.length > 0);
+    return firstLine ? firstLine.replace(/\s+/g, ' ') : '';
   }
 
   private createProposal(
