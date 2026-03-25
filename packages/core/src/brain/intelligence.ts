@@ -805,14 +805,26 @@ export class BrainIntelligence {
       );
     }
 
-    // Rule 4: Plan abandoned
+    // Rule 4: Plan abandoned — parse context for failure reason
     if (session.planId && session.planOutcome === 'abandoned') {
       rulesApplied.push('plan_abandoned');
+      const ctx = session.context ?? '';
+      const objective = this.extractObjective(ctx);
+      const hasFailureReason = /blocked|failed|wrong|mistake|abandoned|reverted|conflict/i.test(
+        ctx,
+      );
+      const confidence = ctx.length > 0 ? (hasFailureReason ? 0.85 : 0.75) : 0.5;
+      const title = objective
+        ? `Anti-pattern: ${objective.slice(0, 80)}`
+        : `Abandoned plan: ${session.planId}`;
+      const description = objective
+        ? `Abandoned: ${objective}${hasFailureReason ? '. Failure indicators found in session context — review for root cause.' : '. Review what went wrong to avoid repeating.'}`
+        : `Plan ${session.planId} was abandoned. Review what went wrong to avoid repeating in future sessions.`;
       proposals.push(
         this.createProposal(sessionId, 'plan_abandoned', 'anti-pattern', {
-          title: `Abandoned plan: ${session.planId}`,
-          description: `Plan ${session.planId} was abandoned. Review what went wrong to avoid repeating in future sessions.`,
-          confidence: 0.7,
+          title,
+          description,
+          confidence,
         }),
       );
     }
