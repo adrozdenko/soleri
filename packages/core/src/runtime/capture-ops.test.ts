@@ -37,6 +37,19 @@ function createMockRuntime(): AgentRuntime {
         entry: { id: 'captured-1' },
       })),
       intelligentSearch: vi.fn(async () => [{ id: 'r1', title: 'Result 1', score: 0.8 }]),
+      scanSearch: vi.fn(async () => [
+        {
+          id: 'r1',
+          title: 'Result 1',
+          score: 0.8,
+          snippet: 'Short desc...',
+          tokenEstimate: 50,
+          type: 'pattern',
+          domain: 'test',
+          severity: 'suggestion',
+          tags: ['test'],
+        },
+      ]),
       recordFeedback: vi.fn(),
     },
     governance: {
@@ -364,6 +377,77 @@ describe('createCaptureOps', () => {
         query: 'test',
       })) as Array<Record<string, unknown>>;
       expect((result[0].score as number) >= (result[1].score as number)).toBe(true);
+    });
+
+    it('scan mode calls brain.scanSearch instead of intelligentSearch', async () => {
+      const result = (await findOp(ops, 'search_intelligent').handler({
+        query: 'test patterns',
+        mode: 'scan',
+      })) as Array<Record<string, unknown>>;
+      expect(runtime.brain.scanSearch).toHaveBeenCalledWith(
+        'test patterns',
+        expect.objectContaining({ limit: 10 }),
+      );
+      expect(runtime.brain.intelligentSearch).not.toHaveBeenCalled();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result[0].source).toBe('vault');
+      expect(result[0].snippet).toBeDefined();
+    });
+
+    it('scan mode defaults limit to 10', async () => {
+      await findOp(ops, 'search_intelligent').handler({
+        query: 'test',
+        mode: 'scan',
+      });
+      expect(runtime.brain.scanSearch).toHaveBeenCalledWith(
+        'test',
+        expect.objectContaining({ limit: 10 }),
+      );
+    });
+
+    it('full mode (default) still uses intelligentSearch with limit 20', async () => {
+      await findOp(ops, 'search_intelligent').handler({
+        query: 'test',
+      });
+      expect(runtime.brain.intelligentSearch).toHaveBeenCalledWith(
+        'test',
+        expect.objectContaining({ limit: 20 }),
+      );
+      expect(runtime.brain.scanSearch).not.toHaveBeenCalled();
+    });
+
+    it('scan mode with includeMemories returns lightweight memory results', async () => {
+      vi.mocked(runtime.vault.searchMemories).mockReturnValue([
+        {
+          id: 'm1',
+          summary:
+            'A long memory summary that should be truncated to 120 chars for scan mode lightweight results test',
+          context: 'Auth context',
+        },
+      ] as unknown);
+      const result = (await findOp(ops, 'search_intelligent').handler({
+        query: 'auth',
+        mode: 'scan',
+        includeMemories: true,
+      })) as Array<Record<string, unknown>>;
+      const memResult = result.find((r) => r.source === 'memory');
+      expect(memResult).toBeDefined();
+      expect(memResult!.id).toBe('m1');
+      expect(memResult!.snippet).toBeDefined();
+      expect(typeof memResult!.snippet).toBe('string');
+      // Should NOT have full memory fields
+      expect(memResult!.filesModified).toBeUndefined();
+      expect(memResult!.toolsUsed).toBeUndefined();
+    });
+
+    it('scan mode handles search failure gracefully', async () => {
+      vi.mocked(runtime.brain.scanSearch).mockRejectedValue(new Error('Scan failed'));
+      const result = (await findOp(ops, 'search_intelligent').handler({
+        query: 'anything',
+        mode: 'scan',
+      })) as Array<Record<string, unknown>>;
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(0);
     });
   });
 

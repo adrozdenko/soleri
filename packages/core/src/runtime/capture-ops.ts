@@ -484,28 +484,42 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'search_intelligent',
       description:
-        'Project-scoped intelligent search combining vault FTS, brain TF-IDF ranking, and optional memory search.',
+        'Project-scoped intelligent search combining vault FTS, brain TF-IDF ranking, and optional memory search. mode:"scan" returns lightweight results (titles + scores + snippets) for two-pass retrieval. mode:"full" (default) returns complete entries.',
       auth: 'read',
       schema: z.object({
         query: z.string(),
         projectPath: z.string().optional(),
         domain: z.string().optional(),
         type: z.string().optional(),
-        limit: z.number().optional().default(20),
+        limit: z.number().optional(),
         includeMemories: z.boolean().optional().default(false),
+        mode: z
+          .enum(['full', 'scan'])
+          .optional()
+          .default('full')
+          .describe(
+            'full = complete entries with scoring breakdowns, scan = lightweight titles + scores for two-pass retrieval',
+          ),
       }),
       handler: async (params) => {
         const query = params.query as string;
         const domain = params.domain as string | undefined;
         const type = params.type as string | undefined;
-        const limit = (params.limit as number | undefined) ?? 20;
+        const mode = (params.mode as string | undefined) ?? 'full';
+        const isScan = mode === 'scan';
+        const limit = (params.limit as number | undefined) ?? (isScan ? 10 : 20);
         const includeMemories = (params.includeMemories as boolean | undefined) ?? false;
 
-        // Search vault via brain's intelligent search (TF-IDF ranked)
+        // Search vault — scan mode returns lightweight results, full returns complete entries
         let vaultResults: Array<{ source: string; [key: string]: unknown }> = [];
         try {
-          const ranked = await brain.intelligentSearch(query, { domain, type, limit });
-          vaultResults = ranked.map((r) => ({ ...r, source: 'vault' }));
+          if (isScan) {
+            const scanned = await brain.scanSearch(query, { domain, type, limit });
+            vaultResults = scanned.map((r) => ({ ...r, source: 'vault' }));
+          } else {
+            const ranked = await brain.intelligentSearch(query, { domain, type, limit });
+            vaultResults = ranked.map((r) => ({ ...r, source: 'vault' }));
+          }
         } catch {
           // Graceful degradation — return empty vault results
         }
@@ -515,7 +529,21 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
         if (includeMemories) {
           try {
             const memories = vault.searchMemories(query, { limit });
-            memoryResults = memories.map((m) => ({ ...m, source: 'memory', score: 0.5 }));
+            if (isScan) {
+              // Lightweight memory results for scan mode
+              memoryResults = memories.map((m) => {
+                const desc = m.summary ?? '';
+                return {
+                  id: m.id,
+                  title: m.context ?? '',
+                  snippet: desc.slice(0, 120) + (desc.length > 120 ? '...' : ''),
+                  score: 0.5,
+                  source: 'memory',
+                };
+              });
+            } else {
+              memoryResults = memories.map((m) => ({ ...m, source: 'memory', score: 0.5 }));
+            }
           } catch {
             // Graceful degradation — return empty memory results
           }
