@@ -765,10 +765,25 @@ export class BrainIntelligence {
       if (significantDirs.length > 0) {
         const [topDir, topFiles] = significantDirs.sort((a, b) => b[1].length - a[1].length)[0];
         rulesApplied.push('multi_file_edit');
+        const ctx = session.context ?? '';
+        const objective = this.extractObjective(ctx);
+        const isRefactor = /refactor|rename|move|extract|consolidat/i.test(ctx);
+        const isFeature = /feat|add|implement|create|new/i.test(ctx);
+        const inferredPattern = isRefactor
+          ? 'Refactoring'
+          : isFeature
+            ? 'Feature'
+            : 'Cross-cutting change';
+        const mfeTitle = objective
+          ? `${inferredPattern}: ${objective.slice(0, 70)}`
+          : `${inferredPattern} in ${topDir} (${topFiles.length} files)`;
+        const mfeDescription = objective
+          ? `${inferredPattern} across ${topFiles.length} files in ${topDir}: ${objective}`
+          : `Session modified ${topFiles.length} files in ${topDir}: ${topFiles.slice(0, 5).join(', ')}${topFiles.length > 5 ? '...' : ''}.`;
         proposals.push(
           this.createProposal(sessionId, 'multi_file_edit', 'pattern', {
-            title: `Multi-file change pattern in ${topDir} (${topFiles.length} files)`,
-            description: `Session modified ${topFiles.length} files in ${topDir}: ${topFiles.slice(0, 5).join(', ')}${topFiles.length > 5 ? '...' : ''}. This may indicate an architectural pattern.`,
+            title: mfeTitle,
+            description: mfeDescription,
             confidence: Math.min(0.8, 0.4 + topFiles.length * 0.05),
           }),
         );
