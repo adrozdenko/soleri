@@ -38,7 +38,6 @@ const SPREAD_MAX = 5;
 const RECENCY_DECAY_DAYS = 30;
 const EXTRACTION_TOOL_THRESHOLD = 3;
 const EXTRACTION_FILE_THRESHOLD = 3;
-const EXTRACTION_LONG_SESSION_MINUTES = 30;
 const EXTRACTION_HIGH_FEEDBACK_RATIO = 0.8;
 const AUTO_PROMOTE_THRESHOLD = 0.8;
 const AUTO_PROMOTE_PENDING_MIN = 0.4;
@@ -776,24 +775,7 @@ export class BrainIntelligence {
       }
     }
 
-    // Rule 3: Long session (>30min) — neutral observation, not anti-pattern
-    if (session.endedAt && session.startedAt) {
-      const durationMs =
-        new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime();
-      const durationMin = durationMs / 60000;
-      if (durationMin > EXTRACTION_LONG_SESSION_MINUTES) {
-        rulesApplied.push('long_session');
-        proposals.push(
-          this.createProposal(sessionId, 'long_session', 'pattern', {
-            title: `Long session (${Math.round(durationMin)} minutes)`,
-            description: `Session lasted ${Math.round(durationMin)} minutes. Deep work session — review if this duration was productive or indicates a need for better tooling.`,
-            confidence: 0.3,
-          }),
-        );
-      }
-    }
-
-    // Rule 4: Plan completed — moderate confidence to avoid auto-promoting generic entries
+    // Rule 3: Plan completed — moderate confidence to avoid auto-promoting generic entries
     if (session.planId && session.planOutcome === 'completed') {
       rulesApplied.push('plan_completed');
       proposals.push(
@@ -805,7 +787,7 @@ export class BrainIntelligence {
       );
     }
 
-    // Rule 5: Plan abandoned
+    // Rule 4: Plan abandoned
     if (session.planId && session.planOutcome === 'abandoned') {
       rulesApplied.push('plan_abandoned');
       proposals.push(
@@ -817,7 +799,7 @@ export class BrainIntelligence {
       );
     }
 
-    // Rule 6: High feedback ratio (>80% accept or dismiss)
+    // Rule 5: High feedback ratio (>80% accept or dismiss)
     const feedbackRow = this.provider.get<{
       total: number;
       accepted: number;
@@ -1375,6 +1357,35 @@ export class BrainIntelligence {
     type: 'pattern' | 'anti-pattern' | 'workflow',
     data: { title: string; description: string; confidence: number },
   ): KnowledgeProposal {
+    // Dedup guard: skip if a proposal with the same rule + sessionId already exists
+    const existing = this.provider.get<{
+      id: string;
+      session_id: string;
+      rule: string;
+      type: string;
+      title: string;
+      description: string;
+      confidence: number;
+      promoted: number;
+      created_at: string;
+    }>('SELECT * FROM brain_proposals WHERE session_id = ? AND rule = ? LIMIT 1', [
+      sessionId,
+      rule,
+    ]);
+    if (existing) {
+      return {
+        id: existing.id,
+        sessionId: existing.session_id,
+        rule: existing.rule,
+        type: existing.type as 'pattern' | 'anti-pattern' | 'workflow',
+        title: existing.title,
+        description: existing.description,
+        confidence: existing.confidence,
+        promoted: existing.promoted === 1,
+        createdAt: existing.created_at,
+      };
+    }
+
     const id = randomUUID();
     this.provider.run(
       `INSERT INTO brain_proposals (id, session_id, rule, type, title, description, confidence)

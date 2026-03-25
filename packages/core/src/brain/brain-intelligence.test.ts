@@ -820,6 +820,36 @@ describe('BrainIntelligence', () => {
     expect(second.proposals.length).toBeGreaterThan(0);
   });
 
+  // ─── Dedup guard in createProposal ──────────────────────────
+
+  it('should not create duplicate proposals for the same rule + sessionId', () => {
+    runtime.brainIntelligence.lifecycle({
+      action: 'start',
+      sessionId: 'dedup-1',
+      toolsUsed: ['search', 'search', 'search'],
+    });
+    runtime.brainIntelligence.lifecycle({ action: 'end', sessionId: 'dedup-1' });
+
+    // First extraction creates proposals
+    const first = runtime.brainIntelligence.extractKnowledge('dedup-1');
+    expect(first.proposals.length).toBeGreaterThan(0);
+    const firstProposalCount = first.proposals.length;
+
+    // Reset extracted_at so we can re-extract the same session
+    runtime.brainIntelligence.resetExtracted({ sessionId: 'dedup-1' });
+
+    // Second extraction should return the same proposals (dedup guard)
+    const second = runtime.brainIntelligence.extractKnowledge('dedup-1');
+    expect(second.proposals.length).toBe(firstProposalCount);
+
+    // Proposal IDs should be identical (returned existing, not created new)
+    expect(second.proposals[0].id).toBe(first.proposals[0].id);
+
+    // Total proposals in the system should not have doubled
+    const stats = runtime.brainIntelligence.getStats();
+    expect(stats.proposals).toBe(firstProposalCount);
+  });
+
   // ─── computeStrengths with modified feedback ───────────────
 
   it('should weight modified feedback at 0.5 in computeStrengths', () => {
