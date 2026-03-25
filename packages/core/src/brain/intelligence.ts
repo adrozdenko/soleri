@@ -738,10 +738,18 @@ export class BrainIntelligence {
     for (const [tool, count] of toolCounts) {
       if (count >= EXTRACTION_TOOL_THRESHOLD) {
         rulesApplied.push('repeated_tool_usage');
+        const ctx = session.context ?? '';
+        const objective = this.extractObjective(ctx);
+        const toolTitle = objective
+          ? `Tool pattern: ${tool} (${count}x) during ${objective.slice(0, 60)}`
+          : `Frequent use of ${tool} (${count}x)`;
+        const toolDescription = objective
+          ? `Tool ${tool} used ${count} times while working on: ${objective}. This tool-task pairing may indicate a reusable workflow.`
+          : `Tool ${tool} was used ${count} times in session. Consider automating or abstracting this workflow.`;
         proposals.push(
           this.createProposal(sessionId, 'repeated_tool_usage', 'pattern', {
-            title: `Frequent use of ${tool}`,
-            description: `Tool ${tool} was used ${count} times in session. Consider automating or abstracting this workflow.`,
+            title: toolTitle,
+            description: toolDescription,
             confidence: Math.min(0.9, 0.5 + count * 0.1),
           }),
         );
