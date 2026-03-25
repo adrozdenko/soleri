@@ -852,7 +852,29 @@ export class BrainIntelligence {
       );
     }
 
-    // Rule 5: High feedback ratio (>80% accept or dismiss)
+    // Rule 5: Drift detected — fires when plan completed but context contains drift indicators
+    if (session.planId && session.planOutcome === 'completed' && session.context) {
+      const driftPattern =
+        /drift|skipped|added.*unplanned|changed scope|out of scope|deviat|unplanned/i;
+      if (driftPattern.test(session.context)) {
+        rulesApplied.push('drift_detected');
+        const objective = this.extractObjective(session.context);
+        const driftMatch =
+          session.context.match(/drift[:\s]+(.{1,120})/i) ??
+          session.context.match(/skipped[:\s]+(.{1,120})/i) ??
+          session.context.match(/unplanned[:\s]+(.{1,120})/i);
+        const driftDetail = driftMatch ? driftMatch[1].trim() : 'scope changed during execution';
+        proposals.push(
+          this.createProposal(sessionId, 'drift_detected', 'anti-pattern', {
+            title: `Plan drift: ${objective ? objective.slice(0, 60) : session.planId} — ${driftDetail.slice(0, 40)}`,
+            description: `Plan ${objective ?? session.planId} completed with drift: ${driftDetail}. Review scope controls for future planning.`,
+            confidence: 0.8,
+          }),
+        );
+      }
+    }
+
+    // Rule 6: High feedback ratio (>80% accept or dismiss)
     const feedbackRow = this.provider.get<{
       total: number;
       accepted: number;
