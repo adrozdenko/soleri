@@ -12,5 +12,12 @@
     "ux-touch-targets",
     "no-ai-attribution"
   ],
-  "composedFrom": ["typescript-safety", "a11y", "css-discipline", "clean-commits", "safety", "yolo-safety"]
+  "composedFrom": [
+    "typescript-safety",
+    "a11y",
+    "css-discipline",
+    "clean-commits",
+    "safety",
+    "yolo-safety"
+  ]
 }

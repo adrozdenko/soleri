@@ -10,17 +10,17 @@ soleri hooks add-pack safety
 
 ## What It Intercepts
 
-| Command | Action |
-|---------|--------|
-| `rm` / `rmdir` | Copies files to staging, then blocks |
-| `git push --force` | Blocks (use `--force-with-lease` instead) |
-| `git reset --hard` | Blocks (use `git stash` first) |
-| `git clean` | Blocks (use `git stash --include-untracked`) |
-| `git checkout -- .` | Blocks |
-| `git restore .` | Blocks |
-| `mv ~/projects/...` | Blocks |
-| `DROP TABLE` | Blocks |
-| `docker rm` / `docker rmi` | Blocks |
+| Command                    | Action                                       |
+| -------------------------- | -------------------------------------------- |
+| `rm` / `rmdir`             | Copies files to staging, then blocks         |
+| `git push --force`         | Blocks (use `--force-with-lease` instead)    |
+| `git reset --hard`         | Blocks (use `git stash` first)               |
+| `git clean`                | Blocks (use `git stash --include-untracked`) |
+| `git checkout -- .`        | Blocks                                       |
+| `git restore .`            | Blocks                                       |
+| `mv ~/projects/...`        | Blocks                                       |
+| `DROP TABLE`               | Blocks                                       |
+| `docker rm` / `docker rmi` | Blocks                                       |
 
 ## Where Backups Go
 

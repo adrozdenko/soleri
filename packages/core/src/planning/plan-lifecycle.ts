@@ -380,7 +380,20 @@ export function createPlanObject(params: {
     scope: params.scope,
     status: params.initialStatus ?? 'draft',
     decisions: params.decisions ?? [],
-    tasks: (params.tasks ?? []).map((t, i) => (Object.assign({id:`task-${i+1}`,title:t.title,description:t.description,status:`pending` as TaskStatus}, t.phase!==undefined&&{phase:t.phase}, t.milestone!==undefined&&{milestone:t.milestone}, t.parentTaskId!==undefined&&{parentTaskId:t.parentTaskId}, {updatedAt:now}))),
+    tasks: (params.tasks ?? []).map((t, i) =>
+      Object.assign(
+        {
+          id: `task-${i + 1}`,
+          title: t.title,
+          description: t.description,
+          status: `pending` as TaskStatus,
+        },
+        t.phase !== undefined && { phase: t.phase },
+        t.milestone !== undefined && { milestone: t.milestone },
+        t.parentTaskId !== undefined && { parentTaskId: t.parentTaskId },
+        { updatedAt: now },
+      ),
+    ),
     ...(params.approach !== undefined && { approach: params.approach }),
     ...(params.context !== undefined && { context: params.context }),
     ...(params.success_criteria !== undefined && { success_criteria: params.success_criteria }),

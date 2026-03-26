@@ -12,12 +12,12 @@ Score → Convert → Test → Graduate
 
 Evaluate 4 dimensions (each HIGH or LOW):
 
-| Dimension | HIGH when... |
-|-----------|-------------|
-| **Frequency** | 3+ manual calls per session for same event type |
+| Dimension             | HIGH when...                                             |
+| --------------------- | -------------------------------------------------------- |
+| **Frequency**         | 3+ manual calls per session for same event type          |
 | **Event Correlation** | Skill consistently triggers on a recognizable hook event |
-| **Determinism** | Skill produces consistent, non-exploratory guidance |
-| **Autonomy** | Skill requires no interactive user decisions |
+| **Determinism**       | Skill produces consistent, non-exploratory guidance      |
+| **Autonomy**          | Skill requires no interactive user decisions             |
 
 **Threshold:** 3/4 HIGH = candidate for conversion.
 
@@ -71,29 +71,29 @@ soleri hooks demote marketing-research    # block → warn
 
 ## Hook Events
 
-| Event | When it fires |
-|-------|--------------|
-| `PreToolUse` | Before a tool call (Write, Edit, Bash, etc.) |
-| `PostToolUse` | After a tool call completes |
-| `PreCompact` | Before context compaction |
-| `Notification` | On notification events |
-| `Stop` | When the session ends |
+| Event          | When it fires                                |
+| -------------- | -------------------------------------------- |
+| `PreToolUse`   | Before a tool call (Write, Edit, Bash, etc.) |
+| `PostToolUse`  | After a tool call completes                  |
+| `PreCompact`   | Before context compaction                    |
+| `Notification` | On notification events                       |
+| `Stop`         | When the session ends                        |
 
 ## Action Levels
 
-| Level | Behavior |
-|-------|----------|
+| Level    | Behavior                              |
+| -------- | ------------------------------------- |
 | `remind` | Inject context, don't block (default) |
-| `warn` | Inject warning context, don't block |
-| `block` | Block the operation with a reason |
+| `warn`   | Inject warning context, don't block   |
+| `block`  | Block the operation with a reason     |
 
 ## CLI Commands
 
-| Command | Description |
-|---------|-------------|
-| `soleri hooks convert <name>` | Create a new hook pack from a skill |
-| `soleri hooks test <pack>` | Validate a hook pack against fixtures |
-| `soleri hooks promote <pack>` | Step up action level |
-| `soleri hooks demote <pack>` | Step down action level |
-| `soleri hooks add-pack <pack>` | Install a hook pack |
-| `soleri hooks remove-pack <pack>` | Uninstall a hook pack |
+| Command                           | Description                           |
+| --------------------------------- | ------------------------------------- |
+| `soleri hooks convert <name>`     | Create a new hook pack from a skill   |
+| `soleri hooks test <pack>`        | Validate a hook pack against fixtures |
+| `soleri hooks promote <pack>`     | Step up action level                  |
+| `soleri hooks demote <pack>`      | Step down action level                |
+| `soleri hooks add-pack <pack>`    | Install a hook pack                   |
+| `soleri hooks remove-pack <pack>` | Uninstall a hook pack                 |

@@ -60,6 +60,7 @@ git worktree list                      # confirm removal
 ```
 
 ## Anti-Patterns
+
 - Creating worktrees for single-file changes or one-liner fixes
 - Leaving orphan worktrees after tasks complete — always clean up
 - Deleting the worktree directory manually instead of `git worktree remove`
@@ -68,13 +69,13 @@ git worktree list                      # confirm removal
 
 ## Quick Reference
 
-| Action           | Command                                          |
-| ---------------- | ------------------------------------------------ |
-| Create           | `git worktree add ../<name> -b <branch>`         |
-| List             | `git worktree list`                              |
-| Remove           | `git worktree remove ../<name>`                  |
-| Prune            | `git worktree prune`                             |
-| Check unpushed   | `git log origin/<branch>..<branch>`              |
-| Claude Code      | Sub-agent with `isolation: "worktree"` parameter |
+| Action         | Command                                          |
+| -------------- | ------------------------------------------------ |
+| Create         | `git worktree add ../<name> -b <branch>`         |
+| List           | `git worktree list`                              |
+| Remove         | `git worktree remove ../<name>`                  |
+| Prune          | `git worktree prune`                             |
+| Check unpushed | `git log origin/<branch>..<branch>`              |
+| Claude Code    | Sub-agent with `isolation: "worktree"` parameter |
 
 **Related skills:** executing-plans, parallel-execute

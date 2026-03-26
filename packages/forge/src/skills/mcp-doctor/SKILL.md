@@ -19,6 +19,7 @@ cat .mcp.json
 ```
 
 For each server entry, record:
+
 - Server name
 - Command (`command` field)
 - Arguments (`args` field)
@@ -41,11 +42,13 @@ If the binary is missing, report it and suggest installation.
 ### 2b. Entry point exists?
 
 For `node` commands, check the script file exists:
+
 ```bash
 ls -la <args[0]>
 ```
 
 For `npx`/`uvx` commands, check the package resolves:
+
 ```bash
 npx --yes <package> --help 2>&1 | head -5
 # or
@@ -63,6 +66,7 @@ kill %1 2>/dev/null
 ```
 
 Look for:
+
 - Startup success messages (e.g. "Starting MCP server", "tools loaded")
 - Error messages (missing dependencies, port conflicts, config errors)
 - Crash/exit codes
@@ -80,6 +84,7 @@ If a stale process holds the port, report the PID and suggest killing it.
 ### 2e. Dependencies met?
 
 For Node.js servers, check if `node_modules` exist:
+
 ```bash
 ls <cwd>/node_modules/.package-lock.json 2>/dev/null
 ```
@@ -92,15 +97,15 @@ For Python (uvx) servers, the virtual env is managed by uvx — check if the pac
 
 For each issue found, apply the appropriate fix:
 
-| Issue | Fix |
-|-------|-----|
-| Binary not found | Suggest install command |
-| Entry point missing | `npm run build` or check path |
-| Port conflict (stale process) | `kill <PID>` (ask user first) |
-| Missing node_modules | `npm install` in the right directory |
-| Config error in .mcp.json | Show the fix, apply with user approval |
-| Package resolution failure | Clear cache, retry install |
-| Server crashes on start | Show error log, diagnose root cause |
+| Issue                         | Fix                                    |
+| ----------------------------- | -------------------------------------- |
+| Binary not found              | Suggest install command                |
+| Entry point missing           | `npm run build` or check path          |
+| Port conflict (stale process) | `kill <PID>` (ask user first)          |
+| Missing node_modules          | `npm install` in the right directory   |
+| Config error in .mcp.json     | Show the fix, apply with user approval |
+| Package resolution failure    | Clear cache, retry install             |
+| Server crashes on start       | Show error log, diagnose root cause    |
 
 **IMPORTANT:** Never kill processes without user confirmation. Always show the PID and process name first.
 
@@ -109,6 +114,7 @@ For each issue found, apply the appropriate fix:
 After repairs, instruct the user:
 
 > Repairs complete. Please restart MCP connections:
+>
 > 1. Type `/mcp` in the prompt
 > 2. Toggle the repaired server(s) off and back on
 > 3. Verify tools appear with a ToolSearch
@@ -145,10 +151,10 @@ Present findings as a table:
 
 ## Quick Reference
 
-| Check | Command | What it tells you |
-|-------|---------|-------------------|
-| Binary exists | `which <cmd>` | Is the runtime installed? |
-| Script exists | `ls <path>` | Is the entry point built? |
-| Port free | `lsof -i :<port>` | Is something blocking the port? |
-| Deps installed | `ls node_modules` | Are npm packages present? |
-| Server starts | `timeout 10 <cmd>` | Does initialization succeed? |
+| Check          | Command            | What it tells you               |
+| -------------- | ------------------ | ------------------------------- |
+| Binary exists  | `which <cmd>`      | Is the runtime installed?       |
+| Script exists  | `ls <path>`        | Is the entry point built?       |
+| Port free      | `lsof -i :<port>`  | Is something blocking the port? |
+| Deps installed | `ls node_modules`  | Are npm packages present?       |
+| Server starts  | `timeout 10 <cmd>` | Does initialization succeed?    |

@@ -6,13 +6,13 @@ Parallel agent lock guard for Soleri. Prevents lockfile corruption when multiple
 
 Intercepts commands that modify package manager lockfiles:
 
-| Package Manager | Commands |
-|----------------|----------|
-| npm | `npm install`, `npm ci` |
-| yarn | `yarn`, `yarn install` |
-| pnpm | `pnpm install` |
-| cargo | `cargo build`, `cargo update` |
-| pip | `pip install`, `pip3 install` |
+| Package Manager | Commands                      |
+| --------------- | ----------------------------- |
+| npm             | `npm install`, `npm ci`       |
+| yarn            | `yarn`, `yarn install`        |
+| pnpm            | `pnpm install`                |
+| cargo           | `cargo build`, `cargo update` |
+| pip             | `pip install`, `pip3 install` |
 
 ## How locking works
 

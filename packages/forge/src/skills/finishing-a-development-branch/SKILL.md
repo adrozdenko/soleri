@@ -33,16 +33,16 @@ Verify no uncommitted changes: `git status` should be clean. Commit or stash bef
    - **Reviewers**: add if the user specifies or the repo has CODEOWNERS
    - **Labels/milestone**: add if relevant
 
-Keep the description focused on *why* the change exists, not a file-by-file diff recap.
+Keep the description focused on _why_ the change exists, not a file-by-file diff recap.
 
 ## Step 3: Squash vs Merge Commit
 
-| Signal | Strategy | Rationale |
-|--------|----------|-----------|
-| Many WIP/fixup commits | **Squash** | Clean history, one logical change |
-| Each commit is a meaningful unit | **Merge commit** | Preserves granular history |
-| Single commit on branch | Either | No difference |
-| Team convention exists | **Follow it** | Consistency wins |
+| Signal                           | Strategy         | Rationale                         |
+| -------------------------------- | ---------------- | --------------------------------- |
+| Many WIP/fixup commits           | **Squash**       | Clean history, one logical change |
+| Each commit is a meaningful unit | **Merge commit** | Preserves granular history        |
+| Single commit on branch          | Either           | No difference                     |
+| Team convention exists           | **Follow it**    | Consistency wins                  |
 
 Default to **squash** unless the user or repo convention says otherwise.
 

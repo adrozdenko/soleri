@@ -69,12 +69,12 @@ YOLO mode deactivates when any of these occur:
 
 ## Quick Reference
 
-| Op                    | When to Use                          |
-| --------------------- | ------------------------------------ |
-| `admin_health`        | Verify safety hook pack is installed |
-| `morph`               | Activate/deactivate YOLO mode        |
-| `orchestrate_complete`| After every task (never skip)        |
-| `search_intelligent`  | Before every decision (never skip)   |
-| `plan_reconcile`      | After execution (never skip)         |
+| Op                     | When to Use                          |
+| ---------------------- | ------------------------------------ |
+| `admin_health`         | Verify safety hook pack is installed |
+| `morph`                | Activate/deactivate YOLO mode        |
+| `orchestrate_complete` | After every task (never skip)        |
+| `search_intelligent`   | Before every decision (never skip)   |
+| `plan_reconcile`       | After execution (never skip)         |
 
 **Related skills:** executing-plans, writing-plans

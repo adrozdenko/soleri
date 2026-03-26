@@ -8,7 +8,6 @@ description: >
   structured work items from conversation context.
 ---
 
-
 # Agent-Optimized Issue Creation
 
 Create GitHub issues that AI agents can parse, execute, and verify without ambiguity. Every issue is a self-contained work order — an agent reading it has everything needed to start, execute, and prove completion.
@@ -33,32 +32,40 @@ An agent cannot act on "improve avatar handling." It can act on: "Add PNG upload
 
 ```markdown
 # Objective
+
 <one sentence: what's broken and what "fixed" looks like>
 
 ## Type: bug
+
 ## Component: <package or module name>
+
 ## Priority: P0 | P1 | P2 | P3
 
 ## Context
+
 - Impact: <who/what is affected>
 - Related: <links to issues, PRs, vault entries>
 - First seen: <date or commit>
 
 ## Steps to Reproduce
+
 1. <exact command or action>
 2. <exact command or action>
 3. Observe: <what happens>
 
 ## Expected vs Actual
-| | Behavior |
-|--|----------|
+
+|              | Behavior           |
+| ------------ | ------------------ |
 | **Expected** | <correct behavior> |
-| **Actual** | <broken behavior> |
+| **Actual**   | <broken behavior>  |
 
 ## Error Output
 ```
+
 <paste exact error, stack trace, or log output>
-```
+
+````
 
 ## Root Cause (if known)
 - File: `path/to/file.ts` — `functionName()` or line reference
@@ -85,8 +92,9 @@ An agent cannot act on "improve avatar handling." It can act on: "Add PNG upload
 ```bash
 <exact test command>
 <exact build/lint command>
-```
-```
+````
+
+````
 
 ### Feature
 
@@ -132,14 +140,16 @@ An agent cannot act on "improve avatar handling." It can act on: "Add PNG upload
 ```bash
 <exact test command>
 <exact build command>
-```
+````
 
 ## Definition of Done
+
 - [ ] Acceptance criteria satisfied
 - [ ] `npm test` passes
 - [ ] `npm run typecheck` passes
 - [ ] Changes scoped to "In Scope" only
-```
+
+````
 
 ### Milestone
 
@@ -165,16 +175,16 @@ An agent cannot act on "improve avatar handling." It can act on: "Add PNG upload
 - [ ] All sub-issues closed
 - [ ] Integration test passes end-to-end
 - [ ] <milestone-level verification>
-```
+````
 
 ## Field Guide
 
 ### Writing Good Objectives
 
-| Bad | Good |
-|-----|------|
-| "Fix the login" | "Login returns 401 instead of session token when OAuth callback has valid code" |
-| "Add dark mode" | "Add `prefers-color-scheme` media query support to all semantic color tokens" |
+| Bad                   | Good                                                                            |
+| --------------------- | ------------------------------------------------------------------------------- |
+| "Fix the login"       | "Login returns 401 instead of session token when OAuth callback has valid code" |
+| "Add dark mode"       | "Add `prefers-color-scheme` media query support to all semantic color tokens"   |
 | "Improve performance" | "Reduce cold-start vault search from 800ms to <200ms by lazy-loading FTS index" |
 
 ### Writing Good Acceptance Criteria
@@ -182,9 +192,11 @@ An agent cannot act on "improve avatar handling." It can act on: "Add PNG upload
 Use Given/When/Then for behavioral criteria. Use plain checkboxes for structural criteria.
 
 **Behavioral:**
+
 - [ ] Given a user with valid OAuth code, when POST /auth/callback, then returns 200 with session token
 
 **Structural:**
+
 - [ ] Unit test covers happy path + error case
 - [ ] No new `any` types introduced
 - [ ] Public API documented in JSDoc
@@ -192,6 +204,7 @@ Use Given/When/Then for behavioral criteria. Use plain checkboxes for structural
 ### Writing Good Code Locations
 
 Always include:
+
 1. **File path** — repo-root relative
 2. **Anchor** — function name, class name, route, or config key
 3. **Context** — what the agent should look at there
@@ -228,27 +241,36 @@ When creating issues from a plan, the plan is the source of truth — GitHub iss
 
 ### Plan-Sourced Task Template
 
-```markdown
+````markdown
 # Objective
+
 <one sentence: what this task delivers>
 
 ## Plan: `<plan-id>` | Task <N> of <total>
+
 ## Parent: #<epic-issue-number>
+
 ## Complexity: Low | Medium | High
+
 ## Depends on: <task dependencies or "nothing">
 
 ## Code Locations
+
 - `path/to/file.ts` — `symbolOrFunction`
 
 ## Acceptance Criteria
+
 - [ ] <testable outcome>
 - [ ] <testable outcome>
 - [ ] Tests pass
 
 ## Verification
+
 ```bash
 <exact command>
 ```
+````
+
 ```
 
 ### Rules for Plan-Sourced Issues
@@ -266,3 +288,4 @@ Always apply at least:
 - Type: `bug`, `feature`, `refactor`, `chore`
 - Priority: `P0`, `P1`, `P2`, `P3` (if using priority labels)
 - Component: package or module name (if using component labels)
+```

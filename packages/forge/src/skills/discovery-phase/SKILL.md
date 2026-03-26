@@ -30,13 +30,13 @@ Do NOT create a plan, write code, or take any implementation action until the di
 
 For each option:
 
-| Field | Content |
-| ----- | ------- |
+| Field        | Content              |
+| ------------ | -------------------- |
 | **Approach** | One-sentence summary |
-| **Pros** | What it gives us |
-| **Cons** | What it costs |
-| **Risk** | What could go wrong |
-| **Effort** | S / M / L |
+| **Pros**     | What it gives us     |
+| **Cons**     | What it costs        |
+| **Risk**     | What could go wrong  |
+| **Effort**   | S / M / L            |
 
 ## After Discovery
 

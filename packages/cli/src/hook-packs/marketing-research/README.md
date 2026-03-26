@@ -4,12 +4,12 @@ Example hook demonstrating the skill-to-hook conversion workflow. Automatically 
 
 ## Conversion Score
 
-| Dimension | Score | Rationale |
-|-----------|-------|-----------|
-| Frequency | HIGH | 4+ manual checks per session when editing marketing content |
-| Event Correlation | HIGH | Always triggers on Write/Edit to marketing files |
-| Determinism | HIGH | Lookups and context injection, not creative guidance |
-| Autonomy | HIGH | No interactive decisions needed |
+| Dimension         | Score | Rationale                                                   |
+| ----------------- | ----- | ----------------------------------------------------------- |
+| Frequency         | HIGH  | 4+ manual checks per session when editing marketing content |
+| Event Correlation | HIGH  | Always triggers on Write/Edit to marketing files            |
+| Determinism       | HIGH  | Lookups and context injection, not creative guidance        |
+| Autonomy          | HIGH  | No interactive decisions needed                             |
 
 **Score: 4/4 — Strong candidate**
 
@@ -22,6 +22,7 @@ soleri hooks add-pack marketing-research
 ## What It Does
 
 Fires on `Write` and `Edit` tool calls when the target file matches marketing patterns:
+
 - `**/marketing/**`
 - `**/*marketing*`
 - `**/campaign*/**`
