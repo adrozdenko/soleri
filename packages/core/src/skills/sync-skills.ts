@@ -41,15 +41,19 @@ export function discoverSkills(skillsDirs: string[]): SkillEntry[] {
   return skills;
 }
 
-/** Inject agent branding after YAML frontmatter */
-function brandSkillContent(content: string, agentName: string): string {
+/** Inject agent branding after YAML frontmatter and rewrite skill name */
+function brandSkillContent(content: string, agentName: string, prefixedName?: string): string {
   // Find end of frontmatter (second ---)
   const fmEnd = content.indexOf('---', content.indexOf('---') + 3);
   if (fmEnd === -1) return content;
 
-  const afterFm = fmEnd + 3;
-  const before = content.slice(0, afterFm);
-  const after = content.slice(afterFm);
+  let before = content.slice(0, fmEnd + 3);
+  const after = content.slice(fmEnd + 3);
+
+  // Rewrite name: field in frontmatter to include agent prefix
+  if (prefixedName) {
+    before = before.replace(/^(name:\s*).+$/m, `$1${prefixedName}`);
+  }
 
   const brandLine = `\n\n> **${agentName}** skill\n`;
   return before + brandLine + after;
@@ -71,10 +75,13 @@ export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string)
   mkdirSync(commandsDir, { recursive: true });
 
   for (const skill of skills) {
-    const targetPath = join(commandsDir, `${skill.name}.md`);
+    const prefix = agentName ? `${agentName.toLowerCase().replace(/\s+/g, '-')}-` : '';
+    const targetPath = join(commandsDir, `${prefix}${skill.name}.md`);
     try {
       const sourceContent = readFileSync(skill.sourcePath, 'utf-8');
-      const branded = agentName ? brandSkillContent(sourceContent, agentName) : sourceContent;
+      const branded = agentName
+        ? brandSkillContent(sourceContent, agentName, `${prefix}${skill.name}`)
+        : sourceContent;
 
       if (!existsSync(targetPath)) {
         writeFileSync(targetPath, branded);
