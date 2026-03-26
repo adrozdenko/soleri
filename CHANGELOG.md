@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v9.5.0 — 2026-03-27 — Performance, Windows Support & Forge Polish
+
+### Performance — 10 Issues Resolved (#385–#394)
+
+Major performance overhaul across `@soleri/core`. All P0 and P1 performance issues from the comprehensive audit are now resolved.
+
+- **SQLite transactions** — `persistVocabulary()` DELETE moved inside transaction, `computeStrengths()` batch-persisted (#385)
+- **Missing indexes** — 7 high-frequency column indexes added via `migratePerformanceIndexes()` (#386)
+- **WAL mode** — pragmas now applied on both constructor paths (string + injected provider) (#387)
+- **Shutdown registry** — `ShutdownRegistry` with LIFO cleanup for timers, watchers, child processes (#388)
+- **Timeouts & limits** — `AbortSignal.timeout(60s)` on OpenAI fetch, 120s fallback on Anthropic, 10MB HTTP body limit, 1MB WS buffer limit (#389)
+- **Async exec** — 7 `execFileSync` calls replaced with async `execFile` in github-projection, `detectGitHubContext` parallelized with `Promise.all` (#390)
+- **Brain lazy-init** — vocabulary loaded from DB at startup, full rebuild only when table empty, incremental persist (#391)
+- **O(n^2) → O(n*k)** — duplicate detection now uses content-hash for exact dupes + FTS5 candidate matching for fuzzy (#392)
+- **Cached routeIntent** — `getModes()` cached with invalidation, `queryVec` hoisted out of scoring loop (#393)
+- **N+1 query fixes** — batch `WHERE IN` for traverse, loadEntries, memoriesByProject, archive; JOIN in computeStrengths (#394)
+
+### Windows Support (#395–#400)
+
+Native Windows support via Git for Windows (Git Bash). No WSL2 required.
+
+- **Cross-platform temp paths** — shell scripts use `${TMPDIR:-${TEMP:-/tmp}}`, TypeScript uses `os.tmpdir()` (#396)
+- **Platform guards** — all `chmodSync`/`symlinkSync` calls guarded with `process.platform !== 'win32'` (#397)
+- **Windows setup guide** — new docs page covering prerequisites, build tools, hook packs, troubleshooting (#398)
+- **CI test matrix** — `windows-latest` runner added for core + CLI unit tests (#399)
+- **README updated** — platform line changed from "WSL2 required" to native Windows support (#400)
+
+### Forge Polish (#323, #324)
+
+- **Model routing hints** — guidance table in shared-rules for Opus/Sonnet/Haiku by workflow stage (#324)
+- **Handoff documents** — `handoff_generate` op for structured context transitions, `context-handoff` workflow scaffolded into new agents, handoff protocol added to session lifecycle rules (#323)
+
 ### Safety Hook Pack (#340)
 
 Anti-deletion hook extracted from `yolo-safety` into standalone `safety` pack, installable via `soleri hooks add-pack safety`. Added 7-day auto-cleanup for staging backups. `yolo-safety` now composes from `safety`. Fixed `getInstalledPacks` to detect composed packs.

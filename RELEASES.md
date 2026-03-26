@@ -1,11 +1,11 @@
 # Soleri Release Plan
 
-Active release plan as of 2026-03-26. Source of truth for release sequencing, dependencies, and priorities.
+Active release plan as of 2026-03-27. Source of truth for release sequencing, dependencies, and priorities.
 
 ## Release Sequence
 
 ```
-v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v10.0
+v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v9.5 → v10.0
 ```
 
 | Release    | Milestone                           | Issues | Status                 | Depends On                  | Release Checklist |
@@ -15,6 +15,7 @@ v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v10.0
 | **v9.2**   | Operator Profile + Engine Hardening | 29     | **Shipped 2026-03-22** | v9.1 (stable runtime)       | #276              |
 | **v9.3**   | Persona Overlay & Auto-Assessment   | —      | **Shipped 2026-03-23** | v9.2                        | —                 |
 | **v9.4**   | YOLO Mode, Op Visibility & Brain    | —      | **Shipped 2026-03-26** | v9.3                        | —                 |
+| **v9.5**   | Performance, Windows & Forge Polish | 16     | **Shipped 2026-03-27** | v9.4                        | #401              |
 | **v10.0**  | soleri.dev Platform                 | 17     | Future                 | Nothing — independent track | —                 |
 
 ## v9.1.1: Bug Fixes
