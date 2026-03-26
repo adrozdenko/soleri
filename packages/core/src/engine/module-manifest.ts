@@ -41,7 +41,7 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
   {
     suffix: 'plan',
     description: 'Plan lifecycle — create, approve, execute, reconcile, complete, grading.',
-    keyOps: ['create_plan', 'approve_plan', 'plan_split', 'plan_reconcile'],
+    keyOps: ['create_plan', 'approve_plan', 'plan_split', 'plan_reconcile', 'plan_close_stale'],
     intentSignals: {
       'plan this': 'create_plan',
       'break this down': 'create_plan',

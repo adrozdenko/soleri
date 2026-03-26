@@ -602,10 +602,22 @@ export function createOrchestrateOps(
           }
         }
 
-        // Complete the planner plan (legacy lifecycle) — only if plan exists
+        // Complete the planner plan (legacy lifecycle) — best-effort
+        // The epilogue (brain session, knowledge extraction, flow epilogue) MUST run
+        // even if plan transition fails (e.g. already completed, missing, invalid state).
+        const warnings: string[] = [];
         let completedPlan;
         if (planObj && planId) {
-          completedPlan = planner.complete(planId);
+          try {
+            completedPlan = planner.complete(planId);
+          } catch (err) {
+            warnings.push(`Plan transition skipped: ${(err as Error).message}`);
+            completedPlan = {
+              id: planId,
+              status: planObj.status ?? 'completed',
+              objective: planObj.objective ?? (completionSummary || 'Direct execution'),
+            };
+          }
         } else {
           completedPlan = {
             id: planId ?? `direct-${Date.now()}`,
@@ -676,6 +688,7 @@ export function createOrchestrateOps(
           extraction,
           epilogue: epilogueResult,
           ...(impactReport ? { impactAnalysis: impactReport } : {}),
+          ...(warnings.length > 0 ? { warnings } : {}),
         };
       },
     },

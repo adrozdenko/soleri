@@ -40,6 +40,7 @@ function makeRuntime(overrides?: {
     },
     planner: {
       list: () => o.plans ?? [],
+      closeStale: () => ({ closedIds: [], closedPlans: [] }),
     },
     vault: {
       stats: () => o.vaultStats ?? { totalEntries: 50, byType: { playbook: 5 } },

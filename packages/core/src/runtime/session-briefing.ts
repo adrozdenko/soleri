@@ -78,8 +78,17 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
           // Session data unavailable — skip
         }
 
-        // 2. Active plans
+        // 2. Active plans — auto-close ancient ones (>24h)
         try {
+          // Auto-close plans stuck in non-terminal states for more than 24h
+          const staleResult = planner.closeStale();
+          if (staleResult.closedPlans.length > 0) {
+            sections.push({
+              label: 'Plans auto-closed',
+              content: `${staleResult.closedPlans.length} stale plan(s) closed: ${staleResult.closedPlans.map((p) => `${p.id.slice(0, 25)}… (${p.reason})`).join(', ')}`,
+            });
+          }
+
           const plans = planner.list();
           const active = plans.filter(
             (p) =>

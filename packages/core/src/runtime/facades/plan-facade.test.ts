@@ -340,4 +340,157 @@ describe('plan-facade', () => {
     expect(result.success).toBe(true);
     expect((result.data as Record<string, unknown>).error).toContain('not found');
   });
+
+  // ─── create_plan vault enrichment ─────────────────────────────
+
+  it('create_plan enriches decisions with vault patterns when matches exist', async () => {
+    // Seed vault with a relevant entry
+    vault.add({
+      title: 'SQLite FTS5 search pattern',
+      description: 'Use FTS5 with porter tokenizer for all text search',
+      content: 'Use FTS5 with porter tokenizer for all text search',
+      type: 'pattern',
+      domain: 'architecture',
+      severity: 'suggestion',
+      tags: ['sqlite', 'search'],
+    });
+
+    const result = await executeOp(ops, 'create_plan', {
+      objective: 'Implement text search with SQLite FTS5',
+      scope: 'packages/core/src/vault',
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as {
+      created: boolean;
+      plan: Record<string, unknown>;
+      vaultEntryIds: string[];
+    };
+    expect(data.created).toBe(true);
+    expect(data.vaultEntryIds.length).toBeGreaterThan(0);
+    // Decisions should contain vault pattern references with entryId markers
+    const decisions = data.plan.decisions as string[];
+    const vaultDecisions = decisions.filter((d) => d.startsWith('Vault pattern:'));
+    expect(vaultDecisions.length).toBeGreaterThan(0);
+    // Each vault decision should have an [entryId:...] marker for brain feedback
+    for (const vd of vaultDecisions) {
+      expect(vd).toMatch(/\[entryId:[^\]]+\]/);
+    }
+  });
+
+  it('create_plan works without vault matches (empty vault)', async () => {
+    // Fresh vault, no entries
+    const result = await executeOp(ops, 'create_plan', {
+      objective: 'Something completely unrelated xyz123',
+      scope: 'test',
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as {
+      created: boolean;
+      vaultEntryIds: string[];
+    };
+    expect(data.created).toBe(true);
+    expect(data.vaultEntryIds).toEqual([]);
+  });
+
+  it('create_plan preserves user decisions alongside vault enrichment', async () => {
+    vault.add({
+      title: 'Testing pattern',
+      description: 'Always write tests before implementation',
+      content: 'Always write tests before implementation',
+      type: 'pattern',
+      domain: 'testing',
+      severity: 'suggestion',
+      tags: ['tdd'],
+    });
+
+    const result = await executeOp(ops, 'create_plan', {
+      objective: 'Add testing patterns to the project',
+      scope: 'packages/core',
+      decisions: ['Use vitest as test runner'],
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as { plan: Record<string, unknown>; vaultEntryIds: string[] };
+    const decisions = data.plan.decisions as string[];
+    // User decision preserved
+    expect(decisions).toContain('Use vitest as test runner');
+    // Vault enrichment added
+    if (data.vaultEntryIds.length > 0) {
+      const vaultDecisions = decisions.filter((d) => d.startsWith('Vault pattern:'));
+      expect(vaultDecisions.length).toBeGreaterThan(0);
+    }
+  });
+
+  // ─── plan_close_stale ─────────────────────────────────────────
+
+  it('plan_close_stale op is registered', () => {
+    expect([...ops.keys()]).toContain('plan_close_stale');
+  });
+
+  it('plan_close_stale returns no plans when none are stale', async () => {
+    const result = await executeOp(ops, 'plan_close_stale', {});
+    expect(result.success).toBe(true);
+    const data = result.data as { closed: number; plans: unknown[] };
+    expect(data.closed).toBe(0);
+    expect(data.plans).toHaveLength(0);
+  });
+
+  it('plan_close_stale with olderThanMs: 0 closes all non-terminal plans', async () => {
+    // Create a draft plan
+    await executeOp(ops, 'create_plan', { objective: 'Stale test', scope: 'test' });
+
+    // Close immediately (olderThanMs: 0 means close everything)
+    const result = await executeOp(ops, 'plan_close_stale', { olderThanMs: 0 });
+    expect(result.success).toBe(true);
+    const data = result.data as { closed: number; plans: Array<{ id: string; reason: string }> };
+    expect(data.closed).toBeGreaterThanOrEqual(1);
+    expect(data.plans[0].reason).toContain('ttl-expired');
+  });
+
+  // ─── Planner.closeStale() ─────────────────────────────────────
+
+  it('closeStale closes draft plans older than TTL', () => {
+    const runtime = makeRuntime(vault);
+    const planner = runtime.planner;
+
+    // Create a plan — it's immediately a draft
+    planner.create({ objective: 'Old draft', scope: 'test' });
+
+    // Close with olderThanMs: 0 to force-close regardless of age
+    const result = planner.closeStale(0);
+    expect(result.closedPlans.length).toBeGreaterThanOrEqual(1);
+    expect(result.closedPlans[0].previousStatus).toBe('draft');
+    expect(result.closedPlans[0].reason).toContain('ttl-expired');
+  });
+
+  it('closeStale does not close completed plans', () => {
+    const runtime = makeRuntime(vault);
+    const planner = runtime.planner;
+
+    // Create and complete a plan
+    const plan = planner.create({
+      objective: 'Completed plan',
+      scope: 'test',
+      decisions: ['d1', 'd2'],
+      tasks: [{ title: 'T1', description: 'd1' }],
+    });
+    planner.approve(plan.id);
+    planner.startExecution(plan.id);
+    planner.complete(plan.id);
+
+    // closeStale should not touch it
+    const result = planner.closeStale(0);
+    expect(result.closedPlans.filter((p) => p.id === plan.id)).toHaveLength(0);
+  });
+
+  it('closeStale respects default TTL — does not close fresh drafts', () => {
+    const runtime = makeRuntime(vault);
+    const planner = runtime.planner;
+
+    // Create a fresh plan
+    planner.create({ objective: 'Fresh draft', scope: 'test' });
+
+    // Close with default TTL (30 min) — fresh plan should NOT be closed
+    const result = planner.closeStale();
+    expect(result.closedPlans).toHaveLength(0);
+  });
 });

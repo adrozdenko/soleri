@@ -853,6 +853,34 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
 
+    // ─── Plan Close Stale ───────────────────────────────────────
+    {
+      name: 'plan_close_stale',
+      description:
+        'Close stale plans stuck in non-terminal states. Draft/approved plans expire after 30 min. Executing/reconciling plans expire after the configured threshold (default 24h). Returns list of closed plans.',
+      auth: 'write',
+      schema: z.object({
+        olderThanMs: z
+          .number()
+          .optional()
+          .describe(
+            'Custom threshold in milliseconds for executing/reconciling plans (default: 24h). Set to 0 to close ALL non-terminal plans immediately.',
+          ),
+      }),
+      handler: async (params) => {
+        const olderThanMs = params.olderThanMs as number | undefined;
+        const result = planner.closeStale(olderThanMs);
+        return {
+          closed: result.closedPlans.length,
+          plans: result.closedPlans,
+          message:
+            result.closedPlans.length > 0
+              ? `Closed ${result.closedPlans.length} stale plan(s)`
+              : 'No stale plans found',
+        };
+      },
+    },
+
     // ─── Purge Plans (#215) ──────────────────────────────────────────
     {
       name: 'plan_purge',

@@ -57,14 +57,15 @@ describe('E2E: skills-and-domains', () => {
     expect(existsSync(join(agentDir, 'skills'))).toBe(true);
   });
 
-  it('should have exactly 32 built-in skills', () => {
+  it('should have exactly 33 built-in skills', () => {
     const skillDirs = readdirSync(join(agentDir, 'skills'), { encoding: 'utf-8' });
-    expect(skillDirs.length).toBe(32);
+    expect(skillDirs.length).toBe(33);
 
     // Verify all expected skill names are present
     const expectedSkills = [
       'agent-dev',
       'agent-guide',
+      'agent-issues',
       'agent-persona',
       'brain-debrief',
       'brainstorming',

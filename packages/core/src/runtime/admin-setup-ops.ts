@@ -149,9 +149,9 @@ function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookG
             type: 'command',
             command: buildConditionalHookCommand(
               agentId,
-              `Call ${marker}memory op:session_capture with a brief summary of the current session before context is compacted.`,
+              `First, call ${marker}plan op:plan_close_stale params:{ olderThanMs: 0 } to auto-close any plans still in non-terminal states. Then call ${marker}memory op:session_capture with a brief summary of the current session before context is compacted. Include any auto-closed plan IDs in the summary.`,
             ),
-            timeout: 5000,
+            timeout: 10000,
           },
         ],
       },
@@ -164,9 +164,9 @@ function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookG
             type: 'command',
             command: buildConditionalHookCommand(
               agentId,
-              `Call ${marker}memory op:session_capture with a structured summary of what was accomplished, then check ${marker}loop op:loop_status — if a loop is active, remind the user.`,
+              `First, call ${marker}plan op:plan_close_stale params:{ olderThanMs: 0 } to auto-close any plans still in non-terminal states. Then call ${marker}memory op:session_capture with a structured summary of what was accomplished, including any auto-closed plan IDs. Finally check ${marker}loop op:loop_status — if a loop is active, remind the user.`,
             ),
-            timeout: 5000,
+            timeout: 10000,
           },
         ],
       },

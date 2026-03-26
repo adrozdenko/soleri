@@ -450,6 +450,71 @@ export class Planner {
     return toArchive;
   }
 
+  /**
+   * Close stale plans — plans in non-terminal states older than the given threshold.
+   * For draft/approved: uses 30 min TTL by default.
+   * For executing/reconciling: uses olderThanMs parameter (24h default).
+   * Returns the list of closed plan IDs.
+   */
+  closeStale(olderThanMs?: number): {
+    closedIds: string[];
+    closedPlans: Array<{ id: string; previousStatus: string; reason: string }>;
+  } {
+    const now = Date.now();
+    const forceAll = olderThanMs === 0;
+    const defaultTtl = forceAll ? 0 : 30 * 60 * 1000; // 30 minutes for draft/approved
+    const executingTtl = forceAll ? 0 : (olderThanMs ?? 24 * 60 * 60 * 1000); // 24h default for executing/reconciling
+    const closed: Array<{ id: string; previousStatus: string; reason: string }> = [];
+
+    for (const plan of this.store.plans) {
+      // Skip terminal states
+      if (plan.status === 'completed' || plan.status === 'archived') continue;
+
+      const age = now - plan.updatedAt;
+      let shouldClose = false;
+      let reason = '';
+
+      if (plan.status === 'draft' || plan.status === 'approved') {
+        // Short TTL for draft/approved — these should move quickly
+        if (age >= defaultTtl) {
+          shouldClose = true;
+          reason = `ttl-expired (${plan.status}, age: ${Math.round(age / 60000)}min)`;
+        }
+      } else if (
+        plan.status === 'executing' ||
+        plan.status === 'validating' ||
+        plan.status === 'reconciling' ||
+        plan.status === 'brainstorming'
+      ) {
+        // Longer TTL for active states
+        if (age >= executingTtl) {
+          shouldClose = true;
+          reason = `stale-closed (${plan.status}, age: ${Math.round(age / 3600000)}h)`;
+        }
+      }
+
+      if (shouldClose) {
+        const previousStatus = plan.status;
+        // Force transition to completed (bypass FSM since these are stale)
+        plan.status = 'completed';
+        plan.updatedAt = now;
+        if (!plan.reconciliation) {
+          plan.reconciliation = {
+            planId: plan.id,
+            accuracy: 0,
+            driftItems: [],
+            summary: `Auto-closed: ${reason}`,
+            reconciledAt: now,
+          };
+        }
+        closed.push({ id: plan.id, previousStatus, reason });
+      }
+    }
+
+    if (closed.length > 0) this.save();
+    return { closedIds: closed.map((c) => c.id), closedPlans: closed };
+  }
+
   stats(): {
     total: number;
     byStatus: Record<PlanStatus, number>;
