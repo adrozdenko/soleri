@@ -132,6 +132,27 @@ const DEFAULT_MODES: ModeConfig[] = [
     behaviorRules: ['Be helpful', 'Ask clarifying questions when needed'],
     keywords: [],
   },
+  {
+    mode: 'YOLO-MODE',
+    intent: 'yolo',
+    description: 'Autonomous execution — skip approval gates, execute directly',
+    behaviorRules: [
+      'Skip plan approval gates — execute tasks directly',
+      'Still run orchestrate_complete — knowledge capture is non-negotiable',
+      'Still run vault gather-before-execute — decisions must be informed',
+      'Hook pack must be installed — refuse to activate without yolo-safety hooks',
+      'User can exit with "exit YOLO" or session end',
+    ],
+    keywords: [
+      'yolo',
+      'autonomous',
+      'fire-and-forget',
+      'hands-off',
+      'no-approval',
+      'skip-gates',
+      'full-auto',
+    ],
+  },
 ];
 
 // ─── Class ──────────────────────────────────────────────────────────

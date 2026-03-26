@@ -17,6 +17,7 @@ import { collectGitEvidence } from '../planning/evidence-collector.js';
 import { matchPlaybooks, type PlaybookMatchResult } from '../playbooks/index.js';
 import { entryToPlaybookDefinition } from '../playbooks/index.js';
 import { closeIssueWithComment } from './github-integration.js';
+import { recordPlanFeedback } from './plan-feedback-helper.js';
 
 /**
  * Create 22 extended planning operations for an agent runtime.
@@ -61,7 +62,21 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           .optional()
           .describe('Rejected alternative approaches (replaces existing)'),
         addTasks: z
-          .array(z.object({ title: z.string(), description: z.string() }))
+          .array(
+            z.object({
+              title: z.string(),
+              description: z.string(),
+              phase: z
+                .string()
+                .optional()
+                .describe('Phase this task belongs to (e.g., "wave-1", "discovery")'),
+              milestone: z
+                .string()
+                .optional()
+                .describe('Milestone this task contributes to (e.g., "v1.0", "mvp")'),
+              parentTaskId: z.string().optional().describe('Parent task ID for sub-task hierarchy'),
+            }),
+          )
           .optional()
           .describe('Tasks to append'),
         removeTasks: z.array(z.string()).optional().describe('Task IDs to remove'),
@@ -104,6 +119,17 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
               title: z.string(),
               description: z.string(),
               dependsOn: z.array(z.string()).optional().describe('Task IDs this task depends on'),
+              phase: z
+                .string()
+                .optional()
+                .describe(
+                  'Phase this task belongs to (e.g., "wave-1", "discovery", "implementation")',
+                ),
+              milestone: z
+                .string()
+                .optional()
+                .describe('Milestone this task contributes to (e.g., "v1.0", "mvp", "beta")'),
+              parentTaskId: z.string().optional().describe('Parent task ID for sub-task hierarchy'),
             }),
           )
           .describe('New task list with optional dependency references (task-1, task-2, etc.)'),
@@ -112,7 +138,14 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
         try {
           const plan = planner.splitTasks(
             params.planId as string,
-            params.tasks as Array<{ title: string; description: string; dependsOn?: string[] }>,
+            params.tasks as Array<{
+              title: string;
+              description: string;
+              dependsOn?: string[];
+              phase?: string;
+              milestone?: string;
+              parentTaskId?: string;
+            }>,
           );
 
           // Auto-start brain session linked to the plan for learning pipeline
@@ -243,20 +276,7 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           }
 
           // Auto-record positive feedback for vault entries used as recommendations
-          let feedbackRecorded = 0;
-          const entryIdRegex = /\[entryId:([^\]]+)\]/;
-          for (const d of plan.decisions) {
-            const decisionStr = typeof d === 'string' ? d : d.decision;
-            const match = entryIdRegex.exec(decisionStr);
-            if (match) {
-              try {
-                brain.recordFeedback(plan.objective, match[1], 'accepted');
-                feedbackRecorded++;
-              } catch {
-                // Graceful degradation — skip if entry not found or already recorded
-              }
-            }
-          }
+          const feedbackRecorded = recordPlanFeedback(plan, brain, brainIntelligence);
 
           // Auto-close linked GitHub issue if plan has one
           let issueClosed = false;

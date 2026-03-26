@@ -35,7 +35,7 @@ describe('IntentRouter', () => {
   describe('construction', () => {
     it('seeds 10 default modes on first creation', () => {
       const modes = router.getModes();
-      expect(modes.length).toBe(10);
+      expect(modes.length).toBe(11);
     });
 
     it('starts in GENERAL-MODE', () => {
@@ -44,7 +44,7 @@ describe('IntentRouter', () => {
 
     it('is idempotent — second instance does not duplicate modes', () => {
       const router2 = new IntentRouter(vault);
-      expect(router2.getModes().length).toBe(10);
+      expect(router2.getModes().length).toBe(11);
     });
   });
 
@@ -199,7 +199,7 @@ describe('IntentRouter', () => {
     it('adds a new mode to the database', () => {
       router.registerMode(customMode);
       const modes = router.getModes();
-      expect(modes.length).toBe(11);
+      expect(modes.length).toBe(12);
       const found = modes.find((m) => m.mode === 'CUSTOM-MODE');
       expect(found).toBeDefined();
       expect(found!.keywords).toEqual(['custom', 'special']);
@@ -335,6 +335,50 @@ describe('IntentRouter', () => {
       expect(stats.byIntent['build']).toBe(1);
       expect(stats.byMode['FIX-MODE']).toBe(2);
       expect(stats.byMode['BUILD-MODE']).toBe(1);
+    });
+  });
+
+  // ─── YOLO-MODE ───────────────────────────────────────────────
+
+  describe('YOLO-MODE', () => {
+    it('route_intent with "yolo" returns YOLO-MODE', () => {
+      const result = router.routeIntent('go yolo on this task');
+      expect(result.intent).toBe('yolo');
+      expect(result.mode).toBe('YOLO-MODE');
+      expect(result.matchedKeywords).toContain('yolo');
+    });
+
+    it('morph to YOLO-MODE succeeds', () => {
+      const result = router.morph('YOLO-MODE');
+      expect(result.previousMode).toBe('GENERAL-MODE');
+      expect(result.currentMode).toBe('YOLO-MODE');
+      expect(result.behaviorRules.length).toBe(5);
+    });
+
+    it('get_behavior_rules returns 5 rules', () => {
+      const rules = router.getBehaviorRules('YOLO-MODE');
+      expect(rules).toHaveLength(5);
+      expect(rules[0]).toContain('Skip plan approval gates');
+      expect(rules[1]).toContain('orchestrate_complete');
+      expect(rules[2]).toContain('vault gather-before-execute');
+      expect(rules[3]).toContain('Hook pack must be installed');
+      expect(rules[4]).toContain('exit YOLO');
+    });
+
+    it('all keywords route to YOLO-MODE', () => {
+      const keywords = [
+        'yolo',
+        'autonomous',
+        'fire-and-forget',
+        'hands-off',
+        'no-approval',
+        'skip-gates',
+        'full-auto',
+      ];
+      for (const kw of keywords) {
+        const result = router.routeIntent(kw);
+        expect(result.mode).toBe('YOLO-MODE');
+      }
     });
   });
 

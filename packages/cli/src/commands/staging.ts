@@ -4,9 +4,12 @@ import { join, relative } from 'node:path';
 import { homedir } from 'node:os';
 import * as log from '../utils/logger.js';
 
-const STAGING_ROOT = join(homedir(), '.soleri', 'staging');
+export const STAGING_ROOT = join(homedir(), '.soleri', 'staging');
 
-interface StagedEntry {
+/** Default max age for stale staging entries (7 days). */
+const DEFAULT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+export interface StagedEntry {
   id: string;
   timestamp: string;
   path: string;
@@ -17,7 +20,7 @@ interface StagedEntry {
 /**
  * Walk a directory tree and collect all items with their relative paths.
  */
-function walkDir(dir: string, base: string): { relPath: string; size: number }[] {
+export function walkDir(dir: string, base: string): { relPath: string; size: number }[] {
   const results: { relPath: string; size: number }[] = [];
   if (!existsSync(dir)) return results;
 
@@ -38,7 +41,7 @@ function walkDir(dir: string, base: string): { relPath: string; size: number }[]
 /**
  * List all staged entries.
  */
-function listStaged(): StagedEntry[] {
+export function listStaged(): StagedEntry[] {
   if (!existsSync(STAGING_ROOT)) return [];
 
   const entries: StagedEntry[] = [];
@@ -66,7 +69,7 @@ function listStaged(): StagedEntry[] {
 /**
  * Parse a duration string like "7d", "24h", "30m" into milliseconds.
  */
-function parseDuration(duration: string): number | null {
+export function parseDuration(duration: string): number | null {
   const match = duration.match(/^(\d+)(d|h|m)$/);
   if (!match) return null;
 
@@ -85,10 +88,76 @@ function parseDuration(duration: string): number | null {
   }
 }
 
-function formatSize(bytes: number): string {
+export function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ─── Reusable Utility Functions ──────────────────────────────────────
+
+export interface StaleStagingInfo {
+  /** Entries older than maxAge. */
+  staleEntries: StagedEntry[];
+  /** Total bytes across stale entries. */
+  totalBytes: number;
+  /** Human-readable total size. */
+  totalSize: string;
+  /** Number of stale entries. */
+  count: number;
+}
+
+/**
+ * Check for staging entries older than a given age.
+ * Pure function — no I/O side effects beyond reading the filesystem.
+ *
+ * @param maxAgeMs - Maximum age in milliseconds (default: 7 days)
+ * @returns Info about stale entries, or null if none found.
+ */
+export function getStaleStagingInfo(
+  maxAgeMs: number = DEFAULT_MAX_AGE_MS,
+): StaleStagingInfo | null {
+  const entries = listStaged();
+  if (entries.length === 0) return null;
+
+  const cutoff = Date.now() - maxAgeMs;
+  const staleEntries = entries.filter((entry) => {
+    try {
+      const stat = statSync(entry.path);
+      return stat.mtimeMs < cutoff;
+    } catch {
+      return false;
+    }
+  });
+
+  if (staleEntries.length === 0) return null;
+
+  const totalBytes = staleEntries.reduce((sum, e) => sum + e.size, 0);
+  return {
+    staleEntries,
+    totalBytes,
+    totalSize: formatSize(totalBytes),
+    count: staleEntries.length,
+  };
+}
+
+/**
+ * Purge stale staging entries. Returns the number of entries removed.
+ *
+ * @param entries - Entries to purge (from getStaleStagingInfo().staleEntries)
+ * @returns Number of entries successfully removed.
+ */
+export function purgeStagingEntries(entries: StagedEntry[]): number {
+  let removed = 0;
+  for (const entry of entries) {
+    try {
+      rmSync(entry.path, { recursive: true, force: true });
+      removed++;
+    } catch {
+      // Skip failures silently — entry may have been removed concurrently
+    }
+  }
+  return removed;
 }
 
 export function registerStaging(program: Command): void {
@@ -161,25 +230,31 @@ export function registerStaging(program: Command): void {
     });
 
   staging
-    .command('purge')
-    .option('--older-than <duration>', 'Only purge snapshots older than duration (e.g. 7d, 24h)')
-    .description('Permanently delete staged files')
-    .action((opts: { olderThan?: string }) => {
+    .command('clean')
+    .option(
+      '--older-than <duration>',
+      'Only remove snapshots older than duration (default: 7d)',
+      '7d',
+    )
+    .option('--all', 'Remove all snapshots regardless of age')
+    .option('--dry-run', 'Show what would be removed without deleting')
+    .description('Remove staging backups older than 7 days (or --all)')
+    .action((opts: { olderThan: string; all?: boolean; dryRun?: boolean }) => {
       if (!existsSync(STAGING_ROOT)) {
-        log.info('No staging directory found. Nothing to purge.');
+        log.info('No staging directory found. Nothing to clean.');
         return;
       }
 
       const entries = listStaged();
 
       if (entries.length === 0) {
-        log.info('No staged files to purge.');
+        log.info('No staged files to clean.');
         return;
       }
 
-      let toPurge = entries;
+      let toClean = entries;
 
-      if (opts.olderThan) {
+      if (!opts.all) {
         const maxAge = parseDuration(opts.olderThan);
         if (!maxAge) {
           log.fail(`Invalid duration: "${opts.olderThan}". Use format like 7d, 24h, 30m`);
@@ -187,22 +262,70 @@ export function registerStaging(program: Command): void {
         }
 
         const cutoff = Date.now() - maxAge;
-        toPurge = entries.filter((entry) => {
+        toClean = entries.filter((entry) => {
           const stat = statSync(entry.path);
           return stat.mtimeMs < cutoff;
         });
       }
 
-      if (toPurge.length === 0) {
-        log.info('No snapshots match the purge criteria.');
+      if (toClean.length === 0) {
+        log.info('No snapshots match the clean criteria.');
         return;
       }
 
-      for (const entry of toPurge) {
-        rmSync(entry.path, { recursive: true, force: true });
-        log.warn(`Purged ${entry.id}`);
+      if (opts.dryRun) {
+        log.heading('Dry run — would remove:');
+        for (const entry of toClean) {
+          log.warn(`${entry.id}`, formatSize(entry.size));
+        }
+        log.info(`Would remove ${toClean.length} staging snapshot(s)`);
+        return;
       }
 
-      log.info(`Purged ${toPurge.length} staging snapshot(s)`);
+      for (const entry of toClean) {
+        rmSync(entry.path, { recursive: true, force: true });
+        log.warn(`Removed ${entry.id}`);
+      }
+
+      log.info(`Removed ${toClean.length} staging snapshot(s)`);
+    });
+
+  staging
+    .command('cleanup')
+    .option('--older-than <duration>', 'Max age for stale entries (default: 7d)', '7d')
+    .option('--yes', 'Skip confirmation prompt')
+    .description('Check for and remove stale staging backups (default: older than 7 days)')
+    .action((opts: { olderThan: string; yes?: boolean }) => {
+      const maxAge = parseDuration(opts.olderThan);
+      if (!maxAge) {
+        log.fail(`Invalid duration: "${opts.olderThan}". Use format like 7d, 24h, 30m`);
+        process.exit(1);
+      }
+
+      const info = getStaleStagingInfo(maxAge);
+
+      if (!info) {
+        log.info('No stale staging backups found.');
+        return;
+      }
+
+      log.heading('Stale Staging Backups');
+      log.info(
+        `Found ${info.count} staging backup(s) older than ${opts.olderThan} (${info.totalSize}).`,
+      );
+
+      for (const entry of info.staleEntries) {
+        log.dim(`  ${entry.id}  ${formatSize(entry.size)}`);
+      }
+
+      if (!opts.yes) {
+        log.info(
+          `Run with --yes to remove, or use: soleri staging purge --older-than ${opts.olderThan}`,
+        );
+        return;
+      }
+
+      const removed = purgeStagingEntries(info.staleEntries);
+      log.pass(`Cleaned up ${removed} stale staging backup(s), freed ${info.totalSize}.`);
     });
 }

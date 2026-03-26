@@ -89,7 +89,12 @@
     "venv",
     "lockfiles",
     "filetree",
-    "opencode"
+    "hotfixes",
+    "opencode",
+    "timebox",
+    "unpushed",
+    "worktree",
+    "worktrees"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [

@@ -90,6 +90,18 @@ Bug resolved, tests pass, root cause captured in vault. A fix without a capture 
 - Skipping the capture step after fixing
 - Not running the full test suite to check regressions
 
+## Rationalization Prevention
+
+Do NOT rationalize away failures. A fix is not done until it is proven done.
+
+- **HARD-GATE: The original symptom must be verified as resolved (test passes, error gone) before claiming the bug is fixed.**
+- **HARD-GATE: Full test suite must pass (no regressions) before completing the fix loop.**
+- Do not say "the fix should work" -- reproduce the original issue and confirm it is gone.
+- Do not say "this is unrelated" to dismiss a new test failure without investigation.
+- Do not skip the capture step -- a fix without a vault entry is incomplete.
+- If the fix introduces a new failure, the fix is not done. Do not rationalize it away.
+- If you cannot verify the fix, say so. Never claim success without evidence.
+
 ## Quick Reference
 
 | Op                                              | When to Use                |

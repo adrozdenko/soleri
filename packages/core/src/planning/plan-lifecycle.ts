@@ -232,7 +232,13 @@ export interface IterateChanges {
   objective?: string;
   scope?: string;
   decisions?: (string | PlanDecision)[];
-  addTasks?: Array<{ title: string; description: string }>;
+  addTasks?: Array<{
+    title: string;
+    description: string;
+    phase?: string;
+    milestone?: string;
+    parentTaskId?: string;
+  }>;
   removeTasks?: string[];
   approach?: string;
   context?: string;
@@ -302,11 +308,15 @@ export function applyIteration(plan: Plan, changes: IterateChanges): number {
       return isNaN(num) ? max : Math.max(max, num);
     }, 0);
     for (let i = 0; i < changes.addTasks.length; i++) {
+      const t = changes.addTasks[i];
       plan.tasks.push({
         id: `task-${maxIndex + i + 1}`,
-        title: changes.addTasks[i].title,
-        description: changes.addTasks[i].description,
+        title: t.title,
+        description: t.description,
         status: 'pending' as TaskStatus,
+        ...(t.phase !== undefined && { phase: t.phase }),
+        ...(t.milestone !== undefined && { milestone: t.milestone }),
+        ...(t.parentTaskId !== undefined && { parentTaskId: t.parentTaskId }),
         updatedAt: now,
       });
     }
@@ -347,7 +357,13 @@ export function createPlanObject(params: {
   objective: string;
   scope: string;
   decisions?: (string | PlanDecision)[];
-  tasks?: Array<{ title: string; description: string }>;
+  tasks?: Array<{
+    title: string;
+    description: string;
+    phase?: string;
+    milestone?: string;
+    parentTaskId?: string;
+  }>;
   approach?: string;
   context?: string;
   success_criteria?: string[];
@@ -364,13 +380,7 @@ export function createPlanObject(params: {
     scope: params.scope,
     status: params.initialStatus ?? 'draft',
     decisions: params.decisions ?? [],
-    tasks: (params.tasks ?? []).map((t, i) => ({
-      id: `task-${i + 1}`,
-      title: t.title,
-      description: t.description,
-      status: 'pending' as TaskStatus,
-      updatedAt: now,
-    })),
+    tasks: (params.tasks ?? []).map((t, i) => (Object.assign({id:`task-${i+1}`,title:t.title,description:t.description,status:`pending` as TaskStatus}, t.phase!==undefined&&{phase:t.phase}, t.milestone!==undefined&&{milestone:t.milestone}, t.parentTaskId!==undefined&&{parentTaskId:t.parentTaskId}, {updatedAt:now}))),
     ...(params.approach !== undefined && { approach: params.approach }),
     ...(params.context !== undefined && { context: params.context }),
     ...(params.success_criteria !== undefined && { success_criteria: params.success_criteria }),
@@ -391,6 +401,9 @@ export function applySplitTasks(
     description: string;
     dependsOn?: string[];
     acceptanceCriteria?: string[];
+    phase?: string;
+    milestone?: string;
+    parentTaskId?: string;
   }>,
 ): void {
   const now = Date.now();
@@ -401,6 +414,9 @@ export function applySplitTasks(
     status: 'pending' as TaskStatus,
     dependsOn: t.dependsOn,
     ...(t.acceptanceCriteria && { acceptanceCriteria: t.acceptanceCriteria }),
+    ...(t.phase !== undefined && { phase: t.phase }),
+    ...(t.milestone !== undefined && { milestone: t.milestone }),
+    ...(t.parentTaskId !== undefined && { parentTaskId: t.parentTaskId }),
     updatedAt: now,
   }));
   const taskIds = new Set(plan.tasks.map((t) => t.id));
@@ -410,6 +426,9 @@ export function applySplitTasks(
         if (!taskIds.has(dep))
           throw new Error(`Task '${task.id}' depends on unknown task '${dep}'`);
       }
+    }
+    if (task.parentTaskId && !taskIds.has(task.parentTaskId)) {
+      throw new Error(`Task '${task.id}' references unknown parent task '${task.parentTaskId}'`);
     }
   }
   plan.updatedAt = now;

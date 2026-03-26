@@ -77,6 +77,18 @@ Capture mid-execution learnings with `op:capture_quick` as they happen — don't
 - Forgetting to reconcile the plan after execution (drift data improves future plans)
 - Starting implementation on main/master without explicit consent
 
+## Rationalization Prevention
+
+Do NOT rationalize away failures. If a verification step fails, the task is not complete.
+
+- **HARD-GATE: Each task's verification must pass before marking it `completed`.**
+- **HARD-GATE: Final verification (Step 6) must pass before `plan_reconcile`. Do not reconcile a failing plan.**
+- Do not say "this task is basically done" when its verification has not run.
+- Do not skip verification steps "to save time" -- they exist for a reason.
+- Do not mark a task `completed` while its tests fail, even if the code "looks right."
+- If a task is blocked or failing, leave it `in_progress` and report honestly.
+- Do not treat reconciliation drift as permission to ignore failures.
+
 ## Quick Reference
 
 | Op                                              | When to Use                 |

@@ -1,7 +1,7 @@
 {
   "name": "yolo-safety",
   "version": "1.0.0",
-  "description": "Anti-deletion guardrail for YOLO mode — intercepts destructive commands, stages files for review",
+  "description": "Safety guardrails for YOLO mode — intercepts destructive commands (rm, git push --force, git reset --hard, git clean, drop table, docker rm), stages files before deletion, blocks everything else",
   "hooks": [],
   "scripts": [
     {
@@ -15,7 +15,7 @@
       "event": "PreToolUse",
       "matcher": "Bash",
       "type": "command",
-      "command": "bash ~/.claude/hooks/anti-deletion.sh",
+      "command": "sh ~/.claude/hooks/anti-deletion.sh",
       "timeout": 10,
       "statusMessage": "Checking for destructive commands..."
     }

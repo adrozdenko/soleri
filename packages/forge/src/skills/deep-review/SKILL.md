@@ -188,6 +188,18 @@ Only capture if genuinely reusable — not every review finding is vault-worthy.
 - Skipping git history (temporal smells are the most actionable)
 - Treating all smells as equal severity (prioritize by impact)
 
+## Rationalization Prevention
+
+Do NOT rationalize away findings. If a smell or issue is detected, report it honestly.
+
+- **HARD-GATE: All three passes must complete before presenting the report. Do not skip a pass.**
+- **HARD-GATE: Critical (red) findings must be flagged -- never downgrade severity to avoid difficult conversations.**
+- Do not say "this is probably fine" to dismiss a code smell you detected.
+- Do not omit findings because "the code works" -- working code can still be poorly architected.
+- Do not soften severity because the code is recent or written by the user.
+- If git history shows high churn, report it. Do not skip temporal smells for convenience.
+- Present the full picture. A review that hides problems is worse than no review.
+
 ## Quick Reference
 
 | Pass            | Focus            | Key Activities                                              |

@@ -66,6 +66,12 @@ export interface PlanTask {
   status: TaskStatus;
   /** Optional dependency IDs — tasks that must complete before this one. */
   dependsOn?: string[];
+  /** Phase this task belongs to (e.g., "wave-1", "discovery", "implementation"). */
+  phase?: string;
+  /** Milestone this task contributes to (e.g., "v1.0", "mvp", "beta"). */
+  milestone?: string;
+  /** Parent task ID — enables sub-task hierarchy within a plan. */
+  parentTaskId?: string;
   /** Evidence submitted for task acceptance criteria. */
   evidence?: TaskEvidence[];
   /** Whether this task has been verified (all evidence checked + reviews passed). */

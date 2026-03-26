@@ -25,7 +25,9 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
         name: z.string().optional().describe('Project display name (derived from path if omitted)'),
       }),
       handler: async (params) => {
-        const { resolve } = await import('node:path');
+        const { resolve, join } = await import('node:path');
+        const { homedir } = await import('node:os');
+        const { existsSync, readdirSync, statSync } = await import('node:fs');
         const projectPath = resolve((params.projectPath as string) ?? '.');
         const project = vault.registerProject(projectPath, params.name as string | undefined);
         // Also track in project registry for cross-project features
@@ -39,6 +41,35 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
 
         const proposalStats = governance.getProposalStats(projectPath);
         const quotaStatus = governance.getQuotaStatus(projectPath);
+
+        // Check for stale staging backups (lightweight — stat only, no tree walk)
+        let stagingWarning: { count: number; message: string } | undefined;
+        try {
+          const stagingRoot = join(homedir(), '.soleri', 'staging');
+          if (existsSync(stagingRoot)) {
+            const maxAgeMs = 7 * 24 * 60 * 60 * 1000; // 7 days
+            const cutoff = Date.now() - maxAgeMs;
+            const dirs = readdirSync(stagingRoot, { withFileTypes: true });
+            let staleCount = 0;
+            for (const dir of dirs) {
+              if (!dir.isDirectory()) continue;
+              try {
+                const st = statSync(join(stagingRoot, dir.name));
+                if (st.mtimeMs < cutoff) staleCount++;
+              } catch {
+                // skip unreadable entries
+              }
+            }
+            if (staleCount > 0) {
+              stagingWarning = {
+                count: staleCount,
+                message: `${staleCount} staging backup(s) older than 7 days. Run: soleri staging cleanup --yes`,
+              };
+            }
+          }
+        } catch {
+          // Non-critical — don't fail session start over staging check
+        }
 
         return {
           project,
@@ -56,6 +87,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
             isQuotaWarning: quotaStatus.isWarning,
             expiredThisSession: expired,
           },
+          ...(stagingWarning ? { stagingWarning } : {}),
         };
       },
     },

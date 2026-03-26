@@ -255,6 +255,9 @@ export class Planner {
       description: string;
       dependsOn?: string[];
       acceptanceCriteria?: string[];
+      phase?: string;
+      milestone?: string;
+      parentTaskId?: string;
     }>,
   ): Plan {
     const plan = this.requirePlan(planId);

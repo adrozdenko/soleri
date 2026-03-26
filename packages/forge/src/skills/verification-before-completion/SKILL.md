@@ -75,6 +75,18 @@ Capture session summary: `YOUR_AGENT_core op:session_capture params: { summary: 
 - Running linter but not build (linter does not check compilation)
 - Skipping the red-green cycle for regression tests
 
+## Rationalization Prevention
+
+Do NOT rationalize away failures. If a check fails, it fails. Period.
+
+- **HARD-GATE: All verification commands must pass (exit 0, 0 failures) before claiming task complete.**
+- **HARD-GATE: Agent system checks (`admin_health`, `admin_diagnostic`) must report no problems before completion.**
+- Do not say "tests probably pass" -- run them and read the output.
+- Do not say "this is a minor issue" to skip a failing check.
+- Do not say "it worked last time" -- stale results are not evidence.
+- Do not downgrade a failure to a warning to avoid blocking completion.
+- If a check fails and you cannot fix it, report the failure honestly. Never hide it.
+
 ## Quick Reference
 
 | Op                      | When to Use                         |
