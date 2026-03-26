@@ -345,22 +345,57 @@ export class Brain {
   }
 
   rebuildVocabulary(): void {
+    const BATCH_SIZE = 100;
+    const termDocFreq = new Map<string, number>();
+    let docCount = 0;
+
+    // Helper to process a batch of entries into the term-doc-frequency map
+    const processBatch = (entries: IntelligenceEntry[]): void => {
+      for (const entry of entries) {
+        const text = [
+          entry.title,
+          entry.description,
+          entry.context ?? '',
+          entry.tags.join(' '),
+        ].join(' ');
+        const tokens = new Set(tokenize(text));
+        for (const token of tokens) {
+          termDocFreq.set(token, (termDocFreq.get(token) ?? 0) + 1);
+        }
+      }
+      docCount += entries.length;
+    };
+
+    // Helper to iterate a single vault in batches
+    const iterateVault = (vault: Vault, seen: Set<string> | null): void => {
+      let offset = 0;
+      while (true) {
+        const batch = vault.list({ limit: BATCH_SIZE, offset });
+        if (batch.length === 0) break;
+        if (seen) {
+          const unique = batch.filter((e) => {
+            if (seen.has(e.id)) return false;
+            seen.add(e.id);
+            return true;
+          });
+          processBatch(unique);
+        } else {
+          processBatch(batch);
+        }
+        if (batch.length < BATCH_SIZE) break;
+        offset += BATCH_SIZE;
+      }
+    };
+
     // Collect entries from all connected sources when VaultManager is available
-    let entries: IntelligenceEntry[];
     if (this.vaultManager) {
       const seen = new Set<string>();
-      entries = [];
       // Gather entries from all tier vaults and connected sources via manager
       for (const tierInfo of this.vaultManager.listTiers()) {
         if (!tierInfo.connected) continue;
         try {
           const tierVault = this.vaultManager.getTier(tierInfo.tier);
-          for (const e of tierVault.list({ limit: 100000 })) {
-            if (!seen.has(e.id)) {
-              seen.add(e.id);
-              entries.push(e);
-            }
-          }
+          iterateVault(tierVault, seen);
         } catch {
           /* tier not connected */
         }
@@ -369,35 +404,19 @@ export class Brain {
         const cv = this.vaultManager.getConnected(name);
         if (!cv) continue;
         try {
-          for (const e of cv.vault.list({ limit: 100000 })) {
-            if (!seen.has(e.id)) {
-              seen.add(e.id);
-              entries.push(e);
-            }
-          }
+          iterateVault(cv.vault, seen);
         } catch {
           /* source not accessible */
         }
       }
     } else {
-      entries = this.vault.list({ limit: 100000 });
+      iterateVault(this.vault, null);
     }
-    const docCount = entries.length;
+
     if (docCount === 0) {
       this.vocabulary.clear();
       this.persistVocabularyFull();
       return;
-    }
-
-    const termDocFreq = new Map<string, number>();
-    for (const entry of entries) {
-      const text = [entry.title, entry.description, entry.context ?? '', entry.tags.join(' ')].join(
-        ' ',
-      );
-      const tokens = new Set(tokenize(text));
-      for (const token of tokens) {
-        termDocFreq.set(token, (termDocFreq.get(token) ?? 0) + 1);
-      }
     }
 
     this.vocabulary.clear();

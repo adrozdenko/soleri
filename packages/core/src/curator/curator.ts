@@ -17,14 +17,17 @@ import type {
 } from './types.js';
 
 import {
-  detectDuplicates as detectDuplicatesPure,
   DEFAULT_DUPLICATE_THRESHOLD,
+  MERGE_SUGGESTION_THRESHOLD,
+  buildVocabulary,
+  entryToText,
 } from './duplicate-detector.js';
 import {
   findContradictions,
   DEFAULT_CONTRADICTION_THRESHOLD,
   type ContradictionCandidate,
 } from './contradiction-detector.js';
+import { tokenize, calculateTfIdf, cosineSimilarity } from '../text/similarity.js';
 import {
   normalizeTag as normalizeTagPure,
   normalizeAndDedup,
@@ -40,6 +43,7 @@ import { enrichEntryMetadata } from './metadata-enricher.js';
 // ─── Constants ──────────────────────────────────────────────────────
 
 const DEFAULT_STALE_DAYS = 90;
+const DEFAULT_BATCH_SIZE = 100;
 
 // ─── Curator Class ──────────────────────────────────────────────────
 
@@ -151,19 +155,101 @@ export class Curator {
   // ─── Duplicates (delegates to duplicate-detector) ─────────────
 
   detectDuplicates(entryId?: string, threshold?: number): DuplicateDetectionResult[] {
-    const results = detectDuplicatesPure(this.vault.list({ limit: 100000 }), entryId, threshold);
-    // Filter out dismissed pairs
+    const effectiveThreshold = threshold ?? DEFAULT_DUPLICATE_THRESHOLD;
     const dismissed = this.getDismissedPairs();
-    if (dismissed.size === 0) return results;
-    return results
-      .map((r) => ({
-        ...r,
-        matches: r.matches.filter((m) => {
-          const key = [r.entryId, m.entryId].sort().join('::');
-          return !dismissed.has(key);
-        }),
-      }))
-      .filter((r) => r.matches.length > 0);
+
+    // --- Phase 1: Content-hash exact duplicates (O(n) via GROUP BY) ---
+    const exactDupes = this.provider.all<{ content_hash: string; ids: string }>(
+      `SELECT content_hash, GROUP_CONCAT(id) as ids FROM entries
+       WHERE content_hash IS NOT NULL
+       GROUP BY content_hash HAVING COUNT(*) > 1`,
+    );
+
+    const results: DuplicateDetectionResult[] = [];
+    const seenPairs = new Set<string>();
+
+    for (const { ids } of exactDupes) {
+      const idList = ids.split(',');
+      if (entryId && !idList.includes(entryId)) continue;
+      const targets = entryId ? [entryId] : idList;
+      for (const targetId of targets) {
+        const matches: DuplicateCandidate[] = [];
+        for (const otherId of idList) {
+          if (otherId === targetId) continue;
+          const pairKey = [targetId, otherId].sort().join('::');
+          if (dismissed.has(pairKey) || seenPairs.has(pairKey)) continue;
+          seenPairs.add(pairKey);
+          const other = this.vault.get(otherId);
+          if (!other) continue;
+          matches.push({
+            entryId: otherId,
+            title: other.title,
+            similarity: 1.0,
+            suggestMerge: true,
+          });
+        }
+        if (matches.length > 0) {
+          results.push({ entryId: targetId, matches, scannedCount: idList.length - 1 });
+        }
+      }
+    }
+
+    // --- Phase 2: FTS5 fuzzy candidate matching ---
+    // For each entry, use FTS5 MATCH to find top candidates, then TF-IDF cosine similarity.
+    // Complexity is O(n * k) where k = FTS5 candidate limit (10), not O(n^2).
+    const exactDupeEntryIds = new Set(results.map((r) => r.entryId));
+    const targetEntries = entryId
+      ? ([this.vault.get(entryId)].filter(Boolean) as IntelligenceEntry[])
+      : this.listBatched();
+
+    // Build vocabulary from all entries (batched)
+    const allEntries = entryId ? this.listBatched() : targetEntries;
+    const vocabulary = buildVocabulary(allEntries);
+
+    for (const entry of targetEntries) {
+      // Skip entries already fully handled by exact-hash matches
+      if (exactDupeEntryIds.has(entry.id)) continue;
+
+      // FTS5 candidate retrieval: find top-10 similar entries
+      let candidates: IntelligenceEntry[];
+      try {
+        candidates = this.vault
+          .search(entry.title, { domain: entry.domain, limit: 10 })
+          .map((r) => r.entry)
+          .filter((c) => c.id !== entry.id);
+      } catch {
+        candidates = [];
+      }
+      if (candidates.length === 0) continue;
+
+      const entryVec = calculateTfIdf(tokenize(entryToText(entry)), vocabulary);
+      const matches: DuplicateCandidate[] = [];
+
+      for (const candidate of candidates) {
+        // Skip cross-domain pairs
+        if (entry.domain !== candidate.domain) continue;
+        const pairKey = [entry.id, candidate.id].sort().join('::');
+        if (dismissed.has(pairKey)) continue;
+
+        const candidateVec = calculateTfIdf(tokenize(entryToText(candidate)), vocabulary);
+        const similarity = cosineSimilarity(entryVec, candidateVec);
+        if (similarity >= effectiveThreshold) {
+          matches.push({
+            entryId: candidate.id,
+            title: candidate.title,
+            similarity,
+            suggestMerge: similarity >= MERGE_SUGGESTION_THRESHOLD,
+          });
+        }
+      }
+
+      if (matches.length > 0) {
+        matches.sort((a, b) => b.similarity - a.similarity);
+        results.push({ entryId: entry.id, matches, scannedCount: candidates.length });
+      }
+    }
+
+    return results;
   }
 
   dismissDuplicate(entryIdA: string, entryIdB: string, reason?: string): { dismissed: boolean } {
@@ -187,9 +273,11 @@ export class Curator {
   detectContradictions(threshold?: number): Contradiction[] {
     const searchFn = (title: string) =>
       this.vault.search(title, { type: 'pattern', limit: 20 }).map((r) => r.entry);
-    return this.persistContradictions(
-      findContradictions(this.vault.list({ limit: 100000 }), threshold, searchFn),
-    );
+    // Load only anti-patterns and patterns (bounded by type), not the entire vault
+    const antipatterns = this.vault.list({ type: 'anti-pattern', limit: 10000 });
+    const patterns = this.vault.list({ type: 'pattern', limit: 10000 });
+    const entries = [...antipatterns, ...patterns];
+    return this.persistContradictions(findContradictions(entries, threshold, searchFn));
   }
 
   getContradictions(status?: ContradictionStatus): Contradiction[] {
@@ -218,10 +306,12 @@ export class Curator {
   ): Promise<{ contradictions: Contradiction[]; method: 'tfidf-only' }> {
     const searchFn = (title: string) =>
       this.vault.search(title, { type: 'pattern', limit: 20 }).map((r) => r.entry);
+    // Load only anti-patterns and patterns (bounded by type), not the entire vault
+    const antipatterns = this.vault.list({ type: 'anti-pattern', limit: 10000 });
+    const patterns = this.vault.list({ type: 'pattern', limit: 10000 });
+    const entries = [...antipatterns, ...patterns];
     return {
-      contradictions: this.persistContradictions(
-        findContradictions(this.vault.list({ limit: 100000 }), threshold, searchFn),
-      ),
+      contradictions: this.persistContradictions(findContradictions(entries, threshold, searchFn)),
       method: 'tfidf-only',
     };
   }
@@ -249,19 +339,28 @@ export class Curator {
 
   groomAll(): GroomAllResult {
     const start = Date.now();
-    const entries = this.vault.list({ limit: 100000 });
     let tagsNormalized = 0,
-      staleCount = 0;
-    for (const entry of entries) {
-      const result = this.groomEntry(entry.id);
-      if (result) {
-        tagsNormalized += result.tagsNormalized.filter((t) => t.wasAliased).length;
-        if (result.stale) staleCount++;
+      staleCount = 0,
+      totalEntries = 0;
+    // Batch pagination — process entries in batches instead of loading all at once
+    let offset = 0;
+    while (true) {
+      const batch = this.vault.list({ limit: DEFAULT_BATCH_SIZE, offset });
+      if (batch.length === 0) break;
+      totalEntries += batch.length;
+      for (const entry of batch) {
+        const result = this.groomEntry(entry.id);
+        if (result) {
+          tagsNormalized += result.tagsNormalized.filter((t) => t.wasAliased).length;
+          if (result.stale) staleCount++;
+        }
       }
+      if (batch.length < DEFAULT_BATCH_SIZE) break;
+      offset += DEFAULT_BATCH_SIZE;
     }
     return {
-      totalEntries: entries.length,
-      groomedCount: entries.length,
+      totalEntries,
+      groomedCount: totalEntries,
       tagsNormalized,
       staleCount,
       durationMs: Date.now() - start,
@@ -343,7 +442,8 @@ export class Curator {
   // ─── Health Audit (delegates to health-audit) ─────────────────
 
   healthAudit(): HealthAuditResult {
-    const entries = this.vault.list({ limit: 100000 });
+    // Load entries in batches instead of all at once
+    const entries = this.listBatched();
     const dataProvider: HealthDataProvider = {
       getStaleCount: (threshold) =>
         (
@@ -479,6 +579,22 @@ export class Curator {
   }
 
   // ─── Private Helpers ──────────────────────────────────────────
+
+  /**
+   * Load all vault entries using batched pagination instead of a single 100k query.
+   */
+  private listBatched(batchSize: number = DEFAULT_BATCH_SIZE): IntelligenceEntry[] {
+    const all: IntelligenceEntry[] = [];
+    let offset = 0;
+    while (true) {
+      const batch = this.vault.list({ limit: batchSize, offset });
+      if (batch.length === 0) break;
+      all.push(...batch);
+      if (batch.length < batchSize) break;
+      offset += batchSize;
+    }
+    return all;
+  }
 
   private persistContradictions(candidates: ContradictionCandidate[]): Contradiction[] {
     const detected: Contradiction[] = [];
