@@ -1,9 +1,4 @@
-{
-  "mcpServers": {
-    "soleri": {
-      "command": "node",
-      "args": ["packages/forge/dist/index.js"],
-      "cwd": "."
-    }
-  }
-}
+{"mcpServers":{"soleri":{"command":"node","args":["packages/forge/dist/index.js"
+  ],"cwd":"."},"serena":{"command":"uvx","args":["--from","git+https://github.com/oraios
+  /serena","serena","start-mcp-server","--project",".","--context","claude-code"],"cwd":
+  "."}}}
