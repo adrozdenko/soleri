@@ -17,6 +17,14 @@ function makeRuntime(overrides?: {
     toolsUsed: string[];
     filesModified: string[];
   }>;
+  memories?: Array<{
+    id?: string;
+    createdAt: number;
+    projectPath?: string;
+    summary?: string;
+    context?: string;
+    type?: string;
+  }>;
   plans?: Array<{
     id: string;
     status: string;
@@ -45,6 +53,7 @@ function makeRuntime(overrides?: {
     vault: {
       stats: () => o.vaultStats ?? { totalEntries: 50, byType: { playbook: 5 } },
       getRecent: (_n: number) => o.recentEntries ?? [],
+      listMemories: () => o.memories ?? [],
     },
     curator: {
       healthAudit: () => ({
@@ -95,11 +104,34 @@ describe('session-briefing', () => {
       expect(data.sections.find((s) => s.label === 'Welcome')).toBeUndefined();
     });
 
-    it('includes Last session section', async () => {
+    it('includes Last session from cross-project memories when fresh', async () => {
       const runtime = makeRuntime({
+        memories: [
+          {
+            id: 'mem-1',
+            createdAt: Date.now() - 600_000, // 10 min ago (ms)
+            projectPath: '/Users/me/projects/other-app',
+            summary: 'Fixed KPI card layout in the dashboard',
+            type: 'session',
+          },
+        ],
+      });
+      const ops = captureOps(createSessionBriefingOps(runtime));
+      const res = await executeOp(ops, 'session_briefing', {});
+
+      const data = res.data as { sections: Array<{ label: string; content: string }> };
+      const session = data.sections.find((s) => s.label === 'Last session');
+      expect(session).toBeDefined();
+      expect(session!.content).toContain('other-app');
+      expect(session!.content).toContain('Fixed KPI card layout');
+    });
+
+    it('falls back to brain sessions when no fresh memories exist', async () => {
+      const runtime = makeRuntime({
+        memories: [], // no memories
         sessions: [
           {
-            endedAt: new Date(Date.now() - 3600000).toISOString(),
+            endedAt: new Date(Date.now() - 3600_000).toISOString(), // 1h ago
             domain: 'frontend',
             context: 'Refactored button component',
             toolsUsed: ['vault_search', 'brain_recommend'],
@@ -115,6 +147,63 @@ describe('session-briefing', () => {
       expect(session).toBeDefined();
       expect(session!.content).toContain('[frontend]');
       expect(session!.content).toContain('Refactored button component');
+    });
+
+    it('skips Last session when all sessions are stale', async () => {
+      const staleTs = Date.now() - 72 * 3600_000; // 72h ago — beyond default 48h
+      const runtime = makeRuntime({
+        memories: [
+          {
+            id: 'mem-old',
+            createdAt: staleTs,
+            projectPath: '/old-project',
+            summary: 'Ancient session',
+            type: 'session',
+          },
+        ],
+        sessions: [
+          {
+            endedAt: new Date(staleTs).toISOString(),
+            domain: 'old',
+            context: 'Ancient brain session',
+            toolsUsed: [],
+            filesModified: [],
+          },
+        ],
+      });
+      const ops = captureOps(createSessionBriefingOps(runtime));
+      const res = await executeOp(ops, 'session_briefing', {});
+
+      const data = res.data as { sections: Array<{ label: string; content: string }> };
+      const session = data.sections.find((s) => s.label === 'Last session');
+      expect(session).toBeUndefined();
+    });
+
+    it('respects custom recencyHours parameter', async () => {
+      const runtime = makeRuntime({
+        memories: [
+          {
+            id: 'mem-3h',
+            createdAt: Date.now() - 3 * 3600_000, // 3h ago
+            projectPath: '/recent-project',
+            summary: 'Recent work',
+            type: 'session',
+          },
+        ],
+      });
+      const ops = captureOps(createSessionBriefingOps(runtime));
+
+      // With 1h window — should skip
+      const narrow = await executeOp(ops, 'session_briefing', { recencyHours: 1 });
+      const narrowData = narrow.data as { sections: Array<{ label: string }> };
+      expect(narrowData.sections.find((s) => s.label === 'Last session')).toBeUndefined();
+
+      // With 4h window — should include
+      const wide = await executeOp(ops, 'session_briefing', { recencyHours: 4 });
+      const wideData = wide.data as { sections: Array<{ label: string; content: string }> };
+      const session = wideData.sections.find((s) => s.label === 'Last session');
+      expect(session).toBeDefined();
+      expect(session!.content).toContain('Recent work');
     });
 
     it('includes Active plans section', async () => {
@@ -232,6 +321,9 @@ describe('session-briefing', () => {
             throw new Error('no vault');
           },
           getRecent: () => {
+            throw new Error('no vault');
+          },
+          listMemories: () => {
             throw new Error('no vault');
           },
         },

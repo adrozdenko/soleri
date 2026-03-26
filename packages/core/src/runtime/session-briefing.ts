@@ -57,22 +57,58 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
           // Vault stats unavailable — skip
         }
 
-        // 1. Last session
+        // 1. Last session — cross-project, with staleness threshold
         try {
-          const sessions = brainIntelligence.listSessions({ limit: 1, active: false });
-          dataPoints += sessions.length;
-          if (sessions.length > 0) {
-            const last = sessions[0];
-            const ago = formatTimeAgo(last.endedAt ? new Date(last.endedAt).getTime() : Date.now());
-            const domain = last.domain ? ` [${last.domain}]` : '';
-            const context = last.context ? `: ${last.context.slice(0, 80)}` : '';
-            const tools = last.toolsUsed.length > 0 ? `, used ${last.toolsUsed.length} tools` : '';
-            const files =
-              last.filesModified.length > 0 ? `, modified ${last.filesModified.length} files` : '';
+          const recencyMs = (params.recencyHours as number) * 3600_000;
+          const cutoff = Date.now() - recencyMs;
+
+          // Try cross-project memories first (most recent work, any project)
+          const recentMemories = vault.listMemories({ type: 'session', limit: 3 });
+          const freshMemory = recentMemories.find((m) => {
+            const ts = m.createdAt > 1e12 ? m.createdAt : m.createdAt * 1000;
+            return ts > cutoff;
+          });
+
+          if (freshMemory) {
+            const ts =
+              freshMemory.createdAt > 1e12 ? freshMemory.createdAt : freshMemory.createdAt * 1000;
+            const ago = formatTimeAgo(ts);
+            const project = freshMemory.projectPath
+              ? ` [${freshMemory.projectPath.split('/').pop()}]`
+              : '';
+            const summary = freshMemory.summary
+              ? `: ${freshMemory.summary.slice(0, 100)}`
+              : freshMemory.context
+                ? `: ${freshMemory.context.slice(0, 100)}`
+                : '';
+            dataPoints += recentMemories.length;
             sections.push({
               label: 'Last session',
-              content: `(${ago})${domain}${context}${tools}${files}`,
+              content: `(${ago})${project}${summary}`,
             });
+          } else {
+            // Fall back to brain sessions (same-project only) if no fresh memory
+            const sessions = brainIntelligence.listSessions({ limit: 1, active: false });
+            dataPoints += sessions.length;
+            if (sessions.length > 0) {
+              const last = sessions[0];
+              const endTs = last.endedAt ? new Date(last.endedAt).getTime() : 0;
+              if (endTs > cutoff) {
+                const ago = formatTimeAgo(endTs);
+                const domain = last.domain ? ` [${last.domain}]` : '';
+                const context = last.context ? `: ${last.context.slice(0, 80)}` : '';
+                const tools =
+                  last.toolsUsed.length > 0 ? `, used ${last.toolsUsed.length} tools` : '';
+                const files =
+                  last.filesModified.length > 0
+                    ? `, modified ${last.filesModified.length} files`
+                    : '';
+                sections.push({
+                  label: 'Last session',
+                  content: `(${ago})${domain}${context}${tools}${files}`,
+                });
+              }
+            }
           }
         } catch {
           // Session data unavailable — skip
