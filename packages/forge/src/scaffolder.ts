@@ -28,6 +28,7 @@ import { generateInjectClaudeMd } from './templates/inject-claude-md.js';
 import { generateActivate } from './templates/activate.js';
 import { generateReadme } from './templates/readme.js';
 import { generateSetupScript } from './templates/setup-script.js';
+import { generateCleanWorktreesScript } from './templates/clean-worktrees.js';
 import { generateAgentsMd } from './templates/agents-md.js';
 import { generateSkills } from './templates/skills.js';
 import { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
@@ -354,6 +355,7 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     ['scripts/copy-assets.js', generateCopyAssetsScript()],
     ['README.md', generateReadme(config)],
     ['scripts/setup.sh', generateSetupScript(config)],
+    ['scripts/clean-worktrees.sh', generateCleanWorktreesScript()],
   ];
 
   if (opencodeSetup) {
@@ -394,8 +396,9 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     filesCreated.push(path);
   }
 
-  // Make setup script executable
+  // Make scripts executable
   chmodSync(join(agentDir, 'scripts', 'setup.sh'), 0o755);
+  chmodSync(join(agentDir, 'scripts', 'clean-worktrees.sh'), 0o755);
 
   // Write source files
   const sourceFiles: Array<[string, string]> = [

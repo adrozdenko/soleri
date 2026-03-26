@@ -53,11 +53,18 @@ if [ ! -f "$SETTINGS_FILE" ]; then
         "type": "prompt",
         "prompt": "Before context is compacted, capture a session summary by calling ${config.id}_core op:session_capture with a brief summary of what was accomplished, the topics covered, files modified, and tools used."
       }
+    ],
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "sh $AGENT_DIR/scripts/clean-worktrees.sh",
+        "timeout": 10
+      }
     ]
   }
 }
 SETTINGS
-  echo "[ok] Created $SETTINGS_FILE with PreCompact hook"
+  echo "[ok] Created $SETTINGS_FILE with PreCompact + SessionStart hooks"
 else
   if grep -q "PreCompact" "$SETTINGS_FILE" 2>/dev/null; then
     echo "[ok] PreCompact hook already configured — skipping"
@@ -74,6 +81,24 @@ else
       fs.writeFileSync('$SETTINGS_FILE', JSON.stringify(settings, null, 2) + '\\n');
     "
     echo "[ok] Added PreCompact hook to $SETTINGS_FILE"
+  fi
+  # Add SessionStart worktree cleanup hook
+  if grep -q "clean-worktrees" "$SETTINGS_FILE" 2>/dev/null; then
+    echo "[ok] SessionStart worktree cleanup hook already configured"
+  else
+    node -e "
+      const fs = require('fs');
+      const settings = JSON.parse(fs.readFileSync('$SETTINGS_FILE', 'utf-8'));
+      if (!settings.hooks) settings.hooks = {};
+      if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+      settings.hooks.SessionStart.push({
+        type: 'command',
+        command: 'sh $AGENT_DIR/scripts/clean-worktrees.sh',
+        timeout: 10
+      });
+      fs.writeFileSync('$SETTINGS_FILE', JSON.stringify(settings, null, 2) + '\\n');
+    "
+    echo "[ok] Added SessionStart worktree cleanup hook"
   fi
 fi
 

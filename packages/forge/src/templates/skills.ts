@@ -6,36 +6,8 @@ import type { AgentConfig } from '../types.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = join(__dirname, '..', 'skills');
 
-/** Skills that use YOUR_AGENT_core placeholder and need agent-specific substitution. */
-const AGENT_SPECIFIC_SKILLS = new Set([
-  'agent-dev',
-  'agent-guide',
-  'agent-persona',
-  'brain-debrief',
-  'brainstorming',
-  'code-patrol',
-  'context-resume',
-  'deep-review',
-  'deliver-and-ship',
-  'env-setup',
-  'executing-plans',
-  'fix-and-learn',
-  'health-check',
-  'knowledge-harvest',
-  'mcp-doctor',
-  'onboard-me',
-  'parallel-execute',
-  'retrospective',
-  'second-opinion',
-  'systematic-debugging',
-  'test-driven-development',
-  'vault-capture',
-  'vault-curate',
-  'vault-navigator',
-  'vault-smells',
-  'verification-before-completion',
-  'writing-plans',
-]);
+/** Placeholder token in skill templates that gets replaced with agent-specific tool name. */
+const AGENT_PLACEHOLDER = 'YOUR_AGENT_core';
 
 /**
  * Generate skill files for the scaffolded agent.
@@ -87,7 +59,7 @@ export function generateSkills(config: AgentConfig): Array<[string, string]> {
 
     let content = readFileSync(contentPath, 'utf-8');
 
-    if (AGENT_SPECIFIC_SKILLS.has(skillName)) {
+    if (content.includes(AGENT_PLACEHOLDER)) {
       content = content.replace(/YOUR_AGENT_core/g, `${config.id}_core`);
     }
 

@@ -15,6 +15,7 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 10_000,
     teardownTimeout: 5_000,
+    exclude: ['**/node_modules/**', '**/.claude/worktrees/**'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
