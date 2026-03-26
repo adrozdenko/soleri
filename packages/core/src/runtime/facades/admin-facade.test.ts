@@ -84,7 +84,7 @@ function mockRuntime(): AgentRuntime {
     pluginRegistry: {
       get: vi.fn(),
     },
-    packInstaller: {},
+    packInstaller: { list: vi.fn(() => []) },
     createdAt: Date.now() - 60000,
     persona: { name: 'TestAgent' },
   } as unknown as AgentRuntime;
