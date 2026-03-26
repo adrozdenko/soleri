@@ -396,9 +396,11 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     filesCreated.push(path);
   }
 
-  // Make scripts executable
-  chmodSync(join(agentDir, 'scripts', 'setup.sh'), 0o755);
-  chmodSync(join(agentDir, 'scripts', 'clean-worktrees.sh'), 0o755);
+  // Make scripts executable (skip on Windows — no POSIX permissions)
+  if (process.platform !== 'win32') {
+    chmodSync(join(agentDir, 'scripts', 'setup.sh'), 0o755);
+    chmodSync(join(agentDir, 'scripts', 'clean-worktrees.sh'), 0o755);
+  }
 
   // Write source files
   const sourceFiles: Array<[string, string]> = [
@@ -789,6 +791,11 @@ function createOpencodeLauncher(
   agentId: string,
   agentDir: string,
 ): { created: boolean; path: string; error?: string } {
+  // Launcher scripts and symlinks to /usr/local/bin are Unix-only
+  if (process.platform === 'win32') {
+    return { created: false, path: '', error: 'Launcher scripts are not supported on Windows' };
+  }
+
   const launcherPath = join('/usr', 'local', 'bin', agentId);
   const script = [
     '#!/usr/bin/env bash',

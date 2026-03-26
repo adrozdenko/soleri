@@ -387,7 +387,8 @@ const designOps = [
         }
 
         const ext = imagePart.inlineData.mimeType.includes('png') ? 'png' : 'jpg';
-        const filePath = outputPath ?? `/tmp/soleri_image_${Date.now()}.${ext}`;
+        const { tmpdir } = await import('node:os');
+        const filePath = outputPath ?? `${tmpdir()}/soleri_image_${Date.now()}.${ext}`;
 
         const { writeFileSync, mkdirSync } = await import('node:fs');
         const { dirname } = await import('node:path');

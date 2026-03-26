@@ -195,7 +195,9 @@ export function installPack(
     mkdirSync(destDir, { recursive: true });
     const destPath = join(destDir, file);
     copyFileSync(sourcePath, destPath);
-    chmodSync(destPath, 0o755);
+    if (process.platform !== 'win32') {
+      chmodSync(destPath, 0o755);
+    }
     installedScripts.push(`${targetDir}/${file}`);
   }
   const lcHooks = resolveLifecycleHooks(packName);

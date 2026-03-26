@@ -170,6 +170,12 @@ function escapeRegExp(s: string): string {
  * e.g., typing `ernesto` opens Claude Code with that agent's MCP config.
  */
 function installLauncher(agentId: string, agentDir: string): void {
+  // Launcher scripts to /usr/local/bin are Unix-only
+  if (process.platform === 'win32') {
+    p.log.info('Launcher scripts are not supported on Windows — skipping');
+    return;
+  }
+
   const binPath = join('/usr/local/bin', agentId);
 
   const script = [

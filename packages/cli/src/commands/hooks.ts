@@ -280,7 +280,9 @@ export function registerHooks(program: Command): void {
 
         const scriptPath = join(scriptsDir, `${name}.sh`);
         writeFileSync(scriptPath, script);
-        chmodSync(scriptPath, 0o755);
+        if (process.platform !== 'win32') {
+          chmodSync(scriptPath, 0o755);
+        }
         log.pass(`Created ${scriptPath}`);
 
         log.info(`Hook pack "${name}" generated (event: ${opts.event}, action: ${opts.action})`);

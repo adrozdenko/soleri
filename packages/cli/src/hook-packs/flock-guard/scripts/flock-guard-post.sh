@@ -33,7 +33,7 @@ fi
 # Release lock
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 PROJECT_HASH=$(printf '%s' "$PROJECT_ROOT" | shasum | cut -c1-8)
-LOCK_DIR="/tmp/soleri-guard-${PROJECT_HASH}.lock"
+LOCK_DIR="${TMPDIR:-${TEMP:-/tmp}}/soleri-guard-${PROJECT_HASH}.lock"
 
 # Only release if we own it
 SESSION_ID="${CLAUDE_SESSION_ID:-$$}"
