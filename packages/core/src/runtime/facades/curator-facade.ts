@@ -37,6 +37,24 @@ export function createCuratorFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
     {
+      name: 'curator_dismiss_duplicate',
+      description:
+        'Dismiss a flagged duplicate pair — marks two entries as reviewed and intentionally distinct. They will no longer appear in curator_detect_duplicates results.',
+      auth: 'write',
+      schema: z.object({
+        entryIdA: z.string().describe('First entry ID'),
+        entryIdB: z.string().describe('Second entry ID'),
+        reason: z.string().optional().describe('Why these are not duplicates'),
+      }),
+      handler: async (params) => {
+        return curator.dismissDuplicate(
+          params.entryIdA as string,
+          params.entryIdB as string,
+          params.reason as string | undefined,
+        );
+      },
+    },
+    {
       name: 'curator_contradictions',
       description: 'List or detect contradictions between patterns and anti-patterns.',
       auth: 'read',

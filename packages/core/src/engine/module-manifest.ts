@@ -87,7 +87,7 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
   {
     suffix: 'curator',
     description: 'Quality — duplicate detection, contradictions, grooming, health audit.',
-    keyOps: ['curator_groom', 'curator_status', 'curator_health'],
+    keyOps: ['curator_groom', 'curator_status', 'curator_health', 'curator_dismiss_duplicate'],
     intentSignals: {
       'clean up vault': 'curator_groom',
       'find duplicates': 'curator_groom',

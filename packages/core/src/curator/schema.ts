@@ -56,6 +56,14 @@ export const CURATOR_SCHEMA = `
     resolved_at INTEGER,
     UNIQUE(pattern_id, antipattern_id)
   );
+  CREATE TABLE IF NOT EXISTS curator_duplicate_dismissals (
+    entry_id_a TEXT NOT NULL,
+    entry_id_b TEXT NOT NULL,
+    dismissed_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    reason TEXT,
+    PRIMARY KEY (entry_id_a, entry_id_b)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_curator_state_status ON curator_entry_state(status);
   CREATE INDEX IF NOT EXISTS idx_curator_changelog_entry ON curator_changelog(entry_id);
 `;

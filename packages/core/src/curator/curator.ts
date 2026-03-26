@@ -151,7 +151,35 @@ export class Curator {
   // ─── Duplicates (delegates to duplicate-detector) ─────────────
 
   detectDuplicates(entryId?: string, threshold?: number): DuplicateDetectionResult[] {
-    return detectDuplicatesPure(this.vault.list({ limit: 100000 }), entryId, threshold);
+    const results = detectDuplicatesPure(this.vault.list({ limit: 100000 }), entryId, threshold);
+    // Filter out dismissed pairs
+    const dismissed = this.getDismissedPairs();
+    if (dismissed.size === 0) return results;
+    return results
+      .map((r) => ({
+        ...r,
+        matches: r.matches.filter((m) => {
+          const key = [r.entryId, m.entryId].sort().join('::');
+          return !dismissed.has(key);
+        }),
+      }))
+      .filter((r) => r.matches.length > 0);
+  }
+
+  dismissDuplicate(entryIdA: string, entryIdB: string, reason?: string): { dismissed: boolean } {
+    const [a, b] = [entryIdA, entryIdB].sort();
+    const result = this.provider.run(
+      'INSERT OR IGNORE INTO curator_duplicate_dismissals (entry_id_a, entry_id_b, reason) VALUES (?, ?, ?)',
+      [a, b, reason ?? 'reviewed — not duplicate'],
+    );
+    return { dismissed: result.changes > 0 };
+  }
+
+  private getDismissedPairs(): Set<string> {
+    const rows = this.provider.all<{ entry_id_a: string; entry_id_b: string }>(
+      'SELECT entry_id_a, entry_id_b FROM curator_duplicate_dismissals',
+    );
+    return new Set(rows.map((r) => `${r.entry_id_a}::${r.entry_id_b}`));
   }
 
   // ─── Contradictions (delegates to contradiction-detector) ─────

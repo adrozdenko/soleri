@@ -647,4 +647,96 @@ describe('Curator', () => {
       expect(result.metrics.tagHealth).toBeLessThan(1);
     });
   });
+
+  // ─── Duplicate Dismissal ──────────────────────────────────────
+
+  describe('Duplicate Dismissal', () => {
+    it('dismissDuplicate stores a pair and detectDuplicates filters it out', () => {
+      // Add two similar entries that will be flagged as duplicates
+      vault.add(
+        makeEntry({
+          id: 'dup-a',
+          title: 'React hook cleanup pattern',
+          description:
+            'Always clean up useEffect hooks with return cleanup function to prevent memory leaks and stale closures.',
+        }),
+      );
+      vault.add(
+        makeEntry({
+          id: 'dup-b',
+          title: 'React hook cleanup pattern for effects',
+          description:
+            'Clean up useEffect hooks by returning a cleanup function to avoid memory leaks and stale closures.',
+        }),
+      );
+
+      // Verify they show up as duplicates
+      const before = curator.detectDuplicates();
+      const dupBefore = before.find(
+        (d) => d.entryId === 'dup-a' && d.matches.some((m) => m.entryId === 'dup-b'),
+      );
+      expect(dupBefore).toBeDefined();
+
+      // Dismiss the pair
+      const result = curator.dismissDuplicate('dup-a', 'dup-b', 'intentionally distinct');
+      expect(result.dismissed).toBe(true);
+
+      // Verify they no longer show up
+      const after = curator.detectDuplicates();
+      const dupAfter = after.find(
+        (d) => d.entryId === 'dup-a' && d.matches.some((m) => m.entryId === 'dup-b'),
+      );
+      expect(dupAfter).toBeUndefined();
+    });
+
+    it('dismissDuplicate works with swapped ID order', () => {
+      vault.add(
+        makeEntry({
+          id: 'sw-a',
+          title: 'Semantic color tokens for error states',
+          description: 'Use semantic tokens like text-error and bg-error-subtle for error UI.',
+        }),
+      );
+      vault.add(
+        makeEntry({
+          id: 'sw-b',
+          title: 'Semantic color tokens for error UI',
+          description:
+            'Always prefer semantic tokens text-error and bg-error-subtle over raw colors.',
+        }),
+      );
+
+      // Dismiss with b,a order
+      curator.dismissDuplicate('sw-b', 'sw-a');
+
+      // Should still be filtered (stored as sorted pair)
+      const results = curator.detectDuplicates('sw-a');
+      const match = results.find((r) => r.matches.some((m) => m.entryId === 'sw-b'));
+      expect(match).toBeUndefined();
+    });
+
+    it('dismissDuplicate is idempotent', () => {
+      vault.add(
+        makeEntry({
+          id: 'idem-a',
+          title: 'Pattern A idempotent test',
+          description: 'First entry for idempotency test of duplicate dismissal.',
+        }),
+      );
+      vault.add(
+        makeEntry({
+          id: 'idem-b',
+          title: 'Pattern A idempotent test duplicate',
+          description: 'Second entry for idempotency test of duplicate dismissal.',
+        }),
+      );
+
+      const first = curator.dismissDuplicate('idem-a', 'idem-b');
+      expect(first.dismissed).toBe(true);
+
+      // Second call should be a no-op (INSERT OR IGNORE)
+      const second = curator.dismissDuplicate('idem-a', 'idem-b');
+      expect(second.dismissed).toBe(false);
+    });
+  });
 });
