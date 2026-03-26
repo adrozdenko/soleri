@@ -191,6 +191,48 @@ When reviewing code, auditing quality, or checking for issues.
   - soleri_brain op:recommend
 `,
   },
+  {
+    name: 'context-handoff',
+    prompt: `# Context Handoff
+
+## When to Use
+Before crossing a context window boundary — \`/clear\`, context compaction, or switching tasks mid-plan.
+
+## Steps
+
+### 1. Generate Handoff
+- Call \`op:handoff_generate\` to produce a structured markdown document
+- The document captures: active plan state, recent decisions, pending tasks, session context
+
+### 2. Capture Session (if not auto-captured)
+- Call \`op:session_capture\` to persist session summary to memory
+- The handoff document is ephemeral — session capture provides durable persistence
+
+### 3. Transition
+- Share the handoff markdown with the new context window
+- The new session can reference plan IDs, task status, and decisions from the handoff
+
+### 4. Resume
+- On restart, read the handoff document
+- Use plan IDs to look up active plans: \`op:orchestrate_status\`
+- Continue from where the handoff left off
+`,
+    gates: `gates:
+  - phase: pre-transition
+    requirement: Handoff document generated with current state
+    check: handoff-generated
+
+  - phase: post-transition
+    requirement: New context has loaded handoff and can reference active plans
+    check: context-restored
+`,
+    tools: `tools:
+  - soleri_memory op:handoff_generate
+  - soleri_memory op:session_capture
+  - soleri_orchestrate op:orchestrate_status
+  - soleri_plan op:create_plan
+`,
+  },
 ];
 
 // ─── Main Scaffolder ──────────────────────────────────────────────────

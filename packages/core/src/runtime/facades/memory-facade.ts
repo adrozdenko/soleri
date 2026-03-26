@@ -195,6 +195,193 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
 
+    // ─── Handoff ────────────────────────────────────────────────
+    {
+      name: 'handoff_generate',
+      description:
+        'Generate a structured handoff document for context transitions. ' +
+        'Pulls from active plan (if any) and recent session memories to produce ' +
+        'a markdown document that can bootstrap a new context window. ' +
+        'Ephemeral — NOT persisted to vault.',
+      auth: 'read',
+      schema: z.object({
+        projectPath: z
+          .string()
+          .optional()
+          .default('.')
+          .describe('Project path for filtering memories'),
+        sessionLimit: z
+          .number()
+          .optional()
+          .default(3)
+          .describe('Number of recent session memories to include'),
+      }),
+      handler: async (params) => {
+        const { planner } = runtime;
+        const projectPath = params.projectPath as string;
+        const sessionLimit = (params.sessionLimit as number) ?? 3;
+
+        const sections: string[] = [];
+        const now = new Date().toISOString();
+
+        sections.push('# Handoff Document');
+        sections.push('');
+        sections.push(`Generated: ${now}`);
+        sections.push('');
+
+        // ─── Active Plan Context ───────────────────────────
+        const activePlans = planner.getActive();
+        if (activePlans.length > 0) {
+          const plan = activePlans[0]; // Most relevant active plan
+          sections.push('## Active Plan');
+          sections.push('');
+          sections.push(`| Field | Value |`);
+          sections.push(`|-------|-------|`);
+          sections.push(`| **Plan ID** | ${plan.id} |`);
+          sections.push(`| **Objective** | ${plan.objective} |`);
+          sections.push(`| **Status** | ${plan.status} |`);
+          sections.push(`| **Scope** | ${plan.scope} |`);
+          sections.push('');
+
+          // Decisions
+          if (plan.decisions.length > 0) {
+            sections.push('### Decisions');
+            sections.push('');
+            for (const d of plan.decisions) {
+              if (typeof d === 'string') {
+                sections.push(`- ${d}`);
+              } else {
+                sections.push(`- **${d.decision}** — ${d.rationale}`);
+              }
+            }
+            sections.push('');
+          }
+
+          // Task status summary
+          if (plan.tasks.length > 0) {
+            sections.push('### Tasks');
+            sections.push('');
+            sections.push('| # | Task | Status |');
+            sections.push('|---|------|--------|');
+            for (let i = 0; i < plan.tasks.length; i++) {
+              const t = plan.tasks[i];
+              sections.push(`| ${i + 1} | ${t.title} | ${t.status} |`);
+            }
+            sections.push('');
+          }
+
+          // Approach
+          if (plan.approach) {
+            sections.push('### Approach');
+            sections.push('');
+            sections.push(plan.approach);
+            sections.push('');
+          }
+
+          // Additional active plans (just IDs)
+          if (activePlans.length > 1) {
+            sections.push('### Other Active Plans');
+            sections.push('');
+            for (let i = 1; i < activePlans.length; i++) {
+              const p = activePlans[i];
+              sections.push(`- **${p.id}**: ${p.objective} (${p.status})`);
+            }
+            sections.push('');
+          }
+        } else {
+          sections.push('## Active Plan');
+          sections.push('');
+          sections.push('No active plans.');
+          sections.push('');
+        }
+
+        // ─── Recent Session Context ────────────────────────
+        const recentSessions = vault.listMemories({
+          type: 'session',
+          projectPath,
+          limit: sessionLimit,
+        });
+
+        if (recentSessions.length > 0) {
+          sections.push('## Recent Sessions');
+          sections.push('');
+          for (const session of recentSessions) {
+            sections.push(`### ${session.createdAt}`);
+            sections.push('');
+            if (session.summary) {
+              sections.push(session.summary);
+              sections.push('');
+            }
+            if (session.nextSteps && session.nextSteps.length > 0) {
+              sections.push('**Next steps:**');
+              for (const step of session.nextSteps) {
+                sections.push(`- ${step}`);
+              }
+              sections.push('');
+            }
+            if (session.decisions && session.decisions.length > 0) {
+              sections.push('**Decisions:**');
+              for (const d of session.decisions) {
+                sections.push(`- ${d}`);
+              }
+              sections.push('');
+            }
+            if (session.filesModified && session.filesModified.length > 0) {
+              sections.push(`**Files modified:** ${session.filesModified.join(', ')}`);
+              sections.push('');
+            }
+          }
+        } else {
+          sections.push('## Recent Sessions');
+          sections.push('');
+          sections.push('No recent session memories found.');
+          sections.push('');
+        }
+
+        // ─── Resumption Hints ──────────────────────────────
+        sections.push('## Resumption');
+        sections.push('');
+        sections.push('Use this document to restore context after a context window transition.');
+        sections.push('');
+        if (activePlans.length > 0) {
+          const plan = activePlans[0];
+          const pendingTasks = plan.tasks.filter(
+            (t) => t.status === 'pending' || t.status === 'in_progress',
+          );
+          if (pendingTasks.length > 0) {
+            sections.push('**Immediate next actions:**');
+            for (const t of pendingTasks.slice(0, 5)) {
+              sections.push(
+                `- ${t.status === 'in_progress' ? '[IN PROGRESS]' : '[PENDING]'} ${t.title}`,
+              );
+            }
+            sections.push('');
+          }
+          if (plan.status === 'executing') {
+            sections.push(
+              '> Plan is in `executing` state. Continue with pending tasks or call `op:plan_reconcile` if complete.',
+            );
+          } else if (plan.status === 'reconciling') {
+            sections.push(
+              '> Plan is in `reconciling` state. Call `op:plan_complete_lifecycle` to finalize.',
+            );
+          }
+        }
+
+        const markdown = sections.join('\n');
+
+        return {
+          handoff: markdown,
+          meta: {
+            activePlanCount: activePlans.length,
+            activePlanId: activePlans.length > 0 ? activePlans[0].id : null,
+            recentSessionCount: recentSessions.length,
+            generatedAt: now,
+          },
+        };
+      },
+    },
+
     // ─── Satellite ops ───────────────────────────────────────────
     ...createMemoryExtraOps(runtime),
     ...createMemoryCrossProjectOps(runtime),
