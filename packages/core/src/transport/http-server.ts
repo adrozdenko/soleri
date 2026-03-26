@@ -151,7 +151,18 @@ export class HttpMcpServer {
       const sessionId = req.headers['mcp-session-id'] as string | undefined;
 
       if (method === 'POST') {
-        const body = await this.readBody(req);
+        let body: unknown;
+        try {
+          body = await this.readBody(req);
+        } catch (err) {
+          const statusCode = (err as { statusCode?: number }).statusCode;
+          if (statusCode === 413) {
+            this.sendJSON(res, 413, { error: 'Request body too large' });
+            return;
+          }
+          this.sendJSON(res, 400, { error: 'Failed to read request body' });
+          return;
+        }
 
         if (sessionId) {
           const session = this.sessions.get(sessionId);
@@ -241,10 +252,41 @@ export class HttpMcpServer {
   }
 
   private readBody(req: IncomingMessage): Promise<unknown> {
+    const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10 MB
+    const BODY_TIMEOUT = 30_000; // 30 seconds
+
     return new Promise((resolve, reject) => {
+      let size = 0;
       const chunks: Buffer[] = [];
-      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      let settled = false;
+
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          req.destroy();
+          reject(new Error('Request body timeout'));
+        }
+      }, BODY_TIMEOUT);
+
+      const cleanup = () => clearTimeout(timer);
+
+      req.on('data', (chunk: Buffer) => {
+        size += chunk.length;
+        if (size > MAX_BODY_SIZE) {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            req.destroy();
+            reject(Object.assign(new Error('Request body too large'), { statusCode: 413 }));
+          }
+          return;
+        }
+        chunks.push(chunk);
+      });
       req.on('end', () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
         try {
           const text = Buffer.concat(chunks).toString('utf-8');
           resolve(text.length > 0 ? JSON.parse(text) : {});
@@ -252,7 +294,12 @@ export class HttpMcpServer {
           reject(e);
         }
       });
-      req.on('error', reject);
+      req.on('error', (e) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(e);
+      });
     });
   }
 

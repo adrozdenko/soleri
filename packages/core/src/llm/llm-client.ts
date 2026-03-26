@@ -237,6 +237,7 @@ export class LLMClient {
           temperature: options.temperature ?? 0.3,
           max_completion_tokens: options.maxTokens ?? 500,
         }),
+        signal: AbortSignal.timeout(60_000),
       });
 
       if (response.headers) {

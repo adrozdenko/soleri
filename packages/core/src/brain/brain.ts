@@ -585,12 +585,13 @@ export class Brain {
 
   private persistVocabulary(): void {
     const db = this.vault.getDb();
-    db.prepare('DELETE FROM brain_vocabulary').run();
-    if (this.vocabulary.size === 0) return;
+    const del = db.prepare('DELETE FROM brain_vocabulary');
     const insert = db.prepare(
       'INSERT INTO brain_vocabulary (term, idf, doc_count) VALUES (?, ?, ?)',
     );
     const tx = db.transaction(() => {
+      del.run();
+      if (this.vocabulary.size === 0) return;
       for (const [term, idf] of this.vocabulary) {
         insert.run(term, idf, 1);
       }

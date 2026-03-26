@@ -53,6 +53,13 @@ export interface MemoryStats {
   byProject: Record<string, number>;
 }
 
+/** Apply critical PRAGMAs that every vault database must have. */
+function applyVaultPragmas(provider: PersistenceProvider): void {
+  provider.run('PRAGMA journal_mode = WAL');
+  provider.run('PRAGMA foreign_keys = ON');
+  provider.run('PRAGMA synchronous = NORMAL');
+}
+
 export class Vault {
   private provider: PersistenceProvider;
   private sqliteProvider: SQLitePersistenceProvider | null;
@@ -65,14 +72,12 @@ export class Vault {
       const sqlite = new SQLitePersistenceProvider(providerOrPath);
       this.provider = sqlite;
       this.sqliteProvider = sqlite;
-      this.provider.run('PRAGMA journal_mode = WAL');
-      this.provider.run('PRAGMA foreign_keys = ON');
-      this.provider.run('PRAGMA synchronous = NORMAL');
     } else {
       this.provider = providerOrPath;
       this.sqliteProvider =
         providerOrPath instanceof SQLitePersistenceProvider ? providerOrPath : null;
     }
+    applyVaultPragmas(this.provider);
     initializeSchema(this.provider);
     checkFormatVersion(this.provider);
   }

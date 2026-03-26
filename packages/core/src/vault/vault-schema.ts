@@ -27,6 +27,7 @@ export function initializeSchema(provider: PersistenceProvider): void {
   migrateOriginColumn(provider);
   migrateContentHash(provider);
   migrateTierColumn(provider);
+  migratePerformanceIndexes(provider);
 }
 
 function createCoreTables(provider: PersistenceProvider): void {
@@ -235,4 +236,24 @@ function migrateTierColumn(provider: PersistenceProvider): void {
   provider.execSql(
     'CREATE INDEX IF NOT EXISTS idx_entries_tier ON entries(tier) WHERE tier IS NOT NULL',
   );
+}
+
+export function migratePerformanceIndexes(provider: PersistenceProvider): void {
+  provider.execSql(`
+    CREATE INDEX IF NOT EXISTS idx_memories_archived_at ON memories(archived_at);
+    CREATE INDEX IF NOT EXISTS idx_entries_updated_at ON entries(updated_at);
+    CREATE INDEX IF NOT EXISTS idx_brain_feedback_entry_id ON brain_feedback(entry_id);
+    CREATE INDEX IF NOT EXISTS idx_entries_valid_until ON entries(valid_until) WHERE valid_until IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_entries_valid_from ON entries(valid_from) WHERE valid_from IS NOT NULL;
+  `);
+
+  // brain_sessions may not exist yet if intelligence module hasn't initialized
+  try {
+    provider.execSql(`
+      CREATE INDEX IF NOT EXISTS idx_brain_sessions_plan_id ON brain_sessions(plan_id) WHERE plan_id IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS idx_brain_sessions_started_at ON brain_sessions(started_at);
+    `);
+  } catch {
+    /* brain_sessions table doesn't exist yet — indexes will be created on next init */
+  }
 }

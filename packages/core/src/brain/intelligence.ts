@@ -571,28 +571,32 @@ export class BrainIntelligence {
       };
 
       strengths.push(ps);
-
-      // Persist
-      this.provider.run(
-        `INSERT OR REPLACE INTO brain_strengths
-         (pattern, domain, strength, usage_score, spread_score, success_score, recency_score,
-          usage_count, unique_contexts, success_rate, last_used, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-        [
-          ps.pattern,
-          ps.domain,
-          ps.strength,
-          ps.usageScore,
-          ps.spreadScore,
-          ps.successScore,
-          ps.recencyScore,
-          ps.usageCount,
-          ps.uniqueContexts,
-          ps.successRate,
-          ps.lastUsed,
-        ],
-      );
     }
+
+    // Persist all strengths in a single transaction to avoid N fsync calls
+    this.provider.transaction(() => {
+      for (const ps of strengths) {
+        this.provider.run(
+          `INSERT OR REPLACE INTO brain_strengths
+           (pattern, domain, strength, usage_score, spread_score, success_score, recency_score,
+            usage_count, unique_contexts, success_rate, last_used, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+          [
+            ps.pattern,
+            ps.domain,
+            ps.strength,
+            ps.usageScore,
+            ps.spreadScore,
+            ps.successScore,
+            ps.recencyScore,
+            ps.usageCount,
+            ps.uniqueContexts,
+            ps.successRate,
+            ps.lastUsed,
+          ],
+        );
+      }
+    });
 
     return strengths;
   }

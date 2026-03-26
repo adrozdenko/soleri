@@ -230,10 +230,18 @@ export class WsMcpServer {
 
     // Set up frame reader
     const maxSize = this.config.maxMessageSize ?? DEFAULT_MAX_MESSAGE_SIZE;
+    const maxBufferSize = maxSize; // raw buffer limit matches max message size (1 MB default)
     let buffer = Buffer.alloc(0);
 
     socket.on('data', (chunk: Buffer) => {
       buffer = Buffer.concat([buffer, chunk]);
+
+      // Guard against unbounded buffer growth (e.g. slow-drip DoS with no complete frames)
+      if (buffer.length > maxBufferSize) {
+        this.sendClose(socket, 1009, 'Buffer exceeded max size');
+        socket.destroy();
+        return;
+      }
 
       // Process all complete frames in the buffer
       while (buffer.length >= 2) {

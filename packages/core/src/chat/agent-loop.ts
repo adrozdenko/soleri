@@ -292,7 +292,7 @@ async function callAnthropic(params: AnthropicCallParams): Promise<AnthropicResp
       'anthropic-version': API_VERSION,
     },
     body: JSON.stringify(body),
-    signal: params.signal,
+    signal: params.signal ?? AbortSignal.timeout(120_000),
   });
 
   if (!response.ok) {
