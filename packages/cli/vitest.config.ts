@@ -6,5 +6,6 @@ export default defineConfig({
     testTimeout: 15_000,
     pool: 'forks',
     teardownTimeout: 10_000,
+    exclude: ['**/node_modules/**', '**/.claude/worktrees/**'],
   },
 });
