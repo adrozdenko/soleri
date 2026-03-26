@@ -40,7 +40,7 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
       description:
         'Revise a draft plan — change objective, scope, decisions, alternatives, or add/remove tasks. Only works on draft plans.',
       auth: 'write',
-      schema: z.object({
+      schema: z.strictObject({
         planId: z.string().describe('ID of the draft plan to iterate on'),
         objective: z.string().optional().describe('New objective (replaces existing)'),
         scope: z.string().optional().describe('New scope (replaces existing)'),
