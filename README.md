@@ -142,8 +142,8 @@ npx @soleri/cli install-knowledge ./bundles/react-patterns
 ## Testing
 
 ```bash
-npm test                # Unit tests — 305 files
-npm run test:e2e        # E2E tests — 800+ tests across 28 files
+npm test                # Unit tests — 233 files, 3,800+ tests
+npm run test:e2e        # E2E tests — 880+ tests across 28 files
 ```
 
 The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), all 20 engine modules across 8 vault-family facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, and domain pack validation.

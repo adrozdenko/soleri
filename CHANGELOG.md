@@ -5,6 +5,96 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v9.4.0 — 2026-03-26 — YOLO Mode, Op Visibility & Brain Feedback Loop
+
+### YOLO Mode (#343, #347)
+
+Autonomous execution mode — skip plan approval gates while preserving all safety invariants.
+
+- **YOLO Mode wave 1** — 10 tasks executed in parallel with worktree isolation (#343)
+- **YOLO Mode wave 2** — activation gate, docs, and skill (#343)
+- **`soleri yolo` CLI command** — activate/deactivate YOLO mode from terminal (#347)
+- **YOLO Safety Hook Pack** — intercepts destructive commands, requires explicit confirmation
+
+### Op Visibility
+
+Internal ops (tokens, bulk operations, telemetry, automation) are now hidden from MCP tool descriptions but remain callable programmatically.
+
+- **`OpVisibility` type** — `'user' | 'internal'` controls MCP exposure
+- **`INTERNAL_OPS` set** — centralized registry of 30+ infrastructure ops
+- **Backward compatible** — ops without visibility field default to `'user'`
+
+### Vault Enrichment & Brain Feedback Loop
+
+`create_plan` now auto-searches the vault for patterns matching the objective and injects them as decisions with `[entryId:...]` markers. On plan completion, the brain feedback helper extracts those markers to record feedback — closing the learning loop.
+
+- **`plan-feedback-helper`** — shared helper for extracting entry IDs and recording brain feedback
+- **Auto-enrichment** — vault patterns automatically added to plan decisions
+- **`vaultEntryIds`** returned from `create_plan` for traceability
+
+### Brain Extraction Rewrite (#358, #361-366)
+
+TDD rewrite of the brain extraction pipeline — smarter pattern detection with context correlation.
+
+- **`plan_completed`** extraction with context parsing (#361)
+- **`plan_abandoned`** extraction with failure analysis (#362)
+- **`multi_file_edit`** extraction with pattern inference (#363)
+- **`repeated_tool`** extraction with context correlation (#364)
+- **`drift_detected`** extraction rule (#366)
+- **`long_session` removed**, dedup guard added (#358)
+
+### Operator Context Learning (#509)
+
+Signal taxonomy, persistent store, and orchestrate integration for learning operator preferences silently.
+
+- **Signal taxonomy** — expertise, corrections, interests, work patterns
+- **Drift-triggered file render** — correction undo detection (#506)
+- **Operator context inspection** commands + E2E validation (#723)
+
+### Plan Lifecycle Safety Net (#372)
+
+Auto-close stale plans that linger in `executing` or `reconciling` state.
+
+- **`plan_close_stale` op** — closes plans past TTL
+- **`plan_iterate`** rejects unknown keys with strictObject (#341)
+- **Scan mode** for `search_intelligent` op (#370)
+
+### Worktree Automation (#357)
+
+- **Automatic worktree cleanup** for scaffolded agents
+- **Post-merge hook** prunes stale worktrees after branch merges
+- **Vitest exclude** — `.claude/worktrees/**` excluded from all test configs
+- **Python setup scripts** for hook registration
+
+### Forge & Skills
+
+- **Persona self-update rules** — guides agents to edit `agent.yaml`, not engine code
+- **Brain feedback loop rule** in shared-rules
+- **7 new skills** + categorized CLAUDE.md index + skill sync for file-tree agents (#11943f1)
+- **Agent-issues skill** + agent name prefix on synced skills
+- **Mandatory agent name prefix** on all responses when persona active
+
+### Pack Tier System
+
+- **Default/Community/Premium** tiers for knowledge packs
+- **`pack_tier` system** with tier-aware search and validation
+
+### Other Changes
+
+- **Curator duplicate dismissal** — stop re-flagging reviewed pairs
+- **`radar_dismiss`** accepts batch IDs
+- **Admin health** now reports skills and hooks status
+- **Archetype system removed** from CLI
+- **MCP SDK bumped** to 1.28.0
+- **E2E bulletproof refactor** — 880+ tests across 28 files, 3 bugs fixed
+- **Documentation audit** — fixed stale counts, legacy refs, broken links
+
+### CI Fixes
+
+- **Module manifest test** updated for new keyOps (vault, plan, admin)
+- **Stale test assertions** fixed after YOLO wave 1
+- **Worktree exclusion** prevents duplicate test runs in CI
+
 ## v9.3.1 — 2026-03-23 — Persona Overlay Mode & Task Auto-Assessment
 
 ### Persona Overlay Mode (#325)
