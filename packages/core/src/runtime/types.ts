@@ -36,6 +36,7 @@ import type { PipelineRunner } from '../queue/pipeline-runner.js';
 import type { OperatorProfileStore } from '../operator/operator-profile.js';
 import type { OperatorContextStore } from '../operator/operator-context-store.js';
 import type { ContextHealthMonitor } from './context-health.js';
+import type { ShutdownRegistry } from './shutdown-registry.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -130,8 +131,10 @@ export interface AgentRuntime {
   personaInstructions: import('../persona/types.js').PersonaSystemInstructions;
   /** Context health monitor — tracks tool call volume and context window fill. */
   contextHealth: ContextHealthMonitor;
+  /** Shutdown registry — centralized cleanup for timers, watchers, child processes. */
+  shutdownRegistry: ShutdownRegistry;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
-  /** Close the vault database connection. Call on shutdown. */
+  /** Close all runtime resources (vault, timers, watchers). Call on shutdown. */
   close(): void;
 }

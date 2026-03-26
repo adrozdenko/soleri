@@ -81,7 +81,10 @@ vi.mock('../governance/governance.js', () => ({
 }));
 
 vi.mock('../loop/loop-manager.js', () => ({
-  LoopManager: mockClass(),
+  LoopManager: vi.fn(function (this: Record<string, unknown>) {
+    this.isActive = vi.fn().mockReturnValue(false);
+    this.cancelLoop = vi.fn();
+  }),
 }));
 
 vi.mock('../control/identity-manager.js', () => ({
@@ -185,7 +188,9 @@ vi.mock('../context/context-engine.js', () => ({
 }));
 
 vi.mock('../agency/agency-manager.js', () => ({
-  AgencyManager: mockClass(),
+  AgencyManager: vi.fn(function (this: Record<string, unknown>) {
+    this.disable = vi.fn();
+  }),
 }));
 
 vi.mock('../vault/knowledge-review.js', () => ({
@@ -220,6 +225,7 @@ vi.mock('../queue/job-queue.js', () => ({
 vi.mock('../queue/pipeline-runner.js', () => ({
   PipelineRunner: vi.fn(function (this: Record<string, unknown>) {
     this.registerHandler = vi.fn();
+    this.stop = vi.fn();
   }),
 }));
 
@@ -258,6 +264,18 @@ vi.mock('./context-health.js', () => ({
   ContextHealthMonitor: vi.fn(function (this: Record<string, unknown>) {
     this.check = vi.fn().mockReturnValue({ level: 'green' });
     this.track = vi.fn();
+  }),
+}));
+
+vi.mock('./shutdown-registry.js', () => ({
+  ShutdownRegistry: vi.fn(function (this: Record<string, unknown>) {
+    this.register = vi.fn();
+    this.closeAll = vi.fn().mockResolvedValue(undefined);
+    this.closeAllSync = vi.fn();
+    this.size = 0;
+    this.isClosed = false;
+    this.entries = [];
+    this.closed = false;
   }),
 }));
 
@@ -359,5 +377,35 @@ describe('createAgentRuntime', () => {
 
   it('initializes context health monitor', () => {
     expect(runtime.contextHealth).toBeDefined();
+  });
+
+  it('initializes shutdown registry', () => {
+    expect(runtime.shutdownRegistry).toBeDefined();
+    expect(runtime.shutdownRegistry.register).toBeDefined();
+  });
+
+  it('registers cleanup callbacks with shutdown registry', () => {
+    // vaultManager, pipelineRunner, agencyManager, loopManager
+    expect(runtime.shutdownRegistry.register).toHaveBeenCalledWith(
+      'vaultManager',
+      expect.any(Function),
+    );
+    expect(runtime.shutdownRegistry.register).toHaveBeenCalledWith(
+      'pipelineRunner',
+      expect.any(Function),
+    );
+    expect(runtime.shutdownRegistry.register).toHaveBeenCalledWith(
+      'agencyManager',
+      expect.any(Function),
+    );
+    expect(runtime.shutdownRegistry.register).toHaveBeenCalledWith(
+      'loopManager',
+      expect.any(Function),
+    );
+  });
+
+  it('close() calls shutdownRegistry.closeAllSync()', () => {
+    runtime.close();
+    expect(runtime.shutdownRegistry.closeAllSync).toHaveBeenCalled();
   });
 });

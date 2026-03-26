@@ -58,6 +58,10 @@ export class PipelineRunner {
     if (this.running) return;
     this.running = true;
     this.timer = setInterval(() => this.tick(), this.pollIntervalMs);
+    // Don't prevent process exit for background polling
+    if (this.timer && typeof this.timer === 'object' && 'unref' in this.timer) {
+      (this.timer as NodeJS.Timeout).unref();
+    }
   }
 
   /**

@@ -28,6 +28,13 @@ function mockRuntime() {
       start: vi.fn(),
       stop: vi.fn(),
     },
+    shutdownRegistry: {
+      register: vi.fn(),
+      closeAll: vi.fn(),
+      closeAllSync: vi.fn(),
+      size: 0,
+      isClosed: false,
+    },
   } as unknown as AgentRuntime;
 }
 

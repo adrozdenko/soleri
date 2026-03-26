@@ -60,6 +60,7 @@ import { loadPersona } from '../persona/loader.js';
 import { generatePersonaInstructions } from '../persona/prompt-generator.js';
 import { OperatorProfileStore } from '../operator/operator-profile.js';
 import { ContextHealthMonitor } from './context-health.js';
+import { ShutdownRegistry } from './shutdown-registry.js';
 
 /**
  * Create a fully initialized agent runtime.
@@ -221,6 +222,117 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   learningRadar.setOperatorProfile(operatorProfile);
   brainIntelligence.setOperatorProfile(operatorProfile);
 
+  // ─── Shutdown Registry ────────────────────────────────────────────
+  const shutdownRegistry = new ShutdownRegistry();
+
+  // Build pipeline runner before the runtime object so we can reference it
+  const pipelineRunner = (() => {
+    const jq = new JobQueue(vault.getProvider());
+    const pr = new PipelineRunner(jq);
+    // Register default job handlers for curator pipeline
+    pr.registerHandler('tag-normalize', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      const result = curator.normalizeTag(entry.tags[0] ?? '');
+      return result;
+    });
+    pr.registerHandler('dedup-check', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      return curator.detectDuplicates(entry.id);
+    });
+    pr.registerHandler('auto-link', async (job) => {
+      if (linkManager) {
+        const suggestions = linkManager.suggestLinks(job.entryId ?? '', 3);
+        for (const s of suggestions) {
+          linkManager.addLink(
+            job.entryId ?? '',
+            s.entryId,
+            s.suggestedType,
+            `pipeline: ${s.reason}`,
+          );
+        }
+        return { linked: suggestions.length };
+      }
+      return { skipped: true, reason: 'link manager not available' };
+    });
+    pr.registerHandler('quality-gate', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      return evaluateQuality(entry, llmClient);
+    });
+    pr.registerHandler('classify', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      return classifyEntry(entry, llmClient);
+    });
+
+    // ─── 9 additional handlers for full Salvador parity (#216) ────
+    pr.registerHandler('enrich-frontmatter', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      return curator.enrichMetadata(entry.id);
+    });
+    pr.registerHandler('detect-staleness', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      // Check if entry is older than 90 days (using validFrom or fallback to 0)
+      const entryTimestamp = (entry.validFrom ?? 0) * 1000 || Date.now();
+      const ageMs = Date.now() - entryTimestamp;
+      const staleDays = 90;
+      const isStale = ageMs > staleDays * 86400000;
+      return { stale: isStale, ageDays: Math.floor(ageMs / 86400000), entryId: entry.id };
+    });
+    pr.registerHandler('detect-duplicate', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      return curator.detectDuplicates(entry.id);
+    });
+    pr.registerHandler('detect-contradiction', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      const contradictions = curator.detectContradictions(0.4);
+      const relevant = contradictions.filter(
+        (c) => c.patternId === job.entryId || c.antipatternId === job.entryId,
+      );
+      return { found: relevant.length, contradictions: relevant };
+    });
+    pr.registerHandler('consolidate-duplicates', async (_job) => {
+      return curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
+    });
+    pr.registerHandler('archive-stale', async (_job) => {
+      // Run consolidation with stale detection
+      const result = curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
+      return { archived: result.staleEntries.length, result };
+    });
+    pr.registerHandler('verify-searchable', async (job) => {
+      const entry = vault.get(job.entryId ?? '');
+      if (!entry) return { skipped: true, reason: 'entry not found' };
+      const searchResults = vault.search(entry.title, { limit: 1 });
+      const found = searchResults.some((r) => r.entry.id === entry.id);
+      return { searchable: found, entryId: entry.id };
+    });
+    return pr;
+  })();
+
+  // ─── Register cleanup callbacks (LIFO: first registered = last closed) ──
+  // Vault manager closes last (other modules may flush to vault during close)
+  shutdownRegistry.register('vaultManager', () => vaultManager.close());
+  // Pipeline runner — clear its polling interval
+  shutdownRegistry.register('pipelineRunner', () => pipelineRunner.stop());
+  // Agency manager — close FSWatchers and debounce timers
+  shutdownRegistry.register('agencyManager', () => agencyManager.disable());
+  // Loop manager — clear accumulated state
+  shutdownRegistry.register('loopManager', () => {
+    if (loop.isActive()) {
+      try {
+        loop.cancelLoop();
+      } catch {
+        // Loop may already be inactive
+      }
+    }
+  });
+
   return {
     config,
     logger,
@@ -256,94 +368,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     knowledgeSynthesizer: new KnowledgeSynthesizer(brain, llmClient),
     chainRunner: new ChainRunner(vault.getProvider()),
     jobQueue: new JobQueue(vault.getProvider()),
-    pipelineRunner: (() => {
-      const jq = new JobQueue(vault.getProvider());
-      const pr = new PipelineRunner(jq);
-      // Register default job handlers for curator pipeline
-      pr.registerHandler('tag-normalize', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        const result = curator.normalizeTag(entry.tags[0] ?? '');
-        return result;
-      });
-      pr.registerHandler('dedup-check', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        return curator.detectDuplicates(entry.id);
-      });
-      pr.registerHandler('auto-link', async (job) => {
-        if (linkManager) {
-          const suggestions = linkManager.suggestLinks(job.entryId ?? '', 3);
-          for (const s of suggestions) {
-            linkManager.addLink(
-              job.entryId ?? '',
-              s.entryId,
-              s.suggestedType,
-              `pipeline: ${s.reason}`,
-            );
-          }
-          return { linked: suggestions.length };
-        }
-        return { skipped: true, reason: 'link manager not available' };
-      });
-      pr.registerHandler('quality-gate', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        return evaluateQuality(entry, llmClient);
-      });
-      pr.registerHandler('classify', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        return classifyEntry(entry, llmClient);
-      });
-
-      // ─── 9 additional handlers for full Salvador parity (#216) ────
-      pr.registerHandler('enrich-frontmatter', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        return curator.enrichMetadata(entry.id);
-      });
-      pr.registerHandler('detect-staleness', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        // Check if entry is older than 90 days (using validFrom or fallback to 0)
-        const entryTimestamp = (entry.validFrom ?? 0) * 1000 || Date.now();
-        const ageMs = Date.now() - entryTimestamp;
-        const staleDays = 90;
-        const isStale = ageMs > staleDays * 86400000;
-        return { stale: isStale, ageDays: Math.floor(ageMs / 86400000), entryId: entry.id };
-      });
-      pr.registerHandler('detect-duplicate', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        return curator.detectDuplicates(entry.id);
-      });
-      pr.registerHandler('detect-contradiction', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        const contradictions = curator.detectContradictions(0.4);
-        const relevant = contradictions.filter(
-          (c) => c.patternId === job.entryId || c.antipatternId === job.entryId,
-        );
-        return { found: relevant.length, contradictions: relevant };
-      });
-      pr.registerHandler('consolidate-duplicates', async (_job) => {
-        return curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
-      });
-      pr.registerHandler('archive-stale', async (_job) => {
-        // Run consolidation with stale detection
-        const result = curator.consolidate({ dryRun: false, staleDaysThreshold: 90 });
-        return { archived: result.staleEntries.length, result };
-      });
-      pr.registerHandler('verify-searchable', async (job) => {
-        const entry = vault.get(job.entryId ?? '');
-        if (!entry) return { skipped: true, reason: 'entry not found' };
-        const searchResults = vault.search(entry.title, { limit: 1 });
-        const found = searchResults.some((r) => r.entry.id === entry.id);
-        return { searchable: found, entryId: entry.id };
-      });
-      return pr;
-    })(),
+    pipelineRunner,
     operatorProfile,
     persona: (() => {
       const p = loadPersona(agentId, config.persona ?? undefined);
@@ -355,9 +380,12 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       return generatePersonaInstructions(p);
     })(),
     contextHealth: new ContextHealthMonitor(),
+    shutdownRegistry,
     createdAt: Date.now(),
     close: () => {
-      vaultManager.close();
+      // Synchronous close — runs all registered callbacks in LIFO order,
+      // then closes the vault (registered first, so runs last).
+      shutdownRegistry.closeAllSync();
     },
   };
 }

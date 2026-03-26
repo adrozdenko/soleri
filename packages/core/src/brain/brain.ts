@@ -58,7 +58,7 @@ export class Brain {
   constructor(vault: Vault, vaultManager?: VaultManager) {
     this.vault = vault;
     this.vaultManager = vaultManager;
-    this.rebuildVocabulary();
+    this.loadVocabularyFromDb();
     this.recomputeWeights();
   }
 
@@ -385,7 +385,7 @@ export class Brain {
     const docCount = entries.length;
     if (docCount === 0) {
       this.vocabulary.clear();
-      this.persistVocabulary();
+      this.persistVocabularyFull();
       return;
     }
 
@@ -406,7 +406,7 @@ export class Brain {
       this.vocabulary.set(term, idf);
     }
 
-    this.persistVocabulary();
+    this.persistVocabularyFull();
   }
 
   getStats(): BrainStats {
@@ -572,28 +572,72 @@ export class Brain {
     const tokens = new Set(tokenize(text));
     const totalDocs = this.vault.stats().totalEntries;
 
+    const changedTerms = new Map<string, number>();
     for (const token of tokens) {
       const currentDocCount = this.vocabulary.has(token)
         ? Math.round(totalDocs / Math.exp(this.vocabulary.get(token)! - 1)) + 1
         : 1;
       const newIdf = Math.log((totalDocs + 1) / (currentDocCount + 1)) + 1;
       this.vocabulary.set(token, newIdf);
+      changedTerms.set(token, newIdf);
     }
 
-    this.persistVocabulary();
+    this.persistVocabularyPartial(changedTerms);
   }
 
-  private persistVocabulary(): void {
+  private persistVocabularyPartial(terms: Map<string, number>): void {
+    if (terms.size === 0) return;
     const db = this.vault.getDb();
-    const del = db.prepare('DELETE FROM brain_vocabulary');
-    const insert = db.prepare(
-      'INSERT INTO brain_vocabulary (term, idf, doc_count) VALUES (?, ?, ?)',
+    const upsert = db.prepare(
+      'INSERT OR REPLACE INTO brain_vocabulary (term, idf, doc_count, updated_at) VALUES (?, ?, 1, unixepoch())',
     );
     const tx = db.transaction(() => {
-      del.run();
-      if (this.vocabulary.size === 0) return;
+      for (const [term, idf] of terms) {
+        upsert.run(term, idf);
+      }
+    });
+    tx();
+  }
+
+  /**
+   * Fast startup path: load vocabulary from the brain_vocabulary table.
+   * If the table is empty (first boot or after corruption), trigger a full rebuild.
+   */
+  private loadVocabularyFromDb(): void {
+    const db = this.vault.getDb();
+    const rows = db.prepare('SELECT term, idf FROM brain_vocabulary').all() as Array<{
+      term: string;
+      idf: number;
+    }>;
+
+    if (rows.length === 0) {
+      this.rebuildVocabulary();
+      return;
+    }
+
+    this.vocabulary.clear();
+    for (const row of rows) {
+      this.vocabulary.set(row.term, row.idf);
+    }
+  }
+
+  /**
+   * Full persist: DELETE all rows then re-INSERT. Used by rebuildVocabulary() which
+   * replaces the entire vocabulary and needs to remove stale terms.
+   */
+  private persistVocabularyFull(): void {
+    const db = this.vault.getDb();
+    if (this.vocabulary.size === 0) {
+      db.prepare('DELETE FROM brain_vocabulary').run();
+      return;
+    }
+    const upsert = db.prepare(
+      'INSERT OR REPLACE INTO brain_vocabulary (term, idf, doc_count, updated_at) VALUES (?, ?, 1, unixepoch())',
+    );
+    const tx = db.transaction(() => {
+      db.prepare('DELETE FROM brain_vocabulary').run();
       for (const [term, idf] of this.vocabulary) {
-        insert.run(term, idf, 1);
+        upsert.run(term, idf);
       }
     });
     tx();

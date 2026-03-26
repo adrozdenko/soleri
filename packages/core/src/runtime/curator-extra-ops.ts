@@ -10,8 +10,17 @@ import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 
 export function createCuratorExtraOps(runtime: AgentRuntime): OpDefinition[] {
-  const { curator, jobQueue, pipelineRunner } = runtime;
+  const { curator, jobQueue, pipelineRunner, shutdownRegistry } = runtime;
   let consolidationInterval: ReturnType<typeof setInterval> | null = null;
+
+  // Register cleanup for any consolidation interval started during this session
+  shutdownRegistry.register('curatorConsolidation', () => {
+    if (consolidationInterval) {
+      clearInterval(consolidationInterval);
+      consolidationInterval = null;
+    }
+    pipelineRunner.stop();
+  });
 
   return [
     // ─── Entry History ──────────────────────────────────────────────

@@ -88,6 +88,10 @@ export class NotificationEngine {
     setTimeout(() => this.poll(), 10_000);
 
     this.timer = setInterval(() => this.poll(), this.intervalMs);
+    // Don't prevent process exit for background notification polling
+    if (this.timer && typeof this.timer === 'object' && 'unref' in this.timer) {
+      (this.timer as NodeJS.Timeout).unref();
+    }
   }
 
   /**

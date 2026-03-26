@@ -551,6 +551,8 @@ export { createSemanticFacades } from './runtime/facades/index.js';
 export { createDomainFacade, createDomainFacades } from './runtime/domain-ops.js';
 export { FeatureFlags } from './runtime/feature-flags.js';
 export type { FlagDefinition } from './runtime/feature-flags.js';
+export { ShutdownRegistry } from './runtime/shutdown-registry.js';
+export type { ShutdownCallback } from './runtime/shutdown-registry.js';
 export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';
 export {
   deprecationWarning,
