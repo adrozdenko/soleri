@@ -1,0 +1,36 @@
+{
+  "name": "flock-guard",
+  "version": "1.0.0",
+  "description": "Parallel agent lock guard — prevents lockfile corruption when multiple agents run in worktrees by using atomic mkdir-based locking across PreToolUse/PostToolUse",
+  "hooks": [],
+  "scripts": [
+    {
+      "name": "flock-guard-pre",
+      "file": "flock-guard-pre.sh",
+      "targetDir": "hooks"
+    },
+    {
+      "name": "flock-guard-post",
+      "file": "flock-guard-post.sh",
+      "targetDir": "hooks"
+    }
+  ],
+  "lifecycleHooks": [
+    {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "type": "command",
+      "command": "sh ~/.claude/hooks/flock-guard-pre.sh",
+      "timeout": 10,
+      "statusMessage": "Checking lockfile guard..."
+    },
+    {
+      "event": "PostToolUse",
+      "matcher": "Bash",
+      "type": "command",
+      "command": "sh ~/.claude/hooks/flock-guard-post.sh",
+      "timeout": 10,
+      "statusMessage": "Releasing lockfile guard..."
+    }
+  ]
+}
