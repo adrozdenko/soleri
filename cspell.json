@@ -67,6 +67,7 @@
     "tsquery",
     "timestamptz",
     "mmap",
+    "msvs",
     "dbname",
     "jaccard",
     "millis",

@@ -35,7 +35,7 @@ your AI editor reads the folder natively. The **Knowledge Engine** provides the 
 
 ## What You Get
 
-**Platform:** macOS and Linux. Windows users need [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
+**Platform:** macOS, Linux, and Windows (via Git Bash). See the [Windows setup guide](https://soleri.ai/docs/guides/windows/) for details.
 
 ```bash
 npx @soleri/cli create my-brain       # Build your second brain (~3 seconds)
