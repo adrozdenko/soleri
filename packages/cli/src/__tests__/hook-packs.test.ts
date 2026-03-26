@@ -23,15 +23,16 @@ describe('hook-packs', () => {
   });
 
   describe('registry', () => {
-    it('should list all 7 built-in packs', () => {
+    it('should list all 8 built-in packs', () => {
       const packs = listPacks();
-      expect(packs.length).toBe(7);
+      expect(packs.length).toBe(8);
       const names = packs.map((p) => p.name).sort();
       expect(names).toEqual([
         'a11y',
         'clean-commits',
         'css-discipline',
         'full',
+        'marketing-research',
         'safety',
         'typescript-safety',
         'yolo-safety',

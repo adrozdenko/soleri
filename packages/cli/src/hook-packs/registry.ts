@@ -30,6 +30,7 @@ export interface HookPackManifest {
   scripts?: HookPackScript[];
   lifecycleHooks?: HookPackLifecycleHook[];
   source?: 'built-in' | 'local';
+  actionLevel?: 'remind' | 'warn' | 'block';
 }
 
 const __filename = fileURLToPath(import.meta.url);

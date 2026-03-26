@@ -1,0 +1,24 @@
+{
+  "name": "marketing-research",
+  "version": "1.0.0",
+  "description": "Auto-research hook for marketing files — reminds to check brand guidelines, A/B testing data, and audience segmentation before editing marketing content",
+  "hooks": [],
+  "scripts": [
+    {
+      "name": "marketing-research",
+      "file": "marketing-research.sh",
+      "targetDir": "hooks"
+    }
+  ],
+  "lifecycleHooks": [
+    {
+      "event": "PreToolUse",
+      "matcher": "Write|Edit",
+      "type": "command",
+      "command": "sh ~/.claude/hooks/marketing-research.sh",
+      "timeout": 10,
+      "statusMessage": "Checking marketing context..."
+    }
+  ],
+  "actionLevel": "remind"
+}
