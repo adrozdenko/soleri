@@ -597,10 +597,10 @@ describe('Knowledge Traceability', () => {
       expect(plan.objective).toBe('Secure the user authentication API endpoints');
       state.planId = plan.id as string;
 
-      // Plan should capture the vault-informed decisions
+      // Plan should capture the vault-informed decisions (user decisions + vault enrichment)
       const decisions = plan.decisions as string[];
       expect(Array.isArray(decisions)).toBe(true);
-      expect(decisions.length).toBe(3);
+      expect(decisions.length).toBeGreaterThanOrEqual(3);
       expect(decisions.some((d) => d.includes('JWT'))).toBe(true);
       expect(decisions.some((d) => d.includes('rate limiting'))).toBe(true);
       expect(decisions.some((d) => d.includes('anti-pattern'))).toBe(true);

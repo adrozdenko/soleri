@@ -1034,4 +1034,178 @@ describe('E2E: planning-orchestration', () => {
       expect('extraction' in data).toBe(true);
     });
   });
+
+  // =========================================================================
+  // Journey: Brain feedback loop — orchestrate_complete feeds brain
+  // =========================================================================
+
+  describe('Journey: orchestrate_complete records brain feedback', () => {
+    const brainFacade = `${AGENT_ID}_brain`;
+
+    it('should record feedback for vault entries used in plan decisions', async () => {
+      // 1. Seed vault with an entry directly via runtime (available in test scope)
+      const entryId = `feedback-loop-e2e-${Date.now()}`;
+      runtime.vault.add({
+        id: entryId,
+        title: 'Test pattern for brain feedback loop',
+        type: 'pattern',
+        domain: 'testing',
+        description: 'A test pattern to verify feedback recording works end-to-end.',
+        severity: 'suggestion',
+        tags: ['testing', 'brain-loop'],
+      });
+
+      // 2. Create a plan with decisions that embed the entryId
+      const planRes = await callOp(planFacade, 'create_plan', {
+        objective: 'Verify brain feedback loop works end-to-end',
+        scope: 'e2e test',
+        decisions: [
+          `Brain pattern: Test pattern (strength: 50.0) [entryId:${entryId}]`,
+        ],
+        tasks: [
+          { title: 'Task A', description: 'Do something' },
+        ],
+      });
+      expect(planRes.success).toBe(true);
+      const planId = (planRes.data as { created: boolean; plan: { id: string } }).plan.id;
+
+      // 3. Approve + split
+      const approveRes = await callOp(planFacade, 'approve_plan', {
+        planId,
+        force: true,
+      });
+      expect(approveRes.success).toBe(true);
+
+      const splitRes = await callOp(planFacade, 'plan_split', {
+        planId,
+        tasks: [{ title: 'Task A', description: 'Do something', type: 'test', complexity: 'low' }],
+      });
+      expect(splitRes.success).toBe(true);
+
+      // 4. Start execution via orchestrate_execute
+      const execRes = await callOp(orchestrateFacade, 'orchestrate_execute', {
+        planId,
+        domain: 'testing',
+        context: 'E2E brain feedback loop test',
+      });
+      expect(execRes.success).toBe(true);
+      const execData = execRes.data as Record<string, unknown>;
+      const sessionId = ((execData.session as Record<string, unknown>)?.id as string);
+
+      // 5. Mark task as completed
+      await callOp(planFacade, 'update_task', {
+        planId,
+        taskId: 'task-1',
+        status: 'completed',
+      });
+
+      // 6. Complete via orchestrate_complete
+      const completeRes = await callOp(orchestrateFacade, 'orchestrate_complete', {
+        planId,
+        sessionId,
+        outcome: 'completed',
+        summary: 'Completed the test task successfully',
+      });
+      expect(completeRes.success).toBe(true);
+
+      // 8. Check brain feedback stats — should have at least 1 feedback entry
+      const statsRes = await callOp(brainFacade, 'brain_feedback_stats', {});
+      expect(statsRes.success).toBe(true);
+      const stats = statsRes.data as { total: number; byAction: Record<string, number> };
+      expect(stats.total).toBeGreaterThanOrEqual(1);
+      expect(stats.byAction.accepted).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  // =========================================================================
+  // Journey: create_plan vault enrichment feeds brain_feedback on completion
+  // =========================================================================
+
+  describe('Journey: vault-enriched create_plan feeds brain_feedback', () => {
+    const brainFacade = `${AGENT_ID}_brain`;
+
+    it('should auto-enrich plan decisions from vault and feed brain on completion', async () => {
+      // 1. Seed vault with a searchable pattern
+      const entryId = `vault-enrich-e2e-${Date.now()}`;
+      runtime.vault.add({
+        id: entryId,
+        title: 'Database migration safety pattern',
+        type: 'pattern',
+        domain: 'architecture',
+        description: 'Always run migrations in a transaction with rollback support.',
+        severity: 'warning',
+        tags: ['database', 'migration', 'safety'],
+      });
+
+      // 2. Create plan with objective matching the vault entry
+      const planRes = await callOp(planFacade, 'create_plan', {
+        objective: 'Implement safe database migration with rollback',
+        scope: 'e2e test',
+        tasks: [{ title: 'Add migration runner', description: 'Implement migration with transaction' }],
+      });
+      expect(planRes.success).toBe(true);
+      const data = planRes.data as {
+        created: boolean;
+        plan: { id: string; decisions: string[] };
+        vaultEntryIds: string[];
+      };
+      expect(data.created).toBe(true);
+
+      // 3. Verify vault enrichment happened
+      expect(data.vaultEntryIds.length).toBeGreaterThan(0);
+      const vaultDecisions = data.plan.decisions.filter((d: string) =>
+        d.startsWith('Vault pattern:'),
+      );
+      expect(vaultDecisions.length).toBeGreaterThan(0);
+      // Each decision should have [entryId:...] for brain feedback extraction
+      for (const vd of vaultDecisions) {
+        expect(vd).toMatch(/\[entryId:[^\]]+\]/);
+      }
+
+      // 4. Full lifecycle: approve → split → execute → complete
+      const planId = data.plan.id;
+      await callOp(planFacade, 'approve_plan', { planId, force: true });
+      await callOp(planFacade, 'plan_split', {
+        planId,
+        tasks: [
+          {
+            title: 'Add migration runner',
+            description: 'Implement migration with transaction',
+            type: 'impl',
+            complexity: 'medium',
+          },
+        ],
+      });
+
+      const execRes = await callOp(orchestrateFacade, 'orchestrate_execute', {
+        planId,
+        domain: 'architecture',
+        context: 'E2E vault enrichment test',
+      });
+      expect(execRes.success).toBe(true);
+      const sessionId = (
+        (execRes.data as Record<string, unknown>).session as Record<string, unknown>
+      )?.id as string;
+
+      await callOp(planFacade, 'update_task', {
+        planId,
+        taskId: 'task-1',
+        status: 'completed',
+      });
+
+      const completeRes = await callOp(orchestrateFacade, 'orchestrate_complete', {
+        planId,
+        sessionId,
+        outcome: 'completed',
+        summary: 'Migration runner implemented with vault-informed decisions',
+      });
+      expect(completeRes.success).toBe(true);
+
+      // 5. Verify brain feedback was recorded for the vault entry
+      const statsRes = await callOp(brainFacade, 'brain_feedback_stats', {});
+      expect(statsRes.success).toBe(true);
+      const stats = statsRes.data as { total: number; byAction: Record<string, number> };
+      expect(stats.total).toBeGreaterThanOrEqual(1);
+    });
+  });
 });
