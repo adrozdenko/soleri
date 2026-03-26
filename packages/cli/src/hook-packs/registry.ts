@@ -97,7 +97,9 @@ export function getPack(name: string): { manifest: HookPackManifest; dir: string
 export function getInstalledPacks(): string[] {
   const claudeDir = join(homedir(), '.claude');
   const packs = listPacks();
-  const installed: string[] = [];
+  const installed = new Set<string>();
+
+  // First pass: detect directly installed packs (hooks or scripts)
   for (const pack of packs) {
     if (pack.hooks.length === 0) {
       if (pack.scripts && pack.scripts.length > 0) {
@@ -105,7 +107,7 @@ export function getInstalledPacks(): string[] {
           existsSync(join(claudeDir, script.targetDir, script.file)),
         );
         if (allScripts) {
-          installed.push(pack.name);
+          installed.add(pack.name);
         }
       }
       continue;
@@ -114,8 +116,19 @@ export function getInstalledPacks(): string[] {
       existsSync(join(claudeDir, `hookify.${hook}.local.md`)),
     );
     if (allPresent) {
-      installed.push(pack.name);
+      installed.add(pack.name);
     }
   }
-  return installed;
+
+  // Second pass: composed packs are installed if all sub-packs are installed
+  for (const pack of packs) {
+    if (pack.composedFrom && pack.composedFrom.length > 0 && !installed.has(pack.name)) {
+      const allSubsInstalled = pack.composedFrom.every((sub) => installed.has(sub));
+      if (allSubsInstalled) {
+        installed.add(pack.name);
+      }
+    }
+  }
+
+  return Array.from(installed);
 }

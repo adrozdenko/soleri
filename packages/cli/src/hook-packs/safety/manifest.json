@@ -1,0 +1,23 @@
+{
+  "name": "safety",
+  "version": "1.0.0",
+  "description": "Anti-deletion safety net — intercepts destructive commands (rm, git push --force, git reset --hard, git clean, drop table, docker rm), stages files before deletion, blocks everything else",
+  "hooks": [],
+  "scripts": [
+    {
+      "name": "anti-deletion",
+      "file": "anti-deletion.sh",
+      "targetDir": "hooks"
+    }
+  ],
+  "lifecycleHooks": [
+    {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "type": "command",
+      "command": "sh ~/.claude/hooks/anti-deletion.sh",
+      "timeout": 10,
+      "statusMessage": "Checking for destructive commands..."
+    }
+  ]
+}

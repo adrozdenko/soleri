@@ -23,15 +23,16 @@ describe('hook-packs', () => {
   });
 
   describe('registry', () => {
-    it('should list all 6 built-in packs', () => {
+    it('should list all 7 built-in packs', () => {
       const packs = listPacks();
-      expect(packs.length).toBe(6);
+      expect(packs.length).toBe(7);
       const names = packs.map((p) => p.name).sort();
       expect(names).toEqual([
         'a11y',
         'clean-commits',
         'css-discipline',
         'full',
+        'safety',
         'typescript-safety',
         'yolo-safety',
       ]);
@@ -49,7 +50,7 @@ describe('hook-packs', () => {
       expect(getPack('nonexistent')).toBeNull();
     });
 
-    it('should return full pack with composedFrom including yolo-safety', () => {
+    it('should return full pack with composedFrom including safety and yolo-safety', () => {
       const pack = getPack('full');
       expect(pack).not.toBeNull();
       expect(pack!.manifest.composedFrom).toEqual([
@@ -57,6 +58,7 @@ describe('hook-packs', () => {
         'a11y',
         'css-discipline',
         'clean-commits',
+        'safety',
         'yolo-safety',
       ]);
       expect(pack!.manifest.hooks).toHaveLength(8);
@@ -64,18 +66,28 @@ describe('hook-packs', () => {
 
     it('should return empty installed packs when none installed', () => {
       const installed = getInstalledPacks();
-      expect(installed.filter((p) => p !== 'yolo-safety')).toEqual([]);
+      expect(installed.filter((p) => p !== 'yolo-safety' && p !== 'safety')).toEqual([]);
     });
 
-    it('should get yolo-safety pack with scripts and lifecycleHooks', () => {
-      const pack = getPack('yolo-safety');
+    it('should get safety pack with scripts and lifecycleHooks', () => {
+      const pack = getPack('safety');
       expect(pack).not.toBeNull();
-      expect(pack!.manifest.name).toBe('yolo-safety');
+      expect(pack!.manifest.name).toBe('safety');
       expect(pack!.manifest.hooks).toEqual([]);
       expect(pack!.manifest.scripts).toHaveLength(1);
       expect(pack!.manifest.scripts![0].name).toBe('anti-deletion');
       expect(pack!.manifest.lifecycleHooks).toHaveLength(1);
       expect(pack!.manifest.lifecycleHooks![0].event).toBe('PreToolUse');
+    });
+
+    it('should get yolo-safety pack as composed from safety', () => {
+      const pack = getPack('yolo-safety');
+      expect(pack).not.toBeNull();
+      expect(pack!.manifest.name).toBe('yolo-safety');
+      expect(pack!.manifest.hooks).toEqual([]);
+      expect(pack!.manifest.composedFrom).toEqual(['safety']);
+      expect(pack!.manifest.scripts).toBeUndefined();
+      expect(pack!.manifest.lifecycleHooks).toBeUndefined();
     });
   });
 
@@ -150,8 +162,8 @@ describe('hook-packs', () => {
       expect(() => removePack('nonexistent')).toThrow('Unknown hook pack: "nonexistent"');
     });
 
-    it('should install yolo-safety pack with scripts and lifecycle hooks', () => {
-      const result = installPack('yolo-safety');
+    it('should install safety pack with scripts and lifecycle hooks', () => {
+      const result = installPack('safety');
       expect(result.installed).toEqual([]);
       expect(result.scripts).toHaveLength(1);
       expect(result.scripts[0]).toBe('hooks/anti-deletion.sh');
@@ -163,12 +175,12 @@ describe('hook-packs', () => {
       expect(settings.hooks).toBeDefined();
       expect(settings.hooks.PreToolUse).toHaveLength(1);
       expect(settings.hooks.PreToolUse[0].command).toBe('sh ~/.claude/hooks/anti-deletion.sh');
-      expect(settings.hooks.PreToolUse[0]._soleriPack).toBe('yolo-safety');
+      expect(settings.hooks.PreToolUse[0]._soleriPack).toBe('safety');
     });
 
-    it('should remove yolo-safety pack including scripts and lifecycle hooks', () => {
-      installPack('yolo-safety');
-      const result = removePack('yolo-safety');
+    it('should remove safety pack including scripts and lifecycle hooks', () => {
+      installPack('safety');
+      const result = removePack('safety');
       expect(result.scripts).toHaveLength(1);
       expect(result.lifecycleHooks).toHaveLength(1);
       const claudeDir = join(tempHome, '.claude');
@@ -177,13 +189,23 @@ describe('hook-packs', () => {
       expect(settings.hooks.PreToolUse).toBeUndefined();
     });
 
-    it('should be idempotent for yolo-safety lifecycle hooks', () => {
-      installPack('yolo-safety');
-      const result2 = installPack('yolo-safety');
+    it('should be idempotent for safety lifecycle hooks', () => {
+      installPack('safety');
+      const result2 = installPack('safety');
       expect(result2.lifecycleHooks).toEqual([]);
       const claudeDir = join(tempHome, '.claude');
       const settings = JSON.parse(readFileSync(join(claudeDir, 'settings.json'), 'utf-8'));
       expect(settings.hooks.PreToolUse).toHaveLength(1);
+    });
+
+    it('should install yolo-safety via composition from safety', () => {
+      const result = installPack('yolo-safety');
+      // yolo-safety composes from safety — script and lifecycle come from safety
+      expect(result.scripts).toHaveLength(1);
+      expect(result.scripts[0]).toBe('hooks/anti-deletion.sh');
+      expect(result.lifecycleHooks).toHaveLength(1);
+      const claudeDir = join(tempHome, '.claude');
+      expect(existsSync(join(claudeDir, 'hooks', 'anti-deletion.sh'))).toBe(true);
     });
   });
 
@@ -207,9 +229,9 @@ describe('hook-packs', () => {
       expect(isPackInstalled('nonexistent')).toBe(false);
     });
 
-    it('should detect yolo-safety as installed when script is present', () => {
-      installPack('yolo-safety');
-      expect(isPackInstalled('yolo-safety')).toBe(true);
+    it('should detect safety as installed when script is present', () => {
+      installPack('safety');
+      expect(isPackInstalled('safety')).toBe(true);
     });
   });
 
@@ -231,6 +253,7 @@ describe('hook-packs', () => {
       expect(installed).toContain('a11y');
       expect(installed).toContain('css-discipline');
       expect(installed).toContain('clean-commits');
+      expect(installed).toContain('safety');
       expect(installed).toContain('yolo-safety');
     });
   });

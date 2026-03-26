@@ -1,5 +1,5 @@
 #!/bin/sh
-# Anti-Deletion Staging Hook for Claude Code (Soleri Hook Pack: yolo-safety)
+# Anti-Deletion Staging Hook for Claude Code (Soleri Hook Pack: safety)
 # PreToolUse -> Bash: intercepts destructive commands, stages files, blocks execution.
 #
 # Intercepted patterns:
@@ -22,6 +22,12 @@
 set -eu
 
 STAGING_ROOT="$HOME/.soleri/staging"
+
+# --- Auto-cleanup: remove staging backups older than 7 days ---
+if [ -d "$STAGING_ROOT" ]; then
+  find "$STAGING_ROOT" -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
+fi
+
 INPUT=$(cat)
 
 # Extract the command from stdin JSON
