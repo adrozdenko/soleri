@@ -142,25 +142,55 @@ Reports:
 
 ### hooks
 
-Manage editor hooks for quality gates.
+Manage editor hooks, hook packs, and skill-to-hook conversion.
 
 ```bash
+# Editor hooks
 npx @soleri/cli hooks add <editor>
 npx @soleri/cli hooks remove <editor>
 npx @soleri/cli hooks list
+
+# Hook packs
 npx @soleri/cli hooks add-pack <pack>
+npx @soleri/cli hooks remove-pack <pack>
+npx @soleri/cli hooks upgrade-pack <pack>
+npx @soleri/cli hooks list-packs
+
+# Skill-to-hook conversion
+npx @soleri/cli hooks convert <name> --event <event> --message <text> [options]
+npx @soleri/cli hooks test <pack>
+npx @soleri/cli hooks promote <pack>
+npx @soleri/cli hooks demote <pack>
 ```
 
 **Editors:** `claude-code`, `cursor`, `vscode`, `neovim`
 
 **Hook Packs:**
 
-| Pack      | Hooks included         |
-| --------- | ---------------------- |
-| `full`    | All 8 quality gates    |
-| `minimal` | Core safety hooks only |
+| Pack                 | Description                                                          |
+| -------------------- | -------------------------------------------------------------------- |
+| `safety`             | Anti-deletion staging — backs up files before rm, blocks force push/reset |
+| `flock-guard`        | Parallel agent lock — prevents lockfile corruption in worktrees      |
+| `clean-commits`      | No AI attribution in git commits                                     |
+| `typescript-safety`  | Block `any` types and console.log                                    |
+| `css-discipline`     | No `!important`, no inline styles                                    |
+| `a11y`               | Accessibility: semantic HTML, focus rings, touch targets             |
+| `yolo-safety`        | Safety guardrails for YOLO mode (composes from `safety`)             |
+| `marketing-research` | Example: auto-research for marketing files                           |
+| `full`               | All quality + safety hooks combined                                  |
 
-**Quality gate hooks:** no-console-log, no-any-types, no-important, no-inline-styles, semantic-html, focus-ring-required, ux-touch-targets, no-ai-attribution.
+**Convert Options:**
+
+| Flag               | Description                                                         | Required |
+| ------------------ | ------------------------------------------------------------------- | -------- |
+| `--event <event>`  | Hook event: PreToolUse, PostToolUse, PreCompact, Notification, Stop | Yes      |
+| `--message <text>` | Context message when hook fires                                     | Yes      |
+| `--matcher <tools>`| Tool name matcher (e.g., "Write\|Edit")                             | No       |
+| `--pattern <globs...>` | File glob patterns to match                                     | No       |
+| `--action <level>` | Action level: remind (default), warn, block                         | No       |
+| `--project`        | Output to project dir instead of built-in                           | No       |
+
+**Graduation:** Hooks start at `remind`, graduate to `warn` then `block` after validation proves zero false positives.
 
 ---
 

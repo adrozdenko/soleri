@@ -20,7 +20,6 @@ For parameter details on common operations, see the [API Reference](/docs/api-re
 | [Memory](#memory)                 | 15           | Cross-session, cross-project, export/import              |
 | [Curator](#curator)               | 13           | Deduplication, health audits, enrichment, contradictions |
 | [Control](#control)               | 13           | Persona, intent routing, modes, governance               |
-| [Cognee](#cognee)                 | 11           | Vector search, knowledge graph, sync                     |
 | [Loop](#loop)                     | 9            | Iterative validation with convergence detection          |
 | [Agency](#agency)                 | 8            | Proactive file watching, pattern surfacing, warnings     |
 | [Context](#context)               | 3            | Entity extraction, knowledge retrieval, analysis         |
@@ -551,24 +550,6 @@ Agent persona, intent routing, operational modes, and governance.
 | `governance_expire`    | write | Expire stale proposals.                              |
 | `governance_dashboard` | read  | Full governance dashboard with all metrics.          |
 
-## Cognee
-
-Optional vector search and knowledge graph via [Cognee](https://github.com/topoteretes/cognee).
-
-| Op                      | Auth  | Description                                    |
-| ----------------------- | ----- | ---------------------------------------------- |
-| `cognee_status`         | read  | Cognee connection status and health.           |
-| `cognee_search`         | read  | Vector similarity search across knowledge.     |
-| `cognee_add`            | write | Add content to the Cognee knowledge graph.     |
-| `cognee_cognify`        | write | Process pending content into graph embeddings. |
-| `cognee_config`         | write | Configure Cognee connection settings.          |
-| `cognee_get_node`       | read  | Get a specific node by ID with connections.    |
-| `cognee_graph_stats`    | read  | Node/edge counts by type.                      |
-| `cognee_export_status`  | read  | Last export timestamp and graph population.    |
-| `cognee_sync_drain`     | write | Drain pending sync queue to Cognee.            |
-| `cognee_sync_reconcile` | write | Reconcile vault and Cognee state.              |
-| `cognee_sync_status`    | read  | Sync queue status and last sync time.          |
-
 ## Loop
 
 Iterative validation for convergence-driven tasks.
@@ -607,7 +588,7 @@ Entity extraction, knowledge retrieval, and context analysis. Used internally by
 | Op                           | Auth | Description                                                                |
 | ---------------------------- | ---- | -------------------------------------------------------------------------- |
 | `context_extract_entities`   | read | Extract named entities from a prompt — files, functions, domains, actions. |
-| `context_retrieve_knowledge` | read | Retrieve relevant knowledge from vault (FTS), Cognee (vector), and brain.  |
+| `context_retrieve_knowledge` | read | Retrieve relevant knowledge from vault (FTS) and brain.                    |
 | `context_analyze`            | read | Full context analysis — entities, knowledge, confidence, domains.          |
 
 ## Domain Facades
