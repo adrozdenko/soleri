@@ -5,6 +5,7 @@ import type {
   CuratorStatus,
   TagNormalizationResult,
   CanonicalTag,
+  DuplicateCandidate,
   DuplicateDetectionResult,
   Contradiction,
   ContradictionStatus,
