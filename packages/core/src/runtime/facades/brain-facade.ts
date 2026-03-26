@@ -466,13 +466,16 @@ export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     },
     {
       name: 'radar_dismiss',
-      description: 'Dismiss a pending radar candidate — marks it as not worth capturing.',
+      description:
+        'Dismiss one or more pending radar candidates — marks them as not worth capturing. Accepts a single ID or an array.',
       auth: 'write',
       schema: z.object({
-        candidateId: z.number().describe('Radar candidate ID to dismiss'),
+        candidateId: z
+          .union([z.number(), z.array(z.number())])
+          .describe('Radar candidate ID(s) to dismiss — single number or array'),
       }),
       handler: async (params) => {
-        return learningRadar.dismiss(params.candidateId as number);
+        return learningRadar.dismiss(params.candidateId as number | number[]);
       },
     },
     {

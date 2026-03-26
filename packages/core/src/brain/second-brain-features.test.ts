@@ -335,7 +335,7 @@ describe('Ambient learning radar (#208)', () => {
     const pending = candidates.find((c) => c.title.includes('stale cache'));
     expect(pending).toBeDefined();
     const result = learningRadar.dismiss(pending!.id);
-    expect(result.dismissed).toBe(true);
+    expect(result.dismissed).toBe(1);
   });
 
   it('getStats returns radar statistics', () => {

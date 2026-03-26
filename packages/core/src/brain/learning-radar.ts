@@ -229,14 +229,17 @@ export class LearningRadar {
   }
 
   /**
-   * Dismiss a pending candidate — mark it as not worth capturing.
+   * Dismiss one or more pending candidates — mark them as not worth capturing.
    */
-  dismiss(candidateId: number): { dismissed: boolean } {
+  dismiss(candidateIds: number | number[]): { dismissed: number } {
+    const ids = Array.isArray(candidateIds) ? candidateIds : [candidateIds];
+    if (ids.length === 0) return { dismissed: 0 };
+    const placeholders = ids.map(() => '?').join(',');
     const result = this.provider.run(
-      "UPDATE radar_candidates SET status = 'dismissed' WHERE id = ? AND status = 'pending'",
-      [candidateId],
+      `UPDATE radar_candidates SET status = 'dismissed' WHERE id IN (${placeholders}) AND status = 'pending'`,
+      ids,
     );
-    return { dismissed: result.changes > 0 };
+    return { dismissed: result.changes };
   }
 
   /**
