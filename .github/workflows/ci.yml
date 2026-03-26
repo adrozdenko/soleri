@@ -99,6 +99,24 @@ jobs:
           name: build-output
       - run: npm run typecheck --workspace=create-soleri
 
+  # ─── Windows tests (core + CLI unit tests) ───────────────────────
+  test-windows:
+    name: Test Windows (Core + CLI)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run build --workspace=@soleri/forge
+      - run: npm run build --workspace=@soleri/cli
+      - run: npm run test --workspace=@soleri/core
+      - run: npm run test --workspace=@soleri/cli
+
   # ─── E2E tests (full build, virgin environment) ──────────────────
   e2e:
     name: E2E Tests
