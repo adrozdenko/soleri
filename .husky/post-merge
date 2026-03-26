@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Clean up stale Claude Code worktrees after merge
+# Worktrees whose branches have been merged become prunable
+git worktree prune 2>/dev/null
+
+# Remove orphaned worktree directories (pruned refs but dirs still on disk)
+if [ -d ".claude/worktrees" ]; then
+  for dir in .claude/worktrees/*/; do
+    [ -d "$dir" ] || continue
+    # If git doesn't recognize it as a valid worktree, remove it
+    if ! git worktree list --porcelain 2>/dev/null | grep -q "$(cd "$dir" && pwd)"; then
+      rm -rf "$dir"
+    fi
+  done
+  # Remove the parent if empty
+  rmdir .claude/worktrees 2>/dev/null || true
+fi
