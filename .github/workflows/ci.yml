@@ -7,67 +7,114 @@ on:
     branches: [main]
 
 jobs:
-  core:
-    name: Build & Test Core
+  # ─── Shared build: install + build all packages ───────────────────
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: 'npm'
       - run: npm ci
-      - run: npm run build --workspace=@soleri/core
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            packages/*/dist/
+            node_modules/.cache/
+          retention-days: 1
+
+  # ─── Unit tests (parallel, reuse build) ───────────────────────────
+  test-core:
+    name: Test Core
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
       - run: npm run test --workspace=@soleri/core
       - run: npm run typecheck --workspace=@soleri/core
 
-  forge:
-    name: Build & Test Forge
-    needs: core
+  test-forge:
+    name: Test Forge
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: 'npm'
       - run: npm ci
-      - run: npm run build --workspace=@soleri/core
-      - run: npm run build --workspace=@soleri/forge
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
       - run: npm run test --workspace=@soleri/forge
       - run: npm run typecheck --workspace=@soleri/forge
 
-  cli:
-    name: Build & Test CLI
-    needs: forge
+  test-cli:
+    name: Test CLI
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: 'npm'
       - run: npm ci
-      - run: npm run build --workspace=@soleri/core
-      - run: npm run build --workspace=@soleri/forge
-      - run: npm run build --workspace=@soleri/cli
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
       - run: npm run test --workspace=@soleri/cli
-        continue-on-error: true
       - run: npm run typecheck --workspace=@soleri/cli
 
-  create-soleri:
-    name: Build create-soleri
-    needs: cli
+  test-create-soleri:
+    name: Test create-soleri
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: 'npm'
       - run: npm ci
-      - run: npm run build --workspace=@soleri/core
-      - run: npm run build --workspace=@soleri/forge
-      - run: npm run build --workspace=@soleri/cli
-      - run: npm run build --workspace=create-soleri
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
       - run: npm run typecheck --workspace=create-soleri
 
+  # ─── E2E tests (full build, virgin environment) ──────────────────
+  e2e:
+    name: E2E Tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+      - run: npm run build
+      - run: npm run test:e2e
+
+  # ─── Code quality (parallel with tests) ──────────────────────────
   quality:
     name: Code Quality
     runs-on: ubuntu-latest
@@ -75,7 +122,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: 'npm'
       - run: npm ci
 
       - name: Lint (oxlint)
@@ -97,6 +145,7 @@ jobs:
         run: npm run deadcode:knip
         continue-on-error: true
 
+  # ─── Website content validation ──────────────────────────────────
   website:
     name: Validate Website Content
     runs-on: ubuntu-latest
