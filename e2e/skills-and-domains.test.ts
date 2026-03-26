@@ -57,21 +57,27 @@ describe('E2E: skills-and-domains', () => {
     expect(existsSync(join(agentDir, 'skills'))).toBe(true);
   });
 
-  it('should have exactly 20 built-in skills', () => {
+  it('should have exactly 27 built-in skills', () => {
     const skillDirs = readdirSync(join(agentDir, 'skills'), { encoding: 'utf-8' });
-    expect(skillDirs.length).toBe(20);
+    expect(skillDirs.length).toBe(27);
 
     // Verify all expected skill names are present
     const expectedSkills = [
+      'agent-dev',
+      'agent-guide',
+      'agent-persona',
       'brain-debrief',
       'brainstorming',
       'code-patrol',
       'context-resume',
       'deep-review',
+      'deliver-and-ship',
+      'env-setup',
       'executing-plans',
       'fix-and-learn',
       'health-check',
       'knowledge-harvest',
+      'mcp-doctor',
       'onboard-me',
       'parallel-execute',
       'retrospective',
@@ -79,6 +85,7 @@ describe('E2E: skills-and-domains', () => {
       'systematic-debugging',
       'test-driven-development',
       'vault-capture',
+      'vault-curate',
       'vault-navigator',
       'vault-smells',
       'verification-before-completion',
