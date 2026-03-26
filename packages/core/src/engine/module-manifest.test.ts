@@ -49,7 +49,7 @@ describe('ENGINE_MODULE_MANIFEST', () => {
       expect(entry.description.length).toBeGreaterThan(0);
       expect(Array.isArray(entry.keyOps)).toBe(true);
       expect(entry.keyOps.length).toBeGreaterThan(0);
-      expect(entry.keyOps.length).toBeLessThanOrEqual(4);
+      expect(entry.keyOps.length).toBeLessThanOrEqual(5);
     }
   });
 
@@ -64,17 +64,18 @@ describe('ENGINE_MODULE_MANIFEST', () => {
 
   it('vault module has expected keyOps', () => {
     const vault = ENGINE_MODULE_MANIFEST.find((m) => m.suffix === 'vault')!;
-    expect(vault.keyOps).toEqual([
-      'search_intelligent',
-      'load_entries',
-      'capture_knowledge',
-      'capture_quick',
-    ]);
+    expect(vault.keyOps).toEqual(['search_intelligent', 'capture_knowledge', 'capture_quick']);
   });
 
   it('plan module has expected keyOps', () => {
     const plan = ENGINE_MODULE_MANIFEST.find((m) => m.suffix === 'plan')!;
-    expect(plan.keyOps).toEqual(['create_plan', 'approve_plan', 'plan_split', 'chain_execute']);
+    expect(plan.keyOps).toEqual([
+      'create_plan',
+      'approve_plan',
+      'plan_split',
+      'plan_reconcile',
+      'plan_close_stale',
+    ]);
   });
 
   it('conditional field is optional and boolean when present', () => {
