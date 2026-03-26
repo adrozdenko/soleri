@@ -111,25 +111,18 @@ export function archive(
   const reason = options.reason ?? `Archived: older than ${options.olderThanDays} days`;
 
   return provider.transaction(() => {
-    const candidates = provider.all<{ id: string }>('SELECT id FROM entries WHERE updated_at < ?', [
-      cutoff,
-    ]);
+    // Bulk INSERT INTO ... SELECT — copies all matching entries to archive in one query
+    provider.run(
+      `INSERT OR IGNORE INTO entries_archive (id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until, archive_reason)
+       SELECT id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until, ?
+       FROM entries WHERE updated_at < ?`,
+      [reason, cutoff],
+    );
 
-    if (candidates.length === 0) return { archived: 0 };
+    // Bulk DELETE — removes all archived entries in one query
+    const result = provider.run('DELETE FROM entries WHERE updated_at < ?', [cutoff]);
 
-    let archived = 0;
-    for (const { id } of candidates) {
-      provider.run(
-        `INSERT OR IGNORE INTO entries_archive (id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until, archive_reason)
-         SELECT id, type, domain, title, severity, description, context, example, counter_example, why, tags, applies_to, created_at, updated_at, valid_from, valid_until, ?
-         FROM entries WHERE id = ?`,
-        [reason, id],
-      );
-      const result = provider.run('DELETE FROM entries WHERE id = ?', [id]);
-      archived += result.changes;
-    }
-
-    return { archived };
+    return { archived: result.changes };
   });
 }
 

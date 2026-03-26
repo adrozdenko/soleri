@@ -10,6 +10,7 @@ import {
   cosineSimilarity,
   jaccardSimilarity,
 } from '../text/similarity.js';
+import { rowToEntry } from '../vault/vault-entries.js';
 import type {
   ScoringWeights,
   ScoreBreakdown,
@@ -98,9 +99,15 @@ export class Brain {
     const queryDomain = options?.domain;
     const now = Math.floor(Date.now() / 1000);
 
+    // Compute queryVec once for all entries (was previously recomputed per entry in scoreEntry)
+    const queryVec =
+      this.vocabulary.size > 0 && queryTokens.length > 0
+        ? calculateTfIdf(queryTokens, this.vocabulary)
+        : null;
+
     const ranked = rawResults.map((result) => {
       const entry = result.entry;
-      const breakdown = this.scoreEntry(entry, queryTokens, queryTags, queryDomain, now);
+      const breakdown = this.scoreEntry(entry, queryTokens, queryTags, queryDomain, now, queryVec);
       return { entry, score: breakdown.total, breakdown };
     });
 
@@ -142,14 +149,17 @@ export class Brain {
   /**
    * Two-pass retrieval — Pass 2: Load.
    * Returns full entries for specific IDs (from a previous scan).
+   * Uses a single WHERE id IN (...) query instead of per-ID lookups.
    */
   loadEntries(ids: string[]): IntelligenceEntry[] {
-    const results: IntelligenceEntry[] = [];
-    for (const id of ids) {
-      const entry = this.vault.get(id);
-      if (entry) results.push(entry);
-    }
-    return results;
+    if (ids.length === 0) return [];
+    const provider = this.vault.getProvider();
+    const placeholders = ids.map(() => '?').join(',');
+    const rows = provider.all<Record<string, unknown>>(
+      `SELECT * FROM entries WHERE id IN (${placeholders})`,
+      ids,
+    );
+    return rows.map(rowToEntry);
   }
 
   /** Rough token estimate for an entry (chars / 4). */
@@ -488,11 +498,12 @@ export class Brain {
     queryTags: string[],
     queryDomain: string | undefined,
     now: number,
+    queryVec: Map<string, number> | null = null,
   ): ScoreBreakdown {
     const w = this.weights;
 
     let semantic = 0;
-    if (this.vocabulary.size > 0 && queryTokens.length > 0) {
+    if (queryVec && queryVec.size > 0) {
       const entryText = [
         entry.title,
         entry.description,
@@ -500,7 +511,6 @@ export class Brain {
         entry.tags.join(' '),
       ].join(' ');
       const entryTokens = tokenize(entryText);
-      const queryVec = calculateTfIdf(queryTokens, this.vocabulary);
       const entryVec = calculateTfIdf(entryTokens, this.vocabulary);
       semantic = cosineSimilarity(queryVec, entryVec);
     }

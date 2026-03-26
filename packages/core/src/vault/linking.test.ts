@@ -68,6 +68,12 @@ class LinkingMockDB implements PersistenceProvider {
   get<T>(sql: string, params?: unknown[]): T | undefined {
     const p = params ?? [];
     if (sql.includes('COUNT(*)')) {
+      if (sql.includes('NOT IN')) {
+        // Count orphan entries (no links)
+        const linkedIds = new Set(this.links.flatMap((l) => [l.source_id, l.target_id]));
+        const count = this.entries.filter((e) => !linkedIds.has(e.id)).length;
+        return { count } as T;
+      }
       const id = p[0] as string;
       const count = this.links.filter((l) => l.source_id === id || l.target_id === id).length;
       return { count } as T;
@@ -101,6 +107,12 @@ class LinkingMockDB implements PersistenceProvider {
       const half = p.length / 2;
       const ids = new Set(p.slice(0, half) as string[]);
       return this.links.filter((l) => ids.has(l.source_id) || ids.has(l.target_id)) as T[];
+    }
+    if (sql.includes('FROM entries WHERE id IN')) {
+      const ids = new Set(p as string[]);
+      return this.entries
+        .filter((e) => ids.has(e.id))
+        .map((e) => ({ id: e.id, title: e.title, type: e.type, domain: e.domain })) as T[];
     }
     if (sql.includes('NOT IN')) {
       const limit = p[0] as number;

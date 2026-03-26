@@ -499,7 +499,7 @@ export class BrainIntelligence {
   // ─── Strength Scoring ─────────────────────────────────────────────
 
   computeStrengths(): PatternStrength[] {
-    // Gather feedback data grouped by entry_id
+    // Gather feedback data grouped by entry_id, JOIN with entries to avoid N+1 vault.get() calls
     const feedbackRows = this.provider.all<{
       entry_id: string;
       total: number;
@@ -508,16 +508,21 @@ export class BrainIntelligence {
       modified: number;
       failed: number;
       last_used: string;
+      entry_title: string | null;
+      entry_domain: string | null;
     }>(
-      `SELECT entry_id,
+      `SELECT bf.entry_id,
               COUNT(*) as total,
-              SUM(CASE WHEN action = 'accepted' THEN 1 ELSE 0 END) as accepted,
-              SUM(CASE WHEN action = 'dismissed' THEN 1 ELSE 0 END) as dismissed,
-              SUM(CASE WHEN action = 'modified' THEN 1 ELSE 0 END) as modified,
-              SUM(CASE WHEN action = 'failed' THEN 1 ELSE 0 END) as failed,
-              MAX(created_at) as last_used
-       FROM brain_feedback
-       GROUP BY entry_id`,
+              SUM(CASE WHEN bf.action = 'accepted' THEN 1 ELSE 0 END) as accepted,
+              SUM(CASE WHEN bf.action = 'dismissed' THEN 1 ELSE 0 END) as dismissed,
+              SUM(CASE WHEN bf.action = 'modified' THEN 1 ELSE 0 END) as modified,
+              SUM(CASE WHEN bf.action = 'failed' THEN 1 ELSE 0 END) as failed,
+              MAX(bf.created_at) as last_used,
+              e.title as entry_title,
+              e.domain as entry_domain
+       FROM brain_feedback bf
+       LEFT JOIN entries e ON e.id = bf.entry_id
+       GROUP BY bf.entry_id`,
     );
 
     // Count unique session domains as spread proxy
@@ -530,10 +535,9 @@ export class BrainIntelligence {
     const strengths: PatternStrength[] = [];
 
     for (const row of feedbackRows) {
-      // Look up vault entry for domain info
-      const entry = this.vault.get(row.entry_id);
-      const domain = entry?.domain ?? 'unknown';
-      const pattern = entry?.title ?? row.entry_id;
+      // Use JOINed entry data — no per-row vault.get() needed
+      const domain = row.entry_domain ?? 'unknown';
+      const pattern = row.entry_title ?? row.entry_id;
 
       // Usage score: min(25, (count / USAGE_MAX) * 25)
       const usageScore = Math.min(25, (row.total / USAGE_MAX) * 25);

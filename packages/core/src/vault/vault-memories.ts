@@ -299,21 +299,29 @@ export function memoryTopics(
 export function memoriesByProject(
   provider: PersistenceProvider,
 ): Array<{ project: string; count: number; memories: Memory[] }> {
-  const rows = provider.all<{ project: string; count: number }>(
-    'SELECT project_path as project, COUNT(*) as count FROM memories WHERE archived_at IS NULL GROUP BY project_path ORDER BY count DESC',
+  // Single query fetching all non-archived memories, grouped client-side by project
+  const allRows = provider.all<Record<string, unknown>>(
+    'SELECT * FROM memories WHERE archived_at IS NULL ORDER BY project_path, created_at DESC',
   );
 
-  return rows.map((row) => {
-    const mems = provider.all<Record<string, unknown>>(
-      'SELECT * FROM memories WHERE project_path = ? AND archived_at IS NULL ORDER BY created_at DESC',
-      [row.project],
-    );
-    return {
-      project: row.project,
-      count: row.count,
-      memories: mems.map(rowToMemory),
-    };
-  });
+  const projectMap = new Map<string, Memory[]>();
+  for (const row of allRows) {
+    const memory = rowToMemory(row);
+    const project = memory.projectPath;
+    if (!projectMap.has(project)) {
+      projectMap.set(project, []);
+    }
+    projectMap.get(project)!.push(memory);
+  }
+
+  // Sort by count descending (matching original behavior)
+  return [...projectMap.entries()]
+    .map(([project, memories]) => ({
+      project,
+      count: memories.length,
+      memories,
+    }))
+    .sort((a, b) => b.count - a.count);
 }
 
 // ── Helper ──────────────────────────────────────────────────────────────

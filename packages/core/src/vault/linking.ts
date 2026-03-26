@@ -145,6 +145,7 @@ export class LinkManager {
   /**
    * Walk the link graph from a starting entry up to `depth` hops.
    * BFS — walks both outgoing and incoming links (undirected).
+   * Batch-loads all links per frontier level to avoid N+1 queries.
    */
   traverse(entryId: string, depth: number = 2): LinkedEntry[] {
     const visited = new Set<string>([entryId]);
@@ -152,51 +153,52 @@ export class LinkManager {
     let frontier = [entryId];
 
     for (let d = 0; d < depth && frontier.length > 0; d++) {
+      // Batch-load all links for entire frontier in one query
+      const allLinks = this.getAllLinksForEntries(frontier);
+
+      // Collect unvisited neighbor IDs
+      const neighborMap = new Map<
+        string,
+        { link: VaultLink; direction: 'outgoing' | 'incoming' }
+      >();
+      for (const link of allLinks) {
+        // Outgoing: source is in frontier, target is the neighbor
+        if (frontier.includes(link.sourceId) && !visited.has(link.targetId)) {
+          if (!neighborMap.has(link.targetId)) {
+            neighborMap.set(link.targetId, { link, direction: 'outgoing' });
+          }
+        }
+        // Incoming: target is in frontier, source is the neighbor
+        if (frontier.includes(link.targetId) && !visited.has(link.sourceId)) {
+          if (!neighborMap.has(link.sourceId)) {
+            neighborMap.set(link.sourceId, { link, direction: 'incoming' });
+          }
+        }
+      }
+
+      if (neighborMap.size === 0) break;
+
+      // Batch-load entry metadata for all neighbors in one query
+      const neighborIds = [...neighborMap.keys()];
+      const metaMap = this.getEntryMetaBatch(neighborIds);
+
       const nextFrontier: string[] = [];
-      for (const currentId of frontier) {
-        this.collectNeighbors(currentId, visited, nextFrontier, result);
+      for (const [neighborId, { link, direction }] of neighborMap) {
+        visited.add(neighborId);
+        nextFrontier.push(neighborId);
+        const entry = metaMap.get(neighborId);
+        if (!entry) continue;
+        result.push({
+          ...entry,
+          linkType: link.linkType,
+          linkDirection: direction,
+          linkNote: link.note,
+        });
       }
       frontier = nextFrontier;
     }
 
     return result;
-  }
-
-  /** Collect unvisited outgoing and incoming neighbors for BFS. */
-  private collectNeighbors(
-    currentId: string,
-    visited: Set<string>,
-    nextFrontier: string[],
-    result: LinkedEntry[],
-  ): void {
-    for (const link of this.getLinks(currentId)) {
-      this.visitNeighbor(link.targetId, link, 'outgoing', visited, nextFrontier, result);
-    }
-    for (const link of this.getBacklinks(currentId)) {
-      this.visitNeighbor(link.sourceId, link, 'incoming', visited, nextFrontier, result);
-    }
-  }
-
-  /** Visit a single neighbor node if not already visited. */
-  private visitNeighbor(
-    neighborId: string,
-    link: VaultLink,
-    direction: 'outgoing' | 'incoming',
-    visited: Set<string>,
-    nextFrontier: string[],
-    result: LinkedEntry[],
-  ): void {
-    if (visited.has(neighborId)) return;
-    visited.add(neighborId);
-    nextFrontier.push(neighborId);
-    const entry = this.getEntryMeta(neighborId);
-    if (!entry) return;
-    result.push({
-      ...entry,
-      linkType: link.linkType,
-      linkDirection: direction,
-      linkNote: link.note,
-    });
   }
 
   // ── Bulk Queries ────────────────────────────────────────────────────
@@ -317,20 +319,43 @@ export class LinkManager {
     const batchSize = opts?.batchSize ?? 50;
     const start = Date.now();
 
-    const orphans = this.getOrphans(10000);
     let processed = 0;
     let linksCreated = 0;
     const preview: Array<{ sourceId: string; targetId: string; linkType: string; score: number }> =
       [];
 
-    for (let i = 0; i < orphans.length; i += batchSize) {
-      const batch = orphans.slice(i, i + batchSize);
-      for (const entry of batch) {
+    // Estimate total for progress reporting (single COUNT query)
+    let totalEstimate = 0;
+    try {
+      const countRow = this.provider.get<{ count: number }>(
+        `SELECT COUNT(*) as count FROM entries
+         WHERE id NOT IN (SELECT source_id FROM vault_links)
+           AND id NOT IN (SELECT target_id FROM vault_links)`,
+      );
+      totalEstimate = countRow?.count ?? 0;
+    } catch {
+      // fall through with 0
+    }
+
+    // Process orphans in batches of batchSize instead of loading all at once.
+    // After each batch, successfully linked entries are no longer orphans,
+    // so the next getOrphans() call returns the next set.
+    // For dry-run mode, we must track processed IDs to avoid re-fetching the same orphans.
+    const processedIds = new Set<string>();
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const batch = this.getOrphans(batchSize);
+      // Filter out already-processed entries (relevant for dry-run where orphan status doesn't change)
+      const unprocessed = batch.filter((e) => !processedIds.has(e.id));
+      if (unprocessed.length === 0) break;
+
+      for (const entry of unprocessed) {
+        processedIds.add(entry.id);
         const created = this.processOrphan(entry.id, threshold, maxLinks, dryRun, preview);
         linksCreated += created;
         processed++;
       }
-      opts?.onProgress?.({ processed, total: orphans.length, linksCreated });
+      opts?.onProgress?.({ processed, total: totalEstimate, linksCreated });
     }
 
     return {
@@ -380,6 +405,27 @@ export class LinkManager {
     } catch {
       return null;
     }
+  }
+
+  /** Batch-load entry metadata for multiple IDs in a single query. */
+  private getEntryMetaBatch(
+    entryIds: string[],
+  ): Map<string, Omit<LinkedEntry, 'linkType' | 'linkDirection' | 'linkNote'>> {
+    const result = new Map<string, Omit<LinkedEntry, 'linkType' | 'linkDirection' | 'linkNote'>>();
+    if (entryIds.length === 0) return result;
+    try {
+      const placeholders = entryIds.map(() => '?').join(',');
+      const rows = this.provider.all<{ id: string; title: string; type: string; domain: string }>(
+        `SELECT id, title, type, domain FROM entries WHERE id IN (${placeholders})`,
+        entryIds,
+      );
+      for (const row of rows) {
+        result.set(row.id, row);
+      }
+    } catch {
+      // graceful degradation
+    }
+    return result;
   }
 }
 

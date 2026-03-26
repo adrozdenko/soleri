@@ -847,7 +847,7 @@ export function createOrchestrateOps(
         }
 
         // 2. Detect GitHub context
-        const ctx = detectGitHubContext(projectPath);
+        const ctx = await detectGitHubContext(projectPath);
         if (!ctx) {
           return {
             status: 'skipped',
@@ -885,7 +885,7 @@ export function createOrchestrateOps(
             };
           }
 
-          const updated = updateGitHubIssueBody(ctx.repo, linkToIssue, body);
+          const updated = await updateGitHubIssueBody(ctx.repo, linkToIssue, body);
           if (!updated) {
             return {
               status: 'error',
@@ -949,7 +949,7 @@ export function createOrchestrateOps(
             continue;
           }
 
-          const issueNumber = createGitHubIssue(ctx.repo, task.title, body, {
+          const issueNumber = await createGitHubIssue(ctx.repo, task.title, body, {
             milestone: milestoneNumber,
             labels: labels.length > 0 ? labels : undefined,
           });

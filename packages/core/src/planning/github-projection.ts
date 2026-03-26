@@ -7,7 +7,10 @@
  * The plan is the source of truth; GitHub issues are the projection.
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -88,15 +91,14 @@ export function parseGitHubRemote(remoteUrl: string): GitHubRepo | null {
  * Detect the GitHub remote from a project directory.
  * Returns null if no GitHub remote found or not a git repo.
  */
-export function detectGitHubRemote(projectPath: string): GitHubRepo | null {
+export async function detectGitHubRemote(projectPath: string): Promise<GitHubRepo | null> {
   try {
-    const output = execFileSync('git', ['remote', 'get-url', 'origin'], {
+    const { stdout } = await execFileAsync('git', ['remote', 'get-url', 'origin'], {
       cwd: projectPath,
-      encoding: 'utf-8',
       timeout: 5000,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
-    return parseGitHubRemote(output);
+      signal: AbortSignal.timeout(5000),
+    });
+    return parseGitHubRemote(stdout.trim());
   } catch {
     return null;
   }
@@ -105,12 +107,11 @@ export function detectGitHubRemote(projectPath: string): GitHubRepo | null {
 /**
  * Check if the `gh` CLI is authenticated.
  */
-export function isGhAuthenticated(): boolean {
+export async function isGhAuthenticated(): Promise<boolean> {
   try {
-    execFileSync('gh', ['auth', 'status'], {
-      encoding: 'utf-8',
+    await execFileAsync('gh', ['auth', 'status'], {
       timeout: 5000,
-      stdio: ['pipe', 'pipe', 'pipe'],
+      signal: AbortSignal.timeout(5000),
     });
     return true;
   } catch {
@@ -125,9 +126,9 @@ export function isGhAuthenticated(): boolean {
 /**
  * List milestones for a GitHub repo.
  */
-export function listMilestones(repo: GitHubRepo): GitHubMilestone[] {
+export async function listMilestones(repo: GitHubRepo): Promise<GitHubMilestone[]> {
   try {
-    const output = execFileSync(
+    const { stdout } = await execFileAsync(
       'gh',
       [
         'api',
@@ -136,12 +137,12 @@ export function listMilestones(repo: GitHubRepo): GitHubMilestone[] {
         '.[] | {number, title, state}',
       ],
       {
-        encoding: 'utf-8',
         timeout: 10000,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        signal: AbortSignal.timeout(10000),
       },
-    ).trim();
+    );
 
+    const output = stdout.trim();
     if (!output) return [];
 
     // gh --jq outputs one JSON object per line
@@ -157,9 +158,12 @@ export function listMilestones(repo: GitHubRepo): GitHubMilestone[] {
 /**
  * List open issues for a GitHub repo.
  */
-export function listOpenIssues(repo: GitHubRepo, limit: number = 100): GitHubIssue[] {
+export async function listOpenIssues(
+  repo: GitHubRepo,
+  limit: number = 100,
+): Promise<GitHubIssue[]> {
   try {
-    const output = execFileSync(
+    const { stdout } = await execFileAsync(
       'gh',
       [
         'issue',
@@ -174,12 +178,12 @@ export function listOpenIssues(repo: GitHubRepo, limit: number = 100): GitHubIss
         'number,title,state,body',
       ],
       {
-        encoding: 'utf-8',
         timeout: 10000,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        signal: AbortSignal.timeout(10000),
       },
-    ).trim();
+    );
 
+    const output = stdout.trim();
     if (!output) return [];
     return JSON.parse(output) as GitHubIssue[];
   } catch {
@@ -190,18 +194,18 @@ export function listOpenIssues(repo: GitHubRepo, limit: number = 100): GitHubIss
 /**
  * List labels for a GitHub repo.
  */
-export function listLabels(repo: GitHubRepo): GitHubLabel[] {
+export async function listLabels(repo: GitHubRepo): Promise<GitHubLabel[]> {
   try {
-    const output = execFileSync(
+    const { stdout } = await execFileAsync(
       'gh',
       ['label', 'list', '--repo', `${repo.owner}/${repo.repo}`, '--json', 'name,color'],
       {
-        encoding: 'utf-8',
         timeout: 10000,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        signal: AbortSignal.timeout(10000),
       },
-    ).trim();
+    );
 
+    const output = stdout.trim();
     if (!output) return [];
     return JSON.parse(output) as GitHubLabel[];
   } catch {
@@ -217,16 +221,18 @@ export function listLabels(repo: GitHubRepo): GitHubLabel[] {
  * Detect full GitHub context for a project.
  * Returns null if not a GitHub project or gh CLI not available.
  */
-export function detectGitHubContext(projectPath: string): GitHubContext | null {
-  const repo = detectGitHubRemote(projectPath);
+export async function detectGitHubContext(projectPath: string): Promise<GitHubContext | null> {
+  const repo = await detectGitHubRemote(projectPath);
   if (!repo) return null;
 
-  const authenticated = isGhAuthenticated();
+  const authenticated = await isGhAuthenticated();
   if (!authenticated) return null;
 
-  const milestones = listMilestones(repo);
-  const existingIssues = listOpenIssues(repo);
-  const labels = listLabels(repo);
+  const [milestones, existingIssues, labels] = await Promise.all([
+    listMilestones(repo),
+    listOpenIssues(repo),
+    listLabels(repo),
+  ]);
 
   return { repo, authenticated, milestones, existingIssues, labels };
 }
@@ -370,7 +376,7 @@ export function formatIssueBody(
  * Create a GitHub issue using the `gh` CLI.
  * Returns the issue number, or null on failure.
  */
-export function createGitHubIssue(
+export async function createGitHubIssue(
   repo: GitHubRepo,
   title: string,
   body: string,
@@ -378,7 +384,7 @@ export function createGitHubIssue(
     milestone?: number;
     labels?: string[];
   },
-): number | null {
+): Promise<number | null> {
   try {
     const args = [
       'issue',
@@ -399,14 +405,13 @@ export function createGitHubIssue(
       args.push('--label', options.labels.join(','));
     }
 
-    const output = execFileSync('gh', args, {
-      encoding: 'utf-8',
+    const { stdout } = await execFileAsync('gh', args, {
       timeout: 15000,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
+      signal: AbortSignal.timeout(15000),
+    });
 
     // gh issue create returns the issue URL: https://github.com/owner/repo/issues/123
-    const match = output.match(/\/issues\/(\d+)/);
+    const match = stdout.trim().match(/\/issues\/(\d+)/);
     return match ? parseInt(match[1], 10) : null;
   } catch {
     return null;
@@ -416,13 +421,13 @@ export function createGitHubIssue(
 /**
  * Update an existing GitHub issue body (for linking plans to existing issues).
  */
-export function updateGitHubIssueBody(
+export async function updateGitHubIssueBody(
   repo: GitHubRepo,
   issueNumber: number,
   body: string,
-): boolean {
+): Promise<boolean> {
   try {
-    execFileSync(
+    await execFileAsync(
       'gh',
       [
         'issue',
@@ -434,9 +439,8 @@ export function updateGitHubIssueBody(
         body,
       ],
       {
-        encoding: 'utf-8',
         timeout: 15000,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        signal: AbortSignal.timeout(15000),
       },
     );
     return true;

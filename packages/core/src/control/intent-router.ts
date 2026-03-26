@@ -162,6 +162,7 @@ export class IntentRouter {
   private vault: Vault;
   private provider: PersistenceProvider;
   private currentMode: OperationalMode = 'GENERAL-MODE';
+  private modesCache: ModeConfig[] | null = null;
 
   constructor(vault: Vault) {
     this.vault = vault;
@@ -322,6 +323,7 @@ export class IntentRouter {
 
     const previousMode = this.currentMode;
     this.currentMode = resolvedMode;
+    this.modesCache = null; // Invalidate cache on mode change
     const behaviorRules = JSON.parse(row.behavior_rules) as string[];
 
     return { previousMode, currentMode: resolvedMode, behaviorRules };
@@ -333,18 +335,16 @@ export class IntentRouter {
 
   getBehaviorRules(mode?: OperationalMode): string[] {
     const target = mode ?? this.currentMode;
-    const row = this.provider.get<{ behavior_rules: string }>(
-      'SELECT behavior_rules FROM agent_modes WHERE mode = ?',
-      [target],
-    );
-
-    if (!row) return [];
-    return JSON.parse(row.behavior_rules) as string[];
+    const modes = this.getModes();
+    const found = modes.find((m) => m.mode === target);
+    return found ? found.behaviorRules : [];
   }
 
   getModes(): ModeConfig[] {
+    if (this.modesCache) return this.modesCache;
     const rows = this.provider.all<ModeRow>('SELECT * FROM agent_modes ORDER BY mode');
-    return rows.map(rowToModeConfig);
+    this.modesCache = rows.map(rowToModeConfig);
+    return this.modesCache;
   }
 
   registerMode(config: ModeConfig): void {
@@ -359,6 +359,7 @@ export class IntentRouter {
         JSON.stringify(config.keywords),
       ],
     );
+    this.modesCache = null;
   }
 
   updateModeRules(mode: OperationalMode, rules: string[]): void {
@@ -369,6 +370,7 @@ export class IntentRouter {
     if (result.changes === 0) {
       throw new Error(`Unknown mode: ${mode}`);
     }
+    this.modesCache = null;
   }
 
   // ─── Routing Feedback ─────────────────────────────────────────────
