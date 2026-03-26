@@ -295,11 +295,70 @@ export function registerEngine(
   return { tools: registeredTools, totalOps, registerTool };
 }
 
+// ─── Op Visibility ───────────────────────────────────────────────────
+
+/**
+ * Ops classified as internal — hidden from MCP tool descriptions but still
+ * callable programmatically. Centralized here for easy auditing.
+ *
+ * Criteria: ops that are infrastructure plumbing, token/account management,
+ * bulk operations, or auto-* automation that users never call directly.
+ */
+/** @internal Exported for testing — do not use outside engine */
+export const INTERNAL_OPS = new Set([
+  // Admin: token management
+  'admin_create_token',
+  'admin_revoke_token',
+  'admin_list_tokens',
+  // Admin: account management
+  'admin_add_account',
+  'admin_remove_account',
+  'admin_rotate_account',
+  'admin_list_accounts',
+  'admin_account_status',
+  // Admin: infrastructure debug
+  'admin_vault_size',
+  'admin_vault_analytics',
+  'admin_search_insights',
+  'admin_env',
+  'admin_gc',
+  'admin_export_config',
+  'admin_key_pool_status',
+  'admin_persistence_info',
+  // Admin: flags
+  'admin_list_flags',
+  'admin_get_flag',
+  'admin_set_flag',
+  // Admin: setup internals
+  'admin_inject_claude_md',
+  // Admin: telemetry
+  'admin_telemetry',
+  'admin_telemetry_recent',
+  'admin_telemetry_reset',
+  'telemetry_errors',
+  'telemetry_slow_ops',
+  // Vault: bulk operations
+  'vault_bulk_add',
+  'vault_bulk_remove',
+  // Plan: automation
+  'plan_auto_reconcile',
+  'plan_auto_improve',
+]);
+
+/** Resolve effective visibility: explicit field wins, then INTERNAL_OPS set, else 'user'. */
+function resolveVisibility(op: OpDefinition): 'user' | 'internal' {
+  if (op.visibility) return op.visibility;
+  return INTERNAL_OPS.has(op.name) ? 'internal' : 'user';
+}
+
 // ─── Tool Registration (No Factory) ──────────────────────────────────
 
 /**
  * Register a single grouped tool with op dispatch.
  * This is the replacement for registerFacade() — same behavior, no FacadeConfig type.
+ *
+ * Internal ops (visibility: 'internal') are excluded from the MCP tool description
+ * but remain dispatchable — they just don't show up in the op list Claude sees.
  */
 function registerModuleTool(
   server: McpServer,
@@ -308,7 +367,8 @@ function registerModuleTool(
   ops: OpDefinition[],
   authPolicy?: () => AuthPolicy,
 ): void {
-  const opNames = ops.map((o) => o.name);
+  const userOps = ops.filter((o) => resolveVisibility(o) !== 'internal');
+  const opNames = userOps.map((o) => o.name);
   const opMap = new Map(ops.map((o) => [o.name, o]));
 
   server.tool(

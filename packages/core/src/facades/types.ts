@@ -25,6 +25,9 @@ export const AUTH_LEVEL_RANK: Record<AuthLevel, number> = {
   admin: 2,
 };
 
+/** Op visibility — controls whether an op is exposed via MCP tool registration */
+export type OpVisibility = 'user' | 'internal';
+
 /** Operation definition within a facade */
 export interface OpDefinition {
   name: string;
@@ -34,6 +37,8 @@ export interface OpDefinition {
   schema?: z.ZodType;
   /** Promote to a first-class MCP tool with full schema discovery. */
   hot?: boolean;
+  /** Controls MCP exposure: 'user' (default) = listed in tool, 'internal' = hidden from MCP but callable programmatically. */
+  visibility?: OpVisibility;
 }
 
 /** Facade configuration — one MCP tool */
