@@ -18,7 +18,11 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      - run: npm run build
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run build --workspace=@soleri/forge
+      - run: npm run build --workspace=@soleri/cli
+      - run: npm run build --workspace=create-soleri
+      - run: npm run build --if-present --workspaces
       - uses: actions/upload-artifact@v4
         with:
           name: build-output
@@ -111,7 +115,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: build-output
-      - run: npm run build
+      - run: npm run build --workspace=@soleri/core
+      - run: npm run build --workspace=@soleri/forge
+      - run: npm run build --workspace=@soleri/cli
+      - run: npm run build --workspace=create-soleri
       - run: npm run test:e2e
 
   # ─── Code quality (parallel with tests) ──────────────────────────
