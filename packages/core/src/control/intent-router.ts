@@ -15,6 +15,7 @@ import type {
   OperationalMode,
   IntentClassification,
   ModeConfig,
+  MorphOptions,
   MorphResult,
   RoutingAccuracyReport,
 } from './types.js';
@@ -288,7 +289,7 @@ export class IntentRouter {
 
   // ─── Mode Management ───────────────────────────────────────────────
 
-  morph(mode: OperationalMode): MorphResult {
+  morph(mode: OperationalMode, options?: MorphOptions): MorphResult {
     // Handle "reset" as a built-in alias for GENERAL-MODE
     const resolvedMode: OperationalMode = (mode as string) === 'reset' ? 'GENERAL-MODE' : mode;
 
@@ -302,6 +303,21 @@ export class IntentRouter {
         .map((r) => r.mode)
         .join(', ');
       throw new Error(`Unknown mode: ${mode}. Available: ${available}`);
+    }
+
+    // ─── YOLO-MODE activation gate ────────────────────────────────
+    // YOLO-MODE requires the yolo-safety hook pack to be installed.
+    // The CLI/facade layer provides hookPackInstalled based on filesystem check.
+    if (resolvedMode === 'YOLO-MODE' && !options?.hookPackInstalled) {
+      return {
+        previousMode: this.currentMode,
+        currentMode: this.currentMode, // unchanged — mode switch blocked
+        behaviorRules: this.getBehaviorRules(),
+        blocked: true,
+        error:
+          'YOLO-MODE requires the yolo-safety hook pack. ' +
+          'Install it with: soleri hooks add-pack yolo-safety',
+      };
     }
 
     const previousMode = this.currentMode;

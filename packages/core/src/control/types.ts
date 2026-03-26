@@ -97,10 +97,19 @@ export interface ModeConfig {
   keywords: string[];
 }
 
+export interface MorphOptions {
+  /** Whether the yolo-safety hook pack is installed. Required for YOLO-MODE activation. */
+  hookPackInstalled?: boolean;
+}
+
 export interface MorphResult {
   previousMode: OperationalMode;
   currentMode: OperationalMode;
   behaviorRules: string[];
+  /** Present when activation is refused (e.g. missing hook pack). */
+  error?: string;
+  /** When true, the mode switch was blocked. */
+  blocked?: boolean;
 }
 
 export interface RoutingAccuracyReport {

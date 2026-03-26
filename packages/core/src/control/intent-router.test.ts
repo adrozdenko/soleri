@@ -348,11 +348,37 @@ describe('IntentRouter', () => {
       expect(result.matchedKeywords).toContain('yolo');
     });
 
-    it('morph to YOLO-MODE succeeds', () => {
-      const result = router.morph('YOLO-MODE');
+    it('morph to YOLO-MODE succeeds when hook pack is installed', () => {
+      const result = router.morph('YOLO-MODE', { hookPackInstalled: true });
       expect(result.previousMode).toBe('GENERAL-MODE');
       expect(result.currentMode).toBe('YOLO-MODE');
       expect(result.behaviorRules.length).toBe(5);
+      expect(result.blocked).toBeUndefined();
+      expect(result.error).toBeUndefined();
+    });
+
+    it('morph to YOLO-MODE fails when hook pack is missing', () => {
+      const result = router.morph('YOLO-MODE');
+      expect(result.blocked).toBe(true);
+      expect(result.error).toContain('yolo-safety hook pack');
+      expect(result.error).toContain('soleri hooks add-pack yolo-safety');
+      expect(result.currentMode).toBe('GENERAL-MODE'); // unchanged
+      expect(router.getCurrentMode()).toBe('GENERAL-MODE'); // not switched
+    });
+
+    it('morph to YOLO-MODE fails when hookPackInstalled is explicitly false', () => {
+      const result = router.morph('YOLO-MODE', { hookPackInstalled: false });
+      expect(result.blocked).toBe(true);
+      expect(result.error).toContain('yolo-safety hook pack');
+      expect(router.getCurrentMode()).toBe('GENERAL-MODE');
+    });
+
+    it('morph to other modes is unaffected by the gate', () => {
+      const result = router.morph('BUILD-MODE');
+      expect(result.currentMode).toBe('BUILD-MODE');
+      expect(result.blocked).toBeUndefined();
+      expect(result.error).toBeUndefined();
+      expect(router.getCurrentMode()).toBe('BUILD-MODE');
     });
 
     it('get_behavior_rules returns 5 rules', () => {

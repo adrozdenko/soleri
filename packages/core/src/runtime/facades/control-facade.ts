@@ -118,11 +118,19 @@ export function createControlFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         mode: z
           .string()
           .describe(
-            'The operational mode to switch to. Valid modes: BUILD-MODE, FIX-MODE, VALIDATE-MODE, DESIGN-MODE, IMPROVE-MODE, DELIVER-MODE, EXPLORE-MODE, PLAN-MODE, REVIEW-MODE, GENERAL-MODE. Use "reset" to return to GENERAL-MODE.',
+            'The operational mode to switch to. Valid modes: BUILD-MODE, FIX-MODE, VALIDATE-MODE, DESIGN-MODE, IMPROVE-MODE, DELIVER-MODE, EXPLORE-MODE, PLAN-MODE, REVIEW-MODE, GENERAL-MODE, YOLO-MODE. Use "reset" to return to GENERAL-MODE.',
+          ),
+        hookPackInstalled: z
+          .boolean()
+          .optional()
+          .describe(
+            'Whether the yolo-safety hook pack is installed. Required for YOLO-MODE activation. The CLI layer should check for the hook pack before calling morph.',
           ),
       }),
       handler: async (params) => {
-        return intentRouter.morph(params.mode as OperationalMode);
+        return intentRouter.morph(params.mode as OperationalMode, {
+          hookPackInstalled: params.hookPackInstalled as boolean | undefined,
+        });
       },
     },
     {
