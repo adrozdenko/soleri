@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Safety Hook Pack (#340)
+
+Anti-deletion hook extracted from `yolo-safety` into standalone `safety` pack, installable via `soleri hooks add-pack safety`. Added 7-day auto-cleanup for staging backups. `yolo-safety` now composes from `safety`. Fixed `getInstalledPacks` to detect composed packs.
+
+### Skill-to-Hook Conversion System (#285-290)
+
+Complete system for converting repeatedly-invoked skills into automated Claude Code hooks.
+
+- **Candidate scorer** — 4-dimension rubric (frequency, event correlation, determinism, autonomy) in `@soleri/core`
+- **`soleri hooks convert`** — scaffolds hook pack from CLI args (all 5 hook events, 3 action levels)
+- **`soleri hooks test`** — validation framework with 15 fixtures per hook, false positive/negative detection
+- **`soleri hooks promote/demote`** — graduated enforcement: remind → warn → block
+- **marketing-research** worked example — PreToolUse hook for brand guidelines
+- **`actionLevel`** field added to `HookPackManifest`
+- 100 unit tests + 18 e2e tests
+
+### Flock-Guard Hook Pack (#371)
+
+Parallel agent lock guard — prevents lockfile corruption when multiple agents run in worktrees.
+
+- **Atomic `mkdir` + JSON state** — POSIX-portable cross-process locking (not flock)
+- **PreToolUse** acquires lock, **PostToolUse** releases — spans the operation
+- **Stale detection** — 30s timeout prevents deadlocks from crashed agents
+- **Reentrant** — same agent can chain multiple install commands
+- Protects: `npm install`, `yarn`, `pnpm install`, `cargo build/update`, `pip install`
+- 10 unit tests + 9 e2e tests (parallel contention simulation)
+
 ## v9.4.0 — 2026-03-26 — YOLO Mode, Op Visibility & Brain Feedback Loop
 
 ### YOLO Mode (#343, #347)

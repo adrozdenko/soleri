@@ -118,7 +118,6 @@ The `PersistenceProvider` interface exists for future extensibility, but SQLite 
 ### Guides
 
 - [**Knowledge Management**](docs/guides/knowledge-management.md) — How to feed, train, and curate your agent's brain. The daily rhythm: search, capture, curate.
-- [**Cognee Setup**](docs/guides/cognee-setup.md) — Optional vector search integration.
 
 ### Knowledge Packs
 
@@ -133,6 +132,28 @@ Install expertise in one command:
 npx @soleri/cli install-knowledge ./bundles/react-patterns
 ```
 
+### Hook Packs
+
+Automated quality gates and safety guardrails for Claude Code:
+
+```bash
+soleri hooks add-pack safety          # Anti-deletion staging for destructive commands
+soleri hooks add-pack flock-guard     # Parallel agent lockfile protection
+soleri hooks add-pack clean-commits   # No AI attribution in git commits
+soleri hooks add-pack typescript-safety  # Block unsafe TS patterns
+soleri hooks add-pack a11y            # Accessibility enforcement
+soleri hooks add-pack full            # All of the above
+```
+
+Convert your own skills into automated hooks:
+
+```bash
+soleri hooks convert my-hook --event PreToolUse --matcher "Write|Edit" \
+  --pattern "**/src/**" --action remind --message "Check guidelines"
+soleri hooks test my-hook             # Validate with fixtures
+soleri hooks promote my-hook          # remind → warn → block
+```
+
 ### Teams & Ops
 
 - **Connected vaults** — Link agent, project, and team vaults with automatic search priority.
@@ -142,11 +163,11 @@ npx @soleri/cli install-knowledge ./bundles/react-patterns
 ## Testing
 
 ```bash
-npm test                # Unit tests — 233 files, 3,800+ tests
-npm run test:e2e        # E2E tests — 880+ tests across 28 files
+npm test                # Unit tests — 313 files, 3,900+ tests
+npm run test:e2e        # E2E tests — 900+ tests across 30 files
 ```
 
-The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), all 20 engine modules across 8 vault-family facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, and domain pack validation.
+The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), all 20 engine modules across 8 vault-family facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, hook pack validation, and domain pack validation.
 
 ## Contributing
 
