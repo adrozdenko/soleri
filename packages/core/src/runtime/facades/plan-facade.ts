@@ -12,7 +12,7 @@ import { createChainOps } from '../chain-ops.js';
 import { PlanGradeRejectionError } from '../../planning/planner.js';
 
 export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { planner } = runtime;
+  const { planner, vault } = runtime;
 
   return [
     // ─── Planning (inline from core-ops.ts) ─────────────────────
@@ -45,16 +45,35 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           .describe('Rejected alternative approaches — plans with 2+ alternatives score higher'),
       }),
       handler: async (params) => {
+        const objective = params.objective as string;
+        const decisions = ((params.decisions as string[]) ?? []).slice();
+
+        // Vault enrichment: search for patterns matching the objective
+        let vaultEntryIds: string[] = [];
+        try {
+          const results = vault.search(objective, { limit: 5 });
+          if (results.length > 0) {
+            vaultEntryIds = results.map((r) => r.entry.id);
+            for (const r of results) {
+              decisions.push(
+                `Vault pattern: ${r.entry.title ?? r.entry.id} (score: ${r.score.toFixed(2)}) [entryId:${r.entry.id}]`,
+              );
+            }
+          }
+        } catch {
+          // Vault search failed — proceed without enrichment
+        }
+
         const plan = planner.create({
-          objective: params.objective as string,
+          objective,
           scope: params.scope as string,
-          decisions: (params.decisions as string[]) ?? [],
+          decisions,
           tasks: (params.tasks as Array<{ title: string; description: string }>) ?? [],
           alternatives: params.alternatives as
             | Array<{ approach: string; pros: string[]; cons: string[]; rejected_reason: string }>
             | undefined,
         });
-        return { created: true, plan };
+        return { created: true, plan, vaultEntryIds };
       },
     },
     {
