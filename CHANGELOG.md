@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v9.7.0 — 2026-03-27 — Paperclip Adaptation & Runtime Foundations
+
+### Paperclip Adaptation — 3 Features (#413–#415)
+
+Adapts key patterns from [Paperclip AI](https://github.com/paperclipai/paperclip) into Soleri, completing the Paperclip Adaptation milestone.
+
+#### Skill Trust Levels & Source Tracking (#413, #416–#423)
+
+Skills now carry provenance metadata — Soleri knows where every skill came from and how dangerous it is.
+
+- **TrustClassifier** — auto-classifies skills on install/sync: `markdown_only` (safe), `assets` (warning), `scripts` (requires approval) (#417)
+- **Source tracking** — every skill records its origin: `builtin`, `pack`, `local`, `github`, `npm` (#416)
+- **Approval gate** — skills with executable scripts require explicit user approval before installation (#419)
+- **Engine version compatibility** — semver check against current Soleri version, returns `compatible`/`unknown`/`invalid` (#420)
+- **CLI visibility** — `soleri skills list --trust` shows trust level, source, and compatibility (#421)
+- 19 unit tests (#422)
+
+#### Session Compaction Policies (#414, #424–#432)
+
+Configurable session rotation with handoff notes — agents pick up where they left off instead of starting cold.
+
+- **CompactionEvaluator** — checks three thresholds: `maxRuns` (200), `maxInputTokens` (2M), `maxAge` (72h) (#425)
+- **Three-level PolicyResolver** — agent.yaml overrides > adapter defaults > engine defaults, individual field merge (#426)
+- **HandoffRenderer** — markdown handoff notes with reason, in-progress work, key decisions, files modified (#427)
+- **ContextHealthMonitor integration** — evaluator runs on every health check, triggers PreCompact hook (#428)
+- **Handoff injection** — persisted on rotation, injected into next session_start (#429)
+- **agent.yaml config** — `engine.compactionPolicy` block in agent schema (#430)
+- 25 unit tests (#431)
+
+#### Task Ancestry & Goal Context Hierarchy (#415, #433–#441)
+
+Plans and tasks now carry the full chain of WHY — subagents understand the mission, not just the task.
+
+- **Goal type** — `objective` → `project` → `plan` → `task` hierarchy with status tracking (#433)
+- **GoalAncestry class** — `getAncestors()` walks parent chain (max 10, cycle detection), `getContext()` renders markdown, `inject()` adds to ExecutionContext (#434)
+- **Goal storage** — JSON-backed persistence with CRUD operations (#435)
+- **Planner integration** — `create_plan` accepts optional `goalId`, `plan_split` inherits to child tasks (#436, #437)
+- **GitHub projection** — projected issues include `## Goal Context` section (#438)
+- **Subagent dispatch** — goal ancestry injected into execution context on dispatch (#439)
+- 22 unit tests (#440)
+
+### Adapter Abstraction & Subagent Runtime (#402–#412)
+
+Foundation layer for multi-runtime support, landed in v9.6.0 cycle.
+
+- **Adapter abstraction** — strategy pattern for runtime adapters (Claude Code first) (#402)
+- **Subagent runtime** — dispatcher, concurrency manager, orphan reaper, result aggregator, workspace resolver (#403–#408)
+- **Pack lifecycle** — install/uninstall/update hooks for pack state machines (#409)
+- **Orchestrate ops** — runtime orchestration operations for subagent coordination (#410)
+
+### Forge & CLI Improvements
+
+- **CLAUDE.md composition** — slimmed down composed output by ~88% (#323)
+- **Engine rules** — added getting started, troubleshooting, and CLAUDE.md composition pipeline knowledge
+- **CLI scaffold fix** — scaffold agent in current directory instead of `~/.soleri/`
+- **Lazy-load better-sqlite3** — eliminates native dep requirement during scaffolding
+- **create-soleri** — include `dist/` in published npm tarball
+
+### CI & Testing
+
+- **lint-staged** — package.json formatting via oxfmt
+- **E2E stability** — threads pool for heavy tests, fire-and-forget cleanup to prevent worker timeout
+- **Windows** — path fixes and E2E assertion corrections
+
 ## v9.5.0 — 2026-03-27 — Performance, Windows Support & Forge Polish
 
 ### Performance — 10 Issues Resolved (#385–#394)
