@@ -5,17 +5,21 @@ import type { OpDefinition } from '../facades/types.js';
 
 // ─── Mock Node.js fs/os modules ────────────────────────────────────────
 
+/** Normalize path separators so Windows backslash paths match forward-slash keys */
+const norm = (p: string): string => p.replace(/\\/g, '/');
+
 const mockFs: Record<string, string> = {};
 const mockDirs = new Set<string>();
 
 vi.mock('node:fs', () => ({
-  existsSync: vi.fn((p: string) => p in mockFs || mockDirs.has(p)),
+  existsSync: vi.fn((p: string) => norm(p) in mockFs || mockDirs.has(norm(p))),
   readFileSync: vi.fn((p: string) => {
-    if (p in mockFs) return mockFs[p];
+    const key = norm(p);
+    if (key in mockFs) return mockFs[key];
     throw new Error(`ENOENT: ${p}`);
   }),
   writeFileSync: vi.fn((p: string, content: string) => {
-    mockFs[p] = content;
+    mockFs[norm(p)] = content;
   }),
   mkdirSync: vi.fn((_p: string) => undefined),
   copyFileSync: vi.fn(),
@@ -30,7 +34,8 @@ vi.mock('node:os', () => ({
 
 vi.mock('node:path', async () => {
   const actual = await vi.importActual<typeof import('node:path')>('node:path');
-  return actual;
+  // Always use posix path semantics so mock filesystem keys (forward slashes) work on all platforms
+  return { ...actual.posix, default: actual.posix };
 });
 
 vi.mock('./claude-md-helpers.js', () => ({
