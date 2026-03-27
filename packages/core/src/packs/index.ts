@@ -14,6 +14,10 @@ export {
   type InstalledPack,
   type InstallResult,
   type ValidateResult,
+  type TrustLevel,
+  type SourceType,
+  type SkillInventoryItem,
+  type SkillMetadata,
 } from './types.js';
 
 export { PackInstaller } from './pack-installer.js';

@@ -7,12 +7,17 @@
  */
 
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
+import type { SkillMetadata, SourceType } from '../packs/types.js';
+import { classifyTrust } from './trust-classifier.js';
+import { checkVersionCompat } from '../packs/resolver.js';
 
 export interface SkillEntry {
   name: string;
   sourcePath: string;
+  /** Trust and source metadata (populated during classification) */
+  metadata?: SkillMetadata;
 }
 
 export interface SyncResult {
@@ -20,6 +25,27 @@ export interface SyncResult {
   updated: string[];
   skipped: string[];
   failed: string[];
+}
+
+/** Error thrown when a skill requires approval due to scripts trust level */
+export class ApprovalRequiredError extends Error {
+  readonly skillName: string;
+  readonly trust: 'scripts';
+  readonly inventory: SkillMetadata['inventory'];
+
+  constructor(skillName: string, inventory: SkillMetadata['inventory']) {
+    super(
+      `Skill "${skillName}" contains executable scripts and requires explicit approval. ` +
+        `Scripts found: ${inventory
+          .filter((i) => i.kind === 'script')
+          .map((i) => i.path)
+          .join(', ')}`,
+    );
+    this.name = 'ApprovalRequiredError';
+    this.skillName = skillName;
+    this.trust = 'scripts';
+    this.inventory = inventory;
+  }
 }
 
 /** Discover skill files (SKILL.md) in skills directories */
@@ -102,4 +128,91 @@ export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string)
   }
 
   return result;
+}
+
+// =============================================================================
+// TRUST CLASSIFICATION & SOURCE TRACKING
+// =============================================================================
+
+/**
+ * Check engine version compatibility for a skill.
+ * Returns 'compatible', 'unknown' (no version specified), or 'invalid'.
+ */
+export function checkSkillCompatibility(
+  engineVersion?: string,
+  currentVersion?: string,
+): 'compatible' | 'unknown' | 'invalid' {
+  if (!engineVersion) return 'unknown';
+  if (!currentVersion) return 'unknown';
+  return checkVersionCompat(currentVersion, engineVersion) ? 'compatible' : 'invalid';
+}
+
+/**
+ * Infer the source type for a skill based on its directory path.
+ */
+function inferSourceType(skillDir: string): SourceType {
+  if (skillDir.includes('node_modules')) return 'npm';
+  if (skillDir.includes('.soleri') || skillDir.includes('.salvador')) return 'builtin';
+  return 'local';
+}
+
+/**
+ * Read engine version from a skill's SKILL.md frontmatter.
+ * Looks for `engine:` or `engineVersion:` in YAML frontmatter.
+ */
+function readSkillEngineVersion(skillPath: string): string | undefined {
+  try {
+    const content = readFileSync(skillPath, 'utf-8');
+    const fmStart = content.indexOf('---');
+    if (fmStart !== 0) return undefined;
+    const fmEnd = content.indexOf('---', 3);
+    if (fmEnd === -1) return undefined;
+    const fm = content.slice(3, fmEnd);
+    // eslint-disable-next-line no-control-regex
+    const match = fm.match(/^(?:engine|engineVersion)\s*:\s*["']?([^"'\n]+)["']?/m);
+    return match?.[1]?.trim();
+  } catch {
+    return undefined;
+  }
+}
+
+export interface ClassifySkillsOptions {
+  /** Current engine version for compatibility checking */
+  currentEngineVersion?: string;
+  /** Skills that have been explicitly approved for scripts trust level */
+  approvedScripts?: Set<string>;
+}
+
+/**
+ * Classify skills with trust levels and source tracking.
+ * Enriches SkillEntry[] with metadata. Throws ApprovalRequiredError
+ * for skills with 'scripts' trust unless explicitly approved.
+ */
+export function classifySkills(
+  skills: SkillEntry[],
+  options: ClassifySkillsOptions = {},
+): SkillEntry[] {
+  return skills.map((skill) => {
+    const skillDir = dirname(skill.sourcePath);
+    const { trust, inventory } = classifyTrust(skillDir);
+
+    // Approval gate for scripts
+    if (trust === 'scripts' && !options.approvedScripts?.has(skill.name)) {
+      throw new ApprovalRequiredError(skill.name, inventory);
+    }
+
+    const engineVersion = readSkillEngineVersion(skill.sourcePath);
+    const sourceType = inferSourceType(skillDir);
+    const compatibility = checkSkillCompatibility(engineVersion, options.currentEngineVersion);
+
+    const metadata: SkillMetadata = {
+      trust,
+      source: { type: sourceType, uri: skillDir },
+      compatibility,
+      engineVersion,
+      inventory,
+    };
+
+    return { ...skill, metadata };
+  });
 }
