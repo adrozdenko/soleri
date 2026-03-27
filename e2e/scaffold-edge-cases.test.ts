@@ -29,8 +29,10 @@ describe('E2E: scaffold-edge-cases', () => {
     mkdirSync(tempDir, { recursive: true });
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    // Fire-and-forget: don't await cleanup to avoid blocking the event loop
+    // during teardown, which triggers vitest birpc timeout on CI.
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should scaffold with many domains (10) and create all domain data files', () => {

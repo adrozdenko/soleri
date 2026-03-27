@@ -100,8 +100,8 @@ describe('Journey 1: Scaffold → Build → Generated tests pass', () => {
     mkdirSync(tempDir, { recursive: true });
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should scaffold an agent with 2 domains', () => {
@@ -180,8 +180,8 @@ describe('Journey 2: Agent refresh', () => {
     agentDir = result.agentDir;
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should have initial CLAUDE.md content file', () => {
@@ -261,8 +261,8 @@ describe('Journey 3: Agent diff', () => {
     agentDir = result.agentDir;
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should detect when generated content matches latest templates (no drift)', () => {
@@ -335,8 +335,8 @@ describe('Journey 4: Generated entry-point structure', () => {
     entryPoint = readFileSync(join(agentDir, 'src/index.ts'), 'utf-8');
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should import createAgentRuntime', () => {
@@ -419,8 +419,8 @@ describe('Journey 4b: Entry-point with domain packs', () => {
     entryPoint = readFileSync(join(result.agentDir, 'src/index.ts'), 'utf-8');
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should import loadDomainPacksFromConfig', () => {
@@ -469,8 +469,8 @@ describe('Journey 5: Generated test file structure', () => {
     testFile = readFileSync(join(agentDir, 'src/__tests__/facades.test.ts'), 'utf-8');
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should exist at the expected path', () => {
@@ -543,8 +543,8 @@ describe('Journey 6: CLAUDE.md content generation', () => {
     );
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should export getClaudeMdContent function', () => {
@@ -627,8 +627,8 @@ describe('Journey 7: Skills installation', () => {
     agentDir = result.agentDir;
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should have a skills/ directory', () => {
@@ -682,8 +682,8 @@ describe('Edge cases', () => {
     mkdirSync(tempDir, { recursive: true });
   });
 
-  afterAll(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+  afterAll(() => {
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   it('should scaffold with no domains (core only)', () => {

@@ -7,7 +7,8 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffold } from '@soleri/forge/lib';
@@ -48,7 +49,7 @@ describe('E2E: skills-and-domains', () => {
   }, 60_000);
 
   afterAll(() => {
-    rmSync(tempDir, { recursive: true, force: true });
+    rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
   // ─── Skills Validation ─────────────────────────────────────────────
