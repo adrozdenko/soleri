@@ -56,10 +56,19 @@ export function composeClaudeMd(agentDir: string, tools?: ToolEntry[]): Composed
   // 5. Essential tools table
   sections.push(composeToolsTable(agentYaml, tools));
 
-  // 6. Engine rules (from instructions/_engine.md)
+  // 6. Engine rules — NOT inlined (they are injected once into ~/.claude/CLAUDE.md
+  //    or project CLAUDE.md via `soleri install`). Including them here would
+  //    triple-load the rules (~8k tokens duplicated per layer).
+  //    We emit a short reference so the agent knows rules exist.
   const enginePath = join(agentDir, 'instructions', '_engine.md');
   if (existsSync(enginePath)) {
-    sections.push(readFileSync(enginePath, 'utf-8').trim());
+    sections.push(
+      '<!-- soleri:engine-rules-ref -->\n' +
+        '> **Engine rules** are loaded from the global or project-level CLAUDE.md ' +
+        '(injected by `soleri install`). See `instructions/_engine.md` for the full rules.\n' +
+        '<!-- /soleri:engine-rules-ref -->',
+    );
+    // Note: _engine.md is still tracked as a source for change detection
     sources.push(enginePath);
   }
 
@@ -304,6 +313,23 @@ function extractSkillDescription(content: string): string | null {
   return parts.length > 0 ? parts.join(' ') : null;
 }
 
+/**
+ * Truncate a skill description to a short trigger phrase.
+ * Full descriptions are already loaded by Claude Code from SKILL.md files,
+ * so CLAUDE.md only needs enough to match intent.
+ */
+function truncateSkillDesc(desc: string, maxLen = 80): string {
+  // Take up to first " — " dash separator (trigger phrase before the details)
+  const dashIdx = desc.indexOf(' — ');
+  const candidate = dashIdx > 0 ? desc.slice(0, dashIdx) : desc;
+  // Also try first sentence
+  const dotIdx = candidate.indexOf('. ');
+  const sentence = dotIdx > 0 ? candidate.slice(0, dotIdx) : candidate;
+  // Truncate to maxLen
+  if (sentence.length <= maxLen) return sentence;
+  return sentence.slice(0, maxLen - 1) + '…';
+}
+
 function composeSkillsIndex(skillsDir: string): string | null {
   const dirs = readdirSync(skillsDir, { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -318,7 +344,7 @@ function composeSkillsIndex(skillsDir: string): string | null {
     if (existsSync(skillPath)) {
       const content = readFileSync(skillPath, 'utf-8');
       const desc = extractSkillDescription(content) ?? dir.name;
-      skillMap.set(dir.name, desc);
+      skillMap.set(dir.name, truncateSkillDesc(desc));
     }
   }
 
@@ -327,34 +353,25 @@ function composeSkillsIndex(skillsDir: string): string | null {
   const lines: string[] = [
     '## Available Skills',
     '',
-    'Skills are specialized workflows that activate automatically when you describe a matching task.',
-    'Each skill provides a structured, step-by-step approach backed by vault knowledge and brain patterns.',
+    'Skills activate automatically on matching intent. Full descriptions in each SKILL.md.',
     '',
   ];
 
-  // Group skills into categories
+  // Group skills into categories — compact table per category
   const categorized = new Set<string>();
 
   for (const [_key, category] of Object.entries(SKILL_CATEGORIES)) {
     const categorySkills = category.skills.filter((s) => skillMap.has(s));
     if (categorySkills.length === 0) continue;
 
-    lines.push(`### ${category.label}`, '');
-    for (const skill of categorySkills) {
-      lines.push(`- **${skill}**: ${skillMap.get(skill)!}`);
-      categorized.add(skill);
-    }
-    lines.push('');
+    lines.push(`**${category.label}:** ${categorySkills.map((s) => `\`${s}\``).join(', ')}`);
+    for (const s of categorySkills) categorized.add(s);
   }
 
-  // Any uncategorized skills go into an "Other" section
+  // Any uncategorized skills
   const uncategorized = [...skillMap.keys()].filter((s) => !categorized.has(s)).sort();
   if (uncategorized.length > 0) {
-    lines.push('### Other', '');
-    for (const skill of uncategorized) {
-      lines.push(`- **${skill}**: ${skillMap.get(skill)!}`);
-    }
-    lines.push('');
+    lines.push(`**Other:** ${uncategorized.map((s) => `\`${s}\``).join(', ')}`);
   }
 
   return lines.join('\n').trimEnd();
