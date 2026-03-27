@@ -41,15 +41,25 @@ export interface LockEntry {
   soleriRange?: string;
   /** Pack tier: default (ships with engine), community (free), premium (unlocked today) */
   tier?: PackTier;
+  /** Current pack lifecycle state */
+  state?: string;
+  /** Most recent lifecycle transition */
+  lastTransition?: { from: string; to: string; timestamp: string; reason?: string };
+  /** ISO timestamp when the pack was disabled */
+  disabledAt?: string;
+  /** Error details if the pack is in an error state */
+  errorMessage?: string;
 }
 
 export type PackType = 'hooks' | 'skills' | 'knowledge' | 'domain' | 'bundle';
 export type PackSource = 'built-in' | 'local' | 'npm';
 export type PackTier = 'default' | 'community' | 'premium';
 
+export const LOCKFILE_VERSION = 2;
+
 export interface LockfileData {
   /** Lockfile format version */
-  version: 1;
+  version: number;
   /** Map of packId → lock entry */
   packs: Record<string, LockEntry>;
 }
@@ -141,18 +151,73 @@ export class PackLockfile {
     return 'sha256-' + createHash('sha256').update(content).digest('hex');
   }
 
+  /**
+   * Update lifecycle fields for a pack entry and save.
+   */
+  updateLifecycle(
+    packId: string,
+    state: string,
+    transition?: { from: string; to: string; reason?: string },
+  ): void {
+    const entry = this.data.packs[packId];
+    if (!entry) return;
+
+    entry.state = state;
+
+    if (transition) {
+      entry.lastTransition = {
+        from: transition.from,
+        to: transition.to,
+        timestamp: new Date().toISOString(),
+        reason: transition.reason,
+      };
+    }
+
+    if (state === 'disabled') {
+      entry.disabledAt = new Date().toISOString();
+    } else {
+      delete entry.disabledAt;
+    }
+
+    if (state === 'error') {
+      // errorMessage is set externally if needed; keep existing value
+    } else {
+      delete entry.errorMessage;
+    }
+
+    this.dirty = true;
+    this.save();
+  }
+
   private load(): LockfileData {
     if (!existsSync(this.filePath)) {
-      return { version: 1, packs: {} };
+      return { version: LOCKFILE_VERSION, packs: {} };
     }
     try {
       const raw = JSON.parse(readFileSync(this.filePath, 'utf-8'));
-      if (raw.version === 1 && typeof raw.packs === 'object') {
+      if (typeof raw.packs !== 'object') {
+        return { version: LOCKFILE_VERSION, packs: {} };
+      }
+
+      // Migrate v1 → v2: add lifecycle fields
+      if (raw.version === 1) {
+        for (const entry of Object.values(raw.packs) as LockEntry[]) {
+          if (!entry.state) {
+            entry.state = 'ready';
+          }
+        }
+        raw.version = LOCKFILE_VERSION;
+        // Mark dirty so the migrated data gets persisted on next save
+        this.dirty = true;
+      }
+
+      if (raw.version === LOCKFILE_VERSION) {
         return raw as LockfileData;
       }
-      return { version: 1, packs: {} };
+
+      return { version: LOCKFILE_VERSION, packs: {} };
     } catch {
-      return { version: 1, packs: {} };
+      return { version: LOCKFILE_VERSION, packs: {} };
     }
   }
 }

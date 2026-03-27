@@ -37,6 +37,8 @@ import type { OperatorProfileStore } from '../operator/operator-profile.js';
 import type { OperatorContextStore } from '../operator/operator-context-store.js';
 import type { ContextHealthMonitor } from './context-health.js';
 import type { ShutdownRegistry } from './shutdown-registry.js';
+import type { RuntimeAdapterRegistry } from '../adapters/registry.js';
+import type { SubagentDispatcher } from '../subagent/dispatcher.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -129,6 +131,10 @@ export interface AgentRuntime {
   persona: import('../persona/types.js').PersonaConfig;
   /** Generated persona system instructions for LLM context. */
   personaInstructions: import('../persona/types.js').PersonaSystemInstructions;
+  /** Runtime adapter registry — dispatch work to different AI CLIs. */
+  adapterRegistry: RuntimeAdapterRegistry;
+  /** Subagent dispatcher — spawn and manage child agent processes. */
+  subagentDispatcher: SubagentDispatcher;
   /** Context health monitor — tracks tool call volume and context window fill. */
   contextHealth: ContextHealthMonitor;
   /** Shutdown registry — centralized cleanup for timers, watchers, child processes. */

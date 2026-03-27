@@ -22,6 +22,7 @@ import type { Vault } from '../vault/vault.js';
 import type { PluginRegistry } from '../plugins/plugin-registry.js';
 import type { PluginContext } from '../plugins/types.js';
 import type { PackRuntime } from '../domain-packs/pack-runtime.js';
+import { PackLifecycleManager } from './pack-lifecycle.js';
 
 const MANIFEST_FILENAME = 'soleri-pack.json';
 
@@ -31,6 +32,7 @@ const MANIFEST_FILENAME = 'soleri-pack.json';
 
 export class PackInstaller {
   private packs = new Map<string, InstalledPack>();
+  readonly lifecycle = new PackLifecycleManager();
 
   constructor(
     private vault: Vault,
@@ -206,17 +208,21 @@ export class PackInstaller {
       const hooksDir = join(packDir, manifest.hooks?.dir ?? 'hooks');
       const hooks = existsSync(hooksDir) ? listMarkdownFiles(hooksDir) : [];
 
-      // Track installed pack
+      // Track installed pack with lifecycle
+      this.lifecycle.initState(manifest.id, 'installed');
+      this.lifecycle.transition(manifest.id, 'ready', 'Initial install');
+
       const installed: InstalledPack = {
         id: manifest.id,
         manifest,
         directory: packDir,
-        status: 'installed',
+        status: 'ready',
         vaultEntries,
         skills,
         hooks,
         facadesRegistered,
         installedAt: Date.now(),
+        transitions: this.lifecycle.getTransitions(manifest.id),
       };
       this.packs.set(manifest.id, installed);
 
@@ -231,17 +237,23 @@ export class PackInstaller {
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e);
 
+      // Transition to error state
+      this.lifecycle.initState(manifest.id, 'installed');
+      this.lifecycle.transition(manifest.id, 'error', error);
+
       this.packs.set(manifest.id, {
         id: manifest.id,
         manifest,
         directory: packDir,
         status: 'error',
         error,
+        errorMessage: error,
         vaultEntries: 0,
         skills: [],
         hooks: [],
         facadesRegistered: false,
         installedAt: Date.now(),
+        transitions: this.lifecycle.getTransitions(manifest.id),
       });
 
       return {
@@ -269,8 +281,72 @@ export class PackInstaller {
       this.pluginRegistry.deactivate(packId);
     }
 
+    // Transition to uninstalled
+    try {
+      this.lifecycle.transition(packId, 'uninstalled', 'User uninstall');
+    } catch {
+      // May not be tracked in lifecycle — continue anyway
+    }
+    this.lifecycle.remove(packId);
+
     pack.status = 'uninstalled';
     this.packs.delete(packId);
+    return true;
+  }
+
+  /**
+   * Disable a pack — deactivates capabilities but preserves vault entries.
+   */
+  disable(packId: string): boolean {
+    const pack = this.packs.get(packId);
+    if (!pack) return false;
+
+    this.lifecycle.transition(packId, 'disabled', 'User disabled');
+
+    // Deactivate facades
+    if (pack.facadesRegistered) {
+      this.pluginRegistry.deactivate(packId);
+    }
+
+    pack.status = 'disabled';
+    pack.disabledAt = Date.now();
+    pack.transitions = this.lifecycle.getTransitions(packId);
+    return true;
+  }
+
+  /**
+   * Enable a previously disabled pack — reactivates capabilities.
+   */
+  async enable(packId: string, runtimeCtx?: unknown, packRuntime?: PackRuntime): Promise<boolean> {
+    const pack = this.packs.get(packId);
+    if (!pack) return false;
+
+    this.lifecycle.transition(packId, 'ready', 'User enabled');
+
+    // Reactivate facades
+    if (pack.manifest.facades.length > 0 && this.pluginRegistry.get(packId)) {
+      const ctx: PluginContext = {
+        packRuntime:
+          packRuntime ??
+          ({
+            vault: {},
+            getProject: () => undefined,
+            listProjects: () => [],
+            createCheck: () => '',
+            validateCheck: () => null,
+            validateAndConsume: () => null,
+          } as unknown as PackRuntime),
+        runtime: runtimeCtx ?? {},
+        manifest: this.pluginRegistry.get(packId)!.manifest,
+        directory: pack.directory,
+      };
+      await this.pluginRegistry.activate(packId, ctx);
+      pack.facadesRegistered = true;
+    }
+
+    pack.status = 'ready';
+    pack.disabledAt = undefined;
+    pack.transitions = this.lifecycle.getTransitions(packId);
     return true;
   }
 

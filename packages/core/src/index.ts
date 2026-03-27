@@ -1,3 +1,34 @@
+// ─── Adapters ────────────────────────────────────────────────────────
+export { RuntimeAdapterRegistry } from './adapters/registry.js';
+export { ClaudeCodeRuntimeAdapter } from './adapters/claude-code-adapter.js';
+export type {
+  RuntimeAdapter,
+  AdapterExecutionContext,
+  AdapterExecutionResult,
+  AdapterTokenUsage,
+  AdapterSessionState,
+  AdapterSessionCodec,
+  AdapterEnvironmentTestResult,
+} from './adapters/types.js';
+
+// ─── Subagent ────────────────────────────────────────────────────────
+export { SubagentDispatcher } from './subagent/dispatcher.js';
+export { TaskCheckout } from './subagent/task-checkout.js';
+export { WorkspaceResolver } from './subagent/workspace-resolver.js';
+export { ConcurrencyManager } from './subagent/concurrency-manager.js';
+export { OrphanReaper } from './subagent/orphan-reaper.js';
+export { aggregateResults } from './subagent/result-aggregator.js';
+export type {
+  SubagentTask,
+  SubagentStatus,
+  SubagentResult,
+  DispatchOptions,
+  AggregatedResult,
+  ClaimInfo,
+  WorktreeInfo,
+  TrackedProcess,
+} from './subagent/types.js';
+
 // ─── Paths ──────────────────────────────────────────────────────────
 export {
   SOLERI_HOME,
@@ -617,7 +648,13 @@ export { computeContentHash } from './vault/content-hash.js';
 export type { HashableEntry } from './vault/content-hash.js';
 
 // ─── Knowledge Packs ────────────────────────────────────────────────────
-export { PackInstaller, packManifestSchema } from './packs/index.js';
+export {
+  PackInstaller,
+  PackLifecycleManager,
+  packManifestSchema,
+  VALID_TRANSITIONS,
+} from './packs/index.js';
+export type { PackState, PackTransition } from './packs/index.js';
 export { PackLockfile, inferPackType } from './packs/index.js';
 export { resolvePack, checkNpmVersion, checkVersionCompat } from './packs/index.js';
 export type {

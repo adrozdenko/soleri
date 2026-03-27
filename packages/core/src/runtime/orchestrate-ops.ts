@@ -386,11 +386,149 @@ export function createOrchestrateOps(
         planId: z.string().describe('ID of the plan to execute (flow planId or legacy planId)'),
         domain: z.string().optional().describe('Domain for brain session tracking'),
         context: z.string().optional().describe('Additional context for the brain session'),
+        runtime: z
+          .string()
+          .optional()
+          .describe(
+            'Runtime adapter type (e.g. "claude-code", "codex"). ' +
+              'When provided, dispatches via the adapter instead of the flow engine.',
+          ),
+        subagent: z
+          .boolean()
+          .optional()
+          .describe(
+            'When true, dispatches plan tasks via SubagentDispatcher instead of FlowExecutor. ' +
+              'Each task runs as a separate subagent process.',
+          ),
+        parallel: z
+          .boolean()
+          .optional()
+          .describe(
+            'Run subagent tasks in parallel (default: true). Only applies when subagent=true.',
+          ),
+        maxConcurrent: z
+          .number()
+          .optional()
+          .describe('Max concurrent subagents (default: 3). Only applies when subagent=true.'),
       }),
       handler: async (params) => {
         const planId = params.planId as string;
         const domain = params.domain as string | undefined;
         const context = params.context as string | undefined;
+        const runtimeType = params.runtime as string | undefined;
+        const useSubagent = params.subagent as boolean | undefined;
+        const parallelMode = params.parallel as boolean | undefined;
+        const maxConcurrentParam = params.maxConcurrent as number | undefined;
+
+        // ── Subagent dispatch path ───────────────────────────────────
+        // When subagent=true, dispatch plan tasks via SubagentDispatcher.
+        // Each task runs as a separate child process via the adapter layer.
+        if (useSubagent && runtime.subagentDispatcher) {
+          const entry = planStore.get(planId);
+          const legacyPlan = !entry ? planner.get(planId) : undefined;
+          const tasks =
+            entry?.plan.steps.map((s) => ({
+              taskId: s.id,
+              prompt: s.name,
+              workspace: process.cwd(),
+              runtime: runtimeType,
+              timeout: 300_000,
+            })) ??
+            legacyPlan?.tasks?.map((t: Record<string, unknown>) => ({
+              taskId: t.id as string,
+              prompt: (t.title as string) ?? (t.description as string) ?? '',
+              workspace: process.cwd(),
+              runtime: runtimeType,
+              timeout: 300_000,
+            })) ??
+            [];
+
+          const aggregated = await runtime.subagentDispatcher.dispatch(tasks, {
+            parallel: parallelMode ?? true,
+            maxConcurrent: maxConcurrentParam ?? 3,
+          });
+
+          // Track in brain session
+          const existingSession = brainIntelligence.getSessionByPlanId(planId);
+          const session =
+            existingSession && !existingSession.endedAt
+              ? existingSession
+              : brainIntelligence.lifecycle({
+                  action: 'start',
+                  domain,
+                  context,
+                  planId,
+                });
+
+          contextHealth.track({
+            type: 'orchestrate_execute',
+            payloadSize: JSON.stringify(aggregated).length,
+          });
+          const healthStatus = contextHealth.check();
+          const healthWarning = buildHealthWarning(healthStatus, vault);
+
+          return {
+            plan: { id: planId, status: 'executing' },
+            session,
+            subagent: {
+              status: aggregated.status,
+              totalTasks: aggregated.totalTasks,
+              completed: aggregated.completed,
+              failed: aggregated.failed,
+              durationMs: aggregated.durationMs,
+              totalUsage: aggregated.totalUsage,
+            },
+            ...(healthWarning ? { contextHealth: healthWarning } : {}),
+          };
+        }
+
+        // ── Adapter dispatch path ────────────────────────────────────
+        // When a runtime is specified, dispatch the plan's prompt via the
+        // adapter instead of the flow engine. This is the integration point
+        // for multi-runtime support (GH #410).
+        if (runtimeType && runtime.adapterRegistry) {
+          const adapter = runtime.adapterRegistry.get(runtimeType);
+          const entry = planStore.get(planId);
+          const prompt = entry?.plan.summary ?? `Execute plan ${planId}`;
+
+          const adapterResult = await adapter.execute({
+            runId: `${planId}-${Date.now()}`,
+            prompt,
+            workspace: process.cwd(),
+            config: { planId, domain },
+          });
+
+          // Track in brain session
+          const existingSession = brainIntelligence.getSessionByPlanId(planId);
+          const session =
+            existingSession && !existingSession.endedAt
+              ? existingSession
+              : brainIntelligence.lifecycle({
+                  action: 'start',
+                  domain,
+                  context,
+                  planId,
+                });
+
+          contextHealth.track({
+            type: 'orchestrate_execute',
+            payloadSize: JSON.stringify(adapterResult).length,
+          });
+          const healthStatus = contextHealth.check();
+          const healthWarning = buildHealthWarning(healthStatus, vault);
+
+          return {
+            plan: { id: planId, status: 'executing' },
+            session,
+            adapter: {
+              type: runtimeType,
+              exitCode: adapterResult.exitCode,
+              summary: adapterResult.summary,
+              usage: adapterResult.usage,
+            },
+            ...(healthWarning ? { contextHealth: healthWarning } : {}),
+          };
+        }
 
         // Look up flow plan
         const entry = planStore.get(planId);

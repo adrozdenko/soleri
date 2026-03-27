@@ -81,7 +81,7 @@ describe('PackLockfile', () => {
     expect(existsSync(lockPath)).toBe(true);
 
     const data = JSON.parse(readFileSync(lockPath, 'utf-8'));
-    expect(data.version).toBe(1);
+    expect(data.version).toBe(2);
     expect(data.packs['test-pack'].version).toBe('1.0.0');
   });
 

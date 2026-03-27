@@ -417,7 +417,7 @@ describe('PackInstaller', () => {
       const pack = installer.get('specific');
       expect(pack).toBeDefined();
       expect(pack?.manifest.version).toBe('3.0.0');
-      expect(pack?.status).toBe('installed');
+      expect(pack?.status).toBe('ready');
     });
   });
 });

@@ -61,6 +61,9 @@ import { generatePersonaInstructions } from '../persona/prompt-generator.js';
 import { OperatorProfileStore } from '../operator/operator-profile.js';
 import { ContextHealthMonitor } from './context-health.js';
 import { ShutdownRegistry } from './shutdown-registry.js';
+import { RuntimeAdapterRegistry } from '../adapters/registry.js';
+import { ClaudeCodeRuntimeAdapter } from '../adapters/claude-code-adapter.js';
+import { SubagentDispatcher } from '../subagent/dispatcher.js';
 
 /**
  * Create a fully initialized agent runtime.
@@ -322,6 +325,8 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   shutdownRegistry.register('pipelineRunner', () => pipelineRunner.stop());
   // Agency manager — close FSWatchers and debounce timers
   shutdownRegistry.register('agencyManager', () => agencyManager.disable());
+
+  shutdownRegistry.register('subagentDispatcher', () => subagentDispatcher.cleanup());
   // Loop manager — clear accumulated state
   shutdownRegistry.register('loopManager', () => {
     if (loop.isActive()) {
@@ -332,6 +337,14 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       }
     }
   });
+
+  // Runtime Adapter Registry — dispatch work to different AI CLIs
+  const adapterRegistry = new RuntimeAdapterRegistry();
+  adapterRegistry.register('claude-code', new ClaudeCodeRuntimeAdapter());
+  adapterRegistry.setDefault('claude-code');
+
+  // Subagent Dispatcher — spawn and manage child agent processes
+  const subagentDispatcher = new SubagentDispatcher({ adapterRegistry });
 
   return {
     config,
@@ -379,6 +392,8 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       const p = loadPersona(agentId, config.persona ?? undefined);
       return generatePersonaInstructions(p);
     })(),
+    adapterRegistry,
+    subagentDispatcher,
     contextHealth: new ContextHealthMonitor(),
     shutdownRegistry,
     createdAt: Date.now(),
