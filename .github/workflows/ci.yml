@@ -46,7 +46,37 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: build-output
-      - run: npm run test --workspace=@soleri/core
+      - name: Run tests with coverage
+        run: npm run test:coverage --workspace=@soleri/core
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          SUMMARY_FILE="packages/core/coverage/coverage-summary.json"
+          if [ ! -f "$SUMMARY_FILE" ]; then
+            echo "⚠️ No coverage summary found" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "## Coverage Report — @soleri/core" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('$SUMMARY_FILE', 'utf-8'));
+            const t = data.total;
+            const fmt = (m) => m.pct.toFixed(1) + '% (' + m.covered + '/' + m.total + ')';
+            const lines = [
+              '| Metric | Coverage |',
+              '|--------|----------|',
+              '| **Statements** | ' + fmt(t.statements) + ' |',
+              '| **Branches** | ' + fmt(t.branches) + ' |',
+              '| **Functions** | ' + fmt(t.functions) + ' |',
+              '| **Lines** | ' + fmt(t.lines) + ' |',
+            ];
+            console.log(lines.join('\n'));
+          " >> "$GITHUB_STEP_SUMMARY"
+
       - run: npm run typecheck --workspace=@soleri/core
 
   test-forge:
