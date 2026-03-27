@@ -987,7 +987,7 @@ describe('E2E: chat-context-agency', () => {
       const data = res.data as { packs: Array<{ id: string; status: string }>; count: number };
       expect(data.count).toBe(1);
       expect(data.packs[0].id).toBe('test-e2e-pack');
-      expect(data.packs[0].status).toBe('installed');
+      expect(data.packs[0].status).toBe('ready');
     });
 
     it('should verify pack seeded vault entries', async () => {

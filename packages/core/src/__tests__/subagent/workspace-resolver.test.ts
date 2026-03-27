@@ -13,6 +13,9 @@ import { WorkspaceResolver } from '../../subagent/workspace-resolver.js';
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 
+/** Normalize path separators to forward slashes for cross-platform assertions. */
+const norm = (p: string): string => p.replace(/\\/g, '/');
+
 describe('WorkspaceResolver', () => {
   let resolver: WorkspaceResolver;
   const baseDir = '/projects/test-repo';
@@ -32,7 +35,7 @@ describe('WorkspaceResolver', () => {
     (execSync as ReturnType<typeof vi.fn>).mockReturnValue('');
 
     const result = resolver.resolve('task-1', '/original/workspace', true);
-    expect(result).toBe(`${baseDir}/.soleri/worktrees/task-1`);
+    expect(norm(result)).toBe(`${baseDir}/.soleri/worktrees/task-1`);
     expect(execSync).toHaveBeenCalledWith(
       expect.stringContaining('git worktree add'),
       expect.objectContaining({ cwd: baseDir }),
@@ -97,7 +100,7 @@ describe('WorkspaceResolver', () => {
     const active = resolver.listActive();
     expect(active).toHaveLength(2);
     expect(active.map((w) => w.taskId).sort()).toEqual(['task-a', 'task-b']);
-    expect(active[0].path).toContain('.soleri/worktrees/');
+    expect(norm(active[0].path)).toContain('.soleri/worktrees/');
     expect(active[0].branch).toContain('subagent/');
     expect(active[0].createdAt).toBeGreaterThan(0);
   });
@@ -126,8 +129,9 @@ describe('WorkspaceResolver', () => {
     (execSync as ReturnType<typeof vi.fn>).mockReturnValue('');
 
     resolver.resolve('task-mkdir', '/ws', true);
-    expect(mkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('.soleri/worktrees'),
+    const calledPath = (mkdirSync as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(norm(calledPath)).toContain('.soleri/worktrees');
+    expect((mkdirSync as ReturnType<typeof vi.fn>).mock.calls[0][1]).toEqual(
       expect.objectContaining({ recursive: true }),
     );
   });
