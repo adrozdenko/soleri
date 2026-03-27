@@ -47,7 +47,10 @@ function getLockDir(): string {
   const hash = execSync(`printf '%s' "${projectRoot}" | shasum | cut -c1-8`, {
     encoding: 'utf-8',
   }).trim();
-  return `/tmp/soleri-guard-${hash}.lock`;
+  const tmpBase = process.env.TMPDIR || process.env.TEMP || '/tmp';
+  // Normalize: strip trailing slash to avoid double-slash
+  const tmp = tmpBase.replace(/\/+$/, '');
+  return `${tmp}/soleri-guard-${hash}.lock`;
 }
 
 function runCli(args: string[], options: { cwd?: string; env?: Record<string, string> } = {}) {

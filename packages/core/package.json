@@ -35,6 +35,10 @@
     "./module-manifest": {
       "types": "./dist/engine/module-manifest.d.ts",
       "import": "./dist/engine/module-manifest.js"
+    },
+    "./personas": {
+      "types": "./dist/persona/defaults.d.ts",
+      "import": "./dist/persona/defaults.js"
     }
   },
   "publishConfig": {
@@ -48,9 +52,11 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
     "yaml": "^2.7.0",
     "zod": "^3.24.2"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.8.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

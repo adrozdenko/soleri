@@ -7,7 +7,7 @@
  */
 import * as p from '@clack/prompts';
 import type { AgentConfigInput } from '@soleri/forge/lib';
-import { ITALIAN_CRAFTSPERSON } from '@soleri/core';
+import { ITALIAN_CRAFTSPERSON } from '@soleri/core/personas';
 
 /** Slugify a display name into a kebab-case ID. */
 function slugify(name: string): string {

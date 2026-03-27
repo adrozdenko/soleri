@@ -3,9 +3,14 @@
  *
  * Supports both positional (array) and named (object) parameters.
  * Exposes getDatabase() for backward-compat consumers that need the raw db.
+ *
+ * better-sqlite3 is loaded lazily at construction time (not at module import)
+ * so that code paths that never instantiate a provider don't require the
+ * native module to be installed.
  */
 
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
+import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type {
@@ -14,6 +19,24 @@ import type {
   RunResult,
   FtsSearchOptions,
 } from './types.js';
+
+type DatabaseConstructor = typeof Database;
+let _DatabaseCtor: DatabaseConstructor | undefined;
+
+function loadDriver(): DatabaseConstructor {
+  if (!_DatabaseCtor) {
+    const req = createRequire(import.meta.url);
+    try {
+      _DatabaseCtor = req('better-sqlite3') as DatabaseConstructor;
+    } catch {
+      throw new Error(
+        'better-sqlite3 is required for persistence but is not installed.\n' +
+          'Run: npm install better-sqlite3',
+      );
+    }
+  }
+  return _DatabaseCtor;
+}
 
 /** Apply performance-tuning PRAGMAs for file-backed SQLite databases. */
 export function applyPerformancePragmas(db: Database.Database): void {
@@ -28,8 +51,9 @@ export class SQLitePersistenceProvider implements PersistenceProvider {
   private db: Database.Database;
 
   constructor(path: string = ':memory:') {
+    const Driver = loadDriver();
     if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
-    this.db = new Database(path);
+    this.db = new Driver(path);
     if (path !== ':memory:') applyPerformancePragmas(this.db);
   }
 
