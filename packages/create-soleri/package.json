@@ -1,6 +1,6 @@
 {
   "name": "create-soleri",
-  "version": "8.1.0",
+  "version": "8.1.1",
   "description": "npm create soleri — scaffold AI agents that learn, remember, and grow with you.",
   "keywords": [
     "agent",
@@ -23,11 +23,15 @@
     "create-soleri": "dist/main.js"
   },
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
