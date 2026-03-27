@@ -22,10 +22,10 @@
   "bin": {
     "create-soleri": "dist/main.js"
   },
-  "type": "module",
   "files": [
     "dist"
   ],
+  "type": "module",
   "publishConfig": {
     "access": "public"
   },
