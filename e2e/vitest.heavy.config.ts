@@ -17,8 +17,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     pool: 'forks',
+    poolOptions: { forks: { singleFork: false } },
     testTimeout: 120_000,
     hookTimeout: 60_000,
+    teardownTimeout: 60_000,
     include: [
       'e2e/cli-agent-lifecycle.test.ts',
       'e2e/scaffold-edge-cases.test.ts',

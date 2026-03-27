@@ -8,7 +8,8 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffold } from '@soleri/forge/lib';
@@ -28,8 +29,8 @@ describe('E2E: scaffold-edge-cases', () => {
     mkdirSync(tempDir, { recursive: true });
   });
 
-  afterAll(() => {
-    rmSync(tempDir, { recursive: true, force: true });
+  afterAll(async () => {
+    await rm(tempDir, { recursive: true, force: true });
   });
 
   it('should scaffold with many domains (10) and create all domain data files', () => {
