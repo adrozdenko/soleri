@@ -55,9 +55,6 @@
     "yaml": "^2.7.0",
     "zod": "^3.24.2"
   },
-  "optionalDependencies": {
-    "better-sqlite3": "^11.8.1"
-  },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/pdf-parse": "^1.1.5",
