@@ -17,7 +17,7 @@ export { TaskCheckout } from './subagent/task-checkout.js';
 export { WorkspaceResolver } from './subagent/workspace-resolver.js';
 export { ConcurrencyManager } from './subagent/concurrency-manager.js';
 export { OrphanReaper } from './subagent/orphan-reaper.js';
-export { aggregateResults } from './subagent/result-aggregator.js';
+export { aggregate as aggregateResults } from './subagent/result-aggregator.js';
 export type {
   SubagentTask,
   SubagentStatus,

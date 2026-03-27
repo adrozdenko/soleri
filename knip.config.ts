@@ -7,21 +7,14 @@ const config: KnipConfig = {
       project: ['*.ts'],
       ignoreDependencies: [
         '@secretlint/secretlint-rule-preset-recommend', // secretlint plugin loaded by config
-        'react-dom', // peer dependency of @astrojs/react
-        '@types/react-dom', // types for react-dom peer dep
-        'cspell', // invoked via npm script (lint:spell)
-        'husky', // git hooks manager (prepare script)
-        'lint-staged', // invoked by husky pre-commit hook
-        'markdownlint-cli2', // invoked via npm script (lint:md)
-        'oxfmt', // invoked via npm script and lint-staged
-        'oxlint', // invoked via npm script and lint-staged
-        'secretlint', // invoked via lint-staged
-        'ts-prune', // invoked via npm script (deadcode:ts-prune)
-        'tsx', // invoked via npm scripts as ts runner
       ],
     },
     'packages/core': {
       project: ['src/**/*.ts'],
+      ignore: [
+        'src/adapters/index.ts', // barrel file for external consumers
+        'src/subagent/index.ts', // barrel file for external consumers
+      ],
       ignoreDependencies: [
         '@modelcontextprotocol/sdk', // optional peer dependency
       ],
@@ -29,9 +22,6 @@ const config: KnipConfig = {
     'packages/engine': {
       entry: ['bin/*.js'],
       project: ['bin/*.js'],
-      ignoreDependencies: [
-        '@modelcontextprotocol/sdk', // MCP transport dependency
-      ],
     },
     'packages/forge': {
       project: ['src/**/*.ts'],

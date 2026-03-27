@@ -7,7 +7,13 @@
  */
 
 import type { RuntimeAdapterRegistry } from '../adapters/registry.js';
-import type { SubagentTask, SubagentResult, DispatchOptions, AggregatedResult } from './types.js';
+import type {
+  SubagentTask,
+  SubagentResult,
+  SubagentStatus,
+  DispatchOptions,
+  AggregatedResult,
+} from './types.js';
 import { TaskCheckout } from './task-checkout.js';
 import { WorkspaceResolver } from './workspace-resolver.js';
 import { ConcurrencyManager } from './concurrency-manager.js';
@@ -120,7 +126,7 @@ export class SubagentDispatcher {
       maxConcurrent: number;
       worktreeIsolation: boolean;
       timeout: number;
-      onTaskUpdate?: (taskId: string, status: string) => void;
+      onTaskUpdate?: (taskId: string, status: SubagentStatus) => void;
     },
   ): Promise<SubagentResult[]> {
     const results = new Map<string, SubagentResult>();

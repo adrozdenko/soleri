@@ -434,9 +434,9 @@ export function createOrchestrateOps(
               runtime: runtimeType,
               timeout: 300_000,
             })) ??
-            legacyPlan?.tasks?.map((t: Record<string, unknown>) => ({
-              taskId: t.id as string,
-              prompt: (t.title as string) ?? (t.description as string) ?? '',
+            legacyPlan?.tasks?.map((t) => ({
+              taskId: t.id,
+              prompt: t.title ?? t.description ?? '',
               workspace: process.cwd(),
               runtime: runtimeType,
               timeout: 300_000,
