@@ -38,6 +38,7 @@ import {
 import { detectRationalizations } from '../planning/rationalization-detector.js';
 import { ImpactAnalyzer } from '../planning/impact-analyzer.js';
 import type { ImpactReport } from '../planning/impact-analyzer.js';
+import { recordPlanFeedback } from './plan-feedback-helper.js';
 
 // ---------------------------------------------------------------------------
 // Intent detection — keyword-based mapping from prompt to intent
@@ -235,7 +236,7 @@ export function createOrchestrateOps(
   runtime: AgentRuntime,
   facades?: FacadeConfig[],
 ): OpDefinition[] {
-  const { planner, brainIntelligence, vault, contextHealth } = runtime;
+  const { planner, brain, brainIntelligence, vault, contextHealth } = runtime;
   const agentId = runtime.config.agentId;
 
   return [
@@ -635,6 +636,19 @@ export function createOrchestrateOps(
           toolsUsed,
           filesModified,
         });
+
+        // Record brain feedback for vault entries referenced in plan decisions
+        if (planObj && planObj.decisions) {
+          try {
+            recordPlanFeedback(
+              { objective: planObj.objective, decisions: planObj.decisions },
+              brain,
+              brainIntelligence,
+            );
+          } catch {
+            // Brain feedback is best-effort
+          }
+        }
 
         // Extract knowledge — runs regardless of plan existence
         let extraction = null;

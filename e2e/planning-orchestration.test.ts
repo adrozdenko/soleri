@@ -472,13 +472,20 @@ describe('E2E: planning-orchestration', () => {
         filesModified: [],
       });
 
-      // orchestrate_complete on an already-completed plan should fail with
-      // an Invalid transition error — planner.complete() cannot transition
-      // from 'completed' to 'completed' (only reconciling → completed is valid).
-      // This is correct: the lifecycle was already finalized by plan_reconcile.
-      expect(res.success).toBe(false);
-      expect(res.error).toContain('Invalid transition');
-      expect(res.error).toContain('completed');
+      // orchestrate_complete on an already-completed plan succeeds with a warning.
+      // The plan transition is best-effort — planner.complete() cannot transition
+      // from 'completed' to 'completed', but the epilogue (brain session end,
+      // knowledge extraction, brain feedback) still runs.
+      expect(res.success).toBe(true);
+      const data = res.data as {
+        plan: { id: string; status: string };
+        warnings?: string[];
+      };
+      expect(data.plan).toBeDefined();
+      // The warnings array should contain the skipped transition message
+      expect(data.warnings).toBeDefined();
+      expect(data.warnings!.length).toBeGreaterThanOrEqual(1);
+      expect(data.warnings![0]).toContain('Plan transition skipped');
     });
   });
 
