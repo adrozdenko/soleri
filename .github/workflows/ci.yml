@@ -139,6 +139,74 @@ jobs:
       - run: npm run build --workspace=create-soleri
       - run: npm run test:e2e
 
+  # ─── Smoke test: scaffold → install → typecheck ─────────────────
+  smoke-test:
+    name: Smoke Test (scaffold + build)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - name: Scaffold agent via create-soleri
+        run: |
+          SMOKE_DIR="$(mktemp -d)"
+          echo "SMOKE_DIR=$SMOKE_DIR" >> "$GITHUB_ENV"
+          AGENT_DIR="$SMOKE_DIR/smoke-ci-agent"
+          echo "AGENT_DIR=$AGENT_DIR" >> "$GITHUB_ENV"
+
+          cat > "$SMOKE_DIR/config.json" <<'CONF'
+          {
+            "id": "smoke-ci-agent",
+            "name": "Smoke CI Agent",
+            "role": "CI smoke test agent",
+            "description": "Scaffolded in CI to verify template compilation.",
+            "domains": ["testing"],
+            "principles": ["Fail fast"],
+            "greeting": "Ready."
+          }
+          CONF
+
+          # Patch outputDir into the config (cannot be set via CLI flag for legacy)
+          node -e "
+            const fs = require('fs');
+            const cfg = JSON.parse(fs.readFileSync('$SMOKE_DIR/config.json', 'utf-8'));
+            cfg.outputDir = '$SMOKE_DIR';
+            fs.writeFileSync('$SMOKE_DIR/config.json', JSON.stringify(cfg, null, 2));
+          "
+
+          node packages/create-soleri/dist/main.js --config "$SMOKE_DIR/config.json" --legacy
+
+      - name: Patch @soleri/core to local workspace
+        run: |
+          cd "$AGENT_DIR"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+            pkg.dependencies['@soleri/core'] = 'file:${{ github.workspace }}/packages/core';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+        working-directory: ${{ env.AGENT_DIR }}
+
+      - name: Typecheck scaffolded agent
+        run: npx tsc --noEmit
+        working-directory: ${{ env.AGENT_DIR }}
+
+      - name: Cleanup
+        if: always()
+        run: rm -rf "$SMOKE_DIR"
+
   # ─── Code quality (parallel with tests) ──────────────────────────
   quality:
     name: Code Quality
