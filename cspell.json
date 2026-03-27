@@ -95,7 +95,8 @@
     "timebox",
     "unpushed",
     "worktree",
-    "worktrees"
+    "worktrees",
+    "touchpoint"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [
