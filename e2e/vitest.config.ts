@@ -11,10 +11,13 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/.claude/worktrees/**',
-      // cli-agent-lifecycle runs heavy child processes (npm install, tsc, vitest)
-      // that block the event loop for >60s, exceeding the birpc RPC timeout.
-      // It runs as a separate vitest invocation in the test:e2e script instead.
+      // Heavy scaffold/child-process tests (npm install, tsc, vitest) block the
+      // event loop for >60s under singleFork, exceeding the birpc RPC timeout.
+      // They run in a separate vitest invocation (vitest.heavy.config.ts) instead.
       '**/cli-agent-lifecycle.test.ts',
+      '**/scaffold-edge-cases.test.ts',
+      '**/skills-and-domains.test.ts',
+      '**/smoke-salvador-agent.test.ts',
     ],
   },
 });
