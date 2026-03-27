@@ -83,6 +83,9 @@ CLAUDE.md is **auto-generated** by `composeClaudeMd()` from the file tree:
 **When adding engine-level rules:** Edit `shared-rules.ts`, then `soleri dev` auto-regenerates.
 **When adding agent-specific rules:** Create a new `.md` file in the agent's `instructions/` folder.
 
+**MANDATORY — Keeping agent knowledge in sync:**
+When changing user-facing behavior (CLI commands, installation flow, scaffolding output, troubleshooting steps, new features), update `shared-rules.ts` so scaffolded agents know about it. The "Getting Started & Updates" and "Soleri CLI" sections are the most common update targets. Agents can only help users with what they know — stale rules mean confused agents.
+
 ### Package Architecture
 
 | Package            | Role                                                                      | Key files                                 |
