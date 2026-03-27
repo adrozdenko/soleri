@@ -99,6 +99,34 @@ jobs:
           name: build-output
       - run: npm run typecheck --workspace=create-soleri
 
+  # ─── Domain pack tests (matrix) ───────────────────────────────────
+  test-domains:
+    name: Test ${{ matrix.package }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - '@soleri/domain-code-review'
+          - '@soleri/domain-component'
+          - '@soleri/domain-design-qa'
+          - '@soleri/domain-design'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+      - name: Build domain pack
+        run: npm run build --workspace=${{ matrix.package }}
+      - name: Run tests
+        run: npm run test --workspace=${{ matrix.package }}
+
   # ─── Windows tests (core + CLI unit tests) ───────────────────────
   test-windows:
     name: Test Windows (Core + CLI)
