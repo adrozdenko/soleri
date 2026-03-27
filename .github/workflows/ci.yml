@@ -229,7 +229,7 @@ jobs:
             "description": "Scaffolded in CI to verify template compilation.",
             "domains": ["testing"],
             "principles": ["Fail fast"],
-            "greeting": "Ready."
+            "greeting": "Ready to assist."
           }
           CONF
 
