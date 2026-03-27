@@ -20,6 +20,38 @@
 import { z } from 'zod';
 
 // =============================================================================
+// SKILL TRUST & SOURCE TRACKING
+// =============================================================================
+
+/** How much a skill can do — escalates from pure docs to executable code */
+export type TrustLevel = 'markdown_only' | 'assets' | 'scripts';
+
+/** Where a skill came from */
+export type SourceType = 'builtin' | 'pack' | 'local' | 'github' | 'npm';
+
+/** A single file in a skill directory, classified by kind */
+export interface SkillInventoryItem {
+  /** Relative path within the skill directory */
+  path: string;
+  /** What kind of file this is */
+  kind: 'skill' | 'reference' | 'asset' | 'script';
+}
+
+/** Extended metadata for a discovered skill */
+export interface SkillMetadata {
+  /** Computed trust level based on directory contents */
+  trust: TrustLevel;
+  /** Where this skill was sourced from */
+  source: { type: SourceType; uri: string };
+  /** Engine version compatibility check result */
+  compatibility: 'compatible' | 'unknown' | 'invalid';
+  /** Engine version declared by the skill (if any) */
+  engineVersion?: string;
+  /** Classified inventory of all files in the skill directory */
+  inventory: SkillInventoryItem[];
+}
+
+// =============================================================================
 // MANIFEST SCHEMA
 // =============================================================================
 

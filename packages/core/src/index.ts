@@ -680,7 +680,22 @@ export type {
   LockfileData,
   ResolvedPack,
   ResolveOptions,
+  TrustLevel,
+  SourceType,
+  SkillInventoryItem,
+  SkillMetadata,
 } from './packs/index.js';
+
+// ─── Skill Trust & Sync ─────────────────────────────────────────────────
+export { classifyTrust, TrustClassifier } from './skills/trust-classifier.js';
+export {
+  discoverSkills,
+  syncSkillsToClaudeCode,
+  classifySkills,
+  checkSkillCompatibility,
+  ApprovalRequiredError,
+} from './skills/sync-skills.js';
+export type { SkillEntry, SyncResult, ClassifySkillsOptions } from './skills/sync-skills.js';
 
 // ─── Plugin System ──────────────────────────────────────────────────────
 export {

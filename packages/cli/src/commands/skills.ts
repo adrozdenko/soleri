@@ -9,7 +9,13 @@ import { join } from 'node:path';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
-import { PackLockfile, inferPackType, resolvePack } from '@soleri/core';
+import {
+  PackLockfile,
+  inferPackType,
+  resolvePack,
+  classifyTrust,
+  checkSkillCompatibility,
+} from '@soleri/core';
 import type { LockEntry, PackSource } from '@soleri/core';
 import { detectAgent } from '../utils/agent-context.js';
 
@@ -33,7 +39,8 @@ export function registerSkills(program: Command): void {
   skills
     .command('list')
     .description('List installed skill packs')
-    .action(() => {
+    .option('--trust', 'Show trust level, source, and compatibility for each pack')
+    .action((opts: { trust?: boolean }) => {
       const lockfile = new PackLockfile(getLockfilePath());
       const entries = lockfile.list().filter((e) => e.type === 'skills' || e.type === 'bundle');
 
@@ -48,6 +55,17 @@ export function registerSkills(program: Command): void {
           entry.source === 'built-in' ? ' [built-in]' : entry.source === 'npm' ? ' [npm]' : '';
         console.log(`  ${entry.id}@${entry.version}${badge}`);
         if (entry.skills.length > 0) console.log(`    skills: ${entry.skills.join(', ')}`);
+
+        if (opts.trust) {
+          const skillsDir = join(entry.directory, 'skills');
+          try {
+            const { trust } = classifyTrust(skillsDir);
+            const compat = checkSkillCompatibility(entry.soleriRange);
+            console.log(`    trust: ${trust}  source: ${entry.source}  compat: ${compat}`);
+          } catch {
+            console.log(`    trust: unknown  source: ${entry.source}`);
+          }
+        }
       }
     });
 
