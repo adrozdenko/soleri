@@ -900,3 +900,7 @@ export type {
   ContextItemType,
   DeclinedCategory,
 } from './operator/operator-context-types.js';
+
+// ─── Update Check ────────────────────────────────────────────────────
+export { checkForUpdate, buildChangelogUrl, detectBreakingChanges } from './update-check.js';
+export type { UpdateInfo } from './update-check.js';

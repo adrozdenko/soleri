@@ -9,6 +9,7 @@ import type { AgentRuntime } from '../types.js';
 import { createOrchestrateOps } from '../orchestrate-ops.js';
 import { createProjectOps } from '../project-ops.js';
 import { createPlaybookOps } from '../playbook-ops.js';
+import { checkForUpdate } from '../../update-check.js';
 
 export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, governance, projectRegistry } = runtime;
@@ -69,6 +70,19 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           }
         } catch {
           // Non-critical — don't fail session start over staging check
+        }
+
+        // Fire-and-forget update check — never blocks, never throws
+        try {
+          const enginePkgUrl = new URL('../../../package.json', import.meta.url);
+          const { readFileSync: readFs } = await import('node:fs');
+          const enginePkg = JSON.parse(readFs(enginePkgUrl, 'utf-8'));
+          void checkForUpdate(
+            runtime.config.agentId ?? 'unknown',
+            enginePkg.version ?? '0.0.0',
+          ).catch(() => {});
+        } catch {
+          // package.json not readable — skip update check silently
         }
 
         return {

@@ -21,6 +21,58 @@ interface CacheEntry {
   latestVersion: string | null;
 }
 
+export interface UpdateInfo {
+  hasUpdate: boolean;
+  currentVersion: string;
+  latestVersion: string | null;
+  changelogUrl: string | null;
+  hasBreakingChanges: boolean;
+  hasMultipleReleases: boolean;
+}
+
+const CHANGELOG_BASE_URL = 'https://github.com/adrozdenko/soleri/releases/tag';
+
+/**
+ * Build a changelog URL for a given version.
+ */
+export function buildChangelogUrl(version: string): string {
+  return `${CHANGELOG_BASE_URL}/v${version}`;
+}
+
+/**
+ * Parse the major version from a semver string (x.y.z).
+ */
+function parseMajor(version: string): number {
+  return Number(version.split('.')[0]) || 0;
+}
+
+/**
+ * Parse the minor version from a semver string (x.y.z).
+ */
+function parseMinor(version: string): number {
+  return Number(version.split('.')[1]) || 0;
+}
+
+/**
+ * Detect breaking changes (major version bump) and multi-release jumps (minor +2).
+ */
+export function detectBreakingChanges(
+  currentVersion: string,
+  latestVersion: string,
+): { hasBreakingChanges: boolean; hasMultipleReleases: boolean } {
+  const currentMajor = parseMajor(currentVersion);
+  const latestMajor = parseMajor(latestVersion);
+  const hasBreakingChanges = latestMajor !== currentMajor;
+
+  const currentMinor = parseMinor(currentVersion);
+  const latestMinor = parseMinor(latestVersion);
+  // Multiple releases: same major but minor jumped by 2+
+  const hasMultipleReleases =
+    !hasBreakingChanges && latestMajor === currentMajor && latestMinor - currentMinor >= 2;
+
+  return { hasBreakingChanges, hasMultipleReleases };
+}
+
 function readCache(): CacheEntry | null {
   try {
     if (!existsSync(CACHE_FILE)) return null;
@@ -75,10 +127,7 @@ export async function checkForUpdate(agentId: string, currentVersion: string): P
   if (cache && Date.now() - cache.checkedAt < CHECK_INTERVAL_MS) {
     // Use cached result
     if (cache.latestVersion && isNewer(currentVersion, cache.latestVersion)) {
-      console.error(
-        `${tag} Update available: @soleri/core ${currentVersion} → ${cache.latestVersion}`,
-      );
-      console.error(`${tag} Run: soleri agent update`);
+      emitUpdateNotifications(tag, currentVersion, cache.latestVersion);
     }
     return;
   }
@@ -101,11 +150,32 @@ export async function checkForUpdate(agentId: string, currentVersion: string): P
     writeCache({ checkedAt: Date.now(), latestVersion });
 
     if (latestVersion && isNewer(currentVersion, latestVersion)) {
-      console.error(`${tag} Update available: @soleri/core ${currentVersion} → ${latestVersion}`);
-      console.error(`${tag} Run: soleri agent update`);
+      emitUpdateNotifications(tag, currentVersion, latestVersion);
     }
   } catch {
     // Network error, timeout, etc. — fail silently
     writeCache({ checkedAt: Date.now(), latestVersion: null });
+  }
+}
+
+/**
+ * Emit update notification messages to stderr, including changelog URL
+ * and breaking change / multi-release warnings.
+ */
+function emitUpdateNotifications(tag: string, currentVersion: string, latestVersion: string): void {
+  console.error(`${tag} Update available: @soleri/core ${currentVersion} → ${latestVersion}`);
+  console.error(`${tag} Run: soleri agent update`);
+  console.error(`${tag} Changelog: ${buildChangelogUrl(latestVersion)}`);
+
+  const { hasBreakingChanges, hasMultipleReleases } = detectBreakingChanges(
+    currentVersion,
+    latestVersion,
+  );
+
+  if (hasBreakingChanges) {
+    const latestMajor = latestVersion.split('.')[0];
+    console.error(`${tag} ⚠ Breaking changes in v${latestMajor}.0.0 — see migration guide`);
+  } else if (hasMultipleReleases) {
+    console.error(`${tag} Multiple releases since your version — review changelog`);
   }
 }
