@@ -366,6 +366,16 @@ export {
 } from './planning/gap-types.js';
 export type { GapSeverity, GapCategory, PlanGap } from './planning/gap-types.js';
 
+// ─── Goal Ancestry ──────────────────────────────────────────────────
+export { GoalAncestry, JsonGoalRepository, generateGoalId } from './planning/goal-ancestry.js';
+export type {
+  GoalLevel,
+  GoalStatus,
+  Goal,
+  GoalStore,
+  GoalRepository,
+} from './planning/goal-ancestry.js';
+
 // ─── Task Complexity Assessor ────────────────────────────────────────
 export { assessTaskComplexity } from './planning/task-complexity-assessor.js';
 export type {
