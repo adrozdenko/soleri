@@ -3,22 +3,19 @@ import { defineConfig } from 'vitest/config';
 /**
  * Separate config for heavy scaffold/child-process tests.
  *
- * These tests spawn heavy child processes (npm install, tsc --noEmit, vitest run)
- * via execFileSync, which blocks the Node.js event loop. Under the main E2E
- * config's `singleFork: true`, the blocked event loop prevents the vitest
- * worker from responding to birpc RPC calls within the 60s timeout, causing
+ * These tests call scaffold() which internally runs synchronous tsc compilation,
+ * blocking the event loop for 60-100+ seconds. Under vitest's `forks` pool,
+ * the blocked event loop prevents birpc RPC heartbeats, causing
  * "[vitest-worker]: Timeout calling onTaskUpdate" errors.
  *
- * Running these tests in their own vitest invocation (without singleFork) avoids
- * the issue: each test file gets its own fork, and the blocked event loop
- * only affects that fork's own communication channel.
+ * Using `threads` pool avoids this: worker threads share the process but
+ * communicate via MessagePort which doesn't depend on the event loop being free.
  */
 export default defineConfig({
   test: {
     environment: 'node',
-    pool: 'forks',
-    poolOptions: { forks: { singleFork: false } },
-    testTimeout: 120_000,
+    pool: 'threads',
+    testTimeout: 180_000,
     hookTimeout: 60_000,
     teardownTimeout: 60_000,
     include: [
