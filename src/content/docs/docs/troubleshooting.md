@@ -3,13 +3,41 @@ title: Troubleshooting
 description: Common issues and solutions for Soleri agents.
 ---
 
+## Installation issues
+
+### `command not found` after `npm create soleri`
+
+Stale npx cache. Clear it and retry:
+
+```bash
+rm -rf ~/.npm/_npx
+npm create soleri@latest my-agent
+```
+
+### `better-sqlite3` compilation fails
+
+`better-sqlite3` is an optional dependency — scaffolding works even if it fails to compile. You only need it when running the knowledge engine.
+
+If you need it:
+- **macOS:** `xcode-select --install`
+- **Linux:** `sudo apt-get install -y build-essential python3`
+- **Windows:** Install Visual Studio Build Tools or use WSL
+
+### Agent created in the wrong directory
+
+Agents scaffold in your current working directory. Use `--dir <path>` to override:
+
+```bash
+npm create soleri my-agent --dir ~/projects
+```
+
 ## Agent not appearing in your AI editor
 
 You connected your agent but your AI editor doesn't see it.
 
-- **Check `.mcp.json` path** — must point to the built `dist/index.js`
-- **Run `npm run build` first** — the agent must be compiled
 - **Restart your AI editor** — MCP servers are loaded at startup
+- **Check `.mcp.json` path** — must point to the correct agent location
+- **Run `npx @soleri/cli install --target claude`** to re-register
 - **Run `npx @soleri/cli doctor`** for a full diagnostic
 
 ## Searches return no results

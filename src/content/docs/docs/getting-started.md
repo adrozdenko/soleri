@@ -6,30 +6,27 @@ description: Install Soleri, create your first agent, and connect it to your AI 
 ## Prerequisites
 
 - **Node.js 18+** — check with `node -v`
-- **An MCP-compatible AI editor** — OpenCode, Claude Code, Cursor, or similar
+- **An MCP-compatible AI editor** — Claude Code, OpenCode, Cursor, Codex, or similar
 - **npm** — ships with Node.js
-- **Build tools** (Linux only) — Soleri uses `better-sqlite3` which requires native compilation:
 
-  ```bash
-  # Ubuntu / Debian
-  sudo apt-get install -y build-essential python3
+:::note[Build tools are optional]
+Soleri uses `better-sqlite3` for its knowledge engine. It ships as an optional dependency — if native compilation fails during install, scaffolding still works. You'll only need build tools when running the agent's knowledge engine.
 
-  # Fedora / RHEL
-  sudo dnf group install "Development Tools" && sudo dnf install python3
-
-  # Alpine
-  apk add build-base python3
-  ```
-
-  macOS and Windows users: Xcode Command Line Tools and Visual Studio Build Tools are typically already installed.
+If you hit compilation errors later:
+- **macOS:** `xcode-select --install`
+- **Linux:** `sudo apt-get install -y build-essential python3`
+- **Windows:** Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) or use WSL
+:::
 
 ## Create Your Agent
 
-One command to scaffold a file-tree agent:
+One command to scaffold a file-tree agent in your current directory:
 
 ```bash
-npx @soleri/cli create my-agent
+npm create soleri my-agent
 ```
+
+This creates `./my-agent/` in whatever directory you run it from.
 
 The interactive wizard asks for:
 
@@ -63,10 +60,12 @@ Your agent is ready to use immediately. No `npm install`, no `npm run build`.
 
 ## Register and Start
 
+From inside the agent folder, register the MCP server and start:
+
 ```bash
 cd my-agent
-soleri install              # Register MCP server in your editor
-soleri dev                  # Start engine + watch for file changes
+npx @soleri/cli install --target claude   # or: opencode, codex, all
+soleri dev                                 # Start engine + watch for changes
 ```
 
 `soleri install` registers the Soleri Knowledge Engine in your editor's MCP config. `soleri dev` starts the engine and watches your agent folder — CLAUDE.md is regenerated automatically when you edit `agent.yaml` or `instructions/`.
@@ -105,6 +104,26 @@ Once connected, try these in your AI editor:
 ```
 
 Your agent starts with starter knowledge and learns from every session.
+
+## Updating Soleri
+
+```bash
+# Check for updates
+soleri agent status
+
+# Update engine to latest version
+npx @soleri/cli@latest upgrade
+
+# Regenerate CLAUDE.md with latest engine rules
+soleri agent refresh
+```
+
+To re-scaffold from scratch (e.g., after a major version bump):
+
+```bash
+rm -rf ~/.npm/_npx              # clear stale npx cache
+npm create soleri@latest my-agent
+```
 
 ## Customize Your Agent
 

@@ -9,11 +9,14 @@ Soleri runs natively on Windows. Hook scripts execute via Git Bash, which ships 
 
 - **Node.js 18+** — [nodejs.org](https://nodejs.org)
 - **Git for Windows** — [git-scm.com](https://git-scm.com/download/win) (provides Git Bash)
-- **Visual Studio Build Tools** — required for `better-sqlite3` native compilation
 
-## Installing Build Tools
+:::note[Build tools are optional for initial setup]
+`better-sqlite3` is an optional dependency. Agent scaffolding works without build tools. You'll only need a C++ toolchain when running the knowledge engine. See below if you hit compilation errors.
+:::
 
-`better-sqlite3` compiles a native C++ addon. On Windows you need a C++ toolchain:
+## Installing Build Tools (if needed)
+
+If the knowledge engine reports that `better-sqlite3` is missing, install a C++ toolchain:
 
 **Option A — Visual Studio Build Tools (recommended):**
 
@@ -32,8 +35,9 @@ If you already have Visual Studio 2019 or 2022 installed with the C++ workload, 
 ## Installation
 
 ```bash
-npx @soleri/cli create my-brain
-npx @soleri/cli install
+npm create soleri my-brain
+cd my-brain
+npx @soleri/cli install --target claude
 npx @soleri/cli dev
 ```
 
