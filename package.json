@@ -83,6 +83,12 @@
       "oxlint --fix",
       "secretlint"
     ],
+    "packages/*/package.json": [
+      "oxfmt --config .oxfmtrc.jsonc"
+    ],
+    "package.json": [
+      "oxfmt --config .oxfmtrc.jsonc"
+    ],
     "*.md": [
       "markdownlint-cli2 --no-globs",
       "cspell --no-must-find-files --no-progress"
