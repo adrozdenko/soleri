@@ -366,6 +366,16 @@ export {
 } from './planning/gap-types.js';
 export type { GapSeverity, GapCategory, PlanGap } from './planning/gap-types.js';
 
+// ─── Goal Ancestry ──────────────────────────────────────────────────
+export { GoalAncestry, JsonGoalRepository, generateGoalId } from './planning/goal-ancestry.js';
+export type {
+  GoalLevel,
+  GoalStatus,
+  Goal,
+  GoalStore,
+  GoalRepository,
+} from './planning/goal-ancestry.js';
+
 // ─── Task Complexity Assessor ────────────────────────────────────────
 export { assessTaskComplexity } from './planning/task-complexity-assessor.js';
 export type {
@@ -839,6 +849,21 @@ export type {
   ProfileSnapshot,
   OperatorProfileHistory,
 } from './operator/operator-types.js';
+
+// ─── Session Compaction ─────────────────────────────────────────────
+export type {
+  CompactionPolicy,
+  CompactionResult,
+  SessionState,
+  HandoffNote,
+} from './session/index.js';
+export {
+  ENGINE_DEFAULTS,
+  shouldCompact,
+  parseDuration,
+  resolvePolicy,
+  renderHandoff,
+} from './session/index.js';
 
 // ─── Operator Context (Adaptive Persona) ────────────────────────────
 export { OperatorContextStore } from './operator/operator-context-store.js';

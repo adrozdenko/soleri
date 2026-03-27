@@ -42,12 +42,27 @@ const DomainPackSchema = z.object({
   version: z.string().optional(),
 });
 
+/** Compaction policy — thresholds for session rotation */
+const CompactionPolicySchema = z.object({
+  /** Max tool calls / runs before compaction. Default: 200 */
+  maxRuns: z.number().int().positive().optional(),
+  /** Max cumulative input tokens before compaction. Default: 2_000_000 */
+  maxInputTokens: z.number().int().positive().optional(),
+  /** Max wall-clock age as duration string (e.g. '72h', '30m', '7d'). Default: '72h' */
+  maxAge: z
+    .string()
+    .regex(/^\d+(ms|s|m|h|d)$/, 'Must be a duration like "72h", "30m", "7d"')
+    .optional(),
+});
+
 /** Engine configuration */
 const EngineConfigSchema = z.object({
   /** Path to agent's vault SQLite database. Default: ~/.{id}/vault.db */
   vault: z.string().optional(),
   /** Enable brain/learning loop. Default: true */
   learning: z.boolean().optional().default(true),
+  /** Session compaction policy — thresholds for automatic session rotation */
+  compactionPolicy: CompactionPolicySchema.optional(),
 });
 
 /** Client setup configuration */
