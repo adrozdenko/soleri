@@ -1,0 +1,49 @@
+# GitHub auto-generated release notes configuration
+# Used as fallback when release notes are generated via GitHub UI
+# Primary changelog is generated from conventional commits in release.yml workflow
+# Docs: https://docs.github.com/en/repositories/releasing-on-github/automatically-generated-release-notes
+
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+    authors:
+      - dependabot
+      - dependabot[bot]
+
+  categories:
+    - title: "## Features"
+      labels:
+        - feat
+        - feature
+        - enhancement
+
+    - title: "## Bug Fixes"
+      labels:
+        - fix
+        - bugfix
+        - bug
+
+    - title: "## Performance"
+      labels:
+        - perf
+        - performance
+
+    - title: "## Refactoring"
+      labels:
+        - refactor
+        - cleanup
+
+    - title: "## CI/CD"
+      labels:
+        - ci
+        - build
+
+    - title: "## Documentation"
+      labels:
+        - docs
+        - documentation
+
+    - title: "## Other Changes"
+      labels:
+        - "*"

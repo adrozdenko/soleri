@@ -89,6 +89,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - uses: actions/setup-node@v4
         with:
@@ -170,7 +173,69 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Generate changelog from conventional commits
+        id: changelog
+        run: |
+          # Find the previous tag
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+          PREVIOUS_TAG=$(git tag --sort=-creatordate | grep -A1 "^${CURRENT_TAG}$" | tail -1)
+
+          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "$CURRENT_TAG" ]; then
+            # First release or no previous tag — use all commits
+            RANGE="$CURRENT_TAG"
+          else
+            RANGE="${PREVIOUS_TAG}..${CURRENT_TAG}"
+          fi
+
+          echo "Generating changelog for $RANGE"
+
+          # Categorize commits by conventional commit prefix
+          FEATURES=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^feat" --extended-regexp | grep -v "^$" || true)
+          FIXES=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^fix" --extended-regexp | grep -v "^$" || true)
+          PERF=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^perf" --extended-regexp | grep -v "^$" || true)
+          DOCS=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^docs" --extended-regexp | grep -v "^$" || true)
+          REFACTOR=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^refactor" --extended-regexp | grep -v "^$" || true)
+          CI_CHANGES=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^ci" --extended-regexp | grep -v "^$" || true)
+          TESTS=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^test" --extended-regexp | grep -v "^$" || true)
+          CHORE=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^chore" --extended-regexp | grep -v "^$" || true)
+
+          # Build the changelog body
+          BODY=""
+
+          if [ -n "$FEATURES" ]; then
+            BODY="${BODY}## Features\n\n${FEATURES}\n\n"
+          fi
+          if [ -n "$FIXES" ]; then
+            BODY="${BODY}## Bug Fixes\n\n${FIXES}\n\n"
+          fi
+          if [ -n "$PERF" ]; then
+            BODY="${BODY}## Performance\n\n${PERF}\n\n"
+          fi
+          if [ -n "$REFACTOR" ]; then
+            BODY="${BODY}## Refactoring\n\n${REFACTOR}\n\n"
+          fi
+          if [ -n "$TESTS" ]; then
+            BODY="${BODY}## Tests\n\n${TESTS}\n\n"
+          fi
+          if [ -n "$CI_CHANGES" ]; then
+            BODY="${BODY}## CI/CD\n\n${CI_CHANGES}\n\n"
+          fi
+          if [ -n "$DOCS" ]; then
+            BODY="${BODY}## Documentation\n\n${DOCS}\n\n"
+          fi
+          if [ -n "$CHORE" ]; then
+            BODY="${BODY}## Maintenance\n\n${CHORE}\n\n"
+          fi
+
+          # Fallback if no conventional commits found
+          if [ -z "$BODY" ]; then
+            BODY="## Changes\n\n$(git log "$RANGE" --pretty=format:'- %s (%h)' | grep -v '^$')\n"
+          fi
+
+          # Write to file (handles multiline safely)
+          printf '%b' "$BODY" > "$RUNNER_TEMP/changelog.md"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: ${{ runner.temp }}/changelog.md
