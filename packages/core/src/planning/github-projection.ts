@@ -333,6 +333,7 @@ export function formatIssueBody(
   plan: PlanMetadataForIssue,
   taskTitle: string,
   taskDescription: string,
+  options?: { goalContext?: string },
 ): string {
   const lines: string[] = [];
 
@@ -340,6 +341,11 @@ export function formatIssueBody(
   lines.push('');
   lines.push(`**Objective:** ${plan.objective}`);
   lines.push('');
+
+  if (options?.goalContext) {
+    lines.push(options.goalContext);
+    lines.push('');
+  }
 
   if (plan.decisions.length > 0) {
     lines.push('## Decisions');

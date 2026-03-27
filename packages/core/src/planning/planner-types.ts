@@ -205,6 +205,8 @@ export interface Plan {
   };
   /** Aggregate execution metrics — populated by reconcile() and complete(). */
   executionSummary?: ExecutionSummary;
+  /** Goal ID linking this plan to the goal hierarchy. */
+  goalId?: string;
   createdAt: number;
   updatedAt: number;
 }

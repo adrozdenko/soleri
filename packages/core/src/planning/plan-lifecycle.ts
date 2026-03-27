@@ -372,6 +372,8 @@ export function createPlanObject(params: {
   target_mode?: string;
   alternatives?: import('./planner-types.js').PlanAlternative[];
   initialStatus?: 'brainstorming' | 'draft';
+  /** Optional goal ID to link this plan to the goal hierarchy. */
+  goalId?: string;
 }): Plan {
   const now = Date.now();
   return {
@@ -401,6 +403,7 @@ export function createPlanObject(params: {
     ...(params.flow !== undefined && { flow: params.flow }),
     ...(params.target_mode !== undefined && { target_mode: params.target_mode }),
     ...(params.alternatives !== undefined && { alternatives: params.alternatives }),
+    ...(params.goalId !== undefined && { goalId: params.goalId }),
     checks: [],
     createdAt: now,
     updatedAt: now,

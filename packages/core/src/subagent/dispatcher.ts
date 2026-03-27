@@ -19,6 +19,8 @@ import { WorkspaceResolver } from './workspace-resolver.js';
 import { ConcurrencyManager } from './concurrency-manager.js';
 import { OrphanReaper } from './orphan-reaper.js';
 import { aggregate } from './result-aggregator.js';
+import type { GoalRepository } from '../planning/goal-ancestry.js';
+import { GoalAncestry } from '../planning/goal-ancestry.js';
 
 const DEFAULT_TIMEOUT = 300_000; // 5 minutes
 const DEFAULT_MAX_CONCURRENT = 3;
@@ -28,6 +30,8 @@ export interface SubagentDispatcherConfig {
   adapterRegistry: RuntimeAdapterRegistry;
   /** Base directory for git worktree isolation */
   baseDir?: string;
+  /** Optional goal repository for injecting goal ancestry context */
+  goalRepository?: GoalRepository;
 }
 
 export class SubagentDispatcher {
@@ -36,9 +40,13 @@ export class SubagentDispatcher {
   private readonly concurrency = new ConcurrencyManager();
   private readonly reaper: OrphanReaper;
   private readonly adapterRegistry: RuntimeAdapterRegistry;
+  private readonly goalAncestry?: GoalAncestry;
 
   constructor(config: SubagentDispatcherConfig) {
     this.adapterRegistry = config.adapterRegistry;
+    if (config.goalRepository) {
+      this.goalAncestry = new GoalAncestry(config.goalRepository);
+    }
     this.workspace = new WorkspaceResolver(config.baseDir ?? process.cwd());
     this.reaper = new OrphanReaper((taskId) => {
       // On orphan: release the task claim and clean up workspace
@@ -245,13 +253,21 @@ export class SubagentDispatcher {
       };
     }
 
-    // 4. Execute with timeout
+    // 4. Inject goal ancestry context if available
+    let enrichedConfig: Record<string, unknown> = { ...task.config, timeout };
+    const goalId = task.config?.goalId as string | undefined;
+    if (goalId && this.goalAncestry) {
+      enrichedConfig =
+        this.goalAncestry.inject({ config: enrichedConfig }, goalId).config ?? enrichedConfig;
+    }
+
+    // 5. Execute with timeout
     try {
       const resultPromise = adapter.execute({
         runId: `subagent-${task.taskId}-${Date.now()}`,
         prompt: task.prompt,
         workspace,
-        config: { ...task.config, timeout },
+        config: enrichedConfig,
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {
