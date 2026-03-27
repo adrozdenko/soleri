@@ -79,7 +79,11 @@ function cleanLock(): void {
   }
 }
 
-describe('flock-guard hook pack', () => {
+// flock-guard uses POSIX shell scripts (sh, mkdir, jq, shasum, grep -qE) that
+// are incompatible with Windows even under Git Bash due to path separator issues.
+const isWindows = process.platform === 'win32';
+
+describe.skipIf(isWindows)('flock-guard hook pack', () => {
   afterEach(() => {
     cleanLock();
   });
