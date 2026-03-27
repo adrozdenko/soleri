@@ -264,7 +264,6 @@ jobs:
 
       - name: Dead code (knip)
         run: npm run deadcode:knip
-        continue-on-error: true
 
   # ─── Website content validation ──────────────────────────────────
   website:
