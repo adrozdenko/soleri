@@ -24,7 +24,11 @@ export function checkNodeVersion(): CheckResult {
 
 export function checkNpm(): CheckResult {
   try {
-    const version = execFileSync('npm', ['--version'], { encoding: 'utf-8' }).trim();
+    // shell: true is needed on Windows where npm is installed as npm.cmd
+    const version = execFileSync('npm', ['--version'], {
+      encoding: 'utf-8',
+      shell: process.platform === 'win32',
+    }).trim();
     return { status: 'pass', label: 'npm', detail: `v${version}` };
   } catch {
     return { status: 'fail', label: 'npm', detail: 'not found' };
@@ -36,6 +40,7 @@ function checkTsx(): CheckResult {
     const version = execFileSync('npx', ['tsx', '--version'], {
       encoding: 'utf-8',
       timeout: 10_000,
+      shell: process.platform === 'win32',
     }).trim();
     return { status: 'pass', label: 'tsx', detail: `v${version}` };
   } catch {

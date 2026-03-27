@@ -6,8 +6,9 @@ import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 
 const SCRIPTS_DIR = join(__dirname, '..', 'hook-packs', 'flock-guard', 'scripts');
-const PRE_SCRIPT = join(SCRIPTS_DIR, 'flock-guard-pre.sh');
-const POST_SCRIPT = join(SCRIPTS_DIR, 'flock-guard-post.sh');
+// Normalize to forward slashes for use in shell commands on Windows (Git Bash)
+const PRE_SCRIPT = join(SCRIPTS_DIR, 'flock-guard-pre.sh').replace(/\\/g, '/');
+const POST_SCRIPT = join(SCRIPTS_DIR, 'flock-guard-post.sh').replace(/\\/g, '/');
 
 // The scripts use `git rev-parse --show-toplevel` which resolves to the repo root.
 // Compute the same hash the scripts will produce.
@@ -18,8 +19,10 @@ const PROJECT_ROOT = execSync('git rev-parse --show-toplevel', {
 const PROJECT_HASH = execSync(`printf '%s' '${PROJECT_ROOT}' | shasum | cut -c1-8`, {
   encoding: 'utf-8',
 }).trim();
-// Scripts use ${TMPDIR:-${TEMP:-/tmp}} — match that resolution for the test environment
-const LOCK_DIR = `${process.env.TMPDIR || process.env.TEMP || tmpdir()}/soleri-guard-${PROJECT_HASH}.lock`;
+// Scripts use ${TMPDIR:-${TEMP:-/tmp}} — match that resolution for the test environment.
+// Normalize backslashes to forward slashes so Node.js paths match POSIX shell paths on Windows.
+const TMP_BASE = (process.env.TMPDIR || process.env.TEMP || tmpdir()).replace(/\\/g, '/');
+const LOCK_DIR = `${TMP_BASE}/soleri-guard-${PROJECT_HASH}.lock`;
 
 function makePayload(command: string): string {
   return JSON.stringify({ tool_name: 'Bash', tool_input: { command } });
@@ -36,7 +39,7 @@ function runPre(
         encoding: 'utf-8',
         stdio: 'pipe',
         cwd: PROJECT_ROOT,
-        env: { ...process.env, ...env },
+        env: { ...process.env, TMPDIR: TMP_BASE, ...env },
       },
     );
     return { stdout, exitCode: 0 };
@@ -56,7 +59,7 @@ function runPost(
         encoding: 'utf-8',
         stdio: 'pipe',
         cwd: PROJECT_ROOT,
-        env: { ...process.env, ...env },
+        env: { ...process.env, TMPDIR: TMP_BASE, ...env },
       },
     );
     return { stdout, exitCode: 0 };

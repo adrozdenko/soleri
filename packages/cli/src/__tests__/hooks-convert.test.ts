@@ -302,9 +302,11 @@ describe('hooks convert', () => {
       expect(scriptContent).toContain('#!/bin/sh');
       expect(scriptContent).toContain('test-pack');
 
-      // Verify script is executable
-      const stat = statSync(join(scriptsDir, `${config.name}.sh`));
-      expect(stat.mode & 0o755).toBe(0o755);
+      // Verify script is executable (Unix only — Windows does not support POSIX permissions)
+      if (process.platform !== 'win32') {
+        const stat = statSync(join(scriptsDir, `${config.name}.sh`));
+        expect(stat.mode & 0o755).toBe(0o755);
+      }
     });
 
     it('should create correct project directory structure with --project flag', () => {

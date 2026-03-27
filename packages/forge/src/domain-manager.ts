@@ -149,6 +149,7 @@ export async function addDomain(params: AddDomainParams): Promise<AddDomainResul
         encoding: 'utf-8',
         timeout: 60_000,
         stdio: ['pipe', 'pipe', 'pipe'],
+        shell: process.platform === 'win32',
       });
     } catch (err) {
       const stderr = (err as { stderr?: string }).stderr ?? '';

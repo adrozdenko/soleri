@@ -318,12 +318,14 @@ export async function installKnowledge(
 
   let buildOutput = '';
   try {
-    // Using execFileSync with npx to avoid shell injection — command is hardcoded
+    // Using execFileSync with npx to avoid shell injection — command is hardcoded.
+    // shell: true is needed on Windows where npm is installed as npm.cmd.
     buildOutput = execFileSync('npm', ['run', 'build'], {
       cwd: agentPath,
       encoding: 'utf-8',
       timeout: 60_000,
       stdio: ['pipe', 'pipe', 'pipe'],
+      shell: process.platform === 'win32',
     });
   } catch (err) {
     const stderr = (err as { stderr?: string }).stderr ?? '';
