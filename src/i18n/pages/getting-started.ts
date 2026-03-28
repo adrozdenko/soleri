@@ -20,7 +20,7 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Register it in your editor',
-        text: 'From inside the new folder, register the MCP server for Claude Code, Codex, OpenCode, or all supported targets.',
+        text: 'From inside the new folder, register the MCP server. Claude Code is fully supported today. Codex and OpenCode support is planned.',
         code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
 
@@ -77,7 +77,7 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Зареєструйте в редакторі',
-        text: 'З нової теки зареєструйте MCP-сервер для Claude Code, Codex, OpenCode або всіх підтримуваних цілей.',
+        text: 'З нової теки зареєструйте MCP-сервер. Claude Code повністю підтримується. Підтримка Codex та OpenCode планується.',
         code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
 
@@ -134,7 +134,7 @@ const content: Record<Locale, GettingStartedContent> = {
       },
       {
         title: 'Registralo nel tuo editor',
-        text: 'Dalla nuova cartella, registra il server MCP per Claude Code, Codex, OpenCode o tutti i target supportati.',
+        text: 'Dalla nuova cartella, registra il server MCP. Claude Code è completamente supportato. Il supporto per Codex e OpenCode è in programma.',
         code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
 

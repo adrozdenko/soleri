@@ -8,14 +8,14 @@ const content: Record<Locale, HowItWorksContent> = {
     description:
       'Soleri is the engine that powers your agent. Your agent learns your project, remembers your decisions, and gets sharper over time — all on your machine.',
     eyebrow: 'How it works',
-    heroTitle: 'How Soleri stays useful after day one.',
+    heroTitle: 'Soleri adds value from day one.',
     heroSubtitle:
-      'You plan. You work. You capture what matters. Next time, your agent already knows.',
+      'Plans <span class="sun-sep">☀</span> Executes <span class="sun-sep">☀</span> Captures <span class="sun-sep">☀</span> Remembers',
     sections: [
       {
-        title: 'You plan. Your agent learns.',
+        title: 'Plan with your agent. It learns.',
         subtitle: 'Start with a plan, capture what matters along the way.',
-        text: 'You ask the agent to plan the work — it uses what it already knows and you approve. While you build, you capture key decisions, patterns, and fixes. About 30 seconds each. That plan-work-capture loop is the learning. No separate training step.',
+        text: 'Turn each plan into reusable knowledge. Capture what mattered in seconds and move on.',
         code: `<span class="dim">// You ask, the agent plans</span>
 <span class="hl">You:</span>     Plan: add email validation to signup.
 <span class="hl">Agent:</span>   Here's the plan:
@@ -32,7 +32,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Next time, it already knows.',
         subtitle: 'Proven patterns show up automatically during planning.',
-        text: "Come back later and plan a similar feature \u2014 your agent recommends the conventions that actually worked last time. Suggestions are ranked by real usage, so the good stuff rises to the top. Your agent starts sounding like your team.",
+        text: 'Start faster on similar work. Your agent surfaces the patterns that actually worked, right when you plan.',
         code: `<span class="dim">// A week later, new task</span>
 <span class="hl">You:</span>     Plan: add phone validation to profile.
 <span class="hl">Agent:</span>   Based on what worked before:
@@ -47,7 +47,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Gets sharper, not messier.',
         subtitle: 'The knowledge base curates itself as you use it.',
-        text: "Worried it'll turn into a junk drawer? It won't. Patterns that keep working get stronger, stale ones fade, and duplicates merge \u2014 automatically. You end up with a clean, reliable set of knowledge that improves with every session.",
+        text: 'Your best patterns rise to the top. Old and duplicate noise fades out automatically.',
         code: `<span class="cmt"># Your agent's strongest patterns</span>
 
 <span class="ok">email-validation</span>     strength: <span class="val">94</span>   used 12 times
@@ -63,7 +63,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Everything stays on your machine.',
         subtitle: 'Local-first. Open source. Nothing leaves your computer.',
-        text: "Your agent's knowledge lives entirely on your machine \u2014 a local SQLite database plus plain files. No cloud sync, no telemetry, no data leaving your computer. Use it with any MCP editor: Claude Code, Cursor, Codex, and more. Open source under Apache 2.0.",
+        text: 'Your knowledge stays private by default. No cloud, no telemetry, no surprises. Open source under Apache 2.0.',
         code: `<span class="key">~/.soleri/</span>
 \u251C\u2500\u2500 <span class="ok">vault.db</span>           <span class="cmt"># your knowledge (SQLite)</span>
 \u251C\u2500\u2500 <span class="ok">brain.json</span>         <span class="cmt"># strength scores</span>
@@ -79,14 +79,14 @@ const content: Record<Locale, HowItWorksContent> = {
     description:
       'Soleri — це рушій, що живить вашого агента. Ваш агент вивчає проєкт, запам\'ятовує рішення і стає точнішим з часом — все на вашій машині.',
     eyebrow: 'Як це працює',
-    heroTitle: 'Як Soleri залишається корисним після першого дня.',
+    heroTitle: 'Soleri дає цінність з першого дня.',
     heroSubtitle:
-      'Ви плануєте. Ви працюєте. Ви фіксуєте важливе. Наступного разу ваш агент вже знає.',
+      'Планує <span class="sun-sep">☀</span> Виконує <span class="sun-sep">☀</span> Фіксує <span class="sun-sep">☀</span> Пам\u0027ятає',
     sections: [
       {
-        title: 'Ви плануєте. Ваш агент вчиться.',
+        title: 'Плануйте разом з агентом. Він вчиться.',
         subtitle: 'Почніть з плану, фіксуйте важливе по дорозі.',
-        text: 'Ви просите агента спланувати роботу — він використовує те, що вже знає, і ви затверджуєте. Під час роботи ви фіксуєте ключові рішення, патерни та виправлення. Близько 30 секунд кожне. Цикл план-робота-фіксація і є навчання. Жодного окремого кроку.',
+        text: 'Перетворіть кожен план на знання для повторного використання. Зафіксуйте важливе за секунди і рухайтесь далі.',
         code: `<span class="dim">// Ви питаєте, агент планує</span>
 <span class="hl">Ти:</span>      План: додати валідацію email до реєстрації.
 <span class="hl">Агент:</span>   Ось план:
@@ -103,7 +103,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Наступного разу він вже знає.',
         subtitle: 'Перевірені патерни з\'являються автоматично при плануванні.',
-        text: 'Поверніться пізніше і сплануйте схожу функцію — ваш агент порекомендує конвенції, що реально спрацювали минулого разу. Пропозиції ранжовані за реальним використанням. Ваш агент починає звучати як ваша команда.',
+        text: 'Починайте швидше зі схожою роботою. Агент підказує патерни, що реально спрацювали, прямо під час планування.',
         code: `<span class="dim">// Через тиждень, нова задача</span>
 <span class="hl">Ти:</span>      План: додати валідацію телефону до профілю.
 <span class="hl">Агент:</span>   На основі того, що спрацювало:
@@ -118,7 +118,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Стає точнішим, не захаращенішим.',
         subtitle: 'База знань курує себе сама під час використання.',
-        text: 'Боїтеся, що перетвориться на звалище? Ні. Патерни, що працюють, стають сильнішими, застарілі згасають, дублікати зливаються — автоматично. Ви отримуєте чистий, надійний набір знань, що покращується з кожною сесією.',
+        text: 'Найкращі патерни піднімаються вгору. Старе та дублі зникають автоматично.',
         code: `<span class="cmt"># Найсильніші патерни вашого агента</span>
 
 <span class="ok">email-validation</span>     сила: <span class="val">94</span>   використано 12 разів
@@ -134,7 +134,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Все залишається на вашій машині.',
         subtitle: 'Локально. Відкритий код. Нічого не залишає ваш комп\'ютер.',
-        text: 'Знання вашого агента живуть повністю на вашій машині — локальна база SQLite плюс прості файли. Без хмарної синхронізації, без телеметрії, без даних, що покидають ваш комп\'ютер. Працює з будь-яким MCP-редактором: Claude Code, Cursor, Codex та інші. Відкритий код під Apache 2.0.',
+        text: 'Ваші знання залишаються приватними за замовчуванням. Без хмари, без телеметрії, без сюрпризів. Відкритий код під Apache 2.0.',
         code: `<span class="key">~/.soleri/</span>
 \u251C\u2500\u2500 <span class="ok">vault.db</span>           <span class="cmt"># ваші знання (SQLite)</span>
 \u251C\u2500\u2500 <span class="ok">brain.json</span>         <span class="cmt"># оцінки сили</span>
@@ -150,14 +150,14 @@ const content: Record<Locale, HowItWorksContent> = {
     description:
       'Soleri è il motore che alimenta il tuo agente. Il tuo agente impara il progetto, ricorda le decisioni e diventa più preciso nel tempo — tutto sulla tua macchina.',
     eyebrow: 'Come funziona',
-    heroTitle: 'Come Soleri resta utile dopo il primo giorno.',
+    heroTitle: 'Soleri aggiunge valore dal primo giorno.',
     heroSubtitle:
-      'Pianifichi. Lavori. Catturi ciò che conta. La prossima volta, il tuo agente già sa.',
+      'Pianifica <span class="sun-sep">☀</span> Esegue <span class="sun-sep">☀</span> Cattura <span class="sun-sep">☀</span> Ricorda',
     sections: [
       {
-        title: 'Pianifichi. Il tuo agente impara.',
+        title: 'Pianifica con il tuo agente. Impara.',
         subtitle: 'Inizia con un piano, cattura ciò che conta lungo la strada.',
-        text: "Chiedi all'agente di pianificare il lavoro — usa ciò che già sa e tu approvi. Mentre costruisci, catturi decisioni, pattern e fix chiave. Circa 30 secondi ciascuno. Il ciclo piano-lavoro-cattura è l'apprendimento. Nessun passaggio separato.",
+        text: 'Trasforma ogni piano in conoscenza riutilizzabile. Cattura ciò che conta in pochi secondi e vai avanti.',
         code: `<span class="dim">// Chiedi, l'agente pianifica</span>
 <span class="hl">Tu:</span>      Piano: aggiungi validazione email alla registrazione.
 <span class="hl">Agente:</span>  Ecco il piano:
@@ -174,7 +174,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'La prossima volta, già sa.',
         subtitle: 'I pattern provati appaiono automaticamente durante la pianificazione.',
-        text: 'Torna più tardi e pianifica una feature simile — il tuo agente raccomanda le convenzioni che hanno funzionato l\'ultima volta. I suggerimenti sono ordinati per uso reale. Il tuo agente inizia a parlare come il tuo team.',
+        text: 'Parti più veloce su lavori simili. Il tuo agente propone i pattern che hanno funzionato, proprio quando pianifichi.',
         code: `<span class="dim">// Una settimana dopo, nuovo task</span>
 <span class="hl">Tu:</span>      Piano: aggiungi validazione telefono al profilo.
 <span class="hl">Agente:</span>  In base a ciò che ha funzionato:
@@ -189,7 +189,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Diventa più preciso, non più caotico.',
         subtitle: 'La base di conoscenza si cura da sola mentre la usi.',
-        text: "Preoccupato che diventi un cassetto della spazzatura? Non succederà. I pattern che funzionano diventano più forti, quelli stantii svaniscono e i duplicati si fondono — automaticamente. Ottieni un set di conoscenze pulito e affidabile che migliora ad ogni sessione.",
+        text: 'I tuoi pattern migliori salgono in cima. Rumore vecchio e duplicati svaniscono automaticamente.',
         code: `<span class="cmt"># I pattern più forti del tuo agente</span>
 
 <span class="ok">email-validation</span>     forza: <span class="val">94</span>   usato 12 volte
@@ -205,7 +205,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Tutto resta sulla tua macchina.',
         subtitle: 'Local-first. Open source. Niente lascia il tuo computer.',
-        text: "La conoscenza del tuo agente vive interamente sulla tua macchina — un database SQLite locale più file semplici. Nessuna sincronizzazione cloud, nessuna telemetria, nessun dato che lascia il tuo computer. Funziona con qualsiasi editor MCP: Claude Code, Cursor, Codex e altri. Open source sotto Apache 2.0.",
+        text: 'La tua conoscenza resta privata per default. Nessun cloud, nessuna telemetria, nessuna sorpresa. Open source sotto Apache 2.0.',
         code: `<span class="key">~/.soleri/</span>
 \u251C\u2500\u2500 <span class="ok">vault.db</span>           <span class="cmt"># la tua conoscenza (SQLite)</span>
 \u251C\u2500\u2500 <span class="ok">brain.json</span>         <span class="cmt"># punteggi di forza</span>

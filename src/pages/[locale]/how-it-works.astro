@@ -25,7 +25,7 @@ const c = howItWorksContent(locale);
     <div class="soleri-mark mark-hero"></div>
     <p class="eyebrow">{c.eyebrow}</p>
     <h1>{c.heroTitle}</h1>
-    <p class="hero-subtitle">{c.heroSubtitle}</p>
+    <p class="hero-subtitle" set:html={c.heroSubtitle} />
   </section>
 
   <!-- SECTIONS -->

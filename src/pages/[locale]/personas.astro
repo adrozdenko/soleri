@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CTA from '../../components/CTA.astro';
-import { t } from '../../i18n/ui';
 import { locales } from '../../i18n/types';
 import type { Locale } from '../../i18n/types';
 import { personasContent } from '../../i18n/pages/personas';
@@ -20,7 +19,7 @@ const c = personasContent(locale);
   lang={locale}
   locale={locale}
 >
-  <!-- PAGE HERO -->
+  <!-- HERO -->
   <section class="page-hero">
     <div class="soleri-mark mark-hero"></div>
     <p class="eyebrow">{c.heroEyebrow}</p>
@@ -28,126 +27,24 @@ const c = personasContent(locale);
     <p class="hero-subtitle">{c.heroSubtitle}</p>
   </section>
 
-  <!-- SECTION 1: CREATE IN SECONDS -->
-  <section class="agent-section" style="margin-top:0;">
-    <div class="section-header">
-      <h2 class="section-title">{c.section1Title}</h2>
-    </div>
-    <div class="agent-grid">
-      <div>
-        <div class="feature-code" set:html={c.section1Code1} />
-        <div class="feature-code" style="margin-top:12px;" set:html={c.section1Code2} />
-      </div>
-      <div class="agent-content">
-        <h3>{c.section1ContentTitle}</h3>
-        <p set:html={c.section1ContentP1} />
-        <p>{c.section1ContentP2}</p>
-        <p class="key-point">{c.section1KeyPoint}</p>
-      </div>
-    </div>
-  </section>
-
-  <div class="soleri-mark mark-section"></div>
-
-  <!-- SECTION 2: STRUCTURED VAULT -->
-  <section class="agent-section">
-    <div class="section-header">
-      <h2 class="section-title">{c.section2Title}</h2>
-    </div>
-    <div class="agent-grid">
-      <div class="agent-content">
-        <h3>{c.section2ContentTitle}</h3>
-        <p>{c.section2ContentP1}</p>
-        <p>{c.section2ContentP2}</p>
-        <p class="key-point">{c.section2KeyPoint}</p>
-        <div class="vault-tree">
-          <div class="vault-node frontend">
-            <span class="vault-node-label">Frontend</span>
-            {c.vaultNodeFrontend}
+  <!-- SECTIONS -->
+  {c.sections.map((s, i) => (
+    <>
+      {i > 0 && <div class="soleri-mark mark-section"></div>}
+      <section class="deep-section">
+        <div class="deep-grid">
+          <div class="deep-content">
+            <h2 class="how-title">{s.title}</h2>
+            <p class="how-subtitle">{s.subtitle}</p>
+            <p>{s.text}</p>
           </div>
-          <div class="vault-node backend">
-            <span class="vault-node-label">Backend</span>
-            {c.vaultNodeBackend}
-          </div>
-          <div class="vault-node crosscut">
-            <span class="vault-node-label">{c.vaultNodeCrosscutLabel}</span>
-            {c.vaultNodeCrosscut}
+          <div>
+            <div class="feature-code" set:html={s.code} />
           </div>
         </div>
-      </div>
-      <div>
-        <div class="feature-code" set:html={c.section2Code1} />
-        <div class="feature-code" style="margin-top:12px;" set:html={c.section2Code2} />
-      </div>
-    </div>
-  </section>
-
-  <!-- SECTION 3: KNOWLEDGE GRAPH -->
-  <section class="agent-section">
-    <div class="section-header">
-      <h2 class="section-title">{c.section3Title}</h2>
-    </div>
-    <div class="agent-grid">
-      <div>
-        <div class="feature-code" set:html={c.section3Code1} />
-        <div class="feature-code" style="margin-top:12px;" set:html={c.section3Code2} />
-      </div>
-      <div class="agent-content">
-        <h3>{c.section3ContentTitle}</h3>
-        <p>{c.section3ContentP1}</p>
-        <p>{c.section3ContentP2}</p>
-        <p class="key-point">{c.section3KeyPoint}</p>
-        <div class="graph-stats">
-          <div class="graph-stat">
-            <span class="graph-stat-num amber">1</span>
-            <div class="graph-stat-text">
-              <strong>{c.graphStep1Title}</strong>
-              <span class="graph-stat-desc">{c.graphStep1Desc}</span>
-            </div>
-          </div>
-          <div class="graph-arrow">&darr;</div>
-          <div class="graph-stat">
-            <span class="graph-stat-num teal">2</span>
-            <div class="graph-stat-text">
-              <strong>{c.graphStep2Title}</strong>
-              <span class="graph-stat-desc">{c.graphStep2Desc}</span>
-            </div>
-          </div>
-          <div class="graph-arrow">&darr;</div>
-          <div class="graph-stat">
-            <span class="graph-stat-num green">3</span>
-            <div class="graph-stat-text">
-              <strong>{c.graphStep3Title}</strong>
-              <span class="graph-stat-desc">{c.graphStep3Desc}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <div class="soleri-mark mark-section"></div>
-
-  <!-- SECTION 4: VAULT SELF-MAINTENANCE -->
-  <section class="agent-section">
-    <div class="section-header">
-      <h2 class="section-title">{c.section4Title}</h2>
-    </div>
-    <div class="agent-grid">
-      <div class="agent-content">
-        <h3>{c.section4ContentTitle}</h3>
-        <p>{c.section4ContentP1}</p>
-        <p>{c.section4ContentP2}</p>
-        <p class="key-point">{c.section4KeyPoint}</p>
-      </div>
-      <div>
-        <div class="feature-code" set:html={c.section4Code1} />
-        <div class="feature-code" style="margin-top:12px;" set:html={c.section4Code2} />
-      </div>
-    </div>
-  </section>
-
-  <div class="soleri-mark mark-section"></div>
+      </section>
+    </>
+  ))}
 
   <CTA locale={locale} />
 </BaseLayout>

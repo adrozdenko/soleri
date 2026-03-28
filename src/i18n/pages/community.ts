@@ -22,7 +22,7 @@ const content: Record<Locale, CommunityContent> = {
         name: 'Discord',
         desc: 'Real-time chat for quick questions, pair debugging, and community hangouts. Coming soon.',
         action: 'Coming soon',
-        href: 'https://discord.gg/soleri',
+        href: '#',
         icon: 'discord',
       },
       {
@@ -80,7 +80,7 @@ const content: Record<Locale, CommunityContent> = {
         name: 'Discord',
         desc: 'Чат у реальному часі для швидких запитань, парного дебагу та спілкування. Скоро.',
         action: 'Скоро',
-        href: 'https://discord.gg/soleri',
+        href: '#',
         icon: 'discord',
       },
       {
@@ -138,7 +138,7 @@ const content: Record<Locale, CommunityContent> = {
         name: 'Discord',
         desc: 'Chat in tempo reale per domande veloci, debug in coppia e ritrovi della community. In arrivo.',
         action: 'In arrivo',
-        href: 'https://discord.gg/soleri',
+        href: '#',
         icon: 'discord',
       },
       {

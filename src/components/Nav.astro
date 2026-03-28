@@ -12,6 +12,7 @@ interface Props {
 const { locale, isRoot = false } = Astro.props;
 const navLinks = getNavLinks(locale);
 const brandHref = isRoot ? 'en/' : 'index.html';
+const currentPath = Astro.url.pathname;
 ---
 <header class="nav">
   <div class="brand">
@@ -22,9 +23,14 @@ const brandHref = isRoot ? 'en/' : 'index.html';
     </a>
   </div>
   <nav class="nav-links" aria-label="Main navigation">
-    {navLinks.map(link => (
-      <a href={link.href.startsWith('/docs') ? link.href : (isRoot ? link.href.slice(1) : link.href.split('/').pop())}>{link.label}</a>
-    ))}
+    {navLinks.map(link => {
+      const href = link.href.startsWith('/docs') ? link.href : (isRoot ? link.href.slice(1) : link.href.split('/').pop());
+      const linkFile = link.href.split('/').pop() || '';
+      const isActive = link.href === '/docs/'
+        ? currentPath === '/docs/' || currentPath === '/docs'
+        : linkFile !== '' && currentPath.endsWith(linkFile);
+      return <a href={href} aria-current={isActive ? 'page' : undefined}>{link.label}</a>;
+    })}
   </nav>
   <div class="nav-actions">
     <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Menu">

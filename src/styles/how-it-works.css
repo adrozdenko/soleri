@@ -108,11 +108,20 @@
   margin-bottom: 8px;
 }
 
+.deep-content .how-subtitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
 .deep-content p {
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.8;
   color: var(--muted);
   margin-bottom: 16px;
+  max-width: 48ch;
 }
 
 .deep-content .key-point {
