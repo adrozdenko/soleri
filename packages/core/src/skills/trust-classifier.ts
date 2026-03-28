@@ -92,7 +92,7 @@ function walkDir(rootDir: string, currentDir: string, inventory: SkillInventoryI
 
     if (!stat.isFile()) continue;
 
-    const relPath = relative(rootDir, fullPath);
+    const relPath = relative(rootDir, fullPath).replaceAll('\\', '/');
     const ext = extname(name).toLowerCase();
     const kind = classifyFile(name, ext);
 
