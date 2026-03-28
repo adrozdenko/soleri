@@ -87,10 +87,16 @@ function resolveLifecycleHooks(
   return hooks;
 }
 
-interface SettingsHookEntry {
+interface SettingsHookDef {
   type: 'command';
   command: string;
   timeout?: number;
+  statusMessage?: string;
+}
+
+interface SettingsHookEntry {
+  matcher?: string;
+  hooks: SettingsHookDef[];
   [key: string]: unknown;
 }
 
@@ -121,17 +127,24 @@ function addLifecycleHooks(
     const eventKey = hook.event;
     const eventHooks = (hooks[eventKey] ?? []) as SettingsHookEntry[];
     const alreadyExists = eventHooks.some(
-      (h) => h.command === hook.command && h[PACK_MARKER] === sourcePack,
+      (h) => h[PACK_MARKER] === sourcePack && h.hooks?.some((hd) => hd.command === hook.command),
     );
     if (!alreadyExists) {
-      const entry: SettingsHookEntry = {
+      const hookDef: SettingsHookDef = {
         type: hook.type,
         command: hook.command,
-        [PACK_MARKER]: sourcePack,
       };
       if (hook.timeout) {
-        entry.timeout = hook.timeout;
+        hookDef.timeout = hook.timeout;
       }
+      if (hook.statusMessage) {
+        hookDef.statusMessage = hook.statusMessage;
+      }
+      const entry: SettingsHookEntry = {
+        matcher: hook.matcher || '',
+        hooks: [hookDef],
+        [PACK_MARKER]: sourcePack,
+      };
       eventHooks.push(entry);
       hooks[eventKey] = eventHooks;
       added.push(`${eventKey}:${hook.matcher}`);
@@ -144,7 +157,10 @@ function addLifecycleHooks(
 
 function removeLifecycleHooks(claudeDir: string, packName: string): string[] {
   const settings = readClaudeSettings(claudeDir);
-  const hooks = (settings['hooks'] ?? {}) as Record<string, SettingsHookEntry[]>;
+  const hooks = (settings['hooks'] ?? {}) as Record<
+    string,
+    (SettingsHookEntry | Record<string, unknown>)[]
+  >;
   const removed: string[] = [];
   for (const [eventKey, eventHooks] of Object.entries(hooks)) {
     if (!Array.isArray(eventHooks)) continue;
@@ -301,7 +317,10 @@ export function isPackInstalled(
         const eventHooks = hooksObj[hook.event];
         if (
           Array.isArray(eventHooks) &&
-          eventHooks.some((h) => h.command === hook.command && h[PACK_MARKER] === sourcePack)
+          eventHooks.some(
+            (h) =>
+              h[PACK_MARKER] === sourcePack && h.hooks?.some((hd) => hd.command === hook.command),
+          )
         ) {
           present++;
         }

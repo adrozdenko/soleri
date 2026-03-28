@@ -176,7 +176,11 @@ describe('hook-packs', () => {
       const settings = JSON.parse(readFileSync(join(claudeDir, 'settings.json'), 'utf-8'));
       expect(settings.hooks).toBeDefined();
       expect(settings.hooks.PreToolUse).toHaveLength(1);
-      expect(settings.hooks.PreToolUse[0].command).toBe('sh ~/.claude/hooks/anti-deletion.sh');
+      expect(settings.hooks.PreToolUse[0].matcher).toBe('Bash');
+      expect(settings.hooks.PreToolUse[0].hooks).toHaveLength(1);
+      expect(settings.hooks.PreToolUse[0].hooks[0].command).toBe(
+        'sh ~/.claude/hooks/anti-deletion.sh',
+      );
       expect(settings.hooks.PreToolUse[0]._soleriPack).toBe('safety');
     });
 
