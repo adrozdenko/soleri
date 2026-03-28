@@ -293,15 +293,23 @@ export function registerPack(program: Command): void {
   pack
     .command('update')
     .argument('[packId]', 'Specific pack to update (or all)')
+    .option('--check', 'Show outdated packs without updating (dry run)')
     .option('--force', 'Force update even if version is incompatible')
     .description('Update installed packs to latest compatible version')
-    .action((packId: string | undefined, _opts: { force?: boolean }) => {
+    .action((packId: string | undefined, opts: { check?: boolean; force?: boolean }) => {
       const lockfilePath = getLockfilePath();
       const lockfile = new PackLockfile(lockfilePath);
       const ctx = detectAgent();
       if (!ctx) return;
 
-      let entries = lockfile.list().filter((e) => e.source === 'npm');
+      const allEntries = lockfile.list();
+
+      if (allEntries.length === 0) {
+        p.log.info('No packs installed.');
+        return;
+      }
+
+      let entries = allEntries.filter((e) => e.source === 'npm');
       if (packId) {
         entries = entries.filter((e) => e.id === packId);
         if (entries.length === 0) {
@@ -314,6 +322,14 @@ export function registerPack(program: Command): void {
         }
       }
 
+      // Note any local/built-in packs that are skipped
+      const skippedLocal = allEntries.filter((e) => e.source !== 'npm');
+      if (!packId && skippedLocal.length > 0) {
+        for (const entry of skippedLocal) {
+          p.log.info(`Skipping ${entry.id} (${entry.source} pack, not updatable from npm)`);
+        }
+      }
+
       if (entries.length === 0) {
         p.log.info('No npm-sourced packs to update.');
         return;
@@ -322,23 +338,74 @@ export function registerPack(program: Command): void {
       const s = p.spinner();
       s.start('Checking for updates...');
 
-      let updated = 0;
+      const outdated: Array<{ id: string; current: string; latest: string }> = [];
+      const errors: Array<{ id: string; error: string }> = [];
+
       for (const entry of entries) {
         const npmPkg = entry.id.startsWith('@') ? entry.id : `@soleri/pack-${entry.id}`;
-        const latest = checkNpmVersion(npmPkg);
-        if (!latest || latest === entry.version) continue;
+        try {
+          const latest = checkNpmVersion(npmPkg);
+          if (!latest) {
+            errors.push({ id: entry.id, error: 'could not reach registry' });
+            continue;
+          }
+          if (latest !== entry.version) {
+            outdated.push({ id: entry.id, current: entry.version, latest });
+          }
+        } catch {
+          errors.push({ id: entry.id, error: 'registry check failed' });
+        }
+      }
 
-        // Update lockfile entry with new version
-        lockfile.set({ ...entry, version: latest, installedAt: new Date().toISOString() });
+      s.stop(outdated.length > 0 ? `${outdated.length} update(s) available` : 'Check complete');
+
+      // Show errors for packs we couldn't reach
+      for (const err of errors) {
+        p.log.warn(`${err.id}: ${err.error}`);
+      }
+
+      if (outdated.length === 0) {
+        p.log.success('All packs are up to date.');
+        return;
+      }
+
+      // Display table
+      const nameWidth = Math.max(4, ...outdated.map((o) => o.id.length));
+      const curWidth = Math.max(7, ...outdated.map((o) => o.current.length));
+      const latWidth = Math.max(6, ...outdated.map((o) => o.latest.length));
+
+      console.log('');
+      console.log(
+        `  ${'Pack'.padEnd(nameWidth)}  ${'Current'.padEnd(curWidth)}  ${'Latest'.padEnd(latWidth)}`,
+      );
+      for (const item of outdated) {
+        console.log(
+          `  ${item.id.padEnd(nameWidth)}  ${item.current.padEnd(curWidth)}  ${item.latest.padEnd(latWidth)}`,
+        );
+      }
+      console.log('');
+
+      if (opts.check) {
+        p.log.info(`${outdated.length} pack(s) outdated. Run without --check to update.`);
+        return;
+      }
+
+      // Perform the actual update
+      let updated = 0;
+      for (const item of outdated) {
+        const entry = lockfile.get(item.id);
+        if (!entry) continue;
+        lockfile.set({
+          ...entry,
+          version: item.latest,
+          installedAt: new Date().toISOString(),
+        });
         updated++;
-        p.log.info(`  ${entry.id}: ${entry.version} → ${latest}`);
       }
 
       if (updated > 0) {
         lockfile.save();
-        s.stop(`Updated ${updated} pack(s)`);
-      } else {
-        s.stop('All packs up to date');
+        p.log.success(`Updated ${updated} pack(s).`);
       }
     });
 
