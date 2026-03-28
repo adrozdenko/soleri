@@ -49,10 +49,39 @@ The `soleri install` command supports `--target claude`, `--target codex`, or `-
 | Vault, brain, planner        | No — pure TypeScript, no IDE dependency    | Works headless                                     |
 | File watching (`soleri dev`) | No — uses Node.js `fs.watch`               | OS-level, not IDE-specific                         |
 
+## Hook System Mapping
+
+Both Claude Code and OpenCode provide hook systems that Soleri leverages for enforcement rules. Claude Code uses shell-based hooks configured in `settings.json`. OpenCode uses a TypeScript plugin system with full lifecycle support.
+
+| Soleri Trigger | Claude Code Event | OpenCode Event |
+| -------------- | ----------------- | ------------------- |
+| `pre-tool-use` | `PreToolUse` | `tool.execute.before` |
+| `post-tool-use` | `PostToolUse` | `tool.execute.after` |
+| `session-start` | `SessionStart` | `session.created` |
+| `pre-compact` | `PreCompact` | `session.compacted` |
+| `pre-commit` | Git hook | Not supported |
+| `on-save` | Not supported | Not supported |
+
+### Adapter Pattern
+
+The enforcement layer uses a host adapter pattern to translate platform-agnostic rules into host-specific config:
+
+- **`ClaudeCodeAdapter`** generates shell hook entries in Claude Code's `settings.json`. Each enforcement rule becomes a hook command that runs a validation script.
+- **`OpenCodeAdapter`** generates a TypeScript plugin file at `.opencode/plugins/soleri-enforcement.ts`. Each enforcement rule becomes an event handler that runs inline checks against the hook context.
+
+Both adapters implement the same `HostAdapter` interface (`supports()` + `translate()`), so the enforcement registry can target any host without the rules themselves being host-aware.
+
+### Upstream Issues
+
+Two OpenCode issues track improvements that will increase parity:
+
+- [anomalyco/opencode#12472](https://github.com/anomalyco/opencode/issues/12472) — native Claude hook compatibility format, which would let OpenCode consume the same `settings.json` hooks without an adapter translation step.
+- [anomalyco/opencode#19469](https://github.com/anomalyco/opencode/issues/19469) — `permission.ask` wiring, which would enable OpenCode to support interactive approval flows similar to Claude Code's `PreToolUse` permission model.
+
 ## What Would Break Cross-Platform
 
 - Relying on Claude Code-specific environment variables
-- Using Claude Code hook system for core logic (hooks are optional enhancement)
+- Putting core logic in hooks instead of in the MCP engine (hooks are an enforcement layer, not a logic layer)
 - Assuming specific MCP client behavior beyond the spec
 
 ## Verification

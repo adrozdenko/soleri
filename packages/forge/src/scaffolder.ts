@@ -163,6 +163,13 @@ export function previewScaffold(config: AgentConfig): ScaffoldPreview {
     });
   }
 
+  if (opencodeSetup && config.hookPacks?.length) {
+    files.push({
+      path: '.opencode/plugins/',
+      description: `OpenCode enforcement plugin (${config.hookPacks.join(', ')})`,
+    });
+  }
+
   if (config.telegram) {
     files.push(
       {
@@ -332,6 +339,10 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
 
   if (claudeSetup && config.hookPacks?.length) {
     dirs.push('.claude');
+  }
+
+  if (opencodeSetup && config.hookPacks?.length) {
+    dirs.push('.opencode/plugins');
   }
 
   for (const dir of dirs) {
@@ -568,6 +579,12 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
 
   if (claudeSetup && config.hookPacks?.length) {
     summaryLines.push(`${config.hookPacks.length} hook pack(s) bundled in .claude/`);
+  }
+
+  if (opencodeSetup && config.hookPacks?.length) {
+    summaryLines.push(
+      `${config.hookPacks.length} hook pack(s) bundled as OpenCode plugin in .opencode/plugins/`,
+    );
   }
 
   for (const registration of mcpRegistrations) {
