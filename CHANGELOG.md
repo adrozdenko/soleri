@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v9.7.2 — 2026-03-28 — Hook Pack Settings Fix
+
+### Bug Fix
+
+- **CLI: lifecycle hook schema** — `addLifecycleHooks()` was writing flat objects to `settings.json` instead of the required `{ matcher, hooks: [...] }` structure, causing Claude Code to reject the settings file on startup. Now correctly wraps hook definitions with matcher and hooks array. Also carries `statusMessage` through to the output.
+
 ## v9.7.1 — 2026-03-28 — Update Notification Improvements
 
 ### Update Check Enhancements (#443, #445, #446)
