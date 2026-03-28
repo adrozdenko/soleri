@@ -382,6 +382,7 @@ body {
 .nav-links a {
   color: var(--muted);
   text-decoration: none;
+  cursor: pointer;
   font-size: 13px;
   font-weight: 500;
   padding: 6px 12px;

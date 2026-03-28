@@ -20,7 +20,7 @@ const c = teamsContent(locale);
   lang={locale}
   locale={locale}
 >
-  <!-- PAGE HERO -->
+  <!-- HERO -->
   <section class="page-hero">
     <div class="soleri-mark mark-hero"></div>
     <p class="eyebrow">{c.hero.eyebrow}</p>
@@ -28,154 +28,24 @@ const c = teamsContent(locale);
     <p class="hero-subtitle">{c.hero.subtitle}</p>
   </section>
 
-  <!-- TEAM VAULTS -->
-  <section class="team-section" style="margin-top:0;">
-    <div class="section-header">
-      <h2 class="section-title">{c.vaults.sectionTitle}</h2>
-    </div>
-    <div class="team-grid">
-      <div class="team-content">
-        <h3>{c.vaults.heading}</h3>
-        <p>{c.vaults.description}</p>
-        <p class="key-point">{c.vaults.keyPoint}</p>
-        <div class="flow-diagram">
-          {c.vaults.flowSteps.map((step, i) => (
-            <>
-              {i > 0 && <div class="flow-arrow">&darr;</div>}
-              <div class="flow-step">
-                <span class={`flow-step-num ${step.color}`}>{step.num}</span>
-                {step.text}
-              </div>
-            </>
-          ))}
+  <!-- SECTIONS -->
+  {c.sections.map((s, i) => (
+    <>
+      {i > 0 && <div class="soleri-mark mark-section"></div>}
+      <section class="deep-section">
+        <div class="deep-grid">
+          <div class="deep-content">
+            <h2 class="how-title">{s.title}</h2>
+            <p class="how-subtitle">{s.subtitle}</p>
+            <p>{s.text}</p>
+          </div>
+          <div>
+            <div class="feature-code" set:html={s.code} />
+          </div>
         </div>
-      </div>
-      <div>
-        <div class="feature-code"><span class="cmt">{c.vaults.code1Comment}</span>
-<Fragment set:html={c.vaults.code1Output} /></div>
-        <div class="feature-code" style="margin-top:12px;"><span class="cmt">{c.vaults.code2Comment}</span>
-<Fragment set:html={c.vaults.code2Output} /></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CROSS-PROJECT KNOWLEDGE -->
-  <section class="team-section">
-    <div class="section-header">
-      <h2 class="section-title">{c.crossProject.sectionTitle}</h2>
-    </div>
-    <div class="team-grid">
-      <div>
-        <div class="feature-code"><span class="cmt">{c.crossProject.code1Comment}</span>
-<Fragment set:html={c.crossProject.code1Output} /></div>
-        <div class="feature-code" style="margin-top:12px;"><span class="cmt">{c.crossProject.code2Comment}</span>
-<Fragment set:html={c.crossProject.code2Yaml} /></div>
-      </div>
-      <div class="team-content">
-        <h3>{c.crossProject.heading}</h3>
-        <p>{c.crossProject.description}</p>
-        <p class="key-point">{c.crossProject.keyPoint}</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- KNOWLEDGE PACKS -->
-  <section class="team-section">
-    <div class="section-header">
-      <h2 class="section-title">{c.packs.sectionTitle}</h2>
-    </div>
-    <div class="team-grid">
-      <div class="team-content">
-        <h3>{c.packs.heading}</h3>
-        <p>{c.packs.description}</p>
-        <table class="packs-table">
-          <thead>
-            <tr>
-              <th>{c.packs.tableHeaders[0]}</th>
-              <th>{c.packs.tableHeaders[1]}</th>
-              <th>{c.packs.tableHeaders[2]}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {c.packs.rows.map(row => (
-              <tr>
-                <td><span class={`tier-badge ${row.tierClass}`}>{row.tierLabel}</span></td>
-                <td>{row.source}</td>
-                <td>{row.price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div>
-        <div class="feature-code"><span class="cmt">{c.packs.code1Comment}</span>
-<Fragment set:html={c.packs.code1Output} /></div>
-        <div class="feature-code" style="margin-top:12px;"><span class="cmt">{c.packs.code2Comment}</span>
-<Fragment set:html={c.packs.code2Output} /></div>
-      </div>
-    </div>
-  </section>
-
-  <div class="soleri-mark mark-section"></div>
-
-  <!-- PLAYBOOKS -->
-  <section class="team-section">
-    <div class="section-header">
-      <h2 class="section-title">{c.playbooks.sectionTitle}</h2>
-    </div>
-    <div class="team-grid">
-      <div class="team-content">
-        <h3>{c.playbooks.heading}</h3>
-        <p>{c.playbooks.description1}</p>
-        <p>{c.playbooks.description2}</p>
-        <p class="key-point">{c.playbooks.keyPoint}</p>
-      </div>
-      <div>
-        <div class="feature-code"><span class="cmt">{c.playbooks.code1Comment}</span>
-<Fragment set:html={c.playbooks.code1Output} /></div>
-        <div class="feature-code" style="margin-top:12px;"><span class="cmt">{c.playbooks.code2Comment}</span>
-<Fragment set:html={c.playbooks.code2Yaml} /></div>
-        <div class="feature-code" style="margin-top:12px;"><span class="cmt">{c.playbooks.code3Comment}</span>
-<Fragment set:html={c.playbooks.code3Output} /></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- UPDATES & VERSIONING -->
-  <section class="team-section">
-    <div class="section-header">
-      <h2 class="section-title">{c.updates.sectionTitle}</h2>
-    </div>
-    <div class="team-grid">
-      <div>
-        <table class="update-table">
-          <thead>
-            <tr>
-              <th>{c.updates.tableHeaders[0]}</th>
-              <th>{c.updates.tableHeaders[1]}</th>
-              <th>{c.updates.tableHeaders[2]}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {c.updates.rows.map(row => (
-              <tr>
-                <td>{row.layer}</td>
-                <td><code>{row.command}</code></td>
-                <td>{row.scope}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p style="font-size:13px; color:var(--accent-teal); font-weight:600; margin-top:12px;">{c.updates.footnote}</p>
-      </div>
-      <div>
-        <div class="feature-code"><span class="cmt">{c.updates.codeComment}</span>
-<Fragment set:html={c.updates.codeOutput} /></div>
-      </div>
-    </div>
-  </section>
-
-  <div class="soleri-mark mark-section"></div>
+      </section>
+    </>
+  ))}
 
   <CTA locale={locale} />
 </BaseLayout>

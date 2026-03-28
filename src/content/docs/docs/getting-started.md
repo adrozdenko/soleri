@@ -6,7 +6,7 @@ description: Install Soleri, create your first agent, and connect it to your AI 
 ## Prerequisites
 
 - **Node.js 18+** — check with `node -v`
-- **An MCP-compatible AI editor** — Claude Code, OpenCode, Cursor, Codex, or similar
+- **An MCP-compatible AI editor** — Claude Code is fully supported today. Codex, Cursor, and OpenCode support is planned.
 - **npm** — ships with Node.js
 
 :::note[Build tools are optional]
@@ -64,7 +64,7 @@ From inside the agent folder, register the MCP server and start:
 
 ```bash
 cd my-agent
-npx @soleri/cli install --target claude   # or: opencode, codex, all
+npx @soleri/cli install --target claude   # fully supported today
 soleri dev                                 # Start engine + watch for changes
 ```
 

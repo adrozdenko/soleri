@@ -51,7 +51,7 @@ const content: Record<Locale, CommunityContent> = {
       },
       {
         title: 'Build an agent',
-        desc: 'Forge a custom agent with its own persona, vault, and workflows. Share what works so others can learn from your approach.',
+        desc: 'Build your own agent with its own persona, vault, and workflows. Share what works so others can learn from your approach.',
       },
     ],
     announcementsTitle: 'Announcements',
@@ -109,7 +109,7 @@ const content: Record<Locale, CommunityContent> = {
       },
       {
         title: 'Створи агента',
-        desc: 'Збери власного агента з власною персоною, сховищем і робочими процесами. Поділись тим, що працює, щоб інші могли вчитися з твого підходу.',
+        desc: 'Створи власного агента зі своїми налаштуваннями та робочими процесами. Поділись тим, що працює, щоб інші могли вчитися з твого підходу.',
       },
     ],
     announcementsTitle: 'Оголошення',
@@ -167,7 +167,7 @@ const content: Record<Locale, CommunityContent> = {
       },
       {
         title: 'Costruisci un agente',
-        desc: 'Forgia un agente personalizzato con la tua persona, il tuo vault e i tuoi workflow. Condividi quello che funziona, cos\u00ec che altri possano imparare dal tuo approccio.',
+        desc: 'Costruisci il tuo agente con le tue impostazioni e i tuoi workflow. Condividi quello che funziona, cos\u00ec che altri possano imparare dal tuo approccio.',
       },
     ],
     announcementsTitle: 'Annunci',

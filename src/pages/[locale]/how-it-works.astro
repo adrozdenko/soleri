@@ -20,7 +20,7 @@ const c = howItWorksContent(locale);
   lang={locale}
   locale={locale}
 >
-  <!-- PAGE HERO -->
+  <!-- HERO -->
   <section class="page-hero">
     <div class="soleri-mark mark-hero"></div>
     <p class="eyebrow">{c.eyebrow}</p>
@@ -28,119 +28,35 @@ const c = howItWorksContent(locale);
     <p class="hero-subtitle">{c.heroSubtitle}</p>
   </section>
 
-  <!-- ARCHITECTURE DIAGRAM -->
-  <div class="arch-diagram">
-    {c.archLayers.map(layer => (
-      <div class="arch-layer">
-        <p class="arch-layer-name"><span class="arch-bar"></span> {layer.name}</p>
-        <p class="arch-layer-desc" set:html={layer.desc} />
-      </div>
-    ))}
-  </div>
-
-  <div class="soleri-mark mark-section"></div>
-
-  <!-- VAULT SECTION -->
-  <section class="deep-section">
-    <div class="deep-grid">
-      <div class="deep-content">
-        <h3>{c.vault.title}</h3>
-        <p>{c.vault.text}</p>
-        <p class="key-point">{c.vault.keyPoint}</p>
-      </div>
-      <div>
-        <div class="feature-code" set:html={c.vault.code1} />
-        <div class="feature-code" style="margin-top:12px;" set:html={c.vault.code2} />
-      </div>
-    </div>
-  </section>
-
-  <!-- BRAIN SECTION -->
-  <section class="deep-section">
-    <div class="deep-grid">
-      <div>
-        <div class="feature-code" set:html={c.brain.code} />
-        <div class="bar-chart">
-          <div class="bar-row">
-            <span class="bar-label">semantic-tokens</span>
-            <div class="bar-track"><div class="bar-fill amber" style="width:94%"></div></div>
-            <span class="bar-value">94</span>
+  <!-- SECTIONS -->
+  {c.sections.map((s, i) => (
+    <>
+      {i > 0 && <div class="soleri-mark mark-section"></div>}
+      <section class="deep-section">
+        <div class="deep-grid">
+          <div class="deep-content">
+            <h2 class="how-title">{s.title}</h2>
+            <p class="how-subtitle">{s.subtitle}</p>
+            <p>{s.text}</p>
           </div>
-          <div class="bar-row">
-            <span class="bar-label">components</span>
-            <div class="bar-track"><div class="bar-fill teal" style="width:87%"></div></div>
-            <span class="bar-value">87</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">error-boundaries</span>
-            <div class="bar-track"><div class="bar-fill green" style="width:82%"></div></div>
-            <span class="bar-value">82</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">a11y-focus</span>
-            <div class="bar-track"><div class="bar-fill teal" style="width:78%"></div></div>
-            <span class="bar-value">78</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">zustand</span>
-            <div class="bar-track"><div class="bar-fill amber" style="width:71%"></div></div>
-            <span class="bar-value">71</span>
-          </div>
-        </div>
-      </div>
-      <div class="deep-content">
-        <h3>{c.brain.title}</h3>
-        <p>{c.brain.text}</p>
-        <p class="key-point">{c.brain.keyPoint}</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- KNOWLEDGE LIFECYCLE SECTION -->
-  <section class="deep-section">
-    <div class="deep-grid">
-      <div class="deep-content">
-        <h3>{c.lifecycle.title}</h3>
-        <p>{c.lifecycle.text}</p>
-        <div class="lifecycle-flow">
-          {c.lifecycle.steps.map((step, i) => (
-            <>
-              {i > 0 && <div class="lifecycle-arrow">&darr;</div>}
-              <div class="lifecycle-step">
-                <span class={`lifecycle-step-num ${step.color}`}>{i + 1}</span>
-                <div class="lifecycle-step-text">
-                  <strong>{step.label}</strong>
-                  <span class="lifecycle-step-desc">{step.desc}</span>
-                </div>
+          <div>
+            <div class="feature-code" set:html={s.code} />
+            {s.barChart && (
+              <div class="bar-chart">
+                {s.barChart.map(b => (
+                  <div class="bar-row">
+                    <span class="bar-label">{b.label}</span>
+                    <div class="bar-track"><div class={`bar-fill ${b.color}`} style={`width:${b.strength}%`}></div></div>
+                    <span class="bar-value">{b.strength}</span>
+                  </div>
+                ))}
               </div>
-            </>
-          ))}
+            )}
+          </div>
         </div>
-        <p class="key-point">{c.lifecycle.keyPoint}</p>
-      </div>
-      <div>
-        <div class="feature-code" set:html={c.lifecycle.code1} />
-        <div class="feature-code" style="margin-top:12px;" set:html={c.lifecycle.code2} />
-      </div>
-    </div>
-  </section>
+      </section>
+    </>
+  ))}
 
-  <div class="soleri-mark mark-section"></div>
-
-  <!-- TRANSPORT SECTION -->
-  <section class="deep-section">
-    <div class="deep-grid">
-      <div class="deep-content">
-        <h3>{c.transport.title}</h3>
-        <p>{c.transport.text}</p>
-        <p class="key-point">{c.transport.keyPoint}</p>
-      </div>
-      <div>
-        <div class="feature-code" set:html={c.transport.code} />
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA -->
   <CTA locale={locale} />
 </BaseLayout>
