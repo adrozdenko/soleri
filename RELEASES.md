@@ -17,7 +17,7 @@ v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v9.5 → v9.6 → v9.7 → v10.0
 | **v9.4**   | YOLO Mode, Op Visibility & Brain    | —      | **Shipped 2026-03-26** | v9.3                        | —                 |
 | **v9.5**   | Performance, Windows & Forge Polish | 16     | **Shipped 2026-03-27** | v9.4                        | #401              |
 | **v9.6**   | Adapter & Subagent Foundations      | 12     | **Shipped 2026-03-27** | v9.5                        | —                 |
-| **v9.7.2** | Hook Pack Settings Fix              | 1      | **Shipping 2026-03-28** | v9.7.1                      | —                 |
+| **v9.7.2** | Hook Pack Settings Fix              | 1      | **Shipped 2026-03-29**  | v9.7.1                      | —                 |
 | **v9.7**   | Paperclip Adaptation                | 29     | **Shipped 2026-03-27** | v9.6                        | #442              |
 | **v10.0**  | soleri.dev Platform                 | 17     | Future                 | Nothing — independent track | —                 |
 
