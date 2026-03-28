@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## v9.7.1 — 2026-03-28 — Update Notification Improvements
+
+### Update Check Enhancements (#443, #445, #446)
+
+- **Session-start update check** — `checkForUpdate()` now fires on every `session_start`, not just engine boot. Fire-and-forget, reuses 24h cache (#443)
+- **Changelog URL** — update notifications now include a link to the GitHub release: `https://github.com/adrozdenko/soleri/releases/tag/vX.Y.Z` (#445)
+- **Breaking change detection** — major version bumps trigger a warning; minor jumps of 2+ suggest reviewing the changelog (#446)
+- New exports: `UpdateInfo`, `buildChangelogUrl`, `detectBreakingChanges` from `@soleri/core`
+- 14 unit tests (#447)
+
+### CLI: `soleri pack update` (#444)
+
+- **New command** — `soleri pack update` checks npm registry for outdated packs, displays aligned table, updates to latest
+- **`--check` flag** — dry-run mode shows outdated packs without installing
+- **Edge cases** — graceful handling for no packs, local packs, unreachable registry
+- 8 unit tests
+
 ## v9.7.0 — 2026-03-27 — Paperclip Adaptation & Runtime Foundations
 
 ### Paperclip Adaptation — 3 Features (#413–#415)
