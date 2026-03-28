@@ -38,45 +38,39 @@ const startHref = 'getting-started.html';
     </div>
   </section>
 
-  <section class="section">
-    <h2 class="section-title" style="margin-bottom: 20px;">{c.principleTitle}</h2>
-    <div class="compare">
-      <div class="compare-panel">
-        <div class="compare-label before">{c.compareBeforeLabel}</div>
-        <div class="compare-content" set:html={c.compareBefore} />
+  <section class="how-section">
+    <div class="how-feature-section">
+      <div class="how-feature-left">
+        <h2 class="how-title">{c.principleTitle}</h2>
+        <h3>{c.principleSubtitle}</h3>
+        <p class="how-text">{c.principleText}</p>
       </div>
-      <div class="compare-panel">
-        <div class="compare-label after">{c.compareAfterLabel}</div>
-        <div class="compare-content" set:html={c.compareAfter} />
+      <div class="how-feature-right">
+        <div class="compare-panel">
+          <div class="compare-content" set:html={c.compareAfter} />
+        </div>
       </div>
     </div>
   </section>
 
   <section class="how-section" id="how-section">
-    <div class="how-grid">
-      <div class="how-left">
-        <h2 class="how-title" set:html={c.howTitle} />
-        <p class="how-text" set:html={c.howText} />
-        <div class="engine-row">
-          {c.engineTags.map(tag => <span class="engine-tag">{tag}</span>)}
+    {c.features.map(f => (
+      <div class="how-feature-section">
+        <div class="how-feature-left">
+          <h2 class="how-title">{f.sectionTitle}</h2>
+          <h3>{f.title}</h3>
+          <p class="how-text">{f.text}</p>
+        </div>
+        <div class="how-feature-right">
+          <div class="feature-code" set:html={f.code} />
         </div>
       </div>
-      <div class="how-right">
-        {c.features.map(f => (
-          <div class="feature-item">
-            <h3 set:html={f.title} />
-            <p>{f.text}</p>
-            <div class="feature-code" set:html={f.code} />
-          </div>
-        ))}
-      </div>
-    </div>
+    ))}
   </section>
 
+  <div class="soleri-mark mark-section"></div>
+
   <section class="section spacious">
-    <div class="section-header">
-      <h2 class="section-title">{c.cardsTitle}</h2>
-    </div>
     <div class="persona-cards">
       {c.cards.map(card => (
         <article class={`persona-card ${card.cls}`}>
@@ -89,18 +83,6 @@ const startHref = 'getting-started.html';
         </article>
       ))}
     </div>
-  </section>
-
-  <section class="section tight">
-    <aside class="terminal">
-      <div class="terminal-header">
-        <span class="terminal-dot red"></span>
-        <span class="terminal-dot yellow"></span>
-        <span class="terminal-dot green"></span>
-        <span class="terminal-title">{c.terminalTitle}</span>
-      </div>
-      <pre class="terminal-code" set:html={c.terminalCode} />
-    </aside>
   </section>
 
   <div class="soleri-mark mark-section"></div>

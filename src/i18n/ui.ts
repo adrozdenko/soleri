@@ -13,7 +13,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'nav.community': 'Community',
     'nav.docs': 'Docs',
     'nav.start': 'Get started',
-    'hero.eyebrow': 'Open source · one agent, many domains',
+    'hero.eyebrow': 'Open source',
     'hero.img.alt':
       'Solarpunk cityscape with organic architecture, lush green vegetation, solar panels, and golden sunlight streaming through glass domes',
     'hero.btn.github': 'Explore on GitHub',

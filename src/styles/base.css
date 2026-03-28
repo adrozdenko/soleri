@@ -1013,6 +1013,14 @@ body:not([data-theme='dark']) .toggle-bg-sun {
   margin-top: 100px;
 }
 
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 80px auto;
+  max-width: 200px;
+  opacity: 0.5;
+}
+
 .section.tight {
   margin-top: 56px;
 }
@@ -1221,6 +1229,25 @@ body:not([data-theme='dark']) .toggle-bg-sun {
   align-items: start;
 }
 
+.how-feature-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+  margin-bottom: 80px;
+}
+
+.how-feature-section:last-child {
+  margin-bottom: 0;
+}
+
+.how-feature-left h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--foreground-strong);
+  margin-bottom: 10px;
+}
+
 .how-title {
   font-size: clamp(28px, 4vw, 44px);
   font-weight: 800;
@@ -1231,21 +1258,24 @@ body:not([data-theme='dark']) .toggle-bg-sun {
   padding-left: 16px;
   position: relative;
 }
-.how-title::before {
+.how-title::before,
+.how-title::after {
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
   width: 2px;
   border-radius: 1px;
-  background: linear-gradient(
-    to bottom,
-    var(--accent-primary) calc(50% - 3px),
-    transparent calc(50% - 3px),
-    transparent calc(50% + 3px),
-    var(--accent-primary) calc(50% + 3px)
-  );
+  background: var(--accent-primary);
+}
+
+.how-title::before {
+  top: 0;
+  height: 0.45em;
+}
+
+.how-title::after {
+  top: 0.65em;
+  height: 0.45em;
 }
 
 .how-text {
@@ -1431,6 +1461,12 @@ body:not([data-theme='dark']) .toggle-bg-sun {
   gap: 16px;
 }
 
+.compare--single {
+  grid-template-columns: 1fr;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
 .compare-panel {
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
@@ -1450,6 +1486,11 @@ body:not([data-theme='dark']) .toggle-bg-sun {
 }
 
 .compare-label.before {
+  background: var(--accent-green-06);
+  color: var(--color-tertiary-500);
+}
+
+.compare--contrast .compare-label.before {
   background: rgb(var(--color-error-600-rgb) / 0.06);
   color: var(--color-error-600);
 }
@@ -1678,6 +1719,11 @@ body:not([data-theme='dark']) .toggle-bg-sun {
 
 @media (max-width: 820px) {
   .how-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .how-feature-section {
     grid-template-columns: 1fr;
     gap: 32px;
   }

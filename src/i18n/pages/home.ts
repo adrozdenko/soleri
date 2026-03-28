@@ -7,35 +7,30 @@ const content: Record<Locale, HomeContent> = {
     heroTitle:
       'One <span class="accent-amber">agent</span> that <span class="accent-teal">remembers</span> how you work.',
     heroText:
-      'Soleri gives your AI assistant a persistent, open-source second brain so your standards, decisions, and workflows do not reset every session.',
-    principleTitle: 'Your experience should compound, not start over.',
-    compareBeforeLabel: 'Without memory',
-    compareAfterLabel: 'With Soleri',
-    compareBefore: `<span class="dim">// Session 1</span>
-<span class="warn">You:</span> API errors always return { error, code, details }.
-<span class="warn">AI:</span>  Got it. I will follow that.
-
-<span class="dim">// Session 2 — next day</span>
-<span class="warn">You:</span> Why did this route return a plain string again?
-<span class="warn">AI:</span>  Sorry, can you remind me of the error format?
-
-<span class="dim">// Same project, same explanation, again</span>`,
+      'Soleri builds your agent. It keeps what it learns. Picks up where you left off.',
+    principleTitle: 'Learns your project.',
+    principleSubtitle: 'Onboard once, work forever',
+    principleText: 'Tell your agent to learn the codebase. It captures the structure, patterns, and conventions — then uses them in every session that follows.',
+    compareBeforeLabel: '',
+    compareAfterLabel: '',
+    compareBefore: '',
     compareAfter: `<span class="dim">// Session 1</span>
-<span class="hl">You:</span> API errors always return { error, code, details }.
-<span class="hl">AI:</span>  Captured to the vault. I will reuse it.
+<span class="hl">You:</span>     Learn this project.
+<span class="hl">Soleri:</span>  On it. I'll go through the codebase and
+         remember how everything is structured.
 
-<span class="dim">// Session 14</span>
-<span class="hl">You:</span> Review this endpoint.
-<span class="hl">AI:</span>  <span class="ok">✓ Session briefing: 1 linked project, 2 relevant patterns</span>
-      Response shape drift detected in <span class="val">users/create</span>.
-      <span class="ok">✓ Reused project rule from the vault</span>
-      <span class="ok">✓ Suggested the shared playbook for API review</span>`,
+<span class="dim">// Session 2</span>
+<span class="hl">You:</span>     Add a new billing event type.
+<span class="hl">Soleri:</span>  Sure. You already have a pattern for events —
+         I'll put the type here, the handler there,
+         and wire it up the same way.`,
     howTitle: 'Personal when it should be.<br/>Shared when it helps.<br/>Open by design.',
     howText:
-      'A file-tree agent your editor can read, a vault that keeps patterns and playbooks, optional shared knowledge for projects and teams, and an engine that improves recommendations over time.',
-    engineTags: ['File tree', 'Vault', 'Playbooks', 'Shared knowledge'],
+      'Your setup, your rules. Share what helps — nothing more.',
+    engineTags: [],
     features: [
       {
+        sectionTitle: 'Personal when it should be.',
         title: 'One agent, many domains',
         text: 'Keep one assistant and let it span the domains your work actually touches. Personal preferences stay local; shared knowledge can be linked in when needed.',
         code: `<span class="cmt"># agent.yaml</span>
@@ -49,17 +44,7 @@ const content: Record<Locale, HomeContent> = {
     <span class="key">priority:</span> <span class="val">0.6</span>`,
       },
       {
-        title: 'A folder your editor can read',
-        text: 'The agent definition lives in plain files. The engine handles persistence, search, and learning.',
-        code: `<span class="key">my-agent/</span>            <span class="cmt"># the agent is a folder</span>
-├── <span class="ok">agent.yaml</span>        <span class="cmt"># identity + engine config</span>
-├── <span class="key">instructions/</span>     <span class="cmt"># behavioral rules</span>
-├── <span class="key">workflows/</span>        <span class="cmt"># repeatable playbooks</span>
-├── <span class="key">knowledge/</span>        <span class="cmt"># domain bundles</span>
-├── <span class="key">skills/</span>           <span class="cmt"># optional skills</span>
-└── .mcp.json         <span class="cmt"># connects to the engine</span>`,
-      },
-      {
+        sectionTitle: 'Shared when it helps.',
         title: 'Plug in more expertise',
         text: 'Use packs and linked vaults to add shared standards, reusable playbooks, or team knowledge without rebuilding every agent.',
         code: `<span class="cmt">$ npx @soleri/cli pack list</span>
@@ -70,19 +55,31 @@ const content: Record<Locale, HomeContent> = {
 <span class="cmt">$ npx @soleri/cli pack install ../team-standards</span>
 <span class="ok">✓</span> Installed team-standards@0.2.0 <span class="cmt">(knowledge)</span>`,
       },
+      {
+        sectionTitle: 'Open by design.',
+        title: 'A folder your editor can read',
+        text: 'The agent definition lives in plain files. The engine handles persistence, search, and learning.',
+        code: `<span class="key">my-agent/</span>            <span class="cmt"># the agent is a folder</span>
+├── <span class="ok">agent.yaml</span>        <span class="cmt"># identity + engine config</span>
+├── <span class="key">instructions/</span>     <span class="cmt"># behavioral rules</span>
+├── <span class="key">workflows/</span>        <span class="cmt"># repeatable playbooks</span>
+├── <span class="key">knowledge/</span>        <span class="cmt"># domain bundles</span>
+├── <span class="key">skills/</span>           <span class="cmt"># optional skills</span>
+└── .mcp.json         <span class="cmt"># connects to the engine</span>`,
+      },
     ],
     cardsTitle: 'One agent. Personal, project, and team knowledge.',
     cards: [
       {
         title: 'Personal',
-        domain: 'Scope',
+        domain: 'Your machine',
         cls: 'salvador',
         capabilities: ['Your preferences', 'Recurring fixes', 'Working style', 'Private notes'],
         ships: 'Keep the parts of the agent that should stay yours.',
       },
       {
         title: 'Project',
-        domain: 'Scope',
+        domain: 'This repo',
         cls: 'gaudi',
         capabilities: [
           'Project rules',
@@ -94,7 +91,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         title: 'Team',
-        domain: 'Scope',
+        domain: 'Across repos',
         cls: 'sentinel',
         capabilities: [
           'Common standards',
@@ -144,37 +141,30 @@ const content: Record<Locale, HomeContent> = {
     heroTitle:
       'Побудуй <span class="accent-amber">другий мозок</span>, який <span class="accent-teal">пам\'ятає</span> все і <span class="accent-green">розумнішає</span> з часом.',
     heroText:
-      'Твої знання, структуровані та пошукові. Контекст, що накопичується з кожною сесією, кожним проєктом.',
-    principleTitle: 'Твоя експертиза має накопичуватися — а не випаровуватися.',
-    compareBeforeLabel: "Без пам'яті",
-    compareAfterLabel: 'Із Soleri',
-    compareBefore: `<span class="dim">// Сесія 1</span>
-<span class="warn">Ти:</span> Ми використовуємо Tailwind із семантичними токенами,
-      ніколи — сирі hex. Базовий крок відступів — 4px.
-<span class="warn">AI:</span>  Зрозуміло! Я цього дотримуватимуся.
-
-<span class="dim">// Сесія 2 — наступного дня</span>
-<span class="warn">Ти:</span> Чому ти знову використав #3B82F6?
-<span class="warn">AI:</span>  Вибач, можеш нагадати мені
-      твої домовленості щодо кольорів?
-
-<span class="dim">// Сесія 47 — те саме питання, знову</span>`,
+      'Soleri створює твого агента. Він зберігає те, що вивчив. Продовжує з того місця, де ти зупинився.',
+    principleTitle: 'Вивчає ваш проєкт.',
+    principleSubtitle: 'Навчи один раз — працюй завжди',
+    principleText: 'Скажіть агенту вивчити кодову базу. Він запам\'ятає структуру, патерни та конвенції — і використовуватиме їх у кожній наступній сесії.',
+    compareBeforeLabel: '',
+    compareAfterLabel: '',
+    compareBefore: '',
     compareAfter: `<span class="dim">// Сесія 1</span>
-<span class="hl">Ти:</span> Ми використовуємо Tailwind із семантичними токенами.
-<span class="hl">AI:</span>  Збережено у сховищі. Я це проконтролюю.
+<span class="hl">Ти:</span>      Вивчи цей проєкт.
+<span class="hl">Soleri:</span>  Вже на цьому. Пройдуся по кодовій базі
+         і запам'ятаю як все влаштовано.
 
-<span class="dim">// Сесія 47</span>
-<span class="hl">Ти:</span> Переглянь цей компонент.
-<span class="hl">AI:</span>  Знайдено 2 сирі hex-значення. У твоєму сховищі зазначено:
-      лише семантичні токени. Виправляю.
-      <span class="ok">✓ Шаблон застосовано зі сховища</span>
-      <span class="ok">✓ Brain strength: 94% (12 сесій)</span>`,
+<span class="dim">// Сесія 2</span>
+<span class="hl">Ти:</span>      Додай новий тип події для білінгу.
+<span class="hl">Soleri:</span>  Звісно. У вас вже є патерн для подій —
+         поставлю тип сюди, хендлер туди,
+         і підключу так само.`,
     howTitle: 'Твій другий мозок.<br/>Завжди навчається.<br/>Ніколи не забуває.',
     howText:
-      "<strong>Сховище</strong> для довготривалої пам'яті, <strong>Brain</strong> для навчання того, що працює, <strong>Memory</strong> що переноситься між сесіями та проєктами. Годуй знаннями — вони накопичуються.",
-    engineTags: ['Файлова тека', 'Сховище', 'Плейбуки', 'Спільні знання'],
+      'Твої налаштування, твої правила. Діліся тим, що допомагає — і нічим більше.',
+    engineTags: [],
     features: [
       {
+        sectionTitle: 'Персональний, коли потрібно.',
         title: 'Один агент, багато доменів',
         text: 'Тримайте одного асистента і дозвольте йому охоплювати домени, з якими ви працюєте. Особисті вподобання залишаються локальними; спільні знання підключаються за потреби.',
         code: `<span class="cmt"># agent.yaml</span>
@@ -188,6 +178,7 @@ const content: Record<Locale, HomeContent> = {
     <span class="key">priority:</span> <span class="val">0.6</span>`,
       },
       {
+        sectionTitle: 'Відкритий за задумом.',
         title: 'Тека, яку редактор може прочитати',
         text: 'Визначення агента живе у звичайних файлах. Рушій забезпечує збереження, пошук та навчання.',
         code: `<span class="key">my-agent/</span>            <span class="cmt"># агент — це тека</span>
@@ -199,6 +190,7 @@ const content: Record<Locale, HomeContent> = {
 └── .mcp.json         <span class="cmt"># підключення до рушія</span>`,
       },
       {
+        sectionTitle: 'Спільний, коли це допомагає.',
         title: 'Додай більше експертизи',
         text: 'Використовуйте пакети та підключені сховища для додавання спільних стандартів, плейбуків або командних знань без перебудови кожного агента.',
         code: `<span class="cmt">$ npx @soleri/cli pack list</span>
@@ -214,14 +206,14 @@ const content: Record<Locale, HomeContent> = {
     cards: [
       {
         title: 'Особисті',
-        domain: 'Масштаб',
+        domain: 'Твій комп\u0027ютер',
         cls: 'salvador',
         capabilities: ['Ваші вподобання', 'Повторювані виправлення', 'Стиль роботи', 'Приватні нотатки'],
         ships: 'Збережіть те, що має залишатися тільки вашим.',
       },
       {
         title: 'Проєктні',
-        domain: 'Масштаб',
+        domain: 'Цей репо',
         cls: 'gaudi',
         capabilities: [
           'Правила проєкту',
@@ -233,27 +225,26 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         title: 'Командні',
-        domain: 'Масштаб',
+        domain: 'Між репо',
         cls: 'sentinel',
         capabilities: ['Спільні стандарти', "Патерни рев'ю", 'Пакети для повторного використання', 'Промотовані знання'],
         ships: 'Діліться корисним без підтримки окремого стеку для кожного.',
       },
     ],
-    terminalTitle: 'Термінал',
-    terminalCode: `<span class="comment"># Створення файлового агента (~3 секунди)</span>
-<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
+    terminalTitle: 'Швидкий старт',
+    terminalCode: `<span class="comment"># Створіть теку агента</span>
+<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
+<span class="comment"># або: npx @soleri/cli create my-agent</span>
 
-<span class="comment">  ✓ Створено agent.yaml</span>
-<span class="comment">  ✓ Згенеровано instructions/, workflows/, knowledge/</span>
-<span class="comment">  ✓ Автоматично зібрано CLAUDE.md</span>
-<span class="comment">  ✓ Готово — без етапу збірки</span>
+<span class="comment"># У новій теці</span>
+<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span>   <span class="comment"># реєстрація MCP-сервера</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>       <span class="comment"># запуск рушія + спостереження за файлами</span>
 
-<span class="comment"># Реєстрація та старт розробки</span>
-<span class="prompt">$</span> <span class="cmd">soleri install</span>            <span class="comment"># реєстрація MCP-сервера</span>
-<span class="prompt">$</span> <span class="cmd">soleri dev</span>                <span class="comment"># запуск рушія + спостереження за файлами</span>
-
-<span class="comment"># Додайте ще знань</span>
-<span class="prompt">$</span> <span class="cmd">soleri pack</span> <span class="arg">install community/react-patterns</span>`,
+<span class="comment">  ✓ Теку агента створено</span>
+<span class="comment">  ✓ MCP конфіг зареєстровано</span>
+<span class="comment">  ✓ CLAUDE.md перегенеровується при змінах</span>
+<span class="comment">  ✓ Токен Claude Code знайдено (якщо доступний)</span>`,
     archTitle: 'Два шари, чітко розділені',
     archSubtitle: 'Тека агента — це оболонка. Рушій знань — це мозок. Вони розвиваються незалежно.',
     layers: [
@@ -279,34 +270,30 @@ const content: Record<Locale, HomeContent> = {
     heroTitle:
       'Costruisci un <span class="accent-amber">secondo cervello</span> che <span class="accent-teal">ricorda</span> tutto e <span class="accent-green">diventa più intelligente</span> nel tempo.',
     heroText:
-      'La tua conoscenza, strutturata e ricercabile. Contesto che si accumula in ogni sessione, ogni progetto.',
-    principleTitle: 'La tua competenza dovrebbe accumularsi, non evaporare.',
-    compareBeforeLabel: 'Senza memoria',
-    compareAfterLabel: 'Con Soleri',
-    compareBefore: `<span class="dim">// Sessione 1</span>
-<span class="warn">Tu:</span> Usiamo Tailwind con token semantici, mai esadecimale puro. Lo spazio è base 4px.
-<span class="warn">AI:</span> Capito! Seguirò questo.
-
-<span class="dim">// Sessione 2 — il giorno seguente</span>
-<span class="warn">Tu:</span> Perché hai usato di nuovo #3B82F6?
-<span class="warn">AI:</span> Scusa, puoi ricordarmi le tue convenzioni sui colori?
-
-<span class="dim">// Sessione 47 — stessa domanda, ancora una volta</span>`,
+      'Soleri crea il tuo agente. Conserva ciò che impara. Riprende da dove avevi lasciato.',
+    principleTitle: 'Impara il tuo progetto.',
+    principleSubtitle: 'Insegna una volta, lavora per sempre',
+    principleText: 'Dì al tuo agente di imparare la codebase. Cattura la struttura, i pattern e le convenzioni — e li usa in ogni sessione successiva.',
+    compareBeforeLabel: '',
+    compareAfterLabel: '',
+    compareBefore: '',
     compareAfter: `<span class="dim">// Sessione 1</span>
-<span class="hl">Tu:</span> Usiamo Tailwind con token semantici.
-<span class="hl">AI:</span> Salvato nel Vault. D'ora in poi applicherò questa regola.
+<span class="hl">Tu:</span>      Impara questo progetto.
+<span class="hl">Soleri:</span>  Ci penso io. Analizzo la codebase e
+         mi ricordo come è strutturato tutto.
 
-<span class="dim">// Sessione 47</span>
-<span class="hl">Tu:</span> Rivedi questo componente.
-<span class="hl">AI:</span> Ho trovato 2 valori esadecimali grezzi. Il Vault dice: solo token semantici. Correggo subito.
-      <span class="ok">✓ Pattern applicato dal Vault</span>
-      <span class="ok">✓ Brain strength: 94% (12 sessioni)</span>`,
+<span class="dim">// Sessione 2</span>
+<span class="hl">Tu:</span>      Aggiungi un nuovo tipo di evento billing.
+<span class="hl">Soleri:</span>  Certo. Avete già un pattern per gli eventi —
+         metto il tipo qui, l'handler lì,
+         e lo collego allo stesso modo.`,
     howTitle: 'Il tuo secondo cervello.<br/>Sempre in apprendimento.<br/>Non dimentica mai.',
     howText:
-      'Un <strong>Vault</strong> per la memoria a lungo termine, un <strong>Cervello</strong> che impara cosa funziona, una <strong>Memoria</strong> che si mantiene tra sessioni e progetti. Dagli conoscenza — si accumula.',
-    engineTags: ['File tree', 'Vault', 'Playbook', 'Conoscenza condivisa'],
+      'Le tue impostazioni, le tue regole. Condividi ciò che aiuta — niente di più.',
+    engineTags: [],
     features: [
       {
+        sectionTitle: 'Personale quando serve.',
         title: 'Un agente, molti domini',
         text: 'Tieni un solo assistente e lascialo coprire i domini che il tuo lavoro tocca davvero. Le preferenze personali restano locali; la conoscenza condivisa si collega quando serve.',
         code: `<span class="cmt"># agent.yaml</span>
@@ -320,6 +307,7 @@ const content: Record<Locale, HomeContent> = {
     <span class="key">priority:</span> <span class="val">0.6</span>`,
       },
       {
+        sectionTitle: 'Aperto per design.',
         title: 'Una cartella leggibile dal tuo editor',
         text: 'La definizione dell\'agente vive in file semplici. Il motore gestisce persistenza, ricerca e apprendimento.',
         code: `<span class="key">my-agent/</span>            <span class="cmt"># l'agente è una cartella</span>
@@ -331,6 +319,7 @@ const content: Record<Locale, HomeContent> = {
 └── .mcp.json         <span class="cmt"># connessione al motore</span>`,
       },
       {
+        sectionTitle: 'Condiviso quando aiuta.',
         title: 'Aggiungi più competenza',
         text: 'Usa pack e vault collegati per aggiungere standard condivisi, playbook riutilizzabili o conoscenza di team senza ricostruire ogni agente.',
         code: `<span class="cmt">$ npx @soleri/cli pack list</span>
@@ -346,41 +335,40 @@ const content: Record<Locale, HomeContent> = {
     cards: [
       {
         title: 'Personale',
-        domain: 'Ambito',
+        domain: 'La tua macchina',
         cls: 'salvador',
         capabilities: ['Le tue preferenze', 'Fix ricorrenti', 'Stile di lavoro', 'Note private'],
         ships: 'Tieni le parti dell\'agente che devono restare solo tue.',
       },
       {
         title: 'Progetto',
-        domain: 'Ambito',
+        domain: 'Questo repo',
         cls: 'gaudi',
         capabilities: ['Regole di progetto', 'Decisioni architetturali', 'Playbook condivisi', 'Contesto recente'],
         ships: 'Collega la conoscenza utile per questa codebase.',
       },
       {
         title: 'Team',
-        domain: 'Ambito',
+        domain: 'Tra i repo',
         cls: 'sentinel',
         capabilities: ['Standard comuni', 'Pattern di revisione', 'Pack riutilizzabili', 'Apprendimenti promossi'],
         ships: 'Condividi ciò che aiuta senza mantenere uno stack personalizzato per ogni collega.',
       },
     ],
-    terminalTitle: 'Terminale',
-    terminalCode: `<span class="comment"># Crea un agente file-tree (~3 secondi)</span>
-<span class="prompt">$</span> <span class="cmd">soleri create</span> <span class="arg">my-agent</span>
+    terminalTitle: 'Avvio rapido',
+    terminalCode: `<span class="comment"># Crea la cartella dell'agente</span>
+<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
+<span class="comment"># oppure: npx @soleri/cli create my-agent</span>
 
-<span class="comment">  ✓ Creato agent.yaml</span>
-<span class="comment">  ✓ Generati instructions/, workflows/, knowledge/</span>
-<span class="comment">  ✓ CLAUDE.md composto automaticamente</span>
-<span class="comment">  ✓ Pronto — nessun passaggio di build</span>
+<span class="comment"># Nella nuova cartella</span>
+<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span>   <span class="comment"># registra server MCP</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>       <span class="comment"># avvia motore + osserva file</span>
 
-<span class="comment"># Registra e inizia a sviluppare</span>
-<span class="prompt">$</span> <span class="cmd">soleri install</span>            <span class="comment"># registra server MCP</span>
-<span class="prompt">$</span> <span class="cmd">soleri dev</span>                <span class="comment"># avvia motore + osserva file</span>
-
-<span class="comment"># Alimentalo con più conoscenza</span>
-<span class="prompt">$</span> <span class="cmd">soleri pack</span> <span class="arg">install community/react-patterns</span>`,
+<span class="comment">  ✓ Cartella agente pronta</span>
+<span class="comment">  ✓ Config MCP registrata</span>
+<span class="comment">  ✓ CLAUDE.md si rigenera ad ogni modifica</span>
+<span class="comment">  ✓ Token Claude Code scoperto (se disponibile)</span>`,
     archTitle: 'Due livelli, nettamente separati',
     archSubtitle:
       "La cartella dell'agente è il guscio. Il motore di conoscenza è il cervello. Evolvono indipendentemente.",
@@ -409,6 +397,8 @@ interface HomeContent {
   heroTitle: string;
   heroText: string;
   principleTitle: string;
+  principleSubtitle: string;
+  principleText: string;
   compareBeforeLabel: string;
   compareAfterLabel: string;
   compareBefore: string;
@@ -416,7 +406,7 @@ interface HomeContent {
   howTitle: string;
   howText: string;
   engineTags: string[];
-  features: { title: string; text: string; code: string }[];
+  features: { sectionTitle: string; title: string; text: string; code: string }[];
   cardsTitle: string;
   cards: { title: string; domain: string; cls: string; capabilities: string[]; ships: string }[];
   terminalTitle: string;
