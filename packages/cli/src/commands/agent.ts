@@ -6,6 +6,7 @@
  */
 
 import { join, dirname } from 'node:path';
+import { createRequire } from 'node:module';
 import {
   existsSync,
   readFileSync,
@@ -20,6 +21,7 @@ import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
+import { parse as parseYaml } from 'yaml';
 import { PackLockfile, checkNpmVersion, checkVersionCompat, SOLERI_HOME } from '@soleri/core';
 import {
   generateClaudeMdTemplate,
@@ -46,6 +48,75 @@ export function registerAgent(program: Command): void {
         process.exit(1);
         return;
       }
+
+      if (ctx.format === 'filetree') {
+        // ─── File-tree agent (v7+) ─────────────────────────────
+        const yamlPath = join(ctx.agentPath, 'agent.yaml');
+        const yaml = parseYaml(readFileSync(yamlPath, 'utf-8'));
+        const agentName = yaml.name || yaml.id || 'unknown';
+        const agentId = yaml.id || 'unknown';
+        const domains: string[] = Array.isArray(yaml.domains) ? yaml.domains : [];
+
+        // Count skills (directories inside skills/)
+        const skillsDir = join(ctx.agentPath, 'skills');
+        let skillsCount = 0;
+        if (existsSync(skillsDir)) {
+          skillsCount = readdirSync(skillsDir, { withFileTypes: true }).filter((d) =>
+            d.isDirectory(),
+          ).length;
+        }
+
+        // Resolve engine version via require.resolve
+        let engineVersion = 'not installed';
+        try {
+          const req = createRequire(join(ctx.agentPath, 'package.json'));
+          const corePkgPath = req.resolve('@soleri/core/package.json');
+          engineVersion = JSON.parse(readFileSync(corePkgPath, 'utf-8')).version || 'unknown';
+        } catch {
+          engineVersion = 'not installed';
+        }
+
+        // Check for core update
+        const latestCore = checkNpmVersion('@soleri/core');
+
+        // Count vault entries if db exists
+        const dbPath = join(ctx.agentPath, 'data', 'vault.db');
+        const hasVault = existsSync(dbPath);
+
+        if (opts.json) {
+          console.log(
+            JSON.stringify(
+              {
+                agent: agentName,
+                id: agentId,
+                format: 'file-tree (v7)',
+                engine: engineVersion,
+                engineLatest: latestCore,
+                domains,
+                skills: skillsCount,
+                vault: { exists: hasVault },
+              },
+              null,
+              2,
+            ),
+          );
+          return;
+        }
+
+        console.log(`\n  Agent: ${agentName}`);
+        console.log(`  ID: ${agentId}`);
+        console.log(`  Format: file-tree (v7)`);
+        console.log(
+          `  Engine: @soleri/core ${engineVersion}${latestCore && latestCore !== engineVersion ? ` (update available: ${latestCore})` : ''}`,
+        );
+        console.log(`  Domains: ${domains.length > 0 ? domains.join(', ') : 'none'}`);
+        console.log(`  Skills: ${skillsCount}`);
+        console.log(`\n  Vault: ${hasVault ? 'initialized' : 'not initialized'}`);
+        console.log('');
+        return;
+      }
+
+      // ─── Legacy TypeScript agent ──────────────────────────────
 
       // Read agent package.json
       const pkgPath = join(ctx.agentPath, 'package.json');
@@ -128,6 +199,96 @@ export function registerAgent(program: Command): void {
         return;
       }
 
+      // ─── File-tree agent (v7+) ────────────────────────────────
+      if (ctx.format === 'filetree') {
+        // Resolve installed @soleri/core version
+        let installedVersion: string | null = null;
+        try {
+          const req = createRequire(import.meta.url);
+          const corePkgPath = req.resolve('@soleri/core/package.json');
+          installedVersion = JSON.parse(readFileSync(corePkgPath, 'utf-8')).version ?? null;
+        } catch {
+          // @soleri/core not resolvable — will show as unknown
+        }
+
+        // Check latest version on npm
+        const latestCore = checkNpmVersion('@soleri/core');
+
+        if (opts.check) {
+          const installed = installedVersion ?? 'unknown';
+          const latest = latestCore ?? 'unknown';
+          if (installed === latest) {
+            console.log(`\n  Engine: @soleri/core ${installed} (up to date)`);
+          } else {
+            console.log(`\n  Engine: @soleri/core ${installed} → ${latest}`);
+          }
+          console.log(`  Format: file-tree (updates via template refresh)`);
+          console.log('');
+          return;
+        }
+
+        if (opts.dryRun) {
+          p.log.info('Would refresh templates (regenerate _engine.md, CLAUDE.md, sync skills)');
+          if (latestCore && installedVersion && latestCore !== installedVersion) {
+            p.log.info(
+              `Engine: ${installedVersion} → ${latestCore} (update @soleri/core globally to upgrade)`,
+            );
+          }
+          return;
+        }
+
+        // Run refresh: regenerate _engine.md, recompose CLAUDE.md, sync skills
+        const enginePath = join(ctx.agentPath, 'instructions', '_engine.md');
+        const claudeMdPath = join(ctx.agentPath, 'CLAUDE.md');
+
+        const skillFiles = generateSkills({ id: ctx.agentId } as AgentConfig);
+
+        // 1. Sync skills
+        if (skillFiles.length > 0) {
+          let newCount = 0;
+          let updatedCount = 0;
+          for (const [relPath, content] of skillFiles) {
+            const fullPath = join(ctx.agentPath, relPath);
+            const dirPath = dirname(fullPath);
+            const isNew = !existsSync(fullPath);
+            mkdirSync(dirPath, { recursive: true });
+            writeFileSync(fullPath, content, 'utf-8');
+            if (isNew) newCount++;
+            else updatedCount++;
+          }
+          p.log.success(
+            `Synced ${skillFiles.length} skills (${newCount} new, ${updatedCount} updated)`,
+          );
+        }
+
+        // 2. Regenerate _engine.md
+        mkdirSync(join(ctx.agentPath, 'instructions'), { recursive: true });
+        writeFileSync(enginePath, getEngineRulesContent(), 'utf-8');
+        p.log.success(`Regenerated ${enginePath}`);
+
+        // 3. Recompose CLAUDE.md
+        const result = composeClaudeMd(ctx.agentPath);
+        writeFileSync(claudeMdPath, result.content, 'utf-8');
+        p.log.success(
+          `Regenerated ${claudeMdPath} (${result.sources.length} sources, ${result.content.length} bytes)`,
+        );
+
+        // 4. Show engine version status
+        const installed = installedVersion ?? 'unknown';
+        const latest = latestCore ?? 'unknown';
+        if (installed !== 'unknown' && latest !== 'unknown' && installed !== latest) {
+          p.log.info(
+            `Engine: ${installed} → ${latest} (run \`npm update -g @soleri/cli\` to upgrade)`,
+          );
+        } else if (installed !== 'unknown') {
+          p.log.info(`Engine: @soleri/core ${installed} (up to date)`);
+        }
+
+        p.log.info('File-tree agents update by refreshing templates from the installed engine.');
+        return;
+      }
+
+      // ─── Legacy TypeScript agent ──────────────────────────────
       const pkgPath = join(ctx.agentPath, 'package.json');
       if (!existsSync(pkgPath)) {
         p.log.error('No package.json found in agent directory.');

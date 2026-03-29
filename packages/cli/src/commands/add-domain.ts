@@ -24,6 +24,7 @@ export function registerAddDomain(program: Command): void {
           agentPath: ctx.agentPath,
           domain,
           noBuild: !opts.build,
+          format: ctx.format,
         });
 
         s.stop(result.success ? result.summary : 'Failed');

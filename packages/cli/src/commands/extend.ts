@@ -2,7 +2,22 @@ import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { detectAgent } from '../utils/agent-context.js';
+import { detectAgent, type AgentContext } from '../utils/agent-context.js';
+
+function warnFiletreeAndExit(ctx: AgentContext): boolean {
+  if (ctx.format !== 'filetree') return false;
+  p.log.warn(
+    [
+      `The 'extend' command requires a TypeScript agent format.`,
+      '',
+      'For file-tree agents, use these alternatives:',
+      '  • Custom skills: add SKILL.md files to skills/{name}/SKILL.md',
+      '  • Hook packs: soleri hooks add-pack <pack>',
+      '  • Custom knowledge: add JSON files to knowledge/',
+    ].join('\n'),
+  );
+  process.exit(0);
+}
 
 export function registerExtend(program: Command): void {
   const extend = program
@@ -18,6 +33,7 @@ export function registerExtend(program: Command): void {
         p.log.error('No agent project detected. Run this from an agent root.');
         process.exit(1);
       }
+      warnFiletreeAndExit(ctx);
 
       const extDir = join(ctx.agentPath, 'src', 'extensions');
       if (existsSync(join(extDir, 'index.ts'))) {
@@ -53,6 +69,7 @@ export function registerExtend(program: Command): void {
         p.log.error('No agent project detected. Run this from an agent root.');
         process.exit(1);
       }
+      warnFiletreeAndExit(ctx);
 
       const opsDir = join(ctx.agentPath, 'src', 'extensions', 'ops');
       mkdirSync(opsDir, { recursive: true });
@@ -108,6 +125,7 @@ export function ${fnName}(runtime: AgentRuntime): OpDefinition {
         p.log.error('No agent project detected. Run this from an agent root.');
         process.exit(1);
       }
+      warnFiletreeAndExit(ctx);
 
       const facadesDir = join(ctx.agentPath, 'src', 'extensions', 'facades');
       mkdirSync(facadesDir, { recursive: true });
@@ -162,6 +180,7 @@ export function create${className}Facade(runtime: AgentRuntime): FacadeConfig {
         p.log.error('No agent project detected. Run this from an agent root.');
         process.exit(1);
       }
+      warnFiletreeAndExit(ctx);
 
       const mwDir = join(ctx.agentPath, 'src', 'extensions', 'middleware');
       mkdirSync(mwDir, { recursive: true });

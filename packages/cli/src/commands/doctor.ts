@@ -15,6 +15,7 @@ export function registerDoctor(program: Command): void {
 
       for (const r of results) {
         if (r.status === 'pass') log.pass(r.label, r.detail);
+        else if (r.status === 'skip') log.skip(r.label, r.detail);
         else if (r.status === 'warn') {
           log.warn(r.label, r.detail);
           hasWarnings = true;

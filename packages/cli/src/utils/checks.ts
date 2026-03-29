@@ -1,15 +1,15 @@
 /**
  * Health check utilities for the doctor command.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
-import { detectAgent } from './agent-context.js';
+import { detectAgent, type AgentFormat } from './agent-context.js';
 import { getInstalledPacks } from '../hook-packs/registry.js';
 
-interface CheckResult {
-  status: 'pass' | 'fail' | 'warn';
+export interface CheckResult {
+  status: 'pass' | 'fail' | 'warn' | 'skip';
   label: string;
   detail?: string;
 }
@@ -53,10 +53,19 @@ export function checkAgentProject(dir?: string): CheckResult {
   if (!ctx) {
     return { status: 'warn', label: 'Agent project', detail: 'not detected in current directory' };
   }
-  return { status: 'pass', label: 'Agent project', detail: `${ctx.agentId} (${ctx.packageName})` };
+  const formatLabel = ctx.format === 'filetree' ? 'file-tree' : 'typescript';
+  return {
+    status: 'pass',
+    label: 'Agent project',
+    detail: `${ctx.agentId} (${ctx.packageName}, ${formatLabel})`,
+  };
 }
 
-export function checkAgentBuild(dir?: string): CheckResult {
+export function checkAgentBuild(dir?: string, format?: AgentFormat): CheckResult {
+  if (format === 'filetree') {
+    return { status: 'skip', label: 'Agent build', detail: 'not applicable for file-tree agents' };
+  }
+
   const ctx = detectAgent(dir);
   if (!ctx) return { status: 'warn', label: 'Agent build', detail: 'no agent detected' };
 
@@ -73,7 +82,15 @@ export function checkAgentBuild(dir?: string): CheckResult {
   return { status: 'pass', label: 'Agent build', detail: 'dist/index.js exists' };
 }
 
-export function checkNodeModules(dir?: string): CheckResult {
+export function checkNodeModules(dir?: string, format?: AgentFormat): CheckResult {
+  if (format === 'filetree') {
+    return {
+      status: 'skip',
+      label: 'Dependencies',
+      detail: 'not applicable for file-tree agents',
+    };
+  }
+
   const ctx = detectAgent(dir);
   if (!ctx) return { status: 'warn', label: 'Dependencies', detail: 'no agent detected' };
 
@@ -85,6 +102,80 @@ export function checkNodeModules(dir?: string): CheckResult {
     };
   }
   return { status: 'pass', label: 'Dependencies', detail: 'node_modules/ exists' };
+}
+
+export function checkAgentYaml(agentPath: string): CheckResult {
+  const yamlPath = join(agentPath, 'agent.yaml');
+  if (!existsSync(yamlPath)) {
+    return { status: 'fail', label: 'agent.yaml', detail: 'not found' };
+  }
+
+  try {
+    const content = readFileSync(yamlPath, 'utf-8');
+    // Light validation: check for required fields without pulling in a YAML parser
+    // (detectAgent already parsed it, but we verify the raw content for diagnostics)
+    const hasId = /^id\s*:/m.test(content);
+    const hasName = /^name\s*:/m.test(content);
+
+    if (!hasId && !hasName) {
+      return {
+        status: 'fail',
+        label: 'agent.yaml',
+        detail: 'missing required fields: id, name',
+      };
+    }
+    if (!hasId) {
+      return { status: 'fail', label: 'agent.yaml', detail: 'missing required field: id' };
+    }
+    if (!hasName) {
+      return { status: 'fail', label: 'agent.yaml', detail: 'missing required field: name' };
+    }
+    return { status: 'pass', label: 'agent.yaml', detail: 'valid (id, name present)' };
+  } catch {
+    return { status: 'fail', label: 'agent.yaml', detail: 'failed to read file' };
+  }
+}
+
+export function checkInstructionsDir(agentPath: string): CheckResult {
+  const instrDir = join(agentPath, 'instructions');
+  if (!existsSync(instrDir)) {
+    return {
+      status: 'fail',
+      label: 'Instructions',
+      detail: 'instructions/ directory not found',
+    };
+  }
+
+  try {
+    const files = readdirSync(instrDir).filter((f) => f.endsWith('.md'));
+    if (files.length === 0) {
+      return {
+        status: 'warn',
+        label: 'Instructions',
+        detail: 'instructions/ exists but contains no .md files',
+      };
+    }
+    return {
+      status: 'pass',
+      label: 'Instructions',
+      detail: `${files.length} instruction file${files.length === 1 ? '' : 's'}`,
+    };
+  } catch {
+    return { status: 'fail', label: 'Instructions', detail: 'failed to read instructions/' };
+  }
+}
+
+export function checkEngineReachable(): CheckResult {
+  try {
+    require.resolve('@soleri/core/package.json');
+    return { status: 'pass', label: 'Engine', detail: '@soleri/core reachable' };
+  } catch {
+    return {
+      status: 'fail',
+      label: 'Engine',
+      detail: '@soleri/core not found — engine is required for file-tree agents',
+    };
+  }
 }
 
 function checkMcpRegistration(dir?: string): CheckResult {
@@ -157,15 +248,33 @@ function checkHookPacks(): CheckResult {
 }
 
 export function runAllChecks(dir?: string): CheckResult[] {
-  return [
+  const ctx = detectAgent(dir);
+  const format = ctx?.format;
+
+  // Common checks for all agent formats
+  const results: CheckResult[] = [
     checkNodeVersion(),
     checkNpm(),
     checkTsx(),
     checkAgentProject(dir),
-    checkNodeModules(dir),
-    checkAgentBuild(dir),
-    checkMcpRegistration(dir),
-    checkHookPacks(),
-    checkCognee(),
   ];
+
+  if (format === 'filetree') {
+    // File-tree agent checks
+    results.push(
+      checkAgentYaml(ctx!.agentPath),
+      checkInstructionsDir(ctx!.agentPath),
+      checkEngineReachable(),
+      checkNodeModules(dir, format),
+      checkAgentBuild(dir, format),
+    );
+  } else {
+    // TypeScript agent checks (or no agent detected)
+    results.push(checkNodeModules(dir, format), checkAgentBuild(dir, format));
+  }
+
+  // Shared checks
+  results.push(checkMcpRegistration(dir), checkHookPacks(), checkCognee());
+
+  return results;
 }

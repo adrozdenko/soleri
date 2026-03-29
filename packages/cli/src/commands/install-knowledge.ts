@@ -98,6 +98,7 @@ export function registerInstallKnowledge(program: Command): void {
           agentPath: ctx.agentPath,
           bundlePath,
           generateFacades: opts.facades,
+          format: ctx.format,
         });
 
         s.stop(result.success ? result.summary : 'Installation failed');

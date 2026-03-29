@@ -26,6 +26,11 @@ export function warn(label: string, detail?: string): void {
   console.log(`  ${YELLOW}!${RESET} ${label}${suffix}`);
 }
 
+export function skip(label: string, detail?: string): void {
+  const suffix = detail ? ` ${DIM}${detail}${RESET}` : '';
+  console.log(`  ${DIM}–${RESET} ${label}${suffix}`);
+}
+
 export function info(message: string): void {
   console.log(`  ${CYAN}ℹ${RESET} ${message}`);
 }

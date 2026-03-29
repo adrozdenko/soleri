@@ -8,6 +8,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { generateDomainFacade } from './templates/domain-facade.js';
 import { generateVaultOnlyDomainFacade } from './knowledge-installer.js';
 import { patchIndexTs, patchClaudeMdContent } from './patching.js';
@@ -17,6 +18,7 @@ interface AddDomainParams {
   agentPath: string;
   domain: string;
   noBuild?: boolean;
+  format?: 'filetree' | 'typescript';
 }
 
 /**
@@ -41,8 +43,16 @@ function isV5Agent(agentPath: string): boolean {
  * 6. Rebuild (unless noBuild)
  */
 export async function addDomain(params: AddDomainParams): Promise<AddDomainResult> {
-  const { agentPath, domain, noBuild = false } = params;
+  const { agentPath, domain, noBuild = false, format } = params;
   const warnings: string[] = [];
+
+  // ── File-tree agent path ──
+
+  if (format === 'filetree') {
+    return addDomainFileTree(agentPath, domain);
+  }
+
+  // ── TypeScript agent path (default / backward compat) ──
 
   // ── Validate agent ──
 
@@ -171,6 +181,69 @@ export async function addDomain(params: AddDomainParams): Promise<AddDomainResul
     buildOutput,
     warnings,
     summary: `Added domain "${domain}" to ${agentId}${v5 ? ' (v5.0 — no facade file needed)' : ''}${warnings.length > 0 ? ` (${warnings.length} warning(s))` : ''}`,
+  };
+}
+
+/**
+ * Add a domain to a file-tree agent (agent.yaml + knowledge/).
+ * No facade generation, no src/ patching, no build step.
+ */
+function addDomainFileTree(agentPath: string, domain: string): AddDomainResult {
+  // ── Validate domain name ──
+
+  if (!/^[a-z][a-z0-9-]*$/.test(domain)) {
+    return fail(agentPath, domain, `Invalid domain name "${domain}" — must be kebab-case`);
+  }
+
+  // ── Read and validate agent.yaml ──
+
+  const yamlPath = join(agentPath, 'agent.yaml');
+  if (!existsSync(yamlPath)) {
+    return fail(agentPath, domain, 'No agent.yaml found — is this a file-tree agent?');
+  }
+
+  let agentYaml: Record<string, unknown>;
+  try {
+    agentYaml = parseYaml(readFileSync(yamlPath, 'utf-8')) as Record<string, unknown>;
+  } catch {
+    return fail(agentPath, domain, 'Failed to parse agent.yaml — is it valid YAML?');
+  }
+
+  const agentId = (agentYaml.id as string) ?? '';
+  if (!agentId) {
+    return fail(agentPath, domain, 'agent.yaml is missing an "id" field');
+  }
+
+  // ── Check if domain already exists ──
+
+  const domains: string[] = Array.isArray(agentYaml.domains) ? (agentYaml.domains as string[]) : [];
+  if (domains.includes(domain)) {
+    return fail(agentPath, domain, `Domain "${domain}" already exists in agent.yaml`);
+  }
+
+  // ── Update agent.yaml domains array ──
+
+  agentYaml.domains = [...domains, domain];
+  writeFileSync(yamlPath, stringifyYaml(agentYaml), 'utf-8');
+
+  // ── Create knowledge/{domain}.json ──
+
+  const knowledgeDir = join(agentPath, 'knowledge');
+  mkdirSync(knowledgeDir, { recursive: true });
+
+  const bundlePath = join(knowledgeDir, `${domain}.json`);
+  const emptyBundle = JSON.stringify({ domain, entries: [] }, null, 2);
+  writeFileSync(bundlePath, emptyBundle, 'utf-8');
+
+  return {
+    success: true,
+    agentPath,
+    domain,
+    agentId,
+    facadeGenerated: false,
+    buildOutput: '',
+    warnings: [],
+    summary: `Added domain "${domain}" to ${agentId} (file-tree agent)`,
   };
 }
 

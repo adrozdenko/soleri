@@ -154,15 +154,24 @@ interface InstallKnowledgeParams {
   agentPath: string;
   bundlePath: string;
   generateFacades?: boolean;
+  /** Agent format: 'filetree' skips package.json check and src/ patching */
+  format?: 'filetree' | 'typescript';
 }
 
 export async function installKnowledge(
   params: InstallKnowledgeParams,
 ): Promise<InstallKnowledgeResult> {
-  const { agentPath, bundlePath, generateFacades = true } = params;
+  const { agentPath, bundlePath, generateFacades = true, format } = params;
   const warnings: string[] = [];
   const facadesGenerated: string[] = [];
   const sourceFilesPatched: string[] = [];
+
+  // ── File-tree agent path ─────────────────────────────────────────
+  if (format === 'filetree') {
+    return installKnowledgeFiletree(agentPath, bundlePath);
+  }
+
+  // ── TypeScript agent path (existing behavior) ────────────────────
 
   // ── Step 1: Validate agent path ──────────────────────────────────
 
@@ -358,6 +367,120 @@ export async function installKnowledge(
     facadesGenerated,
     sourceFilesPatched,
     buildOutput,
+    warnings,
+    summary: summaryParts.join('. ') + '.',
+  };
+}
+
+// ---------- File-tree agent installer ----------
+
+/**
+ * Install knowledge bundles into a file-tree agent.
+ * Writes to {agentPath}/knowledge/ — no package.json, no src/ patching, no build step.
+ * The engine picks up knowledge bundles from this directory at runtime.
+ */
+async function installKnowledgeFiletree(
+  agentPath: string,
+  bundlePath: string,
+): Promise<InstallKnowledgeResult> {
+  const warnings: string[] = [];
+
+  // Derive agentId from agent.yaml
+  let agentId = '';
+  const yamlPath = join(agentPath, 'agent.yaml');
+  if (existsSync(yamlPath)) {
+    try {
+      const raw = readFileSync(yamlPath, 'utf-8');
+      // Simple extraction — avoid importing yaml parser here
+      const idMatch = raw.match(/^id:\s*["']?([^\s"']+)/m);
+      if (idMatch) agentId = idMatch[1];
+    } catch {
+      // best-effort
+    }
+  }
+  if (!agentId) {
+    return fail(agentPath, '', 'No agent.yaml with valid id found — is this a file-tree agent?');
+  }
+
+  // Read and validate bundles
+  const bundleFiles = collectBundleFiles(bundlePath);
+  if (bundleFiles.length === 0) {
+    return fail(agentPath, agentId, `No .json bundle files found at ${bundlePath}`);
+  }
+
+  const bundles: Array<{ file: string; bundle: Bundle }> = [];
+  const issues: string[] = [];
+
+  for (const file of bundleFiles) {
+    try {
+      const raw = readFileSync(file, 'utf-8');
+      const parsed = JSON.parse(raw) as Bundle;
+      const fileIssues = validateBundle(parsed, file);
+      if (fileIssues.length > 0) {
+        issues.push(...fileIssues);
+      } else {
+        bundles.push({ file, bundle: parsed });
+      }
+    } catch (err) {
+      issues.push(
+        `${basename(file)}: invalid JSON — ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  if (bundles.length === 0) {
+    return fail(agentPath, agentId, `All bundles failed validation:\n${issues.join('\n')}`);
+  }
+
+  if (issues.length > 0) {
+    warnings.push(...issues);
+  }
+
+  // Determine new vs existing domains
+  const knowledgeDir = join(agentPath, 'knowledge');
+  mkdirSync(knowledgeDir, { recursive: true });
+
+  const existingFiles = readdirSync(knowledgeDir).filter((f) => f.endsWith('.json'));
+  const existingDomains = new Set(existingFiles.map((f) => f.replace(/\.json$/, '')));
+  const domainsAdded: string[] = [];
+  const domainsUpdated: string[] = [];
+
+  for (const { bundle } of bundles) {
+    if (existingDomains.has(bundle.domain)) {
+      domainsUpdated.push(bundle.domain);
+    } else {
+      domainsAdded.push(bundle.domain);
+    }
+  }
+
+  // Copy bundles to knowledge/
+  for (const { file, bundle } of bundles) {
+    const dest = join(knowledgeDir, `${bundle.domain}.json`);
+    copyFileSync(file, dest);
+  }
+
+  // No facade generation, no src/ patching, no build step for file-tree agents
+
+  const entriesTotal = bundles.reduce((sum, { bundle }) => sum + bundle.entries.length, 0);
+
+  const summaryParts = [
+    `Installed ${bundles.length} bundle(s) with ${entriesTotal} entries into ${agentId} (file-tree)`,
+  ];
+  if (domainsAdded.length > 0) summaryParts.push(`New domains: ${domainsAdded.join(', ')}`);
+  if (domainsUpdated.length > 0) summaryParts.push(`Updated domains: ${domainsUpdated.join(', ')}`);
+  if (warnings.length > 0) summaryParts.push(`${warnings.length} warning(s)`);
+
+  return {
+    success: true,
+    agentPath,
+    agentId,
+    bundlesInstalled: bundles.length,
+    entriesTotal,
+    domainsAdded,
+    domainsUpdated,
+    facadesGenerated: [],
+    sourceFilesPatched: [],
+    buildOutput: '',
     warnings,
     summary: summaryParts.join('. ') + '.',
   };
