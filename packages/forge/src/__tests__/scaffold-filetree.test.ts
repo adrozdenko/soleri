@@ -158,6 +158,50 @@ describe('scaffoldFileTree', () => {
     expect(existsSync(join(result.agentDir, 'workflows', 'code-review', 'prompt.md'))).toBe(true);
   });
 
+  it('scaffolded gates.yaml contains schema comment header', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const gatesContent = readFileSync(
+      join(result.agentDir, 'workflows', 'feature-dev', 'gates.yaml'),
+      'utf-8',
+    );
+    expect(gatesContent).toContain(
+      '# Workflow gates — engine reads these and enforces them during plan execution.',
+    );
+    expect(gatesContent).toContain(
+      '# Format: phase (brainstorming|pre-execution|post-task|completion), requirement, check',
+    );
+
+    // Verify all workflow gates have the header
+    const bugFixGates = readFileSync(
+      join(result.agentDir, 'workflows', 'bug-fix', 'gates.yaml'),
+      'utf-8',
+    );
+    expect(bugFixGates).toContain('# Workflow gates');
+  });
+
+  it('scaffolded tools.yaml contains schema comment header', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const toolsContent = readFileSync(
+      join(result.agentDir, 'workflows', 'feature-dev', 'tools.yaml'),
+      'utf-8',
+    );
+    expect(toolsContent).toContain('# Workflow tools — engine merges these into plan steps.');
+    expect(toolsContent).toContain(
+      '# Format: list of operation strings (agentId_facade op:operation_name)',
+    );
+
+    // Verify all workflow tools have the header
+    const bugFixTools = readFileSync(
+      join(result.agentDir, 'workflows', 'bug-fix', 'tools.yaml'),
+      'utf-8',
+    );
+    expect(bugFixTools).toContain('# Workflow tools');
+  });
+
   it('generates knowledge bundles per domain', () => {
     const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
     expect(result.success).toBe(true);
