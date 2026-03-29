@@ -21,7 +21,12 @@ export type {
 export { AgentConfigSchema, SETUP_TARGETS, MODEL_PRESETS } from './types.js';
 
 // ─── v7 File-Tree Agent ──────────────────────────────────────────────
-export { scaffoldFileTree } from './scaffold-filetree.js';
+export {
+  scaffoldFileTree,
+  SKILLS_REGISTRY,
+  ESSENTIAL_SKILLS,
+  resolveSkillsFilter,
+} from './scaffold-filetree.js';
 export type { FileTreeScaffoldResult } from './scaffold-filetree.js';
 export { AgentYamlSchema, TONES } from './agent-schema.js';
 export type { AgentYaml, AgentYamlInput } from './agent-schema.js';
