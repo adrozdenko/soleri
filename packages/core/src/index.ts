@@ -910,6 +910,17 @@ export type {
   DeclinedCategory,
 } from './operator/operator-context-types.js';
 
+// ─── Workflows ─────────────────────────────────────────────────────────
+export {
+  WorkflowGateSchema,
+  WorkflowToolsSchema,
+  WorkflowOverrideSchema,
+  WORKFLOW_TO_INTENT,
+  loadAgentWorkflows,
+  getWorkflowForIntent,
+} from './workflows/index.js';
+export type { WorkflowGate, WorkflowOverride } from './workflows/index.js';
+
 // ─── Update Check ────────────────────────────────────────────────────
 export { checkForUpdate, buildChangelogUrl, detectBreakingChanges } from './update-check.js';
 export type { UpdateInfo } from './update-check.js';
