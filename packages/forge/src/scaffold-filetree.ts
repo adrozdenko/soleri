@@ -133,7 +133,9 @@ When building a new feature, adding functionality, or creating components.
 - Link new entries to related knowledge: \`op:link_entries\`
 - Complete orchestration: \`op:orchestrate_complete\`
 `,
-    gates: `gates:
+    gates: `# Workflow gates — engine reads these and enforces them during plan execution.
+# Format: phase (brainstorming|pre-execution|post-task|completion), requirement, check
+gates:
   - phase: brainstorming
     requirement: Requirements are clear and user has approved the approach
     check: user-approval
@@ -150,7 +152,9 @@ When building a new feature, adding functionality, or creating components.
     requirement: Knowledge captured to vault with links
     check: knowledge-captured
 `,
-    tools: `tools:
+    tools: `# Workflow tools — engine merges these into plan steps.
+# Format: list of operation strings (agentId_facade op:operation_name)
+tools:
   - soleri_vault op:search_intelligent
   - soleri_vault op:capture_knowledge
   - soleri_links op:link_entries
@@ -191,7 +195,9 @@ When fixing bugs, resolving errors, or addressing regressions.
 - If the bug reveals a pattern or anti-pattern, capture it: \`op:capture_knowledge\`
 - Complete orchestration: \`op:orchestrate_complete\`
 `,
-    gates: `gates:
+    gates: `# Workflow gates — engine reads these and enforces them during plan execution.
+# Format: phase (brainstorming|pre-execution|post-task|completion), requirement, check
+gates:
   - phase: pre-execution
     requirement: Root cause identified and fix plan approved
     check: plan-approved
@@ -204,7 +210,9 @@ When fixing bugs, resolving errors, or addressing regressions.
     requirement: Anti-pattern captured if applicable
     check: knowledge-captured
 `,
-    tools: `tools:
+    tools: `# Workflow tools — engine merges these into plan steps.
+# Format: list of operation strings (agentId_facade op:operation_name)
+tools:
   - soleri_vault op:search_intelligent
   - soleri_vault op:capture_knowledge
   - soleri_plan op:create_plan
@@ -238,12 +246,16 @@ When reviewing code, auditing quality, or checking for issues.
 ### 4. Capture
 - If review reveals new patterns or anti-patterns, capture them: \`op:capture_knowledge\`
 `,
-    gates: `gates:
+    gates: `# Workflow gates — engine reads these and enforces them during plan execution.
+# Format: phase (brainstorming|pre-execution|post-task|completion), requirement, check
+gates:
   - phase: completion
     requirement: All blocking issues addressed
     check: issues-resolved
 `,
-    tools: `tools:
+    tools: `# Workflow tools — engine merges these into plan steps.
+# Format: list of operation strings (agentId_facade op:operation_name)
+tools:
   - soleri_vault op:search_intelligent
   - soleri_vault op:capture_knowledge
   - soleri_brain op:recommend
@@ -275,7 +287,9 @@ Before crossing a context window boundary — \`/clear\`, context compaction, or
 - Use plan IDs to look up active plans: \`op:orchestrate_status\`
 - Continue from where the handoff left off
 `,
-    gates: `gates:
+    gates: `# Workflow gates — engine reads these and enforces them during plan execution.
+# Format: phase (brainstorming|pre-execution|post-task|completion), requirement, check
+gates:
   - phase: pre-transition
     requirement: Handoff document generated with current state
     check: handoff-generated
@@ -284,7 +298,9 @@ Before crossing a context window boundary — \`/clear\`, context compaction, or
     requirement: New context has loaded handoff and can reference active plans
     check: context-restored
 `,
-    tools: `tools:
+    tools: `# Workflow tools — engine merges these into plan steps.
+# Format: list of operation strings (agentId_facade op:operation_name)
+tools:
   - soleri_memory op:handoff_generate
   - soleri_memory op:session_capture
   - soleri_orchestrate op:orchestrate_status
