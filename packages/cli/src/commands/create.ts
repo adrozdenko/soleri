@@ -10,9 +10,17 @@ import {
   type SetupTarget,
   scaffoldFileTree,
 } from '@soleri/forge/lib';
-import { runCreateWizard } from '../prompts/create-wizard.js';
+import { runCreateWizard, type WizardGitConfig } from '../prompts/create-wizard.js';
 import { listPacks } from '../hook-packs/registry.js';
 import { installPack } from '../hook-packs/installer.js';
+import {
+  isGitInstalled,
+  gitInit,
+  gitInitialCommit,
+  gitAddRemote,
+  gitPush,
+  ghCreateRepo,
+} from '../utils/git.js';
 
 function parseSetupTarget(value?: string): SetupTarget | undefined {
   if (!value) return undefined;
@@ -40,6 +48,7 @@ export function registerCreate(program: Command): void {
     .option('--dir <path>', `Parent directory for the agent (default: current directory)`)
     .option('--filetree', 'Create a file-tree agent (v7 — no TypeScript, no build step)')
     .option('--legacy', 'Create a legacy TypeScript agent (v6 — requires npm install + build)')
+    .option('--no-git', 'Skip git repository initialization (git init is on by default)')
     .description('Create a new Soleri agent')
     .action(
       async (
@@ -51,10 +60,14 @@ export function registerCreate(program: Command): void {
           setupTarget?: string;
           filetree?: boolean;
           legacy?: boolean;
+          git?: boolean;
         },
       ) => {
         try {
           let config;
+
+          let gitConfig: WizardGitConfig | undefined;
+          const skipGit = opts?.git === false; // Commander sets git=false when --no-git is passed
 
           if (name && opts?.yes && !opts?.config) {
             // Quick non-interactive: name + --yes = Italian Craftsperson defaults
@@ -73,6 +86,10 @@ export function registerCreate(program: Command): void {
               tone: 'mentor',
               greeting: `Ciao! I'm ${name}. Ready to build something beautiful today?`,
             });
+            // Non-interactive default: git init yes, no remote
+            if (!skipGit) {
+              gitConfig = { init: true };
+            }
           } else if (opts?.config) {
             // Non-interactive: read from config file
             const configPath = resolve(opts.config);
@@ -94,12 +111,15 @@ export function registerCreate(program: Command): void {
               p.outro('Cancelled.');
               return;
             }
-            const parsed = AgentConfigSchema.safeParse(wizardResult);
+            const parsed = AgentConfigSchema.safeParse(wizardResult.config);
             if (!parsed.success) {
               p.log.error(`Invalid config: ${parsed.error.message}`);
               process.exit(1);
             }
             config = parsed.data;
+            if (!skipGit) {
+              gitConfig = wizardResult.git;
+            }
           }
 
           const setupTarget = parseSetupTarget(opts?.setupTarget);
@@ -175,6 +195,68 @@ export function registerCreate(program: Command): void {
             if (!result.success) {
               p.log.error(result.summary);
               process.exit(1);
+            }
+
+            // ─── Git initialization ──────────────────────────────
+            if (gitConfig?.init) {
+              const hasGit = await isGitInstalled();
+              if (!hasGit) {
+                p.log.warn(
+                  'git is not installed — skipping repository initialization. Install git from https://git-scm.com/',
+                );
+              } else {
+                const agentDir = result.agentDir;
+                s.start('Initializing git repository...');
+
+                const initResult = await gitInit(agentDir);
+                if (!initResult.ok) {
+                  s.stop('git init failed');
+                  p.log.warn(`git init failed: ${initResult.error}`);
+                } else {
+                  const commitResult = await gitInitialCommit(
+                    agentDir,
+                    `feat: scaffold agent "${config.name}"`,
+                  );
+                  if (!commitResult.ok) {
+                    s.stop('Initial commit failed');
+                    p.log.warn(`Initial commit failed: ${commitResult.error}`);
+                  } else {
+                    s.stop('Git repository initialized with initial commit');
+                  }
+
+                  // Remote setup
+                  if (gitConfig.remote && initResult.ok && commitResult.ok) {
+                    if (gitConfig.remote.type === 'gh') {
+                      s.start('Creating GitHub repository...');
+                      const ghResult = await ghCreateRepo(config.id, {
+                        visibility: gitConfig.remote.visibility ?? 'private',
+                        dir: agentDir,
+                      });
+                      if (!ghResult.ok) {
+                        s.stop('GitHub repo creation failed');
+                        p.log.warn(`gh repo create failed: ${ghResult.error}`);
+                      } else {
+                        s.stop(`Pushed to ${ghResult.url ?? 'GitHub'}`);
+                      }
+                    } else if (gitConfig.remote.type === 'manual' && gitConfig.remote.url) {
+                      s.start('Setting up remote...');
+                      const remoteResult = await gitAddRemote(agentDir, gitConfig.remote.url);
+                      if (!remoteResult.ok) {
+                        s.stop('Failed to add remote');
+                        p.log.warn(`git remote add failed: ${remoteResult.error}`);
+                      } else {
+                        const pushResult = await gitPush(agentDir);
+                        if (!pushResult.ok) {
+                          s.stop('Push failed');
+                          p.log.warn(`git push failed: ${pushResult.error}`);
+                        } else {
+                          s.stop('Pushed to remote');
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
 
             p.note(result.summary, 'Next steps');

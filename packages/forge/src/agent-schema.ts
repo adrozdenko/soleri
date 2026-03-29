@@ -234,6 +234,26 @@ export const AgentYamlSchema = z.object({
   // ─── Domain Packs ──────────────────────────────
   /** npm domain packs with custom ops and knowledge */
   packs: z.array(DomainPackSchema).optional(),
+
+  // ─── Git Initialization ────────────────────────
+  /** Git initialization configuration. If omitted, git is not initialized. */
+  git: z
+    .object({
+      /** Whether to run git init in the scaffolded agent directory */
+      init: z.boolean(),
+      /** Optional remote repository configuration */
+      remote: z
+        .object({
+          /** How to set up the remote: 'gh' creates via GitHub CLI, 'manual' uses a provided URL */
+          type: z.enum(['gh', 'manual']),
+          /** Remote URL (required for 'manual', auto-generated for 'gh') */
+          url: z.string().optional(),
+          /** Repository visibility for 'gh' type. Default: 'private' */
+          visibility: z.enum(['public', 'private']).optional().default('private'),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export type AgentYaml = z.infer<typeof AgentYamlSchema>;
