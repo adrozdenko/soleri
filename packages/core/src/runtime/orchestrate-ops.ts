@@ -38,7 +38,10 @@ import {
 import { detectRationalizations } from '../planning/rationalization-detector.js';
 import { ImpactAnalyzer } from '../planning/impact-analyzer.js';
 import type { ImpactReport } from '../planning/impact-analyzer.js';
+import { collectGitEvidence } from '../planning/evidence-collector.js';
+import type { EvidenceReport } from '../planning/evidence-collector.js';
 import { recordPlanFeedback } from './plan-feedback-helper.js';
+import { analyzeQualitySignals, captureQualitySignals } from './quality-signals.js';
 
 // ---------------------------------------------------------------------------
 // Intent detection — keyword-based mapping from prompt to intent
@@ -741,10 +744,30 @@ export function createOrchestrateOps(
           }
         }
 
+        const warnings: string[] = [];
+
+        // Evidence-based reconciliation: cross-reference plan tasks against git diff
+        let evidenceReport: EvidenceReport | null = null;
+        if (planObj && outcome === 'completed') {
+          try {
+            evidenceReport = collectGitEvidence(
+              planObj,
+              (params.projectPath as string) ?? '.',
+              'main',
+            );
+            if (evidenceReport.accuracy < 50) {
+              warnings.push(
+                `Low evidence accuracy (${evidenceReport.accuracy}%) — plan tasks may not match git changes.`,
+              );
+            }
+          } catch {
+            // Evidence collection is best-effort — never blocks
+          }
+        }
+
         // Complete the planner plan (legacy lifecycle) — best-effort
         // The epilogue (brain session, knowledge extraction, flow epilogue) MUST run
         // even if plan transition fails (e.g. already completed, missing, invalid state).
-        const warnings: string[] = [];
         let completedPlan;
         if (planObj && planId) {
           try {
@@ -785,6 +808,33 @@ export function createOrchestrateOps(
             );
           } catch {
             // Brain feedback is best-effort
+          }
+        }
+
+        // Feed evidence accuracy into brain feedback — low accuracy signals poor pattern match
+        if (evidenceReport && planObj) {
+          try {
+            const evidenceAction = evidenceReport.accuracy < 50 ? 'dismissed' : 'accepted';
+            brain.recordFeedback(`plan-evidence:${planObj.objective}`, planObj.id, evidenceAction);
+          } catch {
+            // Evidence brain feedback is best-effort
+          }
+        }
+
+        // Quality signals: capture rework anti-patterns and clean-task feedback
+        if (evidenceReport) {
+          try {
+            const qualityAnalysis = analyzeQualitySignals(evidenceReport, planObj);
+            if (qualityAnalysis.antiPatterns.length > 0 || qualityAnalysis.cleanTasks.length > 0) {
+              captureQualitySignals(
+                qualityAnalysis,
+                vault,
+                brain,
+                planId ?? `direct-${Date.now()}`,
+              );
+            }
+          } catch {
+            // Quality signal capture is best-effort — never blocks completion
           }
         }
 
@@ -840,6 +890,7 @@ export function createOrchestrateOps(
           extraction,
           epilogue: epilogueResult,
           ...(impactReport ? { impactAnalysis: impactReport } : {}),
+          ...(evidenceReport ? { evidenceReport } : {}),
           ...(warnings.length > 0 ? { warnings } : {}),
         };
       },
@@ -890,6 +941,44 @@ export function createOrchestrateOps(
           createdAt: e.createdAt,
         }));
 
+        // Compute readiness for the most recent active plan
+        const TERMINAL_TASK_STATES = new Set(['completed', 'skipped', 'failed']);
+        let readiness: {
+          allTasksTerminal: boolean;
+          terminalCount: number;
+          totalCount: number;
+          idleSince: number | null;
+        } | null = null;
+
+        const executingPlans = activePlans.filter(
+          (p: { status: string }) => p.status === 'executing',
+        );
+        if (executingPlans.length > 0) {
+          const plan = executingPlans[0] as {
+            tasks?: Array<{ status: string; completedAt?: number; startedAt?: number }>;
+            updatedAt?: number;
+          };
+          const tasks = plan.tasks ?? [];
+          const totalCount = tasks.length;
+          const terminalCount = tasks.filter((t) => TERMINAL_TASK_STATES.has(t.status)).length;
+          const allTasksTerminal = totalCount > 0 && terminalCount === totalCount;
+
+          // idleSince: the most recent completedAt among terminal tasks, or plan updatedAt
+          let idleSince: number | null = null;
+          if (totalCount > 0 && !allTasksTerminal) {
+            const terminalTimestamps = tasks
+              .filter((t) => TERMINAL_TASK_STATES.has(t.status) && t.completedAt)
+              .map((t) => t.completedAt as number);
+            if (terminalTimestamps.length > 0) {
+              idleSince = Math.max(...terminalTimestamps);
+            } else if (plan.updatedAt) {
+              idleSince = plan.updatedAt;
+            }
+          }
+
+          readiness = { allTasksTerminal, terminalCount, totalCount, idleSince };
+        }
+
         return {
           activePlans,
           sessionContext,
@@ -897,6 +986,7 @@ export function createOrchestrateOps(
           recommendations,
           brainStats,
           flowPlans,
+          ...(readiness ? { readiness } : {}),
         };
       },
     },

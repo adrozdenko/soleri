@@ -342,6 +342,55 @@ describe('plan-lifecycle', () => {
       expect(task.completedAt).toBeGreaterThan(0);
       expect(task.status).toBe('failed');
     });
+
+    it('increments fixIterations on completed → in_progress rework', () => {
+      const task = makeTask();
+      applyTaskStatusUpdate(task, 'in_progress');
+      applyTaskStatusUpdate(task, 'completed');
+      expect(task.fixIterations).toBeUndefined();
+      // Rework: send back from completed to in_progress
+      applyTaskStatusUpdate(task, 'in_progress');
+      expect(task.fixIterations).toBe(1);
+      expect(task.completedAt).toBeUndefined();
+    });
+
+    it('increments fixIterations on failed → in_progress rework', () => {
+      const task = makeTask();
+      applyTaskStatusUpdate(task, 'in_progress');
+      applyTaskStatusUpdate(task, 'failed');
+      // Rework from failed
+      applyTaskStatusUpdate(task, 'in_progress');
+      expect(task.fixIterations).toBe(1);
+      expect(task.completedAt).toBeUndefined();
+    });
+
+    it('accumulates fixIterations across multiple rework cycles', () => {
+      const task = makeTask();
+      applyTaskStatusUpdate(task, 'in_progress');
+      applyTaskStatusUpdate(task, 'completed');
+      applyTaskStatusUpdate(task, 'in_progress'); // rework 1
+      applyTaskStatusUpdate(task, 'completed');
+      applyTaskStatusUpdate(task, 'in_progress'); // rework 2
+      expect(task.fixIterations).toBe(2);
+    });
+
+    it('does not increment fixIterations on pending → in_progress', () => {
+      const task = makeTask();
+      applyTaskStatusUpdate(task, 'in_progress');
+      expect(task.fixIterations).toBeUndefined();
+    });
+
+    it('resets completedAt on rework but preserves startedAt', () => {
+      const task = makeTask();
+      applyTaskStatusUpdate(task, 'in_progress');
+      const originalStartedAt = task.startedAt;
+      applyTaskStatusUpdate(task, 'completed');
+      expect(task.completedAt).toBeGreaterThan(0);
+      // Rework
+      applyTaskStatusUpdate(task, 'in_progress');
+      expect(task.completedAt).toBeUndefined();
+      expect(task.startedAt).toBe(originalStartedAt);
+    });
   });
 
   describe('createPlanObject', () => {

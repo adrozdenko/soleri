@@ -19,6 +19,8 @@ export interface GitTaskEvidence {
   plannedStatus: string;
   matchedFiles: FileChange[];
   verdict: 'DONE' | 'PARTIAL' | 'MISSING' | 'SKIPPED';
+  /** Number of rework cycles this task went through (0 = first pass). */
+  fixIterations?: number;
 }
 
 export interface UnplannedChange {
@@ -72,6 +74,8 @@ export function collectGitEvidence(
       plannedStatus: task.status,
       matchedFiles: matches,
       verdict,
+      ...(task.fixIterations !== undefined &&
+        task.fixIterations > 0 && { fixIterations: task.fixIterations }),
     });
   }
 
@@ -93,12 +97,17 @@ export function collectGitEvidence(
       ? Math.round(((doneTasks + partialTasks * 0.5 + skippedTasks * 0.25) / totalTasks) * 100)
       : 100;
 
+  const reworkedTasks = taskEvidence.filter(
+    (te) => te.fixIterations && te.fixIterations > 0,
+  ).length;
+
   const summary = buildSummary(
     totalTasks,
     doneTasks,
     partialTasks,
     missingWork.length,
     unplannedChanges.length,
+    reworkedTasks,
   );
 
   const verificationGaps = collectVerificationGaps(plan.tasks, taskEvidence);
@@ -284,11 +293,13 @@ function buildSummary(
   partial: number,
   missing: number,
   unplanned: number,
+  reworked: number = 0,
 ): string {
   const parts: string[] = [];
   parts.push(`${done}/${total} tasks verified by git evidence`);
   if (partial > 0) parts.push(`${partial} partially done`);
   if (missing > 0) parts.push(`${missing} with no file evidence`);
   if (unplanned > 0) parts.push(`${unplanned} unplanned file changes`);
+  if (reworked > 0) parts.push(`${reworked} required rework`);
   return parts.join(', ');
 }

@@ -338,6 +338,11 @@ export function applyIteration(plan: Plan, changes: IterateChanges): number {
  */
 export function applyTaskStatusUpdate(task: PlanTask, status: TaskStatus): void {
   const now = Date.now();
+  // Rework detection: completed/failed → in_progress means a fix iteration
+  if (status === 'in_progress' && (task.status === 'completed' || task.status === 'failed')) {
+    task.fixIterations = (task.fixIterations ?? 0) + 1;
+    task.completedAt = undefined;
+  }
   if (status === 'in_progress' && !task.startedAt) task.startedAt = now;
   if (status === 'completed' || status === 'skipped' || status === 'failed') {
     task.completedAt = now;

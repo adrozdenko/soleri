@@ -75,6 +75,20 @@ vi.mock('../planning/impact-analyzer.js', () => ({
   })),
 }));
 
+vi.mock('../planning/evidence-collector.js', () => ({
+  collectGitEvidence: vi.fn().mockReturnValue({
+    planId: 'plan-1',
+    planObjective: 'test',
+    accuracy: 85,
+    evidenceSources: ['git'],
+    taskEvidence: [],
+    unplannedChanges: [],
+    missingWork: [],
+    verificationGaps: [],
+    summary: '0/0 tasks verified by git evidence',
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Mock runtime
 // ---------------------------------------------------------------------------
@@ -88,7 +102,9 @@ function mockRuntime(): AgentRuntime {
       stats: vi.fn().mockReturnValue({ totalEntries: 10, byDomain: {}, byType: {} }),
       captureMemory: vi.fn(),
     },
-    brain: {},
+    brain: {
+      recordFeedback: vi.fn(),
+    },
     brainIntelligence: {
       recommend: vi.fn().mockReturnValue([]),
       lifecycle: vi.fn().mockReturnValue({ id: 'session-1' }),
@@ -317,6 +333,67 @@ describe('createOrchestrateOps', () => {
         }),
       );
       expect(result.session).toBeDefined();
+    });
+
+    it('includes evidenceReport when completing a plan', async () => {
+      const op = findOp(ops, 'orchestrate_complete');
+      const result = (await op.handler({
+        planId: 'plan-1',
+        sessionId: 'session-1',
+        outcome: 'completed',
+        projectPath: '.',
+      })) as Record<string, unknown>;
+
+      expect(result).toHaveProperty('evidenceReport');
+      const report = result.evidenceReport as Record<string, unknown>;
+      expect(report.accuracy).toBe(85);
+      expect(report.evidenceSources).toEqual(['git']);
+    });
+
+    it('succeeds without blocking when git is unavailable', async () => {
+      const { collectGitEvidence } = await import('../planning/evidence-collector.js');
+      vi.mocked(collectGitEvidence).mockImplementationOnce(() => {
+        throw new Error('git not found');
+      });
+
+      const op = findOp(ops, 'orchestrate_complete');
+      const result = (await op.handler({
+        planId: 'plan-1',
+        sessionId: 'session-1',
+        outcome: 'completed',
+      })) as Record<string, unknown>;
+
+      // Should complete successfully without evidenceReport
+      expect(result).toHaveProperty('plan');
+      expect(result).toHaveProperty('session');
+      expect(result).not.toHaveProperty('evidenceReport');
+    });
+
+    it('adds warning when evidence accuracy is below 50%', async () => {
+      const { collectGitEvidence } = await import('../planning/evidence-collector.js');
+      vi.mocked(collectGitEvidence).mockReturnValueOnce({
+        planId: 'plan-1',
+        planObjective: 'test',
+        accuracy: 30,
+        evidenceSources: ['git'],
+        taskEvidence: [],
+        unplannedChanges: [],
+        missingWork: [],
+        verificationGaps: [],
+        summary: '0/2 tasks verified by git evidence',
+      });
+
+      const op = findOp(ops, 'orchestrate_complete');
+      const result = (await op.handler({
+        planId: 'plan-1',
+        sessionId: 'session-1',
+        outcome: 'completed',
+      })) as Record<string, unknown>;
+
+      expect(result).toHaveProperty('evidenceReport');
+      expect(result).toHaveProperty('warnings');
+      const warnings = result.warnings as string[];
+      expect(warnings.some((w) => w.includes('Low evidence accuracy (30%)'))).toBe(true);
     });
   });
 

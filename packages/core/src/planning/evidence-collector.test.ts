@@ -340,6 +340,101 @@ describe('collectGitEvidence', () => {
   });
 });
 
+describe('collectGitEvidence — rework tracking', () => {
+  it('includes fixIterations in task evidence when present', () => {
+    mockExecFileSync
+      .mockReturnValueOnce('feature/auth\n')
+      .mockReturnValueOnce('M\tsrc/auth/middleware.ts\n');
+
+    const plan = makePlan({
+      tasks: [
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'completed',
+          fixIterations: 2,
+          updatedAt: Date.now(),
+        },
+      ],
+    });
+    const report = collectGitEvidence(plan, '/project', 'main');
+
+    expect(report.taskEvidence[0].fixIterations).toBe(2);
+  });
+
+  it('omits fixIterations when task has zero rework', () => {
+    mockExecFileSync
+      .mockReturnValueOnce('feature/auth\n')
+      .mockReturnValueOnce('M\tsrc/auth/middleware.ts\n');
+
+    const plan = makePlan({
+      tasks: [
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
+      ],
+    });
+    const report = collectGitEvidence(plan, '/project', 'main');
+
+    expect(report.taskEvidence[0].fixIterations).toBeUndefined();
+  });
+
+  it('includes rework count in summary when tasks were reworked', () => {
+    mockExecFileSync
+      .mockReturnValueOnce('feature/auth\n')
+      .mockReturnValueOnce('M\tsrc/auth/middleware.ts\nM\tsrc/auth/login.ts\n');
+
+    const plan = makePlan({
+      tasks: [
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'completed',
+          fixIterations: 1,
+          updatedAt: Date.now(),
+        },
+        {
+          id: 'task-2',
+          title: 'Add login endpoint',
+          description: 'Login endpoint',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
+      ],
+    });
+    const report = collectGitEvidence(plan, '/project', 'main');
+
+    expect(report.summary).toContain('1 required rework');
+  });
+
+  it('does not include rework in summary when no tasks were reworked', () => {
+    mockExecFileSync
+      .mockReturnValueOnce('feature/auth\n')
+      .mockReturnValueOnce('M\tsrc/auth/middleware.ts\n');
+
+    const plan = makePlan({
+      tasks: [
+        {
+          id: 'task-1',
+          title: 'Add auth middleware',
+          description: 'Auth middleware',
+          status: 'completed',
+          updatedAt: Date.now(),
+        },
+      ],
+    });
+    const report = collectGitEvidence(plan, '/project', 'main');
+
+    expect(report.summary).not.toContain('rework');
+  });
+});
+
 describe('collectVerificationGaps', () => {
   it('returns empty array when no tasks have verification', () => {
     const tasks: PlanTask[] = [makeTask()];
