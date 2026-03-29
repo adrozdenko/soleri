@@ -197,6 +197,31 @@ describe('scaffoldFileTree', () => {
     expect(gitignore).toContain('_engine.md');
   });
 
+  it('generates conventions.md example instruction file', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const content = readFileSync(join(result.agentDir, 'instructions', 'conventions.md'), 'utf-8');
+    expect(content).toContain('# Conventions');
+    expect(content).toContain('Naming Conventions');
+    expect(content).toContain('What to Avoid');
+    expect(content).toContain('kebab-case');
+  });
+
+  it('generates getting-started.md example instruction file', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const content = readFileSync(
+      join(result.agentDir, 'instructions', 'getting-started.md'),
+      'utf-8',
+    );
+    expect(content).toContain('Getting Started with Instructions');
+    expect(content).toContain('_engine.md');
+    expect(content).toContain('soleri dev');
+    expect(content).toContain('alphabetical order');
+  });
+
   it('fails if directory already exists', () => {
     scaffoldFileTree(MINIMAL_CONFIG, tempDir);
     const result2 = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
