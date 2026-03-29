@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "soleri-engine": {
+      "command": "npx",
+      "args": ["@soleri/engine", "--agent", "./agent.yaml"]
+    }
+  }
+}
