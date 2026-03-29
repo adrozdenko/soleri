@@ -208,7 +208,7 @@ export function registerCreate(program: Command): void {
               selectedPacks = selectedPacks.filter((pk) => available.includes(pk));
             }
           } else if (!nonInteractive && claudeSetup) {
-            const packs = listPacks();
+            const packs = listPacks().filter((pk) => pk.scaffoldDefault !== false);
             const packChoices = packs.map((pk) => ({
               value: pk.name,
               label: pk.name,

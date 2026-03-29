@@ -32,5 +32,6 @@
       "timeout": 10,
       "statusMessage": "Releasing lockfile guard..."
     }
-  ]
+  ],
+  "scaffoldDefault": false
 }

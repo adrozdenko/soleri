@@ -31,6 +31,8 @@ export interface HookPackManifest {
   lifecycleHooks?: HookPackLifecycleHook[];
   source?: 'built-in' | 'local';
   actionLevel?: 'remind' | 'warn' | 'block';
+  /** If false, pack is hidden from the scaffold picker but still installable via `hooks add-pack`. */
+  scaffoldDefault?: boolean;
 }
 
 const __filename = fileURLToPath(import.meta.url);

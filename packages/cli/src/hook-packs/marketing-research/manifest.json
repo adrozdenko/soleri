@@ -20,5 +20,6 @@
       "statusMessage": "Checking marketing context..."
     }
   ],
-  "actionLevel": "remind"
+  "actionLevel": "remind",
+  "scaffoldDefault": false
 }
