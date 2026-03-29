@@ -56,7 +56,18 @@ export function composeClaudeMd(agentDir: string, tools?: ToolEntry[]): Composed
   // 5. Essential tools table
   sections.push(composeToolsTable(agentYaml, tools));
 
-  // 6. Engine rules — NOT inlined (they are injected once into ~/.claude/CLAUDE.md
+  // 6. User custom instructions (instructions/user.md) — priority placement
+  //    This file is user-editable and appears BEFORE engine rules and other instructions.
+  const userMdPath = join(agentDir, 'instructions', 'user.md');
+  if (existsSync(userMdPath)) {
+    const userContent = readFileSync(userMdPath, 'utf-8').trim();
+    if (userContent) {
+      sections.push(userContent);
+      sources.push(userMdPath);
+    }
+  }
+
+  // 7. Engine rules — NOT inlined (they are injected once into ~/.claude/CLAUDE.md
   //    or project CLAUDE.md via `soleri install`). Including them here would
   //    triple-load the rules (~8k tokens duplicated per layer).
   //    We emit a short reference so the agent knows rules exist.
@@ -72,11 +83,11 @@ export function composeClaudeMd(agentDir: string, tools?: ToolEntry[]): Composed
     sources.push(enginePath);
   }
 
-  // 7. User instructions (instructions/*.md, excluding _engine.md)
+  // 8. User instructions (instructions/*.md, excluding _engine.md and user.md)
   const instructionsDir = join(agentDir, 'instructions');
   if (existsSync(instructionsDir)) {
     const files = readdirSync(instructionsDir)
-      .filter((f) => f.endsWith('.md') && f !== '_engine.md')
+      .filter((f) => f.endsWith('.md') && f !== '_engine.md' && f !== 'user.md')
       .sort();
     for (const file of files) {
       const filePath = join(instructionsDir, file);

@@ -252,4 +252,46 @@ describe('scaffoldFileTree', () => {
     expect(result.success).toBe(true);
     expect(result.summary).toContain('No build step needed');
   });
+
+  it('generates user.md with placeholder content', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const userMdPath = join(result.agentDir, 'instructions', 'user.md');
+    expect(existsSync(userMdPath)).toBe(true);
+
+    const content = readFileSync(userMdPath, 'utf-8');
+    expect(content).toContain('# Your Custom Rules');
+    expect(content).toContain('priority placement in CLAUDE.md');
+    expect(content).toContain('Delete these instructions and replace with your own content.');
+  });
+
+  it('includes user.md in filesCreated', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+    expect(result.filesCreated).toContain('instructions/user.md');
+  });
+
+  it('places user.md content before engine rules ref in CLAUDE.md', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    const userPos = claudeMd.indexOf('# Your Custom Rules');
+    const enginePos = claudeMd.indexOf('soleri:engine-rules-ref');
+
+    expect(userPos).toBeGreaterThan(-1);
+    expect(enginePos).toBeGreaterThan(-1);
+    expect(userPos).toBeLessThan(enginePos);
+  });
+
+  it('does not duplicate user.md in the alphabetical instructions section', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    // user.md content should appear exactly once
+    const matches = claudeMd.match(/# Your Custom Rules/g);
+    expect(matches).toHaveLength(1);
+  });
 });
