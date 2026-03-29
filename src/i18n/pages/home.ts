@@ -7,7 +7,7 @@ const content: Record<Locale, HomeContent> = {
     heroTitle:
       'One <span class="accent-amber">agent</span> that <span class="accent-teal">remembers</span> how you work.',
     heroText:
-      'Soleri builds your agent. It keeps what it learns. Picks up where you left off.',
+      '75% orchestration. 20% infrastructure. 5% AI. The model is a tool, not the product. The knowledge engine is the product.',
     principleTitle: 'Learns your project.',
     principleSubtitle: 'Onboard once, work forever',
     principleText: 'Tell your agent to learn the codebase. It captures the structure, patterns, and conventions — then uses them in every session that follows.',
@@ -24,16 +24,17 @@ const content: Record<Locale, HomeContent> = {
 <span class="hl">Soleri:</span>  Sure. You already have a pattern for events —
          I'll put the type here, the handler there,
          and wire it up the same way.`,
-    howTitle: 'Personal when it should be.<br/>Shared when it helps.<br/>Open by design.',
+    howTitle: 'Your folders don\'t learn. Soleri does.<br/>Map. Rooms. Tools.<br/>Pick your starting point.',
     howText:
       'Your setup, your rules. Share what helps — nothing more.',
     engineTags: [],
     features: [
       {
-        sectionTitle: 'Personal when it should be.',
-        title: 'One agent, many domains',
-        text: 'Keep one assistant and let it span the domains your work actually touches. Personal preferences stay local; shared knowledge can be linked in when needed.',
-        code: `<span class="cmt"># agent.yaml</span>
+        sectionTitle: 'Your folders don\'t learn. Soleri does.',
+        title: 'Memory that compounds',
+        text: 'Manual setups start from zero every session. Soleri\'s vault captures patterns, the brain tracks what works, and memory persists across sessions and projects. Knowledge compounds — it never resets.',
+        code: `<span class="cmt"># Your agent remembers across sessions</span>
+<span class="cmt"># agent.yaml</span>
 <span class="key">id:</span> <span class="val">ernesto</span>
 <span class="key">name:</span> <span class="val">Ernesto</span>
 <span class="key">domains:</span> <span class="val">[frontend, backend, operations]</span>
@@ -44,28 +45,35 @@ const content: Record<Locale, HomeContent> = {
     <span class="key">priority:</span> <span class="val">0.6</span>`,
       },
       {
-        sectionTitle: 'Shared when it helps.',
-        title: 'Plug in more expertise',
-        text: 'Use packs and linked vaults to add shared standards, reusable playbooks, or team knowledge without rebuilding every agent.',
-        code: `<span class="cmt">$ npx @soleri/cli pack list</span>
-<span class="ok">2 pack(s) installed:</span>
-  team-standards@0.2.0     <span class="cmt">knowledge [local]</span>
-  review-rules@1.1.0       <span class="cmt">knowledge [npm]</span>
-
-<span class="cmt">$ npx @soleri/cli pack install ../team-standards</span>
-<span class="ok">✓</span> Installed team-standards@0.2.0 <span class="cmt">(knowledge)</span>`,
+        sectionTitle: 'Map. Rooms. Tools.',
+        title: 'Three layers, instantly clear',
+        text: 'The Map routes every task to the right workspace. Each Room has its own context. Tools plug in per workspace, not globally. Different tasks load different context — automatically.',
+        code: `<span class="key">my-agent/</span>
+├── <span class="ok">CLAUDE.md</span>           <span class="cmt"># The Map — routes tasks</span>
+├── <span class="ok">agent.yaml</span>          <span class="cmt"># identity + config</span>
+├── <span class="key">instructions/</span>
+│   └── <span class="ok">user.md</span>         <span class="cmt"># your rules (priority)</span>
+├── <span class="key">workspaces/</span>
+│   ├── <span class="key">scripts/</span>
+│   │   └── <span class="ok">CONTEXT.md</span>  <span class="cmt"># Room: what happens here</span>
+│   └── <span class="key">production/</span>
+│       └── <span class="ok">CONTEXT.md</span>  <span class="cmt"># Room: different context</span>
+├── <span class="key">skills/</span>             <span class="cmt"># Tools: 7 essential</span>
+└── .mcp.json           <span class="cmt"># connects to the engine</span>`,
       },
       {
-        sectionTitle: 'Open by design.',
-        title: 'A folder your editor can read',
-        text: 'The agent definition lives in plain files. The engine handles persistence, search, and learning.',
-        code: `<span class="key">my-agent/</span>            <span class="cmt"># the agent is a folder</span>
-├── <span class="ok">agent.yaml</span>        <span class="cmt"># identity + engine config</span>
-├── <span class="key">instructions/</span>     <span class="cmt"># behavioral rules</span>
-├── <span class="key">workflows/</span>        <span class="cmt"># repeatable playbooks</span>
-├── <span class="key">knowledge/</span>        <span class="cmt"># domain bundles</span>
-├── <span class="key">skills/</span>           <span class="cmt"># optional skills</span>
-└── .mcp.json         <span class="cmt"># connects to the engine</span>`,
+        sectionTitle: 'Pick your starting point.',
+        title: 'Five agents, ready to fork',
+        text: 'Content creator, freelancer, developer, researcher, or business operator. Each starter agent comes with domain-specific workspaces, routing tables, and instructions. Clone one, customize it, ship.',
+        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span>
+
+<span class="dim">? Pick a template:</span>
+  <span class="ok">❯ Muse</span>       <span class="cmt">— content creation</span>
+    <span class="val">Atlas</span>      <span class="cmt">— freelance & consulting</span>
+    <span class="val">Forge</span>      <span class="cmt">— software development</span>
+    <span class="val">Sage</span>       <span class="cmt">— research & academic</span>
+    <span class="val">Compass</span>    <span class="cmt">— business operations</span>
+    <span class="val">Blank</span>      <span class="cmt">— start from scratch</span>`,
       },
     ],
     cardsTitle: 'One agent. Personal, project, and team knowledge.',
@@ -103,37 +111,36 @@ const content: Record<Locale, HomeContent> = {
       },
     ],
     terminalTitle: 'Quick start',
-    terminalCode: `<span class="comment"># Create the agent folder</span>
+    terminalCode: `<span class="comment"># Create from a template</span>
 <span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
-<span class="comment"># or: npx @soleri/cli create my-agent</span>
+<span class="dim">? Pick a template: Forge (software development)</span>
 
-<span class="comment"># In the new folder</span>
+<span class="comment"># Register and run</span>
 <span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span>   <span class="comment"># register MCP server</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>       <span class="comment"># run engine + watch files</span>
 
-<span class="comment">  ✓ Agent folder ready</span>
+<span class="comment">  ✓ Agent folder ready (7 skills, 3 workspaces)</span>
 <span class="comment">  ✓ MCP config registered</span>
-<span class="comment">  ✓ CLAUDE.md regenerates on change</span>
-<span class="comment">  ✓ Claude Code token discovered (if available)</span>`,
-    archTitle: 'Two layers, one maintainable setup',
-    archSubtitle: 'The folder defines the agent. The engine handles persistence and learning.',
+<span class="comment">  ✓ CLAUDE.md regenerates on change</span>`,
+    archTitle: '75/20/5 — The engine behind the folder',
+    archSubtitle: '75% orchestration. 20% infrastructure. 5% AI calls. The model is a tool. The knowledge engine is the product.',
     layers: [
       {
-        label: 'Agent Folder',
-        text: 'Plain files: <code>agent.yaml</code>, <code>instructions/</code>, <code>workflows/</code>, <code>knowledge/</code>. Your editor can read them directly.',
+        label: 'The Map',
+        text: 'CLAUDE.md routes every task to the right workspace. One file at the root, generated from your agent.yaml and instructions.',
       },
       {
-        label: 'Connected Knowledge',
-        text: 'Link personal, project, or team knowledge where it helps. Packs and shared vaults stay optional.',
+        label: 'The Rooms',
+        text: 'Each workspace has its own CONTEXT.md describing what happens there. Different tasks load different context — clean input, clean output.',
       },
       {
-        label: 'Knowledge Engine',
-        text: 'A single engine keeps the vault, playbooks, session context, and learning loop persistent across sessions.',
+        label: 'The Tools',
+        text: 'Skills and knowledge packs plug in per workspace. Seven essential skills ship by default. Add more as you grow.',
       },
       {
-        label: 'Transports',
-        text: 'MCP for coding editors, plus HTTP/SSE and WebSocket transports in core when you need them.',
+        label: 'The Engine',
+        text: 'Vault, Brain, Curator, Planner, Memory. 75% orchestration that makes the 5% AI reliable. Everything stays on your machine.',
       },
     ],
   },

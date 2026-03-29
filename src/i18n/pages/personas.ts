@@ -9,78 +9,82 @@ const content: Record<Locale, PersonasContent> = {
       'Your agent is a folder. Plain files, no build step, configurable with YAML. It learns your project through the plan-work-capture cycle.',
     heroEyebrow: 'Your agent',
     heroTitle:
-      'Just a folder that Soleri engine makes smart.',
+      'A folder that learns. An engine that remembers.',
     heroSubtitle:
-      'Your agent is a folder structure with plain files. Soleri is the engine that gives it memory, planning, and learning.',
+      'Your agent is a folder with plain files. Soleri adds workspaces, routing, and a knowledge engine that gets smarter every session.',
 
     sections: [
-      // Section 1: Your agent is a folder
+      // Section 1: The new folder structure with workspaces
       {
-        title: 'Your agent is a folder.',
-        subtitle: 'Plain files. No build step. No proprietary format.',
-        text: 'Own it like you own your code. Edit it, diff it, version it anywhere.',
-        code: `<span class="cmt"># Your agent is a folder</span>
-<span class="key">my-agent/</span>
-\u251C\u2500\u2500 <span class="val">agent.yaml</span>        <span class="cmt"># identity + config</span>
-\u251C\u2500\u2500 <span class="val">instructions/</span>     <span class="cmt"># behavioral rules</span>
-\u251C\u2500\u2500 <span class="val">workflows/</span>        <span class="cmt"># repeatable playbooks</span>
-\u251C\u2500\u2500 <span class="val">knowledge/</span>        <span class="cmt"># domain expertise</span>
-\u251C\u2500\u2500 <span class="val">skills/</span>           <span class="cmt"># agent capabilities</span>
-\u2514\u2500\u2500 <span class="val">.mcp.json</span>         <span class="cmt"># connects to the engine</span>`,
+        title: 'Map. Rooms. Tools.',
+        subtitle: 'Three layers. One architecture. Instantly clear.',
+        text: 'The Map (CLAUDE.md) routes tasks to the right workspace. Each Room (CONTEXT.md) describes what happens there. Tools (skills) plug in per workspace. Different tasks load different context automatically.',
+        code: `<span class="key">my-agent/</span>
+\u251C\u2500\u2500 <span class="val">CLAUDE.md</span>           <span class="cmt"># The Map \u2014 routing table</span>
+\u251C\u2500\u2500 <span class="val">agent.yaml</span>          <span class="cmt"># identity + config</span>
+\u251C\u2500\u2500 <span class="val">instructions/</span>
+\u2502   \u2514\u2500\u2500 <span class="val">user.md</span>         <span class="cmt"># your custom rules</span>
+\u251C\u2500\u2500 <span class="key">workspaces/</span>
+\u2502   \u251C\u2500\u2500 <span class="key">planning/</span>
+\u2502   \u2502   \u2514\u2500\u2500 <span class="val">CONTEXT.md</span>  <span class="cmt"># Room: architecture decisions</span>
+\u2502   \u251C\u2500\u2500 <span class="key">src/</span>
+\u2502   \u2502   \u2514\u2500\u2500 <span class="val">CONTEXT.md</span>  <span class="cmt"># Room: code conventions</span>
+\u2502   \u2514\u2500\u2500 <span class="key">docs/</span>
+\u2502       \u2514\u2500\u2500 <span class="val">CONTEXT.md</span>  <span class="cmt"># Room: documentation style</span>
+\u251C\u2500\u2500 <span class="val">skills/</span>             <span class="cmt"># Tools: 7 essential</span>
+\u2514\u2500\u2500 <span class="val">.mcp.json</span>`,
       },
 
-      // Section 2: One YAML file
+      // Section 2: Routing table
       {
-        title: 'One YAML file. Full control.',
+        title: 'Tasks route to the right context.',
         subtitle:
-          'Name, role, domains, tone, principles \u2014 all in agent.yaml.',
-        text: 'Define how your agent behaves in one place. Change it anytime \u2014 takes effect immediately.',
-        code: `<span class="cmt"># agent.yaml</span>
-<span class="key">id:</span> <span class="val">my-agent</span>
-<span class="key">name:</span> <span class="val">My Agent</span>
-<span class="key">role:</span> <span class="val">Full-Stack Development Advisor</span>
-<span class="key">domains:</span> <span class="val">[frontend, backend, testing]</span>
-<span class="key">tone:</span> <span class="val">pragmatic</span>
-<span class="key">principles:</span>
-  - <span class="val">Simplicity over cleverness</span>
-  - <span class="val">Test before shipping</span>
-  - <span class="val">Respect existing patterns</span>`,
+          'A routing table in your CLAUDE.md maps task patterns to workspaces.',
+        text: 'Write a spec? Load the scripts workspace. Build a feature? Load src with code conventions. Review a PR? Load review standards. Each task gets only the context it needs \u2014 clean input, clean output.',
+        code: `<span class="cmt"># Routing table in CLAUDE.md</span>
+
+<span class="key">| Task                | Workspace  | Skills          |</span>
+<span class="val">|---------------------|-----------|-----------------|</span>
+<span class="val">| "write script"      | scripts/  | voice, style    |</span>
+<span class="val">| "implement feature" | src/      | tdd, review     |</span>
+<span class="val">| "review PR"         | review/   | code-patrol     |</span>
+<span class="val">| "plan architecture" | planning/ | writing-plans   |</span>`,
       },
 
-      // Section 3: Skills
+      // Section 3: Essential skills
       {
-        title: 'Skills your agent can use.',
+        title: 'Seven skills. Add more when you need them.',
         subtitle:
-          'Plan, capture, review, debug \u2014 repeatable workflows as files.',
-        text: 'Turn your best workflows into repeatable runs. Plan, review, and debug with the same consistency every time.',
-        code: `<span class="cmt">Built-in skills:</span>
-  <span class="val">brainstorming</span>          <span class="cmt">\u2014 explore ideas before committing</span>
-  <span class="val">systematic-debugging</span>   <span class="cmt">\u2014 find root cause, then fix</span>
-  <span class="val">verification</span>           <span class="cmt">\u2014 prove before you ship</span>
+          'Ship lean. Your agent starts with what matters.',
+        text: 'Every agent ships with 7 essential skills. No bloat, no overwhelm. Need more? Install them with one command. Or set skillsFilter: all in agent.yaml to get everything.',
+        code: `<span class="cmt">Essential skills (ship by default):</span>
+  <span class="val">agent-guide</span>           <span class="cmt">\u2014 what can you do?</span>
+  <span class="val">agent-persona</span>         <span class="cmt">\u2014 stay in character</span>
+  <span class="val">vault-navigator</span>       <span class="cmt">\u2014 search knowledge</span>
+  <span class="val">vault-capture</span>         <span class="cmt">\u2014 save patterns</span>
+  <span class="val">systematic-debugging</span>  <span class="cmt">\u2014 find root cause</span>
+  <span class="val">writing-plans</span>         <span class="cmt">\u2014 structured planning</span>
+  <span class="val">context-resume</span>        <span class="cmt">\u2014 pick up where you left off</span>
 
 <span class="cmt">Add more:</span>
-  <span class="val">writing-plans</span>          <span class="cmt">\u2014 structured planning</span>
-  <span class="val">vault-capture</span>          <span class="cmt">\u2014 save patterns to knowledge</span>
-  <span class="val">code-patrol</span>            <span class="cmt">\u2014 scan against your standards</span>
-  <span class="val">fix-and-learn</span>          <span class="cmt">\u2014 fix bugs, capture the lesson</span>
-  <span class="val">onboard-me</span>             <span class="cmt">\u2014 guided codebase walkthrough</span>`,
+  <span class="prompt">$</span> <span class="cmd">npx @soleri/cli</span> <span class="arg">skills install deep-review</span>`,
       },
 
-      // Section 4: Extend
+      // Section 4: Pick a starter
       {
-        title: 'Extend it as you grow.',
+        title: 'Start from someone like you.',
         subtitle:
-          'Add domains, install packs, customize instructions.',
-        text: 'Start lean, scale without friction. Add new knowledge and standards when you need them \u2014 no rebuilds.',
-        code: `<span class="cmt"># Add a new domain</span>
-<span class="prompt">$</span> <span class="cmd">npx @soleri/cli</span> <span class="arg">add-domain security</span>
+          'Five starter agents. Clone one, customize it, ship.',
+        text: 'Content creator, freelancer, developer, researcher, or business operator. Each comes with domain-specific workspaces, routing tables, and instructions tailored to the work.',
+        code: `<span class="cmt">Starter agents:</span>
+  <span class="val">Muse</span>       <span class="cmt">\u2014 content creation (scripts, production, distribution)</span>
+  <span class="val">Atlas</span>      <span class="cmt">\u2014 freelance (clients, templates, business dev)</span>
+  <span class="val">Forge</span>      <span class="cmt">\u2014 development (planning, src, docs, ops)</span>
+  <span class="val">Sage</span>       <span class="cmt">\u2014 research (sources, analysis, writing, admin)</span>
+  <span class="val">Compass</span>    <span class="cmt">\u2014 business (comms, planning, clients, resources)</span>
 
-<span class="cmt"># Install a knowledge pack</span>
-<span class="prompt">$</span> <span class="cmd">npx @soleri/cli</span> <span class="arg">pack install ../team-standards</span>
-<span class="ok">\u2713</span> 18 patterns, 4 playbooks
-
-<span class="cmt"># Your agent picks up changes automatically</span>
-<span class="ok">\u2713</span> CLAUDE.md regenerated`,
+<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
+<span class="val">? Pick a template:</span> <span class="ok">\u276F Forge</span>`,
       },
     ],
   },

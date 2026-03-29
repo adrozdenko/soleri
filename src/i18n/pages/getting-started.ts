@@ -10,42 +10,52 @@ const content: Record<Locale, GettingStartedContent> = {
     eyebrow: 'Create an agent folder and connect it in minutes',
     heroTitle: 'Set up your first Soleri agent.',
     heroSubtitle:
-      'Three steps. Create, register, run. Under two minutes.',
+      'Pick a template. Register. Run. Under two minutes.',
     steps: [
       {
-        title: 'Create the agent folder',
-        text: 'Use the npm create shorthand or the CLI directly. The result is a plain folder with agent.yaml, instructions, workflows, knowledge, and skills.',
-        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>`,
+        title: 'Pick a template and create',
+        text: 'Choose a starter agent that matches your work — content creator, freelancer, developer, researcher, or business operator. Or start blank. The result is a plain folder with workspaces, routing, skills, and instructions.',
+        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
+<span class="prompt">?</span> <span class="cmd">Pick a template:</span>
+  <span class="ok">❯</span> <span class="val">Forge</span>       <span class="cmt">— software development</span>
+    <span class="val">Muse</span>        <span class="cmt">— content creation</span>
+    <span class="val">Atlas</span>       <span class="cmt">— freelance & consulting</span>
+    <span class="val">Sage</span>        <span class="cmt">— research & academic</span>
+    <span class="val">Compass</span>     <span class="cmt">— business operations</span>
+    <span class="val">Blank</span>       <span class="cmt">— start from scratch</span>
+
+<span class="ok">✓</span> Created my-agent <span class="cmt">(7 skills, 3 workspaces)</span>`,
         isInstallCmd: true,
       },
       {
         title: 'Register it in your editor',
-        text: 'From inside the new folder, register the MCP server. Claude Code is fully supported today. Codex and OpenCode support is planned.',
+        text: 'From inside the new folder, register the MCP server. Claude Code, Cursor, and OpenCode are supported.',
         code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
 
-<span class="ok">✓</span> Detected file-tree agent
+<span class="ok">✓</span> Detected file-tree agent <span class="cmt">(Forge template)</span>
 <span class="ok">✓</span> Registered my-agent in <span class="val">~/.claude.json</span>
 <span class="ok">✓</span> Launcher created`,
         isInstallCmd: false,
       },
       {
         title: 'Run the engine',
-        text: 'Start the engine while you work. It watches the agent files and regenerates the editor instruction file when the folder changes.',
+        text: 'Start the engine while you work. It watches your agent files, regenerates CLAUDE.md on change, and keeps the knowledge engine running.',
         code: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>
 
 <span class="ok">✓</span> MCP server running
-<span class="ok">✓</span> Watching agent.yaml, instructions/, workflows/, knowledge/
+<span class="ok">✓</span> Watching agent.yaml, instructions/, workspaces/, skills/
 <span class="ok">✓</span> CLAUDE.md regenerates on change
-<span class="ok">✓</span> Claude Code token discovered <span class="cmt">(if available)</span>`,
+<span class="ok">✓</span> 3 workspaces loaded <span class="cmt">(planning, src, docs)</span>
+<span class="ok">✓</span> 7 essential skills active`,
         isInstallCmd: false,
       },
     ],
     nextTitle: "You're running. What now?",
     nextLinks: [
       {
-        title: 'Try your first task',
-        desc: 'Ask your agent to plan something. See how the plan-capture loop works.',
+        title: 'See how it learns',
+        desc: 'Ask your agent to plan something. Watch it capture patterns and reuse them next time.',
         href: 'how-it-works.html',
       },
       {

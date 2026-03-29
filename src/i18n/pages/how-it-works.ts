@@ -8,26 +8,27 @@ const content: Record<Locale, HowItWorksContent> = {
     description:
       'Soleri is the engine that powers your agent. Your agent learns your project, remembers your decisions, and gets sharper over time — all on your machine.',
     eyebrow: 'How it works',
-    heroTitle: 'Soleri adds value from day one.',
+    heroTitle: '75% orchestration. 20% infrastructure. 5% AI.',
     heroSubtitle:
       'Plans <span class="sun-sep">☀</span> Executes <span class="sun-sep">☀</span> Captures <span class="sun-sep">☀</span> Remembers',
     sections: [
       {
-        title: 'Plan with your agent. It learns.',
-        subtitle: 'Start with a plan, capture what matters along the way.',
-        text: 'Turn each plan into reusable knowledge. Capture what mattered in seconds and move on.',
-        code: `<span class="dim">// You ask, the agent plans</span>
-<span class="hl">You:</span>     Plan: add email validation to signup.
-<span class="hl">Agent:</span>   Here's the plan:
-         1. Add validator in <span class="val">lib/validators</span>
-         2. Wire into the signup handler
-         3. Add test for edge cases
-         Ready to start?
+        title: 'The model is 5% of the system.',
+        subtitle: 'Most AI products are wrappers around an API. Soleri is an engine.',
+        text: '75% orchestration — vault routing, plan gates, intent classification, knowledge curation. 20% infrastructure — SQLite, transports, file I/O. 5% AI calls — only when intelligence is actually needed. The other 95% is what makes AI reliable.',
+        code: `<span class="cmt"># What the 75% actually does</span>
 
-<span class="dim">// After the work, capture what you learned</span>
-<span class="hl">You:</span>     Capture this: use RFC 5322
-         for email validation, not simple regex.
-<span class="hl">Agent:</span>   <span class="ok">\u2713 Saved.</span>`,
+<span class="ok">Brain</span>        <span class="dim">— tracks what works, recommends approaches</span>
+<span class="ok">Curator</span>      <span class="dim">— prevents knowledge decay, deduplicates</span>
+<span class="ok">Governance</span>   <span class="dim">— controls quality, enforces review gates</span>
+<span class="ok">Planner</span>     <span class="dim"> — structured plans with approval checkpoints</span>
+<span class="ok">Memory</span>      <span class="dim"> — persists across sessions and projects</span>
+<span class="ok">Vault</span>       <span class="dim"> — linked knowledge graph, searchable patterns</span>
+
+<span class="cmt"># What the 5% does</span>
+
+<span class="val">LLM calls</span>    <span class="dim">— content classification, persona generation</span>
+<span class="dim">Everything else? Deterministic. Explainable. Offline-capable.</span>`,
       },
       {
         title: 'Next time, it already knows.',
@@ -46,8 +47,8 @@ const content: Record<Locale, HowItWorksContent> = {
       },
       {
         title: 'Gets sharper, not messier.',
-        subtitle: 'The knowledge base curates itself as you use it.',
-        text: 'Your best patterns rise to the top. Old and duplicate noise fades out automatically.',
+        subtitle: 'Three systems keep your knowledge clean.',
+        text: 'Brain tracks pattern strength — your best patterns rise, unused ones fade. Curator deduplicates and resolves contradictions automatically. Governance controls what gets in and enforces review when sharing with a team.',
         code: `<span class="cmt"># Your agent's strongest patterns</span>
 
 <span class="ok">email-validation</span>     strength: <span class="val">94</span>   used 12 times
