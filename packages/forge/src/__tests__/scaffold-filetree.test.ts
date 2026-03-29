@@ -417,4 +417,120 @@ describe('scaffoldFileTree', () => {
     const parsed = parseYaml(content);
     expect(parsed.skillsFilter).toBe('all');
   });
+
+  // ─── Workspace & Routing Tests ─────────────────────────────
+
+  it('creates workspace directories with CONTEXT.md when workspaces defined', () => {
+    const result = scaffoldFileTree(
+      {
+        ...MINIMAL_CONFIG,
+        workspaces: [
+          { id: 'design', name: 'Design', description: 'Design workspace' },
+          { id: 'review', name: 'Review', description: 'Review workspace' },
+        ],
+      },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    // Workspace directories and CONTEXT.md files exist
+    expect(existsSync(join(result.agentDir, 'workspaces', 'design', 'CONTEXT.md'))).toBe(true);
+    expect(existsSync(join(result.agentDir, 'workspaces', 'review', 'CONTEXT.md'))).toBe(true);
+
+    // CONTEXT.md contains workspace name and description
+    const content = readFileSync(
+      join(result.agentDir, 'workspaces', 'design', 'CONTEXT.md'),
+      'utf-8',
+    );
+    expect(content).toContain('# Design');
+    expect(content).toContain('Design workspace');
+  });
+
+  it('seeds default workspaces from domains when no explicit workspaces', () => {
+    const result = scaffoldFileTree(
+      {
+        ...MINIMAL_CONFIG,
+        domains: ['architecture'],
+      },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    // Architecture domain seeds planning, src, docs workspaces
+    expect(existsSync(join(result.agentDir, 'workspaces', 'planning', 'CONTEXT.md'))).toBe(true);
+    expect(existsSync(join(result.agentDir, 'workspaces', 'src', 'CONTEXT.md'))).toBe(true);
+    expect(existsSync(join(result.agentDir, 'workspaces', 'docs', 'CONTEXT.md'))).toBe(true);
+  });
+
+  it('includes routing entries in agent.yaml', () => {
+    const result = scaffoldFileTree(
+      {
+        ...MINIMAL_CONFIG,
+        workspaces: [{ id: 'src', name: 'Source', description: 'Source code' }],
+        routing: [{ pattern: 'implement feature', workspace: 'src', skills: ['tdd'] }],
+      },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    const content = readFileSync(join(result.agentDir, 'agent.yaml'), 'utf-8');
+    const parsed = parseYaml(content);
+
+    expect(parsed.workspaces).toHaveLength(1);
+    expect(parsed.workspaces[0].id).toBe('src');
+    expect(parsed.routing).toHaveLength(1);
+    expect(parsed.routing[0].pattern).toBe('implement feature');
+    expect(parsed.routing[0].workspace).toBe('src');
+    expect(parsed.routing[0].skills).toEqual(['tdd']);
+  });
+
+  it('creates no workspaces directory when no workspaces and no matching domains', () => {
+    const result = scaffoldFileTree(
+      {
+        ...MINIMAL_CONFIG,
+        domains: ['testing', 'quality'], // no workspace seeds for these
+      },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    // No workspaces directory
+    expect(existsSync(join(result.agentDir, 'workspaces'))).toBe(false);
+  });
+
+  it('includes workspaces and routing sections in CLAUDE.md when defined', () => {
+    const result = scaffoldFileTree(
+      {
+        ...MINIMAL_CONFIG,
+        workspaces: [{ id: 'design', name: 'Design', description: 'Design patterns' }],
+        routing: [
+          { pattern: 'design component', workspace: 'design', skills: ['vault-navigator'] },
+        ],
+      },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    expect(claudeMd).toContain('## Workspaces');
+    expect(claudeMd).toContain('Design patterns');
+    expect(claudeMd).toContain('## Task Routing');
+    expect(claudeMd).toContain('design component');
+  });
+
+  it('omits workspaces and routing sections from CLAUDE.md when not defined', () => {
+    // Use domains with no workspace seeds
+    const result = scaffoldFileTree(
+      {
+        ...MINIMAL_CONFIG,
+        domains: ['testing', 'quality'],
+      },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    expect(claudeMd).not.toContain('## Workspaces');
+    expect(claudeMd).not.toContain('## Task Routing');
+  });
 });

@@ -67,6 +67,14 @@ export function composeClaudeMd(agentDir: string, tools?: ToolEntry[]): Composed
     }
   }
 
+  // 6b. Workspaces section (if defined)
+  const workspacesSection = composeWorkspacesSection(agentYaml);
+  if (workspacesSection) sections.push(workspacesSection);
+
+  // 6c. Routing table (if defined)
+  const routingSection = composeRoutingTable(agentYaml);
+  if (routingSection) sections.push(routingSection);
+
   // 7. Engine rules — NOT inlined (they are injected once into ~/.claude/CLAUDE.md
   //    or project CLAUDE.md via `soleri install`). Including them here would
   //    triple-load the rules (~8k tokens duplicated per layer).
@@ -205,6 +213,47 @@ function composeToolsTable(agent: AgentYaml, tools?: ToolEntry[]): string {
 
   lines.push('');
   lines.push(`> Full list: \`${agent.id}_admin op:admin_tool_list\``);
+
+  return lines.join('\n');
+}
+
+function composeWorkspacesSection(agent: AgentYaml): string | null {
+  if (!agent.workspaces || agent.workspaces.length === 0) return null;
+
+  const lines: string[] = [
+    '## Workspaces',
+    '',
+    'Scoped context areas — each workspace has its own CONTEXT.md with task-specific instructions.',
+    '',
+    '| Workspace | Description |',
+    '|-----------|-------------|',
+  ];
+
+  for (const ws of agent.workspaces) {
+    lines.push(`| \`${ws.id}\` | ${ws.description} |`);
+  }
+
+  return lines.join('\n');
+}
+
+function composeRoutingTable(agent: AgentYaml): string | null {
+  if (!agent.routing || agent.routing.length === 0) return null;
+
+  const lines: string[] = [
+    '## Task Routing',
+    '',
+    'When a task matches a pattern below, navigate to the target workspace, load its CONTEXT.md, and activate the listed skills.',
+    'If no pattern matches, use the default root context.',
+    '',
+    '| Task Pattern | Route To | Context | Skills |',
+    '|--------------|----------|---------|--------|',
+  ];
+
+  for (const route of agent.routing) {
+    const ctx = route.context.length > 0 ? route.context.join(', ') : '—';
+    const skills = route.skills.length > 0 ? route.skills.map((s) => `\`${s}\``).join(', ') : '—';
+    lines.push(`| ${route.pattern} | \`${route.workspace}\` | ${ctx} | ${skills} |`);
+  }
 
   return lines.join('\n');
 }
