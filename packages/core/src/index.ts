@@ -40,8 +40,17 @@ export {
   agentKeysPath,
   agentTemplatesDir,
   agentFlagsPath,
+  agentKnowledgeDir,
+  projectKnowledgeDir,
   sharedVaultPath,
 } from './paths.js';
+
+// ─── Vault Markdown Sync ───────────────────────────────────────────
+export {
+  syncAllToMarkdown,
+  syncEntryToMarkdown,
+  entryToMarkdown,
+} from './vault/vault-markdown-sync.js';
 
 // ─── Intelligence ────────────────────────────────────────────────────
 export type {

@@ -109,6 +109,11 @@ export function agentKnowledgeDir(agentId: string): string {
   return join(agentHome(agentId), 'knowledge');
 }
 
+/** Project-local knowledge directory for browsable markdown sync. */
+export function projectKnowledgeDir(projectPath: string): string {
+  return join(projectPath, 'knowledge');
+}
+
 /** Shared vault path: ~/.soleri/vault.db (cross-agent intelligence) */
 export function sharedVaultPath(): string {
   return join(SOLERI_HOME, 'vault.db');

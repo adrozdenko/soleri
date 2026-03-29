@@ -11,7 +11,7 @@ import type { AgentRuntime } from './types.js';
 import { detectScope } from '../vault/scope-detector.js';
 import type { ScopeTier, ScopeDetectionResult } from '../vault/scope-detector.js';
 import { syncEntryToMarkdown } from '../vault/vault-markdown-sync.js';
-import { agentKnowledgeDir } from '../paths.js';
+import { agentKnowledgeDir, projectKnowledgeDir } from '../paths.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 /**
@@ -189,6 +189,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                         origin: 'user',
                       },
                       config.agentId,
+                      projectPath,
                     );
                   }
                 } catch (err) {
@@ -417,6 +418,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                     origin: 'user',
                   },
                   config.agentId,
+                  projectPath,
                 );
                 return result;
               } catch (err) {
@@ -629,9 +631,18 @@ function mapType(type: string): 'pattern' | 'anti-pattern' | 'rule' | 'playbook'
 }
 
 /** Fire-and-forget markdown sync — never blocks capture, logs errors silently. */
-function fireAndForgetSync(entry: IntelligenceEntry, agentId: string): void {
-  const knowledgeDir = agentKnowledgeDir(agentId);
-  syncEntryToMarkdown(entry, knowledgeDir).catch(() => {
+function fireAndForgetSync(entry: IntelligenceEntry, agentId: string, projectPath?: string): void {
+  // Always sync to agent home dir
+  const agentDir = agentKnowledgeDir(agentId);
+  syncEntryToMarkdown(entry, agentDir).catch(() => {
     /* non-blocking — markdown sync is best-effort */
   });
+
+  // Also sync to project-local knowledge dir if a real project path is provided
+  if (projectPath && projectPath !== '.') {
+    const projDir = projectKnowledgeDir(projectPath);
+    syncEntryToMarkdown(entry, projDir).catch(() => {
+      /* non-blocking — markdown sync is best-effort */
+    });
+  }
 }

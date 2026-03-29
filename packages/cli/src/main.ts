@@ -21,6 +21,7 @@ import { registerSkills } from './commands/skills.js';
 import { registerAgent } from './commands/agent.js';
 import { registerTelegram } from './commands/telegram.js';
 import { registerStaging } from './commands/staging.js';
+import { registerVault } from './commands/vault.js';
 import { registerYolo } from './commands/yolo.js';
 
 const require = createRequire(import.meta.url);
@@ -83,5 +84,6 @@ registerSkills(program);
 registerAgent(program);
 registerTelegram(program);
 registerStaging(program);
+registerVault(program);
 registerYolo(program);
 program.parse();
