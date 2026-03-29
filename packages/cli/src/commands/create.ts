@@ -104,6 +104,10 @@ export function registerCreate(program: Command): void {
               process.exit(1);
             }
             config = parsed.data;
+            // Config path: default to git init unless --no-git or config specifies git
+            if (!skipGit) {
+              gitConfig = raw.git ?? { init: true };
+            }
           } else {
             // Interactive wizard
             const wizardResult = await runCreateWizard(name);
