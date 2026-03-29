@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.8.0] — 2026-03-30
+
+### Added
+- **Workspace-scoped context** — `workspaces/` directory with per-workspace `CONTEXT.md` files, domain seeding for default workspaces (#468)
+- **Visible routing table** — task pattern → workspace + context + skills mapping in generated CLAUDE.md
+- **Essential skills filter** — scaffold ships 7 skills by default instead of 31; `skillsFilter` in agent.yaml (`'all'` | `'essential'` | `string[]`)
+- **User-editable CLAUDE.md** — `instructions/user.md` gets priority placement before engine rules, survives regeneration
+- **Example instruction files** — `conventions.md` and `getting-started.md` scaffolded into `instructions/`
+- **5 persona starter agents** — Muse (content), Atlas (freelance), Forge (dev), Sage (research), Compass (business) in `examples/`
+- **OpenCode adapter** — enforcement and hook integration for OpenCode editors
+- **User-gated reconciliation** — fix-trail learning with user approval gate (#459)
+- **Git init in scaffold** — `git init` and remote push added to scaffold flow
+- **Website: 75/20/5 framework** — new positioning across homepage, how-it-works, your-agent, getting-started pages
+- **Website: Map/Rooms/Tools language** — 3-layer architecture naming across all pages
+
+### Fixed
+- Git init on `--config` path was silently skipped
+- Niche hook packs hidden from scaffold picker
+- File-tree agent CLI parity — all commands work without `package.json`
+- Multi-line template picker rendering on getting-started page
+- Path separator normalization in trust-classifier inventory
+
 ## v9.7.2 — 2026-03-28 — Hook Pack Settings Fix
 
 ### Bug Fix
