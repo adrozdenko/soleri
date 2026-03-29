@@ -25,7 +25,7 @@ const content: Record<Locale, GettingStartedContent> = {
     <span class="val">Blank</span>       <span class="cmt">— start from scratch</span>
 
 <span class="ok">✓</span> Created my-agent <span class="cmt">(7 skills, 3 workspaces)</span>`,
-        isInstallCmd: true,
+        isInstallCmd: false,
       },
       {
         title: 'Register it in your editor',
