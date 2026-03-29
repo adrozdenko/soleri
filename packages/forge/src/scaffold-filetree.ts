@@ -540,6 +540,13 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
       'AGENTS.md',
       'instructions/_engine.md',
       '',
+      '# OS',
+      '.DS_Store',
+      '',
+      '# Editor / IDE state',
+      '.obsidian/',
+      '.opencode/',
+      '',
     ].join('\n'),
     filesCreated,
   );
