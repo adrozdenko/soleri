@@ -187,6 +187,18 @@ export const AgentYamlSchema = z.object({
   /** LLM client integration settings */
   setup: SetupConfigSchema.optional().default({}),
 
+  // ─── Skills ─────────────────────────────────────
+  /**
+   * Controls which skills are scaffolded.
+   * - 'essential' (default): ~7 core skills for a lightweight start
+   * - 'all': scaffold all available skills (backward compat)
+   * - string[]: scaffold only the named skills
+   */
+  skillsFilter: z
+    .union([z.literal('all'), z.literal('essential'), z.array(z.string())])
+    .optional()
+    .default('essential'),
+
   // ─── Domain Packs ──────────────────────────────
   /** npm domain packs with custom ops and knowledge */
   packs: z.array(DomainPackSchema).optional(),

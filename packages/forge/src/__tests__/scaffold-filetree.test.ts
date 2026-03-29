@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { parse as parseYaml } from 'yaml';
@@ -251,5 +251,103 @@ describe('scaffoldFileTree', () => {
     const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
     expect(result.success).toBe(true);
     expect(result.summary).toContain('No build step needed');
+  });
+
+  // ─── Skills Filter Tests ─────────────────────────────────────
+
+  it('default scaffold creates only essential skills (~7)', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const skillDirs = readdirSync(join(result.agentDir, 'skills'), { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+
+    // Should have ~7 essential skills, not 30+
+    expect(skillDirs.length).toBeGreaterThanOrEqual(5);
+    expect(skillDirs.length).toBeLessThanOrEqual(10);
+
+    // Essential skills should be present
+    expect(skillDirs).toContain('agent-guide');
+    expect(skillDirs).toContain('vault-navigator');
+    expect(skillDirs).toContain('vault-capture');
+    expect(skillDirs).toContain('systematic-debugging');
+    expect(skillDirs).toContain('writing-plans');
+    expect(skillDirs).toContain('context-resume');
+    expect(skillDirs).toContain('agent-persona');
+
+    // Optional skills should NOT be present
+    expect(skillDirs).not.toContain('brainstorming');
+    expect(skillDirs).not.toContain('deep-review');
+    expect(skillDirs).not.toContain('code-patrol');
+    expect(skillDirs).not.toContain('yolo-mode');
+  });
+
+  it('skillsFilter: "all" creates all skills', () => {
+    const result = scaffoldFileTree(
+      { ...MINIMAL_CONFIG, id: 'all-skills', skillsFilter: 'all' },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    const skillDirs = readdirSync(join(result.agentDir, 'skills'), { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+
+    // Should have all 30+ skills
+    expect(skillDirs.length).toBeGreaterThanOrEqual(25);
+    expect(skillDirs).toContain('brainstorming');
+    expect(skillDirs).toContain('deep-review');
+    expect(skillDirs).toContain('yolo-mode');
+  });
+
+  it('skillsFilter: explicit array creates exactly those skills', () => {
+    const result = scaffoldFileTree(
+      { ...MINIMAL_CONFIG, id: 'custom-skills', skillsFilter: ['vault-navigator', 'agent-guide'] },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    const skillDirs = readdirSync(join(result.agentDir, 'skills'), { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+
+    expect(skillDirs).toEqual(['agent-guide', 'vault-navigator']);
+  });
+
+  it('CLAUDE.md only lists on-disk skills', () => {
+    // Default scaffold = essential only
+    const result = scaffoldFileTree({ ...MINIMAL_CONFIG, id: 'claude-md-skills' }, tempDir);
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+
+    // Essential skills should appear
+    expect(claudeMd).toContain('vault-navigator');
+    expect(claudeMd).toContain('agent-guide');
+
+    // Optional skills should NOT appear (not on disk)
+    expect(claudeMd).not.toContain('brainstorming');
+    expect(claudeMd).not.toContain('yolo-mode');
+  });
+
+  it('skillsFilter default (essential) is not written to agent.yaml', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const content = readFileSync(join(result.agentDir, 'agent.yaml'), 'utf-8');
+    expect(content).not.toContain('skillsFilter');
+  });
+
+  it('skillsFilter: "all" IS written to agent.yaml', () => {
+    const result = scaffoldFileTree(
+      { ...MINIMAL_CONFIG, id: 'written-filter', skillsFilter: 'all' },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    const content = readFileSync(join(result.agentDir, 'agent.yaml'), 'utf-8');
+    const parsed = parseYaml(content);
+    expect(parsed.skillsFilter).toBe('all');
   });
 });

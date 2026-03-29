@@ -18,6 +18,64 @@ import { composeClaudeMd } from './compose-claude-md.js';
 import { generateSkills } from './templates/skills.js';
 import type { AgentConfig } from './types.js';
 
+// ─── Skills Registry ─────────────────────────────────────────────────
+
+/**
+ * Skills classified as essential (always scaffolded by default) or optional
+ * (installed on demand via `soleri skills install`).
+ */
+export const SKILLS_REGISTRY: Record<string, 'essential' | 'optional'> = {
+  'agent-guide': 'essential',
+  'agent-persona': 'essential',
+  'vault-navigator': 'essential',
+  'vault-capture': 'essential',
+  'systematic-debugging': 'essential',
+  'writing-plans': 'essential',
+  'context-resume': 'essential',
+  // ─── Optional (installed on demand) ────────────
+  'agent-dev': 'optional',
+  'agent-issues': 'optional',
+  'brain-debrief': 'optional',
+  brainstorming: 'optional',
+  'code-patrol': 'optional',
+  'deep-review': 'optional',
+  'deliver-and-ship': 'optional',
+  'discovery-phase': 'optional',
+  'env-setup': 'optional',
+  'executing-plans': 'optional',
+  'finishing-a-development-branch': 'optional',
+  'fix-and-learn': 'optional',
+  'health-check': 'optional',
+  'knowledge-harvest': 'optional',
+  'mcp-doctor': 'optional',
+  'onboard-me': 'optional',
+  'parallel-execute': 'optional',
+  retrospective: 'optional',
+  'second-opinion': 'optional',
+  'subagent-driven-development': 'optional',
+  'test-driven-development': 'optional',
+  'using-git-worktrees': 'optional',
+  'vault-curate': 'optional',
+  'vault-smells': 'optional',
+  'verification-before-completion': 'optional',
+  'yolo-mode': 'optional',
+};
+
+/** Names of essential skills (always scaffolded when skillsFilter is 'essential'). */
+export const ESSENTIAL_SKILLS = Object.entries(SKILLS_REGISTRY)
+  .filter(([, tier]) => tier === 'essential')
+  .map(([name]) => name);
+
+/**
+ * Resolve the skill names to scaffold based on the skillsFilter config value.
+ * Returns null when all skills should be included (no filtering).
+ */
+export function resolveSkillsFilter(skillsFilter: 'all' | 'essential' | string[]): string[] | null {
+  if (skillsFilter === 'all') return null; // null = include all
+  if (skillsFilter === 'essential') return ESSENTIAL_SKILLS;
+  return skillsFilter; // explicit list
+}
+
 // ─── Types ────────────────────────────────────────────────────────────
 
 export interface FileTreeScaffoldResult {
@@ -355,7 +413,11 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
   }
 
   // ─── 8. Copy bundled skills (with placeholder substitution) ─
-  const skills = generateSkills({ id: config.id } as AgentConfig);
+  const resolvedSkills = resolveSkillsFilter(config.skillsFilter);
+  const skills = generateSkills({
+    id: config.id,
+    skills: resolvedSkills ?? undefined,
+  } as AgentConfig);
   for (const [relativePath, content] of skills) {
     mkdirSync(join(agentDir, dirname(relativePath)), { recursive: true });
     writeFile(agentDir, relativePath, content, filesCreated);
@@ -475,6 +537,11 @@ function buildAgentYaml(config: AgentYaml): Record<string, unknown> {
   if (config.setup?.model && config.setup.model !== 'claude-code-sonnet-4')
     setup.model = config.setup.model;
   if (Object.keys(setup).length > 0) yaml.setup = setup;
+
+  // Skills filter — only include if not the default ('essential')
+  if (config.skillsFilter && config.skillsFilter !== 'essential') {
+    yaml.skillsFilter = config.skillsFilter;
+  }
 
   // Packs
   if (config.packs && config.packs.length > 0) {
