@@ -235,6 +235,102 @@ Before crossing a context window boundary — \`/clear\`, context compaction, or
   },
 ];
 
+// ─── Workspace & Routing Seeds ───────────────────────────────────────
+
+/** Default workspaces seeded based on agent domains. */
+const DOMAIN_WORKSPACE_SEEDS: Record<string, { id: string; name: string; description: string }[]> =
+  {
+    // Design-related domains
+    design: [
+      {
+        id: 'design',
+        name: 'Design',
+        description: 'Design system patterns, tokens, and components',
+      },
+      { id: 'review', name: 'Review', description: 'Design review and accessibility audits' },
+    ],
+    'ui-design': [
+      { id: 'design', name: 'Design', description: 'UI design patterns, tokens, and components' },
+      { id: 'review', name: 'Review', description: 'Design review and accessibility audits' },
+    ],
+    accessibility: [
+      { id: 'design', name: 'Design', description: 'Accessible design patterns and tokens' },
+      { id: 'review', name: 'Review', description: 'Accessibility audits and compliance checks' },
+    ],
+    // Dev-related domains
+    architecture: [
+      {
+        id: 'planning',
+        name: 'Planning',
+        description: 'Architecture decisions and technical planning',
+      },
+      { id: 'src', name: 'Source', description: 'Implementation code and modules' },
+      { id: 'docs', name: 'Documentation', description: 'Technical documentation and ADRs' },
+    ],
+    backend: [
+      { id: 'planning', name: 'Planning', description: 'Backend architecture and API design' },
+      { id: 'src', name: 'Source', description: 'Implementation code and modules' },
+      { id: 'docs', name: 'Documentation', description: 'API documentation and guides' },
+    ],
+    frontend: [
+      {
+        id: 'planning',
+        name: 'Planning',
+        description: 'Frontend architecture and component design',
+      },
+      { id: 'src', name: 'Source', description: 'Implementation code and components' },
+      {
+        id: 'docs',
+        name: 'Documentation',
+        description: 'Component documentation and style guides',
+      },
+    ],
+    security: [
+      {
+        id: 'planning',
+        name: 'Planning',
+        description: 'Security architecture and threat modeling',
+      },
+      { id: 'src', name: 'Source', description: 'Security implementations and policies' },
+      { id: 'docs', name: 'Documentation', description: 'Security documentation and runbooks' },
+    ],
+  };
+
+/** Default routing entries seeded based on agent domains. */
+const DOMAIN_ROUTING_SEEDS: Record<
+  string,
+  { pattern: string; workspace: string; skills: string[] }[]
+> = {
+  design: [
+    { pattern: 'design component', workspace: 'design', skills: ['vault-navigator'] },
+    { pattern: 'review design', workspace: 'review', skills: ['deep-review'] },
+  ],
+  'ui-design': [
+    { pattern: 'design component', workspace: 'design', skills: ['vault-navigator'] },
+    { pattern: 'review design', workspace: 'review', skills: ['deep-review'] },
+  ],
+  architecture: [
+    { pattern: 'plan architecture', workspace: 'planning', skills: ['writing-plans'] },
+    { pattern: 'implement feature', workspace: 'src', skills: ['test-driven-development'] },
+    { pattern: 'write documentation', workspace: 'docs', skills: ['vault-capture'] },
+  ],
+  backend: [
+    { pattern: 'plan API', workspace: 'planning', skills: ['writing-plans'] },
+    { pattern: 'implement endpoint', workspace: 'src', skills: ['test-driven-development'] },
+    { pattern: 'write docs', workspace: 'docs', skills: ['vault-capture'] },
+  ],
+  frontend: [
+    { pattern: 'plan component', workspace: 'planning', skills: ['writing-plans'] },
+    { pattern: 'implement component', workspace: 'src', skills: ['test-driven-development'] },
+    { pattern: 'write docs', workspace: 'docs', skills: ['vault-capture'] },
+  ],
+  security: [
+    { pattern: 'threat model', workspace: 'planning', skills: ['writing-plans'] },
+    { pattern: 'implement policy', workspace: 'src', skills: ['test-driven-development'] },
+    { pattern: 'write runbook', workspace: 'docs', skills: ['vault-capture'] },
+  ],
+};
+
 // ─── Main Scaffolder ──────────────────────────────────────────────────
 
 /**
@@ -381,7 +477,33 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
     totalSeeded += starterEntries.length;
   }
 
-  // ─── 9. Generate CLAUDE.md ──────────────────────────────────
+  // ─── 9b. Create workspace directories with CONTEXT.md ──────
+  // Resolve workspaces: use explicit config or seed from domains
+  const resolvedWorkspaces = resolveWorkspaces(config);
+  if (resolvedWorkspaces.length > 0) {
+    for (const ws of resolvedWorkspaces) {
+      const wsDir = join(agentDir, 'workspaces', ws.id);
+      mkdirSync(wsDir, { recursive: true });
+      const contextContent = [
+        `# ${ws.name}`,
+        '',
+        ws.description,
+        '',
+        '## Instructions',
+        '',
+        `<!-- Add workspace-specific instructions here for the "${ws.name}" context. -->`,
+        '',
+      ].join('\n');
+      writeFile(
+        agentDir,
+        `workspaces/${ws.id}/${ws.contextFile ?? 'CONTEXT.md'}`,
+        contextContent,
+        filesCreated,
+      );
+    }
+  }
+
+  // ─── 10. Generate CLAUDE.md ──────────────────────────────────
   const { content: claudeMd } = composeClaudeMd(agentDir);
   writeFile(agentDir, 'CLAUDE.md', claudeMd, filesCreated);
 
@@ -476,12 +598,94 @@ function buildAgentYaml(config: AgentYaml): Record<string, unknown> {
     setup.model = config.setup.model;
   if (Object.keys(setup).length > 0) yaml.setup = setup;
 
+  // Workspaces
+  const resolvedWs = resolveWorkspaces(config);
+  if (resolvedWs.length > 0) {
+    yaml.workspaces = resolvedWs.map((ws) => (Object.assign({id:ws.id,name:ws.name,description:ws.description}, ws.contextFile!==`CONTEXT.md`?{contextFile:ws.contextFile}:{})));
+  }
+
+  // Routing
+  const resolvedRouting = resolveRouting(config);
+  if (resolvedRouting.length > 0) {
+    yaml.routing = resolvedRouting.map((r) => (Object.assign({pattern:r.pattern,workspace:r.workspace}, r.context.length>0?{context:r.context}:{}, r.skills.length>0?{skills:r.skills}:{})));
+  }
+
   // Packs
   if (config.packs && config.packs.length > 0) {
     yaml.packs = config.packs;
   }
 
   return yaml;
+}
+
+// ─── Workspace & Routing Helpers ─────────────────────────────────────
+
+/**
+ * Resolve workspaces: use explicit config or seed from domains.
+ * Deduplicates by workspace id.
+ */
+function resolveWorkspaces(
+  config: AgentYaml,
+): { id: string; name: string; description: string; contextFile: string }[] {
+  // If explicitly defined, use those
+  if (config.workspaces && config.workspaces.length > 0) {
+    return config.workspaces.map((ws) => ({
+      id: ws.id,
+      name: ws.name,
+      description: ws.description,
+      contextFile: ws.contextFile ?? 'CONTEXT.md',
+    }));
+  }
+
+  // Otherwise, seed from domains
+  const seen = new Set<string>();
+  const workspaces: { id: string; name: string; description: string; contextFile: string }[] = [];
+
+  for (const domain of config.domains) {
+    const seeds = DOMAIN_WORKSPACE_SEEDS[domain];
+    if (!seeds) continue;
+    for (const seed of seeds) {
+      if (seen.has(seed.id)) continue;
+      seen.add(seed.id);
+      workspaces.push({ ...seed, contextFile: 'CONTEXT.md' });
+    }
+  }
+
+  return workspaces;
+}
+
+/**
+ * Resolve routing entries: use explicit config or seed from domains.
+ * Deduplicates by pattern string.
+ */
+function resolveRouting(
+  config: AgentYaml,
+): { pattern: string; workspace: string; context: string[]; skills: string[] }[] {
+  // If explicitly defined, use those
+  if (config.routing && config.routing.length > 0) {
+    return config.routing.map((r) => ({
+      pattern: r.pattern,
+      workspace: r.workspace,
+      context: r.context ?? [],
+      skills: r.skills ?? [],
+    }));
+  }
+
+  // Otherwise, seed from domains
+  const seen = new Set<string>();
+  const routes: { pattern: string; workspace: string; context: string[]; skills: string[] }[] = [];
+
+  for (const domain of config.domains) {
+    const seeds = DOMAIN_ROUTING_SEEDS[domain];
+    if (!seeds) continue;
+    for (const seed of seeds) {
+      if (seen.has(seed.pattern)) continue;
+      seen.add(seed.pattern);
+      routes.push({ ...seed, context: [] });
+    }
+  }
+
+  return routes;
 }
 
 // ─── Starter Pack Helpers ────────────────────────────────────────────

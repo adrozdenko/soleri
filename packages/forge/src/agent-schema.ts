@@ -145,6 +145,32 @@ export const WorkflowDefinitionSchema = z.object({
   verificationCriteria: z.array(z.string()).optional().default([]),
 });
 
+// ─── Workspace & Routing Schemas ─────────────────────────────────────
+
+/** Workspace definition — scoped context area within an agent */
+export const WorkspaceSchema = z.object({
+  /** Unique workspace identifier (kebab-case) */
+  id: z.string().min(1),
+  /** Human-readable workspace name */
+  name: z.string().min(1),
+  /** What this workspace is for */
+  description: z.string().min(1),
+  /** Context file name within the workspace directory. Default: CONTEXT.md */
+  contextFile: z.string().optional().default('CONTEXT.md'),
+});
+
+/** Routing entry — maps task patterns to workspaces */
+export const RoutingEntrySchema = z.object({
+  /** Task pattern that triggers this route (e.g., "write script", "review code") */
+  pattern: z.string().min(1),
+  /** Target workspace id */
+  workspace: z.string().min(1),
+  /** Extra context files to load for this route */
+  context: z.array(z.string()).optional().default([]),
+  /** Skills to activate for this route */
+  skills: z.array(z.string()).optional().default([]),
+});
+
 // ─── Main Agent Schema ────────────────────────────────────────────────
 
 /**
@@ -187,6 +213,12 @@ export const AgentYamlSchema = z.object({
   /** LLM client integration settings */
   setup: SetupConfigSchema.optional().default({}),
 
+  // ─── Workspaces & Routing ───────────────────────
+  /** Scoped context areas within the agent */
+  workspaces: z.array(WorkspaceSchema).optional(),
+  /** Task pattern → workspace routing table */
+  routing: z.array(RoutingEntrySchema).optional(),
+
   // ─── Domain Packs ──────────────────────────────
   /** npm domain packs with custom ops and knowledge */
   packs: z.array(DomainPackSchema).optional(),
@@ -194,6 +226,8 @@ export const AgentYamlSchema = z.object({
 
 export type AgentYaml = z.infer<typeof AgentYamlSchema>;
 export type AgentYamlInput = z.input<typeof AgentYamlSchema>;
+export type Workspace = z.infer<typeof WorkspaceSchema>;
+export type RoutingEntry = z.infer<typeof RoutingEntrySchema>;
 export type WorkflowDefinition = z.infer<typeof WorkflowDefinitionSchema>;
 export type WorkflowGate = z.infer<typeof WorkflowGateSchema>;
 export type WorkflowTaskTemplate = z.infer<typeof WorkflowTaskTemplateSchema>;

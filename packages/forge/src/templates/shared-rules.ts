@@ -749,6 +749,28 @@ const ENGINE_RULES_LINES: string[] = [
   '- Any file inside `@soleri/core` or `@soleri/forge`',
   '',
 
+  // ─── Workspace Routing ─────────────────────────────────────
+  '## Workspace Routing',
+  '<!-- soleri:workspace-routing -->',
+  '',
+  'Agents can define **workspaces** — scoped context areas with their own CONTEXT.md files — and a **routing table** that maps task patterns to workspaces.',
+  '',
+  '### How It Works',
+  '',
+  '1. When a task matches a routing pattern, navigate to that workspace.',
+  "2. Load the workspace's CONTEXT.md for task-specific instructions and context.",
+  '3. Activate only the skills listed in the routing entry.',
+  '4. If no pattern matches, use the default root context (agent-level CLAUDE.md).',
+  '',
+  '### Routing Rules',
+  '',
+  '- Patterns are matched by semantic similarity, not exact string match.',
+  '- The routing table is defined in `agent.yaml` under the `routing:` key.',
+  '- Workspaces are directories under `workspaces/{id}/` with a CONTEXT.md file.',
+  '- When entering a workspace, its CONTEXT.md supplements (not replaces) the root context.',
+  '- Skills listed in the routing entry are prioritized but do not prevent other skills from activating.',
+  '',
+
   // ─── Verification Protocol ─────────────────────────────────
   '## Verification Protocol',
   '<!-- soleri:verification-protocol -->',
