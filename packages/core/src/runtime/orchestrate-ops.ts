@@ -43,7 +43,11 @@ import type { ImpactReport } from '../planning/impact-analyzer.js';
 import { collectGitEvidence } from '../planning/evidence-collector.js';
 import type { EvidenceReport } from '../planning/evidence-collector.js';
 import { recordPlanFeedback } from './plan-feedback-helper.js';
-import { analyzeQualitySignals, captureQualitySignals } from './quality-signals.js';
+import {
+  analyzeQualitySignals,
+  captureQualitySignals,
+  buildFixTrailSummary,
+} from './quality-signals.js';
 
 // ---------------------------------------------------------------------------
 // Intent detection — keyword-based mapping from prompt to intent
@@ -876,6 +880,7 @@ export function createOrchestrateOps(
         }
 
         // End brain session — runs regardless of plan existence
+        const fixTrail = evidenceReport ? buildFixTrailSummary(evidenceReport) : undefined;
         const session = brainIntelligence.lifecycle({
           action: 'end',
           sessionId,
@@ -883,6 +888,7 @@ export function createOrchestrateOps(
           planOutcome: outcome,
           toolsUsed,
           filesModified,
+          ...(fixTrail ? { context: `Fix trail: ${fixTrail}` } : {}),
         });
 
         // Record brain feedback for vault entries referenced in plan decisions
