@@ -151,7 +151,8 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       }),
       handler: async (params) => {
         const { resolve } = await import('node:path');
-        const projectPath = resolve((params.projectPath as string) ?? '.');
+        const { findProjectRoot } = await import('../../paths.js');
+        const projectPath = findProjectRoot(resolve((params.projectPath as string) ?? '.'));
         const summary = (params.summary ?? params.conversationContext) as string;
         if (!summary) {
           return { captured: false, error: 'Either summary or conversationContext is required.' };

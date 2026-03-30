@@ -20,6 +20,188 @@ export function getEngineRulesContent(): string {
   return ENGINE_RULES_LINES.join('\n');
 }
 
+// ─── Modular Engine Rules ────────────────────────────────────────────
+
+/** Feature modules that can be selectively included in engine rules. */
+export type EngineFeature = 'vault' | 'planning' | 'brain' | 'advanced';
+
+/** All available feature modules. */
+export const ENGINE_FEATURES: readonly EngineFeature[] = [
+  'vault',
+  'planning',
+  'brain',
+  'advanced',
+] as const;
+
+/**
+ * Section markers grouped by module.
+ *
+ * 'core' sections are always included.
+ * Feature modules are included only when requested (or when no filter is specified).
+ */
+const MODULE_SECTIONS: Record<'core' | EngineFeature, readonly string[]> = {
+  core: [
+    'soleri:what-is-soleri',
+    'soleri:response-integrity',
+    'soleri:tool-schema-validation',
+    'soleri:memory-quality',
+    'soleri:output-formatting',
+    'soleri:clean-commits',
+    'soleri:intent-detection',
+    'soleri:overlay-mode',
+    'soleri:session',
+    'soleri:getting-started',
+    'soleri:cli',
+    'soleri:persona-self-update',
+    'soleri:workspace-routing',
+  ],
+  vault: [
+    'soleri:vault-protocol',
+    'soleri:knowledge-capture',
+    'soleri:tool-advocacy',
+    'soleri:cross-project',
+  ],
+  planning: [
+    'soleri:planning',
+    'soleri:workflow-overrides',
+    'soleri:yolo-mode',
+    'soleri:task-routing',
+    'soleri:validation-loop',
+    'soleri:verification-protocol',
+  ],
+  brain: ['soleri:brain', 'soleri:model-routing'],
+  advanced: ['soleri:subagent-identity'],
+};
+
+/**
+ * Returns engine rules with only selected feature modules included.
+ *
+ * Core rules are ALWAYS included. Feature modules are included when:
+ * - `features` is undefined/empty → ALL modules included (backward compatible)
+ * - `features` is specified → only listed modules + core
+ *
+ * @param features - Feature modules to include. Omit for all.
+ */
+export function getModularEngineRules(features?: EngineFeature[]): string {
+  // No filter = return everything (backward compatible)
+  if (!features || features.length === 0) {
+    return getEngineRulesContent();
+  }
+
+  // Build the set of allowed section markers
+  const allowedMarkers = new Set<string>(MODULE_SECTIONS.core);
+  for (const feature of features) {
+    const sections = MODULE_SECTIONS[feature];
+    if (sections) {
+      for (const marker of sections) {
+        allowedMarkers.add(marker);
+      }
+    }
+  }
+
+  // Parse the full content into sections, then filter.
+  // Structure: each section is a ## heading followed by <!-- soleri:marker --> then content.
+  // Sections end at the next ## heading or at the closing <!-- /soleri:engine-rules --> marker.
+  const fullContent = ENGINE_RULES_LINES.join('\n');
+
+  // Split into sections: a section starts at a <!-- soleri:xxx --> marker line
+  // and includes the ## heading that precedes it.
+  // Strategy: find all marker positions, extract section ranges, filter.
+  const lines = fullContent.split('\n');
+  const sections: Array<{ marker: string; startLine: number; endLine: number }> = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const markerMatch = lines[i].match(/^<!-- (soleri:[a-z-]+) -->$/);
+    if (markerMatch && markerMatch[1] !== ENGINE_MARKER) {
+      sections.push({ marker: markerMatch[1], startLine: -1, endLine: -1 });
+    }
+  }
+
+  // For each section, find the start (the ## heading before the marker) and end
+  for (let s = 0; s < sections.length; s++) {
+    const section = sections[s];
+    // Find the marker line
+    let markerLine = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i] === `<!-- ${section.marker} -->`) {
+        markerLine = i;
+        break;
+      }
+    }
+    // Walk backward to find the ## heading (skip empty lines)
+    let headingLine = markerLine;
+    for (let i = markerLine - 1; i >= 0; i--) {
+      if (lines[i].startsWith('## ')) {
+        headingLine = i;
+        break;
+      }
+      if (lines[i].trim() !== '') break;
+    }
+    section.startLine = headingLine;
+
+    // End is one line before the next section's start, or at closing marker
+    if (s + 1 < sections.length) {
+      // Find next section's heading start
+      let nextMarkerLine = -1;
+      for (let i = markerLine + 1; i < lines.length; i++) {
+        if (lines[i] === `<!-- ${sections[s + 1].marker} -->`) {
+          nextMarkerLine = i;
+          break;
+        }
+      }
+      // Walk backward from next marker to find its heading
+      let nextHeadingLine = nextMarkerLine;
+      for (let i = nextMarkerLine - 1; i >= 0; i--) {
+        if (lines[i].startsWith('## ')) {
+          nextHeadingLine = i;
+          break;
+        }
+        if (lines[i].trim() !== '') break;
+      }
+      section.endLine = nextHeadingLine - 1;
+    } else {
+      // Last section — ends at the closing marker
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].match(/^<!-- \/soleri:engine-rules -->$/)) {
+          section.endLine = i - 1;
+          break;
+        }
+      }
+    }
+  }
+
+  // Build output: include preamble (before first section) + allowed sections + closing
+  const firstSectionStart = sections.length > 0 ? sections[0].startLine : lines.length;
+  const outputLines: string[] = [];
+
+  // Preamble: everything before the first section (header, intro text)
+  for (let i = 0; i < firstSectionStart; i++) {
+    outputLines.push(lines[i]);
+  }
+
+  // Sections: include only allowed ones
+  for (const section of sections) {
+    if (allowedMarkers.has(section.marker)) {
+      for (let i = section.startLine; i <= section.endLine; i++) {
+        outputLines.push(lines[i]);
+      }
+      // Ensure blank line separator
+      if (outputLines[outputLines.length - 1]?.trim() !== '') {
+        outputLines.push('');
+      }
+    }
+  }
+
+  // Closing marker
+  const lastSection = sections[sections.length - 1];
+  const closingStart = lastSection ? lastSection.endLine + 1 : firstSectionStart;
+  for (let i = closingStart; i < lines.length; i++) {
+    outputLines.push(lines[i]);
+  }
+
+  return outputLines.join('\n');
+}
+
 const ENGINE_RULES_LINES: string[] = [
   `<!-- ${ENGINE_MARKER} -->`,
   '',
@@ -683,28 +865,28 @@ const ENGINE_RULES_LINES: string[] = [
   '',
   '### How Your CLAUDE.md is Built',
   '',
-  'Your CLAUDE.md is **auto-generated** — never edit it manually. It gets regenerated by `composeClaudeMd()` in these scenarios:',
-  '',
-  '| Trigger | How |',
-  '|---------|-----|',
-  '| `soleri dev` | Hot-reloads and regenerates on file changes |',
-  '| `soleri agent refresh` | Explicitly regenerates from latest templates |',
-  '| `soleri agent update` | After engine update, regenerates to pick up new rules |',
-  '| Scaffold (`create-soleri`) | Generates initial CLAUDE.md for new agents |',
+  'Your CLAUDE.md is **auto-generated** — never edit it manually (except inside `<!-- user:custom -->` markers). Regenerated by `soleri dev`, `soleri agent refresh`, `soleri agent update`, and on scaffold.',
   '',
   'The composition pipeline assembles CLAUDE.md from:',
   '',
   '1. **Agent identity** — from `agent.yaml`',
   '2. **Custom instructions** — from `instructions/user.md` (priority placement, before engine rules)',
-  '3. **Engine rules** — from `@soleri/forge` shared rules (this section)',
+  '3. **Engine rules** — modular, controlled by `engine.features` in `agent.yaml`',
   '4. **User instructions** — from `instructions/*.md` (alphabetically sorted, excluding `user.md` and `_engine.md`)',
   '5. **Tools table** — from engine registration',
   '6. **Workflow index** — from `workflows/`',
   '7. **Skills index** — from `skills/`',
   '',
-  '`instructions/user.md` is the recommended place for your most important agent-specific rules — it appears early in CLAUDE.md for maximum influence on model behavior. Other `instructions/*.md` files are included after engine rules.',
+  '**Modular engine rules:** The `engine.features` array in `agent.yaml` controls which rule modules are included. Available: `vault`, `planning`, `brain`, `advanced`. Core rules are always included. Default (no features specified) = all modules.',
   '',
-  'When the engine updates (`@soleri/core` or `@soleri/forge`), running `soleri agent refresh` regenerates CLAUDE.md with the latest shared rules. Your own `instructions/*.md` files are where agent-specific behavior lives — those survive regeneration.',
+  '### What Survives Regeneration',
+  '',
+  '| Source | Survives? |',
+  '|--------|-----------|',
+  '| `instructions/*.md` | Yes — re-read on every regen |',
+  '| `<!-- user:custom -->` zone in CLAUDE.md | Yes — extracted and re-injected |',
+  '| `agent.yaml` | Drives regen (source of truth) |',
+  '| Manual CLAUDE.md edits outside markers | No — overwritten, warning logged |',
   '',
   '### System Requirements',
   '',

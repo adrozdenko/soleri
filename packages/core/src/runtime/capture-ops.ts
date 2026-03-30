@@ -11,7 +11,7 @@ import type { AgentRuntime } from './types.js';
 import { detectScope } from '../vault/scope-detector.js';
 import type { ScopeTier, ScopeDetectionResult } from '../vault/scope-detector.js';
 import { syncEntryToMarkdown } from '../vault/vault-markdown-sync.js';
-import { agentKnowledgeDir, projectKnowledgeDir } from '../paths.js';
+import { agentKnowledgeDir, projectKnowledgeDir, findProjectRoot } from '../paths.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 /**
@@ -640,7 +640,7 @@ function fireAndForgetSync(entry: IntelligenceEntry, agentId: string, projectPat
 
   // Also sync to project-local knowledge dir if a real project path is provided
   if (projectPath && projectPath !== '.') {
-    const projDir = projectKnowledgeDir(projectPath);
+    const projDir = projectKnowledgeDir(findProjectRoot(projectPath));
     syncEntryToMarkdown(entry, projDir).catch(() => {
       /* non-blocking — markdown sync is best-effort */
     });

@@ -577,4 +577,53 @@ describe('scaffoldFileTree', () => {
     expect(claudeMd).not.toContain('## Workspaces');
     expect(claudeMd).not.toContain('## Task Routing');
   });
+
+  // ─── Modular CLAUDE.md Pipeline Tests ─────────────────────────
+
+  it('CLAUDE.md contains engine-rules-ref marker instead of full engine rules', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    // Should have the reference marker
+    expect(claudeMd).toContain('<!-- soleri:engine-rules-ref -->');
+    expect(claudeMd).toContain('<!-- /soleri:engine-rules-ref -->');
+    // Should NOT have the full engine rules inlined
+    expect(claudeMd).not.toContain('<!-- soleri:engine-rules -->');
+    expect(claudeMd).not.toContain('<!-- /soleri:engine-rules -->');
+  });
+
+  it('CLAUDE.md engine-rules-ref mentions instructions/_engine.md', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    expect(claudeMd).toContain('instructions/_engine.md');
+  });
+
+  it('_engine.md contains the full engine rules with engine-rules markers', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const engineMd = readFileSync(join(result.agentDir, 'instructions', '_engine.md'), 'utf-8');
+    expect(engineMd).toContain('<!-- soleri:engine-rules -->');
+    expect(engineMd).toContain('<!-- /soleri:engine-rules -->');
+    // Should contain actual engine rules sections
+    expect(engineMd).toContain('Vault as Source of Truth');
+    expect(engineMd).toContain('Planning');
+    expect(engineMd).toContain('Clean Commits');
+    expect(engineMd).toContain('Knowledge Capture');
+  });
+
+  it('CLAUDE.md does not duplicate engine rules content from _engine.md', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    // Full engine rules sections should NOT appear in CLAUDE.md
+    // (they are in _engine.md, referenced by the ref marker)
+    expect(claudeMd).not.toContain('## Memory Quality Gate');
+    expect(claudeMd).not.toContain('## Vault as Source of Truth');
+    expect(claudeMd).not.toContain('## Intent Detection');
+  });
 });

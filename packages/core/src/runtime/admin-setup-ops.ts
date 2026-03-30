@@ -33,6 +33,7 @@ import {
   injectAtPosition,
   buildInjectionContent,
   injectEngineRulesBlock,
+  removeEngineRulesFromGlobal,
 } from './claude-md-helpers.js';
 import { discoverSkills, syncSkillsToClaudeCode } from '../skills/sync-skills.js';
 
@@ -295,9 +296,9 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
         const filePath = targetPath ?? join(projectPath, 'CLAUDE.md');
         const existingContent = existsSync(filePath) ? readFileSync(filePath, 'utf-8') : '';
 
-        // Inject engine rules if this is a global injection and agentDir is available
+        // Inject engine rules only for project-level injection (NOT global)
         let contentWithEngineRules = existingContent;
-        if (isGlobal && config.agentDir) {
+        if (!isGlobal && config.agentDir) {
           const enginePath = join(config.agentDir, 'instructions', '_engine.md');
           if (existsSync(enginePath)) {
             const engineRulesContent = readFileSync(enginePath, 'utf-8');
@@ -460,14 +461,41 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
           }
         }
 
+        // 4. Self-healing: strip engine rules from global files if present
+        const selfHealing = { engineRulesRemoved: false, agentsMdEngineRulesRemoved: false };
+        if (install) {
+          const globalClaudeMdPath = join(globalClaudeDir, 'CLAUDE.md');
+          if (existsSync(globalClaudeMdPath)) {
+            const result = removeEngineRulesFromGlobal(readFileSync(globalClaudeMdPath, 'utf-8'));
+            if (result.removed) {
+              writeFileSync(globalClaudeMdPath, result.cleaned, 'utf-8');
+              selfHealing.engineRulesRemoved = true;
+            }
+          }
+
+          const globalAgentsMdPath = join(homedir(), '.config', 'opencode', 'AGENTS.md');
+          if (existsSync(globalAgentsMdPath)) {
+            const result = removeEngineRulesFromGlobal(readFileSync(globalAgentsMdPath, 'utf-8'));
+            if (result.removed) {
+              writeFileSync(globalAgentsMdPath, result.cleaned, 'utf-8');
+              selfHealing.agentsMdEngineRulesRemoved = true;
+            }
+          }
+        }
+
         return {
           dryRun: !install,
           agentId: config.agentId,
           hookifyRules: hookifyResults,
           skills: skillsResults,
           settingsJson: settingsResults,
+          selfHealing,
           ...(install
-            ? { message: 'Global setup complete' }
+            ? {
+                message: selfHealing.engineRulesRemoved
+                  ? 'Global setup complete (engine rules removed from global CLAUDE.md)'
+                  : 'Global setup complete',
+              }
             : { message: 'Dry run — pass install: true to apply' }),
         };
       },

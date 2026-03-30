@@ -11,6 +11,57 @@ import { parse as parseYaml } from 'yaml';
 import { AgentYamlSchema, type AgentYaml } from './agent-schema.js';
 import { ENGINE_MODULE_MANIFEST, CORE_KEY_OPS } from '@soleri/core/module-manifest';
 
+// ─── User Custom Zone ────────────────────────────────────────────────
+
+const USER_CUSTOM_OPEN = '<!-- user:custom -->';
+const USER_CUSTOM_CLOSE = '<!-- /user:custom -->';
+
+const DEFAULT_USER_CUSTOM_BLOCK = [
+  USER_CUSTOM_OPEN,
+  '<!-- Add your custom instructions here. This section survives regeneration. -->',
+  USER_CUSTOM_CLOSE,
+].join('\n');
+
+/**
+ * Extract content between `<!-- user:custom -->` and `<!-- /user:custom -->` markers.
+ * Returns the full block (including markers) or null if not found.
+ */
+export function extractUserCustomZone(content: string): string | null {
+  const openIdx = content.indexOf(USER_CUSTOM_OPEN);
+  if (openIdx === -1) return null;
+
+  const closeIdx = content.indexOf(USER_CUSTOM_CLOSE, openIdx);
+  if (closeIdx === -1) return null;
+
+  return content.slice(openIdx, closeIdx + USER_CUSTOM_CLOSE.length);
+}
+
+/**
+ * Inject a user:custom zone into composed CLAUDE.md content.
+ * Replaces the existing user:custom block if present, otherwise inserts
+ * before the engine-rules-ref marker (or appends at the end).
+ */
+export function injectUserCustomZone(content: string, userZone: string): string {
+  // If the content already has a user:custom block, replace it
+  const existing = extractUserCustomZone(content);
+  if (existing) {
+    return content.replace(existing, userZone);
+  }
+
+  // Insert before engine-rules-ref if present
+  const engineRefMarker = '<!-- soleri:engine-rules-ref -->';
+  const engineIdx = content.indexOf(engineRefMarker);
+  if (engineIdx !== -1) {
+    return content.slice(0, engineIdx) + userZone + '\n\n' + content.slice(engineIdx);
+  }
+
+  // Fallback: append before the last newline
+  if (content.endsWith('\n')) {
+    return content.slice(0, -1) + '\n\n' + userZone + '\n';
+  }
+  return content + '\n\n' + userZone + '\n';
+}
+
 // ─── Types ────────────────────────────────────────────────────────────
 
 export interface ComposedClaudeMd {
@@ -36,6 +87,15 @@ export interface ToolEntry {
  */
 export function composeClaudeMd(agentDir: string, tools?: ToolEntry[]): ComposedClaudeMd {
   const sources: string[] = [];
+
+  // 0. Read existing CLAUDE.md to preserve user:custom zone
+  const existingClaudeMdPath = join(agentDir, 'CLAUDE.md');
+  let preservedUserZone: string | null = null;
+  let existingContent: string | null = null;
+  if (existsSync(existingClaudeMdPath)) {
+    existingContent = readFileSync(existingClaudeMdPath, 'utf-8');
+    preservedUserZone = extractUserCustomZone(existingContent);
+  }
 
   // 1. Read agent.yaml
   const agentYamlPath = join(agentDir, 'agent.yaml');
@@ -128,8 +188,72 @@ export function composeClaudeMd(agentDir: string, tools?: ToolEntry[]): Composed
     if (skillsSection) sections.push(skillsSection);
   }
 
+  // 10. Inject user:custom zone (preserved from old file, or default empty block)
+  const userZone = preservedUserZone ?? DEFAULT_USER_CUSTOM_BLOCK;
+  sections.splice(findUserCustomInsertIndex(sections), 0, userZone);
+
   const content = sections.join('\n\n') + '\n';
+
+  // 11. Detect orphaned content in old file (compare against newly composed content)
+  if (existingContent) {
+    detectOrphanedContent(existingContent, content);
+  }
+
   return { content, sources };
+}
+
+// ─── User Custom Zone Helpers ────────────────────────────────────────
+
+/**
+ * Find the insertion index for the user:custom zone in the sections array.
+ * Target: after user instructions (instructions/user.md content), before engine-rules-ref.
+ */
+function findUserCustomInsertIndex(sections: string[]): number {
+  // Look for the engine-rules-ref marker
+  const engineRefIdx = sections.findIndex((s) => s.includes('<!-- soleri:engine-rules-ref -->'));
+  if (engineRefIdx !== -1) return engineRefIdx;
+
+  // Fallback: insert before the last section
+  return sections.length;
+}
+
+/**
+ * Detect content in existing CLAUDE.md that was manually added outside of
+ * the user:custom zone. Compares the old file's headings against a freshly
+ * composed version — any heading in the old file that doesn't appear in
+ * the new composition (and isn't inside user:custom) is orphaned.
+ *
+ * @param existingContent - The current CLAUDE.md content before regeneration
+ * @param newContent - The freshly composed CLAUDE.md content
+ */
+function detectOrphanedContent(existingContent: string, newContent: string): void {
+  // Extract headings from old file (excluding those inside user:custom zone)
+  const oldHeadings = extractHeadingsOutsideUserCustom(existingContent);
+  if (oldHeadings.length === 0) return;
+
+  // Extract headings from new composed content
+  const newHeadingSet = new Set(newContent.match(/^#{1,3} .+$/gm)?.map((h) => h.trim()) ?? []);
+
+  // Find headings in old that don't exist in new
+  const orphaned = oldHeadings.filter((h) => !newHeadingSet.has(h));
+
+  if (orphaned.length > 0) {
+    process.stderr.write(
+      '\u26a0 CLAUDE.md contains content outside managed sections. ' +
+        'Move to instructions/ or <!-- user:custom --> to preserve across regeneration.\n',
+    );
+  }
+}
+
+/**
+ * Extract markdown headings from content, excluding any inside the user:custom zone.
+ */
+function extractHeadingsOutsideUserCustom(content: string): string[] {
+  // Remove user:custom zone content first
+  const userZone = extractUserCustomZone(content);
+  const cleaned = userZone ? content.replace(userZone, '') : content;
+
+  return cleaned.match(/^#{1,3} .+$/gm)?.map((h) => h.trim()) ?? [];
 }
 
 // ─── Section Composers ────────────────────────────────────────────────

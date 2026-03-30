@@ -12,6 +12,7 @@ import {
   composeIntegrationSection,
   buildInjectionContent,
   injectEngineRulesBlock,
+  removeEngineRulesFromGlobal,
 } from './claude-md-helpers.js';
 import type { AgentRuntimeConfig } from './types.js';
 
@@ -185,5 +186,85 @@ describe('injectEngineRulesBlock', () => {
     expect(result).toContain('BEFORE');
     expect(result).toContain('AFTER');
     expect(result).toContain('REPLACED');
+  });
+
+  it('handles empty content by appending rules', () => {
+    const result = injectEngineRulesBlock('', 'RULES');
+    expect(result).toContain('RULES');
+  });
+
+  it('is idempotent — double injection replaces cleanly', () => {
+    const first = injectEngineRulesBlock('# File', `${RULES_START}\nV1\n${RULES_END}`);
+    const second = injectEngineRulesBlock(first, `${RULES_START}\nV2\n${RULES_END}`);
+    expect(second).toContain('V2');
+    expect(second).not.toContain('V1');
+    // Should have exactly one start marker
+    const startCount = (second.match(/<!-- soleri:engine-rules -->/g) || []).length;
+    expect(startCount).toBe(1);
+  });
+});
+
+describe('removeEngineRulesFromGlobal', () => {
+  const RULES_START = '<!-- soleri:engine-rules -->';
+  const RULES_END = '<!-- /soleri:engine-rules -->';
+
+  it('returns unchanged content when no engine rules present', () => {
+    const content = '# Global CLAUDE.md\n\nSome user content.';
+    const { cleaned, removed } = removeEngineRulesFromGlobal(content);
+    expect(removed).toBe(false);
+    expect(cleaned).toBe(content);
+  });
+
+  it('removes engine rules block from content', () => {
+    const content = `# Global\n\n${RULES_START}\nEngine rules here\n${RULES_END}\n\nUser content`;
+    const { cleaned, removed } = removeEngineRulesFromGlobal(content);
+    expect(removed).toBe(true);
+    expect(cleaned).not.toContain('Engine rules here');
+    expect(cleaned).not.toContain(RULES_START);
+    expect(cleaned).not.toContain(RULES_END);
+    expect(cleaned).toContain('# Global');
+    expect(cleaned).toContain('User content');
+  });
+
+  it('handles engine rules at end of file', () => {
+    const content = `# Global\n\n${RULES_START}\nRules\n${RULES_END}`;
+    const { cleaned, removed } = removeEngineRulesFromGlobal(content);
+    expect(removed).toBe(true);
+    expect(cleaned).toContain('# Global');
+    expect(cleaned).not.toContain('Rules');
+  });
+
+  it('handles engine rules at start of file', () => {
+    const content = `${RULES_START}\nRules\n${RULES_END}\n\n# Global`;
+    const { cleaned, removed } = removeEngineRulesFromGlobal(content);
+    expect(removed).toBe(true);
+    expect(cleaned).toContain('# Global');
+    expect(cleaned).not.toContain(RULES_START);
+  });
+
+  it('preserves agent blocks when removing engine rules', () => {
+    const content = [
+      '# Global',
+      '',
+      '<!-- agent:mybot:mode -->',
+      'Agent content',
+      '<!-- /agent:mybot:mode -->',
+      '',
+      RULES_START,
+      'Engine rules',
+      RULES_END,
+    ].join('\n');
+    const { cleaned, removed } = removeEngineRulesFromGlobal(content);
+    expect(removed).toBe(true);
+    expect(cleaned).toContain('<!-- agent:mybot:mode -->');
+    expect(cleaned).toContain('Agent content');
+    expect(cleaned).not.toContain('Engine rules');
+  });
+
+  it('returns non-empty string for content that is only engine rules', () => {
+    const content = `${RULES_START}\nOnly rules\n${RULES_END}`;
+    const { cleaned, removed } = removeEngineRulesFromGlobal(content);
+    expect(removed).toBe(true);
+    expect(cleaned.length).toBeGreaterThan(0);
   });
 });

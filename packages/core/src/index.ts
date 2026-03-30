@@ -42,6 +42,7 @@ export {
   agentFlagsPath,
   agentKnowledgeDir,
   projectKnowledgeDir,
+  findProjectRoot,
   sharedVaultPath,
 } from './paths.js';
 

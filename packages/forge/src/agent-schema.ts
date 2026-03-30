@@ -55,6 +55,9 @@ const CompactionPolicySchema = z.object({
     .optional(),
 });
 
+/** Engine feature modules that can be selectively included */
+export const ENGINE_FEATURE_VALUES = ['vault', 'planning', 'brain', 'advanced'] as const;
+
 /** Engine configuration */
 const EngineConfigSchema = z.object({
   /** Path to agent's vault SQLite database. Default: ~/.{id}/vault.db */
@@ -63,6 +66,13 @@ const EngineConfigSchema = z.object({
   learning: z.boolean().optional().default(true),
   /** Session compaction policy — thresholds for automatic session rotation */
   compactionPolicy: CompactionPolicySchema.optional(),
+  /**
+   * Engine rule modules to include in CLAUDE.md.
+   * Core rules are always included. Feature modules are additive.
+   * Omit or leave empty to include ALL modules (backward compatible).
+   * Example: ['vault', 'planning'] includes core + vault + planning rules.
+   */
+  features: z.array(z.enum(ENGINE_FEATURE_VALUES)).optional(),
 });
 
 /** Client setup configuration */

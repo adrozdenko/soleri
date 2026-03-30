@@ -413,6 +413,7 @@ npx @soleri/cli hooks demote <pack>
 | `typescript-safety`  | Block `any` types and console.log                                    |
 | `css-discipline`     | No `!important`, no inline styles                                    |
 | `a11y`               | Accessibility: semantic HTML, focus rings, touch targets             |
+| `rtk`                | RTK token compression — rewrites shell commands through [RTK](https://github.com/rtk-ai/rtk) to reduce LLM token usage by 60-90% |
 | `yolo-safety`        | Safety guardrails for YOLO mode (composes from `safety`)             |
 | `marketing-research` | Example: auto-research for marketing files                           |
 | `full`               | All quality + safety hooks combined                                  |
