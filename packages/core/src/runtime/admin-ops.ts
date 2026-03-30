@@ -277,6 +277,23 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
       },
     },
 
+    // ─── Subagent Orphan Reaping ────────────────────────────────────
+    {
+      name: 'admin_reap_orphans',
+      description:
+        'Detect and clean up orphaned subagent processes. Returns reaped PIDs and task IDs.',
+      auth: 'admin',
+      handler: async () => {
+        const dispatcher = runtime.subagentDispatcher;
+        const results = dispatcher.reapOrphans();
+        return {
+          reaped: results.length,
+          pids: results.map((r) => r.pid ?? 0),
+          tasks: results.map((r) => r.taskId),
+        };
+      },
+    },
+
     // ─── Diagnostics ─────────────────────────────────────────────────
     {
       name: 'admin_diagnostic',

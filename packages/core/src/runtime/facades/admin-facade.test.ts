@@ -85,6 +85,9 @@ function mockRuntime(): AgentRuntime {
       get: vi.fn(),
     },
     packInstaller: { list: vi.fn(() => []) },
+    subagentDispatcher: {
+      reapOrphans: vi.fn().mockReturnValue([]),
+    },
     createdAt: Date.now() - 60000,
     persona: { name: 'TestAgent' },
   } as unknown as AgentRuntime;
@@ -325,6 +328,48 @@ describe('createAdminFacadeOps', () => {
     it('returns feature flags', async () => {
       const result = await findOp(ops, 'admin_list_flags').handler({});
       expect(result).toEqual({});
+    });
+  });
+
+  describe('admin_reap_orphans (from satellite)', () => {
+    it('returns empty when no orphans', async () => {
+      const result = (await findOp(ops, 'admin_reap_orphans').handler({})) as Record<
+        string,
+        unknown
+      >;
+      expect(result.reaped).toBe(0);
+      expect(result.pids).toEqual([]);
+      expect(result.tasks).toEqual([]);
+    });
+
+    it('returns reaped orphans', async () => {
+      vi.mocked(runtime.subagentDispatcher.reapOrphans).mockReturnValue([
+        {
+          taskId: 'task-1',
+          status: 'orphaned',
+          exitCode: 1,
+          error: 'died',
+          durationMs: 100,
+          pid: 1234,
+        },
+        {
+          taskId: 'task-2',
+          status: 'orphaned',
+          exitCode: 1,
+          error: 'died',
+          durationMs: 200,
+          pid: 5678,
+        },
+      ]);
+      ops = createAdminFacadeOps(runtime);
+
+      const result = (await findOp(ops, 'admin_reap_orphans').handler({})) as Record<
+        string,
+        unknown
+      >;
+      expect(result.reaped).toBe(2);
+      expect(result.pids).toEqual([1234, 5678]);
+      expect(result.tasks).toEqual(['task-1', 'task-2']);
     });
   });
 });
