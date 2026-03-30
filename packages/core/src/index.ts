@@ -913,7 +913,6 @@ export type {
 // ─── Workflows ─────────────────────────────────────────────────────────
 export {
   WorkflowGateSchema,
-  WorkflowToolsSchema,
   WorkflowOverrideSchema,
   WORKFLOW_TO_INTENT,
   loadAgentWorkflows,
