@@ -13,7 +13,8 @@ import { fileURLToPath } from 'node:url';
 import { stringify as yamlStringify } from 'yaml';
 import type { AgentYaml, AgentYamlInput } from './agent-schema.js';
 import { AgentYamlSchema } from './agent-schema.js';
-import { getEngineRulesContent } from './templates/shared-rules.js';
+import { getModularEngineRules } from './templates/shared-rules.js';
+import type { EngineFeature } from './templates/shared-rules.js';
 import { composeClaudeMd } from './compose-claude-md.js';
 import { generateSkills } from './templates/skills.js';
 import type { AgentConfig } from './types.js';
@@ -567,8 +568,14 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
     filesCreated,
   );
 
-  // ─── 5. Write engine rules ──────────────────────────────────
-  writeFile(agentDir, 'instructions/_engine.md', getEngineRulesContent(), filesCreated);
+  // ─── 5. Write engine rules (modular — respects engine.features) ─────
+  const engineFeatures = config.engine?.features as EngineFeature[] | undefined;
+  writeFile(
+    agentDir,
+    'instructions/_engine.md',
+    getModularEngineRules(engineFeatures),
+    filesCreated,
+  );
 
   // ─── 6. Write user instruction files ────────────────────────
   // Generate user.md — user-editable file with priority placement in CLAUDE.md

@@ -28,10 +28,25 @@ import {
   generateInjectClaudeMd,
   generateSkills,
 } from '@soleri/forge/lib';
-import { composeClaudeMd, getEngineRulesContent } from '@soleri/forge/lib';
-import type { AgentConfig } from '@soleri/forge/lib';
+import { composeClaudeMd, getModularEngineRules, AgentYamlSchema } from '@soleri/forge/lib';
+import type { AgentConfig, EngineFeature } from '@soleri/forge/lib';
 import { detectAgent } from '../utils/agent-context.js';
 import { installClaude } from './install.js';
+
+/**
+ * Read engine.features from agent.yaml at the given agent path.
+ * Returns undefined if not specified (= include all modules).
+ */
+function readEngineFeatures(agentPath: string): EngineFeature[] | undefined {
+  try {
+    const yamlPath = join(agentPath, 'agent.yaml');
+    if (!existsSync(yamlPath)) return undefined;
+    const parsed = AgentYamlSchema.parse(parseYaml(readFileSync(yamlPath, 'utf-8')));
+    return parsed.engine?.features as EngineFeature[] | undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export function registerAgent(program: Command): void {
   const agent = program.command('agent').description('Agent lifecycle management');
@@ -263,7 +278,11 @@ export function registerAgent(program: Command): void {
 
         // 2. Regenerate _engine.md
         mkdirSync(join(ctx.agentPath, 'instructions'), { recursive: true });
-        writeFileSync(enginePath, getEngineRulesContent(), 'utf-8');
+        writeFileSync(
+          enginePath,
+          getModularEngineRules(readEngineFeatures(ctx.agentPath)),
+          'utf-8',
+        );
         p.log.success(`Regenerated ${enginePath}`);
 
         // 3. Recompose CLAUDE.md
@@ -407,7 +426,11 @@ export function registerAgent(program: Command): void {
 
         // 2. Regenerate _engine.md from latest shared-rules
         mkdirSync(join(ctx.agentPath, 'instructions'), { recursive: true });
-        writeFileSync(enginePath, getEngineRulesContent(), 'utf-8');
+        writeFileSync(
+          enginePath,
+          getModularEngineRules(readEngineFeatures(ctx.agentPath)),
+          'utf-8',
+        );
         p.log.success(`Regenerated ${enginePath}`);
 
         // 3. Recompose CLAUDE.md from agent.yaml + instructions + workflows + skills
