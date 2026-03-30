@@ -70,6 +70,8 @@
     "msvs",
     "dbname",
     "jaccard",
+    "Quora",
+    "ycombinator",
     "millis",
     "upserts",
     "retag",
