@@ -181,6 +181,10 @@ export class BrainIntelligence {
       updates.push('plan_outcome = ?');
       values.push(input.planOutcome);
     }
+    if (input.context) {
+      updates.push("context = COALESCE(context, '') || ?");
+      values.push(' | ' + input.context);
+    }
 
     values.push(sessionId);
     this.provider.run(`UPDATE brain_sessions SET ${updates.join(', ')} WHERE id = ?`, values);

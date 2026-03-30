@@ -363,10 +363,10 @@ describe('createOrchestrateOps', () => {
         outcome: 'completed',
       })) as Record<string, unknown>;
 
-      // Should complete successfully without evidenceReport
+      // Should complete successfully with evidenceReport: null
       expect(result).toHaveProperty('plan');
       expect(result).toHaveProperty('session');
-      expect(result).not.toHaveProperty('evidenceReport');
+      expect(result.evidenceReport).toBeNull();
     });
 
     it('adds warning when evidence accuracy is below 50%', async () => {
@@ -394,6 +394,55 @@ describe('createOrchestrateOps', () => {
       expect(result).toHaveProperty('warnings');
       const warnings = result.warnings as string[];
       expect(warnings.some((w) => w.includes('Low evidence accuracy (30%)'))).toBe(true);
+    });
+
+    it('runs evidence collection for abandoned plans too', async () => {
+      const { collectGitEvidence } = await import('../planning/evidence-collector.js');
+      vi.mocked(collectGitEvidence).mockReturnValueOnce({
+        planId: 'plan-1',
+        planObjective: 'test',
+        accuracy: 60,
+        evidenceSources: ['git'],
+        taskEvidence: [
+          {
+            taskId: 't1',
+            taskTitle: 'Task 1',
+            plannedStatus: 'pending',
+            matchedFiles: [],
+            verdict: 'MISSING',
+          },
+        ],
+        unplannedChanges: [],
+        missingWork: [],
+        verificationGaps: [],
+        summary: '0/1 tasks verified by git evidence',
+      });
+
+      const op = findOp(ops, 'orchestrate_complete');
+      const result = (await op.handler({
+        planId: 'plan-1',
+        sessionId: 'session-1',
+        outcome: 'abandoned',
+        projectPath: '.',
+      })) as Record<string, unknown>;
+
+      expect(collectGitEvidence).toHaveBeenCalled();
+      expect(result).toHaveProperty('evidenceReport');
+      const report = result.evidenceReport as Record<string, unknown>;
+      expect(report.accuracy).toBe(60);
+      expect(Array.isArray(report.taskEvidence)).toBe(true);
+    });
+
+    it('returns evidenceReport as null when no plan is provided', async () => {
+      const op = findOp(ops, 'orchestrate_complete');
+      const result = (await op.handler({
+        sessionId: 'session-1',
+        outcome: 'completed',
+        summary: 'Direct task without a plan',
+      })) as Record<string, unknown>;
+
+      expect(result).toHaveProperty('evidenceReport');
+      expect(result.evidenceReport).toBeNull();
     });
   });
 

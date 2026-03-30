@@ -34,8 +34,12 @@ export interface QualityAnalysis {
 // Thresholds
 // ---------------------------------------------------------------------------
 
-/** Tasks with more than this many fix iterations are flagged as anti-patterns. */
+/** Tasks with this many or more fix iterations are flagged as anti-patterns. */
 const REWORK_THRESHOLD = 2;
+/** Brain feedback confidence for clean first-try tasks. */
+const CLEAN_TASK_CONFIDENCE = 0.9;
+/** Brain feedback confidence for high-rework anti-pattern tasks. */
+const REWORK_TASK_CONFIDENCE = 0.7;
 
 // ---------------------------------------------------------------------------
 // Analysis
@@ -44,7 +48,7 @@ const REWORK_THRESHOLD = 2;
 /**
  * Analyze an evidence report for quality signals.
  *
- * - fixIterations > 2 → anti-pattern (rework)
+ * - fixIterations >= 2 → anti-pattern (rework)
  * - fixIterations === 0 + verdict DONE → clean (first-pass success)
  * - unplannedChanges → scope-creep signals
  */
@@ -59,7 +63,7 @@ export function analyzeQualitySignals(
   for (const te of report.taskEvidence) {
     const iterations = te.fixIterations ?? 0;
 
-    if (iterations > REWORK_THRESHOLD) {
+    if (iterations >= REWORK_THRESHOLD) {
       antiPatterns.push({
         taskId: te.taskId,
         taskTitle: te.taskTitle,
@@ -148,7 +152,19 @@ export function captureQualitySignals(
   // Record negative brain feedback for rework tasks
   for (const ap of analysis.antiPatterns) {
     try {
-      brain.recordFeedback(`quality-signal:rework:${ap.taskTitle}`, ap.taskId, 'dismissed');
+      brain.recordFeedback({
+        query: ap.taskTitle,
+        entryId: planId,
+        action: 'dismissed',
+        confidence: REWORK_TASK_CONFIDENCE,
+        source: 'evidence-quality',
+        reason: `Task needed ${ap.fixIterations} fix iterations — high rework`,
+        context: JSON.stringify({
+          taskId: ap.taskId,
+          reworkCount: ap.fixIterations,
+          verdict: ap.verdict,
+        }),
+      });
       feedback++;
     } catch {
       // Best-effort
@@ -158,7 +174,14 @@ export function captureQualitySignals(
   // Record positive brain feedback for clean tasks
   for (const ct of analysis.cleanTasks) {
     try {
-      brain.recordFeedback(`quality-signal:clean:${ct.taskTitle}`, ct.taskId, 'accepted');
+      brain.recordFeedback({
+        query: ct.taskTitle,
+        entryId: planId,
+        action: 'accepted',
+        confidence: CLEAN_TASK_CONFIDENCE,
+        source: 'evidence-quality',
+        reason: 'Clean first-try completion — no rework needed',
+      });
       feedback++;
     } catch {
       // Best-effort
@@ -166,4 +189,20 @@ export function captureQualitySignals(
   }
 
   return { captured, skipped, feedback };
+}
+
+// ---------------------------------------------------------------------------
+// Fix-trail summary for knowledge extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a human-readable fix-trail summary from an evidence report.
+ * Returns `undefined` when no tasks had rework iterations.
+ */
+export function buildFixTrailSummary(report: EvidenceReport): string | undefined {
+  const entries = report.taskEvidence
+    .filter((te) => (te.fixIterations ?? 0) > 0)
+    .map((te) => `${te.taskTitle}: ${te.fixIterations} fix iterations`);
+
+  return entries.length > 0 ? entries.join('; ') : undefined;
 }

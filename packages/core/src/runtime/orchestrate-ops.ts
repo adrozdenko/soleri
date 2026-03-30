@@ -43,7 +43,11 @@ import type { ImpactReport } from '../planning/impact-analyzer.js';
 import { collectGitEvidence } from '../planning/evidence-collector.js';
 import type { EvidenceReport } from '../planning/evidence-collector.js';
 import { recordPlanFeedback } from './plan-feedback-helper.js';
-import { analyzeQualitySignals, captureQualitySignals } from './quality-signals.js';
+import {
+  analyzeQualitySignals,
+  captureQualitySignals,
+  buildFixTrailSummary,
+} from './quality-signals.js';
 
 // ---------------------------------------------------------------------------
 // Intent detection — keyword-based mapping from prompt to intent
@@ -832,7 +836,7 @@ export function createOrchestrateOps(
 
         // Evidence-based reconciliation: cross-reference plan tasks against git diff
         let evidenceReport: EvidenceReport | null = null;
-        if (planObj && outcome === 'completed') {
+        if (planObj) {
           try {
             evidenceReport = collectGitEvidence(
               planObj,
@@ -840,6 +844,9 @@ export function createOrchestrateOps(
               'main',
             );
             if (evidenceReport.accuracy < 50) {
+              console.error(
+                `[soleri] Evidence accuracy ${evidenceReport.accuracy}% — significant drift detected between plan and git state`,
+              );
               warnings.push(
                 `Low evidence accuracy (${evidenceReport.accuracy}%) — plan tasks may not match git changes.`,
               );
@@ -873,6 +880,7 @@ export function createOrchestrateOps(
         }
 
         // End brain session — runs regardless of plan existence
+        const fixTrail = evidenceReport ? buildFixTrailSummary(evidenceReport) : undefined;
         const session = brainIntelligence.lifecycle({
           action: 'end',
           sessionId,
@@ -880,6 +888,7 @@ export function createOrchestrateOps(
           planOutcome: outcome,
           toolsUsed,
           filesModified,
+          ...(fixTrail ? { context: `Fix trail: ${fixTrail}` } : {}),
         });
 
         // Record brain feedback for vault entries referenced in plan decisions
@@ -974,7 +983,7 @@ export function createOrchestrateOps(
           extraction,
           epilogue: epilogueResult,
           ...(impactReport ? { impactAnalysis: impactReport } : {}),
-          ...(evidenceReport ? { evidenceReport } : {}),
+          evidenceReport,
           ...(warnings.length > 0 ? { warnings } : {}),
         };
       },

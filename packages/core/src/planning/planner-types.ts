@@ -88,7 +88,7 @@ export interface PlanTask {
   deliverables?: TaskDeliverable[];
   /** Verification findings for tasks that modify existing code. Advisory only. */
   verification?: TaskVerification;
-  /** Number of times this task was sent back for rework (completed → in_progress). */
+  /** Number of rework cycles. 0 = clean first pass. Incremented when task reverts from completed/failed back to in_progress/pending. */
   fixIterations?: number;
   updatedAt: number;
 }

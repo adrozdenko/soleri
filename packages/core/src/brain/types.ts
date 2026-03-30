@@ -74,7 +74,12 @@ export interface QueryContext {
 // ─── Feedback Types ───────────────────────────────────────────────
 
 export type FeedbackType = 'accepted' | 'dismissed' | 'modified' | 'failed';
-export type FeedbackSource = 'search' | 'recommendation' | 'tool-execution' | 'explicit';
+export type FeedbackSource =
+  | 'search'
+  | 'recommendation'
+  | 'tool-execution'
+  | 'explicit'
+  | 'evidence-quality';
 
 export interface FeedbackInput {
   query: string;

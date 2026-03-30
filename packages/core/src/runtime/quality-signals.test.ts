@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { analyzeQualitySignals, captureQualitySignals } from './quality-signals.js';
+import {
+  analyzeQualitySignals,
+  captureQualitySignals,
+  buildFixTrailSummary,
+} from './quality-signals.js';
 import type { EvidenceReport } from '../planning/evidence-collector.js';
 
 // ---------------------------------------------------------------------------
@@ -104,7 +108,7 @@ describe('analyzeQualitySignals', () => {
     expect(result.antiPatterns).toHaveLength(0);
   });
 
-  it('does not flag task with fixIterations === 2 (at threshold, not above)', () => {
+  it('flags task with fixIterations === 2 (at threshold)', () => {
     const report = makeReport({
       taskEvidence: [
         {
@@ -120,7 +124,28 @@ describe('analyzeQualitySignals', () => {
 
     const result = analyzeQualitySignals(report);
 
+    expect(result.antiPatterns).toHaveLength(1);
+    expect(result.antiPatterns[0].fixIterations).toBe(2);
+  });
+
+  it('does not flag task with fixIterations === 1 (below threshold)', () => {
+    const report = makeReport({
+      taskEvidence: [
+        {
+          taskId: 't4b',
+          taskTitle: 'Single retry task',
+          plannedStatus: 'completed',
+          matchedFiles: [],
+          verdict: 'DONE',
+          fixIterations: 1,
+        },
+      ],
+    });
+
+    const result = analyzeQualitySignals(report);
+
     expect(result.antiPatterns).toHaveLength(0);
+    expect(result.cleanTasks).toHaveLength(0);
   });
 
   it('detects scope creep from unplanned changes', () => {
@@ -199,9 +224,14 @@ describe('captureQualitySignals', () => {
     expect(entry.tags).toContain('auto-captured');
 
     expect(brain.recordFeedback).toHaveBeenCalledWith(
-      'quality-signal:rework:Fix login',
-      't1',
-      'dismissed',
+      expect.objectContaining({
+        query: 'Fix login',
+        entryId: 'plan-1',
+        action: 'dismissed',
+        confidence: 0.7,
+        source: 'evidence-quality',
+        reason: 'Task needed 3 fix iterations — high rework',
+      }),
     );
 
     expect(result.captured).toBe(1);
@@ -226,9 +256,14 @@ describe('captureQualitySignals', () => {
     const result = captureQualitySignals(analysis, vault, brain, 'plan-1');
 
     expect(brain.recordFeedback).toHaveBeenCalledWith(
-      'quality-signal:clean:Add feature',
-      't2',
-      'accepted',
+      expect.objectContaining({
+        query: 'Add feature',
+        entryId: 'plan-1',
+        action: 'accepted',
+        confidence: 0.9,
+        source: 'evidence-quality',
+        reason: 'Clean first-try completion — no rework needed',
+      }),
     );
     expect(result.feedback).toBe(1);
     expect(result.captured).toBe(0);
@@ -281,6 +316,83 @@ describe('captureQualitySignals', () => {
     expect(entry.severity).toBe('critical');
   });
 
+  it('records positive feedback with evidence-quality source for clean first-try tasks', () => {
+    const analysis = {
+      antiPatterns: [],
+      cleanTasks: [
+        {
+          taskId: 'clean-1',
+          taskTitle: 'Smooth task',
+          kind: 'clean' as const,
+          fixIterations: 0,
+          verdict: 'DONE',
+        },
+      ],
+      scopeCreep: [],
+    };
+
+    captureQualitySignals(analysis, vault, brain, 'plan-99');
+
+    expect(brain.recordFeedback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'accepted',
+        confidence: 0.9,
+        source: 'evidence-quality',
+        entryId: 'plan-99',
+      }),
+    );
+  });
+
+  it('records negative feedback with evidence-quality source for high-rework tasks', () => {
+    const analysis = {
+      antiPatterns: [
+        {
+          taskId: 'rework-1',
+          taskTitle: 'Painful task',
+          kind: 'anti-pattern' as const,
+          fixIterations: 3,
+          verdict: 'DONE',
+        },
+      ],
+      cleanTasks: [],
+      scopeCreep: [],
+    };
+
+    captureQualitySignals(analysis, vault, brain, 'plan-99');
+
+    expect(brain.recordFeedback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'dismissed',
+        confidence: 0.7,
+        source: 'evidence-quality',
+        reason: 'Task needed 3 fix iterations — high rework',
+        context: JSON.stringify({ taskId: 'rework-1', reworkCount: 3, verdict: 'DONE' }),
+      }),
+    );
+  });
+
+  it('does not record evidence-quality feedback for tasks with 1 fix iteration', () => {
+    // 1 fix iteration = neither clean (fixIterations !== 0) nor anti-pattern (< 2)
+    const analysis = analyzeQualitySignals(
+      makeReport({
+        taskEvidence: [
+          {
+            taskId: 't-mid',
+            taskTitle: 'Single retry',
+            plannedStatus: 'completed',
+            matchedFiles: [],
+            verdict: 'DONE',
+            fixIterations: 1,
+          },
+        ],
+      }),
+    );
+
+    captureQualitySignals(analysis, vault, brain, 'plan-99');
+
+    expect(brain.recordFeedback).not.toHaveBeenCalled();
+  });
+
   it('handles mixed signals correctly', () => {
     const analysis = {
       antiPatterns: [
@@ -308,5 +420,67 @@ describe('captureQualitySignals', () => {
 
     expect(result.captured).toBe(1);
     expect(result.feedback).toBe(2); // 1 dismissed + 1 accepted
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildFixTrailSummary
+// ---------------------------------------------------------------------------
+
+describe('buildFixTrailSummary', () => {
+  it('returns summary string for tasks with rework iterations', () => {
+    const report = makeReport({
+      taskEvidence: [
+        {
+          taskId: 'a',
+          taskTitle: 'Task A',
+          plannedStatus: 'completed',
+          matchedFiles: [],
+          verdict: 'DONE',
+          fixIterations: 2,
+        },
+        {
+          taskId: 'b',
+          taskTitle: 'Task B',
+          plannedStatus: 'completed',
+          matchedFiles: [],
+          verdict: 'DONE',
+          fixIterations: 0,
+        },
+        {
+          taskId: 'c',
+          taskTitle: 'Task C',
+          plannedStatus: 'completed',
+          matchedFiles: [],
+          verdict: 'DONE',
+          fixIterations: 3,
+        },
+      ],
+    });
+
+    const summary = buildFixTrailSummary(report);
+    expect(summary).toBe('Task A: 2 fix iterations; Task C: 3 fix iterations');
+  });
+
+  it('returns undefined when no tasks have rework', () => {
+    const report = makeReport({
+      taskEvidence: [
+        {
+          taskId: 'a',
+          taskTitle: 'Clean',
+          plannedStatus: 'completed',
+          matchedFiles: [],
+          verdict: 'DONE',
+          fixIterations: 0,
+        },
+      ],
+    });
+
+    expect(buildFixTrailSummary(report)).toBeUndefined();
+  });
+
+  it('returns undefined for empty task evidence', () => {
+    const report = makeReport({ taskEvidence: [] });
+    expect(buildFixTrailSummary(report)).toBeUndefined();
   });
 });
