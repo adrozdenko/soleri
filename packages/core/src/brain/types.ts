@@ -118,6 +118,7 @@ export interface PatternStrength {
   spreadScore: number;
   successScore: number;
   recencyScore: number;
+  temporalMultiplier?: number;
   usageCount: number;
   uniqueContexts: number;
   successRate: number;

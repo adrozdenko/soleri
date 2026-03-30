@@ -36,6 +36,8 @@ import type {
 const USAGE_MAX = 10;
 const SPREAD_MAX = 5;
 const RECENCY_DECAY_DAYS = 30;
+const STRENGTH_HALFLIFE_DAYS = 90;
+const STRENGTH_DECAY_FLOOR = 0.3;
 const EXTRACTION_TOOL_THRESHOLD = 3;
 const EXTRACTION_FILE_THRESHOLD = 3;
 const EXTRACTION_HIGH_FEEDBACK_RATIO = 0.8;
@@ -554,11 +556,21 @@ export class BrainIntelligence {
       const successScore = 25 * successRate;
 
       // Recency score: max(0, 25 * (1 - daysSince / RECENCY_DECAY_DAYS))
-      const lastUsedMs = new Date(row.last_used).getTime();
+      // last_used is MAX(created_at) which is unixepoch() (seconds) — convert to ms
+      const lastUsedRaw = Number(row.last_used);
+      const lastUsedMs = lastUsedRaw < 1e12 ? lastUsedRaw * 1000 : lastUsedRaw;
       const daysSince = (now - lastUsedMs) / (1000 * 60 * 60 * 24);
       const recencyScore = Math.max(0, 25 * (1 - daysSince / RECENCY_DECAY_DAYS));
 
-      const strength = usageScore + spreadScore + successScore + recencyScore;
+      const rawStrength = usageScore + spreadScore + successScore + recencyScore;
+
+      // Temporal decay multiplier: exponential halflife with floor
+      // Patterns fade over time but never vanish completely
+      const temporalMultiplier = Math.max(
+        STRENGTH_DECAY_FLOOR,
+        Math.exp((-Math.LN2 * daysSince) / STRENGTH_HALFLIFE_DAYS),
+      );
+      const strength = rawStrength * temporalMultiplier;
 
       const ps: PatternStrength = {
         pattern,
@@ -568,6 +580,7 @@ export class BrainIntelligence {
         spreadScore,
         successScore,
         recencyScore,
+        temporalMultiplier,
         usageCount: row.total,
         uniqueContexts,
         successRate,
