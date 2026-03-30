@@ -14,12 +14,14 @@ vi.mock('../vault/scope-detector.js', () => ({
   })),
 }));
 
+const mockSyncEntryToMarkdown = vi.fn(() => Promise.resolve({ written: true }));
 vi.mock('../vault/vault-markdown-sync.js', () => ({
-  syncEntryToMarkdown: vi.fn(() => Promise.resolve()),
+  syncEntryToMarkdown: (...args: unknown[]) => mockSyncEntryToMarkdown(...args),
 }));
 
 vi.mock('../paths.js', () => ({
   agentKnowledgeDir: vi.fn(() => '/mock/knowledge'),
+  projectKnowledgeDir: vi.fn((p: string) => `/mock/project/${p}/knowledge`),
 }));
 
 // ─── Mock Runtime Factory ──────────────────────────────────────────────
@@ -213,6 +215,32 @@ describe('createCaptureOps', () => {
       const results = result.results as Array<Record<string, unknown>>;
       expect((results[0].scope as Record<string, unknown>).tier).toBe('agent');
     });
+
+    it('triggers markdown file write on successful capture', async () => {
+      mockSyncEntryToMarkdown.mockClear();
+      await findOp(ops, 'capture_knowledge').handler({
+        entries: [
+          { type: 'pattern', domain: 'testing', title: 'Sync Test', description: 'test', tags: [] },
+        ],
+      });
+      // fire-and-forget: allow microtask to flush
+      await new Promise((r) => setTimeout(r, 10));
+      expect(mockSyncEntryToMarkdown).toHaveBeenCalledWith(
+        expect.objectContaining({ domain: 'testing', title: 'Sync Test' }),
+        '/mock/knowledge',
+      );
+    });
+
+    it('does not block capture response when sync fails', async () => {
+      mockSyncEntryToMarkdown.mockClear();
+      mockSyncEntryToMarkdown.mockRejectedValueOnce(new Error('disk full'));
+      const result = (await findOp(ops, 'capture_knowledge').handler({
+        entries: [{ type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] }],
+      })) as Record<string, unknown>;
+      // Capture should still succeed despite sync error
+      expect(result.captured).toBe(1);
+      expect(result.rejected).toBe(0);
+    });
   });
 
   describe('capture_quick', () => {
@@ -322,6 +350,35 @@ describe('createCaptureOps', () => {
       })) as Record<string, unknown>;
       expect(result.captured).toBe(false);
       expect((result.governance as Record<string, unknown>).action).toBe('error');
+    });
+
+    it('triggers markdown file write on successful capture', async () => {
+      mockSyncEntryToMarkdown.mockClear();
+      await findOp(ops, 'capture_quick').handler({
+        type: 'pattern',
+        domain: 'testing',
+        title: 'Quick Sync Test',
+        description: 'quick test',
+      });
+      // fire-and-forget: allow microtask to flush
+      await new Promise((r) => setTimeout(r, 10));
+      expect(mockSyncEntryToMarkdown).toHaveBeenCalledWith(
+        expect.objectContaining({ domain: 'testing', title: 'Quick Sync Test' }),
+        '/mock/knowledge',
+      );
+    });
+
+    it('does not block capture response when sync fails', async () => {
+      mockSyncEntryToMarkdown.mockClear();
+      mockSyncEntryToMarkdown.mockRejectedValueOnce(new Error('disk full'));
+      const result = (await findOp(ops, 'capture_quick').handler({
+        type: 'pattern',
+        domain: 'testing',
+        title: 'Quick Fail',
+        description: 'test',
+      })) as Record<string, unknown>;
+      // Capture should still succeed despite sync error
+      expect(result.captured).toBe(true);
     });
   });
 

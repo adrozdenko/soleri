@@ -76,21 +76,34 @@ export function entryToMarkdown(entry: IntelligenceEntry): string {
 
 // ─── Sync ───────────────────────────────────────────────────────────
 
-/** Write a single entry as a markdown file to knowledge/vault/{domain}/{slug}.md */
+/** Write a single entry as a markdown file to knowledge/vault/{domain}/{slug}.md.
+ *  Skips the write if the file already exists with a matching content hash (dedup). */
 export async function syncEntryToMarkdown(
   entry: IntelligenceEntry,
   knowledgeDir: string,
-): Promise<void> {
+): Promise<{ written: boolean }> {
   const domain = entry.domain || '_general';
   const slug = titleToSlug(entry.title);
-  if (!slug) return;
+  if (!slug) return { written: false };
 
   const dir = join(knowledgeDir, 'vault', domain);
   mkdirSync(dir, { recursive: true });
 
   const filePath = join(dir, `${slug}.md`);
+
+  // Content-hash dedup: skip rewrite when file content hasn't changed
+  const contentHash = computeContentHash(entry);
+  if (existsSync(filePath)) {
+    const existing = readFileSync(filePath, 'utf-8');
+    const hashMatch = existing.match(/^content_hash:\s*"([^"]+)"/m);
+    if (hashMatch && hashMatch[1] === contentHash) {
+      return { written: false };
+    }
+  }
+
   const content = entryToMarkdown(entry);
   writeFileSync(filePath, content, 'utf-8');
+  return { written: true };
 }
 
 /** Sync all vault entries to markdown, skipping entries whose content hash matches. */

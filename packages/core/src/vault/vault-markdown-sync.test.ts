@@ -128,6 +128,46 @@ describe('vault-markdown-sync', () => {
       const filePath = join(deepDir, 'vault', 'architecture', 'deep-entry.md');
       expect(existsSync(filePath)).toBe(true);
     });
+
+    it('should skip rewrite when content hash matches (dedup)', async () => {
+      const entry = makeEntry({ domain: 'design', title: 'Stable Token' });
+
+      // First write
+      const first = await syncEntryToMarkdown(entry, tmpDir);
+      expect(first.written).toBe(true);
+
+      const filePath = join(tmpDir, 'vault', 'design', 'stable-token.md');
+      const mtimeBefore = readFileSync(filePath, 'utf-8');
+
+      // Second write with same content — should skip
+      const second = await syncEntryToMarkdown(entry, tmpDir);
+      expect(second.written).toBe(false);
+
+      // File content should be identical (not rewritten)
+      const mtimeAfter = readFileSync(filePath, 'utf-8');
+      expect(mtimeAfter).toBe(mtimeBefore);
+    });
+
+    it('should rewrite when content changes', async () => {
+      const entry = makeEntry({ domain: 'design', title: 'Changing Token' });
+      const first = await syncEntryToMarkdown(entry, tmpDir);
+      expect(first.written).toBe(true);
+
+      // Modify the entry
+      entry.description = 'Updated description that changes the hash.';
+      const second = await syncEntryToMarkdown(entry, tmpDir);
+      expect(second.written).toBe(true);
+
+      const filePath = join(tmpDir, 'vault', 'design', 'changing-token.md');
+      const content = readFileSync(filePath, 'utf-8');
+      expect(content).toContain('Updated description');
+    });
+
+    it('should return written:false for empty slug', async () => {
+      const entry = makeEntry({ title: '!!!' }); // slugifies to empty
+      const result = await syncEntryToMarkdown(entry, tmpDir);
+      expect(result.written).toBe(false);
+    });
   });
 
   // ── syncAllToMarkdown ────────────────────────────────────────────
