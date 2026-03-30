@@ -108,7 +108,7 @@ export function createCuratorFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'curator_consolidate',
       description:
-        'Consolidate vault — find duplicates, stale entries, contradictions. Dry-run by default.',
+        'Consolidate vault — find duplicates, stale entries, contradictions, and backfill Zettelkasten links for orphan entries. Dry-run by default.',
       auth: 'write',
       schema: z.object({
         dryRun: z.boolean().optional().describe('Default true. Set false to apply mutations.'),
@@ -126,21 +126,77 @@ export function createCuratorFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           .describe('Contradiction threshold. Default 0.4.'),
       }),
       handler: async (params) => {
-        return curator.consolidate({
+        const result = curator.consolidate({
           dryRun: params.dryRun as boolean | undefined,
           staleDaysThreshold: params.staleDaysThreshold as number | undefined,
           duplicateThreshold: params.duplicateThreshold as number | undefined,
           contradictionThreshold: params.contradictionThreshold as number | undefined,
         });
+
+        // Backfill Zettelkasten links for orphan entries
+        let linksCreated = 0;
+        try {
+          const { linkManager } = runtime;
+          if (linkManager) {
+            const backfillResult = linkManager.backfillLinks({
+              dryRun: params.dryRun as boolean | undefined,
+            });
+            linksCreated = backfillResult.linksCreated;
+          }
+        } catch {
+          // Link module unavailable — degrade gracefully
+        }
+
+        return { ...result, linksCreated };
       },
     },
     {
       name: 'curator_health_audit',
       description:
-        'Audit vault health — score (0-100), coverage, freshness, quality, tag health, recommendations.',
+        'Audit vault health — score (0-100), coverage, freshness, quality, tag health, orphan count, recommendations.',
       auth: 'read',
       handler: async () => {
-        return curator.healthAudit();
+        const result = curator.healthAudit();
+
+        // Enrich with orphan statistics from link manager
+        let orphanCount = 0;
+        let orphanPercentage = 0;
+        try {
+          const { linkManager } = runtime;
+          if (linkManager) {
+            // getOrphans returns up to limit entries; use a high limit to count all
+            const orphans = linkManager.getOrphans(10000);
+            orphanCount = orphans.length;
+            // Compute percentage against total entries via curator status
+            const status = curator.getStatus();
+            const totalEntries = Object.values(status.tables).reduce(
+              (sum, count) => sum + count,
+              0,
+            );
+            orphanPercentage =
+              totalEntries > 0 ? Math.round((orphanCount / totalEntries) * 100) : 0;
+          }
+        } catch {
+          // Link module unavailable — degrade gracefully
+        }
+
+        // Apply quality penalty if orphan percentage > 10%
+        const metrics = { ...result.metrics };
+        const recommendations = [...result.recommendations];
+        if (orphanPercentage > 10) {
+          metrics.quality = Math.round(metrics.quality * 0.7 * 100) / 100;
+          recommendations.push(
+            `${orphanCount} orphan entries (${orphanPercentage}%) have no links — run consolidation to backfill.`,
+          );
+        }
+
+        return {
+          ...result,
+          metrics,
+          recommendations,
+          orphanCount,
+          orphanPercentage,
+        };
       },
     },
 

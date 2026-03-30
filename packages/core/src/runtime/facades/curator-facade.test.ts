@@ -3,23 +3,42 @@ import { createCuratorFacadeOps } from './curator-facade.js';
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 
+interface MockLinkManager {
+  backfillLinks: ReturnType<typeof vi.fn>;
+  getOrphans: ReturnType<typeof vi.fn>;
+}
+
+function getLinkManager(rt: AgentRuntime): MockLinkManager {
+  return (rt as unknown as { linkManager: MockLinkManager }).linkManager;
+}
+
 function mockRuntime(): AgentRuntime {
   return {
     curator: {
-      getStatus: vi.fn().mockReturnValue({ initialized: true, entriesGroomed: 5 }),
+      getStatus: vi
+        .fn()
+        .mockReturnValue({ initialized: true, entriesGroomed: 5, tables: { entries: 100 } }),
       detectDuplicates: vi.fn().mockReturnValue([]),
       detectContradictions: vi.fn(),
       getContradictions: vi.fn().mockReturnValue([]),
       resolveContradiction: vi.fn().mockReturnValue({ resolved: true }),
       groomEntry: vi.fn().mockReturnValue({ groomed: true }),
       groomAll: vi.fn().mockReturnValue({ groomed: 10 }),
-      consolidate: vi.fn().mockReturnValue({ duplicates: 0, stale: 0 }),
-      healthAudit: vi.fn().mockReturnValue({ score: 85 }),
+      consolidate: vi.fn().mockReturnValue({ duplicates: 0, stale: 0, durationMs: 10 }),
+      healthAudit: vi.fn().mockReturnValue({
+        score: 85,
+        metrics: { coverage: 1, freshness: 1, quality: 1, tagHealth: 1 },
+        recommendations: [],
+      }),
       getVersionHistory: vi.fn().mockReturnValue([]),
       recordSnapshot: vi.fn().mockReturnValue({ recorded: true }),
       getQueueStats: vi.fn().mockReturnValue({ total: 20, groomed: 15 }),
       enrichMetadata: vi.fn().mockReturnValue({ enriched: true }),
       detectContradictionsHybrid: vi.fn().mockReturnValue([]),
+    },
+    linkManager: {
+      backfillLinks: vi.fn().mockReturnValue({ processed: 5, linksCreated: 3, durationMs: 50 }),
+      getOrphans: vi.fn().mockReturnValue([]),
     },
     jobQueue: {
       enqueue: vi.fn().mockImplementation((_type, _params) => `job-${Date.now()}`),
@@ -91,7 +110,7 @@ describe('createCuratorFacadeOps', () => {
   describe('curator_status', () => {
     it('returns curator status', async () => {
       const result = await findOp(ops, 'curator_status').handler({});
-      expect(result).toEqual({ initialized: true, entriesGroomed: 5 });
+      expect(result).toEqual({ initialized: true, entriesGroomed: 5, tables: { entries: 100 } });
     });
   });
 
@@ -168,14 +187,17 @@ describe('createCuratorFacadeOps', () => {
   });
 
   describe('curator_consolidate', () => {
-    it('consolidates with default params', async () => {
+    it('consolidates with default params and includes linksCreated', async () => {
       const result = await findOp(ops, 'curator_consolidate').handler({});
-      expect(result).toEqual({ duplicates: 0, stale: 0 });
+      expect(result).toEqual({ duplicates: 0, stale: 0, durationMs: 10, linksCreated: 3 });
       expect(runtime.curator.consolidate).toHaveBeenCalledWith({
         dryRun: undefined,
         staleDaysThreshold: undefined,
         duplicateThreshold: undefined,
         contradictionThreshold: undefined,
+      });
+      expect(getLinkManager(runtime).backfillLinks).toHaveBeenCalledWith({
+        dryRun: undefined,
       });
     });
 
@@ -193,12 +215,68 @@ describe('createCuratorFacadeOps', () => {
         contradictionThreshold: 0.3,
       });
     });
+
+    it('returns linksCreated: 0 when linkManager throws', async () => {
+      const lm = getLinkManager(runtime);
+      vi.mocked(lm.backfillLinks).mockImplementation(() => {
+        throw new Error('link module unavailable');
+      });
+      const result = (await findOp(ops, 'curator_consolidate').handler({})) as Record<
+        string,
+        unknown
+      >;
+      expect(result.linksCreated).toBe(0);
+    });
   });
 
   describe('curator_health_audit', () => {
-    it('returns audit result', async () => {
-      const result = await findOp(ops, 'curator_health_audit').handler({});
-      expect(result).toEqual({ score: 85 });
+    it('returns audit result with orphan metrics', async () => {
+      const result = (await findOp(ops, 'curator_health_audit').handler({})) as Record<
+        string,
+        unknown
+      >;
+      expect(result.score).toBe(85);
+      expect(result.orphanCount).toBe(0);
+      expect(result.orphanPercentage).toBe(0);
+    });
+
+    it('reduces quality when orphan percentage > 10%', async () => {
+      const lm = getLinkManager(runtime);
+      // 15 orphans out of 100 entries = 15%
+      vi.mocked(lm.getOrphans).mockReturnValue(
+        Array.from({ length: 15 }, (_, i) => ({
+          id: `orphan-${i}`,
+          title: `o${i}`,
+          type: 'pattern',
+          domain: 'test',
+        })),
+      );
+      const result = (await findOp(ops, 'curator_health_audit').handler({})) as Record<
+        string,
+        unknown
+      >;
+      expect(result.orphanCount).toBe(15);
+      expect(result.orphanPercentage).toBe(15);
+      const metrics = result.metrics as Record<string, number>;
+      expect(metrics.quality).toBe(0.7); // 1 * 0.7
+      expect(
+        (result.recommendations as string[]).some(
+          (r: string) => r.includes('orphan entries') && r.includes('no links'),
+        ),
+      ).toBe(true);
+    });
+
+    it('succeeds when linkManager throws', async () => {
+      const lm = getLinkManager(runtime);
+      vi.mocked(lm.getOrphans).mockImplementation(() => {
+        throw new Error('link module unavailable');
+      });
+      const result = (await findOp(ops, 'curator_health_audit').handler({})) as Record<
+        string,
+        unknown
+      >;
+      expect(result.orphanCount).toBe(0);
+      expect(result.orphanPercentage).toBe(0);
     });
   });
 
