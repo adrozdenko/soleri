@@ -1,215 +1,149 @@
-/**
- * Workflow loader — colocated contract tests.
- *
- * Uses temporary directories with real YAML files (no mocking fs).
- */
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { loadAgentWorkflows, getWorkflowForIntent } from './workflow-loader.js';
+import fs from 'node:fs';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { loadAgentWorkflows, getWorkflowForIntent, WORKFLOW_TO_INTENT } from './workflow-loader.js';
 import type { WorkflowOverride } from './workflow-loader.js';
 
-// ─── Helpers ────────────────────────────────────────────────────────
+vi.mock('node:fs', () => ({
+  default: {
+    readdirSync: vi.fn(),
+    statSync: vi.fn(),
+    readFileSync: vi.fn(),
+  },
+}));
 
-let tempDir: string;
+describe('workflow-loader', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
 
-beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'workflow-loader-test-'));
-});
+  describe('loadAgentWorkflows', () => {
+    it('returns empty map when directory does not exist', () => {
+      (fs.readdirSync as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new Error('ENOENT');
+      });
 
-afterEach(() => {
-  rmSync(tempDir, { recursive: true, force: true });
-});
-
-function createWorkflow(name: string, opts?: { gates?: string; tools?: string }): void {
-  const dir = join(tempDir, name);
-  mkdirSync(dir, { recursive: true });
-  if (opts?.gates !== undefined) {
-    writeFileSync(join(dir, 'gates.yaml'), opts.gates, 'utf-8');
-  }
-  if (opts?.tools !== undefined) {
-    writeFileSync(join(dir, 'tools.yaml'), opts.tools, 'utf-8');
-  }
-}
-
-// ─── loadAgentWorkflows ─────────────────────────────────────────────
-
-describe('loadAgentWorkflows', () => {
-  it('loads valid gates.yaml and tools.yaml', () => {
-    createWorkflow('feature-dev', {
-      gates: `
-- phase: pre-execution
-  requirement: vault search completed
-  check: vault-search
-- phase: completion
-  requirement: knowledge captured
-  check: knowledge-capture
-`,
-      tools: `
-- vault_search
-- plan_create
-- brain_recommend
-`,
+      const result = loadAgentWorkflows('/nonexistent/workflows');
+      expect(result.size).toBe(0);
     });
 
-    const workflows = loadAgentWorkflows(tempDir);
+    it('loads gates and tools from workflow folder', () => {
+      (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(['feature-dev']);
+      (fs.statSync as ReturnType<typeof vi.fn>).mockReturnValue({ isDirectory: () => true });
+      (fs.readFileSync as ReturnType<typeof vi.fn>).mockImplementation((filePath: string) => {
+        if (filePath.endsWith('prompt.md')) {
+          return '# Feature Dev\nBuild new features.';
+        }
+        if (filePath.endsWith('gates.yaml')) {
+          return `gates:
+  - phase: pre-execution
+    requirement: Plan approved
+    check: plan-approved
+  - phase: completion
+    requirement: Tests pass
+    check: tests-pass
+`;
+        }
+        if (filePath.endsWith('tools.yaml')) {
+          return `tools:
+  - soleri_vault op:search_intelligent
+  - soleri_plan op:create_plan
+`;
+        }
+        throw new Error('ENOENT');
+      });
 
-    expect(workflows.size).toBe(1);
-    const wf = workflows.get('feature-dev')!;
-    expect(wf.gates).toHaveLength(2);
-    expect(wf.gates[0]).toEqual({
-      phase: 'pre-execution',
-      requirement: 'vault search completed',
-      check: 'vault-search',
-    });
-    expect(wf.gates[1].phase).toBe('completion');
-    expect(wf.tools).toEqual(['vault_search', 'plan_create', 'brain_recommend']);
-  });
+      const result = loadAgentWorkflows('/agent/workflows');
+      expect(result.size).toBe(1);
 
-  it('skips malformed gates.yaml with warning', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    createWorkflow('bad-gates', {
-      gates: `
-- phase: invalid-phase
-  requirement: something
-  check: some-check
-`,
-      tools: `
-- tool_a
-`,
-    });
-
-    const workflows = loadAgentWorkflows(tempDir);
-
-    expect(workflows.size).toBe(1);
-    const wf = workflows.get('bad-gates')!;
-    expect(wf.gates).toEqual([]); // malformed gates skipped
-    expect(wf.tools).toEqual(['tool_a']); // tools still loaded
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Skipping invalid gates.yaml'));
-
-    warnSpy.mockRestore();
-  });
-
-  it('returns empty map for missing directory', () => {
-    const workflows = loadAgentWorkflows(join(tempDir, 'nonexistent'));
-    expect(workflows.size).toBe(0);
-  });
-
-  it('returns empty gates array when gates.yaml is missing', () => {
-    createWorkflow('tools-only', {
-      tools: `
-- tool_x
-- tool_y
-`,
+      const workflow = result.get('feature-dev')!;
+      expect(workflow.name).toBe('feature-dev');
+      expect(workflow.prompt).toBe('# Feature Dev\nBuild new features.');
+      expect(workflow.gates).toHaveLength(2);
+      expect(workflow.gates[0]).toEqual({
+        phase: 'pre-execution',
+        requirement: 'Plan approved',
+        check: 'plan-approved',
+      });
+      expect(workflow.gates[1]).toEqual({
+        phase: 'completion',
+        requirement: 'Tests pass',
+        check: 'tests-pass',
+      });
+      expect(workflow.tools).toEqual([
+        'soleri_vault op:search_intelligent',
+        'soleri_plan op:create_plan',
+      ]);
     });
 
-    const workflows = loadAgentWorkflows(tempDir);
+    it('skips non-directory entries', () => {
+      (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(['README.md']);
+      (fs.statSync as ReturnType<typeof vi.fn>).mockReturnValue({ isDirectory: () => false });
 
-    expect(workflows.size).toBe(1);
-    const wf = workflows.get('tools-only')!;
-    expect(wf.gates).toEqual([]);
-    expect(wf.tools).toEqual(['tool_x', 'tool_y']);
-  });
-
-  it('returns empty tools array when tools.yaml is missing', () => {
-    createWorkflow('gates-only', {
-      gates: `
-- phase: brainstorming
-  requirement: explore options
-  check: brainstorm-check
-`,
+      const result = loadAgentWorkflows('/agent/workflows');
+      expect(result.size).toBe(0);
     });
 
-    const workflows = loadAgentWorkflows(tempDir);
+    it('skips workflow folders with no content', () => {
+      (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(['empty-workflow']);
+      (fs.statSync as ReturnType<typeof vi.fn>).mockReturnValue({ isDirectory: () => true });
+      (fs.readFileSync as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new Error('ENOENT');
+      });
 
-    expect(workflows.size).toBe(1);
-    const wf = workflows.get('gates-only')!;
-    expect(wf.gates).toHaveLength(1);
-    expect(wf.tools).toEqual([]);
-  });
-
-  it('loads multiple workflow subdirectories', () => {
-    createWorkflow('feature-dev', {
-      gates: `
-- phase: pre-execution
-  requirement: vault check
-  check: vault
-`,
-      tools: '- plan_create',
+      const result = loadAgentWorkflows('/agent/workflows');
+      expect(result.size).toBe(0);
     });
-    createWorkflow('bug-fix', {
-      tools: '- debug_tool',
+  });
+
+  describe('getWorkflowForIntent', () => {
+    it('returns matching workflow for BUILD intent', () => {
+      const workflows = new Map<string, WorkflowOverride>([
+        ['feature-dev', { name: 'feature-dev', gates: [], tools: ['tool1'] }],
+      ]);
+
+      const result = getWorkflowForIntent(workflows, 'BUILD');
+      expect(result).not.toBeNull();
+      expect(result!.name).toBe('feature-dev');
     });
 
-    const workflows = loadAgentWorkflows(tempDir);
-    expect(workflows.size).toBe(2);
-    expect(workflows.has('feature-dev')).toBe(true);
-    expect(workflows.has('bug-fix')).toBe(true);
+    it('returns null when no matching workflow', () => {
+      const workflows = new Map<string, WorkflowOverride>([
+        ['feature-dev', { name: 'feature-dev', gates: [], tools: ['tool1'] }],
+      ]);
+
+      const result = getWorkflowForIntent(workflows, 'EXPLORE');
+      expect(result).toBeNull();
+    });
+
+    it('uses custom mapping when provided', () => {
+      const workflows = new Map<string, WorkflowOverride>([
+        ['my-custom', { name: 'my-custom', gates: [], tools: ['t1'] }],
+      ]);
+
+      const result = getWorkflowForIntent(workflows, 'DESIGN', {
+        'my-custom': 'DESIGN',
+      });
+      expect(result).not.toBeNull();
+      expect(result!.name).toBe('my-custom');
+    });
+
+    it('is case-insensitive for intent', () => {
+      const workflows = new Map<string, WorkflowOverride>([
+        ['bug-fix', { name: 'bug-fix', gates: [], tools: [] }],
+      ]);
+
+      // bug-fix maps to FIX in WORKFLOW_TO_INTENT
+      const result = getWorkflowForIntent(workflows, 'fix');
+      expect(result).not.toBeNull();
+      expect(result!.name).toBe('bug-fix');
+    });
   });
 
-  it('ignores files (non-directories) in the workflows dir', () => {
-    writeFileSync(join(tempDir, 'README.md'), '# Workflows');
-    createWorkflow('real-workflow', { tools: '- tool_a' });
-
-    const workflows = loadAgentWorkflows(tempDir);
-    expect(workflows.size).toBe(1);
-    expect(workflows.has('real-workflow')).toBe(true);
-  });
-});
-
-// ─── getWorkflowForIntent ───────────────────────────────────────────
-
-describe('getWorkflowForIntent', () => {
-  function buildMap(entries: [string, WorkflowOverride][]): Map<string, WorkflowOverride> {
-    return new Map(entries);
-  }
-
-  const sampleOverride: WorkflowOverride = {
-    gates: [{ phase: 'pre-execution', requirement: 'test', check: 'test-check' }],
-    tools: ['tool_a'],
-  };
-
-  it('resolves intent via default WORKFLOW_TO_INTENT mapping', () => {
-    const workflows = buildMap([['feature-dev', sampleOverride]]);
-    const result = getWorkflowForIntent(workflows, 'BUILD');
-    expect(result).toEqual(sampleOverride);
-  });
-
-  it('returns null when no workflow matches the intent', () => {
-    const workflows = buildMap([['feature-dev', sampleOverride]]);
-    const result = getWorkflowForIntent(workflows, 'UNKNOWN_INTENT');
-    expect(result).toBeNull();
-  });
-
-  it('returns null when mapping exists but workflow is not loaded', () => {
-    const workflows = buildMap([]); // empty map
-    const result = getWorkflowForIntent(workflows, 'BUILD');
-    expect(result).toBeNull();
-  });
-
-  it('custom mapping overrides default mapping', () => {
-    const customOverride: WorkflowOverride = { gates: [], tools: ['custom_tool'] };
-    const workflows = buildMap([
-      ['feature-dev', sampleOverride],
-      ['my-custom', customOverride],
-    ]);
-
-    // Without custom mapping, BUILD maps to feature-dev
-    expect(getWorkflowForIntent(workflows, 'BUILD')).toEqual(sampleOverride);
-
-    // With custom mapping, BUILD maps to my-custom
-    const result = getWorkflowForIntent(workflows, 'BUILD', { 'my-custom': 'BUILD' });
-    expect(result).toEqual(customOverride);
-  });
-
-  it('custom mapping adds new intent mappings', () => {
-    const deployOverride: WorkflowOverride = { gates: [], tools: ['deploy_tool'] };
-    const workflows = buildMap([['deploy', deployOverride]]);
-
-    const result = getWorkflowForIntent(workflows, 'DEPLOY', { deploy: 'DEPLOY' });
-    expect(result).toEqual(deployOverride);
+  describe('WORKFLOW_TO_INTENT', () => {
+    it('maps known workflow names to intents', () => {
+      expect(WORKFLOW_TO_INTENT['feature-dev']).toBe('BUILD');
+      expect(WORKFLOW_TO_INTENT['bug-fix']).toBe('FIX');
+      expect(WORKFLOW_TO_INTENT['code-review']).toBe('REVIEW');
+    });
   });
 });

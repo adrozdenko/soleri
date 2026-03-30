@@ -1,9 +1,12 @@
+/**
+ * Workflow overrides — barrel export.
+ */
 export {
-  WorkflowGateSchema,
-  WorkflowToolsSchema,
-  WorkflowOverrideSchema,
-  WORKFLOW_TO_INTENT,
   loadAgentWorkflows,
   getWorkflowForIntent,
+  WORKFLOW_TO_INTENT,
+  WorkflowGateSchema,
+  WorkflowOverrideSchema,
 } from './workflow-loader.js';
+
 export type { WorkflowGate, WorkflowOverride } from './workflow-loader.js';

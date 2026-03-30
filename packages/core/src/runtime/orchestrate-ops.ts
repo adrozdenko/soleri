@@ -21,6 +21,8 @@ import { runEpilogue } from '../flows/epilogue.js';
 import type { OrchestrationPlan, ExecutionResult } from '../flows/types.js';
 import type { ContextHealthStatus } from './context-health.js';
 import type { OperatorSignals } from '../operator/operator-context-types.js';
+import { loadAgentWorkflows, getWorkflowForIntent } from '../workflows/workflow-loader.js';
+import type { WorkflowOverride } from '../workflows/workflow-loader.js';
 import {
   detectGitHubContext,
   findMatchingMilestone,
@@ -63,6 +65,70 @@ function detectIntent(prompt: string): string {
     if (pattern.test(prompt)) return intent;
   }
   return 'BUILD'; // default
+}
+
+// ---------------------------------------------------------------------------
+// Workflow override merge
+// ---------------------------------------------------------------------------
+
+/**
+ * Merge a workflow override into an OrchestrationPlan (mutates in place).
+ *
+ * - Gates: each workflow gate becomes a gate on the matching plan step
+ *   (matched by phase → step id prefix). Unmatched gates are appended as
+ *   new gate-only steps at the end.
+ * - Tools: workflow tools are merged into every step's `tools` array
+ *   (deduped). This ensures the tools are available to the executor.
+ */
+export function applyWorkflowOverride(plan: OrchestrationPlan, override: WorkflowOverride): void {
+  // Merge gates into plan steps
+  for (const gate of override.gates) {
+    // Try to find a step whose id starts with the gate phase
+    const matchingStep = plan.steps.find((s) =>
+      s.id.toLowerCase().startsWith(gate.phase.toLowerCase()),
+    );
+    if (matchingStep) {
+      // Attach/replace gate on the step
+      matchingStep.gate = {
+        type: 'GATE',
+        condition: gate.requirement,
+        onFail: { action: 'STOP', message: `Gate check failed: ${gate.check}` },
+      };
+    } else {
+      // No matching step — append a new gate-only step
+      plan.steps.push({
+        id: `workflow-gate-${gate.phase}`,
+        name: `${gate.phase} gate (${override.name})`,
+        tools: [],
+        parallel: false,
+        requires: [],
+        gate: {
+          type: 'GATE',
+          condition: gate.requirement,
+          onFail: { action: 'STOP', message: `Gate check failed: ${gate.check}` },
+        },
+        status: 'pending',
+      });
+    }
+  }
+
+  // Merge tools into plan steps (deduplicated)
+  if (override.tools.length > 0) {
+    for (const step of plan.steps) {
+      for (const tool of override.tools) {
+        if (!step.tools.includes(tool)) {
+          step.tools.push(tool);
+        }
+      }
+    }
+    // Update estimated tools count
+    plan.estimatedTools = plan.steps.reduce((acc, s) => acc + s.tools.length, 0);
+  }
+
+  // Add workflow info to warnings for visibility
+  plan.warnings.push(
+    `Workflow override "${override.name}" applied (${override.gates.length} gate(s), ${override.tools.length} tool(s)).`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -312,6 +378,23 @@ export function createOrchestrateOps(
         // 3. Build flow-engine plan
         const plan = await buildPlan(intent, agentId, projectPath, runtime, prompt);
 
+        // 3b. Merge workflow overrides (gates + tools) if agent has a matching workflow
+        let workflowApplied: string | undefined;
+        const agentDir = runtime.config.agentDir;
+        if (agentDir) {
+          try {
+            const workflowsDir = path.join(agentDir, 'workflows');
+            const agentWorkflows = loadAgentWorkflows(workflowsDir);
+            const workflowOverride = getWorkflowForIntent(agentWorkflows, intent);
+            if (workflowOverride) {
+              applyWorkflowOverride(plan, workflowOverride);
+              workflowApplied = workflowOverride.name;
+            }
+          } catch {
+            // Workflow loading failed — plan is still valid without overrides
+          }
+        }
+
         // 4. Store in planStore
         planStore.set(plan.planId, { plan, createdAt: Date.now() });
 
@@ -373,6 +456,7 @@ export function createOrchestrateOps(
             skippedCount: plan.skipped.length,
             warnings: plan.warnings,
             estimatedTools: plan.estimatedTools,
+            ...(workflowApplied ? { workflowOverride: workflowApplied } : {}),
           },
         };
       },

@@ -1,13 +1,17 @@
 /**
- * Workflow loader — reads gates.yaml and tools.yaml from an agent's workflows/ directory.
+ * Workflow loader — reads agent workflow overrides from the file tree.
  *
- * Each subdirectory under workflows/ represents a named workflow (e.g. feature-dev, bug-fix).
- * The loader parses and validates YAML files, returning a Map of workflow overrides.
+ * Each workflow is a folder under `workflows/` containing:
+ *   - `prompt.md`  — system prompt for the workflow (optional)
+ *   - `gates.yaml` — gate definitions (optional)
+ *   - `tools.yaml` — tool allowlist (optional)
+ *
+ * These overrides are merged into the OrchestrationPlan when
+ * the detected intent matches a workflow via WORKFLOW_TO_INTENT.
  */
 
-import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-import { parse as parseYaml } from 'yaml';
+import fs from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
@@ -15,34 +19,36 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 export const WorkflowGateSchema = z.object({
-  phase: z.enum(['brainstorming', 'pre-execution', 'post-task', 'completion']),
+  phase: z.string(),
   requirement: z.string(),
   check: z.string(),
 });
 
-export const WorkflowToolsSchema = z.array(z.string());
-
 export const WorkflowOverrideSchema = z.object({
+  name: z.string(),
+  prompt: z.string().optional(),
   gates: z.array(WorkflowGateSchema).default([]),
-  tools: WorkflowToolsSchema.default([]),
+  tools: z.array(z.string()).default([]),
 });
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 export type WorkflowGate = z.infer<typeof WorkflowGateSchema>;
 export type WorkflowOverride = z.infer<typeof WorkflowOverrideSchema>;
 
 // ---------------------------------------------------------------------------
-// Default workflow → intent mapping
+// Workflow → Intent mapping
 // ---------------------------------------------------------------------------
 
+/**
+ * Maps workflow folder names to intent strings.
+ * Used by `getWorkflowForIntent()` to find a matching workflow.
+ */
 export const WORKFLOW_TO_INTENT: Record<string, string> = {
   'feature-dev': 'BUILD',
   'bug-fix': 'FIX',
   'code-review': 'REVIEW',
-  'context-handoff': 'HANDOFF',
+  'component-build': 'BUILD',
+  'token-migration': 'ENHANCE',
+  'a11y-remediation': 'FIX',
 };
 
 // ---------------------------------------------------------------------------
@@ -50,121 +56,183 @@ export const WORKFLOW_TO_INTENT: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 /**
- * Load all workflow overrides from subdirectories under `workflowsDir`.
+ * Load all workflow overrides from an agent's `workflows/` directory.
  *
- * Each subdirectory may contain:
- * - `gates.yaml` — array of workflow gates
- * - `tools.yaml` — array of tool name strings
- *
- * Returns a Map keyed by subdirectory name. Missing or invalid files are
- * handled gracefully — warnings are logged, never thrown.
+ * Returns an empty Map if the directory doesn't exist or can't be read
+ * (graceful degradation — no throw).
  */
 export function loadAgentWorkflows(workflowsDir: string): Map<string, WorkflowOverride> {
-  const result = new Map<string, WorkflowOverride>();
-
-  if (!existsSync(workflowsDir)) return result;
+  const workflows = new Map<string, WorkflowOverride>();
 
   let entries: string[];
   try {
-    entries = readdirSync(workflowsDir);
+    entries = fs.readdirSync(workflowsDir);
   } catch {
-    return result;
+    // Directory doesn't exist or can't be read — that's fine
+    return workflows;
   }
 
   for (const entry of entries) {
-    const entryPath = join(workflowsDir, entry);
+    const fullPath = path.join(workflowsDir, entry);
+    let stat: fs.Stats;
     try {
-      if (!statSync(entryPath).isDirectory()) continue;
+      stat = fs.statSync(fullPath);
     } catch {
       continue;
     }
+    if (!stat.isDirectory()) continue;
 
-    const gates = loadGates(entryPath, entry);
-    const tools = loadTools(entryPath, entry);
+    const override: WorkflowOverride = { name: entry, gates: [], tools: [] };
 
-    // Only add if at least one file was present (even if empty / defaults)
-    const gatesPath = join(entryPath, 'gates.yaml');
-    const toolsPath = join(entryPath, 'tools.yaml');
-    if (existsSync(gatesPath) || existsSync(toolsPath)) {
-      result.set(entry, { gates, tools });
+    // Read prompt.md
+    const promptPath = path.join(fullPath, 'prompt.md');
+    try {
+      override.prompt = fs.readFileSync(promptPath, 'utf-8').trim();
+    } catch {
+      // No prompt — that's fine
+    }
+
+    // Read gates.yaml
+    const gatesPath = path.join(fullPath, 'gates.yaml');
+    try {
+      const raw = fs.readFileSync(gatesPath, 'utf-8');
+      // Simple YAML parsing for the gates structure
+      const gates = parseGatesYaml(raw);
+      override.gates = gates;
+    } catch {
+      // No gates — that's fine
+    }
+
+    // Read tools.yaml
+    const toolsPath = path.join(fullPath, 'tools.yaml');
+    try {
+      const raw = fs.readFileSync(toolsPath, 'utf-8');
+      const tools = parseToolsYaml(raw);
+      override.tools = tools;
+    } catch {
+      // No tools — that's fine
+    }
+
+    // Only store if we got something useful
+    if (override.prompt || override.gates.length > 0 || override.tools.length > 0) {
+      workflows.set(entry, override);
     }
   }
 
-  return result;
+  return workflows;
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function loadGates(dir: string, workflowName: string): WorkflowGate[] {
-  const filePath = join(dir, 'gates.yaml');
-  if (!existsSync(filePath)) return [];
-
-  try {
-    const content = readFileSync(filePath, 'utf-8');
-    const raw = parseYaml(content);
-    const parsed = z.array(WorkflowGateSchema).safeParse(raw);
-    if (parsed.success) return parsed.data;
-
-    console.warn(
-      `[workflow-loader] Skipping invalid gates.yaml in workflow "${workflowName}": ${parsed.error.message}`,
-    );
-    return [];
-  } catch {
-    console.warn(`[workflow-loader] Failed to read gates.yaml in workflow "${workflowName}"`);
-    return [];
-  }
-}
-
-function loadTools(dir: string, workflowName: string): string[] {
-  const filePath = join(dir, 'tools.yaml');
-  if (!existsSync(filePath)) return [];
-
-  try {
-    const content = readFileSync(filePath, 'utf-8');
-    const raw = parseYaml(content);
-    const parsed = WorkflowToolsSchema.safeParse(raw);
-    if (parsed.success) return parsed.data;
-
-    console.warn(
-      `[workflow-loader] Skipping invalid tools.yaml in workflow "${workflowName}": ${parsed.error.message}`,
-    );
-    return [];
-  } catch {
-    console.warn(`[workflow-loader] Failed to read tools.yaml in workflow "${workflowName}"`);
-    return [];
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Intent lookup
+// Intent matching
 // ---------------------------------------------------------------------------
 
 /**
- * Reverse-lookup: find the workflow whose mapped intent matches `intent`.
- * Checks `customMapping` first, then falls back to `WORKFLOW_TO_INTENT`.
+ * Find a workflow override that matches the given intent.
+ *
+ * Uses WORKFLOW_TO_INTENT mapping, optionally overridden by customMapping.
+ * Returns null if no matching workflow is found.
  */
 export function getWorkflowForIntent(
   workflows: Map<string, WorkflowOverride>,
   intent: string,
   customMapping?: Record<string, string>,
 ): WorkflowOverride | null {
-  // Check custom mapping first (higher priority)
-  if (customMapping) {
-    for (const [name, wfIntent] of Object.entries(customMapping)) {
-      if (wfIntent === intent && workflows.has(name)) {
-        return workflows.get(name)!;
-      }
-    }
-  }
+  const mapping = customMapping ?? WORKFLOW_TO_INTENT;
+  const normalizedIntent = intent.toUpperCase();
 
-  // Fall back to default mapping
-  for (const [name, wfIntent] of Object.entries(WORKFLOW_TO_INTENT)) {
-    if (wfIntent === intent && workflows.has(name)) {
-      return workflows.get(name)!;
+  for (const [workflowName, mappedIntent] of Object.entries(mapping)) {
+    if (mappedIntent.toUpperCase() === normalizedIntent && workflows.has(workflowName)) {
+      return workflows.get(workflowName)!;
     }
   }
 
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Minimal YAML parsers (no external dependency)
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a simple gates.yaml file. Expected format:
+ *
+ * ```yaml
+ * gates:
+ *   - phase: brainstorming
+ *     requirement: Requirements are clear
+ *     check: user-approval
+ * ```
+ */
+function parseGatesYaml(raw: string): WorkflowGate[] {
+  const gates: WorkflowGate[] = [];
+  const lines = raw.split('\n');
+
+  let current: Partial<WorkflowGate> | null = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Skip empty lines and the root "gates:" key
+    if (!trimmed || trimmed === 'gates:') continue;
+
+    // New list item
+    if (trimmed.startsWith('- ')) {
+      if (current && current.phase && current.requirement && current.check) {
+        gates.push(current as WorkflowGate);
+      }
+      current = {};
+      // Parse inline key from "- phase: value"
+      const inlineMatch = trimmed.match(/^-\s+(\w+):\s*(.+)$/);
+      if (inlineMatch) {
+        const [, key, value] = inlineMatch;
+        if (key === 'phase' || key === 'requirement' || key === 'check') {
+          current[key] = value.trim();
+        }
+      }
+      continue;
+    }
+
+    // Continuation key: "    requirement: value"
+    if (current) {
+      const kvMatch = trimmed.match(/^(\w+):\s*(.+)$/);
+      if (kvMatch) {
+        const [, key, value] = kvMatch;
+        if (key === 'phase' || key === 'requirement' || key === 'check') {
+          current[key] = value.trim();
+        }
+      }
+    }
+  }
+
+  // Flush last entry
+  if (current && current.phase && current.requirement && current.check) {
+    gates.push(current as WorkflowGate);
+  }
+
+  return gates;
+}
+
+/**
+ * Parse a simple tools.yaml file. Expected format:
+ *
+ * ```yaml
+ * tools:
+ *   - soleri_vault op:search_intelligent
+ *   - soleri_plan op:create_plan
+ * ```
+ */
+function parseToolsYaml(raw: string): string[] {
+  const tools: string[] = [];
+  const lines = raw.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed === 'tools:') continue;
+
+    if (trimmed.startsWith('- ')) {
+      tools.push(trimmed.slice(2).trim());
+    }
+  }
+
+  return tools;
 }
