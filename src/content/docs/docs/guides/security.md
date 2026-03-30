@@ -90,6 +90,10 @@ Both are opt-in. Neither is required for core functionality. The vault, brain, p
 | Can I delete everything?     | Yes — delete the agent directory and it's gone     |
 | Is sharing automatic?        | No — you explicitly choose what to share           |
 
+## Reporting security issues
+
+If you discover a security vulnerability, please report it to [hello@soleri.ai](mailto:hello@soleri.ai). Do not open a public GitHub issue for security vulnerabilities.
+
 ---
 
 _Back to [Getting Started](/docs/getting-started/). See [Customizing Your Agent](/docs/guides/customizing/) for governance policies and hook configuration, or explore [Capabilities](/docs/capabilities/) for the full list of operations._

@@ -104,6 +104,8 @@ npx @soleri/cli doctor
 
 This checks Node.js version, npm status, agent context, vault health, CLAUDE.md status, and hook configuration.
 
+If nothing above resolves your issue, reach out at [hello@soleri.ai](mailto:hello@soleri.ai) or open an issue on [GitHub](https://github.com/adrozdenko/soleri/issues).
+
 ---
 
 _Back to [Getting Started](/docs/getting-started/) or see [CLI Reference](/docs/cli-reference/) for all available commands._

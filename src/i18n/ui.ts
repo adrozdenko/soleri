@@ -23,6 +23,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'cta.btn.github': 'Explore on GitHub',
     'cta.btn.start': 'Get started',
     'footer.tagline': 'Soleri — Personal agents with shared knowledge',
+    'footer.contact': 'Contact',
     'footer.copyright': '© 2026 Drozd&Co',
     'named.after':
       'Named after <a href="https://en.wikipedia.org/wiki/Paolo_Soleri" target="_blank" rel="noreferrer">Paolo Soleri</a>, the architect who believed structures should be alive, adaptive, and evolving.',
@@ -49,6 +50,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'cta.btn.github': 'Переглянути на GitHub',
     'cta.btn.start': 'Почати',
     'footer.tagline': 'Soleri — Виконувані стандарти для агентних систем',
+    'footer.contact': 'Контакт',
     'footer.copyright': '© 2026 Drozd&Co',
     'named.after':
       'Названо на честь <a href="https://en.wikipedia.org/wiki/Paolo_Soleri" target="_blank" rel="noreferrer">Паоло Солері</a> — архітектора, який вірив, що структури мають бути живими, адаптивними й здатними еволюціонувати.',
@@ -75,6 +77,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     'cta.btn.github': 'Esplora su GitHub',
     'cta.btn.start': 'Inizia ora',
     'footer.tagline': 'Soleri — Standard eseguibili per sistemi agentici',
+    'footer.contact': 'Contatti',
     'footer.copyright': '© 2026 Drozd&Co',
     'named.after':
       'Il nome viene da <a href="https://en.wikipedia.org/wiki/Paolo_Soleri" target="_blank" rel="noreferrer">Paolo Soleri</a>, l\'architetto convinto che le strutture dovessero essere vive, adattive e in continua evoluzione.',

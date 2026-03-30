@@ -173,3 +173,7 @@ Reports Node version, npm status, agent context, vault health, and engine connec
 - **[The Development Workflow](/docs/guides/workflow/)** — learn the five-step rhythm: Search, Plan, Work, Capture, Complete
 - **[CLI Reference](/docs/cli-reference/)** — every CLI command with options and examples
 - **[Extending Your Agent](/docs/extending/)** — add instructions, workflows, knowledge, and packs
+
+## Need help?
+
+If you run into issues, check [Troubleshooting](/docs/troubleshooting/) or reach out at [hello@soleri.ai](mailto:hello@soleri.ai).

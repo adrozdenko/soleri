@@ -32,6 +32,13 @@ const content: Record<Locale, CommunityContent> = {
         href: 'https://drozdnco.substack.com',
         icon: 'email',
       },
+      {
+        name: 'Email',
+        desc: 'Questions, feedback, partnerships — reach us directly.',
+        action: 'Write to us \u2192',
+        href: 'mailto:hello@soleri.ai',
+        icon: 'email',
+      },
     ],
     contributeTitle: 'Ways to contribute',
     contributeSubtitle:
@@ -90,6 +97,13 @@ const content: Record<Locale, CommunityContent> = {
         href: 'https://drozdnco.substack.com',
         icon: 'email',
       },
+      {
+        name: 'Електронна пошта',
+        desc: 'Запитання, зворотний зв\u2019язок, партнерство — пишіть нам напряму.',
+        action: 'Написати нам \u2192',
+        href: 'mailto:hello@soleri.ai',
+        icon: 'email',
+      },
     ],
     contributeTitle: 'Як долучитися',
     contributeSubtitle:
@@ -146,6 +160,13 @@ const content: Record<Locale, CommunityContent> = {
         desc: "Articoli approfonditi sull'accumulo di conoscenza, l'architettura degli agenti e la filosofia di Soleri. Iscriviti per riceverli nella tua casella di posta.",
         action: 'Iscriviti \u2192',
         href: 'https://drozdnco.substack.com',
+        icon: 'email',
+      },
+      {
+        name: 'Email',
+        desc: 'Domande, feedback, partnership — contattaci direttamente.',
+        action: 'Scrivici \u2192',
+        href: 'mailto:hello@soleri.ai',
         icon: 'email',
       },
     ],
