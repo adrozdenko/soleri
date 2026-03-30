@@ -77,6 +77,8 @@ export default defineConfig({
           items: [
             { slug: 'docs/guides/knowledge-driven-development' },
             { slug: 'docs/guides/planning' },
+            { slug: 'docs/guides/subagent-dispatch' },
+            { slug: 'docs/guides/subagent-tutorial' },
             { slug: 'docs/guides/loops' },
             { slug: 'docs/guides/cross-project-knowledge' },
             { slug: 'docs/guides/customizing' },
