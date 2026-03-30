@@ -10,7 +10,7 @@ By the end of this tutorial, you'll have an agent that knows things, learns from
 Open your terminal and run:
 
 ```bash
-npx @soleri/cli create my-agent
+npm create soleri my-agent
 ```
 
 The wizard will ask you a few things — pick a name, describe what your agent does, choose some knowledge areas. Don't overthink it, you can change everything later.
@@ -20,10 +20,14 @@ Your agent is a folder — ready instantly, no build step:
 ```
 my-agent/
 ├── agent.yaml          # Identity + config
+├── .mcp.json           # Connects to engine (Claude Code)
+├── opencode.json       # Connects to engine (OpenCode)
+├── CLAUDE.md           # Auto-generated (never edit)
 ├── instructions/       # Behavioral rules
 ├── workflows/          # Step-by-step playbooks
 ├── knowledge/          # Domain intelligence
-└── .mcp.json           # Connects to engine
+├── skills/             # SKILL.md files
+└── hooks/              # AI editor hooks
 ```
 
 ## Step 2: Connect to your AI editor

@@ -9,7 +9,7 @@ Soleri uses three layers of testing to ensure every engine feature works correct
 
 ```bash
 npm test              # Unit tests (core, forge, CLI)
-npm run test:e2e      # E2E integration tests (800+ tests, 28 files)
+npm run test:e2e      # E2E integration tests (800+ tests, 30 files)
 ```
 
 ## Test Layers
@@ -64,6 +64,8 @@ npm run test:e2e
 | `chat-context-agency`        | Chat, context, agency, control facades plus pack/hook lifecycle                    |
 | `cli-agent-lifecycle`        | CLI agent management (scaffold, build, refresh, diff), generated code compiles     |
 | `cli-commands`               | Non-interactive create, list, doctor, add-domain, governance                       |
+| `cli-flock-guard`            | Flock file-based guard for CLI concurrency safety                                  |
+| `cli-hooks-conversion`       | Hook pack installation, conversion, and lifecycle management                       |
 | `comprehensive-features`     | Every op across all 4 domain packs plus flow engine with realistic inputs          |
 | `concurrent-and-performance` | Concurrent facade calls without race conditions, vault search at 1000+ entries     |
 | `curator-brain-governance`   | Curator grooming, health audits, brain feedback loop, governance lifecycle          |

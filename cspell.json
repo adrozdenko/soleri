@@ -97,7 +97,14 @@
     "unpushed",
     "worktree",
     "worktrees",
-    "touchpoint"
+    "touchpoint",
+    "unsuppress",
+    "backlink",
+    "backlinks",
+    "browsable",
+    "precheck",
+    "flexbox",
+    "newbot"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [

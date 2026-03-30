@@ -6,7 +6,7 @@ description: Install Soleri, create your first agent, and connect it to your AI 
 ## Prerequisites
 
 - **Node.js 18+** — check with `node -v`
-- **An MCP-compatible AI editor** — Claude Code is fully supported today. Codex, Cursor, and OpenCode support is planned.
+- **An MCP-compatible AI editor** — Claude Code, OpenCode, and Codex are supported today.
 - **npm** — ships with Node.js
 
 :::note[Build tools are optional]
@@ -42,7 +42,9 @@ This generates a folder — no TypeScript, no build step:
 ```
 my-agent/
 ├── agent.yaml              # Identity + engine config
-├── .mcp.json               # Connects to Knowledge Engine
+├── .mcp.json               # Connects to Knowledge Engine (Claude Code)
+├── opencode.json           # Connects to Knowledge Engine (OpenCode)
+├── .gitignore              # Excludes auto-generated files
 ├── CLAUDE.md               # Auto-generated (never edit)
 ├── instructions/           # Behavioral rules
 │   ├── _engine.md          # Engine rules (auto-generated)
@@ -50,10 +52,13 @@ my-agent/
 ├── workflows/              # Step-by-step playbooks
 │   ├── feature-dev/
 │   ├── bug-fix/
-│   └── code-review/
+│   ├── code-review/
+│   └── context-handoff/
 ├── knowledge/              # Domain intelligence bundles
 ├── skills/                 # SKILL.md files
-└── hooks/                  # your AI editor hooks
+├── hooks/                  # Your AI editor hooks
+├── data/                   # Agent runtime data
+└── workspaces/             # Workspace contexts
 ```
 
 Your agent is ready to use immediately. No `npm install`, no `npm run build`.
@@ -64,11 +69,27 @@ From inside the agent folder, register the MCP server and start:
 
 ```bash
 cd my-agent
-npx @soleri/cli install --target claude   # fully supported today
-soleri dev                                 # Start engine + watch for changes
+soleri install --target claude    # Claude Code (default)
+soleri install --target opencode  # OpenCode
+soleri install --target codex     # Codex
+soleri install --target all       # All editors
+soleri dev                        # Start engine + watch for changes
 ```
 
 `soleri install` registers the Soleri Knowledge Engine in your editor's MCP config. `soleri dev` starts the engine and watches your agent folder — CLAUDE.md is regenerated automatically when you edit `agent.yaml` or `instructions/`.
+
+:::tip[Non-interactive setup]
+For CI pipelines or scripted setups, pass a config file to skip the interactive wizard:
+
+```bash
+npm create soleri my-agent -- --config agent-config.json --yes
+```
+
+Other useful flags:
+- `--setup-target <editor>` — choose your editor during create (`claude`, `opencode`, `codex`, `all`)
+- `--no-git` — skip `git init`
+- `--dir <path>` — custom parent directory for the agent folder
+:::
 
 ## Connect to your AI editor
 
@@ -148,5 +169,7 @@ Reports Node version, npm status, agent context, vault health, and engine connec
 
 ## What's Next
 
-- **[The Development Workflow](/docs/guides/workflow/)** — learn the five-step rhythm: Search, Plan, Work, Capture, Complete
 - **[Your First 10 Minutes](/docs/guides/first-10-minutes/)** — a hands-on tutorial to see your agent in action
+- **[The Development Workflow](/docs/guides/workflow/)** — learn the five-step rhythm: Search, Plan, Work, Capture, Complete
+- **[CLI Reference](/docs/cli-reference/)** — every CLI command with options and examples
+- **[Extending Your Agent](/docs/extending/)** — add instructions, workflows, knowledge, and packs

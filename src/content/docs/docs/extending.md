@@ -157,3 +157,9 @@ Your agent folder is untouched by engine upgrades.
 | `soleri add-domain <name>`   | Add a knowledge domain                 |
 
 For full command documentation, see [CLI Reference](/docs/cli-reference/). For configuration details, see [Customizing Your Agent](/docs/guides/customizing/).
+
+## Related
+
+- [Creating Packs](/docs/guides/pack-authoring/) — build and publish your own extension packs
+- [Skills Catalog](/docs/guides/skills-catalog/) — browse all available skills
+- [Domain Packs](/docs/guides/domain-packs/) — specialized intelligence modules

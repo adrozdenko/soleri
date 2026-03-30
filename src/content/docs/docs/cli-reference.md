@@ -25,11 +25,18 @@ npx @soleri/cli create [name]
 
 **Options:**
 
-| Flag     | Description                      |
-| -------- | -------------------------------- |
-| `[name]` | Agent name (prompted if omitted) |
+| Flag                       | Description                                                   |
+| -------------------------- | ------------------------------------------------------------- |
+| `[name]`                   | Agent name (prompted if omitted)                              |
+| `-c, --config <path>`      | Path to JSON config file (skip interactive prompts)           |
+| `--setup-target <target>`  | Editor target: `claude`, `opencode`, `codex`, `both`, `all`  |
+| `-y, --yes`                | Skip confirmation prompts (use with `--config` for fully non-interactive) |
+| `--dir <path>`             | Parent directory for the agent (default: current directory)   |
+| `--filetree`               | Create a file-tree agent (v7 — no TypeScript, no build step, default) |
+| `--legacy`                 | Create a legacy TypeScript agent (v6 — requires npm install + build)  |
+| `--no-git`                 | Skip git repository initialization                            |
 
-**Interactive wizard prompts for:** agent name, role, domains, persona voice.
+**Interactive wizard prompts for:** agent name, role, domains, persona voice, hook packs, git remote setup.
 
 **Example:**
 
@@ -37,6 +44,15 @@ npx @soleri/cli create [name]
 npx @soleri/cli create sentinel
 # or use the npm create shorthand:
 npm create soleri sentinel
+
+# Non-interactive with config file:
+npx @soleri/cli create --config agent.json -y
+
+# Quick defaults (Italian Craftsperson persona):
+npx @soleri/cli create my-agent -y
+
+# File-tree agent for OpenCode:
+npx @soleri/cli create my-agent --setup-target opencode
 ```
 
 ---
@@ -108,15 +124,22 @@ npx @soleri/cli add-domain infrastructure
 Import a knowledge bundle into the agent's vault.
 
 ```bash
-npx @soleri/cli install-knowledge <path>
+npx @soleri/cli install-knowledge <pack>
 ```
 
-Accepts a directory or JSON file containing knowledge entries.
+Accepts a local path, directory, or npm package name. Resolves npm packages as `@soleri/knowledge-{name}`.
+
+**Options:**
+
+| Flag            | Description                              |
+| --------------- | ---------------------------------------- |
+| `--no-facades`  | Skip facade generation for new domains   |
 
 **Example:**
 
 ```bash
 npx @soleri/cli install-knowledge ./bundles/react-patterns
+npx @soleri/cli install-knowledge react-hooks
 ```
 
 ---
@@ -137,6 +160,221 @@ Reports:
 - Vault health
 - CLAUDE.md status
 - Recommendations for fixes
+
+---
+
+### install
+
+Register your agent as an MCP server in your AI editor.
+
+```bash
+npx @soleri/cli install [dir]
+```
+
+**Arguments:**
+
+| Argument | Description                                                        |
+| -------- | ------------------------------------------------------------------ |
+| `[dir]`  | Agent directory or agent name (checks `~/.soleri/<name>` first, then cwd) |
+
+**Options:**
+
+| Flag                | Description                                                     |
+| ------------------- | --------------------------------------------------------------- |
+| `--target <target>` | Registration target: `claude`, `opencode`, `codex`, `both`, `all` (default: `claude`) |
+
+Also creates a global launcher script so the agent can be invoked by name from any directory.
+
+**Example:**
+
+```bash
+npx @soleri/cli install
+npx @soleri/cli install ernesto --target all
+npx @soleri/cli install ./my-agent --target opencode
+```
+
+---
+
+### uninstall
+
+Remove your agent's MCP server registration.
+
+```bash
+npx @soleri/cli uninstall [dir]
+```
+
+**Arguments:**
+
+| Argument | Description                          |
+| -------- | ------------------------------------ |
+| `[dir]`  | Agent directory (defaults to cwd)    |
+
+**Options:**
+
+| Flag                | Description                                                           |
+| ------------------- | --------------------------------------------------------------------- |
+| `--target <target>` | Registration target: `claude`, `opencode`, `codex`, `both`, `all` (default: `opencode`) |
+
+---
+
+### agent
+
+Agent lifecycle management.
+
+```bash
+npx @soleri/cli agent <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand     | Description                                                              |
+| -------------- | ------------------------------------------------------------------------ |
+| `status`       | Show agent health: version, packs, vault, and update availability        |
+| `update`       | Update agent engine to latest compatible version                         |
+| `refresh`      | Regenerate CLAUDE.md, _engine.md, and sync skills from latest templates  |
+| `diff`         | Show drift between agent templates and latest engine templates           |
+| `capabilities` | List all capabilities declared by installed packs                        |
+| `validate`     | Validate flow capability requirements against installed packs            |
+| `migrate`      | Move agent data from `~/.{agentId}/` to `~/.soleri/{agentId}/`          |
+
+**`agent status` options:**
+
+| Flag     | Description      |
+| -------- | ---------------- |
+| `--json` | Output as JSON   |
+
+**`agent update` options:**
+
+| Flag        | Description                                 |
+| ----------- | ------------------------------------------- |
+| `--check`   | Show what would change without updating     |
+| `--dry-run` | Preview migration steps                     |
+
+**`agent refresh` options:**
+
+| Flag             | Description                                          |
+| ---------------- | ---------------------------------------------------- |
+| `--dry-run`      | Preview what would change without writing             |
+| `--skip-skills`  | Skip skill sync (only regenerate activation files)   |
+
+**`agent migrate` usage:**
+
+```bash
+npx @soleri/cli agent migrate <agentId>
+```
+
+| Flag        | Description                                        |
+| ----------- | -------------------------------------------------- |
+| `--dry-run` | Preview what would be moved without executing       |
+
+---
+
+### pack
+
+Unified pack manager for hooks, skills, knowledge, and domains. See [Creating Packs](/docs/guides/pack-authoring/) for authoring guide and [Domain Packs](/docs/guides/domain-packs/) for built-in packs.
+
+```bash
+npx @soleri/cli pack <subcommand> [options]
+```
+
+**Subcommands:**
+
+| Subcommand  | Description                                       |
+| ----------- | ------------------------------------------------- |
+| `list`      | List installed packs                              |
+| `install`   | Install a pack from local path, built-in, or npm  |
+| `remove`    | Remove an installed pack                          |
+| `info`      | Show detailed info about an installed pack        |
+| `outdated`  | Check for packs with available updates on npm     |
+| `update`    | Update installed packs to latest compatible version |
+| `search`    | Search for packs on the npm registry              |
+| `available` | List available knowledge packs (built-in and community) |
+| `create`    | Scaffold a new pack project (interactive wizard)  |
+| `validate`  | Validate a pack before publishing                 |
+| `publish`   | Publish pack to npm registry                      |
+
+**`pack list` options:**
+
+| Flag             | Description                                                    |
+| ---------------- | -------------------------------------------------------------- |
+| `--type <type>`  | Filter by pack type: `hooks`, `skills`, `knowledge`, `domain`, `bundle` |
+| `--tier <tier>`  | Filter by tier: `default`, `community`, `premium`              |
+
+**`pack install` options:**
+
+| Flag                | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| `--type <type>`     | Expected pack type                             |
+| `--version <ver>`   | Specific version to install                    |
+| `--frozen`          | Fail if pack is not in lockfile (CI mode)      |
+
+**`pack update` options:**
+
+| Flag       | Description                                     |
+| ---------- | ----------------------------------------------- |
+| `--check`  | Show outdated packs without updating (dry run)  |
+| `--force`  | Force update even if version is incompatible    |
+
+**`pack publish` options:**
+
+| Flag        | Description                                       |
+| ----------- | ------------------------------------------------- |
+| `--dry-run` | Show what would be published without publishing   |
+
+**Example:**
+
+```bash
+npx @soleri/cli pack list
+npx @soleri/cli pack install react-patterns --version 2.0.0
+npx @soleri/cli pack info react-patterns
+npx @soleri/cli pack outdated
+npx @soleri/cli pack update
+npx @soleri/cli pack search react
+npx @soleri/cli pack create
+npx @soleri/cli pack validate ./my-pack
+npx @soleri/cli pack publish ./my-pack --dry-run
+npx @soleri/cli pack remove react-patterns
+```
+
+---
+
+### skills
+
+Manage skill packs (convenience wrapper for `pack --type skills`). See [Skills Catalog](/docs/guides/skills-catalog/) for all available skills.
+
+```bash
+npx @soleri/cli skills <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand  | Description                      |
+| ----------- | -------------------------------- |
+| `list`      | List installed skill packs       |
+| `install`   | Install a skill pack             |
+| `remove`    | Remove a skill pack              |
+| `info`      | Show info about a skill pack     |
+
+**`skills list` options:**
+
+| Flag      | Description                                                |
+| --------- | ---------------------------------------------------------- |
+| `--trust` | Show trust level, source, and compatibility for each pack  |
+
+**`skills install` options:**
+
+| Flag               | Description                     |
+| ------------------ | ------------------------------- |
+| `--version <ver>`  | Specific version to install     |
+
+**Example:**
+
+```bash
+npx @soleri/cli skills list --trust
+npx @soleri/cli skills install my-skills --version 1.0.0
+npx @soleri/cli skills info my-skills
+npx @soleri/cli skills remove my-skills
+```
 
 ---
 
@@ -209,6 +447,152 @@ npx @soleri/cli governance [options]
 | `--preset <name>` | Apply a preset: `strict`, `moderate`, `permissive` |
 | `--show`          | Display current governance settings                |
 
+Shows quotas (max entries total, per category, per type), retention settings (archive/delete thresholds), auto-capture policy, and current quota usage.
+
+---
+
+### yolo
+
+Launch Claude Code in YOLO mode with safety guardrails. See [YOLO Mode](/docs/guides/yolo-mode/) for full guide.
+
+```bash
+npx @soleri/cli yolo [options]
+```
+
+Automatically installs the `yolo-safety` hook pack (if not already installed), then launches Claude Code with `--dangerously-skip-permissions`. Safety hooks intercept destructive commands (rm, git push --force, git reset --hard, drop table, docker rm).
+
+**Options:**
+
+| Flag        | Description                                                |
+| ----------- | ---------------------------------------------------------- |
+| `--dry-run` | Show what would happen without launching Claude            |
+| `--project` | Install safety hooks to project `.claude/` instead of global `~/.claude/` |
+
+**Example:**
+
+```bash
+npx @soleri/cli yolo
+npx @soleri/cli yolo --dry-run
+npx @soleri/cli yolo --project
+```
+
+---
+
+### telegram
+
+Manage Telegram transport for the current agent. See [Telegram Integration](/docs/guides/telegram/) for full guide.
+
+```bash
+npx @soleri/cli telegram <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand | Description                                      |
+| ---------- | ------------------------------------------------ |
+| `enable`   | Add Telegram transport files to the current agent |
+| `disable`  | Remove Telegram transport from the current agent  |
+| `setup`    | Interactive configuration wizard (bot token, API key, model) |
+| `status`   | Check Telegram configuration status               |
+
+**Workflow:**
+
+1. `soleri telegram enable` — generates 4 source files, adds grammy dependency, adds npm scripts
+2. `soleri telegram setup` — interactive wizard for bot token, LLM provider/key, passphrase, model
+3. `npm run telegram:start` or `npm run telegram:dev` — run the bot
+
+**Example:**
+
+```bash
+npx @soleri/cli telegram enable
+npx @soleri/cli telegram setup
+npx @soleri/cli telegram status
+npx @soleri/cli telegram disable
+```
+
+---
+
+### vault
+
+Vault knowledge management.
+
+```bash
+npx @soleri/cli vault <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand | Description                                 |
+| ---------- | ------------------------------------------- |
+| `export`   | Export vault entries as browsable markdown files |
+
+**`vault export` options:**
+
+| Flag              | Description                                  |
+| ----------------- | -------------------------------------------- |
+| `--path <dir>`    | Output directory (default: `./knowledge/`)   |
+| `--domain <name>` | Filter by domain                             |
+
+**Example:**
+
+```bash
+npx @soleri/cli vault export
+npx @soleri/cli vault export --path ~/obsidian
+npx @soleri/cli vault export --domain architecture
+```
+
+---
+
+### staging
+
+Manage the anti-deletion staging folder. The `safety` hook pack backs up files here before destructive operations.
+
+```bash
+npx @soleri/cli staging <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| `list`     | Show staged files with timestamps                     |
+| `restore`  | Restore files from a staging snapshot to their original locations |
+| `clean`    | Remove staging backups older than 7 days (or `--all`) |
+| `cleanup`  | Check for and remove stale staging backups            |
+
+**`staging restore` usage:**
+
+```bash
+npx @soleri/cli staging restore <id>
+```
+
+**`staging clean` options:**
+
+| Flag                      | Description                                         |
+| ------------------------- | --------------------------------------------------- |
+| `--older-than <duration>` | Only remove snapshots older than duration (default: `7d`) |
+| `--all`                   | Remove all snapshots regardless of age              |
+| `--dry-run`               | Show what would be removed without deleting         |
+
+**`staging cleanup` options:**
+
+| Flag                      | Description                                      |
+| ------------------------- | ------------------------------------------------ |
+| `--older-than <duration>` | Max age for stale entries (default: `7d`)        |
+| `--yes`                   | Skip confirmation prompt                         |
+
+Duration format: `7d` (days), `24h` (hours), `30m` (minutes).
+
+**Example:**
+
+```bash
+npx @soleri/cli staging list
+npx @soleri/cli staging restore 1711900000000
+npx @soleri/cli staging clean --older-than 3d
+npx @soleri/cli staging clean --all --dry-run
+npx @soleri/cli staging cleanup --yes
+```
+
 ---
 
 ### extend
@@ -225,85 +609,6 @@ File-tree agents extend through plain files:
 
 See [Extending Your Agent](/docs/extending/) for full documentation.
 :::
-
----
-
-### install
-
-Register your agent as an MCP server in your AI editor.
-
-```bash
-npx @soleri/cli install
-```
-
-Adds the agent to `~/.claude.json` so your AI editor discovers it on startup. Run from inside your agent directory.
-
----
-
-### uninstall
-
-Remove your agent's MCP server registration.
-
-```bash
-npx @soleri/cli uninstall
-```
-
-Removes the entry from `~/.claude.json`.
-
----
-
-### pack
-
-Unified pack manager for hooks, skills, knowledge, and domains.
-
-```bash
-npx @soleri/cli pack <subcommand> [options]
-```
-
-**Subcommands:**
-
-| Subcommand  | Description                       |
-| ----------- | --------------------------------- |
-| `list`      | List available packs              |
-| `install`   | Install a pack                    |
-| `uninstall` | Remove a pack                     |
-| `validate`  | Validate a pack before installing |
-
-**Options:**
-
-| Flag            | Description                                          |
-| --------------- | ---------------------------------------------------- |
-| `--type <type>` | Pack type: `hooks`, `skills`, `knowledge`, `domains` |
-
----
-
-### skills
-
-Manage agent skills (convenience wrapper for `pack --type skills`).
-
-```bash
-npx @soleri/cli skills [subcommand]
-```
-
-Lists, installs, or removes skill packs for your agent.
-
----
-
-### agent
-
-Agent lifecycle management.
-
-```bash
-npx @soleri/cli agent <subcommand>
-```
-
-**Subcommands:**
-
-| Subcommand | Description                           |
-| ---------- | ------------------------------------- |
-| `status`   | Show agent status and configuration   |
-| `update`   | Update agent to latest engine         |
-| `diff`     | Show differences from latest scaffold |
 
 ---
 

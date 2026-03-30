@@ -157,16 +157,23 @@ Four ways to connect: **stdio** (your AI editor), **HTTP/SSE** (web), **WebSocke
 | [Chat](/docs/capabilities/#chat)               | 41  | Chat transport integration                    |
 | [Plan](/docs/capabilities/#plan)               | 32  | Planning, grading, verification               |
 | [Orchestrate](/docs/capabilities/#orchestrate) | 26  | Lifecycle, projects, playbooks                |
-| [Brain](/docs/capabilities/#brain)             | 23  | Learning, strength, recommendations           |
+| [Brain](/docs/capabilities/#brain)             | 30  | Learning, strength, recommendations, radar    |
 | [Memory](/docs/capabilities/#memory)           | 15  | Cross-session, cross-project                  |
 | [Curator](/docs/capabilities/#curator)         | 13  | Vault quality management                      |
 | [Control](/docs/capabilities/#control)         | 13  | Identity, governance                          |
-| [Cognee](/docs/capabilities/#cognee)           | 11  | Vector search, knowledge graph                |
+| [Archive](/docs/capabilities/#archive)         | 12  | Vault archival, lifecycle, maintenance         |
+| [Operator](/docs/capabilities/#operator)       | 10  | Profile learning, signals, adaptation          |
 | [Loop](/docs/capabilities/#loop)               | 9   | Iterative validation                          |
-| [Agency](/docs/capabilities/#agency)           | 8   | Proactive file watching                       |
+| [Links](/docs/capabilities/#links)             | 9   | Entry linking, graph traversal                 |
+| [Agency](/docs/capabilities/#agency)           | 15  | Proactive file watching, intelligence          |
+| [Sync](/docs/capabilities/#sync)               | 8   | Git, Obsidian, pack sync                       |
+| [Intake](/docs/capabilities/#intake)           | 7   | Content ingestion (URLs, text, books)          |
+| [Tier](/docs/capabilities/#tier)               | 7   | Multi-vault connections                        |
+| [Branching](/docs/capabilities/#branching)     | 5   | Vault branching, merge                         |
+| [Review](/docs/capabilities/#review)           | 5   | Knowledge review workflow                      |
 | [Context](/docs/capabilities/#context)         | 3   | Entity extraction, analysis                   |
 
-**Total: 200+ operations** plus 5 per domain.
+**Total: 350+ operations** plus 5 per domain.
 
 ## Day-to-Day Tips
 

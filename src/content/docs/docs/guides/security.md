@@ -7,7 +7,7 @@ Your agent runs on your machine. Your knowledge stays on your machine. This page
 
 ## Everything runs locally
 
-Your Soleri agent is a Node.js process that runs on your computer. It doesn't connect to any cloud service, doesn't send telemetry, and doesn't phone home. The only network calls happen if you explicitly configure optional integrations like Cognee (vector search) or LLM providers.
+Your Soleri agent is a Node.js process that runs on your computer. It doesn't connect to any cloud service, doesn't send telemetry, and doesn't phone home. The only network calls happen if you explicitly configure optional integrations like LLM providers.
 
 Out of the box: **zero network calls.**
 
@@ -69,11 +69,7 @@ If you version-control your agent (including its data files), the knowledge base
 
 ## Optional integrations
 
-Two optional features do make network calls when configured:
-
-### Cognee (vector search)
-
-If you enable Cognee integration, the agent sends text to a Cognee instance for vector embedding and knowledge graph storage. You control where Cognee runs — it can be local or hosted.
+One optional feature does make network calls when configured:
 
 ### LLM providers
 

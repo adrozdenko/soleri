@@ -76,15 +76,6 @@ A plan shows "executing" but you've finished the work.
 - Plans in `executing` state don't expire — they wait for you to come back
 - You can also ask "What plans are in progress?" to see stuck plans
 
-## Cognee connection failing
-
-Vector search isn't working, Cognee shows as unavailable.
-
-- Verify Cognee is running: `curl http://localhost:8000/health`
-- Check the configured URL: ask "What's the Cognee status?"
-- Cognee failures are graceful — searches fall back to vault-only TF-IDF
-- Restart Cognee: `docker restart <container-id>`
-
 ## Vault growing too large
 
 Your vault has hundreds of entries, searches are slow or noisy.

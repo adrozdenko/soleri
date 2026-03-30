@@ -1,0 +1,106 @@
+---
+title: 'Skills Catalog'
+description: 'All available skills — essential and optional — with descriptions and installation instructions.'
+---
+
+Skills are workflow scripts that teach your agent how to handle specific situations. When you say "debug this" or "create a plan", the agent matches your intent to a skill and follows its structured workflow.
+
+Your agent ships with 7 essential skills by default. Another 26 optional skills are available to install on demand.
+
+## Essential skills (included by default)
+
+These ship with every scaffolded agent:
+
+| Skill                    | What it does                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------- |
+| **agent-guide**          | Responds to "what can you do" — lists capabilities, tools, and how to use them                      |
+| **agent-persona**        | Activates the agent's persona on greeting. Maintains character through the session and compaction    |
+| **vault-navigator**      | Searches the knowledge base for patterns, prior art, and best practices                             |
+| **vault-capture**        | Persists a single known pattern, decision, or principle to the vault                                |
+| **systematic-debugging** | First response to any bug — diagnoses root cause before proposing fixes                             |
+| **writing-plans**        | Creates structured implementation plans from clear requirements                                     |
+| **context-resume**       | Rebuilds working context on session start — "where did I leave off?"                                |
+
+## Optional skills
+
+Install any of these to extend your agent's capabilities:
+
+| Skill                             | What it does                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------ |
+| **agent-dev**                     | Extends the agent itself — adding facades, tools, vault ops, or new skills                 |
+| **agent-issues**                  | Creates GitHub issues, bugs, tasks, and milestones structured for AI agent execution       |
+| **brain-debrief**                 | Explores brain-learned patterns — strength scores, intelligence reports                    |
+| **brainstorming**                 | Open-ended creative exploration when requirements are not yet clear                        |
+| **code-patrol**                   | Reviews code against the project's own vault patterns and conventions                      |
+| **deep-review**                   | In-depth code review — architecture fitness, code smells, optimization opportunities       |
+| **deliver-and-ship**              | Pre-delivery quality gates — stability, knowledge capture, code quality checks             |
+| **discovery-phase**               | Structured exploration before committing to a plan — options, tradeoffs, recommendations   |
+| **env-setup**                     | Sets up, fixes, or restores local dev environments across languages and tools              |
+| **executing-plans**               | Executes an approved plan step by step with review checkpoints                             |
+| **finishing-a-development-branch**| Finalizes a branch for merge — PR preparation, cleanup, final checks                      |
+| **fix-and-learn**                 | Applies a fix after root cause is found, then captures the learning in the vault           |
+| **health-check**                  | Read-only health assessment of the knowledge base — scoring, diagnostics, issues           |
+| **knowledge-harvest**             | Extracts multiple patterns from a source — code, docs, PRs, articles                      |
+| **mcp-doctor**                    | Diagnoses and repairs MCP server connectivity issues                                       |
+| **onboard-me**                    | Instant project orientation for newcomers — patterns, conventions, architecture overview    |
+| **parallel-execute**              | Executes independent plan tasks concurrently using subagents                               |
+| **retrospective**                 | Time-bound reflection — sprint retros, weekly summaries, actionable improvements           |
+| **second-opinion**                | Decision support from all sources — vault, brain, cross-project experience, web research   |
+| **subagent-driven-development**   | Decomposes tasks into independent units for parallel isolated execution                    |
+| **test-driven-development**       | Write failing tests before implementation — RED/GREEN/REFACTOR cycle                      |
+| **using-git-worktrees**           | Safe parallel branch work using git worktrees — create, work, merge, clean up              |
+| **vault-curate**                  | Knowledge maintenance — deduplicate, merge, resolve contradictions, groom                  |
+| **vault-smells**                  | Deep knowledge quality analysis — contradictions, stale patterns, orphans, decay           |
+| **verification-before-completion**| Internal quality gate before claiming a task is done — run tests, check output             |
+| **yolo-mode**                     | Autonomous execution — skip approval gates while preserving safety invariants              |
+
+## Installing optional skills
+
+Install a single skill:
+
+```bash
+npx @soleri/cli skills install deep-review
+```
+
+Install a skill pack (group of related skills):
+
+```bash
+npx @soleri/cli pack install my-skills-pack
+```
+
+List installed skills:
+
+```bash
+npx @soleri/cli skills list
+```
+
+## Choosing a skills filter
+
+When scaffolding an agent, you can control which skills are included:
+
+| Filter        | What it includes                   |
+| ------------- | ---------------------------------- |
+| `essential`   | 7 core skills (default)            |
+| `all`         | All 33 skills                      |
+| Custom array  | Only the skills you list           |
+
+Set this in your [`agent.yaml`](/docs/your-agent/):
+
+```yaml
+engine:
+  skillsFilter: essential    # or 'all', or ['vault-navigator', 'deep-review', ...]
+```
+
+## How skills work
+
+Skills are markdown files stored in your agent's `skills/` directory (see [Your Agent](/docs/your-agent/) for the full file-tree layout). Each skill has:
+
+- **Trigger conditions** — phrases and intents that activate it
+- **Steps** — a structured workflow the agent follows
+- **Tool references** — which agent tools to use at each step
+
+When the agent detects a matching intent, it loads the skill and follows its workflow. Skills compose with other agent capabilities — a skill can search the vault, create plans, capture knowledge, and use any tool available to the agent.
+
+---
+
+_Next: [Domain Packs](/docs/guides/domain-packs/) — specialized intelligence modules for design, components, and code review. See also [Creating Packs](/docs/guides/pack-authoring/) to build your own, [Your Agent](/docs/your-agent/) for the agent anatomy overview, [Extending Your Agent](/docs/extending/) for custom ops, and the [CLI Reference](/docs/cli-reference/) for `soleri skills` and `soleri pack` commands._

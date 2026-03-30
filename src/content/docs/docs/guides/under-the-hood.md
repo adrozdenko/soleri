@@ -7,7 +7,7 @@ Your Soleri agent is an MCP tool server. It runs locally, stores everything in f
 
 ## Your agent is a tool server
 
-When your AI editor starts, it launches your agent as a child process. The agent registers its tools — search, capture, plan, and 160+ others — over the Model Context Protocol (MCP).
+When your AI editor starts, it launches your agent as a child process. The agent registers its tools — 20 engine modules with 160+ operations — over the Model Context Protocol (MCP).
 
 your AI editor decides when to call these tools based on your conversation. When you ask "what do we know about error handling?", your AI editor recognizes this as a knowledge question and calls the agent's `search_intelligent` tool. The agent returns ranked results, and your AI editor uses them in its response.
 
@@ -131,12 +131,41 @@ The curator is an automated maintenance system that keeps vault quality high:
 
 You can run curator operations manually, or let them happen as part of the brain's lifecycle.
 
+## All engine modules
+
+The engine registers 20 modules as MCP tools. Each module is a single tool with op-based dispatch:
+
+| Module | Purpose |
+| ------ | ------- |
+| **Vault** | Knowledge store — CRUD, search, FTS5 indexing |
+| **Brain** | Intelligence — pattern strength, TF-IDF, recommendations |
+| **Plan** | Planning lifecycle — create, approve, split, reconcile |
+| **Memory** | Session history — capture, search, cross-project |
+| **Admin** | Health checks, tool listing, diagnostics |
+| **Curator** | Vault maintenance — dedup, decay, health audits |
+| **Loop** | Iterative validation cycles |
+| **Orchestrate** | High-level workflow — plan + execute + complete |
+| **Control** | Intent routing, behavior morphing |
+| **Context** | Entity extraction, knowledge retrieval |
+| **Agency** | Proactive file watching, pattern surfacing |
+| **Chat** | Chat transport — sessions, bridge, notifications |
+| **Operator** | Operator profiling — expertise, corrections, adaptation |
+| **Archive** | Vault snapshots, backup, restore, optimization |
+| **Sync** | Git push/pull, Obsidian sync |
+| **Review** | Governance review workflow — submit, approve, reject |
+| **Intake** | External ingestion — URLs, text, PDFs, batch |
+| **Links** | Zettelkasten connections — link, traverse, orphan detection |
+| **Branching** | Vault branching — isolate, experiment, merge |
+| **Tier** | Multi-tier vault connections — external sources |
+
+Domain packs add additional modules on top of these (e.g., `@soleri/domain-design` adds design-specific facades).
+
 ## Testing
 
 Soleri ships with a comprehensive test suite to verify all of this works correctly:
 
 - **Unit tests** (`npm test`) — test individual modules within each package
-- **E2E tests** (`npm run test:e2e`) — 124 integration tests across 10 files that exercise every engine feature: vault persistence, brain intelligence, curator health audits, governance policies, plan state machine, MCP transport, HTTP/WebSocket servers, CLI commands, scaffold pipeline, and concurrent operations
+- **E2E tests** (`npm run test:e2e`) — 800+ integration tests across 30 files that exercise every engine feature: vault persistence, brain intelligence, curator health audits, governance policies, plan state machine, MCP transport, HTTP/WebSocket servers, CLI commands, scaffold pipeline, operator profiling, knowledge traceability, and concurrent operations
 
 The E2E suite uses real SQLite databases, real MCP stdio transport, and real scaffolded agents — not mocks. When tests pass, the engine works.
 

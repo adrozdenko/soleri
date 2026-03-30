@@ -235,4 +235,4 @@ Linked projects are included in cross-project searches with weighted relevance. 
 
 ---
 
-_Next: [Cognee Integration](/docs/guides/cognee/) — add vector search and knowledge graphs for deeper intelligence. See also [CLI Reference](/docs/cli-reference/) for all command details._
+_Next: [Operator Learning](/docs/guides/operator-learning/) — how your agent learns about you over time. See also [CLI Reference](/docs/cli-reference/) for all command details, [Creating Packs](/docs/guides/pack-authoring/) for building extensions, and [Skills Catalog](/docs/guides/skills-catalog/) for available skills._

@@ -46,6 +46,29 @@ export default defineConfig({
             { slug: 'docs/guides/knowledge-base' },
             { slug: 'docs/guides/code-review' },
             { slug: 'docs/guides/dashboard' },
+            { slug: 'docs/guides/yolo-mode' },
+            { slug: 'docs/guides/telegram' },
+          ],
+        },
+        {
+          label: 'Knowledge Management',
+          translations: { uk: 'Управління знаннями', it: 'Gestione della conoscenza' },
+          items: [
+            { slug: 'docs/guides/vault-branching' },
+            { slug: 'docs/guides/entry-linking' },
+            { slug: 'docs/guides/content-ingestion' },
+            { slug: 'docs/guides/knowledge-review' },
+            { slug: 'docs/guides/vault-sync' },
+            { slug: 'docs/guides/operator-learning' },
+          ],
+        },
+        {
+          label: 'Extensibility',
+          translations: { uk: 'Розширюваність', it: 'Estensibilità' },
+          items: [
+            { slug: 'docs/guides/pack-authoring' },
+            { slug: 'docs/guides/skills-catalog' },
+            { slug: 'docs/guides/domain-packs' },
           ],
         },
         {

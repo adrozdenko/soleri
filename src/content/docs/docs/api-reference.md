@@ -1,6 +1,6 @@
 ---
 title: API Reference
-description: Every facade operation with parameters, auth levels, and usage examples.
+description: Facade operations with parameters, auth levels, and usage examples across all 20 engine modules.
 ---
 
 :::note
@@ -42,18 +42,25 @@ Each agent gets facades named `<agent_id>_<facade>`:
 
 | Facade      | Tool name          | Ops    |
 | ----------- | ------------------ | ------ |
-| Vault       | `<id>_vault`       | 66     |
+| Vault       | `<id>_vault`       | 26     |
 | Admin       | `<id>_admin`       | 56     |
 | Chat        | `<id>_chat`        | 41     |
 | Plan        | `<id>_plan`        | 32     |
+| Brain       | `<id>_brain`       | 30     |
 | Orchestrate | `<id>_orchestrate` | 26     |
-| Brain       | `<id>_brain`       | 23     |
 | Memory      | `<id>_memory`      | 15     |
+| Agency      | `<id>_agency`      | 15     |
 | Curator     | `<id>_curator`     | 13     |
 | Control     | `<id>_control`     | 13     |
-| Cognee      | `<id>_cognee`      | 11     |
+| Archive     | `<id>_archive`     | 12     |
+| Operator    | `<id>_operator`    | 10     |
 | Loop        | `<id>_loop`        | 9      |
-| Agency      | `<id>_agency`      | 8      |
+| Links       | `<id>_links`       | 9      |
+| Sync        | `<id>_sync`        | 8      |
+| Intake      | `<id>_intake`      | 7      |
+| Tier        | `<id>_tier`        | 7      |
+| Branching   | `<id>_branching`   | 5      |
+| Review      | `<id>_review`      | 5      |
 | Context     | `<id>_context`     | 3      |
 | Domain      | `<id>_<domain>`    | 5 each |
 
@@ -214,13 +221,36 @@ Record feedback to the learning system.
 
 ### brain_extract_knowledge
 
-Extract patterns from session history.
+Extract patterns from a session using 6 heuristic rules.
 
-| Param     | Type    | Required | Description                           |
-| --------- | ------- | -------- | ------------------------------------- |
-| `limit`   | number  | no       | Max sessions to analyze               |
-| `since`   | string  | no       | ISO date — only analyze after this    |
-| `persist` | boolean | no       | Whether to persist extracted patterns |
+| Param       | Type   | Required | Description                 |
+| ----------- | ------ | -------- | --------------------------- |
+| `sessionId` | string | yes      | Session ID to extract from  |
+
+### radar_analyze
+
+Analyze a learning signal — auto-captures, queues, or logs based on confidence.
+
+| Param           | Type   | Required | Description                                                                       |
+| --------------- | ------ | -------- | --------------------------------------------------------------------------------- |
+| `type`          | enum   | yes      | `correction`, `search_miss`, `explicit_capture`, `pattern_success`, `workaround`, `repeated_question` |
+| `title`         | string | yes      | Short title for the detected pattern                                              |
+| `description`   | string | yes      | What was learned and why                                                          |
+| `suggestedType` | enum   | no       | `pattern` or `anti-pattern`                                                       |
+| `confidence`    | number | no       | Override confidence (0-1)                                                         |
+| `sourceQuery`   | string | no       | Original query that triggered the signal                                          |
+| `context`       | string | no       | Additional context                                                                |
+
+### synthesize
+
+Synthesize vault knowledge into structured content.
+
+| Param        | Type   | Required | Description                                        |
+| ------------ | ------ | -------- | -------------------------------------------------- |
+| `query`      | string | yes      | Topic to synthesize about                          |
+| `format`     | enum   | yes      | `brief`, `outline`, `talking-points`, `post-draft` |
+| `maxEntries` | number | no       | Max vault entries to consult (default: 10)         |
+| `audience`   | enum   | no       | `technical`, `executive`, `general` (default)      |
 
 ---
 
@@ -339,6 +369,326 @@ Generate clarification for ambiguous intent.
 | `prompt`     | string | yes      | The user prompt to analyze      |
 | `confidence` | number | yes      | Current intent confidence (0-1) |
 
+### agency_suggestions
+
+Evaluate suggestion rules and return triggered proactive suggestions.
+
+No parameters required.
+
+### agency_suppress_warning
+
+Suppress a warning by ID.
+
+| Param       | Type   | Required | Description            |
+| ----------- | ------ | -------- | ---------------------- |
+| `warningId` | string | yes      | Warning ID to suppress |
+
+---
+
+## Archive Facade
+
+### vault_archive
+
+Archive entries older than N days.
+
+| Param          | Type   | Required | Description                        |
+| -------------- | ------ | -------- | ---------------------------------- |
+| `olderThanDays`| number | yes      | Archive entries older than N days   |
+| `reason`       | string | no       | Reason for archiving               |
+
+### vault_restore
+
+Restore an archived entry back to the active table.
+
+| Param | Type   | Required | Description                      |
+| ----- | ------ | -------- | -------------------------------- |
+| `id`  | string | yes      | ID of the archived entry         |
+
+### knowledge_merge
+
+Merge two similar entries — keeps best metadata from both.
+
+| Param      | Type   | Required | Description               |
+| ---------- | ------ | -------- | ------------------------- |
+| `keepId`   | string | yes      | Entry to keep             |
+| `removeId` | string | yes      | Duplicate entry to remove |
+
+### knowledge_reorganize
+
+Re-categorize entries — rename domains/tags. Dry-run by default.
+
+| Param         | Type    | Required | Description                                      |
+| ------------- | ------- | -------- | ------------------------------------------------ |
+| `dryRun`      | boolean | no       | Preview without changes (default: true)          |
+| `retagRules`  | array   | no       | `[{ from: string, to?: string }]` tag rules     |
+| `domainRules` | array   | no       | `[{ from: string, to: string }]` domain rules   |
+
+---
+
+## Operator Facade
+
+### profile_get
+
+Get the full operator profile or a specific section.
+
+| Param     | Type | Required | Description                                                                       |
+| --------- | ---- | -------- | --------------------------------------------------------------------------------- |
+| `section` | enum | no       | `identity`, `cognition`, `communication`, `workingRules`, `trustModel`, `tasteProfile`, `growthEdges`, `technicalContext` |
+
+### signal_accumulate
+
+Accumulate operator signals for later synthesis.
+
+| Param     | Type  | Required | Description                                                    |
+| --------- | ----- | -------- | -------------------------------------------------------------- |
+| `signals` | array | yes      | `[{ id, signalType, data, timestamp, sessionId, confidence }]` |
+
+### synthesis_check
+
+Check if a synthesis pass is due based on signal/session thresholds. No parameters required.
+
+### profile_export
+
+Export the operator profile as markdown or JSON.
+
+| Param    | Type | Required | Description                    |
+| -------- | ---- | -------- | ------------------------------ |
+| `format` | enum | no       | `markdown` or `json` (default) |
+
+---
+
+## Sync Facade
+
+### vault_git_push
+
+Push vault entries to a git-tracked directory.
+
+| Param         | Type   | Required | Description                      |
+| ------------- | ------ | -------- | -------------------------------- |
+| `repoDir`     | string | yes      | Path to git-tracked directory    |
+| `authorName`  | string | no       | Git author name                  |
+| `authorEmail` | string | no       | Git author email                 |
+
+### vault_git_pull
+
+Pull entries from a git directory into the vault.
+
+| Param        | Type   | Required | Description                                    |
+| ------------ | ------ | -------- | ---------------------------------------------- |
+| `repoDir`    | string | yes      | Path to git-tracked directory                  |
+| `onConflict` | enum   | no       | `git` (default) or `vault` conflict resolution |
+
+### vault_export_pack
+
+Export vault entries as a shareable intelligence pack.
+
+| Param        | Type     | Required | Description                              |
+| ------------ | -------- | -------- | ---------------------------------------- |
+| `name`       | string   | no       | Pack name (default: agent ID)            |
+| `version`    | string   | no       | Pack version (default: 1.0.0)            |
+| `tier`       | enum     | no       | `agent`, `project`, or `team`            |
+| `domain`     | string   | no       | Filter by domain                         |
+| `tags`       | string[] | no       | Filter by tags                           |
+| `excludeIds` | string[] | no       | Entry IDs to exclude                     |
+
+### vault_import_pack
+
+Import an intelligence pack with dedup.
+
+| Param     | Type  | Required | Description                               |
+| --------- | ----- | -------- | ----------------------------------------- |
+| `bundles` | array | yes      | Array of IntelligenceBundle objects        |
+| `tier`    | enum  | no       | Force all imports to this tier             |
+
+---
+
+## Review Facade
+
+### vault_submit_review
+
+Submit a vault entry for team review.
+
+| Param         | Type   | Required | Description            |
+| ------------- | ------ | -------- | ---------------------- |
+| `entryId`     | string | yes      | Entry ID to submit     |
+| `submittedBy` | string | no       | Name/ID of submitter   |
+
+### vault_approve
+
+Approve a pending vault entry.
+
+| Param        | Type   | Required | Description        |
+| ------------ | ------ | -------- | ------------------ |
+| `entryId`    | string | yes      | Entry ID           |
+| `reviewedBy` | string | no       | Name/ID of reviewer|
+| `comment`    | string | no       | Review comment     |
+
+### vault_reject
+
+Reject a pending vault entry.
+
+| Param        | Type   | Required | Description          |
+| ------------ | ------ | -------- | -------------------- |
+| `entryId`    | string | yes      | Entry ID             |
+| `reviewedBy` | string | no       | Name/ID of reviewer  |
+| `comment`    | string | no       | Reason for rejection |
+
+---
+
+## Intake Facade
+
+### ingest_url
+
+Fetch a URL, extract text, classify via LLM, and store.
+
+| Param    | Type     | Required | Description                   |
+| -------- | -------- | -------- | ----------------------------- |
+| `url`    | string   | yes      | URL to fetch and ingest       |
+| `domain` | string   | no       | Knowledge domain              |
+| `tags`   | string[] | no       | Additional tags               |
+
+### ingest_text
+
+Ingest raw text — classify via LLM and store.
+
+| Param        | Type     | Required | Description                                       |
+| ------------ | -------- | -------- | ------------------------------------------------- |
+| `text`       | string   | yes      | Text content to ingest                            |
+| `title`      | string   | yes      | Title for the source material                     |
+| `sourceType` | enum     | no       | `article`, `transcript`, `notes`, `documentation` |
+| `url`        | string   | no       | Source URL if available                            |
+| `author`     | string   | no       | Author of the source material                     |
+| `domain`     | string   | no       | Knowledge domain                                  |
+| `tags`       | string[] | no       | Additional tags                                   |
+
+### ingest_batch
+
+Ingest multiple text items in one call.
+
+| Param   | Type  | Required | Description                                               |
+| ------- | ----- | -------- | --------------------------------------------------------- |
+| `items` | array | yes      | `[{ text, title, sourceType?, url?, author?, domain?, tags? }]` |
+
+---
+
+## Links Facade
+
+### link_entries
+
+Create a typed link between two vault entries.
+
+| Param      | Type   | Required | Description                                      |
+| ---------- | ------ | -------- | ------------------------------------------------ |
+| `sourceId` | string | yes      | Source entry ID                                  |
+| `targetId` | string | yes      | Target entry ID                                  |
+| `linkType` | enum   | yes      | `supports`, `contradicts`, `extends`, `sequences`|
+| `note`     | string | no       | Context for the link                             |
+
+### traverse
+
+Walk the link graph from an entry up to N hops deep.
+
+| Param     | Type   | Required | Description                 |
+| --------- | ------ | -------- | --------------------------- |
+| `entryId` | string | yes      | Starting entry ID           |
+| `depth`   | number | no       | Max hops, 1-5 (default: 2) |
+
+### suggest_links
+
+Find semantically similar entries as link candidates.
+
+| Param     | Type   | Required | Description                  |
+| --------- | ------ | -------- | ---------------------------- |
+| `entryId` | string | yes      | Entry to find candidates for |
+| `limit`   | number | no       | Max suggestions (default: 5) |
+
+### get_orphans
+
+Find entries with zero links.
+
+| Param   | Type   | Required | Description                  |
+| ------- | ------ | -------- | ---------------------------- |
+| `limit` | number | no       | Max orphans (default: 20)    |
+
+### relink_vault
+
+Smart re-linking using LLM evaluation.
+
+| Param       | Type    | Required | Description                             |
+| ----------- | ------- | -------- | --------------------------------------- |
+| `batchSize` | number  | no       | Pairs per LLM call (default: 10)       |
+| `limit`     | number  | no       | Max entries to process (0 = all)        |
+| `dryRun`    | boolean | no       | Preview without changes (default: false)|
+
+---
+
+## Branching Facade
+
+### vault_branch
+
+Create a named vault branch.
+
+| Param  | Type   | Required | Description       |
+| ------ | ------ | -------- | ----------------- |
+| `name` | string | yes      | Unique branch name|
+
+### vault_branch_add
+
+Add an operation to a branch.
+
+| Param        | Type   | Required | Description                        |
+| ------------ | ------ | -------- | ---------------------------------- |
+| `branchName` | string | yes      | Branch name                        |
+| `entryId`    | string | yes      | Entry ID                           |
+| `action`     | enum   | yes      | `add`, `modify`, or `remove`       |
+| `entryData`  | object | no       | Full entry data (for add/modify)   |
+
+### vault_merge_branch
+
+Merge a branch into the main vault.
+
+| Param        | Type   | Required | Description    |
+| ------------ | ------ | -------- | -------------- |
+| `branchName` | string | yes      | Branch to merge|
+
+Auth: `admin`
+
+---
+
+## Tier Facade
+
+### vault_connect
+
+Connect an additional vault tier.
+
+| Param  | Type   | Required | Description                |
+| ------ | ------ | -------- | -------------------------- |
+| `tier` | enum   | yes      | `project` or `team`        |
+| `path` | string | yes      | Path to SQLite database    |
+
+Auth: `admin`
+
+### vault_search_all
+
+Search across all connected vault tiers.
+
+| Param   | Type   | Required | Description             |
+| ------- | ------ | -------- | ----------------------- |
+| `query` | string | yes      | Search query            |
+| `limit` | number | no       | Max results (default: 20)|
+
+### vault_connect_source
+
+Connect a named vault source with priority.
+
+| Param      | Type   | Required | Description                      |
+| ---------- | ------ | -------- | -------------------------------- |
+| `name`     | string | yes      | Unique name for the connection   |
+| `path`     | string | yes      | Path to SQLite database          |
+| `priority` | number | no       | Search priority 0-2 (default: 0.5)|
+
+Auth: `admin`
+
 ---
 
 ## Context Facade
@@ -355,7 +705,7 @@ Returns: files, functions, domains, actions, technologies, patterns.
 
 ### context_retrieve_knowledge
 
-Retrieve relevant knowledge from vault, Cognee, and brain.
+Retrieve relevant knowledge from vault and brain.
 
 | Param    | Type   | Required | Description      |
 | -------- | ------ | -------- | ---------------- |
@@ -418,7 +768,7 @@ Auth: `admin`
 
 ---
 
-For the complete list of all 200+ operations, see [Capabilities](/docs/capabilities/). For CLI commands, see [CLI Reference](/docs/cli-reference/). For term definitions, see [Glossary](/docs/glossary/).
+For the complete list of all 350+ operations across 20 facades, see [Capabilities](/docs/capabilities/). For CLI commands, see [CLI Reference](/docs/cli-reference/). For term definitions, see [Glossary](/docs/glossary/).
 
 :::note[Coverage]
 This page documents the most commonly used operations. The remaining operations follow the same facade pattern — call with `op` and `params`. Use `admin_tool_list` to discover all available operations and their parameters in your running agent.
