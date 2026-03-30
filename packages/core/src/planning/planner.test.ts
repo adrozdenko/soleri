@@ -831,4 +831,75 @@ describe('Planner', () => {
       expect(archived[0].status).toBe('archived');
     });
   });
+
+  describe('fixIterations tracking', () => {
+    it('increments fixIterations when task goes completed → in_progress', () => {
+      const plan = planner.create({
+        objective: 'Rework test',
+        scope: 'test',
+        tasks: [{ title: 'Task A', description: 'A task' }],
+      });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+
+      planner.updateTask(plan.id, 'task-1', 'in_progress');
+      planner.updateTask(plan.id, 'task-1', 'completed');
+      planner.updateTask(plan.id, 'task-1', 'in_progress');
+
+      const task = planner.get(plan.id)!.tasks[0];
+      expect(task.fixIterations).toBe(1);
+    });
+
+    it('increments fixIterations when task goes failed → in_progress', () => {
+      const plan = planner.create({
+        objective: 'Failed rework test',
+        scope: 'test',
+        tasks: [{ title: 'Task A', description: 'A task' }],
+      });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+
+      planner.updateTask(plan.id, 'task-1', 'in_progress');
+      planner.updateTask(plan.id, 'task-1', 'failed');
+      planner.updateTask(plan.id, 'task-1', 'in_progress');
+
+      const task = planner.get(plan.id)!.tasks[0];
+      expect(task.fixIterations).toBe(1);
+    });
+
+    it('does NOT increment on forward transitions', () => {
+      const plan = planner.create({
+        objective: 'Forward transition test',
+        scope: 'test',
+        tasks: [{ title: 'Task A', description: 'A task' }],
+      });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+
+      planner.updateTask(plan.id, 'task-1', 'in_progress');
+      planner.updateTask(plan.id, 'task-1', 'completed');
+
+      const task = planner.get(plan.id)!.tasks[0];
+      expect(task.fixIterations ?? 0).toBe(0);
+    });
+
+    it('accumulates across multiple rework cycles', () => {
+      const plan = planner.create({
+        objective: 'Multi-rework test',
+        scope: 'test',
+        tasks: [{ title: 'Task A', description: 'A task' }],
+      });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+
+      planner.updateTask(plan.id, 'task-1', 'in_progress');
+      planner.updateTask(plan.id, 'task-1', 'completed');
+      planner.updateTask(plan.id, 'task-1', 'in_progress'); // rework 1
+      planner.updateTask(plan.id, 'task-1', 'completed');
+      planner.updateTask(plan.id, 'task-1', 'in_progress'); // rework 2
+
+      const task = planner.get(plan.id)!.tasks[0];
+      expect(task.fixIterations).toBe(2);
+    });
+  });
 });

@@ -832,7 +832,7 @@ export function createOrchestrateOps(
 
         // Evidence-based reconciliation: cross-reference plan tasks against git diff
         let evidenceReport: EvidenceReport | null = null;
-        if (planObj && outcome === 'completed') {
+        if (planObj) {
           try {
             evidenceReport = collectGitEvidence(
               planObj,
@@ -840,6 +840,9 @@ export function createOrchestrateOps(
               'main',
             );
             if (evidenceReport.accuracy < 50) {
+              console.error(
+                `[soleri] Evidence accuracy ${evidenceReport.accuracy}% — significant drift detected between plan and git state`,
+              );
               warnings.push(
                 `Low evidence accuracy (${evidenceReport.accuracy}%) — plan tasks may not match git changes.`,
               );
@@ -974,7 +977,7 @@ export function createOrchestrateOps(
           extraction,
           epilogue: epilogueResult,
           ...(impactReport ? { impactAnalysis: impactReport } : {}),
-          ...(evidenceReport ? { evidenceReport } : {}),
+          evidenceReport,
           ...(warnings.length > 0 ? { warnings } : {}),
         };
       },
