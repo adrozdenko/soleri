@@ -55,9 +55,10 @@ export function registerAgent(program: Command): void {
   agent
     .command('status')
     .option('--json', 'Output as JSON')
+    .option('--path <dir>', 'Path to agent directory (default: cwd)')
     .description('Show agent health: version, packs, vault, and update availability')
-    .action((opts: { json?: boolean }) => {
-      const ctx = detectAgent();
+    .action((opts: { json?: boolean; path?: string }) => {
+      const ctx = detectAgent(opts.path);
       if (!ctx) {
         p.log.error('No agent project detected in current directory.');
         process.exit(1);
@@ -205,9 +206,10 @@ export function registerAgent(program: Command): void {
     .command('update')
     .option('--check', 'Show what would change without updating')
     .option('--dry-run', 'Preview migration steps')
+    .option('--path <dir>', 'Path to agent directory (default: cwd)')
     .description('Update agent engine to latest compatible version')
-    .action((opts: { check?: boolean; dryRun?: boolean }) => {
-      const ctx = detectAgent();
+    .action((opts: { check?: boolean; dryRun?: boolean; path?: string }) => {
+      const ctx = detectAgent(opts.path);
       if (!ctx) {
         p.log.error('No agent project detected in current directory.');
         process.exit(1);
@@ -366,9 +368,10 @@ export function registerAgent(program: Command): void {
     .command('refresh')
     .option('--dry-run', 'Preview what would change without writing')
     .option('--skip-skills', 'Skip skill sync (only regenerate activation files)')
+    .option('--path <dir>', 'Path to agent directory (default: cwd)')
     .description('Regenerate activation files and sync skills from latest forge templates')
-    .action((opts: { dryRun?: boolean; skipSkills?: boolean }) => {
-      const ctx = detectAgent();
+    .action((opts: { dryRun?: boolean; skipSkills?: boolean; path?: string }) => {
+      const ctx = detectAgent(opts.path);
       if (!ctx) {
         p.log.error('No agent project detected in current directory.');
         process.exit(1);
@@ -510,9 +513,10 @@ export function registerAgent(program: Command): void {
   // ─── diff ───────────────────────────────────────────────────
   agent
     .command('diff')
+    .option('--path <dir>', 'Path to agent directory (default: cwd)')
     .description('Show drift between agent templates and latest engine templates')
-    .action(() => {
-      const ctx = detectAgent();
+    .action((opts: { path?: string }) => {
+      const ctx = detectAgent(opts.path);
       if (!ctx) {
         p.log.error('No agent project detected in current directory.');
         process.exit(1);
