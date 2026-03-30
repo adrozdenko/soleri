@@ -161,6 +161,10 @@ export type {
   CuratorStatus,
 } from './curator/types.js';
 
+// ─── Dream ──────────────────────────────────────────────────────────
+export { DreamEngine, ensureDreamSchema, createDreamOps } from './dream/index.js';
+export type { DreamReport, DreamStatus } from './dream/dream-engine.js';
+
 // ─── Governance ─────────────────────────────────────────────────────
 export { Governance } from './governance/governance.js';
 export type {

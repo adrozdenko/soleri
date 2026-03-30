@@ -27,6 +27,7 @@ import { createIntakeFacadeOps } from './intake-facade.js';
 import { createLinksFacadeOps } from './links-facade.js';
 import { createBranchingFacadeOps } from './branching-facade.js';
 import { createTierFacadeOps } from './tier-facade.js';
+import { createDreamOps } from '../../dream/dream-ops.js';
 
 export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
   const facades: FacadeConfig[] = [
@@ -132,6 +133,11 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       name: `${agentId}_tier`,
       description: 'Multi-vault tiers — connect, disconnect, search across sources.',
       ops: createTierFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_dream`,
+      description: 'Dream — automatic memory consolidation, vault cleanup, and maintenance.',
+      ops: createDreamOps(runtime),
     },
   ];
 
