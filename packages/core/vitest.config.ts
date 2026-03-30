@@ -6,7 +6,8 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: { forks: { singleFork: true } },
     testTimeout: 30_000,
-    exclude: ['**/node_modules/**', '**/.claude/worktrees/**'],
+    include: ['src/**/*.test.ts'],
+    exclude: ['**/node_modules/**'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
