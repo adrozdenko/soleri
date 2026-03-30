@@ -88,6 +88,18 @@ This installs all available hooks:
 | `ux-touch-targets`    | Touch targets smaller than 44px   |
 | `no-ai-attribution`   | AI attribution in commit messages |
 
+### Token compression with RTK
+
+Reduce LLM token usage by 60-90% by routing shell commands through [RTK](https://github.com/rtk-ai/rtk):
+
+```bash
+npx @soleri/cli hooks add-pack rtk
+```
+
+RTK intercepts Bash commands via a PreToolUse hook and compresses verbose output (git status, test runners, build logs, file listings) before it reaches the LLM context. Supports 70+ commands across git, JS/TS, Python, Go, Ruby, Rust, Docker, and more.
+
+**Prerequisites:** [RTK](https://github.com/rtk-ai/rtk) >= 0.23.0 (`brew install rtk-ai/tap/rtk`) and `jq`.
+
 ### Editor integration
 
 ```bash
