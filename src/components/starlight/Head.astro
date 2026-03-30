@@ -1,0 +1,70 @@
+---
+/**
+ * Custom Starlight Head component.
+ * Renders default head tags + BreadcrumbList JSON-LD structured data.
+ */
+const route = Astro.locals.starlightRoute;
+const { head } = route;
+
+const siteUrl = 'https://soleri.ai';
+const pageTitle = route.entry.data.title;
+const slug = route.slug;
+const locale = route.locale;
+
+// Build the canonical page URL.
+// Root locale pages: /docs/slug, other locales: /{locale}/docs/slug
+const pagePath = slug ? `/${slug}` : '/docs';
+const pageUrl = `${siteUrl}${pagePath}`;
+
+// Build breadcrumb items dynamically from the slug segments.
+// Example slug: "docs/guides/workflow" -> Home > Docs > Guides > Workflow
+const segments = slug ? slug.split('/') : [];
+
+// Strip locale prefix from segments if present (e.g. "uk/docs/guides/workflow")
+const localePrefix = locale && locale !== 'root' ? locale : null;
+const cleanSegments = localePrefix && segments[0] === localePrefix
+  ? segments.slice(1)
+  : segments;
+
+interface BreadcrumbItem {
+  name: string;
+  item: string;
+}
+
+const breadcrumbItems: BreadcrumbItem[] = [
+  { name: 'Home', item: siteUrl },
+];
+
+// Build intermediate breadcrumb items from path segments (excluding the last one)
+let cumulativePath = '';
+for (let i = 0; i < cleanSegments.length - 1; i++) {
+  const segment = cleanSegments[i];
+  cumulativePath += `/${segment}`;
+  // Capitalize segment for display: "docs" -> "Docs", "guides" -> "Guides"
+  const name = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+
+  // For localized pages, insert locale prefix back into the URL
+  const breadcrumbUrl = localePrefix
+    ? `${siteUrl}/${localePrefix}${cumulativePath}`
+    : `${siteUrl}${cumulativePath}`;
+
+  breadcrumbItems.push({ name, item: breadcrumbUrl });
+}
+
+// Final item: the current page with its actual title
+breadcrumbItems.push({ name: pageTitle, item: pageUrl });
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: breadcrumbItems.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: item.item,
+  })),
+};
+---
+
+{head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
+<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />

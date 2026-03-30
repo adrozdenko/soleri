@@ -40,13 +40,13 @@ const currentPath = Astro.url.pathname;
         <line x1="3" y1="18" x2="21" y2="18"/>
       </svg>
     </button>
-    <!-- Language switcher hidden until translations are ready
     <div class="lang-switcher">
-      {locales.map(l => (
-        <a href={`/${l}/`} class={l === locale ? 'active' : ''}>{localeLabels[l]}</a>
-      ))}
+      {locales.map(l => {
+        const pageName = currentPath.replace(/^\/(en|uk|it)\//, '');
+        const href = `/${l}/${pageName}`;
+        return <a href={href} class={l === locale ? 'active' : ''}>{localeLabels[l]}</a>;
+      })}
     </div>
-    -->
     <ThemeToggle />
   </div>
 </header>

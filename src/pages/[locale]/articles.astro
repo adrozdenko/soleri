@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CTA from '../../components/CTA.astro';
 import type { Locale } from '../../i18n/types';
-import { locales } from '../../i18n/types';
+import { locales, SITE_URL } from '../../i18n/types';
 import { articlesContent } from '../../i18n/pages/articles';
 import '../../styles/articles.css';
 
@@ -41,6 +41,24 @@ const c = articlesContent(locale);
 
   <div class="soleri-mark mark-section" style="margin-top:48px;"></div>
   <CTA locale={locale} />
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: c.title,
+    description: c.description,
+    url: `${SITE_URL}/${locale}/articles`,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'Soleri',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Drozd&Co',
+      url: SITE_URL,
+    },
+  })} />
 </BaseLayout>
 
 <script define:vars={{ emptyText: c.empty, emptyLinkText: c.emptyLink, readLinkText: c.readLink, errorText: c.errorLoading, lang: locale }}>

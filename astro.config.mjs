@@ -25,6 +25,7 @@ export default defineConfig({
         it: { label: 'Italiano', lang: 'it' },
       },
       components: {
+        Head: './src/components/starlight/Head.astro',
         Header: './src/components/starlight/Header.astro',
         Footer: './src/components/starlight/Footer.astro',
       },
