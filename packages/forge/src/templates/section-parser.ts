@@ -3,6 +3,8 @@
  *
  * Extracts `<!-- soleri:xxx -->` sections from the engine rules markdown,
  * enabling selective inclusion of feature modules.
+ *
+ * Single-pass: splits on `## ` headings, maps chunks to markers, filters.
  */
 
 export interface ParsedSection {
@@ -21,101 +23,72 @@ export interface ParsedContent {
   closing: string;
 }
 
-const SECTION_MARKER_RE = /^<!-- (soleri:[a-z-]+) -->$/;
-const CLOSING_MARKER_RE = /^<!-- \/soleri:engine-rules -->$/;
+const SECTION_MARKER_RE = /<!-- (soleri:[a-z-]+) -->/;
+const CLOSING_MARKER = '<!-- /soleri:engine-rules -->';
 
 /**
  * Parse marker-delimited sections from engine rules content.
- * Single pass — splits on `<!-- soleri:xxx -->` markers.
  *
- * Section markers look like `<!-- soleri:response-integrity -->` (no closing slash).
- * The outer `<!-- soleri:engine-rules -->` / `<!-- /soleri:engine-rules -->` wrapper
- * is NOT treated as a section marker.
+ * Strategy: split on `## ` heading boundaries, then classify each chunk
+ * as preamble, section (has a marker), or closing (has closing marker).
  */
 export function parseSections(content: string): ParsedContent {
-  const lines = content.split('\n');
+  // Split at each `## ` heading — lookahead preserves the heading in the chunk
+  const chunks = content.split(/(?=^## )/m);
 
-  // First pass: find all marker positions and their preceding headings
-  const markers: Array<{
-    marker: string;
-    markerLine: number;
-    headingLine: number;
-  }> = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(SECTION_MARKER_RE);
-    if (match && match[1] !== 'soleri:engine-rules') {
-      // Walk backward to find the preceding ## heading (skip empty lines)
-      let headingLine = i;
-      for (let j = i - 1; j >= 0; j--) {
-        if (lines[j].startsWith('## ')) {
-          headingLine = j;
-          break;
-        }
-        if (lines[j].trim() !== '') break;
-      }
-      markers.push({ marker: match[1], markerLine: i, headingLine });
-    }
-  }
-
-  // Find closing marker position
-  let closingLine = lines.length;
-  for (let i = lines.length - 1; i >= 0; i--) {
-    if (CLOSING_MARKER_RE.test(lines[i])) {
-      closingLine = i;
-      break;
-    }
-  }
-
-  // Extract preamble: everything before the first section's heading
-  const firstSectionStart = markers.length > 0 ? markers[0].headingLine : closingLine;
-  const preamble = lines.slice(0, firstSectionStart).join('\n');
-
-  // Extract sections
+  let preamble = '';
   const sections: ParsedSection[] = [];
-  for (let s = 0; s < markers.length; s++) {
-    const startLine = markers[s].headingLine;
-    let endLine: number;
+  let closing = '';
+  let foundFirstSection = false;
 
-    if (s + 1 < markers.length) {
-      // End is one line before the next section's heading start
-      endLine = markers[s + 1].headingLine - 1;
-    } else {
-      // Last section ends one line before the closing marker
-      endLine = closingLine - 1;
+  for (const chunk of chunks) {
+    // Check if this chunk contains the closing marker
+    const closingIdx = chunk.indexOf(CLOSING_MARKER);
+    if (closingIdx !== -1) {
+      // Content before closing marker belongs to last section or preamble
+      const beforeClosing = chunk.slice(0, closingIdx);
+      const afterClosing = chunk.slice(closingIdx);
+
+      if (beforeClosing.trim()) {
+        const markerMatch = beforeClosing.match(SECTION_MARKER_RE);
+        if (markerMatch && markerMatch[1] !== 'soleri:engine-rules') {
+          sections.push({ marker: markerMatch[1], content: beforeClosing });
+          foundFirstSection = true;
+        } else if (!foundFirstSection) {
+          preamble += beforeClosing;
+        }
+      }
+      closing = afterClosing;
+      continue;
     }
 
-    const sectionLines = lines.slice(startLine, endLine + 1);
-    // Ensure trailing blank line separator
-    const sectionContent = sectionLines.join('\n');
-
-    sections.push({
-      marker: markers[s].marker,
-      content: sectionContent,
-    });
+    // Check if chunk has a section marker
+    const markerMatch = chunk.match(SECTION_MARKER_RE);
+    if (markerMatch && markerMatch[1] !== 'soleri:engine-rules') {
+      sections.push({ marker: markerMatch[1], content: chunk });
+      foundFirstSection = true;
+    } else {
+      // No marker — this is preamble (before first section)
+      if (!foundFirstSection) {
+        preamble += chunk;
+      }
+    }
   }
-
-  // Closing: from closing marker line to end
-  const closing = lines.slice(closingLine).join('\n');
 
   return { preamble, sections, closing };
 }
 
 /**
  * Rebuild content from parsed sections, including only allowed markers.
- * Core sections and preamble are always included.
  */
 export function filterSections(parsed: ParsedContent, allowedMarkers: Set<string>): string {
   const parts: string[] = [parsed.preamble];
 
   for (const section of parsed.sections) {
     if (allowedMarkers.has(section.marker)) {
-      let sectionText = section.content;
-      // Ensure blank line separator after each included section
-      if (!sectionText.endsWith('\n')) {
-        sectionText += '\n';
-      }
-      parts.push(sectionText);
+      let text = section.content;
+      if (!text.endsWith('\n')) text += '\n';
+      parts.push(text);
     }
   }
 
