@@ -60,6 +60,7 @@ New engine features go in `@soleri/core`. The engine exposes ops via `registerEn
 | `packages/core/src/`                            | Implementation (new module or extend existing) |
 | `packages/core/src/engine/register-engine.ts`   | Register new module tool if adding one         |
 | `packages/core/src/runtime/facades/*-facade.ts` | Op definitions (handler + schema + auth)       |
+| `packages/core/src/dream/`                      | Dream module — automatic memory consolidation  |
 
 ### CLAUDE.md Composition
 
@@ -90,7 +91,7 @@ When changing user-facing behavior (CLI commands, installation flow, scaffolding
 
 | Package            | Role                                                                      | Key files                                 |
 | ------------------ | ------------------------------------------------------------------------- | ----------------------------------------- |
-| `@soleri/core`     | Knowledge Engine — vault, brain, planner, cognee, LLM, `registerEngine()` | `packages/core/src/`                      |
+| `@soleri/core`     | Knowledge Engine — vault, brain, planner, dream, LLM, `registerEngine()`  | `packages/core/src/`                      |
 | `@soleri/forge`    | Scaffold — generates file-tree agents from config                         | `packages/forge/src/scaffold-filetree.ts` |
 | `@soleri/cli`      | Developer CLI — create, install, dev, doctor, hooks                       | `packages/cli/src/`                       |
 | `create-soleri`    | npm create shorthand                                                      | `packages/create-soleri/`                 |

@@ -605,6 +605,7 @@ const ENGINE_RULES_LINES: string[] = [
   '| Debug a problem | "this is broken", "why is this failing" | `op:search_intelligent` — check vault for known bugs first |',
   '| Learn from patterns | "what works for", "recommendations" | `op:strengths` + `op:recommend` — brain-learned patterns from real usage |',
   '| Clean up knowledge | "duplicates", "clean vault", "consolidate" | `op:curator_consolidate` — automated dedup, grooming, contradiction resolution |',
+  '| Consolidate memory | "dream", "consolidate memory", "vault maintenance" | `op:dream_run` — automatic memory consolidation (runs on session start after 5+ sessions/24h, or force with `/dream`) |',
   '| Summarize session | "what did we accomplish", "wrap up" | `op:session_capture` — structured capture with knowledge extraction |',
   '| Explore capabilities | "what can you do", "help", "features" | List capabilities by category, not raw op names |',
   '',

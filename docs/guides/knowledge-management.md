@@ -7,15 +7,16 @@ Your agent learns from every session. This guide explains how to feed it, train 
 Every session follows the same cycle:
 
 ```
-Search → Work → Capture → Curate → Repeat
+Search → Work → Capture → Curate → Dream → Repeat
 ```
 
 1. **Search** the vault before making decisions
 2. **Work** on the task — the agent uses vault knowledge automatically
 3. **Capture** what you learned (patterns, anti-patterns, decisions)
 4. **Curate** periodically — groom, deduplicate, resolve contradictions
+5. **Dream** automatically — after 5+ sessions, the engine consolidates memory in the background
 
-The more you capture, the smarter the next session gets.
+The more you capture, the smarter the next session gets. The dream cycle ensures memory stays clean as sessions accumulate.
 
 ## Starting a Session
 
@@ -231,6 +232,62 @@ For deep cleanup — removes confirmed duplicates and archives stale entries:
 
 Always dry-run first. Review what would be removed, then run with `dryRun: false`.
 
+## Dream — Automatic Memory Consolidation
+
+The dream module runs the full curator pipeline automatically, so you don't have to remember to curate manually. Inspired by how the brain consolidates memories during REM sleep.
+
+### How it works
+
+Every `session_start` increments a dream counter. When two conditions are met, the engine auto-dreams in the background:
+
+- **5+ sessions** since last dream
+- **24+ hours** since last dream
+
+The dream pass runs: dedup, archive stale entries (>90 days), detect contradictions — then resets the counter.
+
+### Manual dream
+
+Force a dream anytime with the `/dream` skill or directly:
+
+```
+{agent}_dream op:dream_run params:{ force: true }
+```
+
+### Check dream status
+
+```
+{agent}_dream op:dream_status
+```
+
+Returns: sessions since last dream, last dream timestamp, total dreams, gate eligibility.
+
+### Check gate conditions
+
+```
+{agent}_dream op:dream_check_gate
+```
+
+Returns whether auto-dream would trigger on the next session start.
+
+### Dream report
+
+After a dream run, you get:
+
+| Metric | Description |
+| --- | --- |
+| `duplicatesFound` | Entries removed as duplicates |
+| `staleArchived` | Entries archived (unchanged >90 days) |
+| `contradictionsFound` | Pattern/anti-pattern conflicts detected |
+| `durationMs` | How long the dream took |
+| `totalDreams` | Lifetime dream count |
+
+### When to force a dream
+
+- After a heavy capture session (10+ new entries)
+- Before a major planning session (clean vault = better recommendations)
+- When vault health score drops below 70
+- After importing external knowledge (`ingest_url`, `ingest_batch`)
+
 ## Linking Knowledge (Zettelkasten)
 
 Entries are more valuable when connected. The vault supports bidirectional links:
@@ -337,12 +394,13 @@ Set a preset:
 
 ### Every session
 
-| When            | Op                      | Why                      |
-| --------------- | ----------------------- | ------------------------ |
-| Start           | `register`              | Load project context     |
-| Before deciding | `search` or `recommend` | Check existing knowledge |
-| After learning  | `capture_knowledge`     | Persist the insight      |
-| End of session  | `session_capture`       | Save session context     |
+| When            | Op                      | Why                          |
+| --------------- | ----------------------- | ---------------------------- |
+| Start           | `register`              | Load project context         |
+| Start (auto)    | `dream_check_gate`      | Auto-dream if gate conditions met |
+| Before deciding | `search` or `recommend` | Check existing knowledge     |
+| After learning  | `capture_knowledge`     | Persist the insight          |
+| End of session  | `session_capture`       | Save session context         |
 
 ### Weekly
 
@@ -351,6 +409,14 @@ Set a preset:
 | Monday          | `curator_health_audit` | Check vault quality  |
 | When score < 70 | `curator_groom_all`    | Clean up entries     |
 | After grooming  | `build_intelligence`   | Rebuild brain scores |
+
+### Automatic (every 5+ sessions / 24h)
+
+| When | Op | Why |
+| --- | --- | --- |
+| Session start | `dream_run` (auto) | Consolidate memory in background |
+| On demand | `dream_run` (force) | Force cleanup before heavy work |
+| Check status | `dream_status` | See when last dream ran |
 
 ### Monthly
 
