@@ -93,7 +93,7 @@ When the task is done, let the agent close the loop:
 >
 > **Agent:** _Plan complete. Accuracy: 95%. 1 pattern extracted from this session._
 
-The agent reconciles what was planned vs what happened, records the session, and extracts any patterns it detected. This feeds the brain — next time someone plans similar work, the recommendations will be better.
+The agent reconciles what was planned vs what happened using git evidence, tracks which tasks were clean first-try vs needed rework, records the session, and extracts patterns. Clean tasks strengthen brain patterns; tasks that needed 2+ fix iterations are flagged as anti-patterns. This feeds the brain — next time someone plans similar work, the recommendations will be better.
 
 For quick tasks without a plan, this step is just the capture from Step 4. The knowledge still enters the vault and feeds the compound loop.
 

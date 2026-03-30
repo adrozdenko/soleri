@@ -354,7 +354,7 @@ High-level plan-execute-complete lifecycle, project management, and playbooks.
 | `register`                  | write | Register a project with the orchestrator.                   |
 | `orchestrate_plan`          | write | Create an orchestrated plan with vault + brain context.     |
 | `orchestrate_execute`       | write | Start executing an orchestrated plan.                       |
-| `orchestrate_complete`      | write | Complete with epilogue — capture knowledge, record session. |
+| `orchestrate_complete`      | write | Complete with epilogue — evidence report, fix-trail quality signals, knowledge capture, session record. |
 | `orchestrate_status`        | read  | Current orchestration state.                                |
 | `orchestrate_quick_capture` | write | Quick-capture knowledge during orchestration.               |
 

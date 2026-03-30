@@ -462,6 +462,8 @@ const ENGINE_RULES_LINES: string[] = [
   '- Knowledge to vault (patterns learned, decisions made)',
   '- Session summary (what was done, files changed)',
   "- Brain feedback (what worked, what didn't)",
+  '- Evidence report — git diff vs plan tasks (accuracy score, verdicts per task)',
+  '- Fix-trail quality signals — clean first-try tasks strengthen brain patterns, high-rework tasks (2+ fix iterations) flag anti-patterns',
   '',
   'Without completion, the knowledge trail is lost. The code is in git, but the WHY disappears.',
   '',

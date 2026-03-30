@@ -7,7 +7,7 @@ Your agent builds a profile of you as you work together. This is not surveillanc
 
 ## How it works
 
-Operator learning happens automatically during `orchestrate_complete` — the step that runs at the end of every task (see [The Agent Workflow](/docs/guides/workflow/) for the full task lifecycle). The agent fills an `operatorSignals` field with observations from the session:
+Operator learning happens automatically during `orchestrate_complete` — the step that runs at the end of every task (see [The Agent Workflow](/docs/guides/workflow/) for the full task lifecycle). This step also runs git-based evidence collection, tracks fix iterations per task, and records quality signals to the brain (clean first-try tasks strengthen patterns, high-rework tasks flag anti-patterns). The agent fills an `operatorSignals` field with observations from the session:
 
 | Signal type     | What it captures                                              | Example                                                |
 | --------------- | ------------------------------------------------------------- | ------------------------------------------------------ |
