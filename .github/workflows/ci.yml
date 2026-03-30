@@ -157,11 +157,15 @@ jobs:
       - name: Run tests
         run: npm run test --workspace=${{ matrix.package }}
 
-  # ─── Windows tests (core + CLI unit tests) ───────────────────────
-  test-windows:
-    name: Test Windows (Core + CLI)
-    runs-on: windows-latest
-    timeout-minutes: 10
+  # ─── Cross-platform tests (Linux, Windows, macOS) ────────────────
+  test-cross-platform:
+    name: Test ${{ matrix.os }} (Core + Forge + CLI)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -173,6 +177,7 @@ jobs:
       - run: npm run build --workspace=@soleri/forge
       - run: npm run build --workspace=@soleri/cli
       - run: npm run test --workspace=@soleri/core
+      - run: npm run test --workspace=@soleri/forge
       - run: npm run test --workspace=@soleri/cli
 
   # ─── E2E tests (full build, virgin environment) ──────────────────
