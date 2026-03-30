@@ -295,9 +295,9 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
         const filePath = targetPath ?? join(projectPath, 'CLAUDE.md');
         const existingContent = existsSync(filePath) ? readFileSync(filePath, 'utf-8') : '';
 
-        // Inject engine rules if this is a global injection and agentDir is available
+        // Inject engine rules only for project-level injection (NOT global)
         let contentWithEngineRules = existingContent;
-        if (isGlobal && config.agentDir) {
+        if (!isGlobal && config.agentDir) {
           const enginePath = join(config.agentDir, 'instructions', '_engine.md');
           if (existsSync(enginePath)) {
             const engineRulesContent = readFileSync(enginePath, 'utf-8');
@@ -460,14 +460,59 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
           }
         }
 
+        // 4. Self-healing: strip engine rules from global CLAUDE.md if present
+        const selfHealing = { engineRulesRemoved: false, agentsMdEngineRulesRemoved: false };
+        if (install) {
+          const globalClaudeMdPath = join(globalClaudeDir, 'CLAUDE.md');
+          if (existsSync(globalClaudeMdPath)) {
+            const globalContent = readFileSync(globalClaudeMdPath, 'utf-8');
+            if (globalContent.includes('<!-- soleri:engine-rules -->')) {
+              const startIdx = globalContent.indexOf('<!-- soleri:engine-rules -->');
+              const endIdx = globalContent.indexOf('<!-- /soleri:engine-rules -->');
+              if (endIdx !== -1) {
+                const before = globalContent.slice(0, startIdx).replace(/\n+$/, '');
+                const after = globalContent
+                  .slice(endIdx + '<!-- /soleri:engine-rules -->'.length)
+                  .replace(/^\n+/, '');
+                const cleaned = before + (before && after ? '\n\n' : '') + after;
+                writeFileSync(globalClaudeMdPath, cleaned || '', 'utf-8');
+                selfHealing.engineRulesRemoved = true;
+              }
+            }
+          }
+
+          const globalAgentsMdPath = join(homedir(), '.config', 'opencode', 'AGENTS.md');
+          if (existsSync(globalAgentsMdPath)) {
+            const agentsMdContent = readFileSync(globalAgentsMdPath, 'utf-8');
+            if (agentsMdContent.includes('<!-- soleri:engine-rules -->')) {
+              const startIdx = agentsMdContent.indexOf('<!-- soleri:engine-rules -->');
+              const endIdx = agentsMdContent.indexOf('<!-- /soleri:engine-rules -->');
+              if (endIdx !== -1) {
+                const before = agentsMdContent.slice(0, startIdx).replace(/\n+$/, '');
+                const after = agentsMdContent
+                  .slice(endIdx + '<!-- /soleri:engine-rules -->'.length)
+                  .replace(/^\n+/, '');
+                const cleaned = before + (before && after ? '\n\n' : '') + after;
+                writeFileSync(globalAgentsMdPath, cleaned || '', 'utf-8');
+                selfHealing.agentsMdEngineRulesRemoved = true;
+              }
+            }
+          }
+        }
+
         return {
           dryRun: !install,
           agentId: config.agentId,
           hookifyRules: hookifyResults,
           skills: skillsResults,
           settingsJson: settingsResults,
+          selfHealing,
           ...(install
-            ? { message: 'Global setup complete' }
+            ? {
+                message: selfHealing.engineRulesRemoved
+                  ? 'Global setup complete (engine rules removed from global CLAUDE.md)'
+                  : 'Global setup complete',
+              }
             : { message: 'Dry run — pass install: true to apply' }),
         };
       },

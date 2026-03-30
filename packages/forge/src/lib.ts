@@ -30,11 +30,19 @@ export {
 export type { FileTreeScaffoldResult } from './scaffold-filetree.js';
 export { AgentYamlSchema, TONES } from './agent-schema.js';
 export type { AgentYaml, AgentYamlInput } from './agent-schema.js';
-export { composeClaudeMd } from './compose-claude-md.js';
+export {
+  composeClaudeMd,
+  extractUserCustomZone,
+  injectUserCustomZone,
+} from './compose-claude-md.js';
 export type { ComposedClaudeMd, ToolEntry } from './compose-claude-md.js';
 export { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
 export { generateClaudeMdTemplate } from './templates/claude-md-template.js';
-export { getEngineRulesContent, getEngineMarker } from './templates/shared-rules.js';
+export {
+  getEngineRulesContent,
+  getEngineMarker,
+  getModularEngineRules,
+} from './templates/shared-rules.js';
 export { generateInjectClaudeMd } from './templates/inject-claude-md.js';
 export { generateSkills } from './templates/skills.js';
 export { generateTelegramBot } from './templates/telegram-bot.js';

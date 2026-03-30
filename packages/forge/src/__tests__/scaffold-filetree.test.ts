@@ -6,11 +6,16 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { parse as parseYaml } from 'yaml';
 import { scaffoldFileTree } from '../scaffold-filetree.js';
+import {
+  composeClaudeMd,
+  extractUserCustomZone,
+  injectUserCustomZone,
+} from '../compose-claude-md.js';
 
 let tempDir: string;
 
@@ -576,5 +581,141 @@ describe('scaffoldFileTree', () => {
     const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
     expect(claudeMd).not.toContain('## Workspaces');
     expect(claudeMd).not.toContain('## Task Routing');
+  });
+
+  // ─── User Custom Zone Tests (integration) ─────────────────────
+
+  it('includes default user:custom block in scaffolded CLAUDE.md', () => {
+    const result = scaffoldFileTree({ ...MINIMAL_CONFIG, id: 'custom-zone-test' }, tempDir);
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    expect(claudeMd).toContain('<!-- user:custom -->');
+    expect(claudeMd).toContain('<!-- /user:custom -->');
+    expect(claudeMd).toContain('This section survives regeneration');
+  });
+
+  it('preserves user:custom content across regeneration', () => {
+    const result = scaffoldFileTree({ ...MINIMAL_CONFIG, id: 'preserve-zone-test' }, tempDir);
+    expect(result.success).toBe(true);
+
+    // Write custom content into the user:custom zone
+    const claudeMdPath = join(result.agentDir, 'CLAUDE.md');
+    const original = readFileSync(claudeMdPath, 'utf-8');
+    const customContent = [
+      '<!-- user:custom -->',
+      '## My Custom Rules',
+      '',
+      'Always greet the user in Spanish.',
+      '<!-- /user:custom -->',
+    ].join('\n');
+    const modified = original.replace(
+      /<!-- user:custom -->[\s\S]*?<!-- \/user:custom -->/,
+      customContent,
+    );
+    writeFileSync(claudeMdPath, modified, 'utf-8');
+
+    // Re-compose (simulating `soleri dev` regeneration)
+    const { content: regenerated } = composeClaudeMd(result.agentDir);
+
+    // Custom content survived
+    expect(regenerated).toContain('Always greet the user in Spanish.');
+    expect(regenerated).toContain('<!-- user:custom -->');
+    expect(regenerated).toContain('<!-- /user:custom -->');
+  });
+
+  it('user:custom block appears before engine-rules-ref', () => {
+    const result = scaffoldFileTree({ ...MINIMAL_CONFIG, id: 'zone-position-test' }, tempDir);
+    expect(result.success).toBe(true);
+
+    const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
+    const customIdx = claudeMd.indexOf('<!-- user:custom -->');
+    const engineIdx = claudeMd.indexOf('<!-- soleri:engine-rules-ref -->');
+
+    // Both should exist
+    expect(customIdx).toBeGreaterThan(-1);
+    expect(engineIdx).toBeGreaterThan(-1);
+
+    // Custom zone should come before engine rules ref
+    expect(customIdx).toBeLessThan(engineIdx);
+  });
+});
+
+// ─── User Custom Zone Helper Unit Tests ──────────────────────────────
+
+describe('extractUserCustomZone', () => {
+  it('extracts content between markers', () => {
+    const content = [
+      '# Agent Mode',
+      '',
+      '<!-- user:custom -->',
+      '## My Rules',
+      'Do X always.',
+      '<!-- /user:custom -->',
+      '',
+      '## Other Section',
+    ].join('\n');
+
+    const result = extractUserCustomZone(content);
+    expect(result).toBe('<!-- user:custom -->\n## My Rules\nDo X always.\n<!-- /user:custom -->');
+  });
+
+  it('returns null when no markers present', () => {
+    expect(extractUserCustomZone('# Just a heading\nSome content.')).toBeNull();
+  });
+
+  it('returns null when only opening marker present', () => {
+    expect(extractUserCustomZone('<!-- user:custom -->\nContent without close')).toBeNull();
+  });
+
+  it('handles empty zone between markers', () => {
+    const content = '<!-- user:custom -->\n<!-- /user:custom -->';
+    const result = extractUserCustomZone(content);
+    expect(result).toBe(content);
+  });
+});
+
+describe('injectUserCustomZone', () => {
+  it('replaces existing user:custom block', () => {
+    const content = [
+      '# Header',
+      '<!-- user:custom -->',
+      'old content',
+      '<!-- /user:custom -->',
+      '## Footer',
+    ].join('\n');
+
+    const newZone = '<!-- user:custom -->\nnew content\n<!-- /user:custom -->';
+    const result = injectUserCustomZone(content, newZone);
+
+    expect(result).toContain('new content');
+    expect(result).not.toContain('old content');
+    expect(result).toContain('## Footer');
+  });
+
+  it('inserts before engine-rules-ref when no existing block', () => {
+    const content = [
+      '# Header',
+      '',
+      '<!-- soleri:engine-rules-ref -->',
+      'engine stuff',
+      '<!-- /soleri:engine-rules-ref -->',
+    ].join('\n');
+
+    const zone = '<!-- user:custom -->\ncustom\n<!-- /user:custom -->';
+    const result = injectUserCustomZone(content, zone);
+
+    const customIdx = result.indexOf('<!-- user:custom -->');
+    const engineIdx = result.indexOf('<!-- soleri:engine-rules-ref -->');
+    expect(customIdx).toBeLessThan(engineIdx);
+  });
+
+  it('appends at end when no existing block and no engine ref', () => {
+    const content = '# Header\n\nSome content\n';
+    const zone = '<!-- user:custom -->\ncustom\n<!-- /user:custom -->';
+    const result = injectUserCustomZone(content, zone);
+
+    expect(result).toContain(zone);
+    expect(result.indexOf(zone)).toBeGreaterThan(content.indexOf('Some content'));
   });
 });
