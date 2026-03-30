@@ -19,6 +19,9 @@ docs/vault/*
 !docs/vault/README.md
 !docs/vault/_schema.md
 
+# Vault session exports (auto-generated, can land in package dirs)
+**/docs/vault/
+
 # Workspace builds
 packages/*/dist/
 packages/*/node_modules/
