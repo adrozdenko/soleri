@@ -18,6 +18,7 @@ import { TaskCheckout } from './task-checkout.js';
 import { WorkspaceResolver } from './workspace-resolver.js';
 import { ConcurrencyManager } from './concurrency-manager.js';
 import { OrphanReaper } from './orphan-reaper.js';
+import type { ReapResult } from './orphan-reaper.js';
 import { aggregate } from './result-aggregator.js';
 import type { GoalRepository } from '../planning/goal-ancestry.js';
 import { GoalAncestry } from '../planning/goal-ancestry.js';
@@ -78,31 +79,36 @@ export class SubagentDispatcher {
     // Resolve dependency order
     const ordered = this.resolveDependencies(tasks);
 
-    if (parallel) {
-      // Run independent tasks in parallel, respecting dependencies
-      const results = await this.dispatchParallel(ordered, {
-        maxConcurrent,
-        worktreeIsolation,
-        timeout,
-        onTaskUpdate,
-      });
+    try {
+      if (parallel) {
+        // Run independent tasks in parallel, respecting dependencies
+        const results = await this.dispatchParallel(ordered, {
+          maxConcurrent,
+          worktreeIsolation,
+          timeout,
+          onTaskUpdate,
+        });
+        return aggregate(results);
+      }
+
+      // Sequential dispatch — await in loop is intentional (tasks must run one at a time)
+      const results: SubagentResult[] = [];
+      for (const task of ordered) {
+        // eslint-disable-line no-await-in-loop
+        onTaskUpdate?.(task.taskId, 'running');
+        const result = await this.executeTask(task, worktreeIsolation, timeout);
+        results.push(result);
+        onTaskUpdate?.(task.taskId, result.status);
+
+        // Stop on failure in sequential mode
+        if (result.exitCode !== 0) break;
+      }
+
       return aggregate(results);
+    } finally {
+      // Event-driven orphan reaping: sweep after every dispatch cycle
+      this.reaper.reap();
     }
-
-    // Sequential dispatch — await in loop is intentional (tasks must run one at a time)
-    const results: SubagentResult[] = [];
-    for (const task of ordered) {
-      // eslint-disable-line no-await-in-loop
-      onTaskUpdate?.(task.taskId, 'running');
-      const result = await this.executeTask(task, worktreeIsolation, timeout);
-      results.push(result);
-      onTaskUpdate?.(task.taskId, result.status);
-
-      // Stop on failure in sequential mode
-      if (result.exitCode !== 0) break;
-    }
-
-    return aggregate(results);
   }
 
   /** Clean up all resources (worktrees, claims, concurrency) */
@@ -114,16 +120,8 @@ export class SubagentDispatcher {
   }
 
   /** Run orphan detection and cleanup */
-  reapOrphans(): SubagentResult[] {
-    const orphaned = this.reaper.reap();
-    return orphaned.map((p) => ({
-      taskId: p.taskId,
-      status: 'orphaned' as const,
-      exitCode: 1,
-      error: `Process ${p.pid} died unexpectedly`,
-      durationMs: Date.now() - p.registeredAt,
-      pid: p.pid,
-    }));
+  reapOrphans(): ReapResult {
+    return this.reaper.reap();
   }
 
   // ── Internal ──────────────────────────────────────────────────────

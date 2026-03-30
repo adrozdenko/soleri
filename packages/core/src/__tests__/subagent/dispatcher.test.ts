@@ -154,11 +154,11 @@ describe('SubagentDispatcher', () => {
     dispatcher.cleanup();
   });
 
-  it('reapOrphans() returns orphaned results when processes are dead', () => {
+  it('reapOrphans() returns ReapResult with empty arrays when no processes tracked', () => {
     // reapOrphans delegates to the internal OrphanReaper
-    // Without registering processes, it should return empty
-    const orphaned = dispatcher.reapOrphans();
-    expect(orphaned).toEqual([]);
+    // Without registering processes, it should return empty reaped/alive
+    const result = dispatcher.reapOrphans();
+    expect(result).toEqual({ reaped: [], alive: [] });
   });
 
   it('dispatch() stops on first failure in sequential mode', async () => {

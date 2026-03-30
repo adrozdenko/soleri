@@ -28,7 +28,7 @@ describe('OrphanReaper', () => {
     expect(reaper.listTracked()).toHaveLength(0);
   });
 
-  it('reap() returns empty when all processes are alive', () => {
+  it('reap() returns empty reaped when all processes are alive', () => {
     // process.kill(pid, 0) succeeds = process alive
     killSpy.mockImplementation(() => true);
 
@@ -36,8 +36,9 @@ describe('OrphanReaper', () => {
     reaper.register(1234, 'task-1');
     reaper.register(5678, 'task-2');
 
-    const reaped = reaper.reap();
-    expect(reaped).toHaveLength(0);
+    const result = reaper.reap();
+    expect(result.reaped).toHaveLength(0);
+    expect(result.alive).toEqual(['task-1', 'task-2']);
     expect(reaper.listTracked()).toHaveLength(2);
   });
 
@@ -51,10 +52,9 @@ describe('OrphanReaper', () => {
     const reaper = new OrphanReaper();
     reaper.register(1234, 'task-1');
 
-    const reaped = reaper.reap();
-    expect(reaped).toHaveLength(1);
-    expect(reaped[0].taskId).toBe('task-1');
-    expect(reaped[0].pid).toBe(1234);
+    const result = reaper.reap();
+    expect(result.reaped).toEqual(['task-1']);
+    expect(result.alive).toHaveLength(0);
     // Dead process should be removed from tracking
     expect(reaper.isTracked(1234)).toBe(false);
   });
@@ -84,8 +84,9 @@ describe('OrphanReaper', () => {
     const reaper = new OrphanReaper();
     reaper.register(1234, 'task-1');
 
-    const reaped = reaper.reap();
-    expect(reaped).toHaveLength(0);
+    const result = reaper.reap();
+    expect(result.reaped).toHaveLength(0);
+    expect(result.alive).toEqual(['task-1']);
     expect(reaper.isTracked(1234)).toBe(true);
   });
 
@@ -132,9 +133,9 @@ describe('OrphanReaper', () => {
     reaper.register(1234, 'task-alive');
     reaper.register(5678, 'task-dead');
 
-    const reaped = reaper.reap();
-    expect(reaped).toHaveLength(1);
-    expect(reaped[0].taskId).toBe('task-dead');
+    const result = reaper.reap();
+    expect(result.reaped).toEqual(['task-dead']);
+    expect(result.alive).toEqual(['task-alive']);
     expect(reaper.isTracked(1234)).toBe(true);
     expect(reaper.isTracked(5678)).toBe(false);
   });

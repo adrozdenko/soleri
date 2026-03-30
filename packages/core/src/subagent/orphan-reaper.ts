@@ -9,6 +9,14 @@
 
 import type { TrackedProcess } from './types.js';
 
+/** Result of a reap cycle. */
+export interface ReapResult {
+  /** Task IDs of processes that were found dead and cleaned up. */
+  reaped: string[];
+  /** Task IDs of processes that are still alive. */
+  alive: string[];
+}
+
 export class OrphanReaper {
   private readonly tracked = new Map<number, TrackedProcess>();
   private readonly onOrphan?: (taskId: string, pid: number) => void;
@@ -29,20 +37,24 @@ export class OrphanReaper {
 
   /**
    * Check each tracked PID for liveness. Dead processes are removed from
-   * tracking, the onOrphan callback is invoked, and they are returned.
+   * tracking, the onOrphan callback is invoked, and the result summarises
+   * which task IDs were reaped vs still alive.
    */
-  reap(): TrackedProcess[] {
-    const reaped: TrackedProcess[] = [];
+  reap(): ReapResult {
+    const reaped: string[] = [];
+    const alive: string[] = [];
 
     for (const [pid, entry] of this.tracked) {
       if (!this.isAlive(pid)) {
         this.tracked.delete(pid);
         this.onOrphan?.(entry.taskId, pid);
-        reaped.push(entry);
+        reaped.push(entry.taskId);
+      } else {
+        alive.push(entry.taskId);
       }
     }
 
-    return reaped;
+    return { reaped, alive };
   }
 
   /** Return all currently tracked processes. */
