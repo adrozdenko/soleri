@@ -18,6 +18,9 @@ const SOLERI_HOME = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
 
 type Target = 'claude' | 'codex' | 'opencode' | 'both' | 'all';
 
+/** Normalize a file path to forward slashes (POSIX) for cross-platform config files. */
+export const toPosix = (p: string): string => p.replace(/\\/g, '/');
+
 /**
  * Resolve the absolute path to the soleri-engine binary.
  * Falls back to `npx @soleri/engine` if resolution fails (e.g. not installed globally).
@@ -35,17 +38,18 @@ function resolveEngineBin(): { command: string; bin: string } {
 /** MCP server entry for file-tree agents (resolved engine path, no npx) */
 function fileTreeMcpEntry(agentDir: string): Record<string, unknown> {
   const engine = resolveEngineBin();
+  const agentYaml = toPosix(join(agentDir, 'agent.yaml'));
   if (engine.command === 'node') {
     return {
       type: 'stdio',
       command: 'node',
-      args: [engine.bin, '--agent', join(agentDir, 'agent.yaml')],
+      args: [toPosix(engine.bin), '--agent', agentYaml],
     };
   }
   return {
     type: 'stdio',
     command: 'npx',
-    args: ['@soleri/engine', '--agent', join(agentDir, 'agent.yaml')],
+    args: ['@soleri/engine', '--agent', agentYaml],
   };
 }
 
@@ -54,7 +58,7 @@ function legacyMcpEntry(agentDir: string): Record<string, unknown> {
   return {
     type: 'stdio',
     command: 'node',
-    args: [join(agentDir, 'dist', 'index.js')],
+    args: [toPosix(join(agentDir, 'dist', 'index.js'))],
     env: {},
   };
 }
@@ -127,15 +131,16 @@ function installCodex(agentId: string, agentDir: string, isFileTree: boolean): v
 
   let section: string;
   if (isFileTree) {
-    const agentYamlPath = join(agentDir, 'agent.yaml');
+    const agentYamlPath = toPosix(join(agentDir, 'agent.yaml'));
     const engine = resolveEngineBin();
     if (engine.command === 'node') {
-      section = `\n\n${sectionHeader}\ncommand = "node"\nargs = ["${engine.bin}", "--agent", "${agentYamlPath}"]\n`;
+      const bin = toPosix(engine.bin);
+      section = `\n\n${sectionHeader}\ncommand = "node"\nargs = ["${bin}", "--agent", "${agentYamlPath}"]\n`;
     } else {
       section = `\n\n${sectionHeader}\ncommand = "npx"\nargs = ["@soleri/engine", "--agent", "${agentYamlPath}"]\n`;
     }
   } else {
-    const entryPoint = join(agentDir, 'dist', 'index.js');
+    const entryPoint = toPosix(join(agentDir, 'dist', 'index.js'));
     section = `\n\n${sectionHeader}\ncommand = "node"\nargs = ["${entryPoint}"]\n`;
   }
 
@@ -173,17 +178,18 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
   const servers = config.mcp as Record<string, unknown>;
   if (isFileTree) {
     const engine = resolveEngineBin();
+    const agentYaml = toPosix(join(agentDir, 'agent.yaml'));
     servers[agentId] = {
       type: 'local',
       command:
         engine.command === 'node'
-          ? ['node', engine.bin, '--agent', join(agentDir, 'agent.yaml')]
-          : ['npx', '-y', '@soleri/engine', '--agent', join(agentDir, 'agent.yaml')],
+          ? ['node', toPosix(engine.bin), '--agent', agentYaml]
+          : ['npx', '-y', '@soleri/engine', '--agent', agentYaml],
     };
   } else {
     servers[agentId] = {
       type: 'local',
-      command: ['node', join(agentDir, 'dist', 'index.js')],
+      command: ['node', toPosix(join(agentDir, 'dist', 'index.js'))],
     };
   }
 
@@ -202,7 +208,10 @@ function escapeRegExp(s: string): string {
 function installLauncher(agentId: string, agentDir: string): void {
   // Launcher scripts to /usr/local/bin are Unix-only
   if (process.platform === 'win32') {
-    p.log.info('Launcher scripts are not supported on Windows — skipping');
+    p.log.info('Launcher scripts are not supported on Windows.');
+    p.log.info(
+      `On Windows, run your agent with: npx @soleri/cli dev --agent "${toPosix(agentDir)}"`,
+    );
     return;
   }
 
@@ -212,7 +221,7 @@ function installLauncher(agentId: string, agentDir: string): void {
     '#!/bin/bash',
     `# ${agentId} — Soleri second brain launcher`,
     `# Type "${agentId}" from any directory to open Claude Code with this agent`,
-    `exec claude --mcp-config ${join(agentDir, '.mcp.json')}`,
+    `exec claude --mcp-config ${toPosix(join(agentDir, '.mcp.json'))}`,
     '',
   ].join('\n');
 
@@ -222,7 +231,7 @@ function installLauncher(agentId: string, agentDir: string): void {
   } catch {
     p.log.warn(`Could not create launcher at ${binPath} (may need sudo)`);
     p.log.info(
-      `To create manually: sudo bash -c 'cat > ${binPath} << "EOF"\\n#!/bin/bash\\nexec claude --mcp-config ${join(agentDir, '.mcp.json')}\\nEOF' && chmod +x ${binPath}`,
+      `To create manually: sudo bash -c 'cat > ${binPath} << "EOF"\\n#!/bin/bash\\nexec claude --mcp-config ${toPosix(join(agentDir, '.mcp.json'))}\\nEOF' && chmod +x ${binPath}`,
     );
   }
 }
