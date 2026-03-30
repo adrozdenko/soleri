@@ -8,9 +8,35 @@ description: >
 
 # Subagent-Driven Development
 
-Decompose work into isolated units, dispatch subagents via the Agent tool, merge results back. You are the controller — you never implement, you orchestrate.
+Decompose work into isolated units, dispatch subagents via the Agent tool, merge results back. You are the orchestrator — you make all decisions, subagents execute.
 
 **Announce at start:** "I'm using the subagent-driven-development skill to dispatch isolated agents."
+
+## The Orchestrator Contract
+
+**You are the boss. Subagents are the crew.**
+
+1. **All decisions stay with the orchestrator.** Research the task, consult the vault, decide the approach. Subagents receive exact specs — scope, file boundaries, acceptance criteria. They execute, they don't decide.
+2. **Subagents MUST NOT create plans.** Only the orchestrator creates plans. Subagent prompts must explicitly state: "Do NOT create plans, do NOT call planning tools."
+3. **If a subagent hits ambiguity, it returns — it doesn't guess.** The orchestrator resolves, then re-dispatches.
+4. **The orchestrator reconciles all work.** After subagents return, the orchestrator reviews changes, merges, captures knowledge.
+
+## Hybrid Agent Routing
+
+Not all subagents are equal. Route by complexity:
+
+| Signal | Agent Type | Why |
+|--------|-----------|-----|
+| Single file, clear spec, no decisions | **Claude Code worker** | Fast, low overhead |
+| Approach already in parent plan | **Claude Code worker** | Spec is decided |
+| 3+ files, cross-cutting concerns | **Soleri agent instance** | Needs vault, brain, lifecycle |
+| Unresolved design decisions | **Soleri agent instance** | Needs judgment |
+| New dependencies or architecture | **Soleri agent instance** | Needs full context |
+
+**User overrides:**
+- "Use full agent for everything" → all Soleri agent instances
+- "Just use workers" → all Claude Code workers
+- Default: hybrid routing
 
 ## When to Dispatch
 
@@ -25,47 +51,84 @@ Decompose work into isolated units, dispatch subagents via the Agent tool, merge
 
 ## The Process
 
-### Step 1: Decompose
+### Step 1: Research & Decide (Orchestrator only)
 
-Break work into discrete units. For each, determine: files involved, dependencies on other units, conflict risk. Only units with no file overlap and no inter-dependency qualify for dispatch.
+Read all relevant files. Consult the vault for patterns. Make every design decision. Define the exact spec for each subagent task: files to touch, approach to use, acceptance criteria.
 
-### Step 2: Dispatch with Worktree Isolation
+### Step 2: Decompose & Route
+
+Break work into discrete units. For each, determine: files involved, dependencies on other units, conflict risk, complexity. Assign agent type per the routing table.
+
+### Step 3: Dispatch
+
+Present the dispatch table to the user:
 
 ```
-Agent(prompt: "<task prompt>", isolation: "worktree")
+## Dispatching N tasks in parallel
+
+| # | Task | Agent | Why |
+|---|------|-------|-----|
+| 1 | Description | Worker / Instance | Routing reason |
 ```
 
-Each subagent prompt must include: (1) task scope, (2) file boundaries, (3) acceptance criteria, (4) rules — no commits, no out-of-scope changes, run tests before reporting.
+Each subagent prompt must include:
+- Task scope and file boundaries
+- Acceptance criteria
+- "Do NOT create plans. Do NOT make design decisions. Execute this spec exactly."
+- For Soleri instances: "Activate, execute, run orchestrate_complete when done."
 
 Launch all independent subagents in a **single message** so they run in parallel.
+Use `isolation: "worktree"` for file-modifying tasks.
 
-### Step 3: Review and Merge
+### Step 4: Review and Merge
 
 For each returning subagent:
 
 1. **Review** — read actual file changes (do not trust self-reports alone), verify tests pass, check scope compliance
 2. **Merge** — `git merge` or `git cherry-pick` from the worktree branch, one at a time
 3. **Test** — run the full suite after each merge; only proceed if green
-4. **Conflicts** — resolve manually, re-run tests, capture as anti-pattern for future planning
+4. **Conflicts** — resolve manually, re-run tests, capture as anti-pattern
 
-After all merges, capture learnings:
+### Step 5: Reconcile & Report
 
+After all merges, report to the user:
+
+**Minimal (default):**
 ```
-YOUR_AGENT_core op:capture_quick params:{
-  title: "subagent dispatch outcome",
-  description: "<which tasks parallelized well, which conflicted>"
-}
+✓ N/N complete. M patterns captured to vault.
+  → Decisions: [any design decisions the orchestrator made]
 ```
+
+**Detailed (on request):**
+```
+| # | Task | Agent | Status | Knowledge |
+|---|------|-------|--------|-----------|
+| 1 | Desc | Worker | Done ✓ | — |
+| 2 | Desc | Instance | Done ✓ | 2 patterns |
+```
+
+Capture learnings to vault. Run `orchestrate_complete` for the parent plan.
+
+## Worktree Cleanup Guarantee
+
+Three layers — nothing accumulates:
+
+1. **Per-task:** `finally` block in dispatcher removes worktree after each task
+2. **Per-batch:** `cleanupAll()` runs after all subagents complete
+3. **Per-session:** `SessionStart` hook prunes orphaned worktrees
 
 ## Anti-Patterns
 
 | Anti-Pattern                                 | Why It Fails                                  |
 | -------------------------------------------- | --------------------------------------------- |
+| Subagent creating its own plan               | Stale plans accumulate, lifecycle never completes |
+| Subagent making design decisions             | Inconsistent approaches, orchestrator loses control |
 | Dispatching for a 5-line fix                 | Startup overhead exceeds the work             |
 | Parallel dispatch of dependent tasks         | Second agent works on stale assumptions       |
 | Skipping worktree isolation for nearby files | Silent overwrites between agents              |
 | Trusting self-reports without reading code   | Agents miss edge cases or misunderstand scope |
 | Dispatching 10+ agents at once               | Review bottleneck shifts to the controller    |
+| Not cleaning up worktrees after merge        | Disk bloat, stale branch accumulation         |
 
 ## Merge Strategy
 
