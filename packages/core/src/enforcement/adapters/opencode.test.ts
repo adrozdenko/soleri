@@ -353,7 +353,8 @@ describe('detectHost', () => {
 
   it('detects opencode via filesystem config when env vars absent', () => {
     mockedExistsSync.mockImplementation((p: unknown) => {
-      const path = String(p);
+      // Normalize to forward slashes so the check works on Windows too
+      const path = String(p).replace(/\\/g, '/');
       if (path.includes('opencode/opencode.json')) return true;
       if (path.includes('.claude')) return false;
       return false;
@@ -364,7 +365,8 @@ describe('detectHost', () => {
 
   it('detects claude-code via filesystem when .claude dir exists', () => {
     mockedExistsSync.mockImplementation((p: unknown) => {
-      const path = String(p);
+      // Normalize to forward slashes so the check works on Windows too
+      const path = String(p).replace(/\\/g, '/');
       if (path.includes('.claude')) return true;
       return false;
     });
