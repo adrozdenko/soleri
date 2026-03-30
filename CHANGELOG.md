@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.10.0] — 2026-03-30
+
+### Added
+- **Modular CLAUDE.md engine rules** — `engine.features` in agent.yaml controls which rule modules are included (vault, planning, brain, advanced); core always included; default = all for backward compatibility (#488, #491)
+- **User:custom preserved zone** — `<!-- user:custom -->` markers in CLAUDE.md survive `soleri dev` regeneration; orphaned content outside markers triggers a warning (#489)
+- **RTK hook pack** — LLM token compression via RTK proxy; intercepts Bash commands and rewrites through RTK for 60-90% token reduction
+- **SEO optimization for soleri.ai** — compressed OG image (2.6MB → 217KB), BreadcrumbList JSON-LD for 149 doc pages, CollectionPage schema for articles, full favicon set, Twitter/Threads social links, language switcher re-enabled
+- **Section parser module** — extracted marker-delimited section parsing from shared-rules.ts into `section-parser.ts` with single-pass regex approach (#496, #497)
+
+### Fixed
+- **Global CLAUDE.md bloat** — engine rules no longer injected into `~/.claude/CLAUDE.md`; self-healing strips leaked rules during `admin_setup_global` (#490)
+- **Vault session export paths** — `findProjectRoot()` walks up to monorepo root; exports no longer land in package subdirectories (#495)
+- **RTK hook `stat` compatibility** — `warn_once()` uses conditional guards instead of `||` chain to work under `set -e` on Linux
+- **RTK hook output contract** — correct Claude Code `hookSpecificOutput` format with `updatedInput`
+
+### Changed
+- **Deduplicated ENGINE_FEATURE_VALUES** — single source of truth in shared-rules.ts, imported by agent-schema.ts (#499)
+- **RTK hook warns on missing deps** — stderr warning when `jq` or `rtk` not installed, once per day via flag file (#498)
+- `getModularEngineRules()` reduced from 90 lines to 14-line thin wrapper delegating to section-parser
+
 ## [9.9.0] — 2026-03-30
 
 ### Added
