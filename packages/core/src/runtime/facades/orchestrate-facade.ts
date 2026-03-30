@@ -85,6 +85,29 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           // package.json not readable — skip update check silently
         }
 
+        // Auto-dream: increment session counter and check gate
+        let dreamInfo: { status: unknown; gate: { eligible: boolean; reason: string } } | null =
+          null;
+        try {
+          const { ensureDreamSchema } = await import('../../dream/schema.js');
+          const { DreamEngine } = await import('../../dream/dream-engine.js');
+          ensureDreamSchema(runtime.vault.getProvider());
+          const dreamEngine = new DreamEngine(runtime.vault, runtime.curator);
+          dreamEngine.incrementSessionCount();
+          const gate = dreamEngine.checkGate();
+          dreamInfo = { status: dreamEngine.getStatus(), gate };
+          if (gate.eligible) {
+            // Fire-and-forget: don't block session_start
+            Promise.resolve()
+              .then(() => dreamEngine.run())
+              .catch(() => {
+                /* best-effort */
+              });
+          }
+        } catch {
+          /* dream module not available — skip silently */
+        }
+
         return {
           project,
           is_new: isNew,
@@ -102,6 +125,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
             expiredThisSession: expired,
           },
           ...(stagingWarning ? { stagingWarning } : {}),
+          ...(dreamInfo ? { dream: dreamInfo } : {}),
         };
       },
     },
