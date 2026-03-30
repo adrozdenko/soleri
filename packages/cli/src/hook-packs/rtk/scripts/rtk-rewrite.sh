@@ -14,7 +14,15 @@ WARN_FLAG="${HOME}/.soleri/.rtk-warned"
 warn_once() {
   # Warn at most once per day (86400 seconds)
   if [ -f "$WARN_FLAG" ]; then
-    WARN_AGE=$(( $(date +%s) - $(stat -f %m "$WARN_FLAG" 2>/dev/null || stat -c %Y "$WARN_FLAG" 2>/dev/null || echo 0) ))
+    # Get file mtime — try macOS stat, then Linux stat, fallback to 0
+    FILE_MTIME=0
+    if stat -f %m "$WARN_FLAG" >/dev/null 2>&1; then
+      FILE_MTIME=$(stat -f %m "$WARN_FLAG")
+    elif stat -c %Y "$WARN_FLAG" >/dev/null 2>&1; then
+      FILE_MTIME=$(stat -c %Y "$WARN_FLAG")
+    fi
+    NOW=$(date +%s)
+    WARN_AGE=$(( NOW - FILE_MTIME ))
     [ "$WARN_AGE" -lt 86400 ] && return
   fi
   mkdir -p "$(dirname "$WARN_FLAG")"
