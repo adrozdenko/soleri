@@ -33,6 +33,7 @@ import {
   injectAtPosition,
   buildInjectionContent,
   injectEngineRulesBlock,
+  removeEngineRulesFromGlobal,
 } from './claude-md-helpers.js';
 import { discoverSkills, syncSkillsToClaudeCode } from '../skills/sync-skills.js';
 
@@ -460,42 +461,24 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
           }
         }
 
-        // 4. Self-healing: strip engine rules from global CLAUDE.md if present
+        // 4. Self-healing: strip engine rules from global files if present
         const selfHealing = { engineRulesRemoved: false, agentsMdEngineRulesRemoved: false };
         if (install) {
           const globalClaudeMdPath = join(globalClaudeDir, 'CLAUDE.md');
           if (existsSync(globalClaudeMdPath)) {
-            const globalContent = readFileSync(globalClaudeMdPath, 'utf-8');
-            if (globalContent.includes('<!-- soleri:engine-rules -->')) {
-              const startIdx = globalContent.indexOf('<!-- soleri:engine-rules -->');
-              const endIdx = globalContent.indexOf('<!-- /soleri:engine-rules -->');
-              if (endIdx !== -1) {
-                const before = globalContent.slice(0, startIdx).replace(/\n+$/, '');
-                const after = globalContent
-                  .slice(endIdx + '<!-- /soleri:engine-rules -->'.length)
-                  .replace(/^\n+/, '');
-                const cleaned = before + (before && after ? '\n\n' : '') + after;
-                writeFileSync(globalClaudeMdPath, cleaned || '', 'utf-8');
-                selfHealing.engineRulesRemoved = true;
-              }
+            const result = removeEngineRulesFromGlobal(readFileSync(globalClaudeMdPath, 'utf-8'));
+            if (result.removed) {
+              writeFileSync(globalClaudeMdPath, result.cleaned, 'utf-8');
+              selfHealing.engineRulesRemoved = true;
             }
           }
 
           const globalAgentsMdPath = join(homedir(), '.config', 'opencode', 'AGENTS.md');
           if (existsSync(globalAgentsMdPath)) {
-            const agentsMdContent = readFileSync(globalAgentsMdPath, 'utf-8');
-            if (agentsMdContent.includes('<!-- soleri:engine-rules -->')) {
-              const startIdx = agentsMdContent.indexOf('<!-- soleri:engine-rules -->');
-              const endIdx = agentsMdContent.indexOf('<!-- /soleri:engine-rules -->');
-              if (endIdx !== -1) {
-                const before = agentsMdContent.slice(0, startIdx).replace(/\n+$/, '');
-                const after = agentsMdContent
-                  .slice(endIdx + '<!-- /soleri:engine-rules -->'.length)
-                  .replace(/^\n+/, '');
-                const cleaned = before + (before && after ? '\n\n' : '') + after;
-                writeFileSync(globalAgentsMdPath, cleaned || '', 'utf-8');
-                selfHealing.agentsMdEngineRulesRemoved = true;
-              }
+            const result = removeEngineRulesFromGlobal(readFileSync(globalAgentsMdPath, 'utf-8'));
+            if (result.removed) {
+              writeFileSync(globalAgentsMdPath, result.cleaned, 'utf-8');
+              selfHealing.agentsMdEngineRulesRemoved = true;
             }
           }
         }
