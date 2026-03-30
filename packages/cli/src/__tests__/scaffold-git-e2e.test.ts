@@ -53,6 +53,10 @@ describe('scaffold + git init (E2E)', () => {
     const initResult = await gitInit(agentDir);
     expect(initResult.ok).toBe(true);
 
+    // Ensure git config is set (CI runners may not have global user.name/user.email)
+    gitCommand(agentDir, 'config', 'user.name', 'Test');
+    gitCommand(agentDir, 'config', 'user.email', 'test@test.local');
+
     const commitResult = await gitInitialCommit(agentDir, 'feat: scaffold agent "test-agent"');
     expect(commitResult.ok).toBe(true);
 
@@ -80,6 +84,9 @@ describe('scaffold + git init (E2E)', () => {
     const agentDir = result.agentDir;
 
     await gitInit(agentDir);
+    // Ensure git config is set (CI runners may not have global user.name/user.email)
+    gitCommand(agentDir, 'config', 'user.name', 'Test');
+    gitCommand(agentDir, 'config', 'user.email', 'test@test.local');
     await gitInitialCommit(agentDir, 'feat: scaffold agent "test-agent"');
 
     const trackedFiles = gitCommand(agentDir, 'ls-files');
