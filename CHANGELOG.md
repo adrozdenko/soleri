@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.11.0] — 2026-03-30
+
+### Added
+- **User-gated reconciliation with fix-trail learning** — `orchestrate_complete` runs git evidence for all plan outcomes, tracks fix iterations per task (rework detection), records quality signals to brain (clean=accepted 0.9, rework=dismissed 0.7), injects fix-trail summary into session context for knowledge extraction (#459, #460, #461, #462, #463)
+- **`--path` flag on agent commands** — `soleri agent status/update/refresh/diff --path <dir>` works from any directory (#503)
+- **`orchestrate_status` op** — check plan readiness with terminal task counts and idle duration
+- **`buildFixTrailSummary()`** — exported utility for human-readable rework summaries
+
+### Changed
+- `evidenceReport` always present in `orchestrate_complete` response (null when unavailable, was previously omitted)
+- Rework threshold changed from `> 2` to `>= 2` fix iterations for anti-pattern detection
+- Confidence values extracted to named constants (`CLEAN_TASK_CONFIDENCE`, `REWORK_TASK_CONFIDENCE`)
+- Removed internal "v7" label from `soleri agent status` output
+
 ## [9.10.0] — 2026-03-30
 
 ### Added
