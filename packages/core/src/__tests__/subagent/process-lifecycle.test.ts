@@ -108,7 +108,7 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       // Process should be alive initially
       expect(isAlive(pid)).toBe(true);
       const initialReap = reaper.reap();
-      expect(initialReap).toHaveLength(0);
+      expect(initialReap.reaped).toHaveLength(0);
       expect(reaper.isTracked(pid)).toBe(true);
 
       // Kill it externally
@@ -116,10 +116,9 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       await waitFor(() => !isAlive(pid));
 
       // Now reap should detect it
-      const reaped = reaper.reap();
-      expect(reaped).toHaveLength(1);
-      expect(reaped[0].pid).toBe(pid);
-      expect(reaped[0].taskId).toBe('orphan-test');
+      const result = reaper.reap();
+      expect(result.reaped).toHaveLength(1);
+      expect(result.reaped[0]).toBe('orphan-test');
       expect(reaper.isTracked(pid)).toBe(false);
     });
 
@@ -155,9 +154,9 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       process.kill(deadPid, 'SIGKILL');
       await waitFor(() => !isAlive(deadPid));
 
-      const reaped = reaper.reap();
-      expect(reaped).toHaveLength(1);
-      expect(reaped[0].taskId).toBe('dead-task');
+      const result = reaper.reap();
+      expect(result.reaped).toHaveLength(1);
+      expect(result.reaped[0]).toBe('dead-task');
       expect(reaper.isTracked(alivePid)).toBe(true);
       expect(reaper.isTracked(deadPid)).toBe(false);
     });
@@ -323,7 +322,7 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
 
       // All alive initially
       const earlyReap = reaper.reap();
-      expect(earlyReap).toHaveLength(0);
+      expect(earlyReap.reaped).toHaveLength(0);
 
       // Kill two of three externally
       process.kill(pids[0], 'SIGKILL');
@@ -331,10 +330,9 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       await waitFor(() => !isAlive(pids[0]) && !isAlive(pids[2]));
 
       // Reap should detect the two dead ones
-      const reaped = reaper.reap();
-      expect(reaped).toHaveLength(2);
-      const reapedTaskIds = reaped.map((r) => r.taskId).sort();
-      expect(reapedTaskIds).toEqual(['wave-task-0', 'wave-task-2']);
+      const result = reaper.reap();
+      expect(result.reaped).toHaveLength(2);
+      expect(result.reaped.sort()).toEqual(['wave-task-0', 'wave-task-2']);
 
       // One should still be tracked
       expect(reaper.listTracked()).toHaveLength(1);
@@ -351,7 +349,7 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       const pid = child.pid!;
       reaper.register(pid, 'finally-test');
 
-      let reapedInFinally: ReturnType<typeof reaper.reap> = [];
+      let reapedInFinally: ReturnType<typeof reaper.reap> | null = null;
 
       try {
         // Simulate dispatch work
@@ -362,8 +360,8 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
         reapedInFinally = reaper.reap();
       }
 
-      expect(reapedInFinally).toHaveLength(1);
-      expect(reapedInFinally[0].taskId).toBe('finally-test');
+      expect(reapedInFinally!.reaped).toHaveLength(1);
+      expect(reapedInFinally!.reaped[0]).toBe('finally-test');
       expect(reaper.listTracked()).toHaveLength(0);
     });
   });
@@ -386,36 +384,21 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       await waitFor(() => !isAlive(pid));
 
       // Simulate what dispatcher.reapOrphans() does internally
-      const orphaned = reaper.reap();
-      const results = orphaned.map((p) => ({
-        taskId: p.taskId,
-        status: 'orphaned' as const,
-        exitCode: 1,
-        error: `Process ${p.pid} died unexpectedly`,
-        durationMs: Date.now() - p.registeredAt,
-        pid: p.pid,
-      }));
+      const result = reaper.reap();
 
-      // Verify report structure matches what admin_reap_orphans returns
+      // reap() returns { reaped: string[], alive: string[] }
+      expect(result.reaped).toHaveLength(1);
+      expect(result.reaped[0]).toBe('facade-test');
+      expect(result.alive).toHaveLength(0);
+
+      // Verify report structure matches what admin_reap_orphans builds
       const report = {
-        reaped: results.length,
-        pids: results.map((r) => r.pid ?? 0),
-        tasks: results.map((r) => r.taskId),
+        reaped: result.reaped.length,
+        tasks: result.reaped,
       };
 
       expect(report.reaped).toBe(1);
-      expect(report.pids).toEqual([pid]);
       expect(report.tasks).toEqual(['facade-test']);
-
-      // Verify individual result structure
-      expect(results[0]).toMatchObject({
-        taskId: 'facade-test',
-        status: 'orphaned',
-        exitCode: 1,
-        pid,
-      });
-      expect(results[0].error).toContain('died unexpectedly');
-      expect(results[0].durationMs).toBeGreaterThanOrEqual(0);
     });
 
     it('returns empty report when no orphans exist', () => {
@@ -423,15 +406,15 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       const child = spawnIdleProcess();
       reaper.register(child.pid!, 'alive-task');
 
-      // All alive — reap returns nothing
-      const orphaned = reaper.reap();
+      // All alive — reap returns nothing reaped
+      const result = reaper.reap();
       const report = {
-        reaped: orphaned.length,
-        pids: orphaned.map((r) => r.pid),
-        tasks: orphaned.map((r) => r.taskId),
+        reaped: result.reaped.length,
+        tasks: result.reaped,
       };
 
-      expect(report).toEqual({ reaped: 0, pids: [], tasks: [] });
+      expect(report).toEqual({ reaped: 0, tasks: [] });
+      expect(result.alive).toHaveLength(1);
     });
   });
 });
