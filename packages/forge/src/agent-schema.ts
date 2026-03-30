@@ -9,6 +9,7 @@
  */
 
 import { z } from 'zod';
+import { ENGINE_FEATURES } from './templates/shared-rules.js';
 
 // ─── Constants ────────────────────────────────────────────────────────
 
@@ -55,9 +56,6 @@ const CompactionPolicySchema = z.object({
     .optional(),
 });
 
-/** Engine feature modules that can be selectively included */
-export const ENGINE_FEATURE_VALUES = ['vault', 'planning', 'brain', 'advanced'] as const;
-
 /** Engine configuration */
 const EngineConfigSchema = z.object({
   /** Path to agent's vault SQLite database. Default: ~/.{id}/vault.db */
@@ -72,7 +70,7 @@ const EngineConfigSchema = z.object({
    * Omit or leave empty to include ALL modules (backward compatible).
    * Example: ['vault', 'planning'] includes core + vault + planning rules.
    */
-  features: z.array(z.enum(ENGINE_FEATURE_VALUES)).optional(),
+  features: z.array(z.enum(ENGINE_FEATURES as unknown as [string, ...string[]])).optional(),
 });
 
 /** Client setup configuration */

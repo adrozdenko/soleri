@@ -9,6 +9,8 @@
  * Uses op:name syntax — the active agent provides the tool prefix.
  */
 
+import { parseSections, filterSections } from './section-parser.js';
+
 const ENGINE_MARKER = 'soleri:engine-rules';
 
 export function getEngineMarker(): string {
@@ -83,123 +85,18 @@ const MODULE_SECTIONS: Record<'core' | EngineFeature, readonly string[]> = {
  * @param features - Feature modules to include. Omit for all.
  */
 export function getModularEngineRules(features?: EngineFeature[]): string {
-  // No filter = return everything (backward compatible)
   if (!features || features.length === 0) {
     return getEngineRulesContent();
   }
 
-  // Build the set of allowed section markers
   const allowedMarkers = new Set<string>(MODULE_SECTIONS.core);
   for (const feature of features) {
     const sections = MODULE_SECTIONS[feature];
-    if (sections) {
-      for (const marker of sections) {
-        allowedMarkers.add(marker);
-      }
-    }
+    if (sections) for (const m of sections) allowedMarkers.add(m);
   }
 
-  // Parse the full content into sections, then filter.
-  // Structure: each section is a ## heading followed by <!-- soleri:marker --> then content.
-  // Sections end at the next ## heading or at the closing <!-- /soleri:engine-rules --> marker.
-  const fullContent = ENGINE_RULES_LINES.join('\n');
-
-  // Split into sections: a section starts at a <!-- soleri:xxx --> marker line
-  // and includes the ## heading that precedes it.
-  // Strategy: find all marker positions, extract section ranges, filter.
-  const lines = fullContent.split('\n');
-  const sections: Array<{ marker: string; startLine: number; endLine: number }> = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const markerMatch = lines[i].match(/^<!-- (soleri:[a-z-]+) -->$/);
-    if (markerMatch && markerMatch[1] !== ENGINE_MARKER) {
-      sections.push({ marker: markerMatch[1], startLine: -1, endLine: -1 });
-    }
-  }
-
-  // For each section, find the start (the ## heading before the marker) and end
-  for (let s = 0; s < sections.length; s++) {
-    const section = sections[s];
-    // Find the marker line
-    let markerLine = -1;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i] === `<!-- ${section.marker} -->`) {
-        markerLine = i;
-        break;
-      }
-    }
-    // Walk backward to find the ## heading (skip empty lines)
-    let headingLine = markerLine;
-    for (let i = markerLine - 1; i >= 0; i--) {
-      if (lines[i].startsWith('## ')) {
-        headingLine = i;
-        break;
-      }
-      if (lines[i].trim() !== '') break;
-    }
-    section.startLine = headingLine;
-
-    // End is one line before the next section's start, or at closing marker
-    if (s + 1 < sections.length) {
-      // Find next section's heading start
-      let nextMarkerLine = -1;
-      for (let i = markerLine + 1; i < lines.length; i++) {
-        if (lines[i] === `<!-- ${sections[s + 1].marker} -->`) {
-          nextMarkerLine = i;
-          break;
-        }
-      }
-      // Walk backward from next marker to find its heading
-      let nextHeadingLine = nextMarkerLine;
-      for (let i = nextMarkerLine - 1; i >= 0; i--) {
-        if (lines[i].startsWith('## ')) {
-          nextHeadingLine = i;
-          break;
-        }
-        if (lines[i].trim() !== '') break;
-      }
-      section.endLine = nextHeadingLine - 1;
-    } else {
-      // Last section — ends at the closing marker
-      for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].match(/^<!-- \/soleri:engine-rules -->$/)) {
-          section.endLine = i - 1;
-          break;
-        }
-      }
-    }
-  }
-
-  // Build output: include preamble (before first section) + allowed sections + closing
-  const firstSectionStart = sections.length > 0 ? sections[0].startLine : lines.length;
-  const outputLines: string[] = [];
-
-  // Preamble: everything before the first section (header, intro text)
-  for (let i = 0; i < firstSectionStart; i++) {
-    outputLines.push(lines[i]);
-  }
-
-  // Sections: include only allowed ones
-  for (const section of sections) {
-    if (allowedMarkers.has(section.marker)) {
-      for (let i = section.startLine; i <= section.endLine; i++) {
-        outputLines.push(lines[i]);
-      }
-      // Ensure blank line separator
-      if (outputLines[outputLines.length - 1]?.trim() !== '') {
-        outputLines.push('');
-      }
-    }
-  }
-
-  // Closing marker
-  const lastSection = sections[sections.length - 1];
-  const closingStart = lastSection ? lastSection.endLine + 1 : firstSectionStart;
-  for (let i = closingStart; i < lines.length; i++) {
-    outputLines.push(lines[i]);
-  }
-
-  return outputLines.join('\n');
+  const parsed = parseSections(getEngineRulesContent());
+  return filterSections(parsed, allowedMarkers);
 }
 
 const ENGINE_RULES_LINES: string[] = [

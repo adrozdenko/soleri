@@ -9,11 +9,26 @@ set -eu
 
 # ── Dependency checks ──────────────────────────────────────────────
 
+WARN_FLAG="${HOME}/.soleri/.rtk-warned"
+
+warn_once() {
+  # Warn at most once per day (86400 seconds)
+  if [ -f "$WARN_FLAG" ]; then
+    WARN_AGE=$(( $(date +%s) - $(stat -f %m "$WARN_FLAG" 2>/dev/null || stat -c %Y "$WARN_FLAG" 2>/dev/null || echo 0) ))
+    [ "$WARN_AGE" -lt 86400 ] && return
+  fi
+  mkdir -p "$(dirname "$WARN_FLAG")"
+  echo "$1" >&2
+  touch "$WARN_FLAG"
+}
+
 if ! command -v jq >/dev/null 2>&1; then
+  warn_once "[soleri:rtk] jq not found — RTK hook disabled. Install: https://stedolan.github.io/jq/"
   exit 0
 fi
 
 if ! command -v rtk >/dev/null 2>&1; then
+  warn_once "[soleri:rtk] rtk not found — RTK hook disabled. Install: https://github.com/rtk-ai/rtk"
   exit 0
 fi
 
