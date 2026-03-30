@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { GoalAncestry, JsonGoalRepository, generateGoalId } from './goal-ancestry.js';
@@ -278,8 +278,7 @@ describe('JsonGoalRepository', () => {
   let repo: JsonGoalRepository;
 
   beforeEach(() => {
-    tempDir = join(tmpdir(), `goal-repo-test-${Date.now()}`);
-    mkdirSync(tempDir, { recursive: true });
+    tempDir = mkdtempSync(join(tmpdir(), 'goal-repo-test-'));
     repo = new JsonGoalRepository(join(tempDir, 'goals.json'));
   });
 
@@ -347,8 +346,7 @@ describe('Planner goalId integration', () => {
   let planner: Planner;
 
   beforeEach(() => {
-    tempDir = join(tmpdir(), `planner-goal-test-${Date.now()}`);
-    mkdirSync(tempDir, { recursive: true });
+    tempDir = mkdtempSync(join(tmpdir(), 'planner-goal-test-'));
     planner = new Planner(join(tempDir, 'plans.json'));
   });
 

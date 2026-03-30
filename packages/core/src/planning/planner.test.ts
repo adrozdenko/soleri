@@ -3,7 +3,7 @@ import { Planner, PlanGradeRejectionError } from './planner.js';
 import type { PlanGap } from './gap-types.js';
 import type { PlanAlternative } from './planner.js';
 import { generateGapId } from './gap-types.js';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -28,8 +28,7 @@ describe('Planner', () => {
   let planner: Planner;
 
   beforeEach(() => {
-    tempDir = join(tmpdir(), `planner-test-${Date.now()}`);
-    mkdirSync(tempDir, { recursive: true });
+    tempDir = mkdtempSync(join(tmpdir(), 'planner-test-'));
     planner = new Planner(join(tempDir, 'plans.json'));
   });
 
