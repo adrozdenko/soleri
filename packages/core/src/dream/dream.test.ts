@@ -3,6 +3,8 @@ import { Vault } from '../vault/vault.js';
 import { Curator } from '../curator/curator.js';
 import { ensureDreamSchema } from './schema.js';
 import { DreamEngine } from './dream-engine.js';
+import { createDreamOps } from './dream-ops.js';
+import type { AgentRuntime } from '../runtime/types.js';
 
 describe('dream schema', () => {
   let vault: Vault;
@@ -109,5 +111,72 @@ describe('DreamEngine', () => {
       const report = engine.run();
       expect(report.totalDreams).toBe(1);
     });
+  });
+});
+
+describe('dream ops', () => {
+  let vault: Vault;
+  let ops: ReturnType<typeof createDreamOps>;
+
+  function findOp(name: string) {
+    const op = ops.find((o) => o.name === name);
+    if (!op) throw new Error(`Op ${name} not found`);
+    return op;
+  }
+
+  beforeEach(() => {
+    vault = new Vault(':memory:');
+    const curator = new Curator(vault);
+    const runtime = { vault, curator } as unknown as AgentRuntime;
+    ops = createDreamOps(runtime);
+  });
+  afterEach(() => {
+    vault.close();
+  });
+
+  it('creates 3 ops with correct names', () => {
+    expect(ops).toHaveLength(3);
+    expect(ops.map((o) => o.name).sort()).toEqual(
+      ['dream_check_gate', 'dream_run', 'dream_status'].sort(),
+    );
+  });
+
+  it('dream_status returns status', async () => {
+    const result = (await findOp('dream_status').handler({})) as Record<string, unknown>;
+    expect(result).toHaveProperty('sessionsSinceLastDream');
+    expect(result).toHaveProperty('gateEligible');
+    expect(result.sessionsSinceLastDream).toBe(0);
+  });
+
+  it('dream_check_gate returns gate info', async () => {
+    const result = (await findOp('dream_check_gate').handler({})) as Record<string, unknown>;
+    expect(result).toHaveProperty('eligible');
+    expect(result).toHaveProperty('reason');
+    expect(result.eligible).toBe(false);
+  });
+
+  it('dream_run skips when gate not met and force=false', async () => {
+    const result = (await findOp('dream_run').handler({})) as Record<string, unknown>;
+    expect(result.skipped).toBe(true);
+    expect(result.reason).toBeDefined();
+    expect(result.status).toBeDefined();
+  });
+
+  it('dream_run executes when force=true', async () => {
+    const result = (await findOp('dream_run').handler({ force: true })) as Record<string, unknown>;
+    expect(result.skipped).toBeUndefined();
+    expect(result).toHaveProperty('durationMs');
+    expect(result).toHaveProperty('totalDreams');
+    expect(result.totalDreams).toBe(1);
+  });
+
+  it('dream_run executes when gate is met', async () => {
+    // Increment sessions to meet threshold (default 5)
+    const engine = new DreamEngine(vault, new Curator(vault));
+    for (let i = 0; i < 5; i++) engine.incrementSessionCount();
+
+    const result = (await findOp('dream_run').handler({})) as Record<string, unknown>;
+    expect(result.skipped).toBeUndefined();
+    expect(result).toHaveProperty('totalDreams');
   });
 });
