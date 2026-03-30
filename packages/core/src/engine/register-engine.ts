@@ -43,6 +43,7 @@ import { createIntakeFacadeOps } from '../runtime/facades/intake-facade.js';
 import { createLinksFacadeOps } from '../runtime/facades/links-facade.js';
 import { createBranchingFacadeOps } from '../runtime/facades/branching-facade.js';
 import { createTierFacadeOps } from '../runtime/facades/tier-facade.js';
+import { createDreamOps } from '../dream/dream-ops.js';
 import { createDomainFacade } from '../runtime/domain-ops.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -189,6 +190,11 @@ export const ENGINE_MODULES: ModuleDef[] = [
     suffix: 'tier',
     description: 'Multi-vault tiers — connect, disconnect, search across sources.',
     createOps: createTierFacadeOps,
+  },
+  {
+    suffix: 'dream',
+    description: 'Dream — automatic memory consolidation, vault cleanup, and maintenance.',
+    createOps: createDreamOps,
   },
 ];
 
