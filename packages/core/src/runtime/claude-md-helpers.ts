@@ -216,3 +216,28 @@ export function injectEngineRulesBlock(content: string, engineRulesContent: stri
   // Append
   return content.trimEnd() + '\n\n' + engineRulesContent + '\n';
 }
+
+/**
+ * Remove engine rules block from content.
+ * Used during self-healing to strip engine rules from global CLAUDE.md
+ * when they were incorrectly injected there (they belong in _engine.md).
+ *
+ * Returns the content without the engine rules block, or unchanged if no block found.
+ */
+export function removeEngineRulesFromGlobal(content: string): {
+  cleaned: string;
+  removed: boolean;
+} {
+  if (!hasEngineRules(content)) {
+    return { cleaned: content, removed: false };
+  }
+
+  const startIdx = content.indexOf(ENGINE_RULES_START);
+  const endIdx = content.indexOf(ENGINE_RULES_END);
+
+  const before = content.slice(0, startIdx).trimEnd();
+  const after = content.slice(endIdx + ENGINE_RULES_END.length).trimStart();
+
+  const cleaned = before + (before && after ? '\n\n' : '') + after;
+  return { cleaned: cleaned || '\n', removed: true };
+}
