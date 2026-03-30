@@ -485,7 +485,9 @@ describe('E2E: planning-orchestration', () => {
       // The warnings array should contain the skipped transition message
       expect(data.warnings).toBeDefined();
       expect(data.warnings!.length).toBeGreaterThanOrEqual(1);
-      expect(data.warnings![0]).toContain('Plan transition skipped');
+      // The "Plan transition skipped" warning may not be first — evidence-based
+      // reconciliation can push a "Low evidence accuracy" warning before it.
+      expect(data.warnings!.some((w) => w.includes('Plan transition skipped'))).toBe(true);
     });
   });
 
