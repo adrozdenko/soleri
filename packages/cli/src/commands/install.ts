@@ -1,7 +1,14 @@
 import type { Command } from 'commander';
 import { createRequire } from 'node:module';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import {
+  accessSync,
+  constants as fsConstants,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+} from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import * as p from '@clack/prompts';
 import { detectAgent } from '../utils/agent-context.js';
@@ -52,8 +59,31 @@ function legacyMcpEntry(agentDir: string): Record<string, unknown> {
   };
 }
 
+/**
+ * Check if a file path is writable. If the file exists, checks write permission on the file.
+ * If the file does not exist, checks write permission on the parent directory.
+ */
+function checkWritable(filePath: string): boolean {
+  try {
+    if (existsSync(filePath)) {
+      accessSync(filePath, fsConstants.W_OK);
+    } else {
+      accessSync(dirname(filePath), fsConstants.W_OK);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function installClaude(agentId: string, agentDir: string, isFileTree: boolean): void {
   const configPath = join(homedir(), '.claude.json');
+
+  if (!checkWritable(configPath)) {
+    p.log.error(`Cannot write to ${configPath} — check file permissions`);
+    process.exit(1);
+  }
+
   let config: Record<string, unknown> = {};
 
   if (existsSync(configPath)) {

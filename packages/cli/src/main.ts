@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 
+const [major] = process.versions.node.split('.').map(Number);
+if (major < 18) {
+  console.error(
+    `\n  Soleri requires Node.js 18 or later.\n  You have v${process.versions.node}.\n  Upgrade at https://nodejs.org\n`,
+  );
+  process.exit(1);
+}
+
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerCreate } from './commands/create.js';

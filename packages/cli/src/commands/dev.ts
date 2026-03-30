@@ -35,7 +35,14 @@ function runFileTreeDev(agentPath: string, agentId: string): void {
   regenerateClaudeMd(agentPath);
 
   // Start the engine server
-  const engineBin = require.resolve('@soleri/core/dist/engine/bin/soleri-engine.js');
+  let engineBin: string;
+  try {
+    engineBin = require.resolve('@soleri/core/dist/engine/bin/soleri-engine.js');
+  } catch {
+    p.log.error('Engine not found. Run: npm install @soleri/core');
+    process.exit(1);
+  }
+
   const engine = spawn('node', [engineBin, '--agent', join(agentPath, 'agent.yaml')], {
     stdio: ['pipe', 'inherit', 'inherit'],
     env: { ...process.env },
