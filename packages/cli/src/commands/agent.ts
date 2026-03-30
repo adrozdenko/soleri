@@ -105,7 +105,7 @@ export function registerAgent(program: Command): void {
               {
                 agent: agentName,
                 id: agentId,
-                format: 'file-tree (v7)',
+                format: 'file-tree',
                 engine: engineVersion,
                 engineLatest: latestCore,
                 domains,
@@ -121,7 +121,7 @@ export function registerAgent(program: Command): void {
 
         console.log(`\n  Agent: ${agentName}`);
         console.log(`  ID: ${agentId}`);
-        console.log(`  Format: file-tree (v7)`);
+        console.log(`  Format: file-tree`);
         console.log(
           `  Engine: @soleri/core ${engineVersion}${latestCore && latestCore !== engineVersion ? ` (update available: ${latestCore})` : ''}`,
         );
