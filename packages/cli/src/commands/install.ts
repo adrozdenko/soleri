@@ -73,7 +73,12 @@ export function installClaude(agentId: string, agentDir: string, isFileTree: boo
     ? fileTreeMcpEntry(agentDir)
     : legacyMcpEntry(agentDir);
 
-  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  try {
+    writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  } catch {
+    p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
+    process.exit(1);
+  }
   p.log.success(`Registered ${agentId} in ~/.claude.json`);
 }
 
@@ -82,7 +87,12 @@ function installCodex(agentId: string, agentDir: string, isFileTree: boolean): v
   const configPath = join(codexDir, 'config.toml');
 
   if (!existsSync(codexDir)) {
-    mkdirSync(codexDir, { recursive: true });
+    try {
+      mkdirSync(codexDir, { recursive: true });
+    } catch {
+      p.log.error(`Cannot create directory ${codexDir}. Check permissions.`);
+      process.exit(1);
+    }
   }
 
   let content = '';
@@ -111,7 +121,12 @@ function installCodex(agentId: string, agentDir: string, isFileTree: boolean): v
 
   content = content + section;
 
-  writeFileSync(configPath, content.trim() + '\n', 'utf-8');
+  try {
+    writeFileSync(configPath, content.trim() + '\n', 'utf-8');
+  } catch {
+    p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
+    process.exit(1);
+  }
   p.log.success(`Registered ${agentId} in ~/.codex/config.toml`);
 }
 
@@ -122,7 +137,12 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
   const configPath = join(configDir, 'opencode.json');
 
   if (!existsSync(configDir)) {
-    mkdirSync(configDir, { recursive: true });
+    try {
+      mkdirSync(configDir, { recursive: true });
+    } catch {
+      p.log.error(`Cannot create directory ${configDir}. Check permissions.`);
+      process.exit(1);
+    }
   }
 
   let config: Record<string, unknown> = {};
@@ -132,7 +152,10 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
       const stripped = raw.replace(/^\s*\/\/.*$/gm, '');
       config = JSON.parse(stripped);
     } catch {
-      config = {};
+      p.log.error(
+        `Failed to parse ${configPath}. The file may be corrupted. Delete it and try again.`,
+      );
+      process.exit(1);
     }
   }
 
@@ -157,7 +180,12 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
     };
   }
 
-  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  try {
+    writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  } catch {
+    p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
+    process.exit(1);
+  }
   p.log.success(`Registered ${agentId} in ~/.config/opencode/opencode.json`);
 }
 

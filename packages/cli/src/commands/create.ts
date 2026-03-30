@@ -97,7 +97,16 @@ export function registerCreate(program: Command): void {
               p.log.error(`Config file not found: ${configPath}`);
               process.exit(1);
             }
-            const raw = JSON.parse(readFileSync(configPath, 'utf-8'));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let raw: any;
+            try {
+              raw = JSON.parse(readFileSync(configPath, 'utf-8'));
+            } catch {
+              p.log.error(
+                `Failed to parse ${configPath}. The file may be corrupted. Delete it and try again.`,
+              );
+              process.exit(1);
+            }
             const parsed = AgentConfigSchema.safeParse(raw);
             if (!parsed.success) {
               p.log.error(`Invalid config: ${parsed.error.message}`);
