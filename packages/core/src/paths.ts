@@ -13,9 +13,9 @@
  * Override with SOLERI_HOME env var or explicit paths in agent.yaml → engine.vault.
  */
 
-import { join } from 'node:path';
+import { join, parse as parsePath } from 'node:path';
 import { homedir } from 'node:os';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 /** Root directory for all Soleri data. Default: ~/.soleri/ */
 export const SOLERI_HOME = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
@@ -112,6 +112,46 @@ export function agentKnowledgeDir(agentId: string): string {
 /** Project-local knowledge directory for browsable markdown sync. */
 export function projectKnowledgeDir(projectPath: string): string {
   return join(projectPath, 'knowledge');
+}
+
+/**
+ * Walk up from startDir to find the actual project/monorepo root.
+ *
+ * Checks for (in order): .git directory, package.json with "workspaces",
+ * or agent.yaml. Returns the first match, or startDir as fallback.
+ *
+ * This prevents vault exports from landing in package subdirectories
+ * when the engine CWD is packages/cli/ instead of the monorepo root.
+ */
+export function findProjectRoot(startDir: string): string {
+  let dir = startDir;
+  const root = parsePath(dir).root;
+
+  while (dir !== root) {
+    // .git is the strongest signal — always marks the project root
+    if (existsSync(join(dir, '.git'))) return dir;
+
+    // package.json with workspaces = monorepo root
+    const pkgPath = join(dir, 'package.json');
+    if (existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        if (pkg.workspaces) return dir;
+      } catch {
+        /* malformed package.json — skip */
+      }
+    }
+
+    // agent.yaml = file-tree agent root
+    if (existsSync(join(dir, 'agent.yaml'))) return dir;
+
+    // Walk up
+    const parent = join(dir, '..');
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  return startDir;
 }
 
 /** Shared vault path: ~/.soleri/vault.db (cross-agent intelligence) */
