@@ -23,9 +23,9 @@ describe('hook-packs', () => {
   });
 
   describe('registry', () => {
-    it('should list all 9 built-in packs', () => {
+    it('should list all 10 built-in packs', () => {
       const packs = listPacks();
-      expect(packs.length).toBe(9);
+      expect(packs.length).toBe(10);
       const names = packs.map((p) => p.name).sort();
       expect(names).toEqual([
         'a11y',
@@ -34,6 +34,7 @@ describe('hook-packs', () => {
         'flock-guard',
         'full',
         'marketing-research',
+        'rtk',
         'safety',
         'typescript-safety',
         'yolo-safety',
@@ -261,6 +262,66 @@ describe('hook-packs', () => {
       expect(installed).toContain('clean-commits');
       expect(installed).toContain('safety');
       expect(installed).toContain('yolo-safety');
+    });
+  });
+
+  describe('rtk pack', () => {
+    it('should get rtk pack with script and lifecycle hook', () => {
+      const pack = getPack('rtk');
+      expect(pack).not.toBeNull();
+      expect(pack!.manifest.name).toBe('rtk');
+      expect(pack!.manifest.hooks).toEqual([]);
+      expect(pack!.manifest.scripts).toHaveLength(1);
+      expect(pack!.manifest.scripts![0].name).toBe('rtk-rewrite');
+      expect(pack!.manifest.scripts![0].file).toBe('rtk-rewrite.sh');
+      expect(pack!.manifest.scripts![0].targetDir).toBe('hooks');
+      expect(pack!.manifest.lifecycleHooks).toHaveLength(1);
+      expect(pack!.manifest.lifecycleHooks![0].event).toBe('PreToolUse');
+      expect(pack!.manifest.lifecycleHooks![0].matcher).toBe('Bash');
+      expect(pack!.manifest.lifecycleHooks![0].command).toBe('sh ~/.claude/hooks/rtk-rewrite.sh');
+    });
+
+    it('should install rtk pack with script and lifecycle hook', () => {
+      const result = installPack('rtk');
+      expect(result.installed).toEqual([]);
+      expect(result.scripts).toHaveLength(1);
+      expect(result.scripts[0]).toBe('hooks/rtk-rewrite.sh');
+      expect(result.lifecycleHooks).toHaveLength(1);
+      expect(result.lifecycleHooks[0]).toBe('PreToolUse:Bash');
+      const claudeDir = join(tempHome, '.claude');
+      expect(existsSync(join(claudeDir, 'hooks', 'rtk-rewrite.sh'))).toBe(true);
+      const settings = JSON.parse(readFileSync(join(claudeDir, 'settings.json'), 'utf-8'));
+      expect(settings.hooks.PreToolUse).toHaveLength(1);
+      expect(settings.hooks.PreToolUse[0].matcher).toBe('Bash');
+      expect(settings.hooks.PreToolUse[0].hooks[0].command).toBe(
+        'sh ~/.claude/hooks/rtk-rewrite.sh',
+      );
+      expect(settings.hooks.PreToolUse[0]._soleriPack).toBe('rtk');
+    });
+
+    it('should remove rtk pack including script and lifecycle hook', () => {
+      installPack('rtk');
+      const result = removePack('rtk');
+      expect(result.scripts).toHaveLength(1);
+      expect(result.lifecycleHooks).toHaveLength(1);
+      const claudeDir = join(tempHome, '.claude');
+      expect(existsSync(join(claudeDir, 'hooks', 'rtk-rewrite.sh'))).toBe(false);
+      const settings = JSON.parse(readFileSync(join(claudeDir, 'settings.json'), 'utf-8'));
+      expect(settings.hooks.PreToolUse).toBeUndefined();
+    });
+
+    it('should be idempotent for rtk lifecycle hooks', () => {
+      installPack('rtk');
+      const result2 = installPack('rtk');
+      expect(result2.lifecycleHooks).toEqual([]);
+      const claudeDir = join(tempHome, '.claude');
+      const settings = JSON.parse(readFileSync(join(claudeDir, 'settings.json'), 'utf-8'));
+      expect(settings.hooks.PreToolUse).toHaveLength(1);
+    });
+
+    it('should not be scaffoldDefault', () => {
+      const pack = getPack('rtk');
+      expect(pack!.manifest.scaffoldDefault).toBe(false);
     });
   });
 });
