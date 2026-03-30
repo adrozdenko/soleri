@@ -40,5 +40,8 @@ fi
 
 # ── Return rewritten command ───────────────────────────────────────
 
-# Output JSON that tells Claude Code to use the rewritten command
-printf '%s' "$INPUT" | jq -c --arg cmd "$REWRITTEN" '.tool_input.command = $cmd'
+# Build updatedInput from original tool_input with rewritten command
+UPDATED_INPUT=$(printf '%s' "$INPUT" | jq -c --arg cmd "$REWRITTEN" '.tool_input | .command = $cmd')
+
+# Output Claude Code hookSpecificOutput contract
+printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"RTK token compression","updatedInput":%s}}' "$UPDATED_INPUT"
