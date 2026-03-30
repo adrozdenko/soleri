@@ -49,8 +49,9 @@ export class SubagentDispatcher {
       this.goalAncestry = new GoalAncestry(config.goalRepository);
     }
     this.workspace = new WorkspaceResolver(config.baseDir ?? process.cwd());
-    this.reaper = new OrphanReaper((taskId) => {
-      // On orphan: release the task claim and clean up workspace
+    this.reaper = new OrphanReaper((taskId, pid) => {
+      // On orphan: kill the process group, release the task claim, and clean up workspace
+      this.reaper.killProcessGroup(pid);
       this.checkout.release(taskId);
       this.workspace.cleanup(taskId);
     });
@@ -111,12 +112,12 @@ export class SubagentDispatcher {
     }
   }
 
-  /** Clean up all resources (worktrees, claims, concurrency) */
+  /** Clean up all resources — kills tracked process groups, then cleans worktrees, claims, concurrency */
   cleanup(): void {
+    this.reaper.killAll();
     this.workspace.cleanupAll();
     this.checkout.releaseAll();
     this.concurrency.reset();
-    this.reaper.clear();
   }
 
   /** Run orphan detection and cleanup */

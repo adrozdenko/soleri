@@ -22,7 +22,7 @@ export { TaskCheckout } from './task-checkout.js';
 export { WorkspaceResolver } from './workspace-resolver.js';
 export { ConcurrencyManager } from './concurrency-manager.js';
 export { OrphanReaper } from './orphan-reaper.js';
-export type { ReapResult } from './orphan-reaper.js';
+export type { ReapResult, ProcessGroupKillResult } from './orphan-reaper.js';
 export { aggregate as aggregateResults } from './result-aggregator.js';
 
 // Dispatcher
