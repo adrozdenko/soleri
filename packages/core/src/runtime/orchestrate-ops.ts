@@ -534,10 +534,27 @@ export function createOrchestrateOps(
             })) ??
             [];
 
-          const aggregated = await runtime.subagentDispatcher.dispatch(tasks, {
-            parallel: parallelMode ?? true,
-            maxConcurrent: maxConcurrentParam ?? 3,
-          });
+          let aggregated;
+          let reapedOrphans: { taskId: string; pid?: number }[] = [];
+          try {
+            aggregated = await runtime.subagentDispatcher.dispatch(tasks, {
+              parallel: parallelMode ?? true,
+              maxConcurrent: maxConcurrentParam ?? 3,
+            });
+          } finally {
+            // Post-dispatch cleanup: reap orphaned subagent processes
+            try {
+              const reaped = runtime.subagentDispatcher.reapOrphans();
+              if (reaped.length > 0) {
+                reapedOrphans = reaped.map((r) => ({ taskId: r.taskId, pid: r.pid }));
+                console.error(
+                  `[soleri] Reaped ${reaped.length} orphaned subagent(s): ${reaped.map((r) => `${r.taskId}(pid:${r.pid})`).join(', ')}`,
+                );
+              }
+            } catch {
+              // Orphan reaping is best-effort — never blocks dispatch result
+            }
+          }
 
           // Track in brain session
           const existingSession = brainIntelligence.getSessionByPlanId(planId);
@@ -569,6 +586,7 @@ export function createOrchestrateOps(
               durationMs: aggregated.durationMs,
               totalUsage: aggregated.totalUsage,
             },
+            ...(reapedOrphans.length > 0 ? { reapedOrphans } : {}),
             ...(healthWarning ? { contextHealth: healthWarning } : {}),
           };
         }

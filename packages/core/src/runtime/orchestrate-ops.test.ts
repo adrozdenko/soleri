@@ -245,6 +245,168 @@ describe('createOrchestrateOps', () => {
       expect(rt.contextHealth.track).toHaveBeenCalled();
       expect(rt.contextHealth.check).toHaveBeenCalled();
     });
+
+    // ─── Post-dispatch cleanup (subagent path) ─────────────────
+    describe('post-dispatch cleanup', () => {
+      function addSubagentDispatcher(
+        runtime: AgentRuntime,
+        opts: {
+          dispatchResult?: Record<string, unknown>;
+          dispatchError?: Error;
+          reapResult?: Array<{
+            taskId: string;
+            status: string;
+            exitCode: number;
+            pid: number;
+            error: string;
+            durationMs: number;
+          }>;
+          reapThrows?: boolean;
+        } = {},
+      ) {
+        const dispatchMock = opts.dispatchError
+          ? vi.fn().mockRejectedValue(opts.dispatchError)
+          : vi.fn().mockResolvedValue(
+              opts.dispatchResult ?? {
+                status: 'completed',
+                totalTasks: 1,
+                completed: 1,
+                failed: 0,
+                durationMs: 100,
+                totalUsage: {},
+              },
+            );
+        const reapMock = opts.reapThrows
+          ? vi.fn().mockImplementation(() => {
+              throw new Error('reap failed');
+            })
+          : vi.fn().mockReturnValue(opts.reapResult ?? []);
+        const cleanupMock = vi.fn();
+
+        (runtime as Record<string, unknown>).subagentDispatcher = {
+          dispatch: dispatchMock,
+          reapOrphans: reapMock,
+          cleanup: cleanupMock,
+        };
+
+        return { dispatchMock, reapMock, cleanupMock };
+      }
+
+      it('calls reapOrphans after successful subagent dispatch', async () => {
+        const { reapMock } = addSubagentDispatcher(rt);
+        ops = createOrchestrateOps(rt);
+
+        const op = findOp(ops, 'orchestrate_execute');
+        await op.handler({ planId: 'legacy-plan', subagent: true });
+
+        expect(reapMock).toHaveBeenCalledTimes(1);
+      });
+
+      it('calls reapOrphans even when dispatch fails', async () => {
+        const { reapMock } = addSubagentDispatcher(rt, {
+          dispatchError: new Error('dispatch boom'),
+        });
+        ops = createOrchestrateOps(rt);
+
+        const op = findOp(ops, 'orchestrate_execute');
+        await expect(op.handler({ planId: 'legacy-plan', subagent: true })).rejects.toThrow(
+          'dispatch boom',
+        );
+
+        expect(reapMock).toHaveBeenCalledTimes(1);
+      });
+
+      it('includes reapedOrphans in result when orphans found', async () => {
+        addSubagentDispatcher(rt, {
+          reapResult: [
+            {
+              taskId: 't1',
+              status: 'orphaned',
+              exitCode: 1,
+              pid: 12345,
+              error: 'dead',
+              durationMs: 500,
+            },
+          ],
+        });
+        ops = createOrchestrateOps(rt);
+
+        const op = findOp(ops, 'orchestrate_execute');
+        const result = (await op.handler({
+          planId: 'legacy-plan',
+          subagent: true,
+        })) as Record<string, unknown>;
+
+        expect(result).toHaveProperty('reapedOrphans');
+        const reaped = result.reapedOrphans as Array<{ taskId: string; pid: number }>;
+        expect(reaped).toHaveLength(1);
+        expect(reaped[0].taskId).toBe('t1');
+        expect(reaped[0].pid).toBe(12345);
+      });
+
+      it('omits reapedOrphans from result when none found', async () => {
+        addSubagentDispatcher(rt, { reapResult: [] });
+        ops = createOrchestrateOps(rt);
+
+        const op = findOp(ops, 'orchestrate_execute');
+        const result = (await op.handler({
+          planId: 'legacy-plan',
+          subagent: true,
+        })) as Record<string, unknown>;
+
+        expect(result).not.toHaveProperty('reapedOrphans');
+      });
+
+      it('does not throw when reapOrphans fails', async () => {
+        addSubagentDispatcher(rt, { reapThrows: true });
+        ops = createOrchestrateOps(rt);
+
+        const op = findOp(ops, 'orchestrate_execute');
+        // Should complete successfully despite reap failure
+        const result = (await op.handler({
+          planId: 'legacy-plan',
+          subagent: true,
+        })) as Record<string, unknown>;
+
+        expect(result).toHaveProperty('subagent');
+        expect(result).not.toHaveProperty('reapedOrphans');
+      });
+
+      it('logs reaped orphans to stderr', async () => {
+        const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        addSubagentDispatcher(rt, {
+          reapResult: [
+            {
+              taskId: 't1',
+              status: 'orphaned',
+              exitCode: 1,
+              pid: 111,
+              error: 'dead',
+              durationMs: 100,
+            },
+            {
+              taskId: 't2',
+              status: 'orphaned',
+              exitCode: 1,
+              pid: 222,
+              error: 'dead',
+              durationMs: 200,
+            },
+          ],
+        });
+        ops = createOrchestrateOps(rt);
+
+        const op = findOp(ops, 'orchestrate_execute');
+        await op.handler({ planId: 'legacy-plan', subagent: true });
+
+        expect(stderrSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Reaped 2 orphaned subagent(s)'),
+        );
+        expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('t1(pid:111)'));
+        expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('t2(pid:222)'));
+        stderrSpy.mockRestore();
+      });
+    });
   });
 
   // ─── orchestrate_complete ─────────────────────────────────────
