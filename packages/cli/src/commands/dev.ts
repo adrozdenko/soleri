@@ -42,7 +42,6 @@ function runFileTreeDev(agentPath: string, agentId: string): void {
     p.log.error('Engine not found. Run: npm install @soleri/core');
     process.exit(1);
   }
-
   const engine = spawn('node', [engineBin, '--agent', join(agentPath, 'agent.yaml')], {
     stdio: ['pipe', 'inherit', 'inherit'],
     env: { ...process.env },
@@ -79,8 +78,13 @@ function runFileTreeDev(agentPath: string, agentId: string): void {
           regenerateClaudeMd(agentPath);
         }, 200);
       });
-    } catch {
-      // Directory may not exist yet — that's OK
+    } catch (err) {
+      // Directory may not exist yet — that's OK, but log unexpected failures
+      if (err instanceof Error && err.message && !err.message.includes('ENOENT')) {
+        console.warn(
+          'File watch stopped: ' + err.message + '. Restart soleri dev if changes stop updating.',
+        );
+      }
     }
   }
 

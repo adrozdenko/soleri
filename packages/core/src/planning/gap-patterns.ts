@@ -172,12 +172,16 @@ export function analyzeStructure(plan: Plan): PlanGap[] {
   }
 
   if (plan.tasks.length === 0) {
+    const hasApproachSteps =
+      plan.approach && /(?:step\s+\d|task\s+\d|\d\.\s|\d\)\s)/i.test(plan.approach);
     gaps.push(
       gap(
-        'critical',
+        hasApproachSteps ? 'major' : 'critical',
         'structure',
-        'Plan has no tasks.',
-        'Add at least one task to make the plan actionable.',
+        hasApproachSteps
+          ? 'Plan has no tasks but approach contains steps. Use `addTasks` in `plan_iterate` or pass `tasks` in `create_plan` to promote them.'
+          : 'Plan has no tasks.',
+        'Add tasks via `create_plan` (tasks param) or `plan_iterate` (addTasks param).',
         'tasks',
         'no_tasks',
       ),
