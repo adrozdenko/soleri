@@ -42,10 +42,13 @@ describe('installClaude path normalization', () => {
     originalHome = process.env.HOME ?? '';
     // Point homedir() to our temp dir so ~/.claude.json lands there
     process.env.HOME = tempDir;
+    // Windows uses USERPROFILE instead of HOME
+    process.env.USERPROFILE = tempDir;
   });
 
   afterEach(() => {
     process.env.HOME = originalHome;
+    if (originalHome) process.env.USERPROFILE = originalHome;
     rmSync(tempDir, { recursive: true, force: true });
   });
 
