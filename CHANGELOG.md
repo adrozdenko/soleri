@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.9.0] — 2026-03-30
+
+### Added
+- **Temporal decay for brain strength scores** — 90-day exponential halflife with 0.3 floor prevents zombie patterns from dominating recommendations; also fixes pre-existing bug where recency scoring misinterpreted unix epoch timestamps
+- **Subagent behavioral contract** — new "Subagent Identity & Behavioral Contract" section in shared-rules with 6 rules: hybrid routing (Claude Code workers vs Soleri agent instances), orchestrator-owns-decisions, no-plan-in-subagent, worktree cleanup guarantee, escalation protocol, UX output contract
+- **Subagent dispatch docs** — reference guide and hands-on tutorial in Starlight docs under Deep Dives
+- **Curator backfills Zettelkasten links** — curator consolidation now auto-creates links during grooming (#484)
+- **Incremental vault markdown sync** — sync on capture instead of batch, reducing I/O (#471)
+- **Workflow overrides in orchestrate_plan** — override workflow steps via plan params (#480)
+- **Workflow loader module** — load and validate workflow YAML at runtime (#478)
+- **Schema comments in scaffold** — gates.yaml and tools.yaml get inline documentation (#481)
+- **Cross-platform CI** — testing on Linux, Windows, and macOS
+- **Comprehensive docs overhaul** — 11 new guides, full accuracy pass across all documentation
+
+### Fixed
+- Grade gate chicken-and-egg: grader now downgrades no-tasks gap to major when approach has structured steps, unblocking plan approval
+- Windows path normalization in MCP config files
+- Node.js version check and preflight permission checks in CLI
+- Improved error messages and fix for silent watch failures in dev mode
+- Windows-compatible scaffolder tests
+- OpenCode adapter test Windows compatibility
+- Scaffold git init test CI safety
+- Stabilized orchestrate_complete E2E test
+- Removed dead WorkflowToolsSchema export
+
 ## [9.8.0] — 2026-03-30
 
 ### Added
