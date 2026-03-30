@@ -192,4 +192,122 @@ describe('SubagentDispatcher', () => {
     expect(updates.length).toBeGreaterThanOrEqual(1);
     expect(updates[0][0]).toBe('cb-test');
   });
+
+  // ── Timeout + process killing ─────────────────────────────────────
+
+  it('dispatch() returns timeout error when task exceeds timeout', async () => {
+    vi.useFakeTimers();
+
+    (mockAdapter.execute as ReturnType<typeof vi.fn>).mockImplementation(
+      () => new Promise(() => {}), // never resolves
+    );
+
+    const tasks = [makeTask({ taskId: 'timeout-task' })];
+    const dispatchPromise = dispatcher.dispatch(tasks, { parallel: false, timeout: 1000 });
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    const result = await dispatchPromise;
+    expect(result.failed).toBe(1);
+    expect(result.results[0].error).toBe('Task timed out');
+
+    vi.useRealTimers();
+  });
+
+  it('dispatch() passes onMeta callback to adapter for pid reporting', async () => {
+    let capturedOnMeta: ((meta: Record<string, unknown>) => void) | undefined;
+
+    (mockAdapter.execute as ReturnType<typeof vi.fn>).mockImplementation(async (ctx) => {
+      capturedOnMeta = ctx.onMeta;
+      // Simulate adapter reporting its PID
+      ctx.onMeta?.({ pid: 42 });
+      return { exitCode: 0, summary: 'done' };
+    });
+
+    const tasks = [makeTask({ taskId: 'meta-test' })];
+    const result = await dispatcher.dispatch(tasks, { parallel: false });
+
+    expect(capturedOnMeta).toBeDefined();
+    expect(result.results[0].pid).toBe(42);
+    expect(result.completed).toBe(1);
+  });
+
+  it('dispatch() kills child process on timeout when pid is reported', async () => {
+    vi.useFakeTimers();
+
+    const killSpy = vi.spyOn(process, 'kill');
+    let sigkillSent = false;
+    killSpy.mockImplementation((_pid: number, signal?: string | number) => {
+      if (signal === 0) {
+        // Process alive until SIGKILL
+        if (sigkillSent) {
+          const err = new Error('No such process') as NodeJS.ErrnoException;
+          err.code = 'ESRCH';
+          throw err;
+        }
+        return true;
+      }
+      if (signal === 'SIGTERM') return true;
+      if (signal === 'SIGKILL') {
+        sigkillSent = true;
+        return true;
+      }
+      return true;
+    });
+
+    (mockAdapter.execute as ReturnType<typeof vi.fn>).mockImplementation(async (ctx) => {
+      // Report PID immediately
+      ctx.onMeta?.({ pid: 9876 });
+      // Then hang forever (simulate stuck process)
+      return new Promise(() => {});
+    });
+
+    const tasks = [makeTask({ taskId: 'kill-test' })];
+    const dispatchPromise = dispatcher.dispatch(tasks, { parallel: false, timeout: 500 });
+
+    // Trigger the timeout
+    await vi.advanceTimersByTimeAsync(500);
+
+    const result = await dispatchPromise;
+    expect(result.failed).toBe(1);
+    expect(result.results[0].error).toBe('Task timed out');
+    expect(result.results[0].pid).toBe(9876);
+
+    // Verify SIGTERM was sent
+    expect(killSpy).toHaveBeenCalledWith(9876, 'SIGTERM');
+
+    // Advance past the 5s grace period to trigger SIGKILL escalation
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(killSpy).toHaveBeenCalledWith(9876, 'SIGKILL');
+
+    killSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('dispatch() does not attempt kill when no pid is reported', async () => {
+    vi.useFakeTimers();
+
+    const killSpy = vi.spyOn(process, 'kill');
+    killSpy.mockImplementation(() => true);
+
+    (mockAdapter.execute as ReturnType<typeof vi.fn>).mockImplementation(
+      () => new Promise(() => {}), // never resolves, no pid reported
+    );
+
+    const tasks = [makeTask({ taskId: 'no-pid-task' })];
+    const dispatchPromise = dispatcher.dispatch(tasks, { parallel: false, timeout: 500 });
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    const result = await dispatchPromise;
+    expect(result.failed).toBe(1);
+    expect(result.results[0].error).toBe('Task timed out');
+
+    // No SIGTERM or SIGKILL should have been sent (only signal-0 checks from reaper are possible)
+    const termCalls = killSpy.mock.calls.filter((c) => c[1] === 'SIGTERM' || c[1] === 'SIGKILL');
+    expect(termCalls).toHaveLength(0);
+
+    killSpy.mockRestore();
+    vi.useRealTimers();
+  });
 });

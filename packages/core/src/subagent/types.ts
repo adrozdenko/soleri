@@ -136,3 +136,13 @@ export interface TrackedProcess {
   /** When the process was registered */
   registeredAt: number;
 }
+
+// ─── Kill Result ───────────────────────────────────────────────────
+
+/** Result of attempting to kill a process */
+export interface KillResult {
+  /** Whether the process was successfully killed */
+  killed: boolean;
+  /** Which signal ultimately killed the process */
+  signal: 'SIGTERM' | 'SIGKILL';
+}

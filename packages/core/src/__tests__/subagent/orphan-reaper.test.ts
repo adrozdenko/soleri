@@ -138,4 +138,139 @@ describe('OrphanReaper', () => {
     expect(reaper.isTracked(1234)).toBe(true);
     expect(reaper.isTracked(5678)).toBe(false);
   });
+
+  // ── isAlive (public) ──────────────────────────────────────────────
+
+  it('isAlive() returns true when process.kill(pid, 0) succeeds', () => {
+    killSpy.mockImplementation(() => true);
+    const reaper = new OrphanReaper();
+    expect(reaper.isAlive(1234)).toBe(true);
+  });
+
+  it('isAlive() returns true for EPERM (process exists, no permission)', () => {
+    killSpy.mockImplementation(() => {
+      const err = new Error('Operation not permitted') as NodeJS.ErrnoException;
+      err.code = 'EPERM';
+      throw err;
+    });
+    const reaper = new OrphanReaper();
+    expect(reaper.isAlive(1234)).toBe(true);
+  });
+
+  it('isAlive() returns false for ESRCH (process dead)', () => {
+    killSpy.mockImplementation(() => {
+      const err = new Error('No such process') as NodeJS.ErrnoException;
+      err.code = 'ESRCH';
+      throw err;
+    });
+    const reaper = new OrphanReaper();
+    expect(reaper.isAlive(1234)).toBe(false);
+  });
+
+  // ── killProcess ───────────────────────────────────────────────────
+
+  describe('killProcess', () => {
+    it('returns killed=true with SIGTERM when process is already dead', async () => {
+      killSpy.mockImplementation(() => {
+        const err = new Error('No such process') as NodeJS.ErrnoException;
+        err.code = 'ESRCH';
+        throw err;
+      });
+
+      const reaper = new OrphanReaper();
+      const result = await reaper.killProcess(9999);
+      expect(result.killed).toBe(true);
+      expect(result.signal).toBe('SIGTERM');
+    });
+
+    it('sends SIGTERM and returns killed=true when process dies from SIGTERM', async () => {
+      let termSent = false;
+      killSpy.mockImplementation((_pid: number, signal?: string | number) => {
+        if (signal === 0) {
+          // isAlive check: alive before SIGTERM, dead after
+          if (termSent) {
+            const err = new Error('No such process') as NodeJS.ErrnoException;
+            err.code = 'ESRCH';
+            throw err;
+          }
+          return true;
+        }
+        if (signal === 'SIGTERM') {
+          termSent = true;
+          return true;
+        }
+        return true;
+      });
+
+      const reaper = new OrphanReaper();
+      // Use escalate=false to avoid the 5s wait
+      const result = await reaper.killProcess(1234, false);
+      expect(result.killed).toBe(true);
+      expect(result.signal).toBe('SIGTERM');
+    });
+
+    it('escalates to SIGKILL when SIGTERM does not kill within grace period', async () => {
+      vi.useFakeTimers();
+
+      let sigkillSent = false;
+      killSpy.mockImplementation((_pid: number, signal?: string | number) => {
+        if (signal === 0) {
+          // Process stays alive until SIGKILL
+          if (sigkillSent) {
+            const err = new Error('No such process') as NodeJS.ErrnoException;
+            err.code = 'ESRCH';
+            throw err;
+          }
+          return true;
+        }
+        if (signal === 'SIGTERM') return true;
+        if (signal === 'SIGKILL') {
+          sigkillSent = true;
+          return true;
+        }
+        return true;
+      });
+
+      const reaper = new OrphanReaper();
+      const promise = reaper.killProcess(1234, true);
+
+      // Advance past the 5s grace period
+      await vi.advanceTimersByTimeAsync(5_000);
+
+      const result = await promise;
+      expect(result.killed).toBe(true);
+      expect(result.signal).toBe('SIGKILL');
+
+      vi.useRealTimers();
+    });
+
+    it('handles SIGTERM throwing (process dies between check and signal)', async () => {
+      let firstCheck = true;
+      killSpy.mockImplementation((_pid: number, signal?: string | number) => {
+        if (signal === 0) {
+          if (firstCheck) {
+            firstCheck = false;
+            return true; // alive on first check
+          }
+          // Dead after
+          const err = new Error('No such process') as NodeJS.ErrnoException;
+          err.code = 'ESRCH';
+          throw err;
+        }
+        if (signal === 'SIGTERM') {
+          // Process died between isAlive check and SIGTERM send
+          const err = new Error('No such process') as NodeJS.ErrnoException;
+          err.code = 'ESRCH';
+          throw err;
+        }
+        return true;
+      });
+
+      const reaper = new OrphanReaper();
+      const result = await reaper.killProcess(1234, false);
+      // Process is dead, so killed=true
+      expect(result.killed).toBe(true);
+      expect(result.signal).toBe('SIGTERM');
+    });
+  });
 });
