@@ -287,9 +287,9 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
         const dispatcher = runtime.subagentDispatcher;
         const results = dispatcher.reapOrphans();
         return {
-          reaped: results.length,
-          pids: results.map((r) => r.pid ?? 0),
-          tasks: results.map((r) => r.taskId),
+          reaped: results.reaped.length,
+          tasks: results.reaped,
+          alive: results.alive,
         };
       },
     },

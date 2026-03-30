@@ -544,11 +544,11 @@ export function createOrchestrateOps(
           } finally {
             // Post-dispatch cleanup: reap orphaned subagent processes
             try {
-              const reaped = runtime.subagentDispatcher.reapOrphans();
-              if (reaped.length > 0) {
-                reapedOrphans = reaped.map((r) => ({ taskId: r.taskId, pid: r.pid }));
+              const reapResult = runtime.subagentDispatcher.reapOrphans();
+              if (reapResult.reaped.length > 0) {
+                reapedOrphans = reapResult.reaped.map((taskId) => ({ taskId }));
                 console.error(
-                  `[soleri] Reaped ${reaped.length} orphaned subagent(s): ${reaped.map((r) => `${r.taskId}(pid:${r.pid})`).join(', ')}`,
+                  `[soleri] Reaped ${reapResult.reaped.length} orphaned subagent(s): ${reapResult.reaped.join(', ')}`,
                 );
               }
             } catch {
