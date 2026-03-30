@@ -36,6 +36,10 @@ export interface QualityAnalysis {
 
 /** Tasks with this many or more fix iterations are flagged as anti-patterns. */
 const REWORK_THRESHOLD = 2;
+/** Brain feedback confidence for clean first-try tasks. */
+const CLEAN_TASK_CONFIDENCE = 0.9;
+/** Brain feedback confidence for high-rework anti-pattern tasks. */
+const REWORK_TASK_CONFIDENCE = 0.7;
 
 // ---------------------------------------------------------------------------
 // Analysis
@@ -152,7 +156,7 @@ export function captureQualitySignals(
         query: ap.taskTitle,
         entryId: planId,
         action: 'dismissed',
-        confidence: 0.7,
+        confidence: REWORK_TASK_CONFIDENCE,
         source: 'evidence-quality',
         reason: `Task needed ${ap.fixIterations} fix iterations — high rework`,
         context: JSON.stringify({
@@ -174,7 +178,7 @@ export function captureQualitySignals(
         query: ct.taskTitle,
         entryId: planId,
         action: 'accepted',
-        confidence: 0.9,
+        confidence: CLEAN_TASK_CONFIDENCE,
         source: 'evidence-quality',
         reason: 'Clean first-try completion — no rework needed',
       });
