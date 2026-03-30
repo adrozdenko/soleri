@@ -47,6 +47,8 @@ export interface AdapterExecutionResult {
   exitCode: number;
   /** Whether execution timed out */
   timedOut?: boolean;
+  /** PID of the spawned child process (if available) */
+  pid?: number;
   /** Token usage */
   usage?: AdapterTokenUsage;
   /** Session state to persist for next run */

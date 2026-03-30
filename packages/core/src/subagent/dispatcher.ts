@@ -259,20 +259,42 @@ export class SubagentDispatcher {
         this.goalAncestry.inject({ config: enrichedConfig }, goalId).config ?? enrichedConfig;
     }
 
-    // 5. Execute with timeout
+    // 5. Execute with timeout and active process killing
+    let childPid: number | undefined;
     try {
       const resultPromise = adapter.execute({
         runId: `subagent-${task.taskId}-${Date.now()}`,
         prompt: task.prompt,
         workspace,
         config: enrichedConfig,
+        onMeta: (meta) => {
+          // Adapters report their child PID via onMeta({ pid })
+          if (typeof meta.pid === 'number') {
+            childPid = meta.pid;
+            this.reaper.register(childPid, task.taskId);
+          }
+        },
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Task timed out')), timeout);
+        setTimeout(() => {
+          reject(new Error('Task timed out'));
+          // Kill the child process if we have a PID
+          if (childPid !== undefined) {
+            // Fire-and-forget: kill with escalation (SIGTERM → wait 5s → SIGKILL)
+            void this.reaper.killProcess(childPid, true).then(() => {
+              this.reaper.unregister(childPid!);
+            });
+          }
+        }, timeout);
       });
 
       const adapterResult = await Promise.race([resultPromise, timeoutPromise]);
+
+      // Normal completion — unregister from reaper
+      if (childPid !== undefined) {
+        this.reaper.unregister(childPid);
+      }
 
       return {
         taskId: task.taskId,
@@ -282,6 +304,7 @@ export class SubagentDispatcher {
         usage: adapterResult.usage,
         sessionState: adapterResult.sessionState,
         durationMs: Date.now() - startTime,
+        pid: childPid ?? adapterResult.pid,
       };
     } catch (err) {
       return {
@@ -290,6 +313,7 @@ export class SubagentDispatcher {
         exitCode: 1,
         error: err instanceof Error ? err.message : String(err),
         durationMs: Date.now() - startTime,
+        pid: childPid,
       };
     } finally {
       // Cleanup

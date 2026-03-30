@@ -7,7 +7,9 @@
  * - EPERM → process is alive but we lack permission to signal it
  */
 
-import type { TrackedProcess } from './types.js';
+import type { TrackedProcess, KillResult } from './types.js';
+
+const KILL_GRACE_PERIOD_MS = 5_000;
 
 /** Result of a reap cycle. */
 export interface ReapResult {
@@ -57,6 +59,50 @@ export class OrphanReaper {
     return { reaped, alive };
   }
 
+  /**
+   * Kill a process by PID. Sends SIGTERM first; if `escalate` is true
+   * (default), waits 5 seconds and sends SIGKILL if still alive.
+   *
+   * Handles gracefully: process already dead, EPERM, etc.
+   */
+  async killProcess(pid: number, escalate = true): Promise<KillResult> {
+    // If already dead, report as killed via SIGTERM (no-op)
+    if (!this.isAlive(pid)) {
+      return { killed: true, signal: 'SIGTERM' };
+    }
+
+    // Send SIGTERM
+    try {
+      process.kill(pid, 'SIGTERM');
+    } catch {
+      // ESRCH = already dead, EPERM = can't signal
+      return { killed: !this.isAlive(pid), signal: 'SIGTERM' };
+    }
+
+    // If not escalating, check once and return
+    if (!escalate) {
+      // Give a brief moment for the signal to take effect
+      return { killed: !this.isAlive(pid), signal: 'SIGTERM' };
+    }
+
+    // Wait grace period, then check if still alive
+    await new Promise<void>((resolve) => setTimeout(resolve, KILL_GRACE_PERIOD_MS));
+
+    if (!this.isAlive(pid)) {
+      return { killed: true, signal: 'SIGTERM' };
+    }
+
+    // Escalate to SIGKILL
+    try {
+      process.kill(pid, 'SIGKILL');
+    } catch {
+      // Process may have died between check and kill
+      return { killed: !this.isAlive(pid), signal: 'SIGKILL' };
+    }
+
+    return { killed: true, signal: 'SIGKILL' };
+  }
+
   /** Return all currently tracked processes. */
   listTracked(): TrackedProcess[] {
     return [...this.tracked.values()];
@@ -80,7 +126,7 @@ export class OrphanReaper {
    * - EPERM   → alive (exists but we can't signal it)
    * - ESRCH   → dead
    */
-  private isAlive(pid: number): boolean {
+  isAlive(pid: number): boolean {
     try {
       process.kill(pid, 0);
       return true;
