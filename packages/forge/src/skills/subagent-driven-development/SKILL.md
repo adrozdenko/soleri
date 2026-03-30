@@ -25,15 +25,16 @@ Decompose work into isolated units, dispatch subagents via the Agent tool, merge
 
 Not all subagents are equal. Route by complexity:
 
-| Signal | Agent Type | Why |
-|--------|-----------|-----|
-| Single file, clear spec, no decisions | **Claude Code worker** | Fast, low overhead |
-| Approach already in parent plan | **Claude Code worker** | Spec is decided |
-| 3+ files, cross-cutting concerns | **Soleri agent instance** | Needs vault, brain, lifecycle |
-| Unresolved design decisions | **Soleri agent instance** | Needs judgment |
-| New dependencies or architecture | **Soleri agent instance** | Needs full context |
+| Signal                                | Agent Type                | Why                           |
+| ------------------------------------- | ------------------------- | ----------------------------- |
+| Single file, clear spec, no decisions | **Claude Code worker**    | Fast, low overhead            |
+| Approach already in parent plan       | **Claude Code worker**    | Spec is decided               |
+| 3+ files, cross-cutting concerns      | **Soleri agent instance** | Needs vault, brain, lifecycle |
+| Unresolved design decisions           | **Soleri agent instance** | Needs judgment                |
+| New dependencies or architecture      | **Soleri agent instance** | Needs full context            |
 
 **User overrides:**
+
 - "Use full agent for everything" → all Soleri agent instances
 - "Just use workers" → all Claude Code workers
 - Default: hybrid routing
@@ -72,6 +73,7 @@ Present the dispatch table to the user:
 ```
 
 Each subagent prompt must include:
+
 - Task scope and file boundaries
 - Acceptance criteria
 - "Do NOT create plans. Do NOT make design decisions. Execute this spec exactly."
@@ -94,12 +96,14 @@ For each returning subagent:
 After all merges, report to the user:
 
 **Minimal (default):**
+
 ```
 ✓ N/N complete. M patterns captured to vault.
   → Decisions: [any design decisions the orchestrator made]
 ```
 
 **Detailed (on request):**
+
 ```
 | # | Task | Agent | Status | Knowledge |
 |---|------|-------|--------|-----------|
@@ -119,16 +123,16 @@ Three layers — nothing accumulates:
 
 ## Anti-Patterns
 
-| Anti-Pattern                                 | Why It Fails                                  |
-| -------------------------------------------- | --------------------------------------------- |
-| Subagent creating its own plan               | Stale plans accumulate, lifecycle never completes |
+| Anti-Pattern                                 | Why It Fails                                        |
+| -------------------------------------------- | --------------------------------------------------- |
+| Subagent creating its own plan               | Stale plans accumulate, lifecycle never completes   |
 | Subagent making design decisions             | Inconsistent approaches, orchestrator loses control |
-| Dispatching for a 5-line fix                 | Startup overhead exceeds the work             |
-| Parallel dispatch of dependent tasks         | Second agent works on stale assumptions       |
-| Skipping worktree isolation for nearby files | Silent overwrites between agents              |
-| Trusting self-reports without reading code   | Agents miss edge cases or misunderstand scope |
-| Dispatching 10+ agents at once               | Review bottleneck shifts to the controller    |
-| Not cleaning up worktrees after merge        | Disk bloat, stale branch accumulation         |
+| Dispatching for a 5-line fix                 | Startup overhead exceeds the work                   |
+| Parallel dispatch of dependent tasks         | Second agent works on stale assumptions             |
+| Skipping worktree isolation for nearby files | Silent overwrites between agents                    |
+| Trusting self-reports without reading code   | Agents miss edge cases or misunderstand scope       |
+| Dispatching 10+ agents at once               | Review bottleneck shifts to the controller          |
+| Not cleaning up worktrees after merge        | Disk bloat, stale branch accumulation               |
 
 ## Merge Strategy
 

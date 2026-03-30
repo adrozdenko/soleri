@@ -212,9 +212,11 @@ describe('Scaffolder', () => {
       expect(setup).toContain('AGENT_NAME="atlas"');
       expect(setup).toContain('#!/usr/bin/env bash');
 
-      const stats = statSync(setupPath);
-      const isExecutable = (stats.mode & 0o111) !== 0;
-      expect(isExecutable).toBe(true);
+      if (process.platform !== 'win32') {
+        const stats = statSync(setupPath);
+        const isExecutable = (stats.mode & 0o111) !== 0;
+        expect(isExecutable).toBe(true);
+      }
     });
 
     it('should generate facade tests using runtime factories', () => {
@@ -297,7 +299,7 @@ describe('Scaffolder', () => {
 
       for (const dir of skillDirs) {
         const content = readFileSync(join(skillsDir, dir, 'SKILL.md'), 'utf-8');
-        expect(content).toMatch(/^---\nname: /);
+        expect(content).toMatch(/^---\r?\nname: /);
         expect(content).toContain('description:');
       }
     });
@@ -326,7 +328,7 @@ describe('Scaffolder', () => {
         const skillPath = join(skillsDir, name, 'SKILL.md');
         if (existsSync(skillPath)) {
           const content = readFileSync(skillPath, 'utf-8');
-          expect(content).toMatch(/^---\nname: /);
+          expect(content).toMatch(/^---\r?\nname: /);
         }
       }
     });
