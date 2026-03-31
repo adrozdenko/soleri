@@ -4,7 +4,8 @@ description: >
   Use when the user says "save this", "capture this", "remember this pattern",
   "add to vault", "vault capture", or when persisting learnings from a work
   session. Validated capture with tier scoping, duplicate detection, and
-  abstraction review.
+  abstraction review. For bulk extraction from documents, code, or PRs, use
+  knowledge-harvest instead.
 ---
 
 # Vault Capture — Validated Knowledge Persistence

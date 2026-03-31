@@ -4,6 +4,7 @@ description: >
   Use when the user says "pre-PR check", "delivery checklist", "is this ready",
   "final review", or "ready to deploy". Runs pre-delivery quality gates
   to ensure nothing ships without passing stability and code quality checks.
+  For mid-workflow verification (not shipping), use verification-before-completion instead.
 ---
 
 # Deliver & Ship — Quality Gate Runner

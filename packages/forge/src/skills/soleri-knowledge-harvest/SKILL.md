@@ -3,7 +3,8 @@ name: soleri-knowledge-harvest
 description: >
   Use when the user says "learn from this", "harvest knowledge", "ingest this",
   or "extract patterns from". Extracts multiple patterns from a source like
-  code, docs, PRs, or articles into the vault.
+  code, docs, PRs, or articles into the vault. For saving a single known
+  pattern, use vault-capture instead.
 ---
 
 # Knowledge Harvest — Extract Patterns From Anything

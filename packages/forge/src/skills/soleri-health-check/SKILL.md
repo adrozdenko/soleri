@@ -3,7 +3,8 @@ name: soleri-health-check
 description: >
   Use when the user says "system health", "agent health", "run diagnostics",
   "system status", or "check health". Read-only health assessment of the
-  knowledge base — scoring, reporting, finding issues.
+  knowledge base — scoring, reporting, finding issues. For deep quality
+  analysis (contradictions, stale patterns, knowledge debt), use vault-smells instead.
 ---
 
 # Health Check — Knowledge Base Maintenance

@@ -4,6 +4,7 @@ description: >
   Use when the user says "check against patterns", "pattern compliance",
   "convention check", "review against vault", or "institutional review".
   Reviews code against the project's own captured patterns and conventions.
+  For general code quality review (smells, architecture), use deep-review instead.
 ---
 
 # Code Patrol — Review Code Against Your Own Knowledge

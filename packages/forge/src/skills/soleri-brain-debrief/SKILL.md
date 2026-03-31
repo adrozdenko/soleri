@@ -3,7 +3,8 @@ name: soleri-brain-debrief
 description: >
   Use when the user says "brain stats", "pattern strengths",
   "intelligence report", "show brain data", or "what patterns are strongest".
-  Surfaces accumulated pattern intelligence from the brain module.
+  Surfaces accumulated pattern intelligence from the brain module. For
+  time-bound work reflection (sprint retro, weekly summary), use retrospective instead.
 ---
 
 # Brain Debrief — Intelligence Report

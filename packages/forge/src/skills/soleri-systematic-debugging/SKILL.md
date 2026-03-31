@@ -3,7 +3,8 @@ name: soleri-systematic-debugging
 description: >
   Use as the FIRST response when something is broken — "bug", "failing test",
   "not working", "debug this", "error", "crash", or "weird issue". Diagnoses
-  root cause before proposing fixes.
+  root cause before proposing fixes. After root cause is found, hand off to
+  fix-and-learn for repair and knowledge capture.
 ---
 
 # Systematic Debugging

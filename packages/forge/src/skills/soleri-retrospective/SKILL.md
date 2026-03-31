@@ -3,7 +3,8 @@ name: soleri-retrospective
 description: >
   Use when the user says "sprint retro", "weekly summary", "what went well",
   "end of sprint", or "monthly report". Time-bound reflection on recent work
-  that reviews sessions and extracts actionable improvements.
+  that reviews sessions and extracts actionable improvements. For brain
+  pattern intelligence and strength scores, use brain-debrief instead.
 ---
 
 # Retrospective — Learning Report From Real Data

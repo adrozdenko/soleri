@@ -3,7 +3,8 @@ name: soleri-deep-review
 description: >
   Use when the user says "deep review", "code smells", "architecture review",
   "is this well architected", or "optimization review". Multi-pass code review
-  analyzing structural health, smells, and solution quality.
+  analyzing structural health, smells, and solution quality. For reviewing
+  against the project's own vault patterns and conventions, use code-patrol instead.
 ---
 
 # Deep Review — Architecture, Smells & Solution Quality
