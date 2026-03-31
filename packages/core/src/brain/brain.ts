@@ -10,7 +10,8 @@ import {
   cosineSimilarity,
   jaccardSimilarity,
 } from '../text/similarity.js';
-import { rowToEntry } from '../vault/vault-entries.js';
+import { rowToEntry, cosineSearch, getVector } from '../vault/vault-entries.js';
+import type { EmbeddingProvider } from '../embeddings/types.js';
 import type {
   ScoringWeights,
   ScoreBreakdown,
@@ -33,11 +34,36 @@ const SEVERITY_SCORES: Record<string, number> = {
   suggestion: 0.4,
 };
 
+// ─── Vector cosine similarity (dense float arrays) ────────────────
+
+function vectorCosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+  let dot = 0,
+    normA = 0,
+    normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+}
+
 // ─── Brain Class ─────────────────────────────────────────────────
 
 const DEFAULT_WEIGHTS: ScoringWeights = {
   semantic: 0.4,
   vector: 0.0,
+  severity: 0.15,
+  temporalDecay: 0.15,
+  tagOverlap: 0.15,
+  domainMatch: 0.15,
+};
+
+/** Weights used when an embedding provider is active — vector gets 0.15, semantic drops to 0.25. */
+const DEFAULT_WEIGHTS_HYBRID: ScoringWeights = {
+  semantic: 0.25,
+  vector: 0.15,
   severity: 0.15,
   temporalDecay: 0.15,
   tagOverlap: 0.15,
@@ -53,13 +79,21 @@ const RECENCY_HALF_LIFE_DAYS = 365;
 export class Brain {
   private vault: Vault;
   private vaultManager: VaultManager | undefined;
+  private embeddingProvider: EmbeddingProvider | undefined;
   private vocabulary: Map<string, number> = new Map();
   private weights: ScoringWeights = { ...DEFAULT_WEIGHTS };
 
-  constructor(vault: Vault, vaultManager?: VaultManager) {
+  constructor(vault: Vault, vaultManager?: VaultManager, embeddingProvider?: EmbeddingProvider) {
     this.vault = vault;
     this.vaultManager = vaultManager;
+    this.embeddingProvider = embeddingProvider;
     this.loadVocabularyFromDb();
+    this.recomputeWeights();
+  }
+
+  /** Set or replace the embedding provider at runtime. */
+  setEmbeddingProvider(provider: EmbeddingProvider | undefined): void {
+    this.embeddingProvider = provider;
     this.recomputeWeights();
   }
 
@@ -91,9 +125,8 @@ export class Brain {
       });
     }
 
-    if (rawResults.length === 0) return [];
+    if (rawResults.length === 0 && !this.embeddingProvider) return [];
 
-    const seedCount = rawResults.length;
     const queryTokens = tokenize(query);
     const queryTags = options?.tags ?? [];
     const queryDomain = options?.domain;
@@ -105,9 +138,53 @@ export class Brain {
         ? calculateTfIdf(queryTokens, this.vocabulary)
         : null;
 
+    // ── Vector recall: embed query and merge cosineSearch candidates ──
+    let queryEmbedding: number[] | null = null;
+    const vectorSimilarityMap = new Map<string, number>();
+
+    if (this.embeddingProvider) {
+      try {
+        const embResult = await this.embeddingProvider.embed([query]);
+        if (embResult.vectors.length > 0 && embResult.vectors[0].length > 0) {
+          queryEmbedding = embResult.vectors[0];
+          const provider = this.vault.getProvider();
+          const vectorHits = cosineSearch(provider, queryEmbedding, fetchLimit);
+
+          // Build similarity lookup and merge vector-only candidates into rawResults
+          const ftsIds = new Set(rawResults.map((r) => r.entry.id));
+          for (const hit of vectorHits) {
+            vectorSimilarityMap.set(hit.entryId, hit.similarity);
+            if (!ftsIds.has(hit.entryId)) {
+              // Vector-only candidate — fetch full entry and add to pool
+              const entry = this.vault.get(hit.entryId);
+              if (entry) {
+                rawResults.push({ entry, score: hit.similarity });
+              }
+            }
+          }
+        }
+      } catch {
+        // Embedding failed — graceful degradation, continue with FTS-only
+      }
+    }
+
+    if (rawResults.length === 0) return [];
+
+    const seedCount = rawResults.length;
+
     const ranked = rawResults.map((result) => {
       const entry = result.entry;
-      const breakdown = this.scoreEntry(entry, queryTokens, queryTags, queryDomain, now, queryVec);
+      const vectorSim = vectorSimilarityMap.get(entry.id) ?? null;
+      const breakdown = this.scoreEntry(
+        entry,
+        queryTokens,
+        queryTags,
+        queryDomain,
+        now,
+        queryVec,
+        queryEmbedding,
+        vectorSim,
+      );
       return { entry, score: breakdown.total, breakdown };
     });
 
@@ -499,6 +576,8 @@ export class Brain {
     queryDomain: string | undefined,
     now: number,
     queryVec: Map<string, number> | null = null,
+    queryEmbedding: number[] | null = null,
+    precomputedVectorSim: number | null = null,
   ): ScoreBreakdown {
     const w = this.weights;
 
@@ -523,7 +602,22 @@ export class Brain {
 
     const domainMatch = queryDomain && entry.domain === queryDomain ? 1.0 : 0;
 
-    const vector = 0;
+    // Use precomputed cosine similarity from the vector recall phase when available.
+    // If we have a query embedding but no precomputed similarity (entry wasn't in
+    // cosineSearch results), try to compute it from the entry's stored vector.
+    let vector = 0;
+    if (precomputedVectorSim !== null) {
+      vector = precomputedVectorSim;
+    } else if (queryEmbedding) {
+      try {
+        const stored = getVector(this.vault.getProvider(), entry.id);
+        if (stored) {
+          vector = vectorCosineSimilarity(queryEmbedding, stored.vector);
+        }
+      } catch {
+        // No stored vector — vector stays 0
+      }
+    }
 
     const total =
       w.semantic * semantic +
@@ -681,7 +775,9 @@ export class Brain {
       }
     ).count;
     if (feedbackCount < FEEDBACK_THRESHOLD) {
-      this.weights = { ...DEFAULT_WEIGHTS };
+      this.weights = this.embeddingProvider
+        ? { ...DEFAULT_WEIGHTS_HYBRID }
+        : { ...DEFAULT_WEIGHTS };
       return;
     }
 
@@ -707,8 +803,20 @@ export class Brain {
       DEFAULT_WEIGHTS.semantic + WEIGHT_BOUND,
     );
 
-    // vector stays 0 in base weights (only active during hybrid search)
-    newWeights.vector = 0;
+    // When no embedding provider is configured, vector weight stays 0.
+    // When provider IS available, vector participates in weight adaptation.
+    if (!this.embeddingProvider) {
+      newWeights.vector = 0;
+    } else {
+      // With embeddings active, give vector a meaningful default weight
+      // by redistributing from semantic (the closest signal).
+      newWeights.vector = DEFAULT_WEIGHTS_HYBRID.vector;
+      newWeights.semantic = clamp(
+        newWeights.semantic - DEFAULT_WEIGHTS_HYBRID.vector,
+        DEFAULT_WEIGHTS.semantic - WEIGHT_BOUND,
+        DEFAULT_WEIGHTS.semantic + WEIGHT_BOUND,
+      );
+    }
 
     const remaining = 1.0 - newWeights.semantic - newWeights.vector;
     const otherSum =
