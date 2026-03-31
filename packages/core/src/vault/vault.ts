@@ -11,6 +11,7 @@ import type { AutoLinkConfig, EntryUpdateFields } from './vault-entries.js';
 export interface SearchResult {
   entry: IntelligenceEntry;
   score: number;
+  source?: string;
 }
 export interface VaultStats {
   totalEntries: number;

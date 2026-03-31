@@ -188,6 +188,7 @@ export class VaultManager {
     return merged.slice(0, limit).map((r) => ({
       entry: r.entry,
       score: r.weightedScore,
+      source: r.source,
     }));
   }
 
