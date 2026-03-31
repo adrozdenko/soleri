@@ -29,6 +29,7 @@ The interactive wizard walks you through agent configuration: name, role, domain
 | `soleri hooks remove-pack <pack>`  | Remove a hook pack                                     |
 | `soleri hooks list-packs`          | Show available hook packs and their status             |
 | `soleri hooks upgrade-pack <pack>` | Upgrade a hook pack to the latest version              |
+| `soleri uninstall [dir]`           | Remove agent MCP entries (or all artifacts with --full)|
 
 ### Create
 
@@ -107,6 +108,34 @@ soleri doctor                  # Verify everything works
 soleri hooks add claude-code   # Add editor hooks
 soleri add-domain security     # Add a domain later
 ```
+
+### Uninstall
+
+Remove an agent's MCP server registration:
+
+```bash
+soleri uninstall [dir]                    # Remove MCP server entries only
+soleri uninstall [dir] --target claude    # Remove from Claude only
+```
+
+Fully remove an agent and all its artifacts:
+
+```bash
+soleri uninstall [dir] --full             # Interactive confirmation
+soleri uninstall [dir] --full --dry-run   # Preview what would be removed
+soleri uninstall [dir] --full --force     # Skip confirmation (CI/scripting)
+```
+
+#### Artifacts removed with --full
+
+| Artifact | Location |
+|----------|----------|
+| MCP server entries | `~/.claude.json`, `~/.codex/config.toml`, `~/.config/opencode/opencode.json` |
+| Project directory | `~/projects/<agent>/` or specified dir |
+| Data directory | `~/.soleri/<agent>/` (current), `~/.<agent>/` (legacy) |
+| CLAUDE.md blocks | `~/CLAUDE.md`, `~/.claude/CLAUDE.md` |
+| Permission entries | `~/.claude/settings.local.json` |
+| Launcher script | `/usr/local/bin/<agent>` |
 
 ## How It Works
 

@@ -94,7 +94,10 @@ export function registerUninstall(program: Command): void {
     .command('uninstall')
     .argument('[dir]', 'Agent directory (defaults to cwd)')
     .option('--target <target>', 'Registration target: opencode, claude, codex, or all', 'opencode')
-    .description('Remove agent MCP server entry from editor config')
+    .option('--full', 'Remove all agent artifacts (project, data, configs, permissions, launcher)')
+    .option('--dry-run', 'Show what would be removed without making changes')
+    .option('--force', 'Skip confirmation prompt')
+    .description('Remove agent MCP server entries (or all artifacts with --full)')
     .action(async (dir?: string, opts?: { target?: string }) => {
       const resolvedDir = dir ? resolve(dir) : undefined;
       const ctx = detectAgent(resolvedDir);
