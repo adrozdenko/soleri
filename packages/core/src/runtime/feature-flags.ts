@@ -23,6 +23,10 @@ const BUILT_IN_FLAGS: Record<string, FlagDefinition> = {
     description: 'Sync vault entries to Cognee knowledge graph',
     defaultValue: true,
   },
+  'embedding-enabled': {
+    description: 'Enable vector embedding provider for hybrid search',
+    defaultValue: false,
+  },
 };
 
 export class FeatureFlags {

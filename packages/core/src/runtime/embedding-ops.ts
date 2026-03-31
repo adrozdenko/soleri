@@ -10,22 +10,10 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
-import type { EmbeddingPipeline } from '../embeddings/pipeline.js';
 import { getEntriesWithoutVectors } from '../vault/vault-entries.js';
 
 export function createEmbeddingOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, flags } = runtime;
-
-  // Helper to get the pipeline (if available on runtime)
-  const getPipeline = (): EmbeddingPipeline | undefined =>
-    (runtime as unknown as { embeddingPipeline?: EmbeddingPipeline }).embeddingPipeline;
-
-  const getProvider = () =>
-    (
-      runtime as unknown as {
-        embeddingProvider?: { providerName: string; model: string; dimensions: number };
-      }
-    ).embeddingProvider;
+  const { vault, flags, embeddingProvider, embeddingPipeline } = runtime;
 
   return [
     {
@@ -34,8 +22,7 @@ export function createEmbeddingOps(runtime: AgentRuntime): OpDefinition[] {
         'Get embedding subsystem status — provider info, vector counts, token usage. Returns { enabled: false } when embeddings are not configured.',
       auth: 'read' as const,
       handler: async () => {
-        const provider = getProvider();
-        if (!provider || !flags.isEnabled('embedding-enabled')) {
+        if (!embeddingProvider || !flags.isEnabled('embedding-enabled')) {
           return {
             enabled: false,
             reason: !flags.isEnabled('embedding-enabled')
@@ -45,7 +32,7 @@ export function createEmbeddingOps(runtime: AgentRuntime): OpDefinition[] {
         }
 
         const persistence = vault.getProvider();
-        const model = provider.model;
+        const model = embeddingProvider.model;
         const missingIds = getEntriesWithoutVectors(persistence, model);
 
         const embeddedRow = persistence.get<{ count: number }>(
@@ -61,9 +48,9 @@ export function createEmbeddingOps(runtime: AgentRuntime): OpDefinition[] {
 
         return {
           enabled: true,
-          provider: provider.providerName,
-          model: provider.model,
-          dimensions: provider.dimensions,
+          provider: embeddingProvider.providerName,
+          model: embeddingProvider.model,
+          dimensions: embeddingProvider.dimensions,
           totalEmbedded,
           totalMissing: missingIds.length,
           // Token tracking is per-call in pipeline — we report what we can from the DB
@@ -77,8 +64,7 @@ export function createEmbeddingOps(runtime: AgentRuntime): OpDefinition[] {
         'Trigger batch embedding of all vault entries missing vectors. Returns counts of embedded, skipped, failed entries and tokens used.',
       auth: 'write' as const,
       handler: async () => {
-        const pipeline = getPipeline();
-        if (!pipeline || !flags.isEnabled('embedding-enabled')) {
+        if (!embeddingPipeline || !flags.isEnabled('embedding-enabled')) {
           return {
             enabled: false,
             reason: !flags.isEnabled('embedding-enabled')
@@ -87,7 +73,7 @@ export function createEmbeddingOps(runtime: AgentRuntime): OpDefinition[] {
           };
         }
 
-        const result = await pipeline.batchEmbed();
+        const result = await embeddingPipeline.batchEmbed();
         return {
           enabled: true,
           embedded: result.embedded,
@@ -106,8 +92,7 @@ export function createEmbeddingOps(runtime: AgentRuntime): OpDefinition[] {
         entryId: z.string().describe('Vault entry ID to embed'),
       }),
       handler: async (params) => {
-        const pipeline = getPipeline();
-        if (!pipeline || !flags.isEnabled('embedding-enabled')) {
+        if (!embeddingPipeline || !flags.isEnabled('embedding-enabled')) {
           return {
             enabled: false,
             reason: !flags.isEnabled('embedding-enabled')
@@ -123,7 +108,7 @@ export function createEmbeddingOps(runtime: AgentRuntime): OpDefinition[] {
         }
 
         const text = [entry.title, entry.description, entry.context].filter(Boolean).join('\n');
-        const embedded = await pipeline.embedEntry(entryId, text);
+        const embedded = await embeddingPipeline.embedEntry(entryId, text);
         return { embedded };
       },
     },

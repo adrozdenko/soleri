@@ -39,6 +39,8 @@ import type { ContextHealthMonitor } from './context-health.js';
 import type { ShutdownRegistry } from './shutdown-registry.js';
 import type { RuntimeAdapterRegistry } from '../adapters/registry.js';
 import type { SubagentDispatcher } from '../subagent/dispatcher.js';
+import type { EmbeddingConfig, EmbeddingProvider } from '../embeddings/types.js';
+import type { EmbeddingPipeline } from '../embeddings/pipeline.js';
 
 /**
  * Configuration for creating an agent runtime.
@@ -63,6 +65,8 @@ export interface AgentRuntimeConfig {
   agentDir?: string;
   /** Persona configuration from agent.yaml. If omitted, Italian Craftsperson default is used. */
   persona?: Partial<import('../persona/types.js').PersonaConfig>;
+  /** Embedding provider configuration. If omitted, embeddings are disabled. */
+  embedding?: EmbeddingConfig;
 }
 
 /**
@@ -135,6 +139,10 @@ export interface AgentRuntime {
   adapterRegistry: RuntimeAdapterRegistry;
   /** Subagent dispatcher — spawn and manage child agent processes. */
   subagentDispatcher: SubagentDispatcher;
+  /** Embedding provider — generates dense vectors for hybrid search (optional). */
+  embeddingProvider?: EmbeddingProvider;
+  /** Embedding pipeline — batch and incremental embedding of vault entries (optional). */
+  embeddingPipeline?: EmbeddingPipeline;
   /** Context health monitor — tracks tool call volume and context window fill. */
   contextHealth: ContextHealthMonitor;
   /** Shutdown registry — centralized cleanup for timers, watchers, child processes. */

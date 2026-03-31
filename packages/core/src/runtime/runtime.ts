@@ -56,6 +56,9 @@ import { PipelineRunner } from '../queue/pipeline-runner.js';
 import { evaluateQuality } from '../curator/quality-gate.js';
 import { classifyEntry } from '../curator/classifier.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
+import type { EmbeddingProvider } from '../embeddings/types.js';
+import { OpenAIEmbeddingProvider } from '../embeddings/openai-provider.js';
+import { EmbeddingPipeline } from '../embeddings/pipeline.js';
 import { loadPersona } from '../persona/loader.js';
 import { generatePersonaInstructions } from '../persona/prompt-generator.js';
 import { OperatorProfileStore } from '../operator/operator-profile.js';
@@ -104,12 +107,46 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     }
   }
 
+  // Feature Flags — file-based + env var + runtime toggles (created early so other modules can check)
+  const flags = new FeatureFlags(getAgentFlagsPath(agentId));
+
   // Planner — multi-step task tracking
   const planner = new Planner(plansPath);
 
+  // ─── Embedding Provider (optional) ────────────────────────────────
+  // Only initialized when both config.embedding is present AND the
+  // 'embedding-enabled' feature flag is on. Brain continues without
+  // embeddings when either condition is unmet (vector weight stays 0).
+  let embeddingProvider: EmbeddingProvider | undefined;
+  let embeddingPipeline: EmbeddingPipeline | undefined;
+
+  if (config.embedding && flags.isEnabled('embedding-enabled')) {
+    try {
+      const embeddingConfig = config.embedding;
+      if (embeddingConfig.provider === 'openai') {
+        const openaiPool = new KeyPool(loadKeyPoolConfig(agentId).openai);
+        embeddingProvider = new OpenAIEmbeddingProvider(embeddingConfig, openaiPool);
+      }
+      // Future providers (ollama, etc.) would be added here
+
+      if (embeddingProvider) {
+        embeddingPipeline = new EmbeddingPipeline(embeddingProvider, vault.getProvider());
+        logger.info(
+          `[Embedding] Initialized: ${embeddingProvider.providerName}/${embeddingProvider.model} (${embeddingProvider.dimensions}d)`,
+        );
+      }
+    } catch (err) {
+      logger.warn(
+        `[Embedding] Failed to initialize: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      // Graceful degradation — continue without embeddings
+    }
+  }
+
   // Brain — intelligence layer (TF-IDF scoring, auto-tagging, dedup)
   // Pass vaultManager so intelligentSearch queries all connected sources (not just agent tier)
-  const brain = new Brain(vault, vaultManager);
+  // Pass embeddingProvider for hybrid FTS5+vector search when available
+  const brain = new Brain(vault, vaultManager, embeddingProvider);
 
   // Brain Intelligence — pattern strengths, session knowledge, intelligence pipeline
   const brainIntelligence = new BrainIntelligence(vault, brain);
@@ -366,7 +403,7 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     intakePipeline,
     textIngester,
     authPolicy: { mode: 'permissive', callerLevel: 'admin' },
-    flags: new FeatureFlags(getAgentFlagsPath(agentId)),
+    flags,
     health,
     playbookExecutor,
     pluginRegistry,
@@ -392,6 +429,8 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       const p = loadPersona(agentId, config.persona ?? undefined);
       return generatePersonaInstructions(p);
     })(),
+    embeddingProvider,
+    embeddingPipeline,
     adapterRegistry,
     subagentDispatcher,
     contextHealth: new ContextHealthMonitor(),
