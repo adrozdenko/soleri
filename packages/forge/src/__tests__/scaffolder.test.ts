@@ -281,11 +281,11 @@ describe('Scaffolder', () => {
 
       // Check essential skills exist (not an exhaustive list — skills are added over time)
       const essentialSkills = [
-        'brainstorming',
-        'context-resume',
-        'health-check',
-        'vault-capture',
-        'vault-navigator',
+        'soleri-brainstorming',
+        'soleri-context-resume',
+        'soleri-health-check',
+        'soleri-vault-capture',
+        'soleri-vault-navigator',
       ];
       for (const skill of essentialSkills) {
         expect(skillDirs).toContain(skill);
@@ -322,7 +322,7 @@ describe('Scaffolder', () => {
     it('should have valid content in superpowers-adapted skills', () => {
       scaffold(testConfig);
       const skillsDir = join(tempDir, 'atlas', 'skills');
-      const superpowersSkills = ['brainstorming', 'executing-plans'];
+      const superpowersSkills = ['soleri-brainstorming', 'soleri-executing-plans'];
 
       for (const name of superpowersSkills) {
         const skillPath = join(skillsDir, name, 'SKILL.md');

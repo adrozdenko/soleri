@@ -379,19 +379,19 @@ describe('scaffoldFileTree', () => {
     expect(skillDirs.length).toBeLessThanOrEqual(10);
 
     // Essential skills should be present
-    expect(skillDirs).toContain('agent-guide');
-    expect(skillDirs).toContain('vault-navigator');
-    expect(skillDirs).toContain('vault-capture');
-    expect(skillDirs).toContain('systematic-debugging');
-    expect(skillDirs).toContain('writing-plans');
-    expect(skillDirs).toContain('context-resume');
-    expect(skillDirs).toContain('agent-persona');
+    expect(skillDirs).toContain('soleri-agent-guide');
+    expect(skillDirs).toContain('soleri-vault-navigator');
+    expect(skillDirs).toContain('soleri-vault-capture');
+    expect(skillDirs).toContain('soleri-systematic-debugging');
+    expect(skillDirs).toContain('soleri-writing-plans');
+    expect(skillDirs).toContain('soleri-context-resume');
+    expect(skillDirs).toContain('soleri-agent-persona');
 
     // Optional skills should NOT be present
-    expect(skillDirs).not.toContain('brainstorming');
-    expect(skillDirs).not.toContain('deep-review');
-    expect(skillDirs).not.toContain('code-patrol');
-    expect(skillDirs).not.toContain('yolo-mode');
+    expect(skillDirs).not.toContain('soleri-brainstorming');
+    expect(skillDirs).not.toContain('soleri-deep-review');
+    expect(skillDirs).not.toContain('soleri-code-patrol');
+    expect(skillDirs).not.toContain('soleri-yolo-mode');
   });
 
   it('skillsFilter: "all" creates all skills', () => {
@@ -407,14 +407,18 @@ describe('scaffoldFileTree', () => {
 
     // Should have all 30+ skills
     expect(skillDirs.length).toBeGreaterThanOrEqual(25);
-    expect(skillDirs).toContain('brainstorming');
-    expect(skillDirs).toContain('deep-review');
-    expect(skillDirs).toContain('yolo-mode');
+    expect(skillDirs).toContain('soleri-brainstorming');
+    expect(skillDirs).toContain('soleri-deep-review');
+    expect(skillDirs).toContain('soleri-yolo-mode');
   });
 
   it('skillsFilter: explicit array creates exactly those skills', () => {
     const result = scaffoldFileTree(
-      { ...MINIMAL_CONFIG, id: 'custom-skills', skillsFilter: ['vault-navigator', 'agent-guide'] },
+      {
+        ...MINIMAL_CONFIG,
+        id: 'custom-skills',
+        skillsFilter: ['soleri-vault-navigator', 'soleri-agent-guide'],
+      },
       tempDir,
     );
     expect(result.success).toBe(true);
@@ -423,7 +427,7 @@ describe('scaffoldFileTree', () => {
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
 
-    expect(skillDirs).toEqual(['agent-guide', 'vault-navigator']);
+    expect(skillDirs).toEqual(['soleri-agent-guide', 'soleri-vault-navigator']);
   });
 
   it('CLAUDE.md only lists on-disk skills', () => {
@@ -434,12 +438,12 @@ describe('scaffoldFileTree', () => {
     const claudeMd = readFileSync(join(result.agentDir, 'CLAUDE.md'), 'utf-8');
 
     // Essential skills should appear
-    expect(claudeMd).toContain('vault-navigator');
-    expect(claudeMd).toContain('agent-guide');
+    expect(claudeMd).toContain('soleri-vault-navigator');
+    expect(claudeMd).toContain('soleri-agent-guide');
 
     // Optional skills should NOT appear (not on disk)
-    expect(claudeMd).not.toContain('brainstorming');
-    expect(claudeMd).not.toContain('yolo-mode');
+    expect(claudeMd).not.toContain('soleri-brainstorming');
+    expect(claudeMd).not.toContain('soleri-yolo-mode');
   });
 
   it('skillsFilter default (essential) is not written to agent.yaml', () => {

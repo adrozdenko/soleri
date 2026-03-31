@@ -155,33 +155,33 @@ ${skillsLead}
 
 | Skill | Description |
 |-------|-------------|
-| \`/test-driven-development\` | Red-green-refactor TDD workflow with vault-informed test patterns |
-| \`/systematic-debugging\` | Root cause investigation — vault search, web search, then diagnose |
-| \`/verification-before-completion\` | Evidence-based completion claims with system diagnostics |
-| \`/brainstorming\` | Collaborative design exploration with vault + web research first |
-| \`/writing-plans\` | Implementation plans with quality grading and auto-improvement |
-| \`/executing-plans\` | Batch execution with loop tracking and plan reconciliation |
-| \`/fix-and-learn\` | Fix bugs and capture root cause — vault search before any fix |
-| \`/code-patrol\` | Review code against YOUR vault patterns, not generic lint rules |
+| \`/soleri-test-driven-development\` | Red-green-refactor TDD workflow with vault-informed test patterns |
+| \`/soleri-systematic-debugging\` | Root cause investigation — vault search, web search, then diagnose |
+| \`/soleri-verification-before-completion\` | Evidence-based completion claims with system diagnostics |
+| \`/soleri-brainstorming\` | Collaborative design exploration with vault + web research first |
+| \`/soleri-writing-plans\` | Implementation plans with quality grading and auto-improvement |
+| \`/soleri-executing-plans\` | Batch execution with loop tracking and plan reconciliation |
+| \`/soleri-fix-and-learn\` | Fix bugs and capture root cause — vault search before any fix |
+| \`/soleri-code-patrol\` | Review code against YOUR vault patterns, not generic lint rules |
 
 **Knowledge Management:**
 
 | Skill | Description |
 |-------|-------------|
-| \`/vault-navigator\` | Intelligent vault search — tags, domains, age reports, cross-project |
-| \`/vault-capture\` | Persist knowledge with curator grooming and governance |
-| \`/knowledge-harvest\` | Point at any doc/code — auto-extract patterns into vault |
-| \`/brain-debrief\` | Intelligence report — strengths, gaps, cross-project insights |
+| \`/soleri-vault-navigator\` | Intelligent vault search — tags, domains, age reports, cross-project |
+| \`/soleri-vault-capture\` | Persist knowledge with curator grooming and governance |
+| \`/soleri-knowledge-harvest\` | Point at any doc/code — auto-extract patterns into vault |
+| \`/soleri-brain-debrief\` | Intelligence report — strengths, gaps, cross-project insights |
 
 **Magic UX:**
 
 | Skill | Description |
 |-------|-------------|
-| \`/context-resume\` | "What was I working on?" — full context reconstruction |
-| \`/second-opinion\` | Decision support from vault + brain + web combined |
-| \`/retrospective\` | Data-driven sprint/week retro from actual metrics |
-| \`/onboard-me\` | Instant project knowledge tour for newcomers |
-| \`/health-check\` | Vault maintenance — duplicates, contradictions, stale entries |
+| \`/soleri-context-resume\` | "What was I working on?" — full context reconstruction |
+| \`/soleri-second-opinion\` | Decision support from vault + brain + web combined |
+| \`/soleri-retrospective\` | Data-driven sprint/week retro from actual metrics |
+| \`/soleri-onboard-me\` | Instant project knowledge tour for newcomers |
+| \`/soleri-health-check\` | Vault maintenance — duplicates, contradictions, stale entries |
 
 ${skillsInstallNote}
 

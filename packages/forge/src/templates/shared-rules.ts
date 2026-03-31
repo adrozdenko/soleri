@@ -845,7 +845,7 @@ const ENGINE_RULES_LINES: string[] = [
   '',
   '### Hooks & Skills',
   '',
-  'Your agent ships with **essential skills** by default (agent-guide, agent-persona, vault-navigator, vault-capture, systematic-debugging, writing-plans, context-resume). Install more with `soleri skills install <name>`. List available skills with `soleri skills list`.',
+  'Your agent ships with **essential skills** by default (soleri-agent-guide, soleri-agent-persona, soleri-vault-navigator, soleri-vault-capture, soleri-systematic-debugging, soleri-writing-plans, soleri-context-resume). Install more with `soleri skills install <name>`. List available skills with `soleri skills list`.',
   '',
   'To scaffold all skills instead, set `skillsFilter: all` in `agent.yaml`.',
   '',

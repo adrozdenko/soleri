@@ -417,46 +417,57 @@ function composeWorkflowIndex(workflowsDir: string): string | null {
 const SKILL_CATEGORIES: Record<string, { label: string; skills: string[] }> = {
   getting_started: {
     label: 'Getting Started',
-    skills: ['agent-guide', 'agent-persona', 'onboard-me', 'env-setup', 'context-resume'],
+    skills: [
+      'soleri-agent-guide',
+      'soleri-agent-persona',
+      'soleri-onboard-me',
+      'soleri-env-setup',
+      'soleri-context-resume',
+    ],
   },
   planning: {
     label: 'Planning & Execution',
-    skills: ['brainstorming', 'writing-plans', 'executing-plans', 'parallel-execute'],
+    skills: [
+      'soleri-brainstorming',
+      'soleri-writing-plans',
+      'soleri-executing-plans',
+      'soleri-parallel-execute',
+    ],
   },
   building: {
     label: 'Building & Fixing',
     skills: [
-      'test-driven-development',
-      'systematic-debugging',
-      'fix-and-learn',
-      'agent-dev',
-      'code-patrol',
+      'soleri-test-driven-development',
+      'soleri-systematic-debugging',
+      'soleri-fix-and-learn',
+      'soleri-agent-dev',
+      'soleri-code-patrol',
     ],
   },
   knowledge: {
     label: 'Knowledge & Learning',
     skills: [
-      'vault-capture',
-      'vault-navigator',
-      'vault-curate',
-      'vault-smells',
-      'knowledge-harvest',
-      'brain-debrief',
+      'soleri-vault-capture',
+      'soleri-vault-navigator',
+      'soleri-vault-curate',
+      'soleri-vault-smells',
+      'soleri-knowledge-harvest',
+      'soleri-brain-debrief',
     ],
   },
   quality: {
     label: 'Quality & Delivery',
     skills: [
-      'verification-before-completion',
-      'deep-review',
-      'deliver-and-ship',
-      'health-check',
-      'mcp-doctor',
+      'soleri-verification-before-completion',
+      'soleri-deep-review',
+      'soleri-deliver-and-ship',
+      'soleri-health-check',
+      'soleri-mcp-doctor',
     ],
   },
   reflection: {
     label: 'Reflection & Research',
-    skills: ['retrospective', 'second-opinion'],
+    skills: ['soleri-retrospective', 'soleri-second-opinion'],
   },
 };
 

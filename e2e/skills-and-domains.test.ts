@@ -64,39 +64,39 @@ describe('E2E: skills-and-domains', () => {
 
     // Verify all expected skill names are present
     const expectedSkills = [
-      'agent-dev',
-      'agent-guide',
-      'agent-issues',
-      'agent-persona',
-      'brain-debrief',
-      'brainstorming',
-      'code-patrol',
-      'context-resume',
-      'deep-review',
-      'deliver-and-ship',
-      'discovery-phase',
-      'env-setup',
-      'executing-plans',
-      'finishing-a-development-branch',
-      'fix-and-learn',
-      'health-check',
-      'knowledge-harvest',
-      'mcp-doctor',
-      'onboard-me',
-      'parallel-execute',
-      'retrospective',
-      'second-opinion',
-      'subagent-driven-development',
-      'systematic-debugging',
-      'test-driven-development',
-      'using-git-worktrees',
-      'vault-capture',
-      'vault-curate',
-      'vault-navigator',
-      'vault-smells',
-      'verification-before-completion',
-      'writing-plans',
-      'yolo-mode',
+      'soleri-agent-dev',
+      'soleri-agent-guide',
+      'soleri-agent-issues',
+      'soleri-agent-persona',
+      'soleri-brain-debrief',
+      'soleri-brainstorming',
+      'soleri-code-patrol',
+      'soleri-context-resume',
+      'soleri-deep-review',
+      'soleri-deliver-and-ship',
+      'soleri-discovery-phase',
+      'soleri-env-setup',
+      'soleri-executing-plans',
+      'soleri-finishing-a-development-branch',
+      'soleri-fix-and-learn',
+      'soleri-health-check',
+      'soleri-knowledge-harvest',
+      'soleri-mcp-doctor',
+      'soleri-onboard-me',
+      'soleri-parallel-execute',
+      'soleri-retrospective',
+      'soleri-second-opinion',
+      'soleri-subagent-driven-development',
+      'soleri-systematic-debugging',
+      'soleri-test-driven-development',
+      'soleri-using-git-worktrees',
+      'soleri-vault-capture',
+      'soleri-vault-curate',
+      'soleri-vault-navigator',
+      'soleri-vault-smells',
+      'soleri-verification-before-completion',
+      'soleri-writing-plans',
+      'soleri-yolo-mode',
     ];
     for (const skill of expectedSkills) {
       expect(skillDirs, `Missing expected skill: ${skill}`).toContain(skill);
@@ -261,7 +261,7 @@ describe('E2E: skills-and-domains', () => {
       description: 'Agent with filtered skills for testing the skills filter feature.',
       domains: ['testing'],
       principles: ['Filter well'],
-      skills: ['vault-capture', 'brainstorming'],
+      skills: ['soleri-vault-capture', 'soleri-brainstorming'],
       outputDir: filteredDir,
     });
 
@@ -272,8 +272,8 @@ describe('E2E: skills-and-domains', () => {
       const dirs = readdirSync(skillsDir, { encoding: 'utf-8' });
       // Should have exactly the selected skills
       expect(dirs.length).toBe(2);
-      expect(dirs).toContain('vault-capture');
-      expect(dirs).toContain('brainstorming');
+      expect(dirs).toContain('soleri-vault-capture');
+      expect(dirs).toContain('soleri-brainstorming');
     }
   });
 });

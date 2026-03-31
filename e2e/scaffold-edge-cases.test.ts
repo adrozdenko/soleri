@@ -103,7 +103,7 @@ describe('E2E: scaffold-edge-cases', () => {
   );
 
   it('should scaffold with skills filter and include only selected skills', () => {
-    const selectedSkills = ['vault-capture', 'commit'];
+    const selectedSkills = ['soleri-vault-capture', 'commit'];
 
     const result = scaffold({
       ...BASE_CONFIG,
