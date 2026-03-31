@@ -352,7 +352,7 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'admin_setup_global',
       description:
-        'Install global agent configuration — hookify rules to ~/.claude/, skills to ~/.claude/commands/, lifecycle hooks to settings.json. Dry-run by default.',
+        'Install global agent configuration — hookify rules to ~/.claude/, skills to ~/.claude/skills/, lifecycle hooks to settings.json. Dry-run by default.',
       auth: 'admin',
       schema: z.object({
         install: z.boolean().describe('Set true to install, false for dry-run preview'),
@@ -370,7 +370,7 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
           .boolean()
           .optional()
           .default(false)
-          .describe('Only install skills to ~/.claude/commands/'),
+          .describe('Only install skills to ~/.claude/skills/'),
       }),
       handler: async (params) => {
         const install = params.install as boolean;

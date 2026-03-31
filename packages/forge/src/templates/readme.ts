@@ -86,9 +86,9 @@ export function generateReadme(config: AgentConfig): string {
 
   const skillsInstallNote =
     claudeSetup && codexSetup
-      ? 'Skills are installed to `~/.claude/commands/` and `~/.codex/skills/` during setup. Run `./scripts/setup.sh` to install or reinstall.'
+      ? 'Skills are installed to `~/.claude/skills/` and `~/.codex/skills/` during setup. Run `./scripts/setup.sh` to install or reinstall.'
       : claudeSetup
-        ? 'Skills are installed to `~/.claude/commands/` during setup. Run `./scripts/setup.sh` to install or reinstall.'
+        ? 'Skills are installed to `~/.claude/skills/` during setup. Run `./scripts/setup.sh` to install or reinstall.'
         : 'Skills are installed to `~/.codex/skills/` during setup. Run `./scripts/setup.sh` to install or reinstall.';
 
   return `# ${config.name} — ${config.role}

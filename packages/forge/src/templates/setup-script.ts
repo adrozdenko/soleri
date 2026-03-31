@@ -102,14 +102,13 @@ else
   fi
 fi
 
-# Install skills to ~/.claude/commands/
+# Install skills to ~/.claude/skills/
 SKILLS_DIR="$AGENT_DIR/skills"
-COMMANDS_DIR="$HOME/.claude/commands"
+CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 
 if [ -d "$SKILLS_DIR" ]; then
   echo ""
   echo "Installing skills for Claude Code..."
-  mkdir -p "$COMMANDS_DIR"
   skill_installed=0
   skill_skipped=0
   for skill_dir in "$SKILLS_DIR"/*/; do
@@ -117,15 +116,36 @@ if [ -d "$SKILLS_DIR" ]; then
     skill_file="$skill_dir/SKILL.md"
     [ -f "$skill_file" ] || continue
     skill_name="$(basename "$skill_dir")"
-    dest="$COMMANDS_DIR/$skill_name.md"
+    dest_dir="$CLAUDE_SKILLS_DIR/$skill_name"
+    dest="$dest_dir/SKILL.md"
     if [ -f "$dest" ]; then
       skill_skipped=$((skill_skipped + 1))
     else
+      mkdir -p "$dest_dir"
       cp "$skill_file" "$dest"
       skill_installed=$((skill_installed + 1))
     fi
   done
   echo "[ok] Claude skills: $skill_installed installed, $skill_skipped already present"
+
+  # Migrate legacy commands to skills (one-time cleanup)
+  LEGACY_DIR="$HOME/.claude/commands"
+  if [ -d "$LEGACY_DIR" ]; then
+    legacy_migrated=0
+    for legacy_file in "$LEGACY_DIR"/*.md; do
+      [ -f "$legacy_file" ] || continue
+      legacy_name="$(basename "$legacy_file" .md)"
+      dest_dir="$CLAUDE_SKILLS_DIR/$legacy_name"
+      if [ ! -d "$dest_dir" ]; then
+        mkdir -p "$dest_dir"
+        mv "$legacy_file" "$dest_dir/SKILL.md"
+        legacy_migrated=$((legacy_migrated + 1))
+      fi
+    done
+    if [ "$legacy_migrated" -gt 0 ]; then
+      echo "[ok] Migrated $legacy_migrated legacy commands from ~/.claude/commands/ to ~/.claude/skills/"
+    fi
+  fi
 fi
 `
     : '';

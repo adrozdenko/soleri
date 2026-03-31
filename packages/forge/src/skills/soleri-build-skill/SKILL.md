@@ -17,7 +17,7 @@ Skills live in two places:
 | Location | Purpose |
 |----------|---------|
 | `packages/forge/src/skills/soleri-{name}/SKILL.md` | Source — ships with Soleri |
-| `~/.claude/commands/{agent}-soleri-{name}.md` | Runtime — synced per agent |
+| `~/.claude/skills/{agent}-soleri-{name}/SKILL.md` | Runtime — synced per agent |
 
 ### File Structure
 

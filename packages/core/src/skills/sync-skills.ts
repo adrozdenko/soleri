@@ -1,6 +1,6 @@
 /**
  * Skill sync — discovers SKILL.md files in agent skills directories
- * and copies them to ~/.claude/commands/ for Claude Code discovery.
+ * and copies them to ~/.claude/skills/ for Claude Code discovery.
  *
  * Injects agent branding so users know which agent owns the skill.
  * Called automatically at engine startup and by admin_setup_global.
@@ -86,30 +86,31 @@ function brandSkillContent(content: string, agentName: string, prefixedName?: st
 }
 
 /**
- * Sync skills from agent directory to ~/.claude/commands/.
+ * Sync skills from agent directory to ~/.claude/skills/.
  * - New skills are installed with agent branding
  * - Changed skills are overwritten (compared by mtime)
  * - Missing source skills leave target untouched (other agents may own them)
  */
 export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string): SyncResult {
-  const commandsDir = join(homedir(), '.claude', 'commands');
+  const skillsDir = join(homedir(), '.claude', 'skills');
   const skills = discoverSkills(skillsDirs);
   const result: SyncResult = { installed: [], updated: [], skipped: [], failed: [] };
 
   if (skills.length === 0) return result;
 
-  mkdirSync(commandsDir, { recursive: true });
-
   for (const skill of skills) {
     const prefix = agentName ? `${agentName.toLowerCase().replace(/\s+/g, '-')}-` : '';
-    const targetPath = join(commandsDir, `${prefix}${skill.name}.md`);
+    const skillName = `${prefix}${skill.name}`;
+    const targetDir = join(skillsDir, skillName);
+    const targetPath = join(targetDir, 'SKILL.md');
     try {
       const sourceContent = readFileSync(skill.sourcePath, 'utf-8');
       const branded = agentName
-        ? brandSkillContent(sourceContent, agentName, `${prefix}${skill.name}`)
+        ? brandSkillContent(sourceContent, agentName, skillName)
         : sourceContent;
 
       if (!existsSync(targetPath)) {
+        mkdirSync(targetDir, { recursive: true });
         writeFileSync(targetPath, branded);
         result.installed.push(skill.name);
       } else {

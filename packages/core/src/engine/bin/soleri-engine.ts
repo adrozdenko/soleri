@@ -163,7 +163,7 @@ async function main(): Promise<void> {
       .join(', ')})`,
   );
 
-  // 6b. Auto-sync skills to ~/.claude/commands/
+  // 6b. Auto-sync skills to ~/.claude/skills/
   const skillsDir = join(agentDir, 'skills');
   if (existsSync(skillsDir)) {
     const syncResult = syncSkillsToClaudeCode([skillsDir], config.name as string);
