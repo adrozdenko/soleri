@@ -12,6 +12,18 @@ Pre-merge checks, PR creation, merge strategy, and branch cleanup.
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to prepare this branch for merge."
 
+## Vault Context
+
+Search for merge patterns and known conflict areas:
+
+```
+YOUR_AGENT_core op:search_intelligent
+  params: { query: "merge patterns <branch domain>" }
+
+YOUR_AGENT_core op:memory_search
+  params: { query: "merge conflicts" }
+```
+
 ## Step 1: Pre-Merge Checklist
 
 Run all checks before creating a PR. Stop on any failure.
@@ -57,6 +69,15 @@ If the base branch has diverged:
 
 Never force-push a rebased branch that others are working on.
 
+### Capture Merge Learnings
+
+If tricky conflicts were resolved:
+
+```
+YOUR_AGENT_core op:capture_knowledge
+  params: { title: "<conflict pattern>", description: "<resolution strategy>", type: "pattern", tags: ["git", "merge", "conflict-resolution"] }
+```
+
 ## Step 5: Branch Cleanup
 
 After merge is confirmed:
@@ -74,3 +95,11 @@ After merge is confirmed:
 - **Leaving stale branches** — delete after merge; stale branches create confusion
 
 **Related skills:** executing-plans, verification-before-completion
+
+## Agent Tools Reference
+
+| Op                    | When to Use                        |
+| --------------------- | ---------------------------------- |
+| `search_intelligent`  | Check vault before starting        |
+| `memory_search`       | Find similar past experiences      |
+| `capture_knowledge`   | Persist patterns worth remembering |

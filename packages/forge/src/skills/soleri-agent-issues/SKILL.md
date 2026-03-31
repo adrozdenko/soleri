@@ -26,6 +26,18 @@ An agent cannot act on "improve avatar handling." It can act on: "Add PNG upload
 - Creating milestones with sub-issues
 - Converting vault patterns or anti-patterns into actionable fixes
 
+## Vault Context Check
+
+Before creating the issue, search for related patterns:
+
+```
+YOUR_AGENT_core op:search_intelligent
+  params: { query: "<bug description or feature summary>" }
+
+YOUR_AGENT_core op:memory_search
+  params: { query: "<similar issues>" }
+```
+
 ## Issue Template by Type
 
 ### Bug
@@ -177,6 +189,15 @@ An agent cannot act on "improve avatar handling." It can act on: "Add PNG upload
 - [ ] <milestone-level verification>
 ````
 
+## Record Issue
+
+After creating the issue, capture it for future reference:
+
+```
+YOUR_AGENT_core op:capture_quick
+  params: { title: "GH Issue #<number>: <title>", tags: ["github", "issue"] }
+```
+
 ## Field Guide
 
 ### Writing Good Objectives
@@ -289,3 +310,11 @@ Always apply at least:
 - Priority: `P0`, `P1`, `P2`, `P3` (if using priority labels)
 - Component: package or module name (if using component labels)
 ```
+
+## Agent Tools Reference
+
+| Op                   | When to Use                               |
+| -------------------- | ----------------------------------------- |
+| `search_intelligent` | Check vault before creating issues        |
+| `memory_search`      | Find similar past issues                  |
+| `capture_quick`      | Record created issue for future reference |

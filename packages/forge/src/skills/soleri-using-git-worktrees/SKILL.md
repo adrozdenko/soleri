@@ -12,6 +12,13 @@ Isolate work into parallel branches without stashing or switching. Use for multi
 
 **Announce at start:** "I'm using the using-git-worktrees skill to isolate this work."
 
+## Check Vault for Worktree Patterns
+
+```
+YOUR_AGENT_core op:search_intelligent
+  params: { query: "worktree parallel execution patterns" }
+```
+
 ## When to Use
 
 - Plan has 2+ independent tasks that can run in parallel
@@ -79,3 +86,17 @@ git worktree list                      # confirm removal
 | Claude Code    | Sub-agent with `isolation: "worktree"` parameter |
 
 **Related skills:** executing-plans, parallel-execute
+
+## Capture Worktree Learnings
+
+```
+YOUR_AGENT_core op:capture_quick
+  params: { title: "<what was learned>", tags: ["worktree", "parallel-execution"] }
+```
+
+## Agent Tools Reference
+
+| Op                   | When to Use                         |
+| -------------------- | ----------------------------------- |
+| `search_intelligent` | Check vault before starting         |
+| `capture_quick`      | Fast capture for simple learnings   |

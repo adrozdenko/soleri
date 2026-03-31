@@ -26,6 +26,16 @@ Scan the project root for configuration files, detect the tech stack and depende
 - Docker/container environment not starting
 - Missing `.env` file or environment variables
 
+## Check Vault for Known Setup Patterns
+
+```
+YOUR_AGENT_core op:search_intelligent
+  params: { query: "<tech stack> setup gotchas" }
+
+YOUR_AGENT_core op:memory_search
+  params: { query: "environment setup <project>" }
+```
+
 ## Detection Phase
 
 Scan the project root and identify:
@@ -149,3 +159,20 @@ If monorepo detected (turbo.json, nx.json, pnpm-workspace.yaml):
 - **Missing runtime version** — subtle bugs from wrong Node/Python version.
 - **Docker not running** — cryptic "connection refused" errors.
 - **Stale dependencies** — after `git pull`, always re-install if lockfile changed.
+
+## Capture Setup Learnings
+
+If any non-obvious steps or workarounds were needed:
+
+```
+YOUR_AGENT_core op:capture_knowledge
+  params: { title: "<gotcha>", description: "<what happened and the fix>", type: "anti-pattern", tags: ["env-setup", "<tech-stack>"] }
+```
+
+## Agent Tools Reference
+
+| Op                    | When to Use                        |
+| --------------------- | ---------------------------------- |
+| `search_intelligent`  | Check vault before starting        |
+| `memory_search`       | Find similar past experiences      |
+| `capture_knowledge`   | Persist patterns worth remembering |
