@@ -163,7 +163,13 @@ export type {
 
 // ─── Dream ──────────────────────────────────────────────────────────
 export { DreamEngine, ensureDreamSchema, createDreamOps } from './dream/index.js';
+export {
+  getSchedule as getDreamSchedule,
+  schedule as scheduleDream,
+  unschedule as unscheduleDream,
+} from './dream/index.js';
 export type { DreamReport, DreamStatus } from './dream/dream-engine.js';
+export type { CronSchedule } from './dream/cron-manager.js';
 
 // ─── Governance ─────────────────────────────────────────────────────
 export { Governance } from './governance/governance.js';
