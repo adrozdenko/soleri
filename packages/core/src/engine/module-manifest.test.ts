@@ -32,8 +32,8 @@ describe('ENGINE_MODULE_MANIFEST', () => {
     expect(suffixes).toContain('intake');
   });
 
-  it('has exactly 20 modules', () => {
-    expect(ENGINE_MODULE_MANIFEST).toHaveLength(20);
+  it('has exactly 22 modules', () => {
+    expect(ENGINE_MODULE_MANIFEST).toHaveLength(22);
   });
 
   it('has no duplicate suffixes', () => {
@@ -168,7 +168,7 @@ describe('manifest order stability', () => {
     expect(ENGINE_MODULE_MANIFEST[0].suffix).toBe('vault');
   });
 
-  it('tier is the last module', () => {
-    expect(ENGINE_MODULE_MANIFEST[ENGINE_MODULE_MANIFEST.length - 1].suffix).toBe('tier');
+  it('dream is the last module', () => {
+    expect(ENGINE_MODULE_MANIFEST[ENGINE_MODULE_MANIFEST.length - 1].suffix).toBe('dream');
   });
 });

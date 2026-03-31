@@ -232,6 +232,16 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
     },
   },
   {
+    suffix: 'embedding',
+    description: 'Embedding management — status, batch rebuild, single-entry embedding.',
+    keyOps: ['embed_status', 'embed_rebuild', 'embed_entry'],
+    intentSignals: {
+      'embedding status': 'embed_status',
+      'rebuild embeddings': 'embed_rebuild',
+      'embed entry': 'embed_entry',
+    },
+  },
+  {
     suffix: 'tier',
     description: 'Multi-vault tiers — connect, disconnect, search across sources.',
     keyOps: ['vault_connect_source', 'vault_search_all', 'vault_list_sources'],
@@ -239,6 +249,16 @@ export const ENGINE_MODULE_MANIFEST: ModuleManifestEntry[] = [
       'connect source': 'vault_connect_source',
       'search all vaults': 'vault_search_all',
       'list sources': 'vault_list_sources',
+    },
+  },
+  {
+    suffix: 'dream',
+    description: 'Dream — automatic memory consolidation, vault cleanup, and maintenance.',
+    keyOps: ['dream_status', 'dream_trigger', 'dream_history'],
+    intentSignals: {
+      'dream status': 'dream_status',
+      'run dream': 'dream_trigger',
+      'dream history': 'dream_history',
     },
   },
 ];

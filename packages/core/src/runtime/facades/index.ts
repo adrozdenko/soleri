@@ -27,6 +27,7 @@ import { createIntakeFacadeOps } from './intake-facade.js';
 import { createLinksFacadeOps } from './links-facade.js';
 import { createBranchingFacadeOps } from './branching-facade.js';
 import { createTierFacadeOps } from './tier-facade.js';
+import { createEmbeddingFacadeOps } from './embedding-facade.js';
 import { createDreamOps } from '../../dream/dream-ops.js';
 
 export function createSemanticFacades(runtime: AgentRuntime, agentId: string): FacadeConfig[] {
@@ -128,6 +129,11 @@ export function createSemanticFacades(runtime: AgentRuntime, agentId: string): F
       name: `${agentId}_branching`,
       description: 'Vault branching — create, list, merge, delete branches.',
       ops: createBranchingFacadeOps(runtime),
+    },
+    {
+      name: `${agentId}_embedding`,
+      description: 'Embedding management — status, batch rebuild, single-entry embedding.',
+      ops: createEmbeddingFacadeOps(runtime),
     },
     {
       name: `${agentId}_tier`,

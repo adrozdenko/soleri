@@ -43,6 +43,7 @@ import { createIntakeFacadeOps } from '../runtime/facades/intake-facade.js';
 import { createLinksFacadeOps } from '../runtime/facades/links-facade.js';
 import { createBranchingFacadeOps } from '../runtime/facades/branching-facade.js';
 import { createTierFacadeOps } from '../runtime/facades/tier-facade.js';
+import { createEmbeddingFacadeOps } from '../runtime/facades/embedding-facade.js';
 import { createDreamOps } from '../dream/dream-ops.js';
 import { createDomainFacade } from '../runtime/domain-ops.js';
 
@@ -185,6 +186,11 @@ export const ENGINE_MODULES: ModuleDef[] = [
     suffix: 'branching',
     description: 'Vault branching — create, list, merge, delete branches.',
     createOps: createBranchingFacadeOps,
+  },
+  {
+    suffix: 'embedding',
+    description: 'Embedding management — status, batch rebuild, single-entry embedding.',
+    createOps: createEmbeddingFacadeOps,
   },
   {
     suffix: 'tier',
