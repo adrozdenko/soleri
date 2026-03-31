@@ -19,12 +19,13 @@ Do NOT create a plan, write code, or take any implementation action until the di
 
 1. **Define the question** — restate what we're exploring as one specific, answerable sentence
 2. **Search vault for prior art** — `YOUR_AGENT_core op:search_intelligent params: { query: "<question>", mode: "scan" }`. Also `op:memory_search` with `crossProject: true`.
-3. **Explore codebase** — read relevant files, configs, architecture, recent commits
-4. **Identify constraints** — hard (must-haves) vs soft (nice-to-haves), unknowns that block a decision
-5. **Draft 2-4 options** — each with pros, cons, risk, and effort (S/M/L)
-6. **Recommend** — pick one, state the primary reason, note what would change the answer
-7. **Capture to vault** — persist the discovery finding
-8. **Transition** — hand off to brainstorming or writing-plans skill
+3. **Get brain recommendations** — `YOUR_AGENT_core op:brain_recommend params: { query: "<discovery topic>" }`. Get brain recommendations for similar past explorations.
+4. **Explore codebase** — read relevant files, configs, architecture, recent commits
+5. **Identify constraints** — hard (must-haves) vs soft (nice-to-haves), unknowns that block a decision
+6. **Draft 2-4 options** — each with pros, cons, risk, and effort (S/M/L)
+7. **Recommend** — pick one, state the primary reason, note what would change the answer
+8. **Capture to vault** — persist the discovery finding
+9. **Transition** — hand off to brainstorming or writing-plans skill
 
 ## Option Format
 
@@ -65,5 +66,6 @@ Save to `docs/discoveries/YYYY-MM-DD-<topic>.md` and commit. Then transition to 
 | -------------------- | ---------------------------------- |
 | `search_intelligent` | Search vault for prior art         |
 | `memory_search`      | Check session history and projects |
+| `brain_recommend`    | Brain recommendations for similar past explorations |
 | `capture_knowledge`  | Persist discovery finding          |
 | `route_intent`       | Classify what comes after          |

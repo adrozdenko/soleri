@@ -19,6 +19,11 @@ Write implementation plans assuming the engineer has zero codebase context. Docu
 ### 1. Vault First
 
 ```
+YOUR_AGENT_core op:memory_search
+  params: { query: "<plan topic>", crossProject: true }
+```
+
+```
 YOUR_AGENT_core op:search_intelligent
   params: { query: "<feature being planned>" }
 YOUR_AGENT_core op:brain_strengths
@@ -97,12 +102,13 @@ Offer execution choice: subagent-driven (this session) or parallel session with 
 
 ## Quick Reference
 
-| Op                                 | When to Use                   |
-| ---------------------------------- | ----------------------------- |
-| `search_intelligent`               | Find patterns before planning |
-| `brain_strengths`                  | Proven approaches             |
-| `create_plan`                      | Create tracked plan           |
-| `plan_grade` / `plan_auto_improve` | Grade and improve             |
-| `plan_iterate`                     | Iterate with feedback         |
-| `plan_split`                       | Split into tasks              |
-| `approve_plan`                     | Lock in approved plan         |
+| Op                                 | When to Use                        |
+| ---------------------------------- | ---------------------------------- |
+| `memory_search`                    | Cross-project plan precedents      |
+| `search_intelligent`               | Find patterns before planning      |
+| `brain_strengths`                  | Proven approaches                  |
+| `create_plan`                      | Create tracked plan                |
+| `plan_grade` / `plan_auto_improve` | Grade and improve                  |
+| `plan_iterate`                     | Iterate with feedback              |
+| `plan_split`                       | Split into tasks                   |
+| `approve_plan`                     | Lock in approved plan              |

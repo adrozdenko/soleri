@@ -101,6 +101,15 @@ salvador_core op:vault_age_report
 
 **Tip:** Use vault-navigator to search topics as you work. Use second-opinion before architectural decisions.
 
+### Record Onboarding
+
+```
+salvador_core op:capture_knowledge
+  params: { title: "Onboarding completed for <project>", description: "<key takeaways and knowledge gaps identified>", type: "workflow", tags: ["onboarding", "<project>"] }
+```
+
+Record what was covered and what gaps remain for future onboarding.
+
 ## Common Mistakes
 
 - Dumping all vault entries instead of curating the most important ones
@@ -119,3 +128,4 @@ salvador_core op:vault_age_report
 | `brain_strengths`                           | Proven patterns               |
 | `brain_global_patterns`                     | Cross-project patterns        |
 | `admin_search_insights`                     | Knowledge gaps                |
+| `capture_knowledge`                         | Record onboarding completion  |

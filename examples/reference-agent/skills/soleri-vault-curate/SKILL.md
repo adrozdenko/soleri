@@ -86,7 +86,15 @@ salvador_core op:knowledge_reorganize
 
 Preview first, then run again with `mode: "apply"` if the preview looks good.
 
-### Step 7: Verify Results
+### Step 7: Rebuild Brain Intelligence
+
+```
+salvador_core op:brain_build_intelligence
+```
+
+Rebuild brain intelligence after vault has been cleaned/reorganized.
+
+### Step 8: Verify Results
 
 ```
 salvador_core op:knowledge_health

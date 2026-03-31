@@ -52,6 +52,15 @@ YOUR_AGENT_core op:brain_global_patterns
   params: { domain: "<domain>" }
 ```
 
+### Session Memory Search
+
+For queries about recent work or session-specific knowledge:
+
+```
+YOUR_AGENT_core op:memory_search
+  params: { query: "<session-specific query>" }
+```
+
 ### Broad exploration ("What do I know about X?")
 
 Chain: `search_intelligent` -> `vault_tags` / `vault_domains` -> `memory_cross_project_search` -> `brain_strengths`. Label each finding with its source.
@@ -80,5 +89,6 @@ If all vault strategies return nothing, search the web. If web finds something u
 | `vault_recent`                              | Recently modified entries      |
 | `vault_age_report`                          | Stale entries                  |
 | `memory_cross_project_search`               | Cross-project search           |
+| `memory_search`                             | Session and recent work search |
 | `brain_strengths` / `brain_global_patterns` | Proven patterns                |
 | `capture_quick`                             | Capture web findings           |

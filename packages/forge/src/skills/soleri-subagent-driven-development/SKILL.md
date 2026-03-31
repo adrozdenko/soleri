@@ -56,6 +56,14 @@ Not all subagents are equal. Route by complexity:
 
 Read all relevant files. Consult the vault for patterns. Make every design decision. Define the exact spec for each subagent task: files to touch, approach to use, acceptance criteria.
 
+```
+YOUR_AGENT_core op:memory_search
+  params: { query: "subagent decomposition" }
+
+YOUR_AGENT_core op:brain_recommend
+  params: { query: "<task domain>" }
+```
+
 ### Step 2: Decompose & Route
 
 Break work into discrete units. For each, determine: files involved, dependencies on other units, conflict risk, complexity. Assign agent type per the routing table.
@@ -98,8 +106,8 @@ After all merges, report to the user:
 **Minimal (default):**
 
 ```
-✓ N/N complete. M patterns captured to vault.
-  → Decisions: [any design decisions the orchestrator made]
+N/N complete. M patterns captured to vault.
+  -> Decisions: [any design decisions the orchestrator made]
 ```
 
 **Detailed (on request):**
@@ -107,11 +115,16 @@ After all merges, report to the user:
 ```
 | # | Task | Agent | Status | Knowledge |
 |---|------|-------|--------|-----------|
-| 1 | Desc | Worker | Done ✓ | — |
-| 2 | Desc | Instance | Done ✓ | 2 patterns |
+| 1 | Desc | Worker | Done | -- |
+| 2 | Desc | Instance | Done | 2 patterns |
 ```
 
 Capture learnings to vault. Run `orchestrate_complete` for the parent plan.
+
+```
+YOUR_AGENT_core op:capture_knowledge
+  params: { title: "<learned pattern>", description: "<merge strategy or decomposition insight>", type: "pattern", tags: ["subagent", "parallel-execution"] }
+```
 
 ## Worktree Cleanup Guarantee
 

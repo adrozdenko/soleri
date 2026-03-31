@@ -1,9 +1,9 @@
 ---
 name: soleri-writing-plans
 description: >
-  Use when the user has clear requirements or a spec and needs a structured implementation plan —
-  "create a plan", "break this down", "plan the implementation". Requirements are already known.
-  For open-ended exploration when requirements are unclear, use brainstorming instead.
+  Use when the user has clear requirements and needs a structured implementation plan —
+  "create a plan", "break this down", or "plan the implementation". For open-ended
+  exploration when requirements are unclear, use brainstorming instead.
 ---
 
 # Writing Plans
@@ -17,6 +17,11 @@ Write implementation plans assuming the engineer has zero codebase context. Docu
 ## Before Writing — Search First
 
 ### 1. Vault First
+
+```
+salvador_core op:memory_search
+  params: { query: "<plan topic>", crossProject: true }
+```
 
 ```
 salvador_core op:search_intelligent
@@ -97,12 +102,13 @@ Offer execution choice: subagent-driven (this session) or parallel session with 
 
 ## Quick Reference
 
-| Op                                 | When to Use                   |
-| ---------------------------------- | ----------------------------- |
-| `search_intelligent`               | Find patterns before planning |
-| `brain_strengths`                  | Proven approaches             |
-| `create_plan`                      | Create tracked plan           |
-| `plan_grade` / `plan_auto_improve` | Grade and improve             |
-| `plan_iterate`                     | Iterate with feedback         |
-| `plan_split`                       | Split into tasks              |
-| `approve_plan`                     | Lock in approved plan         |
+| Op                                 | When to Use                        |
+| ---------------------------------- | ---------------------------------- |
+| `memory_search`                    | Cross-project plan precedents      |
+| `search_intelligent`               | Find patterns before planning      |
+| `brain_strengths`                  | Proven approaches                  |
+| `create_plan`                      | Create tracked plan                |
+| `plan_grade` / `plan_auto_improve` | Grade and improve                  |
+| `plan_iterate`                     | Iterate with feedback              |
+| `plan_split`                       | Split into tasks                   |
+| `approve_plan`                     | Lock in approved plan              |

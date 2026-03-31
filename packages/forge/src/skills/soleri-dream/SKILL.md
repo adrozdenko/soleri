@@ -71,7 +71,15 @@ Format the dream report as a table:
 | **Total dreams** | {totalDreams} |
 | **Timestamp** | {timestamp} |
 
-### Step 4: Capture to Memory
+### Step 4: Rebuild Brain Intelligence
+
+```
+YOUR_AGENT_core op:brain_build_intelligence
+```
+
+Rebuild brain intelligence with the freshly consolidated vault data.
+
+### Step 5: Capture to Memory
 
 ```
 YOUR_AGENT_memory op:session_capture

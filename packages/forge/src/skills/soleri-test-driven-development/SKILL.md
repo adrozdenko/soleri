@@ -9,6 +9,13 @@ description: Use when implementing any feature or bugfix — write failing tests
 
 ## Before You Start — Search First
 
+### Check Vault for Testing Patterns
+
+```
+YOUR_AGENT_core op:search_intelligent
+  params: { query: "<domain> testing patterns" }
+```
+
 ```
 YOUR_AGENT_core op:search_intelligent
   params: { query: "<what you're about to test>" }

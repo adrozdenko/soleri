@@ -31,6 +31,16 @@ If you haven't run the verification command in this message, you cannot claim it
 6. ONLY THEN: Make the claim
 ```
 
+## Check Loop Status
+
+If this task is part of a tracked loop:
+
+```
+YOUR_AGENT_core op:loop_status
+```
+
+Report loop iteration status before claiming completion.
+
 ## Agent System Checks
 
 After passing verification commands:
@@ -91,6 +101,7 @@ Do NOT rationalize away failures. If a check fails, it fails. Period.
 
 | Op                      | When to Use                         |
 | ----------------------- | ----------------------------------- |
+| `loop_status`           | Check loop iteration status         |
 | `admin_health`          | Quick system health check           |
 | `admin_diagnostic`      | Comprehensive diagnostic            |
 | `admin_vault_analytics` | Knowledge quality metrics           |

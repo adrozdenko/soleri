@@ -1,9 +1,9 @@
 ---
 name: soleri-verification-before-completion
 description: >
-  Use as an internal quality gate before claiming any task is done — run tests, check output,
-  verify behavior. This is a mid-workflow checkpoint, not a shipping gate. For actual deployment
-  and release workflows, use deliver-and-ship instead.
+  Use as an internal quality gate before claiming any task is done — "verify this works",
+  "check output", "quality gate", or "run tests before done". This is a mid-workflow
+  checkpoint. For actual deployment, use deliver-and-ship instead.
 ---
 
 # Verification Before Completion
@@ -30,6 +30,16 @@ If you haven't run the verification command in this message, you cannot claim it
 5. AGENT CHECK: Run system diagnostics
 6. ONLY THEN: Make the claim
 ```
+
+## Check Loop Status
+
+If this task is part of a tracked loop:
+
+```
+salvador_core op:loop_status
+```
+
+Report loop iteration status before claiming completion.
 
 ## Agent System Checks
 
@@ -91,6 +101,7 @@ Do NOT rationalize away failures. If a check fails, it fails. Period.
 
 | Op                      | When to Use                         |
 | ----------------------- | ----------------------------------- |
+| `loop_status`           | Check loop iteration status         |
 | `admin_health`          | Quick system health check           |
 | `admin_diagnostic`      | Comprehensive diagnostic            |
 | `admin_vault_analytics` | Knowledge quality metrics           |
