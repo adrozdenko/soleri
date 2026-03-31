@@ -1,10 +1,9 @@
 ---
 name: soleri-vault-curate
 description: >
-  Use when the user says "clean vault", "deduplicate", "groom knowledge",
-  "consolidate vault", "vault maintenance", "find duplicates", "merge patterns",
-  "check contradictions", "vault health", or wants to maintain, clean, reorganize,
-  or improve the quality of the agent's knowledge base.
+  Use when the user says "clean vault", "deduplicate vault", "groom knowledge",
+  "merge patterns", or "vault maintenance". Maintains vault quality through
+  deduplication, grooming, and contradiction detection.
 ---
 
 # Vault Curate — Knowledge Maintenance

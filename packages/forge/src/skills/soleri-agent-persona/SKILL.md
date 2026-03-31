@@ -1,10 +1,9 @@
 ---
 name: soleri-agent-persona
 description: >
-  Use when the user activates the agent's persona via its greeting phrase, or says
-  "activate persona", "be yourself", "stay in character", or any activation phrase
-  defined in the agent's persona configuration. Reinforces character persistence
-  through the session and survives context compaction.
+  Use when the user says "activate persona", "be yourself",
+  "stay in character", or "hello [agent name]". Reinforces character
+  persistence through the session and survives context compaction.
 ---
 
 # Agent Persona — Stay in Character

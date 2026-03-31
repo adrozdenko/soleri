@@ -1,12 +1,9 @@
 ---
 name: soleri-agent-dev
 description: >
-  Use when extending the agent itself — adding facades, tools, vault operations,
-  brain features, new skills, or modifying agent internals. Triggers on "add a facade",
-  "new tool", "extend vault", "add brain feature", "new skill", "add operation",
-  "extend agent", or when the work target is the agent's own codebase rather than
-  a project the agent assists with. Enforces vault-first knowledge gathering before
-  any code reading or planning.
+  Use when the user says "add a facade", "new tool", "extend vault",
+  "add brain feature", "new skill", or "extend agent". For extending
+  the agent's own internals with vault-first knowledge gathering.
 ---
 
 # Agent Dev — Vault-First Internal Development

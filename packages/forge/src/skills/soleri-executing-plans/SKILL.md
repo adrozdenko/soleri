@@ -1,10 +1,9 @@
 ---
 name: soleri-executing-plans
 description: >
-  Use when the user says "execute my plan", "run the plan", "start executing", "implement the
-  plan step by step", or has a written plan to execute sequentially with review checkpoints.
-  Tasks run one at a time in order. If tasks are independent and can run in parallel, use
-  parallel-execute instead.
+  Use when the user says "execute my plan", "run the plan", "start executing",
+  or "implement the plan". Executes tasks sequentially with review checkpoints.
+  For parallel execution, use parallel-execute instead.
 ---
 
 # Executing Plans

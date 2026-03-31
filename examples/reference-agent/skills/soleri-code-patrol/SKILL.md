@@ -1,6 +1,9 @@
 ---
 name: soleri-code-patrol
-description: Use when reviewing code against the project's own captured patterns, anti-patterns, and conventions — not generic lint rules but institutional knowledge.
+description: >
+  Use when the user says "check against patterns", "pattern compliance",
+  "convention check", "review against vault", or "institutional review".
+  Reviews code against the project's own captured patterns and conventions.
 ---
 
 # Code Patrol — Review Code Against Your Own Knowledge

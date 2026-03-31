@@ -1,9 +1,9 @@
 ---
 name: soleri-vault-navigator
 description: >
-  Use when the user asks "search the vault", "find patterns for", "have we seen this
-  before", "vault search", or "best practice for". Queries the knowledge base for
-  existing solutions and prior art. For saving a new entry, use vault-capture instead.
+  Use when the user says "search the vault", "find patterns for",
+  "have we seen this before", "vault search", or "best practice for".
+  Queries the knowledge base for existing solutions and prior art.
 ---
 
 # Vault Navigator — Knowledge Oracle

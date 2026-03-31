@@ -1,9 +1,9 @@
 ---
 name: soleri-verification-before-completion
 description: >
-  Use as an internal quality gate before claiming any task is done — run tests, check output,
-  verify behavior. This is a mid-workflow checkpoint, not a shipping gate. For actual deployment
-  and release workflows, use deliver-and-ship instead.
+  Use when the user says "verify this works", "check output", "quality gate",
+  or "run tests before done". Internal quality gate before claiming any task
+  is done. For shipping, use deliver-and-ship instead.
 ---
 
 # Verification Before Completion

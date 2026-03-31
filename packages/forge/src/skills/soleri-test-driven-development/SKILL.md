@@ -1,6 +1,9 @@
 ---
 name: soleri-test-driven-development
-description: Use when implementing any feature or bugfix — write failing tests before implementation code.
+description: >
+  Use when the user says "TDD", "write tests first", "red green refactor",
+  or "test driven". Write failing tests before implementation code for any
+  feature or bugfix.
 ---
 
 # Test-Driven Development (TDD)

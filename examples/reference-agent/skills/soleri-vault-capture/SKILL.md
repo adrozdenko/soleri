@@ -1,10 +1,9 @@
 ---
 name: soleri-vault-capture
 description: >
-  Use to capture a SINGLE known pattern, anti-pattern, workflow, decision, or principle to the
-  vault. Triggers on "save this", "capture this", "remember this pattern", "add to vault". The
-  user already knows what to capture. For bulk extraction from documents, code, or PRs, use
-  knowledge-harvest instead.
+  Use when the user says "save this", "capture this", "remember this pattern",
+  or "add to vault". Captures a single known pattern, anti-pattern, workflow,
+  or principle to the vault.
 ---
 
 # Vault Capture — Persist Knowledge

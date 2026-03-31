@@ -1,9 +1,9 @@
 ---
 name: soleri-subagent-driven-development
 description: >
-  Use when the user says "use subagents", "parallel agents", "fan out", "dispatch agents",
-  "subagent driven", or when a task decomposes into 2+ independent units that benefit from
-  isolated execution. Covers when to dispatch, worktree isolation, and merge strategy.
+  Use when the user says "use subagents", "parallel agents",
+  "subagent driven", or "isolated execution". Decomposes work into isolated
+  units and dispatches subagents for independent execution.
 ---
 
 # Subagent-Driven Development

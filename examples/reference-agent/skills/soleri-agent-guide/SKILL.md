@@ -1,11 +1,9 @@
 ---
 name: soleri-agent-guide
 description: >
-  Use when the user asks "what can you do", "help me", "how do I use this",
-  "what features do you have", "what tools are available", "how does this work",
-  "show me your capabilities", "what are you", "who are you", or any question
-  about the agent's identity, capabilities, available tools, or how to use them.
-  Not needed for proactive tool suggestions — those are handled by engine rules.
+  Use when the user says "what can you do", "how do I use this",
+  "what features", "what tools available", "who are you", or "show capabilities".
+  Helps users discover agent capabilities and available tools.
 ---
 
 # Agent Guide — Capability Discovery

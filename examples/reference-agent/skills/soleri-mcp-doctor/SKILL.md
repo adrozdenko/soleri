@@ -1,9 +1,9 @@
 ---
 name: soleri-mcp-doctor
 description: >
-  Use when MCP servers fail to connect, tools are missing, or the user says "check MCP",
-  "MCP not working", "server not connecting", "tools missing", "heal MCP", "fix MCP",
-  "mcp doctor", "mcp status". Diagnoses and repairs MCP server connectivity issues.
+  Use when the user says "MCP not working", "tools missing", "fix MCP",
+  "mcp doctor", or "server not connecting". Diagnoses and repairs MCP server
+  connectivity issues.
 ---
 
 # MCP Doctor — Diagnose and Heal MCP Connections

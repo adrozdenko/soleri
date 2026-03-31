@@ -1,10 +1,9 @@
 ---
 name: soleri-fix-and-learn
 description: >
-  Use AFTER a root cause has been identified (typically via systematic-debugging) to execute
-  the fix and capture the learning in the vault. Triggers on "fix it", "apply the fix",
-  "patch this and remember". Do NOT use as the first response to a bug — use
-  systematic-debugging first to find root cause.
+  Use when the user says "fix it", "apply the fix", "patch this and remember",
+  or "fix and capture". Executes a fix AFTER root cause is identified and
+  captures the learning in the vault. Use systematic-debugging first.
 ---
 
 # Fix & Learn — Debug, Repair, Capture

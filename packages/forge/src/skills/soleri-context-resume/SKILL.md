@@ -1,9 +1,9 @@
 ---
 name: soleri-context-resume
 description: >
-  Use when the user says "where did I leave off", "what was I working on", "catch me up",
-  "resume", "continue where we stopped", or is starting a new session and needs to reconstruct
-  working context from memory, plans, and sessions.
+  Use when the user says "where did I leave off", "what was I working on",
+  "catch me up", "resume session", or "continue where we stopped".
+  Reconstructs working context from memory, plans, and sessions.
 ---
 
 # Context Resume — Pick Up Where You Left Off

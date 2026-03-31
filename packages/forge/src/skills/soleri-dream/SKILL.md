@@ -2,9 +2,8 @@
 name: soleri-dream
 description: >
   Use when the user says "dream", "consolidate memory", "clean up memory",
-  "vault maintenance", "memory cleanup", or wants to run automatic memory
-  consolidation. Also triggers on "dream status", "when was last dream",
-  "how clean is my memory".
+  "memory cleanup", or "dream status". Runs automatic memory consolidation
+  — dedup, archive stale entries, resolve contradictions.
 ---
 
 # /dream — Automatic Memory Consolidation

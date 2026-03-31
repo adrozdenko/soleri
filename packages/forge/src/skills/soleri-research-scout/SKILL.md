@@ -2,10 +2,8 @@
 name: soleri-research-scout
 description: >
   Use when the user says "scout", "research scout", "find new info",
-  "what's new", "scan the web", "hunt for updates", "check for changes",
-  "news scan", or wants to discover new information that challenges or
-  updates existing vault knowledge. Also triggers on "scout review" to
-  review and promote staged findings.
+  "what's new", or "scan the web". Discovers new information that challenges
+  or updates existing vault knowledge via web search.
 ---
 
 # /research-scout — Knowledge Discovery via Vault Branching

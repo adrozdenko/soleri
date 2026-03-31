@@ -1,10 +1,9 @@
 ---
 name: soleri-deliver-and-ship
 description: >
-  Use when the user says "ship it", "ready to deploy", "package", "release",
-  "pre-PR check", "delivery checklist", "is this ready", "final review", or mentions
-  shipping, deploying, packaging, or releasing work. Runs pre-delivery quality gates
-  to ensure nothing ships without passing stability, knowledge capture, and code quality checks.
+  Use when the user says "pre-PR check", "delivery checklist", "is this ready",
+  "final review", or "ready to deploy". Runs pre-delivery quality gates
+  to ensure nothing ships without passing stability and code quality checks.
 ---
 
 # Deliver & Ship — Quality Gate Runner

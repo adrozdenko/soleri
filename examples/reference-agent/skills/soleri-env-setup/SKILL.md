@@ -1,12 +1,9 @@
 ---
 name: soleri-env-setup
 description: >
-  Use when a developer needs to set up, fix, or restore a local development environment.
-  Triggers on post-clone setup, project onboarding, first-time running a repo, pulled changes
-  that broke the build, missing or misconfigured dependencies, MODULE_NOT_FOUND or Cannot find
-  module errors, gyp ERR or native module build failures, missing .env files or unknown required
-  environment variables, database setup, Docker compose issues, or connection refused during
-  local dev. Covers Node.js, Python, Rust, Go, Ruby, PHP, and Docker-based projects.
+  Use when the user says "setup environment", "post-clone setup", "broken build",
+  "missing dependencies", or "MODULE_NOT_FOUND". Detects what a project needs,
+  diagnoses what's missing, and produces an actionable setup checklist.
 ---
 
 # Environment Setup

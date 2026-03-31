@@ -1,9 +1,9 @@
 ---
 name: soleri-yolo-mode
 description: >
-  Use when the user says "yolo", "autonomous", "skip approvals", "full auto", "hands off",
-  or asks to execute without approval gates. Activates autonomous execution mode where the
-  agent skips plan approval gates but preserves all safety invariants.
+  Use when the user says "yolo", "autonomous", "skip approvals",
+  "full auto", or "hands off". Activates autonomous execution mode
+  that skips approval gates but preserves safety invariants.
 ---
 
 # YOLO Mode

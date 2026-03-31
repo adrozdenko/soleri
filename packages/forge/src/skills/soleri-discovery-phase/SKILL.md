@@ -1,10 +1,9 @@
 ---
 name: soleri-discovery-phase
 description: >
-  Use for structured exploration before committing to a plan — "I don't know where to start",
-  "what are our options", "investigate", "research this", "explore options", "discovery". Ideal
-  when requirements are unclear, entering a new domain, or facing architectural decisions. Produces
-  a discovery document with options, tradeoffs, and a recommendation.
+  Use when the user says "I don't know where to start", "investigate",
+  "research this", "explore the problem", or "discovery". Structured exploration
+  before committing to a plan, producing options with tradeoffs.
 ---
 
 # Discovery Phase

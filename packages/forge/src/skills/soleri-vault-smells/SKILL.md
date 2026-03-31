@@ -1,11 +1,9 @@
 ---
 name: soleri-vault-smells
 description: >
-  Use for deep knowledge quality analysis — finding contradictions, stale patterns, orphaned entries,
-  weak links, knowledge decay, and structural issues in the vault. Triggers on "vault smells",
-  "knowledge quality", "vault analysis", "find contradictions", "stale patterns", "knowledge debt",
-  "vault deep check", "is my vault healthy". Goes deeper than health-check (which is operational).
-  For code review, use deep-review instead.
+  Use when the user says "vault quality", "vault analysis", "knowledge quality",
+  "knowledge debt", "stale patterns", or "find contradictions". Deep knowledge
+  quality analysis beyond operational health checks.
 ---
 
 # Vault Smells — Knowledge Quality Deep Analysis

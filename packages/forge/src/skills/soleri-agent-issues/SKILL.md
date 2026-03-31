@@ -1,11 +1,9 @@
 ---
 name: soleri-agent-issues
 description: >
-  Use when creating GitHub issues, bugs, tasks, or milestones that will be
-  worked on by AI coding agents. Triggers on: "create issue", "file bug",
-  "gh issue", "add milestone", "create task", "report bug", "gh tasks",
-  "create tasks", "create tickets", "file tickets", or when generating
-  structured work items from conversation context.
+  Use when the user says "create issue", "file bug", "gh issue",
+  "create task", "report bug", or "create tickets". Creates structured
+  GitHub issues optimized for AI agent execution.
 ---
 
 # Agent-Optimized Issue Creation

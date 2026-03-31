@@ -1,10 +1,9 @@
 ---
 name: soleri-brainstorming
 description: >
-  Use for open-ended creative exploration when requirements are NOT yet clear — "I want to build
-  something", "let's think about", "explore options for", "what if we". Explores intent and
-  design before implementation. If the user already has a spec or clear requirements, use
-  writing-plans instead.
+  Use when the user says "I want to build something", "let's think about",
+  "what if we", "creative exploration", or "ideate". For open-ended creative
+  exploration when requirements are NOT yet clear.
 ---
 
 # Brainstorming Ideas Into Designs

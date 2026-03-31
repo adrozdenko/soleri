@@ -1,6 +1,9 @@
 ---
 name: soleri-second-opinion
-description: Use when facing a technical decision, comparing approaches, or needing an informed recommendation backed by vault knowledge, brain patterns, and web research.
+description: >
+  Use when the user says "second opinion", "technical decision",
+  "comparing approaches", or "which approach". Provides informed recommendations
+  backed by vault knowledge, brain patterns, and web research.
 ---
 
 # Second Opinion — Decision Support From All Sources

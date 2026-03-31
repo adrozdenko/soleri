@@ -1,9 +1,9 @@
 ---
 name: soleri-using-git-worktrees
 description: >
-  Use when the user says "worktree", "isolate", "parallel branch", "safe branch", or when a plan
-  has independent tasks that benefit from parallel execution in isolated branches. Provides the
-  protocol for creating, working in, and cleaning up git worktrees safely.
+  Use when the user says "worktree", "parallel branch", "safe branch",
+  or "isolated branch". Provides the protocol for creating, working in,
+  and cleaning up git worktrees safely.
 ---
 
 # Using Git Worktrees

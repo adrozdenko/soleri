@@ -1,10 +1,9 @@
 ---
 name: soleri-deep-review
 description: >
-  Use for in-depth code review beyond linting — architecture fitness, code smells, solution quality,
-  optimization opportunities. Triggers on "deep review", "review this code", "is this well architected",
-  "code smells", "review this module", "architecture review", "is this the right approach",
-  "optimization review". Works on any codebase. For vault-specific knowledge quality, use vault-smells instead.
+  Use when the user says "deep review", "code smells", "architecture review",
+  "is this well architected", or "optimization review". Multi-pass code review
+  analyzing structural health, smells, and solution quality.
 ---
 
 # Deep Review — Architecture, Smells & Solution Quality

@@ -1,9 +1,9 @@
 ---
 name: soleri-onboard-me
 description: >
-  Use when someone is new to the PROJECT and needs orientation — "onboard me", "I'm new here",
-  "project overview", "what should I know about this codebase". Questions about the project's
-  patterns and conventions, not about the agent's capabilities (use agent-guide for that).
+  Use when the user says "onboard me", "I'm new here", "project overview",
+  or "what should I know about this codebase". Provides a structured tour
+  of everything the vault knows about this project.
 ---
 
 # Onboard Me — Instant Project Intelligence

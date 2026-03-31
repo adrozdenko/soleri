@@ -1,10 +1,9 @@
 ---
 name: soleri-health-check
 description: >
-  Use when the user asks "check health", "system status", "how healthy is the vault",
-  "knowledge quality", "run diagnostics", "vault health report", or wants a read-only health
-  assessment of the knowledge base — scoring, reporting, finding issues. Does NOT modify vault
-  entries. To actively clean, merge, or deduplicate, use vault-curate instead.
+  Use when the user says "system health", "agent health", "run diagnostics",
+  "system status", or "check health". Read-only health assessment of the
+  knowledge base — scoring, reporting, finding issues.
 ---
 
 # Health Check — Knowledge Base Maintenance

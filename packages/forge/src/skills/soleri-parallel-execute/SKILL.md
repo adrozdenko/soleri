@@ -1,10 +1,9 @@
 ---
 name: soleri-parallel-execute
 description: >
-  Use when executing a plan where independent tasks can run concurrently. Triggers on "run in
-  parallel", "parallelize", "fan out", "concurrent execution", "run simultaneously", "at the
-  same time", "dispatch subagents", "batch execute", or when a plan has 3+ tasks with no
-  dependency overlap. For sequential task-by-task execution, use executing-plans instead.
+  Use when the user says "run in parallel", "fan out", "concurrent execution",
+  "batch execute", or "dispatch subagents". Executes independent plan tasks
+  concurrently via subagents. For sequential execution, use executing-plans.
 ---
 
 # Parallel Execute — Subagent-Driven Plan Execution

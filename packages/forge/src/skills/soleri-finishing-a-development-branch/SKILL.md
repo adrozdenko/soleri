@@ -1,9 +1,9 @@
 ---
 name: soleri-finishing-a-development-branch
 description: >
-  Use when the user says "finish branch", "merge branch", "ready to merge", "PR ready",
-  "close branch", "submit PR", or wants to finalize a development branch for merge into
-  the base branch.
+  Use when the user says "finish branch", "ready to merge", "PR ready",
+  "submit PR", or "close branch". Handles pre-merge checks, PR creation,
+  merge strategy, and branch cleanup.
 ---
 
 # Finishing a Development Branch

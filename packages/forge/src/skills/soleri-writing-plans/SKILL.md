@@ -1,9 +1,9 @@
 ---
 name: soleri-writing-plans
 description: >
-  Use when the user has clear requirements or a spec and needs a structured implementation plan —
-  "create a plan", "break this down", "plan the implementation". Requirements are already known.
-  For open-ended exploration when requirements are unclear, use brainstorming instead.
+  Use when the user says "create a plan", "break this down", or
+  "plan the implementation". Creates structured implementation plans when
+  requirements are already known. For exploration, use brainstorming.
 ---
 
 # Writing Plans
