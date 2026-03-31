@@ -4,6 +4,7 @@
  */
 import type { PersistenceProvider } from '../persistence/types.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import type { StoredVector } from '../embeddings/types.js';
 import type { LinkManager } from './linking.js';
 import { computeContentHash } from './content-hash.js';
 import type { SearchResult, VaultStats } from './vault.js';
@@ -375,6 +376,117 @@ export function contentHashStats(provider: PersistenceProvider): {
       'SELECT COUNT(DISTINCT content_hash) as c FROM entries WHERE content_hash IS NOT NULL',
     )?.c ?? 0;
   return { total, hashed, uniqueHashes };
+}
+
+// ── Vector Operations ────────────────────────────────────────────────────
+
+/** Store a vector for an entry. Upserts — replaces if exists. */
+export function storeVector(
+  provider: PersistenceProvider,
+  entryId: string,
+  vector: number[],
+  model: string,
+  dimensions: number,
+): void {
+  const blob = Buffer.from(new Float32Array(vector).buffer);
+  provider.run(
+    `INSERT INTO entry_vectors (entry_id, vector, model, dimensions, created_at)
+     VALUES (@entryId, @vector, @model, @dimensions, @createdAt)
+     ON CONFLICT(entry_id) DO UPDATE SET
+       vector = excluded.vector, model = excluded.model,
+       dimensions = excluded.dimensions, created_at = excluded.created_at`,
+    {
+      entryId,
+      vector: blob,
+      model,
+      dimensions,
+      createdAt: Date.now(),
+    },
+  );
+}
+
+/** Get the stored vector for an entry, or null. */
+export function getVector(provider: PersistenceProvider, entryId: string): StoredVector | null {
+  const row = provider.get<{
+    entry_id: string;
+    vector: Buffer;
+    model: string;
+    dimensions: number;
+    created_at: number;
+  }>('SELECT * FROM entry_vectors WHERE entry_id = ?', [entryId]);
+  if (!row) return null;
+  return {
+    entryId: row.entry_id,
+    vector: Array.from(
+      new Float32Array(row.vector.buffer, row.vector.byteOffset, row.vector.byteLength / 4),
+    ),
+    model: row.model,
+    dimensions: row.dimensions,
+    createdAt: row.created_at,
+  };
+}
+
+/** Delete the vector for an entry. */
+export function deleteVector(provider: PersistenceProvider, entryId: string): void {
+  provider.run('DELETE FROM entry_vectors WHERE entry_id = ?', [entryId]);
+}
+
+/** Get IDs of entries that have no vector for the given model. */
+export function getEntriesWithoutVectors(provider: PersistenceProvider, model: string): string[] {
+  const rows = provider.all<{ id: string }>(
+    `SELECT e.id FROM entries e
+     LEFT JOIN entry_vectors ev ON e.id = ev.entry_id AND ev.model = @model
+     WHERE ev.entry_id IS NULL`,
+    { model },
+  );
+  return rows.map((r) => r.id);
+}
+
+/**
+ * Brute-force cosine similarity search over all stored vectors.
+ * Returns top-K entries sorted by similarity descending.
+ * For <100K entries, brute-force is fast enough (~50ms).
+ */
+export function cosineSearch(
+  provider: PersistenceProvider,
+  queryVector: number[],
+  topK: number,
+): Array<{ entryId: string; similarity: number }> {
+  const rows = provider.all<{
+    entry_id: string;
+    vector: Buffer;
+  }>('SELECT entry_id, vector FROM entry_vectors');
+
+  // Precompute query norm
+  let queryNorm = 0;
+  for (let i = 0; i < queryVector.length; i++) {
+    queryNorm += queryVector[i] * queryVector[i];
+  }
+  queryNorm = Math.sqrt(queryNorm);
+  if (queryNorm === 0) return [];
+
+  const results: Array<{ entryId: string; similarity: number }> = [];
+
+  for (const row of rows) {
+    const stored = new Float32Array(
+      row.vector.buffer,
+      row.vector.byteOffset,
+      row.vector.byteLength / 4,
+    );
+    let dot = 0;
+    let storedNorm = 0;
+    for (let i = 0; i < stored.length; i++) {
+      dot += queryVector[i] * stored[i];
+      storedNorm += stored[i] * stored[i];
+    }
+    storedNorm = Math.sqrt(storedNorm);
+    if (storedNorm === 0) continue;
+    const similarity = dot / (queryNorm * storedNorm);
+    results.push({ entryId: row.entry_id, similarity });
+  }
+
+  results.sort((a, b) => b.similarity - a.similarity);
+  return results.slice(0, topK);
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────

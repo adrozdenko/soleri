@@ -28,6 +28,7 @@ export function initializeSchema(provider: PersistenceProvider): void {
   migrateContentHash(provider);
   migrateTierColumn(provider);
   migratePerformanceIndexes(provider);
+  migrateVectorStorage(provider);
 }
 
 function createCoreTables(provider: PersistenceProvider): void {
@@ -256,4 +257,18 @@ export function migratePerformanceIndexes(provider: PersistenceProvider): void {
   } catch {
     /* brain_sessions table doesn't exist yet — indexes will be created on next init */
   }
+}
+
+function migrateVectorStorage(provider: PersistenceProvider): void {
+  provider.execSql(`
+    CREATE TABLE IF NOT EXISTS entry_vectors (
+      entry_id TEXT PRIMARY KEY,
+      vector BLOB NOT NULL,
+      model TEXT NOT NULL,
+      dimensions INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE
+    );
+  `);
+  provider.execSql('CREATE INDEX IF NOT EXISTS idx_entry_vectors_model ON entry_vectors(model)');
 }
