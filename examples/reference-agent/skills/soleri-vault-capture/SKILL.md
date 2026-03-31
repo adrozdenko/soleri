@@ -2,84 +2,203 @@
 name: soleri-vault-capture
 description: >
   Use when the user says "save this", "capture this", "remember this pattern",
-  or "add to vault". Captures a single known pattern, anti-pattern, workflow,
-  or principle to the vault.
+  "add to vault", "vault capture", or when persisting learnings from a work
+  session. Validated capture with tier scoping, duplicate detection, and
+  abstraction review.
 ---
 
-# Vault Capture — Persist Knowledge
+# Vault Capture — Validated Knowledge Persistence
 
-Capture patterns, anti-patterns, workflows, and principles to the vault. Captured knowledge compounds — it informs future searches, brain recommendations, and team reviews.
+Capture knowledge to the vault with mandatory validation before persistence. Every item goes through tier classification, duplicate detection, and abstraction review. Nothing lands in the vault without conscious scoping.
+
+## When to Use
+
+- End of a work session — collecting learnings
+- After a significant decision, pattern discovery, or anti-pattern identification
+- When multiple items need capturing from a conversation
+- User says "capture this", "save to vault", "remember this"
 
 ## Steps
 
-### 1. Check for Duplicates
+### 1. Extract Candidate Items
+
+Review the conversation or user request. For each piece of knowledge, extract:
+
+- **Title** — clear, searchable name
+- **Description** — what it is, when it applies, why it matters
+- **Why** — reasoning behind the pattern (makes entries actionable)
+- **Type** — pattern | anti-pattern | workflow | principle | decision | rule | reference
+- **Domain** — architecture, design, components, process, testing, etc.
+- **Tags** — 3-5 searchable keywords
+
+### 2. Tier Classification (MANDATORY)
+
+For EACH item, apply the three-question test:
+
+| Question | If YES |
+|----------|--------|
+| Would any developer on ANY project benefit? | **agent** tier |
+| Would this apply to OTHER projects this team owns? | **team** tier |
+| Is this specific to THIS codebase only? | **project** tier |
+
+Decision tree:
 
 ```
-salvador_core op:search_intelligent
-  params: { query: "<knowledge title or description>" }
-salvador_core op:curator_detect_duplicates
+Universal? (WCAG, UX laws, language patterns)
+  → YES → agent
+  → NO → Shared across team projects? (design system, workflow conventions)
+    → YES → team
+    → NO → project (component rules, token policies, architectural decisions)
 ```
 
-If similar entry exists, update it instead of creating a duplicate.
+**When in doubt: prefer project over agent.** Too specific is safer than too general.
 
-### 2. Classify the Knowledge
+### 3. Duplicate Detection
 
-| Type             | Description                         |
-| ---------------- | ----------------------------------- |
-| **pattern**      | Works and should be repeated        |
-| **anti-pattern** | Fails and should be avoided         |
-| **workflow**     | Steps for a specific task           |
-| **principle**    | Guiding rule or heuristic           |
-| **decision**     | Architectural choice with rationale |
-
-### 3. Capture
+For each item, search the vault:
 
 ```
-salvador_core op:capture_knowledge
+YOUR_AGENT_core op:search_intelligent
+  params: { query: "<item title and key terms>" }
+```
+
+Check results:
+
+- **Score > 0.5** — likely duplicate. Update the existing entry instead of creating new.
+- **Score 0.3-0.5** — possible overlap. Review existing entry: update or capture as new.
+- **Score < 0.3** — no duplicate. Proceed with capture.
+
+For batch scans: `YOUR_AGENT_core op:curator_detect_duplicates`
+
+### 4. Abstraction Level Check
+
+Validate each item is at the right level:
+
+| Too Specific (skip) | Just Right (capture) | Too General (skip) |
+|----------------------|----------------------|--------------------|
+| "Line 42 of FileUpload.tsx needs a Button" | "Components must use Button atom for all interactive elements" | "Use design system components" |
+| "Changed bg-red-500 to error token" | "No raw Tailwind colors — use semantic tokens" | "Use semantic colors" |
+| "Fixed timeout in GuidedCodeBlock" | "setTimeout in useEffect must return clearTimeout cleanup" | "Clean up side effects" |
+
+Ask: "Would this help someone who hasn't read today's conversation?" If NO — too specific, skip it.
+
+### 5. Present Review Table
+
+Before capturing, present ALL items to the user:
+
+```
+## Capture Review
+
+| # | Title | Type | Tier | Duplicate? | Abstraction | Action |
+|---|-------|------|------|------------|-------------|--------|
+| 1 | [title] | pattern | project | No match | Good | Capture |
+| 2 | [title] | anti-pattern | agent | Similar: [id] (0.45) | Good | Update existing |
+| 3 | [title] | workflow | project | No match | Too specific | Skip |
+```
+
+**Wait for user approval.** Do NOT proceed without explicit confirmation.
+
+### 6. Execute Approved Captures
+
+For each approved item:
+
+```
+YOUR_AGENT_core op:capture_knowledge
   params: {
-    title: "<clear, searchable name>",
-    description: "<what it is and when it applies>",
-    type: "<pattern|anti-pattern|workflow|principle|decision>",
-    category: "<domain>",
-    tags: ["<tag1>", "<tag2>"],
-    example: "<code or before/after>",
-    why: "<reasoning>"
+    entries: [{
+      title: "<title>",
+      description: "<description>",
+      type: "<type>",
+      domain: "<domain>",
+      severity: "<critical|warning|suggestion>",
+      tags: ["<tag1>", "<tag2>"],
+      why: "<reasoning>"
+    }]
   }
 ```
 
-For quick captures: `salvador_core op:capture_quick params: { title: "<name>", description: "<details>" }`
+For quick single captures: `YOUR_AGENT_core op:capture_quick params: { title: "<name>", description: "<details>" }`
 
-### 4. Post-Capture Quality
+### 7. Post-Capture Quality
 
-- `op:curator_groom params: { entryId: "<id>" }` — normalize tags
-- `op:curator_enrich params: { entryId: "<id>" }` — LLM enrichment
-- `op:curator_contradictions` — check for conflicts
+For each captured entry:
 
-### 5. Governance (if enabled)
+- `YOUR_AGENT_core op:curator_groom params: { entryId: "<id>" }` — normalize tags
+- `YOUR_AGENT_core op:curator_enrich params: { entryId: "<id>" }` — LLM enrichment
+- `YOUR_AGENT_core op:curator_contradictions` — check for conflicts with existing entries
 
-If capture returns a `proposalId`, entry is queued: `op:governance_proposals params: { action: "list" }`.
+### 8. Verify and Fix Tiers (MANDATORY)
 
-### 6. Promote to Global (Optional)
+After capture, check EVERY response. Auto-detection frequently assigns "agent" tier with LOW confidence to project-specific knowledge.
 
-For cross-project knowledge: `op:memory_promote_to_global params: { entryId: "<id>" }`.
+```
+YOUR_AGENT_core op:vault_set_scope
+  params: { id: "<entry-id>", tier: "<correct-tier>" }
+```
 
-### 7. Verify
+### 9. Governance (if enabled)
 
-`op:admin_health` and `op:admin_vault_analytics` to confirm storage and quality.
+If capture returns a `proposalId`, entry is queued for review:
+
+```
+YOUR_AGENT_core op:governance_proposals
+  params: { action: "list" }
+```
+
+### 10. Promote to Global (optional)
+
+For cross-project knowledge worth sharing:
+
+```
+YOUR_AGENT_core op:memory_promote_to_global
+  params: { entryId: "<id>" }
+```
+
+### 11. Report
+
+After all captures:
+
+```
+## Captured
+
+| # | Title | ID | Tier | Type | Links |
+|---|-------|----|------|------|-------|
+| 1 | [title] | [id] | project | pattern | 3 auto-linked |
+
+Skipped: [count] (too specific / duplicate)
+Updated: [count] (merged into existing)
+```
+
+Verify with `YOUR_AGENT_core op:admin_health` and `YOUR_AGENT_core op:admin_vault_analytics`.
+
+## Anti-patterns
+
+- Capturing code fixes as knowledge (that's what git is for)
+- Capturing temporary state (active plan, current task)
+- Capturing things already in CLAUDE.md (duplication)
+- Using "agent" tier for anything mentioning project-specific names
+- Batch-capturing without showing the review table first
+- Skipping tier verification after capture
 
 ## Common Mistakes
 
 - Not checking for duplicates before capturing
 - Missing the `why` field (makes entries not actionable)
 - Skipping post-capture grooming (tags stay unnormalized)
+- Letting auto-detection assign wrong tier without correction
+- Capturing implementation details that belong in git, not vault
 
-## Quick Reference
+## Agent Tools Reference
 
-| Op                                    | When to Use          |
-| ------------------------------------- | -------------------- |
-| `search_intelligent`                  | Check for duplicates |
-| `capture_knowledge` / `capture_quick` | Persist to vault     |
-| `curator_groom` / `curator_enrich`    | Post-capture quality |
-| `curator_contradictions`              | Find conflicts       |
-| `memory_promote_to_global`            | Share cross-project  |
-| `admin_health`                        | Verify health        |
+| Op | When to Use |
+|----|-------------|
+| `search_intelligent` | Duplicate detection before capture |
+| `curator_detect_duplicates` | Batch duplicate scan |
+| `capture_knowledge` | Persist after approval |
+| `capture_quick` | Fast capture for simple items |
+| `curator_groom` / `curator_enrich` | Post-capture quality |
+| `curator_contradictions` | Find conflicts with existing entries |
+| `vault_set_scope` | Fix tier after capture |
+| `governance_proposals` | Check governance queue |
+| `memory_promote_to_global` | Share cross-project |
+| `admin_health` / `admin_vault_analytics` | Verify health after capture |
