@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.12.0] — 2026-04-01
+
+### Added
+- **Embeddings module** — provider-agnostic embedding types, OpenAI provider, batch/incremental pipeline, hybrid FTS5+vector search, vector storage table, facade ops (`embed_status`, `embed_rebuild`, `embed_entry`), runtime feature flag (#embedding series)
+- **Dream module** — scheduled vault consolidation with `DreamEngine`, `dream_run`/`dream_status`/`dream_check_gate` ops, auto-trigger on session start, `/dream` skill template, `soleri dream` CLI command
+- **Orphan reaping** — process group management, active process killing on timeout, post-dispatch orphan reaping in `orchestrate_execute`, `reapOrphans` via admin facade
+- **Orphan skill cleanup** — `syncSkillsToClaudeCode` removes stale skill directories with staging backup, `SyncResult.removed` field (#524)
+- **`soleri uninstall --full`** — complete agent removal with `--full` flag and `--target` default fix
+- **Vault search source** — surface search result source in vault API
+- **`/research-scout` skill** — new forge skill template
+
+### Fixed
+- **CLI `dev.ts` ESM crash on Node 25+** — replaced bare `require()`/`require.resolve()` with path construction and dynamic `import()` (#531)
+- **Missing dependency declarations** — `better-sqlite3` (>=11.0.0) as optionalDep, `@modelcontextprotocol/sdk` as required peerDep in `@soleri/core` (#532, #533)
+- **`npx @soleri/engine` crash** — resolved by declaring `better-sqlite3` in core dependency tree (#533)
+- **Skill confusable pairs** — cross-references added in forge to disambiguate confusable skill pairs
+- **Orphan reaper return type** — aligned `admin-ops` and `orchestrate-ops` with `ReapResult`
+- **Dream facade registration** — registered in MCP engine module list
+- **Test pollution** — vitest include whitelist prevents worktree test bleed; brittle tmpdir and hardcoded op count patterns replaced
+
+### Changed
+- **Skills path migration** — install path moved from `~/.claude/commands/` to `~/.claude/skills/`
+- **Skills renamed** — all 35 skills prefixed with `soleri-`, deduplicated trigger keywords
+- **10 skills upgraded** — enhanced engine ops in partially-wired skills, 4 previously inactive skills fully wired
+- **CLAUDE.md slimmed** — bootstrap-only in repo, full docs moved to vault
+- **`.claude/` gitignored** — worktree artifacts excluded
+
 ## [9.11.0] — 2026-03-30
 
 ### Added
