@@ -65,14 +65,12 @@
     "@modelcontextprotocol/sdk": "^1.12.1"
   },
   "peerDependenciesMeta": {
-    "@modelcontextprotocol/sdk": {
-      "optional": true
-    },
     "@anthropic-ai/sdk": {
       "optional": true
     }
   },
   "optionalDependencies": {
+    "better-sqlite3": "^7.6.13",
     "pdf-parse": "^1.1.4"
   },
   "engines": {
