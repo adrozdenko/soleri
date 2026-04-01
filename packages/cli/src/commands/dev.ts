@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { watch, writeFileSync } from 'node:fs';
+import { existsSync, watch, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
@@ -26,18 +26,29 @@ export function registerDev(program: Command): void {
     });
 }
 
-function runFileTreeDev(agentPath: string, agentId: string): void {
+async function runFileTreeDev(agentPath: string, agentId: string): Promise<void> {
   p.log.info(`Starting ${agentId} in file-tree dev mode...`);
   p.log.info('Starting Knowledge Engine + watching for file changes.');
   p.log.info('CLAUDE.md will be regenerated automatically on changes.');
   p.log.info('Press Ctrl+C to stop.\n');
 
-  regenerateClaudeMd(agentPath);
+  await regenerateClaudeMd(agentPath);
 
   // Start the engine server
   let engineBin: string;
   try {
-    engineBin = require.resolve('@soleri/core/dist/engine/bin/soleri-engine.js');
+    const candidate = join(
+      agentPath,
+      'node_modules',
+      '@soleri',
+      'core',
+      'dist',
+      'engine',
+      'bin',
+      'soleri-engine.js',
+    );
+    if (!existsSync(candidate)) throw new Error('Engine not found at ' + candidate);
+    engineBin = candidate;
   } catch {
     p.log.error('Engine not found. Run: npm install @soleri/core');
     process.exit(1);
@@ -73,10 +84,10 @@ function runFileTreeDev(agentPath: string, agentId: string): void {
 
         // Debounce — regenerate at most once per 200ms
         if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
+        debounceTimer = setTimeout(async () => {
           const changedFile = filename ? ` (${filename})` : '';
           p.log.info(`Change detected${changedFile} — regenerating CLAUDE.md`);
-          regenerateClaudeMd(agentPath);
+          await regenerateClaudeMd(agentPath);
         }, 200);
       });
     } catch (err: unknown) {
@@ -105,11 +116,10 @@ function runFileTreeDev(agentPath: string, agentId: string): void {
   });
 }
 
-function regenerateClaudeMd(agentPath: string): void {
+async function regenerateClaudeMd(agentPath: string): Promise<void> {
   try {
     // Dynamic import to avoid loading forge at CLI startup
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { composeClaudeMd } = require('@soleri/forge/lib');
+    const { composeClaudeMd } = await import('@soleri/forge/lib');
     const { content } = composeClaudeMd(agentPath);
     writeFileSync(join(agentPath, 'CLAUDE.md'), content, 'utf-8');
     p.log.success('CLAUDE.md regenerated');
