@@ -70,7 +70,7 @@
     }
   },
   "optionalDependencies": {
-    "better-sqlite3": "^7.6.13",
+    "better-sqlite3": ">=11.0.0",
     "pdf-parse": "^1.1.4"
   },
   "engines": {
