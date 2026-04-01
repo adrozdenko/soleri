@@ -6,7 +6,16 @@
  * Called automatically at engine startup and by admin_setup_global.
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import type { SkillMetadata, SourceType } from '../packs/types.js';
@@ -25,6 +34,7 @@ export interface SyncResult {
   updated: string[];
   skipped: string[];
   failed: string[];
+  removed: string[];
 }
 
 /** Error thrown when a skill requires approval due to scripts trust level */
@@ -94,7 +104,7 @@ function brandSkillContent(content: string, agentName: string, prefixedName?: st
 export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string): SyncResult {
   const skillsDir = join(homedir(), '.claude', 'skills');
   const skills = discoverSkills(skillsDirs);
-  const result: SyncResult = { installed: [], updated: [], skipped: [], failed: [] };
+  const result: SyncResult = { installed: [], updated: [], skipped: [], failed: [], removed: [] };
 
   if (skills.length === 0) return result;
 
@@ -125,6 +135,40 @@ export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string)
       }
     } catch {
       result.failed.push(skill.name);
+    }
+  }
+
+  // Orphan cleanup: remove skills that belong to this agent but are no longer in source
+  if (agentName) {
+    const prefix = `${agentName.toLowerCase().replace(/\s+/g, '-')}-`;
+    const syncedNames = new Set<string>(
+      [...result.installed, ...result.updated, ...result.skipped, ...result.failed].map(
+        (name) => `${prefix}${name}`,
+      ),
+    );
+
+    try {
+      const entries = readdirSync(skillsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        if (!entry.name.startsWith(prefix)) continue;
+        if (syncedNames.has(entry.name)) continue;
+
+        // Orphan detected — stage backup then remove
+        const orphanPath = join(skillsDir, entry.name);
+        try {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const stagingDir = join(homedir(), '.soleri', 'staging', timestamp);
+          mkdirSync(stagingDir, { recursive: true });
+          cpSync(orphanPath, join(stagingDir, entry.name), { recursive: true });
+          rmSync(orphanPath, { recursive: true, force: true });
+          result.removed.push(entry.name);
+        } catch {
+          result.failed.push(entry.name);
+        }
+      }
+    } catch {
+      // Skills directory doesn't exist or is unreadable — nothing to clean
     }
   }
 

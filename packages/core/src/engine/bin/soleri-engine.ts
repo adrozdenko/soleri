@@ -173,6 +173,9 @@ async function main(): Promise<void> {
         `${tag} Skills synced: ${syncResult.installed.length} new, ${syncResult.updated.length} updated`,
       );
     }
+    if (syncResult.removed.length) {
+      console.error(`${tag} Removed ${syncResult.removed.length} orphaned skill(s)`);
+    }
   }
 
   // 7. Load domain packs
