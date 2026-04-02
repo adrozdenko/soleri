@@ -19,7 +19,7 @@ const content: Record<Locale, GettingStartedContent> = {
 
 <span class="ok">✓</span> Agent created! <span class="cmt">(28 files, 7 skills, 4 workflows)</span>
 <span class="ok">✓</span> Registered my-agent in <span class="val">~/.claude.json</span>`,
-        isInstallCmd: true,
+        isInstallCmd: false,
       },
       {
         title: 'Start using it',
@@ -72,7 +72,7 @@ const content: Record<Locale, GettingStartedContent> = {
 
 <span class="ok">✓</span> Агента створено! <span class="cmt">(28 файлів, 7 навичок, 4 робочі процеси)</span>
 <span class="ok">✓</span> Зареєстровано my-agent у <span class="val">~/.claude.json</span>`,
-        isInstallCmd: true,
+        isInstallCmd: false,
       },
       {
         title: 'Починайте працювати',
@@ -125,7 +125,7 @@ const content: Record<Locale, GettingStartedContent> = {
 
 <span class="ok">✓</span> Agente creato! <span class="cmt">(28 file, 7 skill, 4 workflow)</span>
 <span class="ok">✓</span> Registrato my-agent in <span class="val">~/.claude.json</span>`,
-        isInstallCmd: true,
+        isInstallCmd: false,
       },
       {
         title: 'Inizia a usarlo',
