@@ -15,9 +15,7 @@ const config: KnipConfig = {
         'src/adapters/index.ts', // barrel file for external consumers
         'src/subagent/index.ts', // barrel file for external consumers
       ],
-      ignoreDependencies: [
-        '@modelcontextprotocol/sdk', // optional peer dependency
-      ],
+      ignoreDependencies: [],
     },
     'packages/engine': {
       entry: ['bin/*.js'],
