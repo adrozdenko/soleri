@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdirSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, rmSync, symlinkSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -57,6 +57,14 @@ function installAgent(agentDir: string): void {
     stdio: 'pipe',
     timeout: 60_000,
   });
+
+  // file: link creates a duplicate @modelcontextprotocol/sdk — symlink to monorepo's copy
+  const agentMcpSdk = join(agentDir, 'node_modules', '@modelcontextprotocol', 'sdk');
+  const monorepoMcpSdk = join(MONOREPO_ROOT, 'node_modules', '@modelcontextprotocol', 'sdk');
+  if (existsSync(agentMcpSdk) && existsSync(monorepoMcpSdk)) {
+    rmSync(agentMcpSdk, { recursive: true, force: true });
+    symlinkSync(monorepoMcpSdk, agentMcpSdk, 'junction');
+  }
 }
 
 /** Run tsc --noEmit in an agent directory. */
