@@ -114,17 +114,19 @@ function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
 
 const TRIGGER_MAP: Record<string, string> = {
   // Dev & agent
-  'add a new facade to the agent': 'agent-dev',
+  'add a facade to the agent': 'agent-dev',
   'what can you do': 'agent-guide',
-  'create a github issue for this bug': 'agent-issues',
+  'create issue for this bug': 'agent-issues',
+  'file bug for this problem': 'agent-issues',
   'hello ernesto': 'agent-persona',
 
-  // Architecture & code quality
-  'compare approaches for caching': 'arch-decisions',
-  'review this database schema': 'arch-decisions',
+  // Code quality
   'deep review this module': 'deep-review',
   'is this code well architected': 'deep-review',
-  'review code against our patterns': 'code-patrol',
+  'check against patterns in vault': 'code-patrol',
+  'review against vault conventions': 'code-patrol',
+  'second opinion on this technical decision': 'second-opinion',
+  'comparing approaches for this': 'second-opinion',
 
   // Debugging & fixing
   'this test is failing': 'systematic-debugging',
@@ -136,31 +138,32 @@ const TRIGGER_MAP: Record<string, string> = {
   'create a plan for this feature': 'writing-plans',
   'break this down into tasks': 'writing-plans',
   'execute my plan step by step': 'executing-plans',
-  'run these tasks in parallel': 'parallel-execute',
-  'dispatch subagents for this work': 'subagent-driven-development',
+  'run in parallel these tasks': 'parallel-execute',
+  'fan out concurrent execution': 'parallel-execute',
+  'use subagents for this work': 'subagent-driven-development',
   'use worktrees for these branches': 'using-git-worktrees',
 
   // Brainstorming & discovery
   'I want to build something new': 'brainstorming',
   "let's think about this idea": 'brainstorming',
   "I don't know where to start": 'discovery-phase',
-  'what are our options here': 'discovery-phase',
+  'investigate and explore the problem': 'discovery-phase',
 
   // Vault operations
   'search the vault for auth patterns': 'vault-navigator',
-  'have we seen this pattern before': 'vault-navigator',
+  'find patterns for authentication': 'vault-navigator',
   'save this pattern to the vault': 'vault-capture',
-  'remember this anti-pattern': 'vault-capture',
-  'clean up the vault': 'vault-curate',
-  'find duplicate entries in vault': 'vault-curate',
-  'check vault for contradictions': 'vault-smells',
-  'is my vault healthy': 'vault-smells',
+  'capture this to the vault': 'vault-capture',
+  'clean vault and deduplicate': 'vault-curate',
+  'groom knowledge in vault': 'vault-curate',
+  'vault quality analysis': 'vault-smells',
+  'find contradictions in vault': 'vault-smells',
   'learn from this pull request': 'knowledge-harvest',
   'extract patterns from this doc': 'knowledge-harvest',
 
   // Health & diagnostics
-  'check system health': 'health-check',
-  'how healthy is the vault': 'health-check',
+  'check system health and diagnostics': 'health-check',
+  'run diagnostics on agent health': 'health-check',
   'MCP server not connecting': 'mcp-doctor',
   'tools are missing from MCP': 'mcp-doctor',
 
@@ -170,29 +173,27 @@ const TRIGGER_MAP: Record<string, string> = {
   'brain stats and pattern strengths': 'brain-debrief',
   'what patterns are strongest': 'brain-debrief',
   'sprint retro for this week': 'retrospective',
-  'what went well this week': 'retrospective',
+  'weekly summary of what went well': 'retrospective',
   'consolidate my memory': 'dream',
   'run dream maintenance': 'dream',
 
   // Shipping & quality
-  'ship it': 'deliver-and-ship',
-  'is this ready for production': 'deliver-and-ship',
+  'pre-PR check and delivery checklist': 'deliver-and-ship',
+  'is this ready to deploy': 'deliver-and-ship',
   'finish this branch and prepare PR': 'finishing-a-development-branch',
-  'version bump and publish to npm': 'release-gate',
-  'are we ready to release': 'release-gate',
-  'run verification before marking done': 'verification-before-completion',
+  'verify this works before marking done': 'verification-before-completion',
 
   // Testing & environment
-  'write failing tests first': 'test-driven-development',
+  'write tests first with TDD': 'test-driven-development',
+  'red green refactor cycle': 'test-driven-development',
   'set up my local dev environment': 'env-setup',
   'MODULE_NOT_FOUND error after pull': 'env-setup',
-  'I am new to this project': 'onboard-me',
+  'onboard me to this project': 'onboard-me',
 
   // Meta
-  'give me a second opinion on this': 'second-opinion',
   'go yolo mode no approvals': 'yolo-mode',
   'scout the web for new info': 'research-scout',
-  'what is new in this space': 'research-scout',
+  'research scout for updates': 'research-scout',
 
   // Skill building
   'build a new skill for the agent': 'build-skill',
