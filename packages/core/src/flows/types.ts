@@ -151,19 +151,35 @@ export interface PlanStep {
   tools: string[];
   parallel: boolean;
   requires: ProbeName[];
+  allowedTools?: string[];
   gate?: {
     type: string;
     condition?: string;
     min?: number;
     onFail?: { action: string; goto?: string; message?: string };
   };
-  status: 'pending' | 'running' | 'passed' | 'failed' | 'skipped' | 'gate-paused';
+  status:
+    | 'pending'
+    | 'running'
+    | 'passed'
+    | 'failed'
+    | 'skipped'
+    | 'gate-paused'
+    | 'stale'
+    | 'rerun';
 }
 
 export interface SkippedStep {
   id: string;
   name: string;
   reason: string;
+}
+
+export interface ToolDeviation {
+  stepId: string;
+  expectedTools: string[];
+  actualTool: string;
+  timestamp: string;
 }
 
 export interface OrchestrationPlan {
@@ -177,6 +193,7 @@ export interface OrchestrationPlan {
   summary: string;
   estimatedTools: number;
   context: OrchestrationContext;
+  deviations?: ToolDeviation[];
 }
 
 export interface OrchestrationContext {
@@ -184,6 +201,27 @@ export interface OrchestrationContext {
   probes: ProbeResults;
   entities: { components: string[]; actions: string[]; technologies?: string[] };
   projectPath: string;
+}
+
+// ---------------------------------------------------------------------------
+// Step persistence (incremental correction protocol)
+// ---------------------------------------------------------------------------
+
+export type StepPersistenceStatus = 'completed' | 'stale' | 'invalidated' | 'rerun';
+
+export interface StepState {
+  status: StepPersistenceStatus;
+  output: unknown;
+  timestamp: string;
+  rerunCount: number;
+  rerunReason?: string;
+}
+
+export interface PlanRunManifest {
+  planId: string;
+  steps: Record<string, StepState>;
+  lastRun: string;
+  createdAt: string;
 }
 
 // ---------------------------------------------------------------------------

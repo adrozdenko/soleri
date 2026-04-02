@@ -3,7 +3,9 @@
  * evaluating gates and handling branching.
  */
 
-import type { OrchestrationPlan, ExecutionResult, StepResult } from './types.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import type { OrchestrationPlan, ExecutionResult, StepResult, PlanRunManifest } from './types.js';
 import { evaluateGate } from './gate-evaluator.js';
 
 /** Maximum iterations for BRANCH loops to prevent infinite cycles. */
@@ -14,14 +16,81 @@ type DispatchFn = (
   params: Record<string, unknown>,
 ) => Promise<{ tool: string; status: string; data?: unknown; error?: string }>;
 
+// ---------------------------------------------------------------------------
+// Step persistence helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve the persistence directory for a plan run.
+ * Returns `{persistDir}/.soleri/plan-runs/{planId}/`.
+ */
+export function getPlanRunDir(persistDir: string, planId: string): string {
+  return path.join(persistDir, '.soleri', 'plan-runs', planId);
+}
+
+/**
+ * Load or create a PlanRunManifest from disk.
+ */
+export function loadManifest(runDir: string, planId: string): PlanRunManifest {
+  const manifestPath = path.join(runDir, 'manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as PlanRunManifest;
+    } catch {
+      // Malformed manifest — return fresh one
+    }
+  }
+  const now = new Date().toISOString();
+  return { planId, steps: {}, lastRun: now, createdAt: now };
+}
+
+/**
+ * Write a PlanRunManifest to disk.
+ */
+export function saveManifest(runDir: string, manifest: PlanRunManifest): void {
+  fs.mkdirSync(runDir, { recursive: true });
+  fs.writeFileSync(path.join(runDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+}
+
+/**
+ * Persist a single step's output to disk and update the manifest.
+ */
+export function persistStepOutput(
+  runDir: string,
+  manifest: PlanRunManifest,
+  stepIndex: number,
+  stepId: string,
+  output: unknown,
+): void {
+  fs.mkdirSync(runDir, { recursive: true });
+  const safeStepId = stepId.replace(/[/\\:*?"<>|.]/g, '_');
+  const fileName = `step-${stepIndex}-${safeStepId}.json`;
+  fs.writeFileSync(path.join(runDir, fileName), JSON.stringify(output, null, 2));
+
+  const existing = manifest.steps[stepId];
+  const now = new Date().toISOString();
+
+  manifest.steps[stepId] = {
+    status: 'completed',
+    output,
+    timestamp: now,
+    rerunCount: existing ? existing.rerunCount + 1 : 0,
+    rerunReason: existing?.rerunReason,
+  };
+  manifest.lastRun = now;
+  saveManifest(runDir, manifest);
+}
+
 /**
  * Executes an orchestration plan sequentially (with parallel inner steps).
  */
 export class FlowExecutor {
   private dispatch: DispatchFn;
+  private persistDir: string | undefined;
 
-  constructor(dispatch: DispatchFn) {
+  constructor(dispatch: DispatchFn, persistDir?: string) {
     this.dispatch = dispatch;
+    this.persistDir = persistDir;
   }
 
   /**
@@ -34,6 +103,14 @@ export class FlowExecutor {
     const toolsCalled: string[] = [];
     let branchIterations = 0;
     let currentIndex = 0;
+
+    // Set up persistence if configured
+    let runDir: string | undefined;
+    let manifest: PlanRunManifest | undefined;
+    if (this.persistDir) {
+      runDir = getPlanRunDir(this.persistDir, plan.planId);
+      manifest = loadManifest(runDir, plan.planId);
+    }
 
     while (currentIndex < plan.steps.length) {
       const step = plan.steps[currentIndex];
@@ -120,6 +197,20 @@ export class FlowExecutor {
       }
 
       stepResults.push(stepResult);
+
+      // Persist step output to disk if configured
+      if (runDir && manifest) {
+        try {
+          persistStepOutput(runDir, manifest, currentIndex, step.id, {
+            toolResults,
+            gateResult: stepResult.gateResult,
+            status: stepResult.status,
+            durationMs: stepResult.durationMs,
+          });
+        } catch {
+          // Persistence is best-effort — never blocks execution
+        }
+      }
 
       // Handle gate action
       switch (verdict.action) {

@@ -17,6 +17,7 @@ export type {
   StepResult,
   ExecutionResult,
   GateVerdict,
+  ToolDeviation,
 } from './types.js';
 
 // Loader
@@ -47,6 +48,7 @@ export { FlowExecutor } from './executor.js';
 
 // Dispatch registry
 export { createDispatcher } from './dispatch-registry.js';
+export type { ActivePlanRef } from './dispatch-registry.js';
 
 // Epilogue
 export { runEpilogue } from './epilogue.js';

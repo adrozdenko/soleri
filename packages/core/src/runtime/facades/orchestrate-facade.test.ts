@@ -95,6 +95,22 @@ describe('orchestrate-facade', () => {
     expect(data.governance).toBeDefined();
   });
 
+  it('session_start includes preflight manifest', async () => {
+    const result = await executeOp(ops, 'session_start', { projectPath: '/test/proj' });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+    const preflight = data.preflight as Record<string, unknown>;
+    expect(preflight).toBeDefined();
+    expect(Array.isArray(preflight.tools)).toBe(true);
+    expect(Array.isArray(preflight.skills)).toBe(true);
+    expect(Array.isArray(preflight.activePlans)).toBe(true);
+    expect(preflight.vaultSummary).toBeDefined();
+    const vaultSummary = preflight.vaultSummary as Record<string, unknown>;
+    expect(typeof vaultSummary.entryCount).toBe('number');
+    expect(typeof vaultSummary.connected).toBe('boolean');
+    expect(Array.isArray(vaultSummary.domains)).toBe(true);
+  });
+
   it('session_start increments session count on second call', async () => {
     await executeOp(ops, 'session_start', { projectPath: '/test/proj' });
     const result = await executeOp(ops, 'session_start', { projectPath: '/test/proj' });

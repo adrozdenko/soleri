@@ -42,6 +42,18 @@ import type { SubagentDispatcher } from '../subagent/dispatcher.js';
 import type { EmbeddingConfig, EmbeddingProvider } from '../embeddings/types.js';
 import type { EmbeddingPipeline } from '../embeddings/pipeline.js';
 
+/** Pre-flight manifest returned by session_start for agent self-awareness. */
+export interface PreflightManifest {
+  tools: Array<{ facade: string; op: string; description: string }>;
+  skills: string[];
+  activePlans: Array<{ planId: string; title: string; status: string }>;
+  vaultSummary: {
+    entryCount: number;
+    connected: boolean;
+    domains: string[];
+  };
+}
+
 /**
  * Configuration for creating an agent runtime.
  * Only `agentId` is required — everything else has sensible defaults.
