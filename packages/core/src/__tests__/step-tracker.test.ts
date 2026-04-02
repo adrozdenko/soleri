@@ -194,18 +194,22 @@ describe('validateCompletion', () => {
 
 describe('persistence', () => {
   let tmpDir: string;
-  let originalHome: string;
+  let originalHome: string | undefined;
+  let originalUserProfile: string | undefined;
 
   beforeEach(() => {
     tmpDir = join(tmpdir(), `step-tracker-test-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
-    originalHome = process.env.HOME!;
-    // Override HOME so getRunsDir() writes to our temp dir
+    originalHome = process.env.HOME;
+    originalUserProfile = process.env.USERPROFILE;
+    // Override HOME (Unix) and USERPROFILE (Windows) so getRunsDir() writes to our temp dir
     process.env.HOME = tmpDir;
+    process.env.USERPROFILE = tmpDir;
   });
 
   afterEach(() => {
     process.env.HOME = originalHome;
+    process.env.USERPROFILE = originalUserProfile;
     try {
       rmSync(tmpDir, { recursive: true, force: true });
     } catch {

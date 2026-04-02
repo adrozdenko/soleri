@@ -24,7 +24,7 @@ describe('facade assembly with domain packs', () => {
     }
   });
 
-  it('semantic facades include all 20 expected facades', () => {
+  it('semantic facades include all 22 expected facades', () => {
     const semanticNames = semantic.map((f) => f.name);
     expect(semanticNames).toContain('test_vault');
     expect(semanticNames).toContain('test_plan');
@@ -46,7 +46,9 @@ describe('facade assembly with domain packs', () => {
     expect(semanticNames).toContain('test_links');
     expect(semanticNames).toContain('test_branching');
     expect(semanticNames).toContain('test_tier');
-    expect(semantic).toHaveLength(20);
+    expect(semanticNames).toContain('test_embedding');
+    expect(semanticNames).toContain('test_dream');
+    expect(semantic).toHaveLength(22);
   });
 
   it('domain facades include design domain and pack facades', () => {

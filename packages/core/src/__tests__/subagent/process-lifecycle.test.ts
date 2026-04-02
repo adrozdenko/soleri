@@ -233,7 +233,8 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       const result = reaper.killProcessGroup(pid);
 
       expect(result.killed).toBe(true);
-      expect(result.method).toBe('group');
+      // Windows doesn't support negative-PID group signals, falls back to 'single'
+      expect(result.method).toBe(process.platform === 'win32' ? 'single' : 'group');
 
       await waitFor(() => !isAlive(pid));
       expect(isAlive(pid)).toBe(false);
@@ -268,7 +269,8 @@ describe('Process Lifecycle Integration', { timeout: 15_000 }, () => {
       const reaper = new OrphanReaper();
       const result = reaper.killProcessGroup(parentPid, 'SIGKILL');
       expect(result.killed).toBe(true);
-      expect(result.method).toBe('group');
+      // Windows doesn't support negative-PID group signals, falls back to 'single'
+      expect(result.method).toBe(process.platform === 'win32' ? 'single' : 'group');
 
       // Both parent and grandchild should be dead
       await waitFor(() => !isAlive(parentPid) && !isAlive(grandchildPid), 5000);

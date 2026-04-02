@@ -62,7 +62,7 @@
   },
   "peerDependencies": {
     "@anthropic-ai/sdk": ">=0.30.0",
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "@modelcontextprotocol/sdk": "^1.28.0"
   },
   "peerDependenciesMeta": {
     "@anthropic-ai/sdk": {

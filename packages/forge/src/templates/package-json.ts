@@ -27,7 +27,7 @@ export function generatePackageJson(config: AgentConfig): string {
     license: 'MIT',
     engines: { node: '>=18.0.0' },
     dependencies: {
-      '@modelcontextprotocol/sdk': '^1.12.1',
+      '@modelcontextprotocol/sdk': '^1.28.0',
       '@soleri/core': '^2.0.0',
       zod: '^3.24.2',
       ...(config.telegram ? { grammy: '^1.35.0' } : {}),

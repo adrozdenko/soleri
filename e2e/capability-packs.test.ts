@@ -174,11 +174,11 @@ describe('Journey 1: Fresh agent has core capabilities', () => {
   });
 
   it('real runtime should have facades wired correctly', () => {
-    // 20 semantic facades + 2 domain facades (design, testing) = 22
-    expect(facades.length).toBe(22);
-    expect(handlers.size).toBe(22);
+    // 22 semantic facades + 2 domain facades (design, testing) = 24
+    expect(facades.length).toBe(24);
+    expect(handlers.size).toBe(24);
 
-    // All 20 semantic facades should be registered
+    // All 22 semantic facades should be registered
     const facadeNames = facades.map((f) => f.name);
     expect(facadeNames).toContain(`${AGENT_ID}_vault`);
     expect(facadeNames).toContain(`${AGENT_ID}_admin`);
