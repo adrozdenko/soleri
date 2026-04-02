@@ -92,6 +92,13 @@ describe('E2E: scaffold-and-build', () => {
       timeout: 60_000,
     });
 
+    // Deduplicate to collapse file:-linked @modelcontextprotocol/sdk copies
+    execFileSync('npm', ['dedupe'], {
+      cwd: agentDir,
+      stdio: 'pipe',
+      timeout: 30_000,
+    });
+
     // Typecheck — verifies generated code compiles
     execFileSync('npx', ['tsc', '--noEmit'], {
       cwd: agentDir,

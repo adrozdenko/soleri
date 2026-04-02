@@ -262,6 +262,10 @@ jobs:
         run: npm install --ignore-scripts
         working-directory: ${{ env.AGENT_DIR }}
 
+      - name: Deduplicate dependencies
+        run: npm dedupe
+        working-directory: ${{ env.AGENT_DIR }}
+
       - name: Typecheck scaffolded agent
         run: npx tsc --noEmit
         working-directory: ${{ env.AGENT_DIR }}

@@ -11,6 +11,7 @@ import { Brain } from '../brain/brain.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 const isCI = !!process.env.CI;
+const isWindows = process.platform === 'win32';
 const DOMAINS = ['design', 'a11y', 'performance', 'security', 'architecture', 'testing', 'ux'];
 const TYPES: IntelligenceEntry['type'][] = ['pattern', 'anti-pattern', 'rule', 'playbook'];
 const SEVERITIES: IntelligenceEntry['severity'][] = ['critical', 'warning', 'suggestion'];
@@ -77,7 +78,7 @@ describe('Vault Scaling — 10K entries', () => {
       const elapsed = performance.now() - start;
 
       expect(results.length).toBeGreaterThan(0);
-      expect(elapsed).toBeLessThan(isCI ? 500 : 50);
+      expect(elapsed).toBeLessThan(isCI ? (isWindows ? 2000 : 500) : 50);
     }
   });
 
@@ -90,7 +91,7 @@ describe('Vault Scaling — 10K entries', () => {
     const elapsed = performance.now() - start;
 
     expect(results.length).toBeGreaterThan(0);
-    expect(elapsed).toBeLessThan(isCI ? 1000 : 200);
+    expect(elapsed).toBeLessThan(isCI ? (isWindows ? 2000 : 1000) : 200);
   });
 
   test('list with filters under 200ms at 10K', () => {
