@@ -18,6 +18,8 @@ v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v9.5 → v9.6 → v9.7 → v10.0
 | **v9.5**   | Performance, Windows & Forge Polish | 16     | **Shipped 2026-03-27** | v9.4                        | #401              |
 | **v9.6**   | Adapter & Subagent Foundations      | 12     | **Shipped 2026-03-27** | v9.5                        | —                 |
 | **v9.7.2** | Hook Pack Settings Fix              | 1      | **Shipped 2026-03-29**  | v9.7.1                      | —                 |
+| **v9.12.1** | CI fixes, clean-machine install      | —     | **Shipped 2026-04-02**  | v9.12.0                     | #544              |
+| **v9.12.0** | Embeddings, Dream, Orphan Cleanup   | —     | **Shipped 2026-04-01**  | v9.11.0                     | —                 |
 | **v9.11.0** | Reconciliation Epic & CLI --path    | 7     | **Shipped 2026-03-30**  | v9.10.0                     | #514              |
 | **v9.10.0** | Modular CLAUDE.md, RTK, SEO         | 12    | **Shipped 2026-03-30**  | v9.9.0                      | #501              |
 | **v9.9.0** | Subagent Contract & Brain Decay     | —     | **Shipped 2026-03-30**  | v9.8.0                      | #485              |

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.12.1] — 2026-04-02
+
+### Fixed
+- **`npm create soleri` on clean machine** — preflight check now creates `~/.soleri` before verifying write permissions, fixing `ENOENT` misreported as permissions error (#541)
+- **Worktree branch cleanup** — local-only branches with auto-cleanup of merged `subagent/*` and `worktree-agent-*` branches (#540)
+- **reapOrphans test mocks** — aligned with `ReapResult` interface (`{ reaped: string[], alive: string[] }`)
+- **Windows CI** — platform-aware process group assertions, `USERPROFILE` env for `os.homedir()`, relaxed vault-scaling perf thresholds
+- **E2E facade counts** — updated 22→24 / 20→22 after embedding and dream facades added
+- **MCP SDK type conflict** — aligned `@modelcontextprotocol/sdk` to `^1.28.0` across core, forge, and scaffold template; symlink dedup in CI for `file:` links
+- **Skill trigger map** — removed references to non-existent skills, rewrote phrases to match actual trigger keywords
+- **Extensions scaffold test timeout** — bumped from 5s to 30s for legacy TypeScript scaffolder
+
+### Changed
+- **GitHub Actions** — upgraded `checkout` v4→v6, `setup-node` v4→v6, `upload-artifact` v4→v7, `download-artifact` v4→v8 (Node.js 24 compatible)
+- **Dead code cleanup** — removed unused `packages/core/src/embeddings/index.ts` barrel, cleaned `ignoreDependencies` in knip config
+- **Markdown formatting** — auto-formatted 10 skill/README files via oxfmt
+- **"ship it" trigger** — added to deliver-and-ship skill description
+
+### Documentation
+- Prerequisites and Tart testing guide (#539)
+- Search architecture deep dive
+
 ## [9.12.0] — 2026-04-01
 
 ### Added
