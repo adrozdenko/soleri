@@ -39,26 +39,25 @@ const content: Record<Locale, GettingStartedContent> = {
         isInstallCmd: false,
       },
       {
-        title: 'Register it in your editor',
-        text: 'From inside the new folder, register the MCP server. Claude Code, Cursor, and OpenCode are supported.',
-        code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
-<span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
-
-<span class="ok">✓</span> Detected file-tree agent
+        title: 'Open Claude Code',
+        text: 'The scaffold auto-registers your agent as an MCP server. Just open Claude Code — your agent is ready. For other editors, run the install command manually.',
+        code: `<span class="cmt"># Your agent was auto-registered during scaffold:</span>
 <span class="ok">✓</span> Registered my-agent in <span class="val">~/.claude.json</span>
-<span class="ok">✓</span> Launcher created`,
+
+<span class="cmt"># For other editors (Codex, OpenCode):</span>
+<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target codex</span>`,
         isInstallCmd: false,
       },
       {
         title: 'Run the engine',
         text: 'Start the engine while you work. It watches your agent files, regenerates CLAUDE.md on change, and keeps the knowledge engine running.',
-        code: `<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>
+        code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
+<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>
 
 <span class="ok">✓</span> MCP server running
 <span class="ok">✓</span> Watching agent.yaml, instructions/, workspaces/, skills/
-<span class="ok">✓</span> CLAUDE.md regenerates on change
-<span class="ok">✓</span> 3 workspaces loaded <span class="cmt">(planning, src, docs)</span>
-<span class="ok">✓</span> 7 essential skills active`,
+<span class="ok">✓</span> CLAUDE.md regenerates on change`,
         isInstallCmd: false,
       },
     ],
