@@ -253,14 +253,7 @@ describe('createOrchestrateOps', () => {
         opts: {
           dispatchResult?: Record<string, unknown>;
           dispatchError?: Error;
-          reapResult?: Array<{
-            taskId: string;
-            status: string;
-            exitCode: number;
-            pid: number;
-            error: string;
-            durationMs: number;
-          }>;
+          reapResult?: string[];
           reapThrows?: boolean;
         } = {},
       ) {
@@ -280,7 +273,10 @@ describe('createOrchestrateOps', () => {
           ? vi.fn().mockImplementation(() => {
               throw new Error('reap failed');
             })
-          : vi.fn().mockReturnValue(opts.reapResult ?? []);
+          : vi.fn().mockReturnValue({
+              reaped: opts.reapResult ?? [],
+              alive: [],
+            });
         const cleanupMock = vi.fn();
 
         (runtime as Record<string, unknown>).subagentDispatcher = {
@@ -318,16 +314,7 @@ describe('createOrchestrateOps', () => {
 
       it('includes reapedOrphans in result when orphans found', async () => {
         addSubagentDispatcher(rt, {
-          reapResult: [
-            {
-              taskId: 't1',
-              status: 'orphaned',
-              exitCode: 1,
-              pid: 12345,
-              error: 'dead',
-              durationMs: 500,
-            },
-          ],
+          reapResult: ['t1'],
         });
         ops = createOrchestrateOps(rt);
 
@@ -338,10 +325,9 @@ describe('createOrchestrateOps', () => {
         })) as Record<string, unknown>;
 
         expect(result).toHaveProperty('reapedOrphans');
-        const reaped = result.reapedOrphans as Array<{ taskId: string; pid: number }>;
+        const reaped = result.reapedOrphans as Array<{ taskId: string }>;
         expect(reaped).toHaveLength(1);
         expect(reaped[0].taskId).toBe('t1');
-        expect(reaped[0].pid).toBe(12345);
       });
 
       it('omits reapedOrphans from result when none found', async () => {
@@ -375,24 +361,7 @@ describe('createOrchestrateOps', () => {
       it('logs reaped orphans to stderr', async () => {
         const stderrSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         addSubagentDispatcher(rt, {
-          reapResult: [
-            {
-              taskId: 't1',
-              status: 'orphaned',
-              exitCode: 1,
-              pid: 111,
-              error: 'dead',
-              durationMs: 100,
-            },
-            {
-              taskId: 't2',
-              status: 'orphaned',
-              exitCode: 1,
-              pid: 222,
-              error: 'dead',
-              durationMs: 200,
-            },
-          ],
+          reapResult: ['t1', 't2'],
         });
         ops = createOrchestrateOps(rt);
 
@@ -402,8 +371,8 @@ describe('createOrchestrateOps', () => {
         expect(stderrSpy).toHaveBeenCalledWith(
           expect.stringContaining('Reaped 2 orphaned subagent(s)'),
         );
-        expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('t1(pid:111)'));
-        expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('t2(pid:222)'));
+        expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('t1'));
+        expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('t2'));
         stderrSpy.mockRestore();
       });
     });

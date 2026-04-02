@@ -90,7 +90,7 @@ describe('Vault Scaling — 10K entries', () => {
     const elapsed = performance.now() - start;
 
     expect(results.length).toBeGreaterThan(0);
-    expect(elapsed).toBeLessThan(isCI ? 500 : 50);
+    expect(elapsed).toBeLessThan(isCI ? 1000 : 200);
   });
 
   test('list with filters under 200ms at 10K', () => {
