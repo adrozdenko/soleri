@@ -233,14 +233,13 @@ YOUR_AGENT_core op:session_capture params:{
 | Tasks touch files in the same package        | Use `isolation: "worktree"`               |
 | Tasks modify the same file                   | **Do NOT parallelize** — run sequentially |
 
-When using worktree isolation, the controller must merge worktree changes back after review passes, then **immediately delete the branch**:
+When using worktree isolation, the controller must merge worktree changes back after review passes, then **immediately delete the local branch**:
 
 ```bash
-git branch -D <subagent/taskId>              # delete local branch
-git push origin --delete <subagent/taskId>    # delete remote if pushed
+git branch -D <subagent/taskId>
 ```
 
-Branch cleanup is mandatory after every merge. Stale branches accumulate fast during parallel execution.
+Worktree branches are local-only — never push them to remote. Branch cleanup is mandatory after every merge.
 
 ## Failure Handling
 

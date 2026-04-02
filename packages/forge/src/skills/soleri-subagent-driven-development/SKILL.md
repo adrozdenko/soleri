@@ -100,8 +100,8 @@ For each returning subagent:
 4. **Clean up the branch** — after merge is confirmed and tests pass:
    ```bash
    git branch -D <subagent/taskId>              # delete local branch
-   git push origin --delete <subagent/taskId>    # delete remote if pushed
    ```
+   Worktree branches are local-only — never push them to remote.
 5. **Conflicts** — resolve manually, re-run tests, capture as anti-pattern
 
 **Branch cleanup is mandatory.** Every merged branch must be deleted immediately. Do not leave branches for later cleanup — they accumulate fast during parallel execution.
@@ -135,12 +135,12 @@ YOUR_AGENT_core op:capture_knowledge
 
 ## Worktree & Branch Cleanup Guarantee
 
-Four layers — nothing accumulates:
+Worktree branches are **local-only** — never push them to remote. Four layers ensure nothing accumulates:
 
-1. **Per-task:** `finally` block in dispatcher removes worktree, local branch, and remote branch after each task
-2. **Per-merge:** Orchestrator deletes local + remote branch immediately after confirmed merge (Step 4)
+1. **Per-task:** `finally` block in dispatcher removes worktree and local branch after each task
+2. **Per-merge:** Orchestrator deletes local branch immediately after confirmed merge (Step 4)
 3. **Per-batch:** `cleanupAll()` runs after all subagents complete
-4. **Per-session:** `SessionStart` hook prunes orphaned worktrees and deletes merged `subagent/*` and `worktree-agent-*` branches
+4. **Per-session:** `SessionStart` hook prunes orphaned worktrees and deletes merged `subagent/*` and `worktree-agent-*` local branches
 
 ## Anti-Patterns
 

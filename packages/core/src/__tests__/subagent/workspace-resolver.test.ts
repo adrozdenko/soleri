@@ -54,7 +54,7 @@ describe('WorkspaceResolver', () => {
     warnSpy.mockRestore();
   });
 
-  it('cleanup() calls git worktree remove, git branch -D, and git push origin --delete', () => {
+  it('cleanup() calls git worktree remove and git branch -D but not git push', () => {
     (execSync as ReturnType<typeof vi.fn>).mockReturnValue('');
 
     // First create a worktree
@@ -71,9 +71,10 @@ describe('WorkspaceResolver', () => {
       expect.stringContaining('git branch -D'),
       expect.objectContaining({ cwd: baseDir }),
     );
-    expect(execSync).toHaveBeenCalledWith(
-      expect.stringContaining('git push origin --delete'),
-      expect.objectContaining({ cwd: baseDir }),
+    // Worktree branches are local-only — should NOT push to remote
+    expect(execSync).not.toHaveBeenCalledWith(
+      expect.stringContaining('git push'),
+      expect.anything(),
     );
   });
 
