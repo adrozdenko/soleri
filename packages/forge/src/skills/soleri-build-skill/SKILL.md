@@ -14,10 +14,10 @@ Create well-structured skills that follow Soleri conventions. Skills are SKILL.m
 
 Skills live in two places:
 
-| Location | Purpose |
-|----------|---------|
+| Location                                           | Purpose                    |
+| -------------------------------------------------- | -------------------------- |
 | `packages/forge/src/skills/soleri-{name}/SKILL.md` | Source — ships with Soleri |
-| `~/.claude/skills/{agent}-soleri-{name}/SKILL.md` | Runtime — synced per agent |
+| `~/.claude/skills/{agent}-soleri-{name}/SKILL.md`  | Runtime — synced per agent |
 
 ### File Structure
 
@@ -67,6 +67,7 @@ grep -h "description:" packages/forge/src/skills/soleri-*/SKILL.md
 ```
 
 Rules:
+
 - No trigger phrase may appear in more than one skill
 - Use quoted phrases: `"exact trigger words"`
 - Cover the full intent range — think about how users naturally ask for this
@@ -86,50 +87,54 @@ Every Soleri skill should use the engine where applicable. Use the `YOUR_AGENT_c
 
 Common integration points:
 
-| When | Op | Why |
-|------|-----|-----|
-| Before starting work | `search_intelligent` | Check vault for prior art |
-| Before starting work | `memory_search` | Check session history |
-| During execution | `brain_recommend` | Get brain recommendations |
-| After completion | `capture_knowledge` | Persist patterns learned |
-| After completion | `capture_quick` | Fast capture for simple learnings |
-| Quality checks | `admin_health` | Verify system health |
-| Iteration tracking | `loop_start` / `loop_iterate` | Track multi-step work |
+| When                 | Op                            | Why                               |
+| -------------------- | ----------------------------- | --------------------------------- |
+| Before starting work | `search_intelligent`          | Check vault for prior art         |
+| Before starting work | `memory_search`               | Check session history             |
+| During execution     | `brain_recommend`             | Get brain recommendations         |
+| After completion     | `capture_knowledge`           | Persist patterns learned          |
+| After completion     | `capture_quick`               | Fast capture for simple learnings |
+| Quality checks       | `admin_health`                | Verify system health              |
+| Iteration tracking   | `loop_start` / `loop_iterate` | Track multi-step work             |
 
 ### Available Facades
 
 All ops use the `YOUR_AGENT_core` placeholder:
 
-| Domain | Key Ops |
-|--------|---------|
+| Domain                 | Key Ops                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
 | Vault search & capture | `search_intelligent`, `search`, `capture_knowledge`, `capture_quick`, `vault_tags`, `vault_domains` |
-| Admin & health | `admin_health`, `admin_diagnostic`, `admin_tool_list`, `admin_vault_analytics` |
-| Curator & quality | `curator_health_audit`, `curator_detect_duplicates`, `curator_contradictions`, `curator_groom_all` |
-| Brain & learning | `brain_stats`, `brain_strengths`, `brain_recommend`, `brain_build_intelligence` |
-| Memory & sessions | `memory_search`, `memory_stats`, `session_capture`, `memory_cross_project_search` |
-| Planning | `create_plan`, `approve_plan`, `plan_split`, `plan_reconcile`, `plan_complete_lifecycle` |
-| Loops & validation | `loop_start`, `loop_iterate`, `loop_complete`, `loop_status` |
+| Admin & health         | `admin_health`, `admin_diagnostic`, `admin_tool_list`, `admin_vault_analytics`                      |
+| Curator & quality      | `curator_health_audit`, `curator_detect_duplicates`, `curator_contradictions`, `curator_groom_all`  |
+| Brain & learning       | `brain_stats`, `brain_strengths`, `brain_recommend`, `brain_build_intelligence`                     |
+| Memory & sessions      | `memory_search`, `memory_stats`, `session_capture`, `memory_cross_project_search`                   |
+| Planning               | `create_plan`, `approve_plan`, `plan_split`, `plan_reconcile`, `plan_complete_lifecycle`            |
+| Loops & validation     | `loop_start`, `loop_iterate`, `loop_complete`, `loop_status`                                        |
 
 ### Step 5: Write the Skill
 
 Follow these rules:
 
 **Naming:**
+
 - Folder: `packages/forge/src/skills/soleri-{name}/SKILL.md`
 - `name:` field must be `soleri-{name}` — matching the folder
 - All Soleri skills use the `soleri-` prefix
 
 **Frontmatter:**
+
 - `description:` must include specific trigger phrases in quotes
 - Use `>` for multi-line YAML folded scalar descriptions
 
 **Body (target 1,500-2,000 words):**
+
 - Imperative form ("Search the vault", not "You should search")
 - Numbered steps with concrete op examples including params
 - Agent Tools Reference table at the end
 - Common Mistakes section if applicable
 
 **Op References:**
+
 - Always use `YOUR_AGENT_core op:xxx` — never hardcode agent names
 - Include example params where helpful
 - Only reference ops that actually exist (verify with `admin_tool_list`)
@@ -196,10 +201,10 @@ YOUR_AGENT_core op:capture_knowledge
 
 ## Agent Tools Reference
 
-| Op | When to Use |
-|----|-------------|
+| Op                   | When to Use                            |
+| -------------------- | -------------------------------------- |
 | `search_intelligent` | Check for existing skills and patterns |
-| `capture_knowledge` | Capture skill creation decision |
-| `admin_tool_list` | Verify available ops |
-| `vault_domains` | Check domain categories |
-| `memory_search` | Find related past work |
+| `capture_knowledge`  | Capture skill creation decision        |
+| `admin_tool_list`    | Verify available ops                   |
+| `vault_domains`      | Check domain categories                |
+| `memory_search`      | Find related past work                 |

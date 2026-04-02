@@ -168,8 +168,8 @@ YOUR_AGENT_core op:capture_knowledge
 
 ## Agent Tools Reference
 
-| Op                    | When to Use                        |
-| --------------------- | ---------------------------------- |
-| `search_intelligent`  | Check vault before starting        |
-| `memory_search`       | Find similar past experiences      |
-| `capture_knowledge`   | Persist patterns worth remembering |
+| Op                   | When to Use                        |
+| -------------------- | ---------------------------------- |
+| `search_intelligent` | Check vault before starting        |
+| `memory_search`      | Find similar past experiences      |
+| `capture_knowledge`  | Persist patterns worth remembering |

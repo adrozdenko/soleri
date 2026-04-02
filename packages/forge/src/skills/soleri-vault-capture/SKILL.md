@@ -36,11 +36,11 @@ Review the conversation or user request. For each piece of knowledge, extract:
 
 For EACH item, apply the three-question test:
 
-| Question | If YES |
-|----------|--------|
-| Would any developer on ANY project benefit? | **agent** tier |
-| Would this apply to OTHER projects this team owns? | **team** tier |
-| Is this specific to THIS codebase only? | **project** tier |
+| Question                                           | If YES           |
+| -------------------------------------------------- | ---------------- |
+| Would any developer on ANY project benefit?        | **agent** tier   |
+| Would this apply to OTHER projects this team owns? | **team** tier    |
+| Is this specific to THIS codebase only?            | **project** tier |
 
 Decision tree:
 
@@ -75,11 +75,11 @@ For batch scans: `YOUR_AGENT_core op:curator_detect_duplicates`
 
 Validate each item is at the right level:
 
-| Too Specific (skip) | Just Right (capture) | Too General (skip) |
-|----------------------|----------------------|--------------------|
+| Too Specific (skip)                        | Just Right (capture)                                           | Too General (skip)             |
+| ------------------------------------------ | -------------------------------------------------------------- | ------------------------------ |
 | "Line 42 of FileUpload.tsx needs a Button" | "Components must use Button atom for all interactive elements" | "Use design system components" |
-| "Changed bg-red-500 to error token" | "No raw Tailwind colors — use semantic tokens" | "Use semantic colors" |
-| "Fixed timeout in GuidedCodeBlock" | "setTimeout in useEffect must return clearTimeout cleanup" | "Clean up side effects" |
+| "Changed bg-red-500 to error token"        | "No raw Tailwind colors — use semantic tokens"                 | "Use semantic colors"          |
+| "Fixed timeout in GuidedCodeBlock"         | "setTimeout in useEffect must return clearTimeout cleanup"     | "Clean up side effects"        |
 
 Ask: "Would this help someone who hasn't read today's conversation?" If NO — too specific, skip it.
 
@@ -191,15 +191,15 @@ Verify with `YOUR_AGENT_core op:admin_health` and `YOUR_AGENT_core op:admin_vaul
 
 ## Agent Tools Reference
 
-| Op | When to Use |
-|----|-------------|
-| `search_intelligent` | Duplicate detection before capture |
-| `curator_detect_duplicates` | Batch duplicate scan |
-| `capture_knowledge` | Persist after approval |
-| `capture_quick` | Fast capture for simple items |
-| `curator_groom` / `curator_enrich` | Post-capture quality |
-| `curator_contradictions` | Find conflicts with existing entries |
-| `vault_set_scope` | Fix tier after capture |
-| `governance_proposals` | Check governance queue |
-| `memory_promote_to_global` | Share cross-project |
-| `admin_health` / `admin_vault_analytics` | Verify health after capture |
+| Op                                       | When to Use                          |
+| ---------------------------------------- | ------------------------------------ |
+| `search_intelligent`                     | Duplicate detection before capture   |
+| `curator_detect_duplicates`              | Batch duplicate scan                 |
+| `capture_knowledge`                      | Persist after approval               |
+| `capture_quick`                          | Fast capture for simple items        |
+| `curator_groom` / `curator_enrich`       | Post-capture quality                 |
+| `curator_contradictions`                 | Find conflicts with existing entries |
+| `vault_set_scope`                        | Fix tier after capture               |
+| `governance_proposals`                   | Check governance queue               |
+| `memory_promote_to_global`               | Share cross-project                  |
+| `admin_health` / `admin_vault_analytics` | Verify health after capture          |

@@ -96,7 +96,7 @@ YOUR_AGENT_core op:capture_quick
 
 ## Agent Tools Reference
 
-| Op                   | When to Use                         |
-| -------------------- | ----------------------------------- |
-| `search_intelligent` | Check vault before starting         |
-| `capture_quick`      | Fast capture for simple learnings   |
+| Op                   | When to Use                       |
+| -------------------- | --------------------------------- |
+| `search_intelligent` | Check vault before starting       |
+| `capture_quick`      | Fast capture for simple learnings |

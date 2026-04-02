@@ -14,22 +14,22 @@ The interactive wizard walks you through agent configuration: name, role, domain
 
 ## Commands
 
-| Command                            | Description                                            |
-| ---------------------------------- | ------------------------------------------------------ |
-| `soleri create [name]`             | Interactive wizard to scaffold a new agent             |
-| `soleri list [dir]`                | Show agents in a directory                             |
-| `soleri add-domain <domain>`       | Add a knowledge domain to the agent in cwd             |
-| `soleri install-knowledge <pack>`  | Install knowledge packs from a local path              |
-| `soleri dev`                       | Run agent in development mode (stdio MCP server)       |
-| `soleri doctor`                    | Health check — Node, npm, tsx, agent, deps, build, MCP |
-| `soleri hooks add <editor>`        | Generate editor hooks/config files                     |
-| `soleri hooks remove <editor>`     | Remove editor hooks/config files                       |
-| `soleri hooks list`                | Show installed editor hooks                            |
-| `soleri hooks add-pack <pack>`     | Install a hook pack globally (~/.claude/)              |
-| `soleri hooks remove-pack <pack>`  | Remove a hook pack                                     |
-| `soleri hooks list-packs`          | Show available hook packs and their status             |
-| `soleri hooks upgrade-pack <pack>` | Upgrade a hook pack to the latest version              |
-| `soleri uninstall [dir]`           | Remove agent MCP entries (or all artifacts with --full)|
+| Command                            | Description                                             |
+| ---------------------------------- | ------------------------------------------------------- |
+| `soleri create [name]`             | Interactive wizard to scaffold a new agent              |
+| `soleri list [dir]`                | Show agents in a directory                              |
+| `soleri add-domain <domain>`       | Add a knowledge domain to the agent in cwd              |
+| `soleri install-knowledge <pack>`  | Install knowledge packs from a local path               |
+| `soleri dev`                       | Run agent in development mode (stdio MCP server)        |
+| `soleri doctor`                    | Health check — Node, npm, tsx, agent, deps, build, MCP  |
+| `soleri hooks add <editor>`        | Generate editor hooks/config files                      |
+| `soleri hooks remove <editor>`     | Remove editor hooks/config files                        |
+| `soleri hooks list`                | Show installed editor hooks                             |
+| `soleri hooks add-pack <pack>`     | Install a hook pack globally (~/.claude/)               |
+| `soleri hooks remove-pack <pack>`  | Remove a hook pack                                      |
+| `soleri hooks list-packs`          | Show available hook packs and their status              |
+| `soleri hooks upgrade-pack <pack>` | Upgrade a hook pack to the latest version               |
+| `soleri uninstall [dir]`           | Remove agent MCP entries (or all artifacts with --full) |
 
 ### Create
 
@@ -128,14 +128,14 @@ soleri uninstall [dir] --full --force     # Skip confirmation (CI/scripting)
 
 #### Artifacts removed with --full
 
-| Artifact | Location |
-|----------|----------|
+| Artifact           | Location                                                                     |
+| ------------------ | ---------------------------------------------------------------------------- |
 | MCP server entries | `~/.claude.json`, `~/.codex/config.toml`, `~/.config/opencode/opencode.json` |
-| Project directory | `~/projects/<agent>/` or specified dir |
-| Data directory | `~/.soleri/<agent>/` (current), `~/.<agent>/` (legacy) |
-| CLAUDE.md blocks | `~/CLAUDE.md`, `~/.claude/CLAUDE.md` |
-| Permission entries | `~/.claude/settings.local.json` |
-| Launcher script | `/usr/local/bin/<agent>` |
+| Project directory  | `~/projects/<agent>/` or specified dir                                       |
+| Data directory     | `~/.soleri/<agent>/` (current), `~/.<agent>/` (legacy)                       |
+| CLAUDE.md blocks   | `~/CLAUDE.md`, `~/.claude/CLAUDE.md`                                         |
+| Permission entries | `~/.claude/settings.local.json`                                              |
+| Launcher script    | `/usr/local/bin/<agent>`                                                     |
 
 ## How It Works
 

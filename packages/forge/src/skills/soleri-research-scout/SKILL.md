@@ -19,10 +19,10 @@ promotes the good ones, discards the rest.
 
 ## Two Modes
 
-| Command | What it does |
-|---------|-------------|
-| `/research-scout` | Run a scout pass — search web, capture to branch |
-| `/research-scout review` | Review branch findings, promote or discard |
+| Command                  | What it does                                     |
+| ------------------------ | ------------------------------------------------ |
+| `/research-scout`        | Run a scout pass — search web, capture to branch |
+| `/research-scout review` | Review branch findings, promote or discard       |
 
 ---
 
@@ -52,6 +52,7 @@ YOUR_AGENT_brain op:brain_strengths params:{ limit: 10 }
 ```
 
 From these, build 3-5 focused search queries based on:
+
 - Active vault domains (e.g., "typescript", "react", "testing")
 - Strong brain patterns (what the user works on most)
 - Recent capture topics (what's top of mind)
@@ -66,6 +67,7 @@ WebSearch: "{topic} best practices updated site:reddit.com OR site:news.ycombina
 ```
 
 Focus on:
+
 - New tool releases or deprecations
 - Breaking changes in dependencies
 - Updated best practices that contradict vault patterns
@@ -81,6 +83,7 @@ YOUR_AGENT_vault op:search_intelligent
 ```
 
 Classify:
+
 - **NEW** — vault has nothing on this topic. Worth capturing.
 - **UPDATE** — vault has related entry but info is outdated. Capture with link.
 - **CONTRADICTS** — finding conflicts with existing vault pattern. High value. Capture with contradiction link.
@@ -91,6 +94,7 @@ Classify:
 ### Step 5: Validate Before Capture
 
 For each non-redundant finding:
+
 - Verify from at least 2 independent sources
 - Check the date — reject anything older than 3 months
 - Assess relevance — does this matter for active projects?
@@ -125,11 +129,11 @@ during promotion.
 
 Present results:
 
-| # | Finding | Type | Domain | Source | Status |
-|---|---------|------|--------|--------|--------|
-| 1 | {title} | NEW | {domain} | {url} | Captured to branch |
-| 2 | {title} | CONTRADICTS | {domain} | {url} | Captured — contradicts {entry_id} |
-| 3 | {title} | REDUNDANT | {domain} | — | Skipped |
+| #   | Finding | Type        | Domain   | Source | Status                            |
+| --- | ------- | ----------- | -------- | ------ | --------------------------------- |
+| 1   | {title} | NEW         | {domain} | {url}  | Captured to branch                |
+| 2   | {title} | CONTRADICTS | {domain} | {url}  | Captured — contradicts {entry_id} |
+| 3   | {title} | REDUNDANT   | {domain} | —      | Skipped                           |
 
 **Summary:** {N} sources searched, {found} findings, {captured} captured to scout branch, {skipped} skipped as redundant.
 
@@ -160,12 +164,12 @@ List all entries on the `scout-findings` branch.
 
 For each entry on the branch, present to the user:
 
-| Field | Value |
-|-------|-------|
-| **Title** | {title} |
-| **Domain** | {domain} |
-| **Source** | {from why field} |
-| **Age** | {days since capture} |
+| Field           | Value                          |
+| --------------- | ------------------------------ |
+| **Title**       | {title}                        |
+| **Domain**      | {domain}                       |
+| **Source**      | {from why field}               |
+| **Age**         | {days since capture}           |
 | **Contradicts** | {entry ID if noted, or "none"} |
 
 Ask: **Promote, Archive, or Skip?**
@@ -187,12 +191,12 @@ YOUR_AGENT_branching op:vault_branch
 
 ### Step 4: Report
 
-| Metric | Value |
-|--------|-------|
-| **Reviewed** | {total} |
+| Metric       | Value      |
+| ------------ | ---------- |
+| **Reviewed** | {total}    |
 | **Promoted** | {promoted} |
 | **Archived** | {archived} |
-| **Skipped** | {skipped} |
+| **Skipped**  | {skipped}  |
 
 ---
 

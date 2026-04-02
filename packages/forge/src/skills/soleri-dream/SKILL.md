@@ -16,9 +16,9 @@ consolidates biological memory.
 
 ## Quick Commands
 
-| Command | What it does |
-|---------|-------------|
-| `/dream` | Run a full dream pass (forces, bypasses gate) |
+| Command         | What it does                                              |
+| --------------- | --------------------------------------------------------- |
+| `/dream`        | Run a full dream pass (forces, bypasses gate)             |
 | `/dream status` | Show dream state: last dream, sessions since, eligibility |
 
 ## Orchestration
@@ -31,12 +31,12 @@ YOUR_AGENT_dream op:dream_status
 
 Report current state to user as a table:
 
-| Field | Value |
-|-------|-------|
+| Field                         | Value                    |
+| ----------------------------- | ------------------------ |
 | **Sessions since last dream** | {sessionsSinceLastDream} |
-| **Last dream** | {lastDreamAt or "Never"} |
-| **Total dreams** | {totalDreams} |
-| **Gate eligible** | {gateEligible} |
+| **Last dream**                | {lastDreamAt or "Never"} |
+| **Total dreams**              | {totalDreams}            |
+| **Gate eligible**             | {gateEligible}           |
 
 ### Step 2: Run Dream
 
@@ -61,14 +61,14 @@ If the response contains `skipped: true`, inform the user:
 
 Format the dream report as a table:
 
-| Metric | Value |
-|--------|-------|
-| **Duration** | {durationMs}ms |
-| **Duplicates found** | {duplicatesFound} |
-| **Stale entries archived** | {staleArchived} |
-| **Contradictions found** | {contradictionsFound} |
-| **Total dreams** | {totalDreams} |
-| **Timestamp** | {timestamp} |
+| Metric                     | Value                 |
+| -------------------------- | --------------------- |
+| **Duration**               | {durationMs}ms        |
+| **Duplicates found**       | {duplicatesFound}     |
+| **Stale entries archived** | {staleArchived}       |
+| **Contradictions found**   | {contradictionsFound} |
+| **Total dreams**           | {totalDreams}         |
+| **Timestamp**              | {timestamp}           |
 
 ### Step 4: Rebuild Brain Intelligence
 
@@ -90,6 +90,7 @@ YOUR_AGENT_memory op:session_capture
 ## Gate Logic
 
 Auto-dream triggers automatically on session start when BOTH conditions are met:
+
 - **5+ sessions** since last dream
 - **24+ hours** since last dream
 

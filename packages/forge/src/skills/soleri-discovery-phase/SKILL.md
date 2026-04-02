@@ -61,10 +61,10 @@ Save to `docs/discoveries/YYYY-MM-DD-<topic>.md` and commit. Then transition to 
 
 ## Quick Reference
 
-| Op                   | When to Use                        |
-| -------------------- | ---------------------------------- |
-| `search_intelligent` | Search vault for prior art         |
-| `memory_search`      | Check session history and projects |
+| Op                   | When to Use                                         |
+| -------------------- | --------------------------------------------------- |
+| `search_intelligent` | Search vault for prior art                          |
+| `memory_search`      | Check session history and projects                  |
 | `brain_recommend`    | Brain recommendations for similar past explorations |
-| `capture_knowledge`  | Persist discovery finding          |
-| `route_intent`       | Classify what comes after          |
+| `capture_knowledge`  | Persist discovery finding                           |
+| `route_intent`       | Classify what comes after                           |
