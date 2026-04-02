@@ -10,7 +10,7 @@ const content: Record<Locale, GettingStartedContent> = {
     eyebrow: 'Create an agent folder and connect it in minutes',
     heroTitle: 'Set up your first Soleri agent.',
     heroSubtitle:
-      'Install the prerequisites, pick a template, and start learning.',
+      'Install the prerequisites, scaffold your agent, and start learning.',
     steps: [
       {
         title: 'Install the prerequisites',
@@ -28,18 +28,14 @@ const content: Record<Locale, GettingStartedContent> = {
         isInstallCmd: false,
       },
       {
-        title: 'Pick a template and create',
-        text: 'Choose a starter agent that matches your work — content creator, freelancer, developer, researcher, or business operator. Or start blank. The result is a plain folder with workspaces, routing, skills, and instructions.',
+        title: 'Create your agent',
+        text: 'One command scaffolds a complete agent folder with instructions, workflows, skills, and knowledge. Name it, pick a persona, and you\'re done.',
         code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
-<span class="prompt">?</span> <span class="cmd">Pick a template:</span>
-  <span class="ok">❯</span> <span class="val">Forge</span>       <span class="cmt">— software development</span>
-    <span class="val">Muse</span>        <span class="cmt">— content creation</span>
-    <span class="val">Atlas</span>       <span class="cmt">— freelance & consulting</span>
-    <span class="val">Sage</span>        <span class="cmt">— research & academic</span>
-    <span class="val">Compass</span>     <span class="cmt">— business operations</span>
-    <span class="val">Blank</span>       <span class="cmt">— start from scratch</span>
+<span class="prompt">?</span> <span class="cmd">What should your agent be called?</span> <span class="val">my-agent</span>
+<span class="prompt">?</span> <span class="cmd">Persona:</span> <span class="val">Italian Craftsperson (default)</span>
+<span class="prompt">?</span> <span class="cmd">Create this agent?</span> <span class="val">Yes</span>
 
-<span class="ok">✓</span> Created my-agent <span class="cmt">(7 skills, 3 workspaces)</span>`,
+<span class="ok">✓</span> Agent created! <span class="cmt">(28 files, 7 skills, 4 workflows)</span>`,
         isInstallCmd: false,
       },
       {
@@ -48,7 +44,7 @@ const content: Record<Locale, GettingStartedContent> = {
         code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target claude</span>
 
-<span class="ok">✓</span> Detected file-tree agent <span class="cmt">(Forge template)</span>
+<span class="ok">✓</span> Detected file-tree agent
 <span class="ok">✓</span> Registered my-agent in <span class="val">~/.claude.json</span>
 <span class="ok">✓</span> Launcher created`,
         isInstallCmd: false,

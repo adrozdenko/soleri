@@ -70,21 +70,19 @@ const content: Record<Locale, PersonasContent> = {
   <span class="prompt">$</span> <span class="cmd">npx @soleri/cli</span> <span class="arg">skills install deep-review</span>`,
       },
 
-      // Section 4: Pick a starter
+      // Section 4: Create your agent
       {
-        title: 'Start from someone like you.',
+        title: 'Start in one command.',
         subtitle:
-          'Five starter agents. Clone one, customize it, ship.',
-        text: 'Content creator, freelancer, developer, researcher, or business operator. Each comes with domain-specific workspaces, routing tables, and instructions tailored to the work.',
-        code: `<span class="cmt">Starter agents:</span>
-  <span class="val">Muse</span>       <span class="cmt">\u2014 content creation (scripts, production, distribution)</span>
-  <span class="val">Atlas</span>      <span class="cmt">\u2014 freelance (clients, templates, business dev)</span>
-  <span class="val">Forge</span>      <span class="cmt">\u2014 development (planning, src, docs, ops)</span>
-  <span class="val">Sage</span>       <span class="cmt">\u2014 research (sources, analysis, writing, admin)</span>
-  <span class="val">Compass</span>    <span class="cmt">\u2014 business (comms, planning, clients, resources)</span>
+          'Name it, pick a persona, start working.',
+        text: 'The scaffold includes instructions, workflows, skills, and knowledge. Choose a built-in persona or describe your own \u2014 the wizard generates the character from your description.',
+        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
+<span class="prompt">?</span> <span class="cmd">What should your agent be called?</span> <span class="val">my-agent</span>
+<span class="prompt">?</span> <span class="cmd">Persona:</span> <span class="val">Describe your own persona</span>
+<span class="prompt">?</span> <span class="cmd">Describe your agent's personality:</span>
+  <span class="val">Like Bishop from Aliens \u2014 calm, precise, helpful</span>
 
-<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
-<span class="val">? Pick a template:</span> <span class="ok">\u276F Forge</span>`,
+<span class="ok">\u2713</span> Agent created! <span class="cmt">(28 files, 7 skills, 4 workflows)</span>`,
       },
     ],
   },

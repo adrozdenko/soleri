@@ -63,17 +63,13 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         sectionTitle: 'Pick your starting point.',
-        title: 'Five agents, ready to fork',
-        text: 'Content creator, freelancer, developer, researcher, or business operator. Each starter agent comes with domain-specific workspaces, routing tables, and instructions. Clone one, customize it, ship.',
-        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span>
+        title: 'One command, your agent',
+        text: 'Name it, pick a persona, and start working. The scaffold includes instructions, workflows, skills, and knowledge — ready to customize. Your agent learns everything else from your projects.',
+        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
+<span class="prompt">?</span> <span class="cmd">What should your agent be called?</span> <span class="val">my-agent</span>
+<span class="prompt">?</span> <span class="cmd">Persona:</span> <span class="val">Italian Craftsperson (default)</span>
 
-<span class="dim">? Pick a template:</span>
-  <span class="ok">❯ Muse</span>       <span class="cmt">— content creation</span>
-    <span class="val">Atlas</span>      <span class="cmt">— freelance & consulting</span>
-    <span class="val">Forge</span>      <span class="cmt">— software development</span>
-    <span class="val">Sage</span>       <span class="cmt">— research & academic</span>
-    <span class="val">Compass</span>    <span class="cmt">— business operations</span>
-    <span class="val">Blank</span>      <span class="cmt">— start from scratch</span>`,
+<span class="ok">✓</span> Agent created! <span class="cmt">(28 files, 7 skills, 4 workflows)</span>`,
       },
     ],
     cardsTitle: 'One agent. Personal, project, and team knowledge.',
@@ -111,16 +107,15 @@ const content: Record<Locale, HomeContent> = {
       },
     ],
     terminalTitle: 'Quick start',
-    terminalCode: `<span class="comment"># Create from a template</span>
+    terminalCode: `<span class="comment"># Create your agent</span>
 <span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
-<span class="dim">? Pick a template: Forge (software development)</span>
+<span class="comment">  ✓ Agent created (28 files, 7 skills, 4 workflows)</span>
 
 <span class="comment"># Register and run</span>
 <span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span>   <span class="comment"># register MCP server</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>       <span class="comment"># run engine + watch files</span>
 
-<span class="comment">  ✓ Agent folder ready (7 skills, 3 workspaces)</span>
 <span class="comment">  ✓ MCP config registered</span>
 <span class="comment">  ✓ CLAUDE.md regenerates on change</span>`,
     archTitle: '75/20/5 — The engine behind the folder',
