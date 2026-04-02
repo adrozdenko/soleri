@@ -23,6 +23,22 @@ If you need it:
 - **Linux:** `sudo apt-get install -y build-essential python3`
 - **Windows:** Install Visual Studio Build Tools or use WSL
 
+### `Cannot write to ~/.soleri` on first install
+
+If you just installed Soleri and see this error, you're likely running a cached older version. Clear the npx cache and pin the latest version:
+
+```bash
+rm -rf ~/.npm/_npx
+npm create soleri@latest my-agent
+```
+
+If the error persists, create the directory manually and retry:
+
+```bash
+mkdir -p ~/.soleri
+npm create soleri my-agent
+```
+
 ### Agent created in the wrong directory
 
 Agents scaffold in your current working directory. Use `--dir <path>` to override:
