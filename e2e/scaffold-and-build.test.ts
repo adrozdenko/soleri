@@ -92,12 +92,12 @@ describe('E2E: scaffold-and-build', () => {
       timeout: 60_000,
     });
 
-    // Deduplicate to collapse file:-linked @modelcontextprotocol/sdk copies
-    execFileSync('npm', ['dedupe'], {
-      cwd: agentDir,
-      stdio: 'pipe',
-      timeout: 30_000,
-    });
+    // Remove agent's own @modelcontextprotocol/sdk so TypeScript uses
+    // the single copy from the file:-linked @soleri/core
+    const agentMcpSdk = join(agentDir, 'node_modules', '@modelcontextprotocol');
+    if (existsSync(agentMcpSdk)) {
+      rmSync(agentMcpSdk, { recursive: true, force: true });
+    }
 
     // Typecheck — verifies generated code compiles
     execFileSync('npx', ['tsc', '--noEmit'], {

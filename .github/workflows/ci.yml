@@ -262,8 +262,11 @@ jobs:
         run: npm install --ignore-scripts
         working-directory: ${{ env.AGENT_DIR }}
 
-      - name: Deduplicate dependencies
-        run: npm dedupe
+      - name: Resolve MCP SDK duplicate
+        run: |
+          # file: link brings monorepo's copy of @modelcontextprotocol/sdk.
+          # Remove the agent's own copy so TypeScript sees only one declaration.
+          rm -rf node_modules/@modelcontextprotocol
         working-directory: ${{ env.AGENT_DIR }}
 
       - name: Typecheck scaffolded agent
