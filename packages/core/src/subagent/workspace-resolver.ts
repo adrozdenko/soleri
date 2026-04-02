@@ -72,6 +72,7 @@ export class WorkspaceResolver {
 
   /**
    * Remove the worktree for a given task.
+   * Deletes the worktree directory, local branch, and remote branch.
    * Silently handles errors (e.g., worktree already removed).
    */
   cleanup(taskId: string): void {
@@ -86,12 +87,22 @@ export class WorkspaceResolver {
       // Silently ignore — worktree may already be gone
     }
 
-    // Clean up the branch as well
+    // Clean up the local and remote branch
     if (info.branch) {
       try {
         execSync(`git branch -D "${info.branch}"`, { ...EXEC_OPTS, cwd: this.baseDir });
       } catch {
         // Silently ignore — branch may not exist
+      }
+
+      // Delete remote branch if it was pushed
+      try {
+        execSync(`git push origin --delete "${info.branch}" 2>/dev/null`, {
+          ...EXEC_OPTS,
+          cwd: this.baseDir,
+        });
+      } catch {
+        // Silently ignore — remote branch may not exist
       }
     }
 

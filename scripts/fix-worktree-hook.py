@@ -22,6 +22,7 @@ if [ -d "$wt_dir" ]; then
   rmdir "$wt_dir" 2>/dev/null || true
   [ "$count" -gt 0 ] && echo "Cleaned $count stale worktree(s)"
 fi
+exit 0
 '''
 
 with open(path, "w") as f:

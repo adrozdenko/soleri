@@ -10,8 +10,23 @@ const content: Record<Locale, GettingStartedContent> = {
     eyebrow: 'Create an agent folder and connect it in minutes',
     heroTitle: 'Set up your first Soleri agent.',
     heroSubtitle:
-      'Pick a template. Register. Run. Under two minutes.',
+      'Install the prerequisites, pick a template, and start learning.',
     steps: [
+      {
+        title: 'Install the prerequisites',
+        text: 'You need Node.js 18+ and an MCP-compatible AI editor. Example below uses Claude Code; Codex and OpenCode are also supported.',
+        code: `<span class="prompt">#</span> <span class="cmt">Install Node.js (if you don't have it)</span>
+<span class="prompt">$</span> <span class="cmd">brew install node</span>          <span class="cmt">— macOS (or download from nodejs.org)</span>
+
+<span class="prompt">#</span> <span class="cmt">Install an AI editor (pick one)</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>  <span class="cmt">— Claude Code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @openai/codex</span>              <span class="cmt">— Codex</span>
+<span class="prompt">$</span> <span class="cmd">go install github.com/opencode-ai/opencode@latest</span> <span class="cmt">— OpenCode</span>
+
+<span class="prompt">#</span> <span class="cmt">Verify</span>
+<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— should print v18+</span>`,
+        isInstallCmd: false,
+      },
       {
         title: 'Pick a template and create',
         text: 'Choose a starter agent that matches your work — content creator, freelancer, developer, researcher, or business operator. Or start blank. The result is a plain folder with workspaces, routing, skills, and instructions.',
@@ -77,8 +92,23 @@ const content: Record<Locale, GettingStartedContent> = {
     eyebrow: 'Створіть теку агента та підключіть за лічені хвилини',
     heroTitle: 'Налаштуйте свого першого агента Soleri.',
     heroSubtitle:
-      'Три кроки. Створити, зареєструвати, запустити. Менше двох хвилин.',
+      'Встановіть залежності, оберіть шаблон і починайте.',
     steps: [
+      {
+        title: 'Встановіть залежності',
+        text: 'Потрібні Node.js 18+ та MCP-сумісний AI-редактор. Приклад нижче використовує Claude Code; Codex та OpenCode також підтримуються.',
+        code: `<span class="prompt">#</span> <span class="cmt">Встановити Node.js (якщо немає)</span>
+<span class="prompt">$</span> <span class="cmd">brew install node</span>          <span class="cmt">— macOS (або завантажте з nodejs.org)</span>
+
+<span class="prompt">#</span> <span class="cmt">Встановити AI-редактор (оберіть один)</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>  <span class="cmt">— Claude Code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @openai/codex</span>              <span class="cmt">— Codex</span>
+<span class="prompt">$</span> <span class="cmd">go install github.com/opencode-ai/opencode@latest</span> <span class="cmt">— OpenCode</span>
+
+<span class="prompt">#</span> <span class="cmt">Перевірити</span>
+<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— має показати v18+</span>`,
+        isInstallCmd: false,
+      },
       {
         title: 'Створіть теку агента',
         text: 'Використовуйте npm create або CLI напряму. Результат — звичайна тека з agent.yaml, instructions, workflows, knowledge та skills.',
@@ -134,8 +164,23 @@ const content: Record<Locale, GettingStartedContent> = {
     eyebrow: 'Crea una cartella agente e collegala in pochi minuti',
     heroTitle: 'Configura il tuo primo agente Soleri.',
     heroSubtitle:
-      'Tre passaggi. Crea, registra, avvia. Meno di due minuti.',
+      'Installa i prerequisiti, scegli un template e inizia.',
     steps: [
+      {
+        title: 'Installa i prerequisiti',
+        text: 'Servono Node.js 18+ e un editor AI compatibile con MCP. L\'esempio sotto usa Claude Code; Codex e OpenCode sono anch\'essi supportati.',
+        code: `<span class="prompt">#</span> <span class="cmt">Installa Node.js (se non lo hai)</span>
+<span class="prompt">$</span> <span class="cmd">brew install node</span>          <span class="cmt">— macOS (o scarica da nodejs.org)</span>
+
+<span class="prompt">#</span> <span class="cmt">Installa un editor AI (scegline uno)</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>  <span class="cmt">— Claude Code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @openai/codex</span>              <span class="cmt">— Codex</span>
+<span class="prompt">$</span> <span class="cmd">go install github.com/opencode-ai/opencode@latest</span> <span class="cmt">— OpenCode</span>
+
+<span class="prompt">#</span> <span class="cmt">Verifica</span>
+<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— dovrebbe mostrare v18+</span>`,
+        isInstallCmd: false,
+      },
       {
         title: "Crea la cartella dell'agente",
         text: 'Usa la scorciatoia npm create o il CLI direttamente. Il risultato è una cartella semplice con agent.yaml, instructions, workflows, knowledge e skills.',
