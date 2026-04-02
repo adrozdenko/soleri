@@ -12,6 +12,16 @@ import { createPlaybookOps } from '../playbook-ops.js';
 import { checkForUpdate } from '../../update-check.js';
 import { buildPreflightManifest } from '../preflight.js';
 import { ENGINE_MODULE_MANIFEST } from '../../engine/module-manifest.js';
+import {
+  createTracker,
+  advanceStep,
+  recordEvidence,
+  generateCheckpoint,
+  validateCompletion,
+  persistTracker,
+  loadTracker,
+} from '../../skills/step-tracker.js';
+import type { SkillStep, EvidenceType } from '../../skills/step-tracker.js';
 
 export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, governance, projectRegistry } = runtime;
@@ -160,6 +170,85 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           ...(stagingWarning ? { stagingWarning } : {}),
           ...(dreamInfo ? { dream: dreamInfo } : {}),
         };
+      },
+    },
+
+    // ─── Skill Step Tracking ──────────────────────────────────────
+    {
+      name: 'skill_step_start',
+      description:
+        'Create a skill step tracker. Persists initial state to disk and returns the tracker with checkpoint summary.',
+      auth: 'write',
+      schema: z.object({
+        skillName: z.string().describe('Name of the skill being tracked'),
+        steps: z
+          .array(
+            z.object({
+              id: z.string(),
+              description: z.string(),
+              evidence: z.enum(['tool_called', 'file_exists']),
+            }),
+          )
+          .describe('Ordered steps with evidence requirements'),
+      }),
+      handler: async (params) => {
+        const steps = (
+          params.steps as Array<{ id: string; description: string; evidence: EvidenceType }>
+        ).map((s): SkillStep => ({ id: s.id, description: s.description, evidence: s.evidence }));
+        const tracker = createTracker(params.skillName as string, steps);
+        const filePath = persistTracker(tracker);
+        const checkpoint = generateCheckpoint(tracker);
+        return { tracker, filePath, checkpoint };
+      },
+    },
+    {
+      name: 'skill_step_advance',
+      description:
+        'Record evidence for the current step, advance to the next step, persist state, and return checkpoint summary.',
+      auth: 'write',
+      schema: z.object({
+        runId: z.string().describe('Run ID returned by skill_step_start'),
+        stepId: z.string().describe('Step ID to record evidence for'),
+        evidence: z.string().describe('Evidence value (tool name or file path)'),
+        verified: z.boolean().optional().default(true).describe('Whether evidence is verified'),
+      }),
+      handler: async (params) => {
+        let tracker = loadTracker(params.runId as string);
+        if (!tracker) {
+          return { error: `No tracker found for runId: ${params.runId}` };
+        }
+        tracker = recordEvidence(
+          tracker,
+          params.stepId as string,
+          params.evidence as string,
+          (params.verified as boolean) ?? true,
+        );
+        tracker = advanceStep(tracker);
+        const filePath = persistTracker(tracker);
+        const checkpoint = generateCheckpoint(tracker);
+        return { tracker, filePath, checkpoint };
+      },
+    },
+    {
+      name: 'skill_step_complete',
+      description:
+        'Validate skill completion, persist final state, and return a completion result with any skipped steps.',
+      auth: 'write',
+      schema: z.object({
+        runId: z.string().describe('Run ID returned by skill_step_start'),
+      }),
+      handler: async (params) => {
+        const tracker = loadTracker(params.runId as string);
+        if (!tracker) {
+          return { error: `No tracker found for runId: ${params.runId}` };
+        }
+        const result = validateCompletion(tracker);
+        // Mark completed if all steps have evidence
+        const finalTracker = result.complete
+          ? { ...tracker, completedAt: tracker.completedAt ?? new Date().toISOString() }
+          : tracker;
+        const filePath = persistTracker(finalTracker);
+        return { result, tracker: finalTracker, filePath };
       },
     },
 

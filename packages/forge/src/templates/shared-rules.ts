@@ -714,6 +714,18 @@ const ENGINE_RULES_LINES: string[] = [
   '| Switching to a different task mid-plan | `op:handoff_generate` to bookmark state |',
   '',
 
+  // ─── Skill Step Checkpoints ────────────────────────────
+  '### Skill Step Checkpoints',
+  '',
+  'Skills with structured steps return a checkpoint summary at each step boundary.',
+  'When executing a multi-step skill:',
+  '1. Start with `op:skill_step_start` to create a tracker',
+  '2. After each step, call `op:skill_step_advance` with evidence',
+  '3. On completion, call `op:skill_step_complete` to validate',
+  '',
+  'Save intermediate outputs to files, not context. This survives context compaction.',
+  '',
+
   // ─── Getting Started & Updates ─────────────────────────
   '## Getting Started & Updates',
   '<!-- soleri:getting-started -->',
