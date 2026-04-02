@@ -601,6 +601,7 @@ export type {
 } from './persona/types.js';
 export {
   ITALIAN_CRAFTSPERSON,
+  NEUTRAL_PERSONA,
   PERSONA_TEMPLATES,
   createDefaultPersona,
 } from './persona/defaults.js';

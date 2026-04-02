@@ -7,7 +7,7 @@
  */
 import * as p from '@clack/prompts';
 import type { AgentConfigInput } from '@soleri/forge/lib';
-import { ITALIAN_CRAFTSPERSON } from '@soleri/core/personas';
+import { ITALIAN_CRAFTSPERSON, NEUTRAL_PERSONA } from '@soleri/core/personas';
 import { isGhInstalled } from '../utils/git.js';
 
 /** Git configuration collected from the wizard. */
@@ -67,52 +67,19 @@ export async function runCreateWizard(initialName?: string): Promise<CreateWizar
       },
       {
         value: 'custom',
-        label: 'Describe your own persona',
-        hint: 'Tell me who your agent should be',
+        label: 'Custom (editable neutral persona)',
+        hint: 'Full persona file — customize later via agent.yaml',
       },
     ],
   });
 
   if (p.isCancel(personaChoice)) return null;
 
-  let personaDescription: string | undefined;
-
-  if (personaChoice === 'custom') {
-    const desc = (await p.text({
-      message: "Describe your agent's personality (we'll generate the persona from this)",
-      placeholder: 'A calm Japanese sensei who speaks in zen metaphors and values harmony in code',
-      validate: (v) => {
-        if (!v || v.trim().length < 10) return 'Give at least a brief description (10+ chars)';
-        if (v.length > 500) return 'Max 500 characters';
-      },
-    })) as string;
-
-    if (p.isCancel(desc)) return null;
-    personaDescription = desc;
-  }
-
   // ─── Build config ───────────────────────────────────────────
-  const persona = personaDescription
-    ? {
-        template: 'custom',
-        name: name.trim(),
-        voice: personaDescription,
-        // Custom personas start with minimal config — the LLM enriches from the voice description
-        inspiration: '',
-        culture: '',
-        metaphors: [] as string[],
-        traits: [] as string[],
-        quirks: [] as string[],
-        opinions: [] as string[],
-        greetings: [`Hello! I'm ${name.trim()}. What are we working on?`],
-        signoffs: ['Until next time!'],
-        languageRule: "Speak the user's language naturally.",
-        nameRule: 'Adapt to name changes but keep character intact.',
-      }
-    : {
-        ...ITALIAN_CRAFTSPERSON,
-        name: name.trim(),
-      };
+  const persona =
+    personaChoice === 'custom'
+      ? { ...NEUTRAL_PERSONA, name: name.trim() }
+      : { ...ITALIAN_CRAFTSPERSON, name: name.trim() };
 
   const greeting = persona.greetings[0] ?? `Ciao! I'm ${name.trim()}. What are we working on?`;
 
