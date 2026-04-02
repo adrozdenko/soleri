@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPreflightManifest, type PreflightInput } from './preflight.js';
+import { buildPreflightManifest, type PreflightInput } from '../runtime/preflight.js';
 
 function makeInput(overrides: Partial<PreflightInput> = {}): PreflightInput {
   return {

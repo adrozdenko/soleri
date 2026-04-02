@@ -34,7 +34,11 @@ export function getPlanRunDir(persistDir: string, planId: string): string {
 export function loadManifest(runDir: string, planId: string): PlanRunManifest {
   const manifestPath = path.join(runDir, 'manifest.json');
   if (fs.existsSync(manifestPath)) {
-    return JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as PlanRunManifest;
+    try {
+      return JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as PlanRunManifest;
+    } catch {
+      // Malformed manifest — return fresh one
+    }
   }
   const now = new Date().toISOString();
   return { planId, steps: {}, lastRun: now, createdAt: now };
@@ -59,7 +63,8 @@ export function persistStepOutput(
   output: unknown,
 ): void {
   fs.mkdirSync(runDir, { recursive: true });
-  const fileName = `step-${stepIndex}-${stepId}.json`;
+  const safeStepId = stepId.replace(/[/\\:*?"<>|.]/g, '_');
+  const fileName = `step-${stepIndex}-${safeStepId}.json`;
   fs.writeFileSync(path.join(runDir, fileName), JSON.stringify(output, null, 2));
 
   const existing = manifest.steps[stepId];

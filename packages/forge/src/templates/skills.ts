@@ -13,10 +13,12 @@ const AGENT_PLACEHOLDER = 'YOUR_AGENT_core';
 // Frontmatter step extraction
 // ---------------------------------------------------------------------------
 
+export type SkillStepEvidence = 'tool_called' | 'file_exists';
+
 export interface SkillStepDef {
   id: string;
   description: string;
-  evidence: string;
+  evidence: SkillStepEvidence;
 }
 
 /**
@@ -58,7 +60,10 @@ export function extractStepsFromFrontmatter(content: string): SkillStepDef[] | n
       }
       const evMatch = line.match(/^\s+evidence:\s*(.+)/);
       if (evMatch) {
-        current.evidence = evMatch[1].trim().replace(/^["']|["']$/g, '');
+        const raw = evMatch[1].trim().replace(/^["']|["']$/g, '');
+        if (raw === 'tool_called' || raw === 'file_exists') {
+          current.evidence = raw;
+        }
         continue;
       }
     }

@@ -40,10 +40,15 @@ export interface SkillStepTracker {
 // Factory
 // ---------------------------------------------------------------------------
 
+/** Sanitize a string for safe use in file paths. */
+function sanitizeForPath(name: string): string {
+  return name.replace(/[/\\:*?"<>|.]/g, '_');
+}
+
 export function createTracker(skillName: string, steps: SkillStep[]): SkillStepTracker {
   return {
     skillName,
-    runId: `${skillName}-${Date.now()}`,
+    runId: `${sanitizeForPath(skillName)}-${Date.now()}`,
     steps,
     currentStep: 0,
     startedAt: new Date().toISOString(),

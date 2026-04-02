@@ -163,9 +163,14 @@ const planStore = new Map<string, PlanEntry>();
  * If facades are provided, uses the full dispatch registry.
  * Otherwise, falls back to a simple runtime-based dispatcher.
  */
-function buildDispatch(agentId: string, runtime: AgentRuntime, facades?: FacadeConfig[]) {
+function buildDispatch(
+  agentId: string,
+  runtime: AgentRuntime,
+  facades?: FacadeConfig[],
+  activePlan?: import('../flows/dispatch-registry.js').ActivePlanRef,
+) {
   if (facades && facades.length > 0) {
-    return createDispatcher(agentId, facades);
+    return createDispatcher(agentId, facades, activePlan);
   }
 
   // Fallback: runtime-based dispatch for known tool patterns
@@ -651,8 +656,17 @@ export function createOrchestrateOps(
 
         if (entry) {
           // Flow-engine execution path
-          const dispatch = buildDispatch(agentId, runtime, facades);
-          const executor = new FlowExecutor(dispatch);
+          const activePlanRef = {
+            steps: entry.plan.steps.map((s) => ({
+              id: s.id,
+              allowedTools: s.allowedTools,
+              status: s.status,
+            })),
+            deviations: entry.plan.deviations,
+          };
+          const dispatch = buildDispatch(agentId, runtime, facades, activePlanRef);
+          const projectPath = (params.projectPath as string) ?? '.';
+          const executor = new FlowExecutor(dispatch, projectPath);
           const executionResult = await executor.execute(entry.plan);
 
           // Store result
@@ -1405,8 +1419,9 @@ export function createOrchestrateOps(
         const targetStepId = allStepIds[stepNumber];
 
         if (!targetStepId && !manifest.steps[String(stepNumber)]) {
-          // Try numeric key or allow creating a new entry
-          // For new manifests, stepId is used as key
+          return {
+            error: `Step ${stepNumber} not found in manifest. Available steps: ${allStepIds.join(', ') || '(none)'}`,
+          };
         }
 
         const now = new Date().toISOString();

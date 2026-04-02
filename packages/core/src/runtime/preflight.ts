@@ -15,6 +15,8 @@ export interface PreflightInput {
   skills: string[];
   /** Plans currently in executing state */
   executingPlans: Array<{ id: string; objective: string; status: string }>;
+  /** Whether the vault is connected */
+  vaultConnected?: boolean;
   /** Vault stats */
   vaultStats: {
     totalEntries: number;
@@ -44,7 +46,7 @@ export function buildPreflightManifest(input: PreflightInput): PreflightManifest
     activePlans,
     vaultSummary: {
       entryCount: input.vaultStats.totalEntries,
-      connected: input.vaultStats.totalEntries >= 0,
+      connected: input.vaultConnected ?? true,
       domains,
     },
   };
