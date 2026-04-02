@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.13.0] — 2026-04-02
+
+### Added
+- **Neutral persona template** — `NEUTRAL_PERSONA` constant with full `PersonaConfig`: professional neutral voice, 6 traits, 4 quirks, 6 opinions, 3 greetings, 3 signoffs. Registered as `neutral-custom` in `PERSONA_TEMPLATES` (#545, #547)
+- **README placeholders** — `knowledge/`, `data/`, and `hooks/` directories now ship with README.md explaining purpose and usage
+
+### Changed
+- **Wizard simplified** — "Custom" persona option now generates a rich neutral persona file directly instead of asking for a description prompt. No LLM at scaffold time, works fully offline
+- **Website updated** — removed fake template picker (Forge, Muse, Atlas, Sage, Compass) from EN getting-started, home, and personas pages. Now shows actual wizard flow
+- **Troubleshooting** — added "Cannot write to ~/.soleri" entry with npx cache workaround
+- **`create-soleri` dependency** — pinned `@soleri/cli` to `>=9.12.1` to prevent stale npx cache issues
+- **Release workflow** — tightened npm publish skip pattern to prevent false "already published" on auth errors
+
 ## [9.12.1] — 2026-04-02
 
 ### Fixed

@@ -106,7 +106,8 @@
     "browsable",
     "precheck",
     "flexbox",
-    "newbot"
+    "newbot",
+    "signoffs"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [
