@@ -10,6 +10,8 @@ import { createOrchestrateOps } from '../orchestrate-ops.js';
 import { createProjectOps } from '../project-ops.js';
 import { createPlaybookOps } from '../playbook-ops.js';
 import { checkForUpdate } from '../../update-check.js';
+import { buildPreflightManifest } from '../preflight.js';
+import { ENGINE_MODULE_MANIFEST } from '../../engine/module-manifest.js';
 
 export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, governance, projectRegistry } = runtime;
@@ -108,6 +110,36 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           /* dream module not available — skip silently */
         }
 
+        // ─── Pre-flight manifest ───────────────────────────────
+        let skills: string[] = [];
+        try {
+          const { discoverSkills } = await import('../../skills/sync-skills.js');
+          const agentDir = runtime.config.agentDir;
+          const skillsDirs = agentDir ? [join(agentDir, 'skills')] : [];
+          skills = discoverSkills(skillsDirs).map((s) => s.name);
+        } catch {
+          // Skills discovery is best-effort
+        }
+
+        const agentId = runtime.config.agentId;
+        const facades = ENGINE_MODULE_MANIFEST.map((m) => ({
+          name: `${agentId}_${m.suffix}`,
+          ops: m.keyOps.map((op) => ({ name: op, description: m.description })),
+        }));
+
+        const executingPlans = runtime.planner.getExecuting().map((p) => ({
+          id: p.id,
+          objective: p.objective,
+          status: p.status,
+        }));
+
+        const preflight = buildPreflightManifest({
+          facades,
+          skills,
+          executingPlans,
+          vaultStats: stats,
+        });
+
         return {
           project,
           is_new: isNew,
@@ -124,6 +156,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
             isQuotaWarning: quotaStatus.isWarning,
             expiredThisSession: expired,
           },
+          preflight,
           ...(stagingWarning ? { stagingWarning } : {}),
           ...(dreamInfo ? { dream: dreamInfo } : {}),
         };
