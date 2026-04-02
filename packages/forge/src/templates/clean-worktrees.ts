@@ -47,23 +47,20 @@ for dir in "$WORKTREE_DIR"/*/; do
     fi
   fi
 
-  # Delete the local branch if it exists
+  # Delete the local branch if it exists (worktree branches are local-only)
   if [ -n "$branch" ] && [ "$branch" != "HEAD" ]; then
     git branch -D "$branch" 2>/dev/null
-    # Delete the remote branch if it was pushed
-    git push origin --delete "$branch" 2>/dev/null
   fi
 
   rm -rf "$dir" 2>/dev/null && cleaned=$((cleaned + 1))
 done
 
-# Also clean up orphaned subagent/* and worktree-agent-* branches
+# Also clean up orphaned subagent/* and worktree-agent-* local branches
 # whose changes are already in main
 for branch in $(git branch --format='%(refname:short)' 2>/dev/null | grep -E '^(subagent/|worktree-agent-)'); do
   diff="$(git diff main..."$branch" --stat 2>/dev/null | tail -1)"
   if [ -z "$diff" ]; then
     git branch -D "$branch" 2>/dev/null
-    git push origin --delete "$branch" 2>/dev/null
     cleaned=$((cleaned + 1))
   fi
 done

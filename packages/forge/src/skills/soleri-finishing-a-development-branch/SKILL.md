@@ -85,9 +85,8 @@ After merge is confirmed:
 1. `git checkout <base> && git pull`
 2. `git branch -d <branch>` — delete local branch
 3. If remote branch not auto-deleted: `git push origin --delete <branch>`
-4. If this branch was created by a subagent (`subagent/*` or `worktree-agent-*`), also clean up any related worktree: `git worktree prune`
 
-**This step is mandatory, not optional.** Stale branches accumulate fast — especially during parallel subagent execution where dozens of branches can be created in a single session.
+**This step is mandatory, not optional.** Stale branches accumulate fast.
 
 ## Anti-Patterns
 
