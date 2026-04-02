@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { ITALIAN_CRAFTSPERSON, PERSONA_TEMPLATES, createDefaultPersona } from './defaults.js';
+import {
+  ITALIAN_CRAFTSPERSON,
+  NEUTRAL_PERSONA,
+  PERSONA_TEMPLATES,
+  createDefaultPersona,
+} from './defaults.js';
 
 describe('ITALIAN_CRAFTSPERSON', () => {
   it('uses italian-craftsperson template id', () => {
@@ -25,9 +30,42 @@ describe('ITALIAN_CRAFTSPERSON', () => {
   });
 });
 
+describe('NEUTRAL_PERSONA', () => {
+  it('uses neutral-custom template id', () => {
+    expect(NEUTRAL_PERSONA.template).toBe('neutral-custom');
+  });
+
+  it('has non-empty voice and inspiration', () => {
+    expect(NEUTRAL_PERSONA.voice.length).toBeGreaterThan(0);
+    expect(NEUTRAL_PERSONA.inspiration.length).toBeGreaterThan(0);
+  });
+
+  it('has no cultural flavor', () => {
+    expect(NEUTRAL_PERSONA.culture).toBe('');
+  });
+
+  it('has all arrays populated with minimum counts', () => {
+    expect(NEUTRAL_PERSONA.traits.length).toBeGreaterThanOrEqual(3);
+    expect(NEUTRAL_PERSONA.quirks.length).toBeGreaterThanOrEqual(3);
+    expect(NEUTRAL_PERSONA.opinions.length).toBeGreaterThanOrEqual(3);
+    expect(NEUTRAL_PERSONA.metaphors.length).toBeGreaterThanOrEqual(3);
+    expect(NEUTRAL_PERSONA.greetings.length).toBeGreaterThanOrEqual(2);
+    expect(NEUTRAL_PERSONA.signoffs.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('has non-empty language and name rules', () => {
+    expect(NEUTRAL_PERSONA.languageRule.length).toBeGreaterThan(0);
+    expect(NEUTRAL_PERSONA.nameRule.length).toBeGreaterThan(0);
+  });
+});
+
 describe('PERSONA_TEMPLATES', () => {
   it('contains italian-craftsperson entry', () => {
     expect(PERSONA_TEMPLATES['italian-craftsperson']).toBe(ITALIAN_CRAFTSPERSON);
+  });
+
+  it('contains neutral-custom entry', () => {
+    expect(PERSONA_TEMPLATES['neutral-custom']).toBe(NEUTRAL_PERSONA);
   });
 
   it('does not include name or history in template entries', () => {
