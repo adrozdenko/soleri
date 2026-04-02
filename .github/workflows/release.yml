@@ -118,8 +118,9 @@ jobs:
           set -euo pipefail
           log="$(mktemp)"
           if ! npm publish --workspace=@soleri/core --access public >"$log" 2>&1; then
-            if grep -qE "previously published|You cannot publish over|is not in this registry|EPUBLISHCONFLICT" "$log"; then
+            if grep -qE "previously published|You cannot publish over|EPUBLISHCONFLICT" "$log"; then
               echo "Already published — skipping"
+              cat "$log"
             else
               cat "$log"
               exit 1
@@ -133,8 +134,9 @@ jobs:
           set -euo pipefail
           log="$(mktemp)"
           if ! npm publish --workspace=@soleri/forge --access public >"$log" 2>&1; then
-            if grep -qE "previously published|You cannot publish over|is not in this registry|EPUBLISHCONFLICT" "$log"; then
+            if grep -qE "previously published|You cannot publish over|EPUBLISHCONFLICT" "$log"; then
               echo "Already published — skipping"
+              cat "$log"
             else
               cat "$log"
               exit 1
@@ -148,8 +150,9 @@ jobs:
           set -euo pipefail
           log="$(mktemp)"
           if ! npm publish --workspace=@soleri/cli --access public >"$log" 2>&1; then
-            if grep -qE "previously published|You cannot publish over|is not in this registry|EPUBLISHCONFLICT" "$log"; then
+            if grep -qE "previously published|You cannot publish over|EPUBLISHCONFLICT" "$log"; then
               echo "Already published — skipping"
+              cat "$log"
             else
               cat "$log"
               exit 1
@@ -163,8 +166,9 @@ jobs:
           set -euo pipefail
           log="$(mktemp)"
           if ! npm publish --workspace=create-soleri --access public >"$log" 2>&1; then
-            if grep -qE "previously published|You cannot publish over|is not in this registry|EPUBLISHCONFLICT" "$log"; then
+            if grep -qE "previously published|You cannot publish over|EPUBLISHCONFLICT" "$log"; then
               echo "Already published — skipping"
+              cat "$log"
             else
               cat "$log"
               exit 1
