@@ -9,10 +9,13 @@
  * deliverable submission, and deliverable verification.
  */
 
+import fs from 'node:fs';
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import type { DriftItem, TaskEvidence } from '../planning/planner.js';
+import type { PlanRunManifest } from '../flows/types.js';
+import { getPlanRunDir } from '../flows/executor.js';
 import { collectGitEvidence } from '../planning/evidence-collector.js';
 import { matchPlaybooks, type PlaybookMatchResult } from '../playbooks/index.js';
 import { entryToPlaybookDefinition } from '../playbooks/index.js';
@@ -178,6 +181,11 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
       schema: z.object({
         planId: z.string().describe('Plan ID to reconcile'),
         actualOutcome: z.string().describe('Description of what actually happened'),
+        projectPath: z
+          .string()
+          .optional()
+          .default('.')
+          .describe('Project root (for reading rerun manifest)'),
         driftItems: z
           .array(
             z.object({
@@ -228,11 +236,46 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
               }
             : undefined;
 
+        // Attach rerun report if a plan-run manifest exists
+        let rerunReport: {
+          totalReruns: number;
+          staleSteps: number;
+          steps: { stepId: string; status: string; rerunCount: number; rerunReason?: string }[];
+        } | null = null;
+
+        try {
+          const projectPath = params.projectPath as string;
+          const runDir = getPlanRunDir(projectPath, params.planId as string);
+          const manifestPath = `${runDir}/manifest.json`;
+          if (fs.existsSync(manifestPath)) {
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as PlanRunManifest;
+            const entries = Object.entries(manifest.steps);
+            const rerunSteps = entries.filter(
+              ([, s]) => s.rerunCount > 0 || s.status === 'rerun' || s.status === 'stale',
+            );
+            if (rerunSteps.length > 0) {
+              rerunReport = {
+                totalReruns: rerunSteps.reduce((sum, [, s]) => sum + s.rerunCount, 0),
+                staleSteps: entries.filter(([, s]) => s.status === 'stale').length,
+                steps: rerunSteps.map(([id, s]) => ({
+                  stepId: id,
+                  status: s.status,
+                  rerunCount: s.rerunCount,
+                  rerunReason: s.rerunReason,
+                })),
+              };
+            }
+          }
+        } catch {
+          // Manifest reading is best-effort
+        }
+
         return {
           reconciled: true,
           accuracy: plan.reconciliation!.accuracy,
           driftCount: plan.reconciliation!.driftItems.length,
           toolDeviations,
+          rerunReport,
           plan,
         };
       },

@@ -15,10 +15,10 @@ import { z } from 'zod';
 import type { OpDefinition, FacadeConfig } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import { buildPlan } from '../flows/plan-builder.js';
-import { FlowExecutor } from '../flows/executor.js';
+import { FlowExecutor, getPlanRunDir, loadManifest, saveManifest } from '../flows/executor.js';
 import { createDispatcher } from '../flows/dispatch-registry.js';
 import { runEpilogue } from '../flows/epilogue.js';
-import type { OrchestrationPlan, ExecutionResult } from '../flows/types.js';
+import type { OrchestrationPlan, ExecutionResult, PlanRunManifest } from '../flows/types.js';
 import type { ContextHealthStatus } from './context-health.js';
 import type { OperatorSignals } from '../operator/operator-context-types.js';
 import { loadAgentWorkflows, getWorkflowForIntent } from '../workflows/workflow-loader.js';
@@ -1348,6 +1348,114 @@ export function createOrchestrateOps(
             existingIssuesChecked: ctx.existingIssues.length,
             labelsAvailable: ctx.labels.length,
           },
+        };
+      },
+    },
+
+    // ─── orchestrate_rerun_step ──────────────────────────────────────
+    {
+      name: 'orchestrate_rerun_step',
+      description:
+        'Re-execute a single plan step without full restart. Marks the target step as invalidated then rerun, ' +
+        'marks downstream steps as stale (or rerun if within cascadeTo range). ' +
+        'Reads and writes the plan-run manifest on disk.',
+      auth: 'write',
+      schema: z.object({
+        planId: z.string().describe('Plan ID'),
+        stepNumber: z.number().describe('0-based step index to re-run'),
+        reason: z.string().describe('Why the step is being re-run'),
+        projectPath: z
+          .string()
+          .optional()
+          .default('.')
+          .describe('Project root (for manifest location)'),
+        cascadeTo: z
+          .number()
+          .optional()
+          .describe(
+            'If set, also mark steps up to this index (exclusive) as rerun instead of just stale',
+          ),
+      }),
+      handler: async (params) => {
+        const planId = params.planId as string;
+        const stepNumber = params.stepNumber as number;
+        const reason = params.reason as string;
+        const projectPath = params.projectPath as string;
+        const cascadeTo = params.cascadeTo as number | undefined;
+
+        const runDir = getPlanRunDir(projectPath, planId);
+        let manifest: PlanRunManifest;
+        try {
+          manifest = loadManifest(runDir, planId);
+        } catch (err) {
+          return { error: `Failed to load manifest: ${(err as Error).message}` };
+        }
+
+        const stepKeys = Object.keys(manifest.steps);
+        if (stepKeys.length === 0 && stepNumber > 0) {
+          return {
+            error:
+              'No step data in manifest — the plan may not have been executed with persistence enabled.',
+          };
+        }
+
+        // Find the step key at the target index by checking all steps
+        // Steps are keyed by stepId — we match by position in the plan
+        const allStepIds = Object.keys(manifest.steps);
+        const targetStepId = allStepIds[stepNumber];
+
+        if (!targetStepId && !manifest.steps[String(stepNumber)]) {
+          // Try numeric key or allow creating a new entry
+          // For new manifests, stepId is used as key
+        }
+
+        const now = new Date().toISOString();
+        const affected: { stepId: string; status: string }[] = [];
+
+        // Mark all steps by their position
+        const sortedStepIds = Object.keys(manifest.steps);
+        for (let i = 0; i < sortedStepIds.length; i++) {
+          const sid = sortedStepIds[i];
+          const state = manifest.steps[sid];
+
+          if (i === stepNumber) {
+            // Target step: invalidated → rerun
+            state.status = 'rerun';
+            state.rerunCount += 1;
+            state.rerunReason = reason;
+            state.timestamp = now;
+            affected.push({ stepId: sid, status: 'rerun' });
+          } else if (i > stepNumber) {
+            // Downstream step
+            if (cascadeTo !== undefined && i < cascadeTo) {
+              state.status = 'rerun';
+              state.rerunCount += 1;
+              state.rerunReason = `Cascade from step ${stepNumber}: ${reason}`;
+              state.timestamp = now;
+              affected.push({ stepId: sid, status: 'rerun' });
+            } else {
+              state.status = 'stale';
+              state.timestamp = now;
+              affected.push({ stepId: sid, status: 'stale' });
+            }
+          }
+        }
+
+        manifest.lastRun = now;
+
+        try {
+          saveManifest(runDir, manifest);
+        } catch (err) {
+          return { error: `Failed to save manifest: ${(err as Error).message}` };
+        }
+
+        return {
+          planId,
+          stepNumber,
+          reason,
+          cascadeTo: cascadeTo ?? null,
+          affected,
+          manifestPath: runDir,
         };
       },
     },

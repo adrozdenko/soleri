@@ -158,7 +158,15 @@ export interface PlanStep {
     min?: number;
     onFail?: { action: string; goto?: string; message?: string };
   };
-  status: 'pending' | 'running' | 'passed' | 'failed' | 'skipped' | 'gate-paused';
+  status:
+    | 'pending'
+    | 'running'
+    | 'passed'
+    | 'failed'
+    | 'skipped'
+    | 'gate-paused'
+    | 'stale'
+    | 'rerun';
 }
 
 export interface SkippedStep {
@@ -193,6 +201,27 @@ export interface OrchestrationContext {
   probes: ProbeResults;
   entities: { components: string[]; actions: string[]; technologies?: string[] };
   projectPath: string;
+}
+
+// ---------------------------------------------------------------------------
+// Step persistence (incremental correction protocol)
+// ---------------------------------------------------------------------------
+
+export type StepPersistenceStatus = 'completed' | 'stale' | 'invalidated' | 'rerun';
+
+export interface StepState {
+  status: StepPersistenceStatus;
+  output: unknown;
+  timestamp: string;
+  rerunCount: number;
+  rerunReason?: string;
+}
+
+export interface PlanRunManifest {
+  planId: string;
+  steps: Record<string, StepState>;
+  lastRun: string;
+  createdAt: string;
 }
 
 // ---------------------------------------------------------------------------
