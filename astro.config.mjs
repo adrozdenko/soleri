@@ -88,6 +88,7 @@ export default defineConfig({
             { slug: 'docs/guides/cognee' },
             { slug: 'docs/guides/team-workflows' },
             { slug: 'docs/guides/under-the-hood' },
+            { slug: 'docs/guides/search-architecture' },
             { slug: 'docs/guides/security' },
           ],
         },

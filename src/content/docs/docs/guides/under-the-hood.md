@@ -42,6 +42,8 @@ When your AI editor calls the search tool, the agent doesn't just do a keyword m
 
 This is why a critical security pattern about JWT storage outranks a suggestion about loading spinners when you search for "authentication" — even if both mention tokens.
 
+For the full technical deep dive — FTS5 configuration, BM25 weights, hybrid vector search, adaptive weight learning, and federated tier search — see [Search Architecture](/docs/guides/search-architecture/).
+
 ## The brain
 
 The brain is the intelligence layer that sits on top of the vault. It tracks which patterns actually work and uses that information to improve recommendations.
