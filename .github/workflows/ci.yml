@@ -264,9 +264,12 @@ jobs:
 
       - name: Resolve MCP SDK duplicate
         run: |
-          # file: link brings monorepo's copy of @modelcontextprotocol/sdk.
-          # Remove the agent's own copy so TypeScript sees only one declaration.
-          rm -rf node_modules/@modelcontextprotocol
+          # file: link to @soleri/core brings the monorepo's @modelcontextprotocol/sdk.
+          # The agent also installs its own copy, causing duplicate type declarations.
+          # Replace the agent's copy with a symlink to the monorepo's copy.
+          rm -rf node_modules/@modelcontextprotocol/sdk
+          ln -s "${{ github.workspace }}/node_modules/@modelcontextprotocol/sdk" \
+            node_modules/@modelcontextprotocol/sdk
         working-directory: ${{ env.AGENT_DIR }}
 
       - name: Typecheck scaffolded agent

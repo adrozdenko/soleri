@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, rmSync, symlinkSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
@@ -92,11 +92,14 @@ describe('E2E: scaffold-and-build', () => {
       timeout: 60_000,
     });
 
-    // Remove agent's own @modelcontextprotocol/sdk so TypeScript uses
-    // the single copy from the file:-linked @soleri/core
-    const agentMcpSdk = join(agentDir, 'node_modules', '@modelcontextprotocol');
-    if (existsSync(agentMcpSdk)) {
+    // file: link to @soleri/core brings the monorepo's @modelcontextprotocol/sdk.
+    // The agent also installs its own copy, causing duplicate type declarations.
+    // Replace the agent's copy with a symlink to the monorepo's single copy.
+    const agentMcpSdk = join(agentDir, 'node_modules', '@modelcontextprotocol', 'sdk');
+    const monorepoMcpSdk = join(monorepoRoot, 'node_modules', '@modelcontextprotocol', 'sdk');
+    if (existsSync(agentMcpSdk) && existsSync(monorepoMcpSdk)) {
       rmSync(agentMcpSdk, { recursive: true, force: true });
+      symlinkSync(monorepoMcpSdk, agentMcpSdk, 'junction');
     }
 
     // Typecheck — verifies generated code compiles
