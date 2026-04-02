@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.13.1] — 2026-04-02
+
+### Added
+- **Auto-register MCP server** — `npm create soleri` now auto-registers the agent in `~/.claude.json` during scaffolding. No manual `soleri install` step needed (#551, #552)
+
+### Changed
+- **Scaffold next steps** — removed "Run: soleri install" since registration is automatic
+- **Website step 3** — updated to show auto-registration instead of manual install command
+
 ## [9.13.0] — 2026-04-02
 
 ### Added

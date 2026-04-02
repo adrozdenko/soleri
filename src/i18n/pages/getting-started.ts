@@ -39,25 +39,17 @@ const content: Record<Locale, GettingStartedContent> = {
         isInstallCmd: false,
       },
       {
-        title: 'Open Claude Code',
-        text: 'The scaffold auto-registers your agent as an MCP server. Just open Claude Code — your agent is ready. For other editors, run the install command manually.',
-        code: `<span class="cmt"># Your agent was auto-registered during scaffold:</span>
+        title: 'Start using your agent',
+        text: 'Your agent was auto-registered during scaffold. Open Claude Code and start talking — the MCP server launches automatically. No extra commands needed.',
+        code: `<span class="cmt"># The scaffold already registered your agent:</span>
 <span class="ok">✓</span> Registered my-agent in <span class="val">~/.claude.json</span>
 
-<span class="cmt"># For other editors (Codex, OpenCode):</span>
-<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
-<span class="prompt">$</span> <span class="cmd">npx @soleri/cli install</span> <span class="arg">--target codex</span>`,
-        isInstallCmd: false,
-      },
-      {
-        title: 'Run the engine',
-        text: 'Start the engine while you work. It watches your agent files, regenerates CLAUDE.md on change, and keeps the knowledge engine running.',
-        code: `<span class="prompt">$</span> <span class="cmd">cd</span> <span class="arg">my-agent</span>
-<span class="prompt">$</span> <span class="cmd">npx @soleri/cli dev</span>
+<span class="cmt"># Just open Claude Code:</span>
+<span class="prompt">$</span> <span class="cmd">claude</span>
 
-<span class="ok">✓</span> MCP server running
-<span class="ok">✓</span> Watching agent.yaml, instructions/, workspaces/, skills/
-<span class="ok">✓</span> CLAUDE.md regenerates on change`,
+<span class="cmt"># Your agent is ready. Try:</span>
+<span class="hl">You:</span>  Hello my-agent!
+<span class="hl">Agent:</span> Hello! What are we working on?`,
         isInstallCmd: false,
       },
     ],
