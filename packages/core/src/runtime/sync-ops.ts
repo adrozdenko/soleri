@@ -10,6 +10,7 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import { coerceArray } from './schema-helpers.js';
 import { GitVaultSync, type GitVaultSyncConfig } from '../vault/git-vault-sync.js';
 import type {
   IntelligenceEntry,
@@ -257,15 +258,13 @@ export function createSyncOps(runtime: AgentRuntime): OpDefinition[] {
         'Import an intelligence pack into the vault with content-hash dedup. Entries with duplicate content are skipped.',
       auth: 'write' as const,
       schema: z.object({
-        bundles: z
-          .array(
-            z.object({
-              domain: z.string(),
-              version: z.string(),
-              entries: z.array(z.record(z.unknown())),
-            }),
-          )
-          .describe('Array of IntelligenceBundle objects to import'),
+        bundles: coerceArray(
+          z.object({
+            domain: z.string(),
+            version: z.string(),
+            entries: z.array(z.record(z.unknown())),
+          }),
+        ).describe('Array of IntelligenceBundle objects to import'),
         tier: z
           .enum(['agent', 'project', 'team'])
           .optional()

@@ -13,6 +13,7 @@ import { join, basename } from 'node:path';
 import type { OpDefinition } from '../facades/types.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { AgentRuntime } from './types.js';
+import { coerceArray } from './schema-helpers.js';
 
 const entrySchema = z.object({
   id: z.string(),
@@ -115,7 +116,7 @@ export function createVaultExtraOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'Add multiple vault entries at once. Uses upsert — existing IDs are updated.',
       auth: 'write',
       schema: z.object({
-        entries: z.array(entrySchema),
+        entries: coerceArray(entrySchema),
       }),
       handler: async (params) => {
         const entries = params.entries as IntelligenceEntry[];
@@ -128,7 +129,7 @@ export function createVaultExtraOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'Remove multiple vault entries by IDs in a single transaction.',
       auth: 'admin',
       schema: z.object({
-        ids: z.array(z.string()),
+        ids: coerceArray(z.string()),
       }),
       handler: async (params) => {
         const ids = params.ids as string[];
@@ -177,7 +178,7 @@ export function createVaultExtraOps(runtime: AgentRuntime): OpDefinition[] {
         'Import vault entries from a JSON bundle. Uses upsert — existing IDs are updated, new IDs are inserted.',
       auth: 'write',
       schema: z.object({
-        entries: z.array(entrySchema),
+        entries: coerceArray(entrySchema),
       }),
       handler: async (params) => {
         const entries = params.entries as IntelligenceEntry[];
@@ -198,7 +199,7 @@ export function createVaultExtraOps(runtime: AgentRuntime): OpDefinition[] {
         'Seed the vault from intelligence data. Idempotent — safe to call multiple times. Uses upsert.',
       auth: 'write',
       schema: z.object({
-        entries: z.array(entrySchema),
+        entries: coerceArray(entrySchema),
       }),
       handler: async (params) => {
         const entries = params.entries as IntelligenceEntry[];

@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import { coerceArray } from './schema-helpers.js';
 import { detectScope } from '../vault/scope-detector.js';
 import type { ScopeTier, ScopeDetectionResult } from '../vault/scope-detector.js';
 import { syncEntryToMarkdown } from '../vault/vault-markdown-sync.js';
@@ -35,7 +36,7 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
           .enum(['agent', 'project', 'team'])
           .optional()
           .describe('Manual tier override. If omitted, tier is auto-detected from content.'),
-        entries: z.array(
+        entries: coerceArray(
           z.object({
             id: z.string().optional(),
             type: z

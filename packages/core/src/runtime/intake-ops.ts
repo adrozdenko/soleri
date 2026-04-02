@@ -9,6 +9,7 @@ import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { IntakePipeline } from '../intake/intake-pipeline.js';
 import type { TextIngester, IngestSource } from '../intake/text-ingester.js';
+import { coerceArray } from './schema-helpers.js';
 
 /**
  * Create the 7 intake operations.
@@ -191,9 +192,9 @@ export function createIntakeOps(
         'Ingest multiple text items in one call. Each item has its own source metadata. Processed sequentially.',
       auth: 'write',
       schema: z.object({
-        items: z
-          .array(
-            z.object({
+        items: coerceArray(
+          z
+            .object({
               text: z.string(),
               title: z.string(),
               sourceType: z.enum(['article', 'transcript', 'notes', 'documentation']).optional(),
@@ -201,10 +202,9 @@ export function createIntakeOps(
               author: z.string().optional(),
               domain: z.string().optional(),
               tags: z.array(z.string()).optional(),
-            }),
-          )
-          .min(1)
-          .describe('Array of items to ingest'),
+            })
+            .strict(),
+        ).describe('Array of items to ingest (at least 1)'),
       }),
       handler: async (params) => {
         if (!textIngester) return { error: 'Text ingester not configured (LLM client required)' };

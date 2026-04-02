@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import { coerceArray } from './schema-helpers.js';
 import type { DriftItem, TaskEvidence } from '../planning/planner.js';
 import type { PlanRunManifest } from '../flows/types.js';
 import { getPlanRunDir } from '../flows/executor.js';
@@ -64,25 +65,24 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           )
           .optional()
           .describe('Rejected alternative approaches (replaces existing)'),
-        addTasks: z
-          .array(
-            z.object({
-              title: z.string(),
-              description: z.string(),
-              phase: z
-                .string()
-                .optional()
-                .describe('Phase this task belongs to (e.g., "wave-1", "discovery")'),
-              milestone: z
-                .string()
-                .optional()
-                .describe('Milestone this task contributes to (e.g., "v1.0", "mvp")'),
-              parentTaskId: z.string().optional().describe('Parent task ID for sub-task hierarchy'),
-            }),
-          )
+        addTasks: coerceArray(
+          z.object({
+            title: z.string(),
+            description: z.string(),
+            phase: z
+              .string()
+              .optional()
+              .describe('Phase this task belongs to (e.g., "wave-1", "discovery")'),
+            milestone: z
+              .string()
+              .optional()
+              .describe('Milestone this task contributes to (e.g., "v1.0", "mvp")'),
+            parentTaskId: z.string().optional().describe('Parent task ID for sub-task hierarchy'),
+          }),
+        )
           .optional()
           .describe('Tasks to append'),
-        removeTasks: z.array(z.string()).optional().describe('Task IDs to remove'),
+        removeTasks: coerceArray(z.string()).optional().describe('Task IDs to remove'),
       }),
       handler: async (params) => {
         try {
@@ -116,26 +116,24 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'write',
       schema: z.object({
         planId: z.string().describe('Plan ID to split tasks for'),
-        tasks: z
-          .array(
-            z.object({
-              title: z.string(),
-              description: z.string(),
-              dependsOn: z.array(z.string()).optional().describe('Task IDs this task depends on'),
-              phase: z
-                .string()
-                .optional()
-                .describe(
-                  'Phase this task belongs to (e.g., "wave-1", "discovery", "implementation")',
-                ),
-              milestone: z
-                .string()
-                .optional()
-                .describe('Milestone this task contributes to (e.g., "v1.0", "mvp", "beta")'),
-              parentTaskId: z.string().optional().describe('Parent task ID for sub-task hierarchy'),
-            }),
-          )
-          .describe('New task list with optional dependency references (task-1, task-2, etc.)'),
+        tasks: coerceArray(
+          z.object({
+            title: z.string(),
+            description: z.string(),
+            dependsOn: z.array(z.string()).optional().describe('Task IDs this task depends on'),
+            phase: z
+              .string()
+              .optional()
+              .describe(
+                'Phase this task belongs to (e.g., "wave-1", "discovery", "implementation")',
+              ),
+            milestone: z
+              .string()
+              .optional()
+              .describe('Milestone this task contributes to (e.g., "v1.0", "mvp", "beta")'),
+            parentTaskId: z.string().optional().describe('Parent task ID for sub-task hierarchy'),
+          }),
+        ).describe('New task list with optional dependency references (task-1, task-2, etc.)'),
       }),
       handler: async (params) => {
         try {

@@ -608,6 +608,9 @@ export {
 export { loadPersona } from './persona/loader.js';
 export { generatePersonaInstructions, getRandomSignoff } from './persona/prompt-generator.js';
 
+// ─── Schema Helpers ────────────────────────────────────────────────
+export { coerceArray } from './runtime/schema-helpers.js';
+
 // ─── Runtime Factory ────────────────────────────────────────────────
 export { createAgentRuntime } from './runtime/runtime.js';
 export { createSemanticFacades } from './runtime/facades/index.js';

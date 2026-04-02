@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import { coerceArray } from './schema-helpers.js';
 import { parsePlaybookFromEntry, validatePlaybook } from '../vault/playbook.js';
 import {
   matchPlaybooks,
@@ -69,7 +70,7 @@ export function createPlaybookOps(runtime: AgentRuntime): OpDefinition[] {
         title: z.string(),
         domain: z.string(),
         description: z.string(),
-        steps: z.array(
+        steps: coerceArray(
           z.object({
             title: z.string(),
             description: z.string(),
