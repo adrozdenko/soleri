@@ -3,22 +3,57 @@ title: Getting Started
 description: Install Soleri, create your first agent, and connect it to your AI editor in under 5 minutes.
 ---
 
-## Prerequisites
+## Step 1: Install the Prerequisites
 
-- **Node.js 18+** — check with `node -v`
-- **An MCP-compatible AI editor** — Claude Code, OpenCode, and Codex are supported today.
-- **npm** — ships with Node.js
+Soleri needs three things on your machine before you can start. If you already have them, skip to [Step 2](#step-2-create-your-agent).
 
-:::note[Build tools are optional]
-Soleri uses `better-sqlite3` for its knowledge engine. It ships as an optional dependency — if native compilation fails during install, scaffolding still works. You'll only need build tools when running the agent's knowledge engine.
+### 1. Node.js 18+
 
-If you hit compilation errors later:
-- **macOS:** `xcode-select --install`
-- **Linux:** `sudo apt-get install -y build-essential python3`
-- **Windows:** Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) or use WSL
-:::
+Soleri runs on Node.js. Check if you have it:
 
-## Create Your Agent
+```bash
+node -v
+```
+
+If the command isn't found or shows a version below 18:
+
+| Platform | Install command |
+|----------|----------------|
+| **macOS** | `brew install node` (requires [Homebrew](https://brew.sh)) or download from [nodejs.org](https://nodejs.org) |
+| **Linux** | `curl -fsSL https://deb.nodesource.com/setup_22.x \| sudo bash - && sudo apt-get install -y nodejs` |
+| **Windows** | Download the installer from [nodejs.org](https://nodejs.org) |
+
+npm ships with Node.js — no separate install needed.
+
+### 2. An MCP-compatible AI editor
+
+Soleri connects to your AI editor via [MCP (Model Context Protocol)](https://modelcontextprotocol.io). You need at least one of these installed:
+
+| Editor | Install |
+|--------|---------|
+| **Claude Code** (recommended) | `npm install -g @anthropic-ai/claude-code` — see [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) |
+| **Codex** | `npm install -g @openai/codex` — see [Codex docs](https://github.com/openai/codex) |
+| **OpenCode** | `go install github.com/opencode-ai/opencode@latest` — see [OpenCode docs](https://github.com/opencode-ai/opencode) |
+
+### 3. Build tools (optional — for the Knowledge Engine)
+
+Soleri's Knowledge Engine uses `better-sqlite3`, which requires native compilation. Scaffolding works without it, but the engine won't start until build tools are available.
+
+| Platform | Install command |
+|----------|----------------|
+| **macOS** | `xcode-select --install` |
+| **Linux** | `sudo apt-get install -y build-essential python3` |
+| **Windows** | Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) or use WSL |
+
+### Verify everything
+
+```bash
+node -v          # should print v18.x or higher
+npm -v           # should print 8.x or higher
+claude --version # if using Claude Code
+```
+
+## Step 2: Create Your Agent
 
 One command to scaffold a file-tree agent in your current directory:
 
@@ -63,7 +98,7 @@ my-agent/
 
 Your agent is ready to use immediately. No `npm install`, no `npm run build`.
 
-## Register and Start
+## Step 3: Register and Start
 
 From inside the agent folder, register the MCP server and start:
 
@@ -91,7 +126,7 @@ Other useful flags:
 - `--dir <path>` — custom parent directory for the agent folder
 :::
 
-## Connect to your AI editor
+## Step 4: Connect to Your AI Editor
 
 After running `soleri install`, restart your AI editor. Your agent is available as a tool. The `.mcp.json` in your agent folder looks like:
 
@@ -106,7 +141,7 @@ After running `soleri install`, restart your AI editor. Your agent is available 
 }
 ```
 
-## First Conversation
+## Step 5: First Conversation
 
 Once connected, try these in your AI editor:
 

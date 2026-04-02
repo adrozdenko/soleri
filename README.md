@@ -37,6 +37,10 @@ your AI editor reads the folder natively. The **Knowledge Engine** provides the 
 
 **Platform:** macOS, Linux, and Windows (via Git Bash). See the [Windows setup guide](https://soleri.ai/docs/guides/windows/) for details.
 
+**Prerequisites:**
+- [Node.js 18+](https://nodejs.org) (npm ships with it)
+- An MCP-compatible AI editor: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://github.com/openai/codex), or [OpenCode](https://github.com/opencode-ai/opencode)
+
 ```bash
 npx @soleri/cli create my-brain       # Build your second brain (~3 seconds)
 npx @soleri/cli install               # Connect to your editor
