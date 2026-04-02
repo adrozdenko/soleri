@@ -55,10 +55,14 @@ for dir in "$WORKTREE_DIR"/*/; do
   rm -rf "$dir" 2>/dev/null && cleaned=$((cleaned + 1))
 done
 
+# Detect default branch (main, master, etc.)
+default_branch="$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')"
+[ -z "$default_branch" ] && default_branch="main"
+
 # Also clean up orphaned subagent/* and worktree-agent-* local branches
-# whose changes are already in main
+# whose changes are already merged
 for branch in $(git branch --format='%(refname:short)' 2>/dev/null | grep -E '^(subagent/|worktree-agent-)'); do
-  diff="$(git diff main..."$branch" --stat 2>/dev/null | tail -1)"
+  diff="$(git diff "$default_branch"..."$branch" --stat 2>/dev/null | tail -1)"
   if [ -z "$diff" ]; then
     git branch -D "$branch" 2>/dev/null
     cleaned=$((cleaned + 1))
