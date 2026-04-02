@@ -1,4 +1,4 @@
-import { accessSync, constants as fsConstants, readFileSync, existsSync } from 'node:fs';
+import { accessSync, constants as fsConstants, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
@@ -185,7 +185,15 @@ export function registerCreate(program: Command): void {
 
             const outputDir = opts?.dir ? resolve(opts.dir) : (config.outputDir ?? process.cwd());
 
-            // Preflight: check output directory is writable
+            // Preflight: ensure output directory exists and is writable
+            if (!existsSync(outputDir)) {
+              try {
+                mkdirSync(outputDir, { recursive: true });
+              } catch {
+                p.log.error(`Cannot create ${outputDir} — check permissions`);
+                process.exit(1);
+              }
+            }
             try {
               accessSync(outputDir, fsConstants.W_OK);
             } catch {
