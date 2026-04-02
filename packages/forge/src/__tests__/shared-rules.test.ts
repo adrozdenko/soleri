@@ -68,7 +68,7 @@ describe('shared-rules', () => {
       expect(modular).toContain('## What is Soleri');
       expect(modular).toContain('## Response Integrity');
       expect(modular).toContain('## Output Formatting');
-      expect(modular).toContain('## Clean Commits');
+      expect(modular).toContain('## Commit Style');
       expect(modular).toContain('## Session Lifecycle');
     });
 

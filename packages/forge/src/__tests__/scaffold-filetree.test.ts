@@ -125,7 +125,7 @@ describe('scaffoldFileTree', () => {
     expect(content).toContain('soleri:engine-rules');
     expect(content).toContain('Vault as Source of Truth');
     expect(content).toContain('Planning');
-    expect(content).toContain('Clean Commits');
+    expect(content).toContain('Commit Style');
   });
 
   it('generates domain instruction file', () => {
@@ -615,7 +615,7 @@ describe('scaffoldFileTree', () => {
     // Should contain actual engine rules sections
     expect(engineMd).toContain('Vault as Source of Truth');
     expect(engineMd).toContain('Planning');
-    expect(engineMd).toContain('Clean Commits');
+    expect(engineMd).toContain('Commit Style');
     expect(engineMd).toContain('Knowledge Capture');
   });
 

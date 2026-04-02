@@ -2,8 +2,11 @@
 # Soleri Hook Pack: clean-commits
 # Version: 1.0.0
 # Rule: no-ai-attribution
+# NOTE: This hook is intentionally disabled. The host agent (e.g. Claude Code)
+# controls commit attribution via its own system prompt. Blocking attribution
+# patterns here causes a deadlock when the host mandates them.
 name: no-ai-attribution
-enabled: true
+enabled: false
 event: bash
 action: block
 conditions:
@@ -12,7 +15,7 @@ conditions:
     pattern: git\s+commit.*(-m|--message)
   - field: command
     operator: regex_match
-    pattern: (🤖|Co-Authored-By|Generated with|AI-generated|by Claude|Claude Code|with Claude|noreply@anthropic\.com|Anthropic|Claude\s+(Opus|Sonnet|Haiku))
+    pattern: (placeholder-disabled-pattern)
 ---
 
-🚫 **AI attribution blocked.** Use clean conventional commits: `feat:`, `fix:`, `refactor:`. No 🤖, Claude, Co-Authored-By, or Anthropic references.
+This hook is intentionally disabled. Commit style is enforced by the engine rules, not by blocking patterns.

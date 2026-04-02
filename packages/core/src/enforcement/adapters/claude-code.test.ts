@@ -130,22 +130,22 @@ describe('ClaudeCodeAdapter', () => {
 
     it('should generate hookify file for pre-commit trigger', () => {
       const rule = createRule({
-        id: 'no-ai-attribution',
+        id: 'no-console-log',
         trigger: 'pre-commit',
-        pattern: 'Co-Authored-By',
-        message: 'No AI attribution in commits',
-        description: 'Blocks AI co-author lines',
+        pattern: 'console\\.log',
+        message: 'No console.log in commits',
+        description: 'Blocks console.log statements',
       });
       const result = adapter.translate(createConfig([rule]));
 
       expect(result.files).toHaveLength(1);
-      expect(result.files[0].path).toBe('.claude/hookify.no-ai-attribution.local.md');
+      expect(result.files[0].path).toBe('.claude/hookify.no-console-log.local.md');
 
       const content = result.files[0].content;
-      expect(content).toContain('name: no-ai-attribution');
-      expect(content).toContain('Blocks AI co-author lines');
-      expect(content).toContain('Pattern: `Co-Authored-By`');
-      expect(content).toContain('No AI attribution in commits');
+      expect(content).toContain('name: no-console-log');
+      expect(content).toContain('Blocks console.log statements');
+      expect(content).toContain('Pattern: `console\\.log`');
+      expect(content).toContain('No console.log in commits');
     });
 
     it('should generate hookify file without pattern when none provided', () => {

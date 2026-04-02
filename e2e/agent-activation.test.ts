@@ -706,7 +706,7 @@ describe('E2E: agent-activation', () => {
       expect(content).toContain('Soleri Engine Rules');
       expect(content).toContain('Vault as Source of Truth');
       expect(content).toContain('Planning');
-      expect(content).toContain('Clean Commits');
+      expect(content).toContain('Commit Style');
       expect(content).toContain('Knowledge Capture');
       expect(content).toContain('op:create_plan');
     });
@@ -1073,7 +1073,7 @@ describe('E2E: agent-activation', () => {
       expect(engineContent).toContain('<!-- soleri:engine-rules -->');
       expect(engineContent).toContain('Vault as Source of Truth');
       expect(engineContent).toContain('Planning');
-      expect(engineContent).toContain('Clean Commits');
+      expect(engineContent).toContain('Commit Style');
       expect(engineContent).toContain('<!-- /soleri:engine-rules -->');
     });
 
