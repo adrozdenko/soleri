@@ -289,6 +289,37 @@ export function registerCreate(program: Command): void {
               }
             }
 
+            // ─── Auto-register MCP server in Claude Code ─────────
+            try {
+              const { homedir } = await import('node:os');
+              const { join } = await import('node:path');
+              const {
+                readFileSync: readF,
+                writeFileSync: writeF,
+                existsSync: existsF,
+              } = await import('node:fs');
+              const configPath = join(homedir(), '.claude.json');
+              let claudeConfig: Record<string, unknown> = {};
+              if (existsF(configPath)) {
+                claudeConfig = JSON.parse(readF(configPath, 'utf-8'));
+              }
+              if (!claudeConfig.mcpServers || typeof claudeConfig.mcpServers !== 'object') {
+                claudeConfig.mcpServers = {};
+              }
+              const agentYaml = result.agentDir.replace(/\\/g, '/') + '/agent.yaml';
+              (claudeConfig.mcpServers as Record<string, unknown>)[config.id] = {
+                type: 'stdio',
+                command: 'npx',
+                args: ['@soleri/engine', '--agent', agentYaml],
+              };
+              writeF(configPath, JSON.stringify(claudeConfig, null, 2) + '\n', 'utf-8');
+              p.log.success(`Registered ${config.id} in ~/.claude.json`);
+            } catch {
+              p.log.warn(
+                'Could not auto-register — run `npx @soleri/cli install --target claude` manually.',
+              );
+            }
+
             p.note(result.summary, 'Next steps');
             p.outro('Done!');
             return;

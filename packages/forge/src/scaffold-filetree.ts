@@ -785,8 +785,7 @@ To export entries as files: **"Export vault entries as markdown"**
     'Next steps:',
     `  1. cd ${config.id}`,
     '  2. Review agent.yaml and customize instructions/',
-    '  3. Run: soleri install   (registers MCP server)',
-    '  4. Run: soleri dev       (watches files, auto-regenerates CLAUDE.md)',
+    '  3. Run: soleri dev       (watches files, auto-regenerates CLAUDE.md)',
     '',
     'No build step needed — this agent is ready to use.',
   ].join('\n');
