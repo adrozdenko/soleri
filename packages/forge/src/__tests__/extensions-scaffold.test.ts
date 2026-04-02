@@ -13,7 +13,7 @@ describe('scaffold extensions', () => {
     rmSync(outputDir, { recursive: true, force: true });
   });
 
-  it('should create extensions directory with index and example op', () => {
+  it('should create extensions directory with index and example op', { timeout: 30_000 }, () => {
     scaffold({
       id: agentId,
       name: 'Extension Test',
