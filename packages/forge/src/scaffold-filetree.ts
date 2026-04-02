@@ -518,6 +518,49 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
     mkdirSync(join(agentDir, dir), { recursive: true });
   }
 
+  // Write README placeholders for empty directories
+  writeFile(
+    agentDir,
+    'data/README.md',
+    `# Data
+
+Runtime data for your agent — vault database, plans, brain state.
+
+These files are managed automatically by the Soleri engine. You don't need to edit them.
+
+| File | Purpose |
+|------|---------|
+| \`vault.db\` | Knowledge vault (SQLite) |
+| \`plans.json\` | Active and completed plans |
+| \`brain.json\` | Pattern intelligence state |
+`,
+    filesCreated,
+  );
+
+  writeFile(
+    agentDir,
+    'hooks/README.md',
+    `# Hooks
+
+Quality gate hooks that run automatically during your workflow.
+
+Install hook packs with:
+
+\`\`\`bash
+soleri hooks install <pack-name>
+\`\`\`
+
+List available packs:
+
+\`\`\`bash
+soleri hooks list
+\`\`\`
+
+See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) for details.
+`,
+    filesCreated,
+  );
+
   // ─── 2. Write agent.yaml ────────────────────────────────────
   const agentYamlContent = yamlStringify(buildAgentYaml(config), {
     lineWidth: 100,
@@ -661,6 +704,44 @@ export function scaffoldFileTree(input: AgentYamlInput, outputDir: string): File
     );
     totalSeeded += starterEntries.length;
   }
+
+  // Always write knowledge/README.md so the directory isn't mysteriously empty
+  writeFile(
+    agentDir,
+    'knowledge/README.md',
+    `# Knowledge
+
+Your agent's knowledge lives in the vault database (\`data/vault.db\`), not as files in this directory.
+
+## Seeding starter knowledge
+
+Drop JSON bundles here to seed knowledge when the agent starts:
+
+\`\`\`json
+{
+  "domain": "your-domain",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "unique-id",
+      "title": "Pattern name",
+      "content": "Description of the pattern...",
+      "type": "pattern",
+      "domain": "your-domain",
+      "tags": ["tag1", "tag2"]
+    }
+  ]
+}
+\`\`\`
+
+## Browsing vault contents
+
+Ask your agent: **"Show me vault stats"** or **"List all entries"**
+
+To export entries as files: **"Export vault entries as markdown"**
+`,
+    filesCreated,
+  );
 
   // ─── 9b. Create workspace directories with CONTEXT.md ──────
   // Resolve workspaces: use explicit config or seed from domains
