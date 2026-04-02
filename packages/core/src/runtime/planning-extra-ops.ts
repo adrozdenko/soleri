@@ -195,10 +195,44 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           actualOutcome: params.actualOutcome as string,
           driftItems: params.driftItems as DriftItem[] | undefined,
         });
+
+        // Add tool deviations to drift report
+        const deviations =
+          (
+            plan as unknown as {
+              deviations?: Array<{
+                stepId: string;
+                expectedTools: string[];
+                actualTool: string;
+                timestamp: string;
+              }>;
+            }
+          ).deviations ?? [];
+        const toolDeviations =
+          deviations.length > 0
+            ? {
+                count: deviations.length,
+                byStep: Object.entries(
+                  deviations.reduce(
+                    (acc, d) => {
+                      (acc[d.stepId] = acc[d.stepId] || []).push(d);
+                      return acc;
+                    },
+                    {} as Record<string, typeof deviations>,
+                  ),
+                ).map(([stepId, devs]) => ({
+                  stepId,
+                  deviationCount: devs.length,
+                  unexpectedTools: [...new Set(devs.map((d) => d.actualTool))],
+                })),
+              }
+            : undefined;
+
         return {
           reconciled: true,
           accuracy: plan.reconciliation!.accuracy,
           driftCount: plan.reconciliation!.driftItems.length,
+          toolDeviations,
           plan,
         };
       },

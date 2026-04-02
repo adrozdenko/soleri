@@ -151,6 +151,7 @@ export interface PlanStep {
   tools: string[];
   parallel: boolean;
   requires: ProbeName[];
+  allowedTools?: string[];
   gate?: {
     type: string;
     condition?: string;
@@ -166,6 +167,13 @@ export interface SkippedStep {
   reason: string;
 }
 
+export interface ToolDeviation {
+  stepId: string;
+  expectedTools: string[];
+  actualTool: string;
+  timestamp: string;
+}
+
 export interface OrchestrationPlan {
   planId: string;
   intent: string;
@@ -177,6 +185,7 @@ export interface OrchestrationPlan {
   summary: string;
   estimatedTools: number;
   context: OrchestrationContext;
+  deviations?: ToolDeviation[];
 }
 
 export interface OrchestrationContext {

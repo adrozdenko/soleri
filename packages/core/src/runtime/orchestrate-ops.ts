@@ -129,6 +129,13 @@ export function applyWorkflowOverride(plan: OrchestrationPlan, override: Workflo
     plan.estimatedTools = plan.steps.reduce((acc, s) => acc + s.tools.length, 0);
   }
 
+  // Set allowedTools from the merged tool set
+  for (const step of plan.steps) {
+    if (step.tools.length > 0) {
+      step.allowedTools = [...new Set(step.tools)];
+    }
+  }
+
   // Add workflow info to warnings for visibility
   plan.warnings.push(
     `Workflow override "${override.name}" applied (${override.gates.length} gate(s), ${override.tools.length} tool(s)).`,
