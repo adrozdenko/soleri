@@ -90,14 +90,21 @@ Each subagent prompt must include:
 Launch all independent subagents in a **single message** so they run in parallel.
 Use `isolation: "worktree"` for file-modifying tasks.
 
-### Step 4: Review and Merge
+### Step 4: Review, Merge, and Clean Up
 
 For each returning subagent:
 
 1. **Review** — read actual file changes (do not trust self-reports alone), verify tests pass, check scope compliance
 2. **Merge** — `git merge` or `git cherry-pick` from the worktree branch, one at a time
 3. **Test** — run the full suite after each merge; only proceed if green
-4. **Conflicts** — resolve manually, re-run tests, capture as anti-pattern
+4. **Clean up the branch** — after merge is confirmed and tests pass:
+   ```bash
+   git branch -D <subagent/taskId>              # delete local branch
+   git push origin --delete <subagent/taskId>    # delete remote if pushed
+   ```
+5. **Conflicts** — resolve manually, re-run tests, capture as anti-pattern
+
+**Branch cleanup is mandatory.** Every merged branch must be deleted immediately. Do not leave branches for later cleanup — they accumulate fast during parallel execution.
 
 ### Step 5: Reconcile & Report
 
@@ -126,13 +133,14 @@ YOUR_AGENT_core op:capture_knowledge
   params: { title: "<learned pattern>", description: "<merge strategy or decomposition insight>", type: "pattern", tags: ["subagent", "parallel-execution"] }
 ```
 
-## Worktree Cleanup Guarantee
+## Worktree & Branch Cleanup Guarantee
 
-Three layers — nothing accumulates:
+Four layers — nothing accumulates:
 
-1. **Per-task:** `finally` block in dispatcher removes worktree after each task
-2. **Per-batch:** `cleanupAll()` runs after all subagents complete
-3. **Per-session:** `SessionStart` hook prunes orphaned worktrees
+1. **Per-task:** `finally` block in dispatcher removes worktree, local branch, and remote branch after each task
+2. **Per-merge:** Orchestrator deletes local + remote branch immediately after confirmed merge (Step 4)
+3. **Per-batch:** `cleanupAll()` runs after all subagents complete
+4. **Per-session:** `SessionStart` hook prunes orphaned worktrees and deletes merged `subagent/*` and `worktree-agent-*` branches
 
 ## Anti-Patterns
 
