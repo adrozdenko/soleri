@@ -7,7 +7,7 @@
 #   0  All checks passed
 #   1  A step failed
 # ─────────────────────────────────────────────────────────────────────────
-set -euo pipefail
+set -uo pipefail
 
 AGENT_NAME="${1:-test-agent}"
 LOG_FILE="/tmp/soleri-test-$(date +%Y%m%d-%H%M%S).log"
@@ -38,7 +38,9 @@ fi
 
 NODE_VERSION=$(node --version 2>/dev/null || echo "none")
 log "Node.js version: ${NODE_VERSION}"
-if [[ "$NODE_VERSION" != "none" ]] && [[ "${NODE_VERSION#v}" > "18" || "${NODE_VERSION#v}" == "18"* ]]; then
+NODE_MAJOR="${NODE_VERSION#v}"
+NODE_MAJOR="${NODE_MAJOR%%.*}"
+if [[ "$NODE_VERSION" != "none" ]] && [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && (( NODE_MAJOR >= 18 )); then
   pass "Node.js >= 18 (${NODE_VERSION})"
 else
   fail "Node.js >= 18 required (got ${NODE_VERSION})"
@@ -51,7 +53,13 @@ NPM_VERSION=$(npm --version 2>/dev/null || echo "none")
 log "Phase 2: Installing Soleri CLI"
 
 # Test global install (as a user would)
-npm install -g @soleri/cli 2>&1 | tee -a "$LOG_FILE"
+# If a local tarball was uploaded (--publish mode), use it; otherwise install from npm
+if [ -f /tmp/soleri-cli.tgz ]; then
+  log "Installing from local tarball..."
+  npm install -g /tmp/soleri-cli.tgz 2>&1 | tee -a "$LOG_FILE" || fail "Failed to install from tarball"
+else
+  npm install -g @soleri/cli 2>&1 | tee -a "$LOG_FILE" || fail "Failed to install @soleri/cli"
+fi
 command -v soleri &>/dev/null && pass "soleri CLI in PATH" || fail "soleri CLI not in PATH"
 
 # Verify version
@@ -89,11 +97,17 @@ fi
 log "Phase 4: Building agent"
 
 if [ -f "package.json" ]; then
-  npm install 2>&1 | tee -a "$LOG_FILE"
-  [[ $? -eq 0 ]] && pass "npm install succeeded" || fail "npm install failed"
+  if npm install 2>&1 | tee -a "$LOG_FILE"; then
+    pass "npm install succeeded"
+  else
+    fail "npm install failed"
+  fi
 
-  npm run build 2>&1 | tee -a "$LOG_FILE"
-  [[ $? -eq 0 ]] && pass "npm run build succeeded" || fail "npm run build failed"
+  if npm run build 2>&1 | tee -a "$LOG_FILE"; then
+    pass "npm run build succeeded"
+  else
+    fail "npm run build failed"
+  fi
 
   [ -f "dist/index.js" ] && pass "dist/index.js exists" || fail "dist/index.js missing"
 else

@@ -5,7 +5,7 @@ description: Install Soleri, create your first agent, and connect it to your AI 
 
 ## Step 1: Install the Prerequisites
 
-Soleri needs three things on your machine before you can start. If you already have them, skip to [Step 2](#step-2-create-your-agent).
+Soleri needs two things on your machine, plus one optional setup for native builds. If you already have the required items, skip to [Step 2](#step-2-create-your-agent).
 
 ### 1. Node.js 18+
 

@@ -14,16 +14,17 @@ const content: Record<Locale, GettingStartedContent> = {
     steps: [
       {
         title: 'Install the prerequisites',
-        text: 'You need Node.js 18+ and an MCP-compatible AI editor (Claude Code, Codex, or OpenCode). npm ships with Node.js — no separate install.',
+        text: 'You need Node.js 18+ and an MCP-compatible AI editor. Example below uses Claude Code; Codex and OpenCode are also supported.',
         code: `<span class="prompt">#</span> <span class="cmt">Install Node.js (if you don't have it)</span>
 <span class="prompt">$</span> <span class="cmd">brew install node</span>          <span class="cmt">— macOS (or download from nodejs.org)</span>
 
 <span class="prompt">#</span> <span class="cmt">Install an AI editor (pick one)</span>
-<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>  <span class="cmt">— Claude Code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @openai/codex</span>              <span class="cmt">— Codex</span>
+<span class="prompt">$</span> <span class="cmd">go install github.com/opencode-ai/opencode@latest</span> <span class="cmt">— OpenCode</span>
 
 <span class="prompt">#</span> <span class="cmt">Verify</span>
-<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— should print v18+</span>
-<span class="prompt">$</span> <span class="cmd">claude --version</span>          <span class="cmt">— should print a version</span>`,
+<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— should print v18+</span>`,
         isInstallCmd: false,
       },
       {
@@ -95,16 +96,17 @@ const content: Record<Locale, GettingStartedContent> = {
     steps: [
       {
         title: 'Встановіть залежності',
-        text: 'Потрібні Node.js 18+ та MCP-сумісний AI-редактор (Claude Code, Codex або OpenCode). npm встановлюється разом з Node.js.',
+        text: 'Потрібні Node.js 18+ та MCP-сумісний AI-редактор. Приклад нижче використовує Claude Code; Codex та OpenCode також підтримуються.',
         code: `<span class="prompt">#</span> <span class="cmt">Встановити Node.js (якщо немає)</span>
 <span class="prompt">$</span> <span class="cmd">brew install node</span>          <span class="cmt">— macOS (або завантажте з nodejs.org)</span>
 
 <span class="prompt">#</span> <span class="cmt">Встановити AI-редактор (оберіть один)</span>
-<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>  <span class="cmt">— Claude Code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @openai/codex</span>              <span class="cmt">— Codex</span>
+<span class="prompt">$</span> <span class="cmd">go install github.com/opencode-ai/opencode@latest</span> <span class="cmt">— OpenCode</span>
 
 <span class="prompt">#</span> <span class="cmt">Перевірити</span>
-<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— має показати v18+</span>
-<span class="prompt">$</span> <span class="cmd">claude --version</span>          <span class="cmt">— має показати версію</span>`,
+<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— має показати v18+</span>`,
         isInstallCmd: false,
       },
       {
@@ -166,16 +168,17 @@ const content: Record<Locale, GettingStartedContent> = {
     steps: [
       {
         title: 'Installa i prerequisiti',
-        text: 'Servono Node.js 18+ e un editor AI compatibile con MCP (Claude Code, Codex o OpenCode). npm viene installato insieme a Node.js.',
+        text: 'Servono Node.js 18+ e un editor AI compatibile con MCP. L\'esempio sotto usa Claude Code; Codex e OpenCode sono anch\'essi supportati.',
         code: `<span class="prompt">#</span> <span class="cmt">Installa Node.js (se non lo hai)</span>
 <span class="prompt">$</span> <span class="cmd">brew install node</span>          <span class="cmt">— macOS (o scarica da nodejs.org)</span>
 
 <span class="prompt">#</span> <span class="cmt">Installa un editor AI (scegline uno)</span>
-<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @anthropic-ai/claude-code</span>  <span class="cmt">— Claude Code</span>
+<span class="prompt">$</span> <span class="cmd">npm install -g @openai/codex</span>              <span class="cmt">— Codex</span>
+<span class="prompt">$</span> <span class="cmd">go install github.com/opencode-ai/opencode@latest</span> <span class="cmt">— OpenCode</span>
 
 <span class="prompt">#</span> <span class="cmt">Verifica</span>
-<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— dovrebbe mostrare v18+</span>
-<span class="prompt">$</span> <span class="cmd">claude --version</span>          <span class="cmt">— dovrebbe mostrare una versione</span>`,
+<span class="prompt">$</span> <span class="cmd">node -v</span>                   <span class="cmt">— dovrebbe mostrare v18+</span>`,
         isInstallCmd: false,
       },
       {

@@ -27,7 +27,11 @@ err() { printf "\033[1;31mError: %s\033[0m\n" "$1" >&2; exit 1; }
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-restore) RESTORE=false; shift ;;
-    --publish)    TARBALL="$2"; shift 2 ;;
+    --publish)
+      [[ $# -ge 2 ]] || err "--publish requires a tarball path"
+      TARBALL="$2"
+      shift 2
+      ;;
     *)            err "Unknown argument: $1" ;;
   esac
 done
@@ -42,6 +46,13 @@ fi
 log "Booting VM '${VM_NAME}'..."
 tart run "${VM_NAME}" --no-graphics &
 TART_PID=$!
+
+# Ensure VM is cleaned up on any exit (including set -e failures)
+cleanup() {
+  ssh $SSH_OPTS "${SSH_USER}@${VM_IP:-}" "sudo shutdown -h now" 2>/dev/null || true
+  [[ -n "${TART_PID:-}" ]] && kill "${TART_PID}" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 # Wait for VM to get an IP
 log "Waiting for VM to boot and get an IP..."
@@ -101,9 +112,11 @@ scp $SSH_OPTS "${SSH_USER}@${VM_IP}:/tmp/soleri-test-*.log" "${SCRIPT_DIR}/logs/
 
 # ─── Shutdown VM ─────────────────────────────────────────────────────────
 log "Shutting down VM..."
+# cleanup trap handles shutdown + kill; just clear it since we're exiting normally
+trap - EXIT
 ssh $SSH_OPTS "${SSH_USER}@${VM_IP}" "sudo shutdown -h now" 2>/dev/null || true
 sleep 3
-kill $TART_PID 2>/dev/null || true
+kill "$TART_PID" 2>/dev/null || true
 
 # ─── Report ──────────────────────────────────────────────────────────────
 if [ $EXIT_CODE -eq 0 ]; then
