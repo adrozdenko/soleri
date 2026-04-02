@@ -2,8 +2,15 @@
  * Tests for compose-claude-md.ts — user custom zone helpers.
  */
 
-import { describe, it, expect } from 'vitest';
-import { extractUserCustomZone, injectUserCustomZone } from '../compose-claude-md.js';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import {
+  extractUserCustomZone,
+  injectUserCustomZone,
+  composeClaudeMd,
+} from '../compose-claude-md.js';
 
 const OPEN = '<!-- user:custom -->';
 const CLOSE = '<!-- /user:custom -->';
@@ -85,5 +92,43 @@ describe('injectUserCustomZone', () => {
     expect(result).not.toContain('Placeholder');
     expect(result).toContain('# Agent v2');
     expect(result).toContain('## New Footer');
+  });
+});
+
+describe('composeClaudeMd', () => {
+  let tempDir: string;
+
+  const minimalAgentYaml = `
+id: test-agent
+name: Test Agent
+role: A test agent
+description: A minimal agent for testing compose-claude-md
+domains: []
+principles: []
+`;
+
+  beforeEach(() => {
+    tempDir = join(tmpdir(), `compose-test-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    writeFileSync(join(tempDir, 'agent.yaml'), minimalAgentYaml);
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('excludes getting-started.md from composed output', () => {
+    const instructionsDir = join(tempDir, 'instructions');
+    mkdirSync(instructionsDir, { recursive: true });
+    writeFileSync(
+      join(instructionsDir, 'getting-started.md'),
+      '# Getting Started\nInstall steps here',
+    );
+    writeFileSync(join(instructionsDir, 'usage.md'), '# Usage\nHow to use the agent');
+
+    const result = composeClaudeMd(tempDir);
+    expect(result.content).toContain('How to use the agent');
+    expect(result.content).not.toContain('Install steps here');
+    expect(result.content).not.toContain('# Getting Started');
   });
 });

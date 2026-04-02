@@ -155,7 +155,10 @@ export function composeClaudeMd(agentDir: string, tools?: ToolEntry[]): Composed
   const instructionsDir = join(agentDir, 'instructions');
   if (existsSync(instructionsDir)) {
     const files = readdirSync(instructionsDir)
-      .filter((f) => f.endsWith('.md') && f !== '_engine.md' && f !== 'user.md')
+      .filter(
+        (f) =>
+          f.endsWith('.md') && f !== '_engine.md' && f !== 'user.md' && f !== 'getting-started.md',
+      )
       .sort();
     for (const file of files) {
       const filePath = join(instructionsDir, file);
