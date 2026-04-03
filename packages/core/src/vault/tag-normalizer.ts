@@ -56,7 +56,7 @@ export function computeEditDistance(a: string, b: string): number {
   if (b.length === 0) return a.length;
 
   let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-  let curr = new Array<number>(b.length + 1);
+  let curr = Array.from<number>({ length: b.length + 1 });
 
   for (let i = 1; i <= a.length; i++) {
     curr[0] = i;
@@ -106,8 +106,12 @@ export function normalizeTag(
   // Always drop noise words
   if (isNoisy(lower)) return null;
 
-  // Exact match in canonical list — return canonical form
-  if (canonical.includes(lower)) return lower;
+  // Derive lowercase canonical for matching; preserve original casing for return
+  const canonicalLower = canonical.map((x) => x.toLowerCase());
+
+  // Exact match in canonical list — return canonical form (original casing)
+  const exactIdx = canonicalLower.indexOf(lower);
+  if (exactIdx !== -1) return canonical[exactIdx];
 
   if (canonical.length === 0) {
     // No canonical list configured — pass through in suggest, drop in enforce
@@ -118,11 +122,11 @@ export function normalizeTag(
   let bestMatch: string | null = null;
   let bestDist = Infinity;
 
-  for (const c of canonical) {
-    const dist = computeEditDistance(lower, c);
+  for (let i = 0; i < canonicalLower.length; i++) {
+    const dist = computeEditDistance(lower, canonicalLower[i]);
     if (dist < bestDist) {
       bestDist = dist;
-      bestMatch = c;
+      bestMatch = canonical[i];
     }
   }
 

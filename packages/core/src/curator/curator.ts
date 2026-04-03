@@ -411,10 +411,28 @@ export class Curator {
     const mergeMap = new Map<string, string>(); // minor → major
     const processed = new Set<string>();
 
-    for (let i = 0; i < allTags.length; i++) {
-      for (let j = i + 1; j < allTags.length; j++) {
-        const a = allTags[i];
-        const b = allTags[j];
+    // Bucket tags by length to reduce comparisons from O(n²) to O(n * avg_bucket_size)
+    const buckets = new Map<number, string[]>();
+    for (const tag of allTags) {
+      const len = tag.length;
+      const bucket = buckets.get(len);
+      if (bucket) {
+        bucket.push(tag);
+      } else {
+        buckets.set(len, [tag]);
+      }
+    }
+
+    for (const a of allTags) {
+      if (processed.has(a)) continue;
+      // Only compare against tags of the same or adjacent length (edit distance ≤ 1)
+      const candidates: string[] = [
+        ...(buckets.get(a.length) ?? []),
+        ...(buckets.get(a.length - 1) ?? []),
+        ...(buckets.get(a.length + 1) ?? []),
+      ];
+      for (const b of candidates) {
+        if (b === a) continue;
         if (processed.has(a) || processed.has(b)) continue;
         if (computeEditDistance(a, b) <= 1) {
           const countA = tagCounts.get(a) ?? 0;
@@ -573,9 +591,9 @@ export class Curator {
               JSON.stringify(normalized),
               'Canonical retag during consolidation',
             );
+            mutations++;
           }
           retagged++;
-          mutations++;
         }
       }
     }

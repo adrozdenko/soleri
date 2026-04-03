@@ -49,13 +49,28 @@ const FETCH_TIMEOUT_MS = 15000;
 
 // ─── Class ───────────────────────────────────────────────────────────
 
+interface CanonicalTagConfig {
+  canonicalTags: string[];
+  tagConstraintMode: 'enforce' | 'suggest' | 'off';
+  metadataTagPrefixes: string[];
+}
+
 export class TextIngester {
   private vault: Vault;
   private llm: LLMClient | null;
+  private canonicalTagConfig: CanonicalTagConfig | null = null;
 
   constructor(vault: Vault, llm: LLMClient | null) {
     this.vault = vault;
     this.llm = llm;
+  }
+
+  /**
+   * Wire canonical tag config from runtime — used as defaults for all ingest calls.
+   * Caller-provided options in ingestText/ingestUrl/ingestBatch still take precedence.
+   */
+  setCanonicalTagConfig(cfg: CanonicalTagConfig): void {
+    this.canonicalTagConfig = cfg;
   }
 
   /**
@@ -108,6 +123,9 @@ export class TextIngester {
     const domain = opts?.domain ?? 'general';
     const extraTags = opts?.tags ?? [];
 
+    // Resolve canonical config — caller opts take precedence over runtime-wired config
+    const canonicalTagsForClassify = opts?.canonicalTags ?? this.canonicalTagConfig?.canonicalTags;
+
     // Classify all chunks
     const allItems: ClassifiedItem[] = [];
     for (const chunk of chunks) {
@@ -116,7 +134,7 @@ export class TextIngester {
         this.llm,
         chunk,
         `${source.type}: ${source.title}`,
-        opts?.canonicalTags,
+        canonicalTagsForClassify,
       );
       allItems.push(...items);
     }
@@ -137,16 +155,19 @@ export class TextIngester {
     const metadataTags = [`source:ingested`, `source:${source.type}`];
 
     // Apply canonical tag normalization if configured
-    const canonicalTags = opts?.canonicalTags;
-    const tagMode = opts?.tagConstraintMode ?? 'suggest';
-    const metaPrefixes = opts?.metadataTagPrefixes ?? ['source:'];
+    // Caller-provided options take precedence over runtime-wired config
+    const canonicalTags = opts?.canonicalTags ?? this.canonicalTagConfig?.canonicalTags;
+    const tagMode =
+      opts?.tagConstraintMode ?? this.canonicalTagConfig?.tagConstraintMode ?? 'suggest';
 
     // Store in vault
     const entries: IntelligenceEntry[] = unique.map((item, i) => {
       const rawTags = [...(item.tags ?? []), ...extraTags];
+      // metaPrefixes not passed here — source: tags are added after normalization,
+      // so there is nothing to exempt at this point.
       const normalizedTags =
         canonicalTags && tagMode !== 'off'
-          ? normalizeTagsCanonical(rawTags, canonicalTags, tagMode, metaPrefixes)
+          ? normalizeTagsCanonical(rawTags, canonicalTags, tagMode)
           : rawTags;
 
       return {

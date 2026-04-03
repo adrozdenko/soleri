@@ -208,6 +208,15 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const intakePipeline = new IntakePipeline(vault.getProvider(), vault, llmClient);
   const textIngester = new TextIngester(vault, llmClient);
 
+  // Wire canonical tag config into TextIngester if provided
+  if (config.canonicalTags && config.canonicalTags.length > 0) {
+    textIngester.setCanonicalTagConfig({
+      canonicalTags: config.canonicalTags,
+      tagConstraintMode: config.tagConstraintMode ?? 'suggest',
+      metadataTagPrefixes: config.metadataTagPrefixes ?? ['source:'],
+    });
+  }
+
   // Playbook Executor — in-memory step-by-step workflow sessions
   const playbookExecutor = new PlaybookExecutor();
 

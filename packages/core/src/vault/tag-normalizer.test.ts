@@ -33,7 +33,7 @@ describe('computeEditDistance', () => {
     expect(computeEditDistance('arch', 'arcs')).toBe(1);
   });
 
-  it('distance 1: architcture → architecture (single transposition)', () => {
+  it("distance 1: architcture → architecture (single insertion - missing 'e')", () => {
     expect(computeEditDistance('architcture', 'architecture')).toBe(1);
   });
 
