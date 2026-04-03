@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.14.4] — 2026-04-03
+
+### Fixed
+
+- **No more blank `user.md` placeholder** — `npm create soleri` no longer scaffolds an empty `instructions/user.md`. The file is an owner-override hook for custom behavioral rules; it adds no value for universal second brain agents and was causing agents to ask "what's your purpose?" on first use. Create it manually only when you need to override engine defaults. (#607)
+- **Stale global skill cleanup** — engine startup now removes ALL `*-soleri-*` agent-prefixed entries from `~/.claude/skills/` when installing project-local skills, eliminating cross-agent contamination where one agent's skills (e.g. `test-agent-soleri-*`) appeared in another agent's sessions (#571)
+- **knowledge-packs double-nesting on rebuild** — `@soleri/core` build script now cleans `dist/knowledge-packs/` before copying, preventing accumulation of `knowledge-packs/knowledge-packs/` on repeated local builds (#578)
+- **`soleri pack available` verified working** — 6 packs available: 3 community packs (salvador-craft, salvador-engineering, salvador-ui-pro) and 3 starter packs (architecture, design, security) (#580)
+
 ## [9.14.3] — 2026-04-03
 
 ### Fixed
