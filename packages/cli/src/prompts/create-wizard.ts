@@ -42,12 +42,16 @@ export async function runCreateWizard(initialName?: string): Promise<CreateWizar
   p.intro('Create a new Soleri agent');
 
   // ─── Step 1: Name ───────────────────────────────────────────
+  const NAME_PLACEHOLDER = 'aria';
+
   const name = (await p.text({
     message: 'What should your agent be called?',
-    placeholder: 'Ernesto',
+    placeholder: NAME_PLACEHOLDER,
     initialValue: initialName,
     validate: (v) => {
       if (!v || v.trim().length === 0) return 'Name is required';
+      if (v.trim().toLowerCase() === NAME_PLACEHOLDER)
+        return `"${NAME_PLACEHOLDER}" is just an example — type your own agent name`;
       if (v.length > 50) return 'Max 50 characters';
     },
   })) as string;
