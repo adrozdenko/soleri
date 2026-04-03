@@ -7,12 +7,10 @@
  */
 
 import { resolve } from 'node:path';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Command } from 'commander';
 import { detectAgent } from '../utils/agent-context.js';
 import * as log from '../utils/logger.js';
-import { SOLERI_HOME } from '@soleri/core';
+import { resolveVaultDbPath } from '../utils/vault-db.js';
 
 export function registerVault(program: Command): void {
   const vault = program.command('vault').description('Vault knowledge management');
@@ -31,14 +29,7 @@ export function registerVault(program: Command): void {
 
       const outputDir = opts.path ? resolve(opts.path) : resolve('knowledge');
 
-      // Find vault DB — check new path first, then legacy
-      const newDbPath = join(SOLERI_HOME, agent.agentId, 'vault.db');
-      const legacyDbPath = join(SOLERI_HOME, '..', `.${agent.agentId}`, 'vault.db');
-      const vaultDbPath = existsSync(newDbPath)
-        ? newDbPath
-        : existsSync(legacyDbPath)
-          ? legacyDbPath
-          : null;
+      const vaultDbPath = resolveVaultDbPath(agent.agentId);
 
       if (!vaultDbPath) {
         log.fail('Vault DB not found', 'Run the agent once to initialize its vault database.');

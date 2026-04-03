@@ -198,6 +198,7 @@ export interface BuildIntelligenceResult {
   strengthsComputed: number;
   globalPatterns: number;
   domainProfiles: number;
+  gcClosed: number;
 }
 
 export interface BrainIntelligenceStats {

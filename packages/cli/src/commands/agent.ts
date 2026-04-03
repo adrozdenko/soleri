@@ -74,8 +74,8 @@ function readFileTreeAgentConfig(agentPath: string): FileTreeAgentConfig | null 
       name: parsed.name,
       role: parsed.role,
       description: parsed.description,
-      domains: parsed.domains,
-      principles: parsed.principles,
+      domains: parsed.domains ?? [],
+      principles: parsed.principles ?? [],
       tone: parsed.tone,
       greeting: parsed.greeting,
       persona: parsed.persona,
@@ -491,7 +491,12 @@ export function registerAgent(program: Command): void {
         );
 
         // 4. Regenerate AGENTS.md for Codex/OpenCode
-        const agentsMd = generateAgentsMd(config as AgentConfig);
+        const safeConfig = {
+          ...config,
+          principles: config.principles ?? [],
+          domains: config.domains ?? [],
+        };
+        const agentsMd = generateAgentsMd(safeConfig as AgentConfig);
         writeFileSync(agentsMdPath, agentsMd, 'utf-8');
         p.log.success(`Regenerated ${agentsMdPath} (${agentsMd.length} bytes)`);
         return;

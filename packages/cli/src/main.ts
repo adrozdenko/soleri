@@ -33,6 +33,7 @@ import { registerVault } from './commands/vault.js';
 import { registerYolo } from './commands/yolo.js';
 import { registerDream } from './commands/dream.js';
 import { registerUpdate } from './commands/update.js';
+import { registerBrain } from './commands/brain.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -98,4 +99,5 @@ registerVault(program);
 registerYolo(program);
 registerDream(program);
 registerUpdate(program);
+registerBrain(program);
 program.parse();

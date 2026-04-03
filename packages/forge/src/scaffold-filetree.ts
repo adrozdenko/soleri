@@ -581,6 +581,29 @@ See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) f
   };
   writeFile(agentDir, '.mcp.json', JSON.stringify(mcpJson, null, 2) + '\n', filesCreated);
 
+  // ─── 3a. Write settings.local.json (Claude Code hooks) ─────
+  const settingsLocal = {
+    hooks: {
+      Stop: [
+        {
+          matcher: '',
+          hooks: [
+            {
+              type: 'command',
+              command: 'soleri brain close-orphans --max-age 1h',
+            },
+          ],
+        },
+      ],
+    },
+  };
+  writeFile(
+    agentDir,
+    'settings.local.json',
+    JSON.stringify(settingsLocal, null, 2) + '\n',
+    filesCreated,
+  );
+
   // ─── 3b. Write .opencode.json (OpenCode uses "mcp" not "mcpServers", type "local" not "stdio", command as array) ──
   const opencodeJson = {
     $schema: 'https://opencode.ai/config.json',
@@ -603,6 +626,9 @@ See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) f
       'CLAUDE.md',
       'AGENTS.md',
       'instructions/_engine.md',
+      '',
+      '# Local config — machine-specific, do not commit',
+      'settings.local.json',
       '',
       '# OS',
       '.DS_Store',
