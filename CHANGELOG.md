@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.14.3] — 2026-04-03
+
+### Fixed
+
+- **Wizard name placeholder** — pressing Enter without typing a name during `npm create soleri` no longer submits "Ernesto" as the agent identity. Placeholder changed to a neutral example ("aria") and validation now rejects the placeholder value with a clear error message (#604, #605)
+
 ## [9.14.2] — 2026-04-03
 
 ### Fixed
