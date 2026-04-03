@@ -39,6 +39,10 @@
     "./personas": {
       "types": "./dist/persona/defaults.d.ts",
       "import": "./dist/persona/defaults.js"
+    },
+    "./skills/validate-skills": {
+      "types": "./dist/skills/validate-skills.d.ts",
+      "import": "./dist/skills/validate-skills.js"
     }
   },
   "publishConfig": {

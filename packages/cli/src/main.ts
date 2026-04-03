@@ -34,6 +34,7 @@ import { registerYolo } from './commands/yolo.js';
 import { registerDream } from './commands/dream.js';
 import { registerUpdate } from './commands/update.js';
 import { registerBrain } from './commands/brain.js';
+import { registerValidateSkills } from './commands/validate-skills.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -100,4 +101,5 @@ registerYolo(program);
 registerDream(program);
 registerUpdate(program);
 registerBrain(program);
+registerValidateSkills(program);
 program.parse();
