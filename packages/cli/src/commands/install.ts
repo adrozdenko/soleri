@@ -327,7 +327,7 @@ function installLauncher(agentId: string, agentDir: string, target: Target): voi
     p.log.info('Launcher skipped: OpenCode does not have a CLI equivalent.');
     return;
   }
-  if (target === 'all') {
+  if (target === 'all' || target === 'both') {
     p.log.info('Note: Launcher is Claude-specific — other targets do not have a CLI equivalent.');
   }
 
