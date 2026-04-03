@@ -317,7 +317,20 @@ function escapeRegExp(s: string): string {
  * Create a global launcher script so the agent can be invoked by name from any directory.
  * e.g., typing `ernesto` opens Claude Code with that agent's MCP config.
  */
-function installLauncher(agentId: string, agentDir: string): void {
+function installLauncher(agentId: string, agentDir: string, target: Target): void {
+  // Only create a launcher for Claude — other targets don't have a CLI equivalent
+  if (target === 'codex') {
+    p.log.info('Launcher skipped: Codex does not have a CLI equivalent.');
+    return;
+  }
+  if (target === 'opencode') {
+    p.log.info('Launcher skipped: OpenCode does not have a CLI equivalent.');
+    return;
+  }
+  if (target === 'all') {
+    p.log.info('Note: Launcher is Claude-specific — other targets do not have a CLI equivalent.');
+  }
+
   // Launcher scripts to /usr/local/bin are Unix-only
   if (process.platform === 'win32') {
     p.log.info('Launcher scripts are not supported on Windows.');
@@ -412,7 +425,7 @@ export function registerInstall(program: Command): void {
       }
 
       // Create global launcher script
-      installLauncher(ctx.agentId, ctx.agentPath);
+      installLauncher(ctx.agentId, ctx.agentPath, target);
 
       p.log.info(`Agent ${ctx.agentId} is now available as an MCP server.`);
     });
