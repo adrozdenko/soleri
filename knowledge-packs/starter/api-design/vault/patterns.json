@@ -1,0 +1,137 @@
+[
+  {
+    "id": "api-001",
+    "type": "pattern",
+    "domain": "api",
+    "title": "Nouns for Resources, Verbs for Actions",
+    "description": "Use plural nouns for resource endpoints: /users, /orders, /products. Reserve verbs for non-CRUD actions on a resource: POST /users/:id/activate, POST /orders/:id/cancel. Let HTTP methods convey the operation — GET reads, POST creates, PUT replaces, PATCH updates, DELETE removes. Anti-example: GET /getUsers, POST /createOrder, DELETE /deleteUser/:id.",
+    "severity": "warning",
+    "tags": ["api", "rest", "naming"]
+  },
+  {
+    "id": "api-002",
+    "type": "pattern",
+    "domain": "api",
+    "title": "Consistent Error Response Shape (RFC 7807)",
+    "description": "Return errors in a uniform structure following RFC 7807 Problem Details. Every error response should include: type (URI identifying the error class), title (short human-readable summary), status (HTTP status code), detail (specific explanation for this occurrence), instance (URI identifying the specific request). Example:\n{\n  \"type\": \"https://api.example.com/errors/insufficient-funds\",\n  \"title\": \"Insufficient Funds\",\n  \"status\": 422,\n  \"detail\": \"Account balance is $10.00, but the transfer requires $25.00.\",\n  \"instance\": \"/transfers/abc-123\"\n}\nThis makes error handling consistent across all clients — no guessing which field holds the message.",
+    "severity": "warning",
+    "tags": ["api", "error-handling", "rfc7807"]
+  },
+  {
+    "id": "api-003",
+    "type": "rule",
+    "domain": "api",
+    "title": "Validate Input at the Boundary",
+    "description": "Never trust client data. Validate every field at the API boundary before it reaches business logic or the database. Use schema validation (Zod, Joi, JSON Schema) to enforce types, ranges, formats, and required fields. Reject invalid input with a 400 response and a clear list of validation errors. Example response:\n{\n  \"type\": \"https://api.example.com/errors/validation\",\n  \"title\": \"Validation Error\",\n  \"status\": 400,\n  \"detail\": \"Request body failed validation.\",\n  \"errors\": [\n    { \"field\": \"email\", \"message\": \"Must be a valid email address\" },\n    { \"field\": \"age\", \"message\": \"Must be between 0 and 150\" }\n  ]\n}\nValidation at the boundary prevents injection, type confusion, and data corruption downstream.",
+    "severity": "critical",
+    "tags": ["api", "validation", "security"]
+  },
+  {
+    "id": "api-004",
+    "type": "pattern",
+    "domain": "api",
+    "title": "Use HTTP Status Codes Correctly",
+    "description": "Match the status code to the actual outcome. Common mappings: 200 OK — successful read or update. 201 Created — resource created (include Location header). 204 No Content — successful delete or update with no body. 400 Bad Request — malformed or invalid input. 401 Unauthorized — missing or invalid credentials. 403 Forbidden — valid credentials but insufficient permissions. 404 Not Found — resource does not exist. 409 Conflict — state conflict (duplicate email, outdated version). 422 Unprocessable Entity — syntactically valid but semantically wrong. 429 Too Many Requests — rate limit exceeded. Anti-pattern: returning 200 with { \"error\": true } in the body.",
+    "severity": "warning",
+    "tags": ["api", "rest", "http"]
+  },
+  {
+    "id": "api-005",
+    "type": "pattern",
+    "domain": "api",
+    "title": "Cursor-Based Pagination Over Offset",
+    "description": "Prefer cursor-based pagination over offset/limit. Offset pagination breaks when rows are inserted or deleted between pages, and performance degrades on large offsets (the database still scans skipped rows). Cursor pagination uses an opaque token (usually an encoded ID or timestamp) for stable, performant page traversal. Response shape:\n{\n  \"data\": [...],\n  \"pagination\": {\n    \"next_cursor\": \"eyJpZCI6MTAwfQ==\",\n    \"has_more\": true\n  }\n}\nRequest: GET /users?cursor=eyJpZCI6MTAwfQ==&limit=25. Use offset only for simple admin UIs where users need to jump to arbitrary pages.",
+    "severity": "warning",
+    "tags": ["api", "pagination", "performance"]
+  },
+  {
+    "id": "api-006",
+    "type": "pattern",
+    "domain": "api",
+    "title": "Idempotency Keys for POST Operations",
+    "description": "Accept an Idempotency-Key header on POST endpoints to prevent duplicate operations from retries. The server stores the key and its response; if the same key is sent again, return the stored response without re-executing. This is critical for payment, order, and any state-changing endpoints where network retries could cause double-processing. Implementation: client generates a UUID, sends it as Idempotency-Key header. Server checks a key store (Redis/DB) — if found, return cached response; if not, process and store. Keys should expire after 24-48 hours.\nExample header: Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000",
+    "severity": "warning",
+    "tags": ["api", "idempotency", "reliability"]
+  },
+  {
+    "id": "api-007",
+    "type": "pattern",
+    "domain": "api",
+    "title": "Rate Limiting with Standard Headers",
+    "description": "Protect your API with rate limiting and communicate limits via standard headers. Include these headers on every response:\nRateLimit-Limit: 100 (max requests per window)\nRateLimit-Remaining: 42 (requests left in current window)\nRateLimit-Reset: 1620000000 (Unix timestamp when the window resets)\nWhen the limit is exceeded, return 429 Too Many Requests with a Retry-After header (seconds until the client can retry). Use sliding window or token bucket algorithms. Apply different limits per tier (free: 100/min, pro: 1000/min) and per endpoint (auth endpoints should have stricter limits).",
+    "severity": "warning",
+    "tags": ["api", "rate-limiting", "security"]
+  },
+  {
+    "id": "api-008",
+    "type": "pattern",
+    "domain": "api",
+    "title": "API Versioning via URL Prefix",
+    "description": "Version your API using a URL prefix: /v1/users, /v2/users. This is the most explicit and cacheable approach. Alternatives like Accept headers (Accept: application/vnd.api+json;version=2) are harder to test in browsers and less visible in logs. Rules: never break a published version — add fields, don't remove them. Deprecate old versions with a Sunset header and a deprecation notice in the response. Maintain at most 2 active versions. Document the migration path between versions.",
+    "severity": "warning",
+    "tags": ["api", "versioning", "architecture"]
+  },
+  {
+    "id": "api-009",
+    "type": "pattern",
+    "domain": "api",
+    "title": "HATEOAS Links for Discoverability",
+    "description": "Include hypermedia links in responses so clients can discover related actions without hardcoding URLs. Use a _links object with relation types. Example:\n{\n  \"id\": \"usr_123\",\n  \"name\": \"Jane\",\n  \"_links\": {\n    \"self\": { \"href\": \"/v1/users/usr_123\" },\n    \"orders\": { \"href\": \"/v1/users/usr_123/orders\" },\n    \"activate\": { \"href\": \"/v1/users/usr_123/activate\", \"method\": \"POST\" }\n  }\n}\nThis reduces client-server coupling — clients follow links instead of constructing URLs. Especially valuable for public APIs with external consumers.",
+    "severity": "suggestion",
+    "tags": ["api", "rest", "hateoas", "discoverability"]
+  },
+  {
+    "id": "api-010",
+    "type": "pattern",
+    "domain": "api",
+    "title": "ETags and Conditional Requests",
+    "description": "Use ETags for caching and concurrency control. Return an ETag header with a hash of the response content. Clients send If-None-Match on GET requests — return 304 Not Modified if unchanged (saves bandwidth). For updates, clients send If-Match — return 412 Precondition Failed if the resource was modified since it was read (prevents lost updates). Example flow:\nGET /users/123 → 200, ETag: \"abc123\"\nGET /users/123, If-None-Match: \"abc123\" → 304 Not Modified\nPUT /users/123, If-Match: \"abc123\" → 200 (or 412 if stale)\nThis prevents both unnecessary data transfer and write conflicts.",
+    "severity": "suggestion",
+    "tags": ["api", "caching", "concurrency", "etag"]
+  },
+  {
+    "id": "api-011",
+    "type": "pattern",
+    "domain": "api",
+    "title": "Bulk Operations Over N+1 Calls",
+    "description": "Provide batch endpoints for operations that clients commonly perform on multiple resources. Instead of making N individual requests, clients send a single batch request. Example — bulk status update:\nPATCH /v1/orders/batch\n{\n  \"operations\": [\n    { \"id\": \"ord_1\", \"status\": \"shipped\" },\n    { \"id\": \"ord_2\", \"status\": \"shipped\" }\n  ]\n}\nReturn per-item results so partial failures are visible:\n{\n  \"results\": [\n    { \"id\": \"ord_1\", \"status\": \"success\" },\n    { \"id\": \"ord_2\", \"status\": \"error\", \"error\": \"Order not found\" }\n  ]\n}\nUse 207 Multi-Status when results are mixed. Set a reasonable max batch size (100-500 items).",
+    "severity": "suggestion",
+    "tags": ["api", "batch", "performance"]
+  },
+  {
+    "id": "api-012",
+    "type": "rule",
+    "domain": "api",
+    "title": "Short-Lived JWTs with Refresh Tokens",
+    "description": "Use short-lived access tokens (5-15 minutes) paired with long-lived refresh tokens (7-30 days). Access tokens are JWTs sent in the Authorization header — they are stateless and fast to validate. Refresh tokens are opaque, stored server-side, and used only to obtain new access tokens. Never store tokens in localStorage (XSS-vulnerable) — use httpOnly cookies for refresh tokens and in-memory storage for access tokens. Rotate refresh tokens on every use (one-time use). Revoke refresh tokens server-side on logout or security events.",
+    "severity": "critical",
+    "tags": ["api", "auth", "jwt", "security"]
+  },
+  {
+    "id": "api-013",
+    "type": "anti-pattern",
+    "domain": "api",
+    "title": "Exposing Internal IDs and Stack Traces",
+    "description": "Never expose auto-increment database IDs, internal service names, or stack traces in API responses. Sequential IDs leak information about your data volume and allow enumeration attacks. Stack traces reveal implementation details useful for attackers. Use UUIDs or prefixed opaque IDs (usr_abc123, ord_xyz789) for external identifiers. In production, log stack traces server-side but return only a generic error and a correlation ID to the client:\n{\n  \"type\": \"https://api.example.com/errors/internal\",\n  \"title\": \"Internal Server Error\",\n  \"status\": 500,\n  \"detail\": \"An unexpected error occurred.\",\n  \"instance\": \"req_abc123\"\n}",
+    "severity": "critical",
+    "tags": ["api", "security", "error-handling"]
+  },
+  {
+    "id": "api-014",
+    "type": "anti-pattern",
+    "domain": "api",
+    "title": "God Endpoint That Does Everything",
+    "description": "Avoid single endpoints that accept an 'action' field to perform wildly different operations: POST /api { action: 'createUser' } and POST /api { action: 'deleteOrder' }. This makes routing opaque, documentation impossible, and per-endpoint auth/rate-limiting impractical. Each resource and operation should have its own endpoint with clear HTTP method semantics. If you need to orchestrate multiple operations, use a dedicated workflow endpoint (POST /v1/checkout) rather than a generic dispatch.",
+    "severity": "warning",
+    "tags": ["api", "rest", "architecture"]
+  },
+  {
+    "id": "api-015",
+    "type": "pattern",
+    "domain": "api",
+    "title": "Request Correlation IDs for Tracing",
+    "description": "Generate a unique correlation ID for every incoming request and propagate it through all downstream services. Accept a client-provided X-Request-ID header (validate it is a UUID), or generate one if missing. Include it in every log line, error response, and outgoing service call. This makes debugging distributed issues trivial — search by correlation ID to see the full request lifecycle. Return the ID in the response header so clients can reference it in bug reports:\nX-Request-ID: 550e8400-e29b-41d4-a716-446655440000",
+    "severity": "warning",
+    "tags": ["api", "observability", "tracing"]
+  }
+]

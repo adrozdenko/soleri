@@ -1,0 +1,9 @@
+{
+  "id": "starter-api-design",
+  "name": "API Design Starter Pack",
+  "version": "1.0.0",
+  "description": "REST conventions, error responses, validation, versioning, auth patterns, pagination — essential API design patterns.",
+  "domains": ["api", "architecture"],
+  "tier": "default",
+  "vault": { "dir": "vault" }
+}
