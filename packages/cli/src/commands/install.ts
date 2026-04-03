@@ -12,6 +12,7 @@ import { dirname, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import * as p from '@clack/prompts';
 import { detectAgent } from '../utils/agent-context.js';
+import { detectArtifacts } from '../utils/agent-artifacts.js';
 
 /** Default parent directory for agents: ~/.soleri/ */
 const SOLERI_HOME = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
@@ -25,7 +26,7 @@ export const toPosix = (p: string): string => p.replace(/\\/g, '/');
  * Resolve the absolute path to the soleri-engine binary.
  * Falls back to `npx @soleri/engine` if resolution fails (e.g. not installed globally).
  */
-function resolveEngineBin(): { command: string; bin: string } {
+export function resolveEngineBin(): { command: string; bin: string } {
   try {
     const require = createRequire(import.meta.url);
     const bin = require.resolve('@soleri/core/dist/engine/bin/soleri-engine.js');
@@ -194,7 +195,7 @@ export function installClaude(agentId: string, agentDir: string, isFileTree: boo
     p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
     process.exit(1);
   }
-  p.log.success(`Registered ${agentId} in ~/.claude.json`);
+  p.log.success(`Registered ${agentId} in ~/.claude.json (restart your session to load)`);
 
   // Pre-approve facade permissions so users don't hit approval prompts
   installClaudePermissions(agentId);
@@ -246,7 +247,7 @@ function installCodex(agentId: string, agentDir: string, isFileTree: boolean): v
     p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
     process.exit(1);
   }
-  p.log.success(`Registered ${agentId} in ~/.codex/config.toml`);
+  p.log.success(`Registered ${agentId} in ~/.codex/config.toml (restart your session to load)`);
 }
 
 function installOpencode(agentId: string, agentDir: string, isFileTree: boolean): void {
@@ -306,7 +307,9 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
     p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
     process.exit(1);
   }
-  p.log.success(`Registered ${agentId} in ~/.config/opencode/opencode.json`);
+  p.log.success(
+    `Registered ${agentId} in ~/.config/opencode/opencode.json (restart your session to load)`,
+  );
 }
 
 function escapeRegExp(s: string): string {
@@ -348,13 +351,64 @@ function installLauncher(agentId: string, agentDir: string): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Verify
+// ---------------------------------------------------------------------------
+
+export interface VerifyCheck {
+  label: string;
+  passed: boolean;
+}
+
+/**
+ * Verify the full install chain for an agent against a given target.
+ * Returns an array of pass/fail checks.
+ */
+export function verifyInstall(agentId: string, agentDir: string, target: Target): VerifyCheck[] {
+  const checks: VerifyCheck[] = [];
+
+  // 1. Agent entry exists in config for each relevant target
+  const artifacts = detectArtifacts(agentId, agentDir);
+  const targetEntries = artifacts.mcpServerEntries;
+
+  const targets: ('claude' | 'codex' | 'opencode')[] =
+    target === 'all' || target === 'both'
+      ? ['claude', 'codex', 'opencode']
+      : [target as 'claude' | 'codex' | 'opencode'];
+
+  for (const t of targets) {
+    const hasEntry = targetEntries.some((e) => e.target === t);
+    checks.push({
+      label: `Agent entry in ${t} config`,
+      passed: hasEntry,
+    });
+  }
+
+  // 2. Engine binary resolves locally (not via npx fallback)
+  const engine = resolveEngineBin();
+  checks.push({
+    label: 'Engine binary resolves (local)',
+    passed: engine.command === 'node',
+  });
+
+  // 3. agent.yaml exists at configured path
+  const agentYamlPath = join(agentDir, 'agent.yaml');
+  checks.push({
+    label: `agent.yaml exists (${agentYamlPath})`,
+    passed: existsSync(agentYamlPath),
+  });
+
+  return checks;
+}
+
 export function registerInstall(program: Command): void {
   program
     .command('install')
     .argument('[dir]', 'Agent directory or agent name (checks ~/.soleri/<name> first, then cwd)')
     .option('--target <target>', 'Registration target: claude, opencode, codex, or all', 'claude')
+    .option('--verify', 'Verify the install chain (config, engine, agent.yaml)')
     .description('Register agent as MCP server in editor config')
-    .action(async (dir?: string, opts?: { target?: string }) => {
+    .action(async (dir?: string, opts?: { target?: string; verify?: boolean }) => {
       let resolvedDir: string | undefined;
 
       if (dir) {
@@ -414,6 +468,28 @@ export function registerInstall(program: Command): void {
       // Create global launcher script
       installLauncher(ctx.agentId, ctx.agentPath);
 
-      p.log.info(`Agent ${ctx.agentId} is now available as an MCP server.`);
+      // Run verification if --verify was passed
+      if (opts?.verify) {
+        const checks = verifyInstall(ctx.agentId, ctx.agentPath, target);
+        p.log.info('');
+        p.log.info('Install verification:');
+        let allPassed = true;
+        for (const check of checks) {
+          const icon = check.passed ? '\u2705' : '\u274C';
+          const logFn = check.passed ? p.log.success : p.log.error;
+          logFn(`${icon} ${check.label}`);
+          if (!check.passed) allPassed = false;
+        }
+        if (!allPassed) {
+          p.log.error('Verification failed — one or more checks did not pass.');
+          process.exit(1);
+        }
+        p.log.success('All checks passed.');
+        return;
+      }
+
+      p.log.info(
+        `Install complete for ${ctx.agentId}. Restart your session to load the MCP server.`,
+      );
     });
 }
