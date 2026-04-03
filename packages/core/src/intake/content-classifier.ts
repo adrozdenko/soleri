@@ -46,21 +46,39 @@ Rules:
 // =============================================================================
 
 /**
+ * Build the classification system prompt, optionally injecting a canonical tag list.
+ * When canonical tags are provided, the LLM is guided to prefer them.
+ */
+export function buildClassificationPrompt(canonicalTags?: string[]): string {
+  if (!canonicalTags || canonicalTags.length === 0) {
+    return CLASSIFICATION_PROMPT;
+  }
+  const tagList = canonicalTags.join(', ');
+  return (
+    CLASSIFICATION_PROMPT +
+    `\n\nTag guidance: Use only tags from this approved list where possible: ${tagList}. Create a new tag only when nothing from the list fits the concept.`
+  );
+}
+
+/**
  * Classify a text chunk into structured knowledge items using an LLM.
  *
- * @param llm      - LLMClient instance
- * @param chunkText - The text to classify
- * @param citation  - Source citation (e.g. "book.pdf, pages 12-15")
+ * @param llm          - LLMClient instance
+ * @param chunkText    - The text to classify
+ * @param citation     - Source citation (e.g. "book.pdf, pages 12-15")
+ * @param canonicalTags - Optional canonical tag list to inject into the prompt
  * @returns Classified items, or [] on any error
  */
 export async function classifyChunk(
   llm: LLMClient,
   chunkText: string,
   citation: string,
+  canonicalTags?: string[],
 ): Promise<ClassifiedItem[]> {
   try {
+    const systemPrompt = buildClassificationPrompt(canonicalTags);
     const result = await llm.complete({
-      systemPrompt: CLASSIFICATION_PROMPT,
+      systemPrompt,
       userPrompt: chunkText,
       maxTokens: 4096,
       temperature: 0.3,

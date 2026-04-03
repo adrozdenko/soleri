@@ -148,6 +148,15 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Pass embeddingProvider for hybrid FTS5+vector search when available
   const brain = new Brain(vault, vaultManager, embeddingProvider);
 
+  // Wire canonical tag config if provided
+  if (config.canonicalTags && config.canonicalTags.length > 0) {
+    brain.setCanonicalTagConfig({
+      canonicalTags: config.canonicalTags,
+      tagConstraintMode: config.tagConstraintMode ?? 'suggest',
+      metadataTagPrefixes: config.metadataTagPrefixes ?? ['source:'],
+    });
+  }
+
   // Brain Intelligence — pattern strengths, session knowledge, intelligence pipeline
   const brainIntelligence = new BrainIntelligence(vault, brain);
 

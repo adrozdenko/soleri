@@ -62,6 +62,7 @@ export interface GroomAllResult {
   tagsNormalized: number;
   staleCount: number;
   durationMs: number;
+  synonymMerges: number;
 }
 
 // ─── Consolidation ──────────────────────────────────────────────────
@@ -71,6 +72,14 @@ export interface ConsolidationOptions {
   staleDaysThreshold?: number;
   duplicateThreshold?: number;
   contradictionThreshold?: number;
+  /** When true, run all entries through canonical tag normalization. Dry-run by default. */
+  retag?: boolean;
+  /** Canonical tag list for retag operation. Required when retag is true. */
+  canonicalTags?: string[];
+  /** Tag constraint mode for retag. Default: 'suggest'. */
+  tagConstraintMode?: 'enforce' | 'suggest' | 'off';
+  /** Metadata tag prefixes exempt from canonical normalization. Default: ['source:']. */
+  metadataTagPrefixes?: string[];
 }
 
 export interface ConsolidationResult {
@@ -80,6 +89,7 @@ export interface ConsolidationResult {
   contradictions: Contradiction[];
   mutations: number;
   durationMs: number;
+  retagged?: number;
 }
 
 // ─── Changelog & Health ─────────────────────────────────────────────

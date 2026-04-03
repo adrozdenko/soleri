@@ -79,6 +79,25 @@ export interface AgentRuntimeConfig {
   persona?: Partial<import('../persona/types.js').PersonaConfig>;
   /** Embedding provider configuration. If omitted, embeddings are disabled. */
   embedding?: EmbeddingConfig;
+  /**
+   * Canonical tag taxonomy configuration.
+   * When set, tags are normalized against this list during capture and ingestion.
+   */
+  canonicalTags?: string[];
+  /**
+   * Tag constraint mode.
+   * - 'enforce': tags not matching canonical list are dropped (unless within edit-distance 3).
+   * - 'suggest': tags are mapped to nearest canonical if within edit-distance 2 (default).
+   * - 'off': no normalization — behavior unchanged from pre-taxonomy.
+   * Default: 'suggest'
+   */
+  tagConstraintMode?: 'enforce' | 'suggest' | 'off';
+  /**
+   * Metadata tag prefixes — tags with these prefixes (e.g. 'source:') are treated as metadata
+   * and are exempt from canonical normalization.
+   * Default: ['source:']
+   */
+  metadataTagPrefixes?: string[];
 }
 
 /**

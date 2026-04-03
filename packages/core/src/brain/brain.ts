@@ -3,6 +3,7 @@ import type { SearchResult } from '../vault/vault.js';
 import type { VaultManager } from '../vault/vault-manager.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import { computeContentHash } from '../vault/content-hash.js';
+import { normalizeTags as normalizeTagsCanonical } from '../vault/tag-normalizer.js';
 import {
   tokenize,
   calculateTf,
@@ -76,12 +77,20 @@ const DUPLICATE_BLOCK_THRESHOLD = 0.8;
 const DUPLICATE_WARN_THRESHOLD = 0.6;
 const RECENCY_HALF_LIFE_DAYS = 365;
 
+/** Canonical tag taxonomy config, injected from AgentRuntimeConfig. */
+export interface CanonicalTagConfig {
+  canonicalTags: string[];
+  tagConstraintMode: 'enforce' | 'suggest' | 'off';
+  metadataTagPrefixes: string[];
+}
+
 export class Brain {
   private vault: Vault;
   private vaultManager: VaultManager | undefined;
   private embeddingProvider: EmbeddingProvider | undefined;
   private vocabulary: Map<string, number> = new Map();
   private weights: ScoringWeights = { ...DEFAULT_WEIGHTS };
+  private canonicalTagConfig: CanonicalTagConfig | undefined;
 
   constructor(vault: Vault, vaultManager?: VaultManager, embeddingProvider?: EmbeddingProvider) {
     this.vault = vault;
@@ -89,6 +98,11 @@ export class Brain {
     this.embeddingProvider = embeddingProvider;
     this.loadVocabularyFromDb();
     this.recomputeWeights();
+  }
+
+  /** Configure canonical tag taxonomy. Called by createAgentRuntime when config provides canonicalTags. */
+  setCanonicalTagConfig(cfg: CanonicalTagConfig): void {
+    this.canonicalTagConfig = cfg;
   }
 
   /** Set or replace the embedding provider at runtime. */
@@ -260,7 +274,17 @@ export class Brain {
     },
   ): CaptureResult {
     const autoTags = this.generateTags(entry.title, entry.description, entry.context);
-    const mergedTags = Array.from(new Set([...(entry.tags ?? []), ...autoTags]));
+    let mergedTags = Array.from(new Set([...(entry.tags ?? []), ...autoTags]));
+
+    // Apply canonical tag normalization if configured
+    if (this.canonicalTagConfig && this.canonicalTagConfig.tagConstraintMode !== 'off') {
+      mergedTags = normalizeTagsCanonical(
+        mergedTags,
+        this.canonicalTagConfig.canonicalTags,
+        this.canonicalTagConfig.tagConstraintMode,
+        this.canonicalTagConfig.metadataTagPrefixes,
+      );
+    }
 
     const duplicate = this.detectDuplicate(entry.title, entry.domain);
 
