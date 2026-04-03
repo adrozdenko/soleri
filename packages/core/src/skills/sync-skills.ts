@@ -1,22 +1,29 @@
 /**
  * Skill sync — discovers SKILL.md files in agent skills directories
- * and copies them to ~/.claude/skills/ for Claude Code discovery.
+ * and installs them for Claude Code discovery.
  *
- * Injects agent branding so users know which agent owns the skill.
+ * Default: project-local `.claude/skills/` with canonical (unprefixed) names
+ * and symlinks so source edits propagate automatically.
+ *
+ * Optional `global: true` installs to `~/.claude/skills/` with agent-prefixed
+ * names and file copies (symlinks to project paths don't work globally).
+ *
  * Called automatically at engine startup and by admin_setup_global.
  */
 
 import {
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative } from 'node:path';
 import { homedir } from 'node:os';
 import type { SkillMetadata, SourceType } from '../packs/types.js';
 import { classifyTrust } from './trust-classifier.js';
@@ -35,6 +42,15 @@ export interface SyncResult {
   skipped: string[];
   failed: string[];
   removed: string[];
+  /** Stale global entries cleaned up during project-local install */
+  cleanedGlobal: string[];
+}
+
+export interface SyncOptions {
+  /** Install globally to ~/.claude/skills/ with agent-prefixed names (default: false) */
+  global?: boolean;
+  /** Project root for project-local installs (default: process.cwd()) */
+  projectRoot?: string;
 }
 
 /** Error thrown when a skill requires approval due to scripts trust level */
@@ -96,42 +112,97 @@ function brandSkillContent(content: string, agentName: string, prefixedName?: st
 }
 
 /**
- * Sync skills from agent directory to ~/.claude/skills/.
- * - New skills are installed with agent branding
- * - Changed skills are overwritten (compared by mtime)
- * - Missing source skills leave target untouched (other agents may own them)
+ * Sync skills to Claude Code's skills directory.
+ *
+ * Default (project-local): installs to `<projectRoot>/.claude/skills/` using
+ * canonical (unprefixed) names and symlinks for automatic propagation.
+ *
+ * Global (`options.global: true`): installs to `~/.claude/skills/` using
+ * agent-prefixed names and file copies (symlinks to project paths won't work).
+ *
+ * Project-local installs also clean up stale `{agent}-soleri-*` entries from
+ * the global `~/.claude/skills/` directory to eliminate duplication.
  */
-export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string): SyncResult {
-  const skillsDir = join(homedir(), '.claude', 'skills');
+export function syncSkillsToClaudeCode(
+  skillsDirs: string[],
+  agentName?: string,
+  options: SyncOptions = {},
+): SyncResult {
+  const isGlobal = options.global === true;
+  const projectRoot = options.projectRoot ?? process.cwd();
+
+  const skillsDir = isGlobal
+    ? join(homedir(), '.claude', 'skills')
+    : join(projectRoot, '.claude', 'skills');
+
   const skills = discoverSkills(skillsDirs);
-  const result: SyncResult = { installed: [], updated: [], skipped: [], failed: [], removed: [] };
+  const result: SyncResult = {
+    installed: [],
+    updated: [],
+    skipped: [],
+    failed: [],
+    removed: [],
+    cleanedGlobal: [],
+  };
 
   if (skills.length === 0) return result;
 
   for (const skill of skills) {
-    const prefix = agentName ? `${agentName.toLowerCase().replace(/\s+/g, '-')}-` : '';
-    const skillName = `${prefix}${skill.name}`;
+    // Global installs use agent-prefixed names; local uses canonical names
+    const skillName =
+      isGlobal && agentName
+        ? `${agentName.toLowerCase().replace(/\s+/g, '-')}-${skill.name}`
+        : skill.name;
     const targetDir = join(skillsDir, skillName);
     const targetPath = join(targetDir, 'SKILL.md');
-    try {
-      const sourceContent = readFileSync(skill.sourcePath, 'utf-8');
-      const branded = agentName
-        ? brandSkillContent(sourceContent, agentName, skillName)
-        : sourceContent;
 
-      if (!existsSync(targetPath)) {
-        mkdirSync(targetDir, { recursive: true });
-        writeFileSync(targetPath, branded);
-        result.installed.push(skill.name);
-      } else {
-        const sourceMtime = statSync(skill.sourcePath).mtimeMs;
-        const targetMtime = statSync(targetPath).mtimeMs;
-        if (sourceMtime > targetMtime) {
+    try {
+      if (isGlobal) {
+        // Global: copy with branding (original behavior)
+        const sourceContent = readFileSync(skill.sourcePath, 'utf-8');
+        const branded = agentName
+          ? brandSkillContent(sourceContent, agentName, skillName)
+          : sourceContent;
+
+        if (!existsSync(targetPath)) {
+          mkdirSync(targetDir, { recursive: true });
           writeFileSync(targetPath, branded);
-          result.updated.push(skill.name);
+          result.installed.push(skill.name);
         } else {
-          result.skipped.push(skill.name);
+          const sourceMtime = statSync(skill.sourcePath).mtimeMs;
+          const targetMtime = statSync(targetPath).mtimeMs;
+          if (sourceMtime > targetMtime) {
+            writeFileSync(targetPath, branded);
+            result.updated.push(skill.name);
+          } else {
+            result.skipped.push(skill.name);
+          }
         }
+      } else {
+        // Project-local: symlink the skill directory
+        const sourceSkillDir = dirname(skill.sourcePath);
+
+        if (existsSync(targetDir)) {
+          // Check if it's already a symlink pointing to the right place
+          try {
+            const stat = lstatSync(targetDir);
+            if (stat.isSymbolicLink()) {
+              // Already a symlink — skip
+              result.skipped.push(skill.name);
+              continue;
+            }
+          } catch {
+            // lstat failed — remove and recreate
+          }
+          // Not a symlink — remove the copy and replace with symlink
+          rmSync(targetDir, { recursive: true, force: true });
+        }
+
+        mkdirSync(skillsDir, { recursive: true });
+        // Use relative symlink so the project stays portable
+        const relPath = relative(skillsDir, sourceSkillDir);
+        symlinkSync(relPath, targetDir);
+        result.installed.push(skill.name);
       }
     } catch {
       result.failed.push(skill.name);
@@ -142,16 +213,18 @@ export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string)
   if (agentName) {
     const prefix = `${agentName.toLowerCase().replace(/\s+/g, '-')}-`;
     const syncedNames = new Set<string>(
-      [...result.installed, ...result.updated, ...result.skipped, ...result.failed].map(
-        (name) => `${prefix}${name}`,
+      [...result.installed, ...result.updated, ...result.skipped, ...result.failed].map((name) =>
+        isGlobal ? `${prefix}${name}` : name,
       ),
     );
 
     try {
       const entries = readdirSync(skillsDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-        if (!entry.name.startsWith(prefix)) continue;
+        if (!entry.isDirectory() && !lstatSync(join(skillsDir, entry.name)).isSymbolicLink())
+          continue;
+        const matchPrefix = isGlobal ? entry.name.startsWith(prefix) : true;
+        if (!matchPrefix) continue;
         if (syncedNames.has(entry.name)) continue;
 
         // Orphan detected — stage backup then remove
@@ -160,7 +233,10 @@ export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string)
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const stagingDir = join(homedir(), '.soleri', 'staging', timestamp);
           mkdirSync(stagingDir, { recursive: true });
-          cpSync(orphanPath, join(stagingDir, entry.name), { recursive: true });
+          const orphanStat = lstatSync(orphanPath);
+          if (!orphanStat.isSymbolicLink()) {
+            cpSync(orphanPath, join(stagingDir, entry.name), { recursive: true });
+          }
           rmSync(orphanPath, { recursive: true, force: true });
           result.removed.push(entry.name);
         } catch {
@@ -172,7 +248,45 @@ export function syncSkillsToClaudeCode(skillsDirs: string[], agentName?: string)
     }
   }
 
+  // Task 3: Clean up stale global entries when doing a project-local install
+  if (!isGlobal && agentName) {
+    cleanStaleGlobalSkills(agentName, result);
+  }
+
   return result;
+}
+
+/**
+ * Remove existing `{agent}-soleri-*` entries from ~/.claude/skills/
+ * to clean up duplicates left by the old global-install behavior.
+ */
+function cleanStaleGlobalSkills(agentName: string, result: SyncResult): void {
+  const globalSkillsDir = join(homedir(), '.claude', 'skills');
+  if (!existsSync(globalSkillsDir)) return;
+
+  const prefix = `${agentName.toLowerCase().replace(/\s+/g, '-')}-soleri-`;
+
+  try {
+    const entries = readdirSync(globalSkillsDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (!entry.name.startsWith(prefix)) continue;
+
+      const staleDir = join(globalSkillsDir, entry.name);
+      try {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const stagingDir = join(homedir(), '.soleri', 'staging', timestamp);
+        mkdirSync(stagingDir, { recursive: true });
+        cpSync(staleDir, join(stagingDir, entry.name), { recursive: true });
+        rmSync(staleDir, { recursive: true, force: true });
+        result.cleanedGlobal.push(entry.name);
+      } catch {
+        // Best-effort cleanup — don't fail the sync
+      }
+    }
+  } catch {
+    // Global skills dir unreadable — nothing to clean
+  }
 }
 
 // =============================================================================

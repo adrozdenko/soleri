@@ -425,7 +425,7 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
             const agentName =
               runtime.persona?.name ??
               config.agentId.charAt(0).toUpperCase() + config.agentId.slice(1);
-            skillsResults = syncSkillsToClaudeCode(skillsSourceDirs, agentName);
+            skillsResults = syncSkillsToClaudeCode(skillsSourceDirs, agentName, { global: true });
           } else {
             // Dry run — just discover what would be synced
             const skills = discoverSkills(skillsSourceDirs);

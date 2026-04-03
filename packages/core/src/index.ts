@@ -720,7 +720,12 @@ export {
   checkSkillCompatibility,
   ApprovalRequiredError,
 } from './skills/sync-skills.js';
-export type { SkillEntry, SyncResult, ClassifySkillsOptions } from './skills/sync-skills.js';
+export type {
+  SkillEntry,
+  SyncResult,
+  SyncOptions,
+  ClassifySkillsOptions,
+} from './skills/sync-skills.js';
 
 // ─── Plugin System ──────────────────────────────────────────────────────
 export {

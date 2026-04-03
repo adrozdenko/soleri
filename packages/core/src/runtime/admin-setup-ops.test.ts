@@ -53,6 +53,8 @@ vi.mock('../skills/sync-skills.js', () => ({
     updated: [],
     skipped: [],
     failed: [],
+    removed: [],
+    cleanedGlobal: [],
   })),
 }));
 

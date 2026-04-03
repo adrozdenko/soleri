@@ -163,10 +163,12 @@ async function main(): Promise<void> {
       .join(', ')})`,
   );
 
-  // 6b. Auto-sync skills to ~/.claude/skills/
+  // 6b. Auto-sync skills to project-local .claude/skills/
   const skillsDir = join(agentDir, 'skills');
   if (existsSync(skillsDir)) {
-    const syncResult = syncSkillsToClaudeCode([skillsDir], config.name as string);
+    const syncResult = syncSkillsToClaudeCode([skillsDir], config.name as string, {
+      projectRoot: process.cwd(),
+    });
     const total = syncResult.installed.length + syncResult.updated.length;
     if (total > 0) {
       console.error(
@@ -175,6 +177,9 @@ async function main(): Promise<void> {
     }
     if (syncResult.removed.length) {
       console.error(`${tag} Removed ${syncResult.removed.length} orphaned skill(s)`);
+    }
+    if (syncResult.cleanedGlobal.length) {
+      console.error(`${tag} Cleaned ${syncResult.cleanedGlobal.length} stale global skill(s)`);
     }
   }
 

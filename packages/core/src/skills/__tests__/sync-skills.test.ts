@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, existsSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 
 let sourceDir: string;
 let fakeHome: string;
+let fakeProject: string;
 
 function setup(): void {
   const base = join(tmpdir(), `soleri-sync-test-${Date.now()}`);
@@ -19,6 +20,9 @@ function setup(): void {
 
   fakeHome = join(base, 'fake-home');
   mkdirSync(join(fakeHome, '.claude', 'skills'), { recursive: true });
+
+  fakeProject = join(base, 'fake-project');
+  mkdirSync(join(fakeProject, '.claude', 'skills'), { recursive: true });
 }
 
 function teardown(): void {
@@ -40,29 +44,36 @@ function createSourceSkill(name: string, content?: string): string {
 }
 
 /** Create a directory in the fake ~/.claude/skills/ target */
-function createTargetSkillDir(name: string): string {
+function createGlobalSkillDir(name: string): string {
   const dir = join(fakeHome, '.claude', 'skills', name);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'SKILL.md'), `---\nname: ${name}\n---\n\nStale skill.\n`);
   return dir;
 }
 
-function targetSkillsDir(): string {
+function globalSkillsDir(): string {
   return join(fakeHome, '.claude', 'skills');
 }
 
-function targetDirExists(name: string): boolean {
-  return existsSync(join(targetSkillsDir(), name));
+function globalDirExists(name: string): boolean {
+  return existsSync(join(globalSkillsDir(), name));
+}
+
+function projectSkillsDir(): string {
+  return join(fakeProject, '.claude', 'skills');
+}
+
+function projectDirExists(name: string): boolean {
+  return existsSync(join(projectSkillsDir(), name));
 }
 
 // =============================================================================
-// TESTS
+// TESTS — Global install (orphan cleanup)
 // =============================================================================
 
-describe('syncSkillsToClaudeCode — orphan cleanup', () => {
+describe('syncSkillsToClaudeCode — global orphan cleanup', () => {
   beforeEach(() => {
     setup();
-    // Mock homedir() so syncSkillsToClaudeCode writes to our temp directory
     vi.mock('node:os', async (importOriginal) => {
       const original = await importOriginal<typeof import('node:os')>();
       return {
@@ -77,56 +88,118 @@ describe('syncSkillsToClaudeCode — orphan cleanup', () => {
     teardown();
   });
 
-  it('removes orphan directories that match the agent prefix', async () => {
-    // Source has "my-skill", target has stale "test-agent-old-skill"
+  it('removes orphan directories that match the agent prefix (global)', async () => {
     createSourceSkill('my-skill');
-    createTargetSkillDir('test-agent-old-skill');
+    createGlobalSkillDir('test-agent-old-skill');
 
     const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
-    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent');
+    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent', { global: true });
 
-    // The orphan should be reported as removed
     expect(result.removed).toContain('test-agent-old-skill');
-    // The orphan directory should be gone
-    expect(targetDirExists('test-agent-old-skill')).toBe(false);
+    expect(globalDirExists('test-agent-old-skill')).toBe(false);
   });
 
-  it('does NOT remove directories that do not match the agent prefix', async () => {
+  it('does NOT remove directories that do not match the agent prefix (global)', async () => {
     createSourceSkill('my-skill');
-    // "other-agent-skill" does NOT start with "test-agent-"
-    createTargetSkillDir('other-agent-skill');
+    createGlobalSkillDir('other-agent-skill');
 
     const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
-    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent');
+    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent', { global: true });
 
-    // Should still exist — not our prefix
-    expect(targetDirExists('other-agent-skill')).toBe(true);
+    expect(globalDirExists('other-agent-skill')).toBe(true);
     expect(result.removed).not.toContain('other-agent-skill');
   });
 
-  it('does NOT remove a skill directory that was just synced', async () => {
+  it('does NOT remove a skill directory that was just synced (global)', async () => {
     createSourceSkill('active-skill');
-    // This directory matches the prefix AND is a current skill
-    createTargetSkillDir('test-agent-active-skill');
+    createGlobalSkillDir('test-agent-active-skill');
 
     const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
-    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent');
+    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent', { global: true });
 
-    // "active-skill" should be synced (installed/updated/skipped), not removed
     const synced = [...result.installed, ...result.updated, ...result.skipped];
     expect(synced).toContain('active-skill');
     expect(result.removed).not.toContain('test-agent-active-skill');
-    expect(targetDirExists('test-agent-active-skill')).toBe(true);
+    expect(globalDirExists('test-agent-active-skill')).toBe(true);
   });
 
-  it('returns an empty removed array when there are no orphans', async () => {
+  it('returns an empty removed array when there are no orphans (global)', async () => {
     createSourceSkill('only-skill');
 
     const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
-    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent');
+    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent', { global: true });
 
     expect(result.removed).toBeDefined();
     expect(Array.isArray(result.removed)).toBe(true);
     expect(result.removed).toHaveLength(0);
+  });
+});
+
+// =============================================================================
+// TESTS — Project-local install (symlinks + canonical names)
+// =============================================================================
+
+describe('syncSkillsToClaudeCode — project-local install', () => {
+  beforeEach(() => {
+    setup();
+    vi.mock('node:os', async (importOriginal) => {
+      const original = await importOriginal<typeof import('node:os')>();
+      return {
+        ...original,
+        homedir: () => fakeHome,
+      };
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    teardown();
+  });
+
+  it('creates symlinks with canonical (unprefixed) names', async () => {
+    createSourceSkill('soleri-vault-capture');
+
+    const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
+    const result = syncSkillsToClaudeCode([sourceDir], 'Ernesto', {
+      projectRoot: fakeProject,
+    });
+
+    // Should use canonical name, not "ernesto-soleri-vault-capture"
+    expect(result.installed).toContain('soleri-vault-capture');
+    expect(projectDirExists('soleri-vault-capture')).toBe(true);
+
+    // Should be a symlink
+    const stat = lstatSync(join(projectSkillsDir(), 'soleri-vault-capture'));
+    expect(stat.isSymbolicLink()).toBe(true);
+  });
+
+  it('cleans stale global entries with agent-soleri- prefix', async () => {
+    createSourceSkill('soleri-vault-capture');
+    // Simulate old global duplicates
+    createGlobalSkillDir('ernesto-soleri-vault-capture');
+    createGlobalSkillDir('ernesto-soleri-vault-navigator');
+
+    const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
+    const result = syncSkillsToClaudeCode([sourceDir], 'Ernesto', {
+      projectRoot: fakeProject,
+    });
+
+    expect(result.cleanedGlobal).toContain('ernesto-soleri-vault-capture');
+    expect(result.cleanedGlobal).toContain('ernesto-soleri-vault-navigator');
+    expect(globalDirExists('ernesto-soleri-vault-capture')).toBe(false);
+    expect(globalDirExists('ernesto-soleri-vault-navigator')).toBe(false);
+  });
+
+  it('does not clean global entries that do not match agent-soleri- prefix', async () => {
+    createSourceSkill('soleri-vault-capture');
+    createGlobalSkillDir('other-agent-skill');
+
+    const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
+    const result = syncSkillsToClaudeCode([sourceDir], 'Ernesto', {
+      projectRoot: fakeProject,
+    });
+
+    expect(result.cleanedGlobal).not.toContain('other-agent-skill');
+    expect(globalDirExists('other-agent-skill')).toBe(true);
   });
 });
