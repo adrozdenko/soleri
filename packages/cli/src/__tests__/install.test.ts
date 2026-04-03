@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { toPosix } from '../commands/install.js';
+import { toPosix, getNextStepMessage } from '../commands/install.js';
 
 // Mock @clack/prompts to suppress console output during tests
 vi.mock('@clack/prompts', () => ({
@@ -29,6 +29,39 @@ describe('toPosix', () => {
 
   it('handles empty string', () => {
     expect(toPosix('')).toBe('');
+  });
+});
+
+describe('getNextStepMessage', () => {
+  it('returns Claude-specific instruction', () => {
+    const msg = getNextStepMessage('claude');
+    expect(msg).toContain('Claude Code');
+    expect(msg).toContain('/mcp');
+  });
+
+  it('returns Codex-specific instruction', () => {
+    const msg = getNextStepMessage('codex');
+    expect(msg).toContain('Codex');
+    expect(msg).toContain('new Codex conversation');
+  });
+
+  it('returns OpenCode-specific instruction', () => {
+    const msg = getNextStepMessage('opencode');
+    expect(msg).toContain('OpenCode');
+  });
+
+  it('returns instructions for all targets when target is "all"', () => {
+    const msg = getNextStepMessage('all');
+    expect(msg).toContain('Claude Code');
+    expect(msg).toContain('Codex');
+    expect(msg).toContain('OpenCode');
+  });
+
+  it('returns instructions for all targets when target is "both"', () => {
+    const msg = getNextStepMessage('both');
+    expect(msg).toContain('Claude Code');
+    expect(msg).toContain('Codex');
+    expect(msg).toContain('OpenCode');
   });
 });
 
