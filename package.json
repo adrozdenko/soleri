@@ -46,6 +46,7 @@
     "deadcode:knip": "knip --exclude exports --exclude types --exclude duplicates --exclude unlisted --exclude binaries",
     "deadcode:ts-prune": "ts-prune",
     "test:e2e": "vitest run --config e2e/vitest.config.ts --dir e2e && vitest run --config e2e/vitest.heavy.config.ts",
+    "validate-skills": "tsx packages/core/src/skills/validate-skill-docs.ts",
     "prepare": "husky"
   },
   "dependencies": {
