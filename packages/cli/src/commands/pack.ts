@@ -11,7 +11,13 @@ import { join, resolve as pathResolve } from 'node:path';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
-import { PackLockfile, inferPackType, resolvePack, checkNpmVersion } from '@soleri/core';
+import {
+  PackLockfile,
+  inferPackType,
+  resolvePack,
+  checkNpmVersion,
+  getBuiltinKnowledgePacksDirs,
+} from '@soleri/core';
 import type { LockEntry, PackSource } from '@soleri/core';
 
 // ─── Tier display helpers ────────────────────────────────────────────
@@ -457,9 +463,14 @@ export function registerPack(program: Command): void {
         const candidates = [
           join(process.cwd(), 'knowledge-packs'),
           pathResolve(import.meta.dirname ?? '.', '..', '..', '..', '..', '..', 'knowledge-packs'),
+          ...getBuiltinKnowledgePacksDirs(),
         ];
+        const seen = new Set<string>();
         for (const c of candidates) {
-          if (existsSync(c)) searchDirs.push(c);
+          if (existsSync(c) && !seen.has(c)) {
+            searchDirs.push(c);
+            seen.add(c);
+          }
         }
       }
 

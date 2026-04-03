@@ -10,10 +10,33 @@
  */
 
 import { existsSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { resolve, join, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+
+// ─── Built-in knowledge-packs discovery ──────────────────────────────
+
+const _dirname =
+  typeof __dirname !== 'undefined' ? __dirname : dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Discover the built-in `knowledge-packs/` directory shipped with @soleri/core.
+ * Tries multiple levels up from this file's compiled location to account for
+ * different installation layouts (monorepo dev, npm install, npx).
+ */
+export function getBuiltinKnowledgePacksDirs(): string[] {
+  const dirs: string[] = [];
+  for (let i = 1; i <= 5; i++) {
+    const candidate = resolve(_dirname, ...Array<string>(i).fill('..'), 'knowledge-packs');
+    if (existsSync(candidate)) {
+      dirs.push(candidate);
+      break;
+    }
+  }
+  return dirs;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────
 

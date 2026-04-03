@@ -691,7 +691,12 @@ export {
 } from './packs/index.js';
 export type { PackState, PackTransition } from './packs/index.js';
 export { PackLockfile, inferPackType } from './packs/index.js';
-export { resolvePack, checkNpmVersion, checkVersionCompat } from './packs/index.js';
+export {
+  resolvePack,
+  checkNpmVersion,
+  checkVersionCompat,
+  getBuiltinKnowledgePacksDirs,
+} from './packs/index.js';
 export type {
   PackManifest,
   PackStatus,
