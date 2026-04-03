@@ -5,20 +5,10 @@
  * `soleri brain close-orphans --max-age 2h` — close sessions older than 2h
  */
 
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Command } from 'commander';
 import { detectAgent } from '../utils/agent-context.js';
 import { pass, fail, info, heading } from '../utils/logger.js';
-import { SOLERI_HOME } from '@soleri/core';
-
-function resolveVaultDbPath(agentId: string): string | null {
-  const newDbPath = join(SOLERI_HOME, agentId, 'vault.db');
-  const legacyDbPath = join(SOLERI_HOME, '..', `.${agentId}`, 'vault.db');
-  if (existsSync(newDbPath)) return newDbPath;
-  if (existsSync(legacyDbPath)) return legacyDbPath;
-  return null;
-}
+import { resolveVaultDbPath } from '../utils/vault-db.js';
 
 function parseMaxAge(value: string): number {
   const match = value.match(/^(\d+)(h|m|s)$/);

@@ -7,20 +7,10 @@
  * `soleri dream status`                 — show dream status + cron info
  */
 
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Command } from 'commander';
 import { detectAgent } from '../utils/agent-context.js';
 import { pass, fail, info, heading, dim } from '../utils/logger.js';
-import { SOLERI_HOME } from '@soleri/core';
-
-function resolveVaultDbPath(agentId: string): string | null {
-  const newDbPath = join(SOLERI_HOME, agentId, 'vault.db');
-  const legacyDbPath = join(SOLERI_HOME, '..', `.${agentId}`, 'vault.db');
-  if (existsSync(newDbPath)) return newDbPath;
-  if (existsSync(legacyDbPath)) return legacyDbPath;
-  return null;
-}
+import { resolveVaultDbPath } from '../utils/vault-db.js';
 
 export function registerDream(program: Command): void {
   const dream = program.command('dream').description('Vault memory consolidation');

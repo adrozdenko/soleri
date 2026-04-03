@@ -158,13 +158,17 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           const activeSessions = brainIntelligence.listSessions({ active: true, limit: 1000 });
           for (const s of activeSessions) {
             if (new Date(s.startedAt) < cutoff) {
-              brainIntelligence.lifecycle({
-                action: 'end',
-                sessionId: s.id,
-                planOutcome: 'abandoned',
-                context: 'auto-closed: orphan from previous conversation',
-              });
-              orphansClosed++;
+              try {
+                brainIntelligence.lifecycle({
+                  action: 'end',
+                  sessionId: s.id,
+                  planOutcome: 'abandoned',
+                  context: 'auto-closed: orphan from previous conversation',
+                });
+                orphansClosed++;
+              } catch {
+                // Best-effort per session — never let one failure abort the rest
+              }
             }
           }
         } catch {
