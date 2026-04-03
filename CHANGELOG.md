@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.14.2] — 2026-04-03
+
+### Fixed
+- **`soleri update` version display** — current version now shows the real installed version instead of 'unknown' (#602)
+
 ## [9.14.1] — 2026-04-03
 
 ### Added
