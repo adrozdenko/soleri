@@ -21,6 +21,7 @@ import {
   gitPush,
   ghCreateRepo,
 } from '../utils/git.js';
+import { installClaudePermissions } from './install.js';
 
 function parseSetupTarget(value?: string): SetupTarget | undefined {
   if (!value) return undefined;
@@ -314,6 +315,9 @@ export function registerCreate(program: Command): void {
               };
               writeF(configPath, JSON.stringify(claudeConfig, null, 2) + '\n', 'utf-8');
               p.log.success(`Registered ${config.id} in ~/.claude.json`);
+
+              // Pre-approve facade permissions so users don't hit approval prompts
+              installClaudePermissions(config.id);
             } catch {
               p.log.warn(
                 'Could not auto-register — run `npx @soleri/cli install --target claude` manually.',

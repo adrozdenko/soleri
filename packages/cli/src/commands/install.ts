@@ -80,6 +80,87 @@ function checkWritable(filePath: string): boolean {
   }
 }
 
+/**
+ * Facade suffixes pre-approved for every Soleri agent.
+ * Each suffix becomes `mcp__<agentId>__<agentId>_<suffix>` in settings.local.json.
+ */
+const PRE_APPROVED_FACADE_SUFFIXES = [
+  'core',
+  'vault',
+  'plan',
+  'brain',
+  'memory',
+  'admin',
+  'curator',
+  'orchestrate',
+  'control',
+  'context',
+  'agency',
+  'operator',
+  'chat',
+  'archive',
+  'sync',
+  'review',
+  'intake',
+  'links',
+  'branching',
+  'tier',
+  'loop',
+  'embedding',
+  'dream',
+  'testing',
+  'typescript',
+] as const;
+
+/**
+ * Write pre-approved facade permissions to ~/.claude/settings.local.json.
+ * Merges with existing permissions — never removes entries added by the user or other agents.
+ */
+export function installClaudePermissions(agentId: string): void {
+  const claudeDir = join(homedir(), '.claude');
+  const settingsPath = join(claudeDir, 'settings.local.json');
+
+  // Build permission entries: mcp__<agentId>__<agentId>_<suffix>
+  const newEntries = PRE_APPROVED_FACADE_SUFFIXES.map(
+    (suffix) => `mcp__${agentId}__${agentId}_${suffix}`,
+  );
+
+  let config: Record<string, unknown> = {};
+  if (existsSync(settingsPath)) {
+    try {
+      config = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+    } catch {
+      // Corrupted file — start fresh but warn
+      p.log.warn(`Could not parse ${settingsPath} — creating fresh permissions`);
+      config = {};
+    }
+  }
+
+  if (!config.permissions || typeof config.permissions !== 'object') {
+    config.permissions = {};
+  }
+  const permissions = config.permissions as Record<string, unknown>;
+
+  const existing = Array.isArray(permissions.allow) ? (permissions.allow as string[]) : [];
+  const merged = [...new Set([...existing, ...newEntries])];
+  permissions.allow = merged;
+
+  try {
+    mkdirSync(claudeDir, { recursive: true });
+    writeFileSync(settingsPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  } catch {
+    p.log.warn(`Could not write ${settingsPath} — MCP tools may require manual approval`);
+    return;
+  }
+
+  const added = merged.length - existing.length;
+  if (added > 0) {
+    p.log.success(`Pre-approved ${merged.length} facade permissions in settings.local.json`);
+  } else {
+    p.log.info('Facade permissions already configured in settings.local.json');
+  }
+}
+
 export function installClaude(agentId: string, agentDir: string, isFileTree: boolean): void {
   const configPath = join(homedir(), '.claude.json');
 
@@ -114,6 +195,9 @@ export function installClaude(agentId: string, agentDir: string, isFileTree: boo
     process.exit(1);
   }
   p.log.success(`Registered ${agentId} in ~/.claude.json`);
+
+  // Pre-approve facade permissions so users don't hit approval prompts
+  installClaudePermissions(agentId);
 }
 
 function installCodex(agentId: string, agentDir: string, isFileTree: boolean): void {
