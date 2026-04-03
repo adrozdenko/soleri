@@ -1129,6 +1129,30 @@ export class BrainIntelligence {
   // ─── Intelligence Pipeline ────────────────────────────────────────
 
   buildIntelligence(): BuildIntelligenceResult {
+    // Step 0: GC — close orphaned sessions with no execution signal older than 24h
+    const TTL_MS = 24 * 60 * 60 * 1000;
+    const cutoff = new Date(Date.now() - TTL_MS).toISOString();
+    const activeSessions = this.listSessions({ active: true, limit: 1000 });
+    let gcClosed = 0;
+    for (const s of activeSessions) {
+      const isOld = s.startedAt < cutoff;
+      const hasNoSignal =
+        s.toolsUsed.length === 0 && s.filesModified.length === 0 && s.planOutcome === null;
+      if (isOld && hasNoSignal) {
+        try {
+          this.lifecycle({
+            action: 'end',
+            sessionId: s.id,
+            planOutcome: 'abandoned',
+            context: 'auto-gc: no execution signal after TTL',
+          });
+          gcClosed++;
+        } catch {
+          // GC must never break the intelligence pipeline
+        }
+      }
+    }
+
     // Step 1: Compute and persist strengths
     const strengths = this.computeStrengths();
 
@@ -1154,6 +1178,7 @@ export class BrainIntelligence {
       strengthsComputed: strengths.length,
       globalPatterns,
       domainProfiles,
+      gcClosed,
     };
   }
 
