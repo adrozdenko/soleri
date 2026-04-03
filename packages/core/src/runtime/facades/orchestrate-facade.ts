@@ -24,7 +24,7 @@ import {
 import type { SkillStep, EvidenceType } from '../../skills/step-tracker.js';
 
 export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, governance, projectRegistry } = runtime;
+  const { vault, governance, projectRegistry, brainIntelligence } = runtime;
 
   return [
     // ─── Session Start (inline from core-ops.ts) ─────────────────────
@@ -150,6 +150,27 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           vaultStats: stats,
         });
 
+        // Auto-close orphaned brain sessions (endedAt IS NULL, startedAt < now - 2h)
+        let orphansClosed = 0;
+        try {
+          const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+          const cutoff = new Date(Date.now() - TWO_HOURS_MS);
+          const activeSessions = brainIntelligence.listSessions({ active: true });
+          for (const s of activeSessions) {
+            if (new Date(s.startedAt) < cutoff) {
+              brainIntelligence.lifecycle({
+                action: 'end',
+                sessionId: s.id,
+                planOutcome: 'abandoned',
+                context: 'auto-closed: orphan from previous conversation',
+              });
+              orphansClosed++;
+            }
+          }
+        } catch {
+          // Non-critical — don't fail session start over orphan cleanup
+        }
+
         return {
           project,
           is_new: isNew,
@@ -167,6 +188,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
             expiredThisSession: expired,
           },
           preflight,
+          orphansClosed,
           ...(stagingWarning ? { stagingWarning } : {}),
           ...(dreamInfo ? { dream: dreamInfo } : {}),
         };
