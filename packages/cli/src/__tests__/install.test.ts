@@ -63,6 +63,11 @@ describe('getNextStepMessage', () => {
     expect(msg).toContain('Codex');
     expect(msg).toContain('OpenCode');
   });
+
+  it('falls back to Claude instructions for unknown target', () => {
+    const msg = getNextStepMessage('unknown-target');
+    expect(msg).toContain('Claude Code');
+  });
 });
 
 describe('installClaude path normalization', () => {

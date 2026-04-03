@@ -326,6 +326,9 @@ export function getNextStepMessage(target: string): string {
     return [instructions.claude, instructions.codex, instructions.opencode].join('\n');
   }
 
+  if (!(target in instructions)) {
+    p.log.warn(`Unknown target "${target}" — defaulting to Claude instructions.`);
+  }
   return instructions[target] ?? instructions.claude;
 }
 
