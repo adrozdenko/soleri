@@ -1,0 +1,128 @@
+[
+  {
+    "id": "test-001",
+    "type": "pattern",
+    "domain": "testing",
+    "title": "Test Pyramid — Many Unit, Some Integration, Few E2E",
+    "description": "Structure your test suite as a pyramid: ~70% unit tests (fast, isolated, cheap), ~20% integration tests (verify module interactions), ~10% end-to-end tests (critical user flows only). Unit tests catch logic errors fast; integration tests catch wiring bugs; e2e tests catch real-world failures. An inverted pyramid (mostly e2e) leads to slow, brittle, expensive suites.\n\nExample ratio for a 500-test suite:\n- 350 unit tests (run in <10s)\n- 100 integration tests (run in <60s)\n- 50 e2e tests (run in <5min)",
+    "severity": "warning",
+    "tags": ["testing", "test-pyramid", "architecture"]
+  },
+  {
+    "id": "test-002",
+    "type": "pattern",
+    "domain": "testing",
+    "title": "Arrange-Act-Assert Structure for Every Test",
+    "description": "Every test should follow the AAA pattern for readability:\n\n```ts\ntest('calculates total with discount', () => {\n  // Arrange — set up preconditions\n  const cart = createCart([item(10), item(20)]);\n  const discount = percent(15);\n\n  // Act — execute the behavior under test\n  const total = cart.applyDiscount(discount);\n\n  // Assert — verify the outcome\n  expect(total).toBe(25.5);\n});\n```\n\nIf you can't clearly separate these three phases, the test is likely doing too much.",
+    "severity": "suggestion",
+    "tags": ["testing", "readability", "structure"]
+  },
+  {
+    "id": "test-003",
+    "type": "rule",
+    "domain": "testing",
+    "title": "Test Behavior, Not Implementation Details",
+    "description": "Tests should verify what the code does, not how it does it. Testing implementation details (private methods, internal state, call order) creates brittle tests that break on every refactor.\n\nBad — tests implementation:\n```ts\nexpect(service._cache.size).toBe(1);\nexpect(fetchSpy).toHaveBeenCalledTimes(1);\n```\n\nGood — tests behavior:\n```ts\nconst first = await service.getUser(1);\nconst second = await service.getUser(1);\nexpect(first).toEqual(second); // caching works\n```\n\nAsk: 'If I refactor internals without changing behavior, will this test break?' If yes, it's testing implementation.",
+    "severity": "warning",
+    "tags": ["testing", "refactoring", "maintainability"]
+  },
+  {
+    "id": "test-004",
+    "type": "rule",
+    "domain": "testing",
+    "title": "No Test Interdependence — Each Test Runs Alone",
+    "description": "Every test must pass when run in isolation, in any order. Never rely on shared mutable state, test execution order, or side effects from other tests.\n\nAnti-pattern:\n```ts\nlet user;\ntest('creates user', () => { user = createUser(); });\ntest('updates user', () => { updateUser(user.id, { name: 'New' }); }); // fails if run alone\n```\n\nFix: each test creates its own data in beforeEach or in the test body. Use fresh fixtures per test. Run tests with --randomize flag to catch hidden dependencies.",
+    "severity": "critical",
+    "tags": ["testing", "isolation", "reliability"]
+  },
+  {
+    "id": "test-005",
+    "type": "pattern",
+    "domain": "testing",
+    "title": "Mock at Boundaries, Not Internals",
+    "description": "Mock external dependencies (HTTP APIs, databases, file system, clocks) at the boundary of your system. Don't mock internal modules or utility functions — let them run with real code.\n\n```ts\n// Good — mock the boundary (HTTP client)\nconst api = mockHttpClient({ '/users/1': { name: 'Alice' } });\nconst service = new UserService(api);\nconst user = await service.getById(1);\nexpect(user.name).toBe('Alice');\n\n// Bad — mocking internal helper\njest.mock('./formatName'); // now you're testing nothing useful\n```\n\nBoundary mocks make tests fast and deterministic without sacrificing coverage of real logic.",
+    "severity": "warning",
+    "tags": ["testing", "mocking", "boundaries", "dependency-injection"]
+  },
+  {
+    "id": "test-006",
+    "type": "pattern",
+    "domain": "testing",
+    "title": "Use Test Factories for Complex Object Setup",
+    "description": "Create factory functions that produce valid test objects with sensible defaults. Override only what matters for each test.\n\n```ts\nfunction buildUser(overrides: Partial<User> = {}): User {\n  return {\n    id: randomId(),\n    name: 'Test User',\n    email: 'test@example.com',\n    role: 'viewer',\n    createdAt: new Date('2024-01-01'),\n    ...overrides,\n  };\n}\n\n// In tests — only specify what matters\ntest('admins can delete', () => {\n  const admin = buildUser({ role: 'admin' });\n  expect(canDelete(admin)).toBe(true);\n});\n```\n\nFactories reduce noise, prevent fragile tests, and make required vs incidental data obvious.",
+    "severity": "suggestion",
+    "tags": ["testing", "factories", "test-data", "maintainability"]
+  },
+  {
+    "id": "test-007",
+    "type": "pattern",
+    "domain": "testing",
+    "title": "One Logical Assertion Per Test",
+    "description": "Each test should verify one behavior. Multiple assertions are fine when they verify different aspects of the same behavior. Multiple assertions testing different behaviors should be separate tests.\n\nGood — one behavior, multiple asserts:\n```ts\ntest('creates user with defaults', () => {\n  const user = createUser({ name: 'Alice' });\n  expect(user.name).toBe('Alice');\n  expect(user.role).toBe('viewer');   // default\n  expect(user.active).toBe(true);     // default\n});\n```\n\nBad — two behaviors in one test:\n```ts\ntest('user lifecycle', () => {\n  const user = createUser({ name: 'Alice' });\n  expect(user.active).toBe(true);\n  deactivateUser(user.id);\n  expect(user.active).toBe(false); // separate behavior\n});\n```",
+    "severity": "suggestion",
+    "tags": ["testing", "assertions", "readability"]
+  },
+  {
+    "id": "test-008",
+    "type": "anti-pattern",
+    "domain": "testing",
+    "title": "Flaky Tests — Never Use Sleep, Use Polling",
+    "description": "Never use fixed delays (sleep, setTimeout) to wait for async operations. They're either too slow (wasted CI time) or too fast (flaky failures).\n\nBad:\n```ts\nawait sleep(2000);\nexpect(screen.getByText('Done')).toBeVisible();\n```\n\nGood:\n```ts\nawait waitFor(() => {\n  expect(screen.getByText('Done')).toBeVisible();\n}, { timeout: 5000 });\n```\n\nOther flaky test sources: shared state, network calls without mocks, time-dependent logic without fake clocks, random data without seeds. Fix the root cause — never retry-until-green.",
+    "severity": "critical",
+    "tags": ["testing", "flaky-tests", "async", "ci"]
+  },
+  {
+    "id": "test-009",
+    "type": "pattern",
+    "domain": "testing",
+    "title": "Descriptive Test Names: should_expected_when_condition",
+    "description": "Test names should describe the expected behavior and the condition that triggers it. Use a consistent naming convention across the suite.\n\nGood names:\n```ts\ntest('should return 404 when user does not exist', ...)\ntest('should apply discount when cart total exceeds 100', ...)\ntest('should reject empty email on registration', ...)\n```\n\nBad names:\n```ts\ntest('test1', ...)\ntest('works correctly', ...)\ntest('handles edge case', ...)\n```\n\nWhen a test fails, its name should tell you what broke without reading the code.",
+    "severity": "suggestion",
+    "tags": ["testing", "naming", "readability"]
+  },
+  {
+    "id": "test-010",
+    "type": "anti-pattern",
+    "domain": "testing",
+    "title": "Snapshot Testing Overuse",
+    "description": "Snapshot tests capture output and compare against a stored reference. They're useful for catching unexpected changes but dangerous when overused — developers blindly update snapshots without reviewing diffs.\n\nGood use: serialized data structures, CLI output, small component renders.\nBad use: large component trees, frequently changing UI, API responses.\n\nRules:\n- Keep snapshots small and focused\n- Always review snapshot diffs in code review\n- Use inline snapshots for small values: expect(result).toMatchInlineSnapshot()\n- If a snapshot updates on every change, replace it with explicit assertions",
+    "severity": "warning",
+    "tags": ["testing", "snapshots", "code-review"]
+  },
+  {
+    "id": "test-011",
+    "type": "rule",
+    "domain": "testing",
+    "title": "Code Coverage Is a Guide, Not a Goal",
+    "description": "Aim for ~80% code coverage as a healthy baseline. Don't chase 100% — it leads to low-value tests that test getters, setters, and trivial code.\n\nWhat to cover:\n- Business logic and domain rules\n- Error handling paths\n- Edge cases and boundary conditions\n- Integration points\n\nWhat to skip:\n- Simple getters/setters\n- Framework boilerplate\n- Generated code\n- Type-only files\n\nCoverage tells you what's NOT tested. High coverage doesn't mean good tests — you can have 100% coverage with zero meaningful assertions.",
+    "severity": "warning",
+    "tags": ["testing", "coverage", "metrics"]
+  },
+  {
+    "id": "test-012",
+    "type": "pattern",
+    "domain": "testing",
+    "title": "TDD Red-Green-Refactor Cycle",
+    "description": "Write tests before implementation in three steps:\n\n1. RED — Write a failing test for the next piece of behavior:\n```ts\ntest('should hash password before saving', async () => {\n  const user = await createUser({ password: 'plain' });\n  expect(user.password).not.toBe('plain');\n  expect(user.password).toMatch(/^\\$2b\\$/);\n});\n```\n\n2. GREEN — Write the minimum code to make it pass. No more.\n\n3. REFACTOR — Clean up the implementation while keeping tests green.\n\nTDD catches design issues early — if a test is hard to write, the API is hard to use. Small cycles (5-10 min) keep you focused and prevent over-engineering.",
+    "severity": "suggestion",
+    "tags": ["testing", "tdd", "workflow"]
+  },
+  {
+    "id": "test-013",
+    "type": "anti-pattern",
+    "domain": "testing",
+    "title": "Testing Through the UI for Logic Validation",
+    "description": "Don't write e2e or browser tests to verify business logic. If you need to check that a discount calculation is correct, test the calculation function directly — not by filling out a form, clicking submit, and reading the total from the DOM.\n\n```ts\n// Bad — slow, brittle, tests too many things at once\ntest('discount works', async () => {\n  await page.fill('#amount', '100');\n  await page.click('#apply-discount');\n  expect(await page.textContent('#total')).toBe('$85.00');\n});\n\n// Good — fast, focused, tests the actual logic\ntest('applies 15% discount', () => {\n  expect(applyDiscount(100, 0.15)).toBe(85);\n});\n```\n\nPush logic tests down to the unit level. Use e2e only for user flow validation.",
+    "severity": "warning",
+    "tags": ["testing", "test-pyramid", "e2e", "unit-tests"]
+  },
+  {
+    "id": "test-014",
+    "type": "pattern",
+    "domain": "testing",
+    "title": "Parameterized Tests for Multiple Input Cases",
+    "description": "When testing the same behavior with different inputs, use parameterized tests (test.each / it.each) instead of duplicating test bodies.\n\n```ts\ntest.each([\n  ['empty string', '', false],\n  ['valid email', 'a@b.com', true],\n  ['missing @', 'ab.com', false],\n  ['missing domain', 'a@', false],\n  ['unicode local', 'ñ@b.com', true],\n])('isValidEmail(%s) returns %s', (_label, input, expected) => {\n  expect(isValidEmail(input)).toBe(expected);\n});\n```\n\nBenefits: less duplication, easy to add cases, each case reports separately on failure. Use for validators, parsers, formatters, and any pure function with varied inputs.",
+    "severity": "suggestion",
+    "tags": ["testing", "parameterized", "dry", "readability"]
+  }
+]

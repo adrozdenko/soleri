@@ -1,0 +1,9 @@
+{
+  "id": "starter-testing",
+  "name": "Testing Starter Pack",
+  "version": "1.0.0",
+  "description": "Test pyramid, mocking strategies, TDD, flaky test prevention, assertion patterns — essential testing patterns.",
+  "domains": ["testing"],
+  "tier": "default",
+  "vault": { "dir": "vault" }
+}
