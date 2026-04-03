@@ -42,13 +42,13 @@ your AI editor reads the folder natively. The **Knowledge Engine** provides the 
 - An MCP-compatible AI editor: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://github.com/openai/codex), or [OpenCode](https://github.com/opencode-ai/opencode)
 
 ```bash
-npx --yes @soleri/cli create my-brain       # Build your second brain (~3 seconds)
-npx --yes @soleri/cli install               # Connect to your editor
-npx --yes @soleri/cli dev                   # Start learning
-npx --yes @soleri/cli doctor                # Check system health
+npx --yes soleri create my-brain       # Build your second brain (~3 seconds)
+npx --yes soleri install               # Connect to your editor
+npx --yes soleri dev                   # Start learning
+npx --yes soleri doctor                # Check system health
 ```
 
-> **npx vs global install:** The commands above use `npx --yes` which downloads and runs the CLI without a global install. The `--yes` flag skips the confirmation prompt. If you prefer a persistent install, run `npm install -g @soleri/cli` and then use bare `soleri` commands (e.g. `soleri create my-brain`).
+> **npx vs global install:** The commands above use `npx --yes` which downloads and runs the CLI without a global install. The `--yes` flag skips the confirmation prompt. If you prefer a persistent install, run `npm install -g soleri` and then use bare `soleri` commands (e.g. `soleri create my-brain`).
 
 Your second brain is ready the moment it's created. No build step needed.
 
@@ -135,7 +135,7 @@ Install expertise in one command:
 | **Community** | npm registry     | Free |
 
 ```bash
-npx --yes @soleri/cli install-knowledge ./bundles/react-patterns
+npx --yes soleri install-knowledge ./bundles/react-patterns
 ```
 
 ### Hook Packs
@@ -143,28 +143,28 @@ npx --yes @soleri/cli install-knowledge ./bundles/react-patterns
 Automated quality gates and safety guardrails for Claude Code:
 
 ```bash
-npx --yes @soleri/cli hooks add-pack safety          # Anti-deletion staging for destructive commands
-npx --yes @soleri/cli hooks add-pack flock-guard     # Parallel agent lockfile protection
-npx --yes @soleri/cli hooks add-pack clean-commits   # No AI attribution in git commits
-npx --yes @soleri/cli hooks add-pack typescript-safety  # Block unsafe TS patterns
-npx --yes @soleri/cli hooks add-pack a11y            # Accessibility enforcement
-npx --yes @soleri/cli hooks add-pack full            # All of the above
+npx --yes soleri hooks add-pack safety          # Anti-deletion staging for destructive commands
+npx --yes soleri hooks add-pack flock-guard     # Parallel agent lockfile protection
+npx --yes soleri hooks add-pack clean-commits   # No AI attribution in git commits
+npx --yes soleri hooks add-pack typescript-safety  # Block unsafe TS patterns
+npx --yes soleri hooks add-pack a11y            # Accessibility enforcement
+npx --yes soleri hooks add-pack full            # All of the above
 ```
 
 Convert your own skills into automated hooks:
 
 ```bash
-npx --yes @soleri/cli hooks convert my-hook --event PreToolUse --matcher "Write|Edit" \
+npx --yes soleri hooks convert my-hook --event PreToolUse --matcher "Write|Edit" \
   --pattern "**/src/**" --action remind --message "Check guidelines"
-npx --yes @soleri/cli hooks test my-hook             # Validate with fixtures
-npx --yes @soleri/cli hooks promote my-hook          # remind → warn → block
+npx --yes soleri hooks test my-hook             # Validate with fixtures
+npx --yes soleri hooks promote my-hook          # remind → warn → block
 ```
 
 ### Teams & Ops
 
 - **Connected vaults** — Link agent, project, and team vaults with automatic search priority.
 - **Cross-project knowledge** — Link projects and search across them with weighted relevance.
-- **Health checks** — `npx --yes @soleri/cli doctor` reports engine version, domain status, vault health, brain tracking, and team sync state.
+- **Health checks** — `npx --yes soleri doctor` reports engine version, domain status, vault health, brain tracking, and team sync state.
 
 ## Testing
 
