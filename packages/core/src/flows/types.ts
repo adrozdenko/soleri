@@ -194,6 +194,10 @@ export interface OrchestrationPlan {
   estimatedTools: number;
   context: OrchestrationContext;
   deviations?: ToolDeviation[];
+  /** Workflow prompt.md content injected by applyWorkflowOverride */
+  workflowPrompt?: string;
+  /** Name of the matched workflow */
+  workflowName?: string;
 }
 
 export interface OrchestrationContext {

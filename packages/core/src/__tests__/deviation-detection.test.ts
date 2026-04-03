@@ -156,6 +156,55 @@ describe('deviation-detection', () => {
       expect(plan.steps[1].allowedTools).toEqual(['tool_b']);
     });
 
+    it('injects workflowPrompt and workflowName when override has prompt', () => {
+      const plan = makePlan([
+        {
+          id: 'step-1',
+          name: 'Step one',
+          tools: [],
+          parallel: false,
+          requires: [],
+          status: 'pending',
+        },
+      ]);
+
+      const override: WorkflowOverride = {
+        name: 'feature-dev',
+        prompt: '# Feature Development\nFollow TDD approach.',
+        gates: [],
+        tools: [],
+      };
+
+      applyWorkflowOverride(plan, override);
+
+      expect(plan.workflowPrompt).toBe('# Feature Development\nFollow TDD approach.');
+      expect(plan.workflowName).toBe('feature-dev');
+    });
+
+    it('does not set workflowPrompt when override has no prompt', () => {
+      const plan = makePlan([
+        {
+          id: 'step-1',
+          name: 'Step one',
+          tools: [],
+          parallel: false,
+          requires: [],
+          status: 'pending',
+        },
+      ]);
+
+      const override: WorkflowOverride = {
+        name: 'test-workflow',
+        gates: [],
+        tools: [],
+      };
+
+      applyWorkflowOverride(plan, override);
+
+      expect(plan.workflowPrompt).toBeUndefined();
+      expect(plan.workflowName).toBeUndefined();
+    });
+
     it('does not set allowedTools on steps that remain tool-less', () => {
       const plan = makePlan([
         {

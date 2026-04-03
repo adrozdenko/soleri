@@ -136,10 +136,30 @@ export function applyWorkflowOverride(plan: OrchestrationPlan, override: Workflo
     }
   }
 
+  // Inject workflow prompt.md content if available
+  if (override.prompt) {
+    plan.workflowPrompt = override.prompt;
+    plan.workflowName = override.name;
+  }
+
   // Add workflow info to warnings for visibility
   plan.warnings.push(
     `Workflow override "${override.name}" applied (${override.gates.length} gate(s), ${override.tools.length} tool(s)).`,
   );
+}
+
+// ---------------------------------------------------------------------------
+// Workflow prompt preamble helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Prepend workflow prompt content to a task prompt when available.
+ * Returns the original prompt unchanged if no workflow prompt is set.
+ */
+function withWorkflowPreamble(taskPrompt: string, plan: OrchestrationPlan | undefined): string {
+  if (!plan?.workflowPrompt) return taskPrompt;
+  const header = plan.workflowName ? `## Workflow: ${plan.workflowName}` : '## Workflow';
+  return `${header}\n${plan.workflowPrompt}\n\n## Task\n${taskPrompt}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -532,7 +552,7 @@ export function createOrchestrateOps(
           const tasks =
             entry?.plan.steps.map((s) => ({
               taskId: s.id,
-              prompt: s.name,
+              prompt: withWorkflowPreamble(s.name, entry?.plan),
               workspace: process.cwd(),
               runtime: runtimeType,
               timeout: 300_000,
@@ -610,7 +630,8 @@ export function createOrchestrateOps(
         if (runtimeType && runtime.adapterRegistry) {
           const adapter = runtime.adapterRegistry.get(runtimeType);
           const entry = planStore.get(planId);
-          const prompt = entry?.plan.summary ?? `Execute plan ${planId}`;
+          const rawPrompt = entry?.plan.summary ?? `Execute plan ${planId}`;
+          const prompt = withWorkflowPreamble(rawPrompt, entry?.plan);
 
           const adapterResult = await adapter.execute({
             runId: `${planId}-${Date.now()}`,
@@ -692,6 +713,11 @@ export function createOrchestrateOps(
           const healthStatus = contextHealth.check();
           const healthWarning = buildHealthWarning(healthStatus, vault);
 
+          // Build workflow preamble for the calling agent's context
+          const workflowPreamble = entry.plan.workflowPrompt
+            ? withWorkflowPreamble(entry.plan.summary, entry.plan)
+            : undefined;
+
           return {
             plan: { id: planId, status: 'executing' },
             session,
@@ -702,6 +728,7 @@ export function createOrchestrateOps(
               toolsCalled: executionResult.toolsCalled,
               durationMs: executionResult.durationMs,
             },
+            ...(workflowPreamble ? { workflowPreamble } : {}),
             ...(healthWarning ? { contextHealth: healthWarning } : {}),
           };
         }
