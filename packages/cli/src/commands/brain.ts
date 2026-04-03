@@ -86,7 +86,7 @@ export function registerBrain(program: Command): void {
               action: 'end',
               sessionId: s.id,
               planOutcome: 'abandoned',
-              context: `auto-closed by Stop hook: no completion after ${opts.maxAge}`,
+              context: `auto-closed via CLI: no completion after ${opts.maxAge}`,
             });
             closed++;
           } catch {

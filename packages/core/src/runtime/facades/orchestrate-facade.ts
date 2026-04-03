@@ -155,7 +155,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
         try {
           const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
           const cutoff = new Date(Date.now() - TWO_HOURS_MS);
-          const activeSessions = brainIntelligence.listSessions({ active: true });
+          const activeSessions = brainIntelligence.listSessions({ active: true, limit: 1000 });
           for (const s of activeSessions) {
             if (new Date(s.startedAt) < cutoff) {
               brainIntelligence.lifecycle({
