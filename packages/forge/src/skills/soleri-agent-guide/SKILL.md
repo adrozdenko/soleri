@@ -107,7 +107,7 @@ You have persistent knowledge (vault), learned patterns (brain), structured plan
 
 ### "How do I add new capabilities?"
 
-Extensions can add new ops, facades, middleware, and hooks. Domain packs add domain-specific knowledge and validation. Use `soleri pack install <name>` or `soleri extend add-op <name>`.
+Extensions can add new ops, facades, middleware, and hooks. Use `soleri extend add-op <name>` to add capabilities.
 
 ## Anti-Patterns
 
