@@ -75,10 +75,10 @@ describe('verifyInstall', () => {
     const { verifyInstall } = await import('../commands/install.js');
     const checks = verifyInstall('test-agent', agentDir, 'claude');
 
-    const engineCheck = checks.find((c) => c.label.includes('Engine binary'));
+    const engineCheck = checks.find((c) => c.label.includes('Engine'));
     expect(engineCheck).toBeDefined();
-    // Engine resolves locally in the monorepo, so this should pass
-    expect(typeof engineCheck!.passed).toBe('boolean');
+    // Engine always resolves (local or npx fallback)
+    expect(engineCheck!.passed).toBe(true);
   });
 
   it('should check all targets when target is "all"', async () => {

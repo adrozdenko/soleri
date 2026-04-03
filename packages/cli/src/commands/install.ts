@@ -384,11 +384,14 @@ export function verifyInstall(agentId: string, agentDir: string, target: Target)
     });
   }
 
-  // 2. Engine binary resolves locally (not via npx fallback)
+  // 2. Engine binary resolves (local or npx fallback)
   const engine = resolveEngineBin();
+  const isLocal = engine.command === 'node';
   checks.push({
-    label: 'Engine binary resolves (local)',
-    passed: engine.command === 'node',
+    label: isLocal
+      ? `Engine binary resolves (${engine.bin})`
+      : 'Engine resolves via npx (fallback)',
+    passed: true,
   });
 
   // 3. agent.yaml exists at configured path
@@ -468,6 +471,10 @@ export function registerInstall(program: Command): void {
       // Create global launcher script
       installLauncher(ctx.agentId, ctx.agentPath);
 
+      p.log.info(
+        `Install complete for ${ctx.agentId}. Restart your session to load the MCP server.`,
+      );
+
       // Run verification if --verify was passed
       if (opts?.verify) {
         const checks = verifyInstall(ctx.agentId, ctx.agentPath, target);
@@ -485,12 +492,6 @@ export function registerInstall(program: Command): void {
           process.exit(1);
         }
         p.log.success('All checks passed.');
-        return;
       }
-
-
-      p.log.info(
-        `Install complete for ${ctx.agentId}. Restart your session to load the MCP server.`,
-      );
     });
 }
