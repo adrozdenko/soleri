@@ -507,6 +507,13 @@ export function registerInstall(program: Command): void {
       p.log.success(`Install complete for ${ctx.agentId}.`);
       p.log.info(getNextStepMessage(target));
 
+      // Warn users running via npx — their cache may go stale on next release
+      if (resolveEngineBin().command === 'npx') {
+        p.log.warn(
+          `Running via npx — updates may be cached. For reliable updates: npm install -g soleri`,
+        );
+      }
+
       // Run verification if --verify was passed
       if (opts?.verify) {
         const checks = verifyInstall(ctx.agentId, ctx.agentPath, target);
