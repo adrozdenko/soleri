@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import {
+  mkdirSync,
+  rmSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  lstatSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffold, previewScaffold, listAgents } from '../scaffolder.js';
@@ -353,6 +361,34 @@ describe('Scaffolder', () => {
     it('should mention skills in scaffold summary', () => {
       const result = scaffold(testConfig);
       expect(result.summary).toContain('built-in skills');
+    });
+
+    it('should sync generated skills into .claude/skills/', () => {
+      scaffold(testConfig);
+      const agentDir = join(tempDir, 'atlas');
+      const claudeSkillsDir = join(agentDir, '.claude', 'skills');
+
+      expect(existsSync(claudeSkillsDir)).toBe(true);
+
+      // Project-local sync uses symlinks, so check for both directories and symlinks
+      const syncedSkills = readdirSync(claudeSkillsDir, { withFileTypes: true })
+        .filter((e) => {
+          if (e.isDirectory()) return true;
+          // lstat to detect symlinks (readdirSync follows symlinks for isDirectory())
+          try {
+            return lstatSync(join(claudeSkillsDir, e.name)).isSymbolicLink();
+          } catch {
+            return false;
+          }
+        })
+        .map((e) => e.name);
+
+      expect(syncedSkills.length).toBeGreaterThan(0);
+
+      // Every synced skill should have a SKILL.md (existsSync follows symlinks)
+      for (const name of syncedSkills) {
+        expect(existsSync(join(claudeSkillsDir, name, 'SKILL.md'))).toBe(true);
+      }
     });
   });
 

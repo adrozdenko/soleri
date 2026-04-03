@@ -37,6 +37,7 @@ import { generateTelegramConfig } from './templates/telegram-config.js';
 import { generateTelegramAgent } from './templates/telegram-agent.js';
 import { generateTelegramSupervisor } from './templates/telegram-supervisor.js';
 import { detectInstalledDomainPacks } from './utils/detect-domain-packs.js';
+import { syncSkillsToClaudeCode } from '@soleri/core';
 
 function getSetupTarget(config: AgentConfig): SetupTarget {
   return config.setupTarget ?? 'claude';
@@ -452,6 +453,15 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     mkdirSync(skillDir, { recursive: true });
     writeFileSync(join(agentDir, path), content, 'utf-8');
     filesCreated.push(path);
+  }
+
+  // Sync generated skills into .claude/skills/ for immediate Claude Code discovery
+  try {
+    const agentSkillsDir = join(agentDir, 'skills');
+    syncSkillsToClaudeCode([agentSkillsDir], config.name, { projectRoot: agentDir });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[forge] Warning: Failed to sync skills to .claude/skills/: ${msg}`);
   }
 
   const totalOps = config.domains.length * 5 + 214; // 5 per domain + 209 semantic + 5 agent-specific
