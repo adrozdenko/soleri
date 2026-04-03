@@ -42,6 +42,7 @@ export {
 } from './templates/shared-rules.js';
 export type { EngineFeature } from './templates/shared-rules.js';
 export { generateInjectClaudeMd } from './templates/inject-claude-md.js';
+export { generateAgentsMd } from './templates/agents-md.js';
 export { generateSkills } from './templates/skills.js';
 export { generateTelegramBot } from './templates/telegram-bot.js';
 export { generateTelegramAgent } from './templates/telegram-agent.js';

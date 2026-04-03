@@ -4,8 +4,9 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { homedir } from 'node:os';
 import { detectAgent, type AgentFormat } from './agent-context.js';
+import { detectArtifacts } from './agent-artifacts.js';
+import { resolveCorePackageJsonPath } from './core-resolver.js';
 import { getInstalledPacks } from '../hook-packs/registry.js';
 
 export interface CheckResult {
@@ -166,49 +167,36 @@ export function checkInstructionsDir(agentPath: string): CheckResult {
 }
 
 export function checkEngineReachable(): CheckResult {
-  try {
-    require.resolve('@soleri/core/package.json');
+  if (resolveCorePackageJsonPath() !== null) {
     return { status: 'pass', label: 'Engine', detail: '@soleri/core reachable' };
-  } catch {
-    return {
-      status: 'fail',
-      label: 'Engine',
-      detail: '@soleri/core not found — engine is required for file-tree agents',
-    };
   }
+
+  return {
+    status: 'fail',
+    label: 'Engine',
+    detail: '@soleri/core not found — engine is required for file-tree agents',
+  };
 }
 
 function checkMcpRegistration(dir?: string): CheckResult {
   const ctx = detectAgent(dir);
   if (!ctx) return { status: 'warn', label: 'MCP registration', detail: 'no agent detected' };
 
-  const claudeJsonPath = join(homedir(), '.claude.json');
-  if (!existsSync(claudeJsonPath)) {
+  const artifacts = detectArtifacts(ctx.agentId, ctx.agentPath);
+  if (artifacts.mcpServerEntries.length === 0) {
     return {
       status: 'warn',
       label: 'MCP registration',
-      detail: '~/.claude.json not found',
+      detail: `not found in ~/.claude.json, ~/.codex/config.toml, or ~/.config/opencode/opencode.json`,
     };
   }
 
-  try {
-    const config = JSON.parse(readFileSync(claudeJsonPath, 'utf-8'));
-    const servers = config.mcpServers ?? {};
-    if (ctx.agentId in servers) {
-      return {
-        status: 'pass',
-        label: 'MCP registration',
-        detail: `registered as "${ctx.agentId}"`,
-      };
-    }
-    return {
-      status: 'warn',
-      label: 'MCP registration',
-      detail: `"${ctx.agentId}" not found in ~/.claude.json`,
-    };
-  } catch {
-    return { status: 'fail', label: 'MCP registration', detail: 'failed to parse ~/.claude.json' };
-  }
+  const targets = [...new Set(artifacts.mcpServerEntries.map((entry) => entry.target))];
+  return {
+    status: 'pass',
+    label: 'MCP registration',
+    detail: `registered in ${targets.join(', ')}`,
+  };
 }
 
 function checkCognee(): CheckResult {
