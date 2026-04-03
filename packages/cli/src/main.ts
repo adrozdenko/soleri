@@ -32,6 +32,7 @@ import { registerStaging } from './commands/staging.js';
 import { registerVault } from './commands/vault.js';
 import { registerYolo } from './commands/yolo.js';
 import { registerDream } from './commands/dream.js';
+import { registerUpdate } from './commands/update.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -96,4 +97,5 @@ registerStaging(program);
 registerVault(program);
 registerYolo(program);
 registerDream(program);
+registerUpdate(program);
 program.parse();

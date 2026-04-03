@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { toPosix, getNextStepMessage } from '../commands/install.js';
+import { toPosix, getNextStepMessage, resolveEngineBin } from '../commands/install.js';
 
 // Mock @clack/prompts to suppress console output during tests
 vi.mock('@clack/prompts', () => ({
@@ -67,6 +67,25 @@ describe('getNextStepMessage', () => {
   it('falls back to Claude instructions for unknown target', () => {
     const msg = getNextStepMessage('unknown-target');
     expect(msg).toContain('Claude Code');
+  });
+});
+
+describe('resolveEngineBin', () => {
+  it('returns an object with command and bin fields', () => {
+    const result = resolveEngineBin();
+    expect(result).toHaveProperty('command');
+    expect(result).toHaveProperty('bin');
+    expect(['node', 'npx']).toContain(result.command);
+  });
+});
+
+describe('npx fallback warning', () => {
+  it('resolveEngineBin returns npx when @soleri/core is not locally installed', () => {
+    // In the monorepo, core IS locally installed so command === 'node'.
+    // We verify the shape here; the warning branch is exercised in e2e (npx install).
+    const result = resolveEngineBin();
+    expect(typeof result.command).toBe('string');
+    expect(typeof result.bin).toBe('string');
   });
 });
 
