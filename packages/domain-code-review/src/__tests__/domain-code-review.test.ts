@@ -264,6 +264,33 @@ describe('accessibility_audit', () => {
 
     expect(result.verdict).toBe('PASS');
   });
+
+  it('should not flag button or link with visible textContent', async () => {
+    const result = (await op.handler({
+      elements: [{ tag: 'button', textContent: 'Submit' }],
+    })) as { issuesFound: number; verdict: string };
+
+    expect(result.issuesFound).toBe(0);
+    expect(result.verdict).toBe('PASS');
+  });
+
+  it('should flag button with no ariaLabel and no textContent', async () => {
+    const result = (await op.handler({
+      elements: [{ tag: 'button' }],
+    })) as { issuesFound: number; verdict: string };
+
+    expect(result.issuesFound).toBe(1);
+    expect(result.verdict).toBe('FAIL');
+  });
+
+  it('should flag input with no ariaLabel regardless of textContent absence', async () => {
+    const result = (await op.handler({
+      elements: [{ tag: 'input' }],
+    })) as { issuesFound: number; verdict: string };
+
+    expect(result.issuesFound).toBe(1);
+    expect(result.verdict).toBe('FAIL');
+  });
 });
 
 describe('validate_component_states', () => {

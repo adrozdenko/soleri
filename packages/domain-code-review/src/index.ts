@@ -77,7 +77,7 @@ const REVIEW_KNOWLEDGE = [
     category: 'accessibility',
     pattern: 'Interactive elements without accessible names',
     issue: 'Screen readers announce elements without context.',
-    fix: 'Add aria-label, aria-labelledby, or visible text content.',
+    fix: 'Add aria-label, aria-labelledby, or visible text content (buttons and links with text do not need aria-label).',
     severity: 'error' as const,
   },
   {
@@ -561,6 +561,7 @@ const playwrightOps = [
           tag: z.string(),
           role: z.string().optional(),
           ariaLabel: z.string().optional(),
+          textContent: z.string().optional(),
           tabIndex: z.number().optional(),
           contrastRatio: z.number().optional(),
         }),
@@ -571,6 +572,7 @@ const playwrightOps = [
         tag: string;
         role?: string;
         ariaLabel?: string;
+        textContent?: string;
         tabIndex?: number;
         contrastRatio?: number;
       }>;
@@ -587,7 +589,7 @@ const playwrightOps = [
 
       for (const el of elements) {
         // Missing aria-label on interactive elements
-        if (interactiveTags.has(el.tag) && !el.ariaLabel) {
+        if (interactiveTags.has(el.tag) && !el.ariaLabel && !el.textContent) {
           issues.push({
             tag: el.tag,
             issue: `Interactive <${el.tag}> missing aria-label`,
