@@ -257,20 +257,26 @@ export function syncSkillsToClaudeCode(
 }
 
 /**
- * Remove existing `{agent}-soleri-*` entries from ~/.claude/skills/
+ * Remove ALL `{agent}-soleri-*` entries from ~/.claude/skills/
  * to clean up duplicates left by the old global-install behavior.
+ *
+ * Cleans entries from ALL agents, not just the current one — any
+ * `*-soleri-*` entry in the global dir is a stale copy from a previous
+ * global install. Canonical skills now live in project-local .claude/skills/.
  */
 function cleanStaleGlobalSkills(agentName: string, result: SyncResult): void {
   const globalSkillsDir = join(homedir(), '.claude', 'skills');
   if (!existsSync(globalSkillsDir)) return;
 
-  const prefix = `${agentName.toLowerCase().replace(/\s+/g, '-')}-soleri-`;
+  // Match any agent-prefixed soleri skill: <anything>-soleri-<skillname>
+  // Canonical project-local names look like "soleri-*" (no agent prefix).
+  const stalePattern = /^.+-soleri-.+$/;
 
   try {
     const entries = readdirSync(globalSkillsDir, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      if (!entry.name.startsWith(prefix)) continue;
+      if (!stalePattern.test(entry.name)) continue;
 
       const staleDir = join(globalSkillsDir, entry.name);
       try {

@@ -625,23 +625,9 @@ See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) f
   );
 
   // ─── 6. Write user instruction files ────────────────────────
-  // Generate user.md — user-editable file with priority placement in CLAUDE.md
-  const userMdContent = [
-    '# Your Custom Rules',
-    '',
-    'Add your agent-specific rules, constraints, and preferences here.',
-    'This file gets priority placement in CLAUDE.md — it appears before engine rules.',
-    '',
-    '## Examples of what to put here:',
-    '- Project-specific conventions',
-    '- Communication preferences',
-    '- Domain expertise to emphasize',
-    '- Things to always/never do',
-    '',
-    'Delete these instructions and replace with your own content.',
-    '',
-  ].join('\n');
-  writeFile(agentDir, 'instructions/user.md', userMdContent, filesCreated);
+  // user.md is intentionally NOT scaffolded — it's an owner-override file that
+  // users create only when they need behavioral rules beyond the engine defaults.
+  // See docs/guides/customizing.md for when and how to use it.
 
   // Generate domain-specific instruction file if agent has specialized domains
   if (config.domains.length > 0) {
