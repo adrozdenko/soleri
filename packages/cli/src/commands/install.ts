@@ -194,7 +194,7 @@ export function installClaude(agentId: string, agentDir: string, isFileTree: boo
     p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
     process.exit(1);
   }
-  p.log.success(`Registered ${agentId} in ~/.claude.json`);
+  p.log.success(`Registered ${agentId} in ~/.claude.json (restart your session to load)`);
 
   // Pre-approve facade permissions so users don't hit approval prompts
   installClaudePermissions(agentId);
@@ -246,7 +246,7 @@ function installCodex(agentId: string, agentDir: string, isFileTree: boolean): v
     p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
     process.exit(1);
   }
-  p.log.success(`Registered ${agentId} in ~/.codex/config.toml`);
+  p.log.success(`Registered ${agentId} in ~/.codex/config.toml (restart your session to load)`);
 }
 
 function installOpencode(agentId: string, agentDir: string, isFileTree: boolean): void {
@@ -306,7 +306,9 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
     p.log.error(`Cannot write to ${configPath}. Check file permissions.`);
     process.exit(1);
   }
-  p.log.success(`Registered ${agentId} in ~/.config/opencode/opencode.json`);
+  p.log.success(
+    `Registered ${agentId} in ~/.config/opencode/opencode.json (restart your session to load)`,
+  );
 }
 
 function escapeRegExp(s: string): string {
@@ -414,6 +416,8 @@ export function registerInstall(program: Command): void {
       // Create global launcher script
       installLauncher(ctx.agentId, ctx.agentPath);
 
-      p.log.info(`Agent ${ctx.agentId} is now available as an MCP server.`);
+      p.log.info(
+        `Install complete for ${ctx.agentId}. Restart your session to load the MCP server.`,
+      );
     });
 }
