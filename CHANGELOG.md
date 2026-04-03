@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.14.1] — 2026-04-03
+
+### Added
+- **`soleri update` command** — self-updater that fetches the latest version from npm, installs globally via `npm install -g soleri@latest`, and prints a clear `Updated X → Y` diff. Exits cleanly if already on latest (#598, #600)
+
+### Fixed
+- **npx stale-cache warning** — `soleri install` now warns when running via npx fallback that updates may be cached, and recommends `npm install -g soleri` for reliable updates (#599, #600)
+
 ## [9.14.0] — 2026-04-03
 
 ### Added
