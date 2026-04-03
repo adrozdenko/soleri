@@ -18,6 +18,8 @@ v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v9.5 → v9.6 → v9.7 → v10.0
 | **v9.5**   | Performance, Windows & Forge Polish | 16     | **Shipped 2026-03-27** | v9.4                        | #401              |
 | **v9.6**   | Adapter & Subagent Foundations      | 12     | **Shipped 2026-03-27** | v9.5                        | —                 |
 | **v9.7.2** | Hook Pack Settings Fix              | 1      | **Shipped 2026-03-29**  | v9.7.1                      | —                 |
+| **v9.14.0** | Install reliability, --verify flag, target-aware messaging | — | **Shipped 2026-04-03** | v9.13.1 | #597 |
+| **v9.13.1** | Auto-register MCP server on create  | —   | **Shipped 2026-04-02**  | v9.13.0                     | —                 |
 | **v9.13.0** | Neutral persona, wizard simplification | —   | **Shipped 2026-04-02**  | v9.12.1                     | #548              |
 | **v9.12.1** | CI fixes, clean-machine install      | —     | **Shipped 2026-04-02**  | v9.12.0                     | #544              |
 | **v9.12.0** | Embeddings, Dream, Orphan Cleanup   | —     | **Shipped 2026-04-01**  | v9.11.0                     | —                 |

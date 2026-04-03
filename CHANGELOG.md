@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.14.0] — 2026-04-03
+
+### Added
+- **`--verify` flag** — `soleri install --verify` runs an end-to-end health check after install: config exists, agent entry present, engine resolves, `agent.yaml` exists. Exits non-zero on failure (#585, #593)
+- **Target-aware restart instructions** — post-install message now tells you exactly how to reload for your editor: Claude Code session restart, new Codex conversation, or OpenCode restart (#584, #596)
+- **Pre-approved facade permissions** — `soleri install` and `soleri create` now write 25 pre-approved MCP facade permissions to `~/.claude/settings.local.json`, eliminating approval prompts for routine tool calls (#568)
+
+### Fixed
+- **Install success message** — replaced misleading "Install complete. Restart your session" with factual "Config written to `<path>`" (#583, #588)
+- **Launcher target-aware** — `soleri install --target codex` and `--target opencode` now skip launcher creation with a clear explanation. `--target all`/`both` creates a Claude launcher and notes it's Claude-specific (#586, #594)
+
+### Documentation
+- **npx as primary invocation** — README and docs updated to use `npx --yes soleri` (public package name) instead of internal `@soleri/cli` (#587, #591)
+
 ## [9.13.1] — 2026-04-02
 
 ### Added
