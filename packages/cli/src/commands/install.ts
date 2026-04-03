@@ -312,6 +312,26 @@ function installOpencode(agentId: string, agentDir: string, isFileTree: boolean)
   );
 }
 
+/**
+ * Return target-specific post-install restart instructions.
+ */
+export function getNextStepMessage(target: string): string {
+  const instructions: Record<string, string> = {
+    claude: 'Next step: Restart your Claude Code session (or run `/mcp` to reload MCP servers).',
+    codex: 'Next step: Start a new Codex conversation to load the MCP server.',
+    opencode: 'Next step: Restart OpenCode to load the MCP server.',
+  };
+
+  if (target === 'both' || target === 'all') {
+    return [instructions.claude, instructions.codex, instructions.opencode].join('\n');
+  }
+
+  if (!(target in instructions)) {
+    p.log.warn(`Unknown target "${target}" — defaulting to Claude instructions.`);
+  }
+  return instructions[target] ?? instructions.claude;
+}
+
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -484,9 +504,8 @@ export function registerInstall(program: Command): void {
       // Create global launcher script
       installLauncher(ctx.agentId, ctx.agentPath, target);
 
-      p.log.info(
-        `Install complete for ${ctx.agentId}. Restart your session to load the MCP server.`,
-      );
+      p.log.success(`Install complete for ${ctx.agentId}.`);
+      p.log.info(getNextStepMessage(target));
 
       // Run verification if --verify was passed
       if (opts?.verify) {
