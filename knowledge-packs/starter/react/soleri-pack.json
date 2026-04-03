@@ -1,0 +1,9 @@
+{
+  "id": "starter-react",
+  "name": "React Starter Pack",
+  "version": "1.0.0",
+  "description": "Hook rules, component patterns, state management, performance optimization, error boundaries — essential React patterns.",
+  "domains": ["react", "frontend"],
+  "tier": "default",
+  "vault": { "dir": "vault" }
+}
