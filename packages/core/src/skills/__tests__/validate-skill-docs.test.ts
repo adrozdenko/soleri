@@ -5,8 +5,11 @@
 import { describe, it, expect } from 'vitest';
 import { validateSkillDocs } from '../validate-skill-docs.js';
 
-// Vitest runs from the workspace root (monorepo root)
-const ROOT_DIR = process.cwd();
+// Resolve monorepo root from this file's location (packages/core/src/skills/__tests__)
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const __dirname2 = dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = resolve(__dirname2, '../../../../..');
 
 describe('validateSkillDocs', () => {
   it('builds a non-empty schema registry', () => {
