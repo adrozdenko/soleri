@@ -6,7 +6,6 @@
  */
 
 import { join, dirname } from 'node:path';
-import { createRequire } from 'node:module';
 import {
   existsSync,
   readFileSync,
@@ -26,6 +25,7 @@ import { PackLockfile, checkNpmVersion, checkVersionCompat, SOLERI_HOME } from '
 import {
   generateClaudeMdTemplate,
   generateInjectClaudeMd,
+  generateAgentsMd,
   generateSkills,
 } from '@soleri/forge/lib';
 import { composeClaudeMd, getModularEngineRules, AgentYamlSchema } from '@soleri/forge/lib';
@@ -45,6 +45,58 @@ function readEngineFeatures(agentPath: string): EngineFeature[] | undefined {
     return parsed.engine?.features as EngineFeature[] | undefined;
   } catch {
     return undefined;
+  }
+}
+
+/** Subset of AgentConfig fields sourced from a file-tree agent.yaml. */
+interface FileTreeAgentConfig {
+  id?: string;
+  name?: string;
+  role?: string;
+  description?: string;
+  domains?: string[];
+  principles?: string[];
+  tone?: string;
+  greeting?: string;
+  persona?: Record<string, unknown>;
+  vaults?: Array<{ name: string; path: string; priority?: number }>;
+  setupTarget?: string;
+}
+
+function readFileTreeAgentConfig(agentPath: string): FileTreeAgentConfig | null {
+  try {
+    const yamlPath = join(agentPath, 'agent.yaml');
+    if (!existsSync(yamlPath)) return null;
+
+    const parsed = AgentYamlSchema.parse(parseYaml(readFileSync(yamlPath, 'utf-8')));
+    const cfg: FileTreeAgentConfig = {
+      id: parsed.id,
+      name: parsed.name,
+      role: parsed.role,
+      description: parsed.description,
+      domains: parsed.domains,
+      principles: parsed.principles,
+      tone: parsed.tone,
+      greeting: parsed.greeting,
+      persona: parsed.persona,
+      vaults: parsed.vaults,
+      setupTarget: parsed.setup?.target ?? 'claude',
+    };
+    return cfg;
+  } catch {
+    return null;
+  }
+}
+
+function readAgentCoreVersion(agentPath: string): string | null {
+  const corePkgPath = join(agentPath, 'node_modules', '@soleri', 'core', 'package.json');
+  if (!existsSync(corePkgPath)) return null;
+
+  try {
+    const pkg = JSON.parse(readFileSync(corePkgPath, 'utf-8')) as { version?: unknown };
+    return typeof pkg.version === 'string' ? pkg.version : null;
+  } catch {
+    return null;
   }
 }
 
@@ -83,14 +135,7 @@ export function registerAgent(program: Command): void {
         }
 
         // Resolve engine version via require.resolve
-        let engineVersion = 'not installed';
-        try {
-          const req = createRequire(join(ctx.agentPath, 'package.json'));
-          const corePkgPath = req.resolve('@soleri/core/package.json');
-          engineVersion = JSON.parse(readFileSync(corePkgPath, 'utf-8')).version || 'unknown';
-        } catch {
-          engineVersion = 'not installed';
-        }
+        const engineVersion = readAgentCoreVersion(ctx.agentPath) ?? 'not installed';
 
         // Check for core update
         const latestCore = checkNpmVersion('@soleri/core');
@@ -219,14 +264,7 @@ export function registerAgent(program: Command): void {
       // ─── File-tree agent (v7+) ────────────────────────────────
       if (ctx.format === 'filetree') {
         // Resolve installed @soleri/core version
-        let installedVersion: string | null = null;
-        try {
-          const req = createRequire(import.meta.url);
-          const corePkgPath = req.resolve('@soleri/core/package.json');
-          installedVersion = JSON.parse(readFileSync(corePkgPath, 'utf-8')).version ?? null;
-        } catch {
-          // @soleri/core not resolvable — will show as unknown
-        }
+        const installedVersion = readAgentCoreVersion(ctx.agentPath);
 
         // Check latest version on npm
         const latestCore = checkNpmVersion('@soleri/core');
@@ -382,6 +420,14 @@ export function registerAgent(program: Command): void {
       if (ctx.format === 'filetree') {
         const enginePath = join(ctx.agentPath, 'instructions', '_engine.md');
         const claudeMdPath = join(ctx.agentPath, 'CLAUDE.md');
+        const agentsMdPath = join(ctx.agentPath, 'AGENTS.md');
+        const config = readFileTreeAgentConfig(ctx.agentPath);
+
+        if (!config) {
+          p.log.error('Could not parse agent.yaml for AGENTS.md regeneration.');
+          process.exit(1);
+          return;
+        }
 
         // Generate skills from latest forge templates
         const skillFiles = opts.skipSkills
@@ -391,6 +437,7 @@ export function registerAgent(program: Command): void {
         if (opts.dryRun) {
           p.log.info(`Would regenerate: ${enginePath}`);
           p.log.info(`Would regenerate: ${claudeMdPath}`);
+          p.log.info(`Would regenerate: ${agentsMdPath}`);
           if (skillFiles.length > 0) {
             const newSkills = skillFiles.filter(
               ([relPath]) => !existsSync(join(ctx.agentPath, relPath)),
@@ -442,6 +489,11 @@ export function registerAgent(program: Command): void {
         p.log.success(
           `Regenerated ${claudeMdPath} (${result.sources.length} sources, ${result.content.length} bytes)`,
         );
+
+        // 4. Regenerate AGENTS.md for Codex/OpenCode
+        const agentsMd = generateAgentsMd(config as AgentConfig);
+        writeFileSync(agentsMdPath, agentsMd, 'utf-8');
+        p.log.success(`Regenerated ${agentsMdPath} (${agentsMd.length} bytes)`);
         return;
       }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { toPosix, getNextStepMessage, resolveEngineBin } from '../commands/install.js';
@@ -82,20 +82,17 @@ describe('resolveEngineBin', () => {
 describe('npx fallback warning', () => {
   afterEach(() => {
     vi.resetModules();
-    vi.doUnmock('node:module');
+    vi.doUnmock('../utils/core-resolver.js');
   });
 
   it('returns npx fallback when core resolution fails', async () => {
-    vi.doMock('node:module', async () => {
-      const actual = await vi.importActual<typeof import('node:module')>('node:module');
+    vi.doMock('../utils/core-resolver.js', async () => {
+      const actual = await vi.importActual<typeof import('../utils/core-resolver.js')>(
+        '../utils/core-resolver.js',
+      );
       return {
         ...actual,
-        createRequire: () =>
-          ({
-            resolve: () => {
-              throw new Error('MODULE_NOT_FOUND');
-            },
-          }) as ReturnType<typeof import('node:module').createRequire>,
+        resolveInstalledEngineBin: () => null,
       };
     });
 

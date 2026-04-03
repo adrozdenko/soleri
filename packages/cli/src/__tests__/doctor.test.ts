@@ -117,5 +117,50 @@ describe('doctor command', () => {
       expect(labels).toContain('Node.js');
       expect(labels).toContain('npm');
     });
+
+    it('should detect Codex MCP registration for file-tree agents', { timeout: 20_000 }, () => {
+      const originalHome = process.env.HOME ?? '';
+      const originalUserProfile = process.env.USERPROFILE ?? '';
+      process.env.HOME = tempDir;
+      process.env.USERPROFILE = tempDir;
+
+      try {
+        const agentDir = join(tempDir, 'agent');
+        mkdirSync(join(agentDir, 'instructions'), { recursive: true });
+        mkdirSync(join(tempDir, '.codex'), { recursive: true });
+
+        writeFileSync(
+          join(agentDir, 'agent.yaml'),
+          [
+            'id: test-agent',
+            'name: Test Agent',
+            'role: A test agent',
+            'description: A minimal file-tree agent for doctor testing',
+            'domains: []',
+            'principles: []',
+            '',
+          ].join('\n'),
+        );
+        writeFileSync(join(agentDir, 'instructions', 'usage.md'), '# Usage');
+        writeFileSync(
+          join(tempDir, '.codex', 'config.toml'),
+          [
+            '[mcp_servers.test-agent]',
+            'command = "node"',
+            'args = ["engine.js", "--agent", "agent.yaml"]',
+            '',
+          ].join('\n'),
+        );
+
+        const results = runAllChecks(agentDir);
+        const registration = results.find((r) => r.label === 'MCP registration');
+        expect(registration).toBeDefined();
+        expect(registration!.status).toBe('pass');
+        expect(registration!.detail).toContain('codex');
+      } finally {
+        process.env.HOME = originalHome;
+        process.env.USERPROFILE = originalUserProfile;
+      }
+    });
   });
 });

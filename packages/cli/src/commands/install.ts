@@ -1,5 +1,4 @@
 import type { Command } from 'commander';
-import { createRequire } from 'node:module';
 import {
   accessSync,
   constants as fsConstants,
@@ -13,6 +12,7 @@ import { homedir } from 'node:os';
 import * as p from '@clack/prompts';
 import { detectAgent } from '../utils/agent-context.js';
 import { detectArtifacts } from '../utils/agent-artifacts.js';
+import { resolveInstalledEngineBin } from '../utils/core-resolver.js';
 
 /** Default parent directory for agents: ~/.soleri/ */
 const SOLERI_HOME = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
@@ -27,13 +27,8 @@ export const toPosix = (p: string): string => p.replace(/\\/g, '/');
  * Falls back to `npx @soleri/engine` if resolution fails (e.g. not installed globally).
  */
 export function resolveEngineBin(): { command: string; bin: string } {
-  try {
-    const require = createRequire(import.meta.url);
-    const bin = require.resolve('@soleri/core/dist/engine/bin/soleri-engine.js');
-    return { command: 'node', bin };
-  } catch {
-    return { command: 'npx', bin: '@soleri/engine' };
-  }
+  const bin = resolveInstalledEngineBin();
+  return bin ? { command: 'node', bin } : { command: 'npx', bin: '@soleri/engine' };
 }
 
 /** MCP server entry for file-tree agents (resolved engine path, no npx) */

@@ -11,6 +11,7 @@ import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { ClassifiedItem } from './types.js';
 import { classifyChunk } from './content-classifier.js';
 import { dedupItems } from './dedup-gate.js';
+import { normalizeTags as normalizeTagsCanonical } from '../vault/tag-normalizer.js';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -26,6 +27,12 @@ export interface IngestOptions {
   tags?: string[];
   /** Max chars per chunk for LLM classification. Default 4000. */
   chunkSize?: number;
+  /** Canonical tag list for normalization. If omitted, no canonical normalization. */
+  canonicalTags?: string[];
+  /** Tag constraint mode. Default: 'suggest'. */
+  tagConstraintMode?: 'enforce' | 'suggest' | 'off';
+  /** Metadata tag prefixes exempt from canonical normalization. Default: ['source:']. */
+  metadataTagPrefixes?: string[];
 }
 
 export interface IngestResult {
@@ -42,13 +49,28 @@ const FETCH_TIMEOUT_MS = 15000;
 
 // ─── Class ───────────────────────────────────────────────────────────
 
+interface CanonicalTagConfig {
+  canonicalTags: string[];
+  tagConstraintMode: 'enforce' | 'suggest' | 'off';
+  metadataTagPrefixes: string[];
+}
+
 export class TextIngester {
   private vault: Vault;
   private llm: LLMClient | null;
+  private canonicalTagConfig: CanonicalTagConfig | null = null;
 
   constructor(vault: Vault, llm: LLMClient | null) {
     this.vault = vault;
     this.llm = llm;
+  }
+
+  /**
+   * Wire canonical tag config from runtime — used as defaults for all ingest calls.
+   * Caller-provided options in ingestText/ingestUrl/ingestBatch still take precedence.
+   */
+  setCanonicalTagConfig(cfg: CanonicalTagConfig): void {
+    this.canonicalTagConfig = cfg;
   }
 
   /**
@@ -101,11 +123,19 @@ export class TextIngester {
     const domain = opts?.domain ?? 'general';
     const extraTags = opts?.tags ?? [];
 
+    // Resolve canonical config — caller opts take precedence over runtime-wired config
+    const canonicalTagsForClassify = opts?.canonicalTags ?? this.canonicalTagConfig?.canonicalTags;
+
     // Classify all chunks
     const allItems: ClassifiedItem[] = [];
     for (const chunk of chunks) {
       // oxlint-disable-next-line eslint(no-await-in-loop)
-      const items = await classifyChunk(this.llm, chunk, `${source.type}: ${source.title}`);
+      const items = await classifyChunk(
+        this.llm,
+        chunk,
+        `${source.type}: ${source.title}`,
+        canonicalTagsForClassify,
+      );
       allItems.push(...items);
     }
 
@@ -121,18 +151,37 @@ export class TextIngester {
     // Build source attribution for context field
     const attribution = buildAttribution(source);
 
+    // Metadata tags use 'source:' prefix so they're exempt from canonical normalization
+    const metadataTags = [`source:ingested`, `source:${source.type}`];
+
+    // Apply canonical tag normalization if configured
+    // Caller-provided options take precedence over runtime-wired config
+    const canonicalTags = opts?.canonicalTags ?? this.canonicalTagConfig?.canonicalTags;
+    const tagMode =
+      opts?.tagConstraintMode ?? this.canonicalTagConfig?.tagConstraintMode ?? 'suggest';
+
     // Store in vault
-    const entries: IntelligenceEntry[] = unique.map((item, i) => ({
-      id: `ingest-${source.type}-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
-      type: mapType(item.type),
-      domain,
-      title: item.title,
-      description: item.description,
-      severity: mapSeverity(item.severity),
-      tags: [...(item.tags ?? []), ...extraTags, 'ingested', source.type],
-      context: attribution,
-      origin: 'user' as const,
-    }));
+    const entries: IntelligenceEntry[] = unique.map((item, i) => {
+      const rawTags = [...(item.tags ?? []), ...extraTags];
+      // metaPrefixes not passed here — source: tags are added after normalization,
+      // so there is nothing to exempt at this point.
+      const normalizedTags =
+        canonicalTags && tagMode !== 'off'
+          ? normalizeTagsCanonical(rawTags, canonicalTags, tagMode)
+          : rawTags;
+
+      return {
+        id: `ingest-${source.type}-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        type: mapType(item.type),
+        domain,
+        title: item.title,
+        description: item.description,
+        severity: mapSeverity(item.severity),
+        tags: [...normalizedTags, ...metadataTags],
+        context: attribution,
+        origin: 'user' as const,
+      };
+    });
 
     if (entries.length > 0) {
       this.vault.seed(entries);

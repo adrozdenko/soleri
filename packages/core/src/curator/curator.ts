@@ -40,6 +40,10 @@ import {
 import { initializeTables } from './schema.js';
 import { computeHealthAudit, type HealthDataProvider } from './health-audit.js';
 import { enrichEntryMetadata } from './metadata-enricher.js';
+import {
+  computeEditDistance,
+  normalizeTags as normalizeTagsCanonical,
+} from '../vault/tag-normalizer.js';
 
 // ─── Constants ──────────────────────────────────────────────────────
 
@@ -359,13 +363,139 @@ export class Curator {
       if (batch.length < DEFAULT_BATCH_SIZE) break;
       offset += DEFAULT_BATCH_SIZE;
     }
+
+    // Synonym merge: detect tag pairs with edit-distance ≤ 1 and merge lower-frequency into higher
+    const synonymMerges = this.mergeSynonymTags();
+
     return {
       totalEntries,
       groomedCount: totalEntries,
       tagsNormalized,
       staleCount,
       durationMs: Date.now() - start,
+      synonymMerges,
     };
+  }
+
+  /**
+   * Detect tag pairs where edit-distance ≤ 1 (e.g. 'workflow'/'workflows') and merge
+   * the lower-frequency tag into the higher-frequency one across all entries.
+   * Returns count of tags merged.
+   */
+  private mergeSynonymTags(): number {
+    // Collect all unique tags and their usage counts
+    const rows = this.provider.all<{ tags: string }>(
+      'SELECT tags FROM entries WHERE tags IS NOT NULL',
+    );
+    const tagCounts = new Map<string, number>();
+
+    for (const row of rows) {
+      let tags: string[];
+      try {
+        tags = JSON.parse(row.tags) as string[];
+      } catch {
+        continue;
+      }
+      for (const tag of tags) {
+        if (typeof tag === 'string' && tag.length > 0) {
+          tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+        }
+      }
+    }
+
+    const allTags = Array.from(tagCounts.keys());
+    if (allTags.length < 2) return 0;
+
+    // Build synonym merge map: minorTag → majorTag
+    // Only merge if edit-distance ≤ 1 and major has higher or equal frequency
+    const mergeMap = new Map<string, string>(); // minor → major
+    const processed = new Set<string>();
+
+    // Bucket tags by length to reduce comparisons from O(n²) to O(n * avg_bucket_size)
+    const buckets = new Map<number, string[]>();
+    for (const tag of allTags) {
+      const len = tag.length;
+      const bucket = buckets.get(len);
+      if (bucket) {
+        bucket.push(tag);
+      } else {
+        buckets.set(len, [tag]);
+      }
+    }
+
+    for (const a of allTags) {
+      if (processed.has(a)) continue;
+      // Only compare against tags of the same or adjacent length (edit distance ≤ 1)
+      const candidates: string[] = [
+        ...(buckets.get(a.length) ?? []),
+        ...(buckets.get(a.length - 1) ?? []),
+        ...(buckets.get(a.length + 1) ?? []),
+      ];
+      for (const b of candidates) {
+        if (b === a) continue;
+        if (processed.has(a) || processed.has(b)) continue;
+        if (computeEditDistance(a, b) <= 1) {
+          const countA = tagCounts.get(a) ?? 0;
+          const countB = tagCounts.get(b) ?? 0;
+          // Merge lower-frequency into higher-frequency
+          if (countA >= countB) {
+            mergeMap.set(b, a);
+            processed.add(b);
+          } else {
+            mergeMap.set(a, b);
+            processed.add(a);
+          }
+        }
+      }
+    }
+
+    if (mergeMap.size === 0) return 0;
+
+    // Apply merges to all affected entries
+    let mergeCount = 0;
+    const allEntryRows = this.provider.all<{ id: string; tags: string }>(
+      'SELECT id, tags FROM entries WHERE tags IS NOT NULL',
+    );
+
+    for (const row of allEntryRows) {
+      let tags: string[];
+      try {
+        tags = JSON.parse(row.tags) as string[];
+      } catch {
+        continue;
+      }
+
+      let changed = false;
+      const updated = [
+        ...new Set(
+          tags.map((tag) => {
+            const replacement = mergeMap.get(tag);
+            if (replacement) {
+              changed = true;
+              return replacement;
+            }
+            return tag;
+          }),
+        ),
+      ];
+
+      if (changed) {
+        this.provider.run('UPDATE entries SET tags = ?, updated_at = unixepoch() WHERE id = ?', [
+          JSON.stringify(updated),
+          row.id,
+        ]);
+        this.logChange(
+          'synonym_merge',
+          row.id,
+          JSON.stringify(tags),
+          JSON.stringify(updated),
+          'Synonym tag merge (edit-distance ≤ 1)',
+        );
+        mergeCount++;
+      }
+    }
+
+    return mergeCount;
   }
 
   // ─── Consolidation ───────────────────────────────────────────
@@ -419,6 +549,55 @@ export class Curator {
         }
       }
     }
+
+    // Retag: run all entries through canonical normalization if requested
+    let retagged: number | undefined;
+    if (options?.retag && options.canonicalTags && options.canonicalTags.length > 0) {
+      const tagMode = options.tagConstraintMode ?? 'suggest';
+      const metaPrefixes = options.metadataTagPrefixes ?? ['source:'];
+      retagged = 0;
+
+      const entryRows = this.provider.all<{ id: string; tags: string }>(
+        'SELECT id, tags FROM entries WHERE tags IS NOT NULL',
+      );
+
+      for (const row of entryRows) {
+        let tags: string[];
+        try {
+          tags = JSON.parse(row.tags) as string[];
+        } catch {
+          continue;
+        }
+
+        const normalized = normalizeTagsCanonical(
+          tags,
+          options.canonicalTags,
+          tagMode,
+          metaPrefixes,
+        );
+        const tagsChanged =
+          normalized.length !== tags.length || normalized.some((t, i) => t !== tags[i]);
+
+        if (tagsChanged) {
+          if (!dryRun) {
+            this.provider.run(
+              'UPDATE entries SET tags = ?, updated_at = unixepoch() WHERE id = ?',
+              [JSON.stringify(normalized), row.id],
+            );
+            this.logChange(
+              'retag',
+              row.id,
+              JSON.stringify(tags),
+              JSON.stringify(normalized),
+              'Canonical retag during consolidation',
+            );
+            mutations++;
+          }
+          retagged++;
+        }
+      }
+    }
+
     return {
       dryRun,
       duplicates,
@@ -426,6 +605,7 @@ export class Curator {
       contradictions,
       mutations,
       durationMs: Date.now() - start,
+      retagged,
     };
   }
 

@@ -101,6 +101,13 @@ export type {
 } from './vault/vault-types.js';
 export { validatePlaybook, parsePlaybookFromEntry } from './vault/playbook.js';
 export type { Playbook, PlaybookStep, PlaybookValidationResult } from './vault/playbook.js';
+export { DEFAULT_CANONICAL_TAGS } from './vault/default-canonical-tags.js';
+export {
+  normalizeTag as normalizeTagCanonical,
+  normalizeTags as normalizeTagsCanonical,
+  isMetadataTag,
+  computeEditDistance,
+} from './vault/tag-normalizer.js';
 
 // ─── Playbook System (registry, matching, seeding) ─────────────────
 export {
