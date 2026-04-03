@@ -369,13 +369,13 @@ const ops = [
       const results: Array<{
         id: string;
         name: string;
-        status: 'synced' | 'drift' | 'missing-file';
+        status: 'synced' | 'drift' | 'missing-file' | 'missing-metadata';
       }> = [];
 
       // Check registered components against file list
       for (const entry of registry.values()) {
         if (!entry.filePath) {
-          results.push({ id: entry.id, name: entry.name, status: 'drift' });
+          results.push({ id: entry.id, name: entry.name, status: 'missing-metadata' });
         } else if (filePaths.includes(entry.filePath)) {
           results.push({ id: entry.id, name: entry.name, status: 'synced' });
         } else {
@@ -393,6 +393,7 @@ const ops = [
         synced: results.filter((r) => r.status === 'synced').length,
         drifted: results.filter((r) => r.status === 'drift').length,
         missingFile: results.filter((r) => r.status === 'missing-file').length,
+        missingMetadata: results.filter((r) => r.status === 'missing-metadata').length,
         unregistered: unregistered.length,
         components: results,
         unregisteredFiles: unregistered,

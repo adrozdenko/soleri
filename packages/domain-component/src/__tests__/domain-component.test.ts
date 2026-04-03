@@ -292,7 +292,7 @@ import { Card } from '../Card';
     expect(result.internal).toContain('../Card');
   });
 
-  it('sync_status should report synced, missing-file, and unregistered', async () => {
+  it('sync_status should report synced, missing-file, missing-metadata, and unregistered', async () => {
     await findOp('create').handler({
       name: 'Button',
       description: 'btn',
@@ -306,7 +306,7 @@ import { Card } from '../Card';
     await findOp('create').handler({
       name: 'Modal',
       description: 'modal',
-      // No filePath — will show as drift
+      // No filePath — should be classified as missing-metadata, NOT drift
     });
 
     const result = (await findOp('sync_status').handler({
@@ -315,12 +315,98 @@ import { Card } from '../Card';
       synced: number;
       drifted: number;
       missingFile: number;
+      missingMetadata: number;
       unregistered: number;
+      components: Array<{ id: string; name: string; status: string }>;
+      unregisteredFiles: string[];
     };
 
     expect(result.synced).toBe(1); // Button matches
     expect(result.missingFile).toBe(1); // Card file not in list
-    expect(result.drifted).toBe(1); // Modal has no filePath
+    expect(result.drifted).toBe(0); // No drift — missing filePath is now missing-metadata
+    expect(result.missingMetadata).toBe(1); // Modal has no filePath
     expect(result.unregistered).toBe(1); // Dialog.tsx not registered
+  });
+
+  it('sync_status should classify component without filePath as missing-metadata, not drift', async () => {
+    await findOp('create').handler({
+      name: 'Tooltip',
+      description: 'tooltip with no file path',
+      // filePath intentionally omitted
+    });
+
+    const result = (await findOp('sync_status').handler({
+      filePaths: [],
+    })) as {
+      drifted: number;
+      missingMetadata: number;
+      components: Array<{ id: string; name: string; status: string }>;
+    };
+
+    const tooltipEntry = result.components.find((c) => c.name === 'Tooltip');
+    expect(tooltipEntry).toBeDefined();
+    expect(tooltipEntry!.status).toBe('missing-metadata');
+    expect(result.drifted).toBe(0);
+    expect(result.missingMetadata).toBe(1);
+  });
+
+  it('sync_status should classify component with matching filePath as synced', async () => {
+    await findOp('create').handler({
+      name: 'Badge',
+      description: 'badge',
+      filePath: 'src/Badge.tsx',
+    });
+
+    const result = (await findOp('sync_status').handler({
+      filePaths: ['src/Badge.tsx'],
+    })) as {
+      synced: number;
+      components: Array<{ id: string; name: string; status: string }>;
+    };
+
+    const badgeEntry = result.components.find((c) => c.name === 'Badge');
+    expect(badgeEntry).toBeDefined();
+    expect(badgeEntry!.status).toBe('synced');
+    expect(result.synced).toBe(1);
+  });
+
+  it('sync_status should classify component with filePath not in input list as missing-file', async () => {
+    await findOp('create').handler({
+      name: 'Avatar',
+      description: 'avatar',
+      filePath: 'src/Avatar.tsx',
+    });
+
+    const result = (await findOp('sync_status').handler({
+      filePaths: ['src/OtherComponent.tsx'],
+    })) as {
+      missingFile: number;
+      components: Array<{ id: string; name: string; status: string }>;
+    };
+
+    const avatarEntry = result.components.find((c) => c.name === 'Avatar');
+    expect(avatarEntry).toBeDefined();
+    expect(avatarEntry!.status).toBe('missing-file');
+    expect(result.missingFile).toBe(1);
+  });
+
+  it('sync_status should list file paths not in registry as unregisteredFiles', async () => {
+    await findOp('create').handler({
+      name: 'Icon',
+      description: 'icon',
+      filePath: 'src/Icon.tsx',
+    });
+
+    const result = (await findOp('sync_status').handler({
+      filePaths: ['src/Icon.tsx', 'src/Unregistered.tsx', 'src/AlsoUnknown.tsx'],
+    })) as {
+      unregistered: number;
+      unregisteredFiles: string[];
+    };
+
+    expect(result.unregistered).toBe(2);
+    expect(result.unregisteredFiles).toContain('src/Unregistered.tsx');
+    expect(result.unregisteredFiles).toContain('src/AlsoUnknown.tsx');
+    expect(result.unregisteredFiles).not.toContain('src/Icon.tsx');
   });
 });
