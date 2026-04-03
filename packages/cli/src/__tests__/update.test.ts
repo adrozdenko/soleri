@@ -65,9 +65,12 @@ describe('update command', () => {
   });
 
   it('prints already-on-latest when current version matches latest', async () => {
-    // getCurrentVersion() falls back to 'unknown' in test env (no package.json in require path).
-    // Return 'unknown' from npm view to match, triggering the "already on latest" branch.
-    vi.mocked(execSync).mockReturnValue(Buffer.from('unknown\n'));
+    // getCurrentVersion() reads ../../package.json → packages/cli/package.json.
+    // Return the same version from npm view to trigger the "already on latest" branch.
+    const { createRequire } = await import('node:module');
+    const req = createRequire(import.meta.url);
+    const { version } = req('../../package.json') as { version: string };
+    vi.mocked(execSync).mockReturnValue(Buffer.from(`${version}\n`));
 
     const action = captureAction();
     await action();

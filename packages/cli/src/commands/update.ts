@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 function getCurrentVersion(): string {
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    return (require('../package.json') as { version: string }).version;
+    return (require('../../package.json') as { version: string }).version;
   } catch {
     return 'unknown';
   }
