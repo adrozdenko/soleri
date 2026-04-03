@@ -48,41 +48,25 @@ function readEngineFeatures(agentPath: string): EngineFeature[] | undefined {
   }
 }
 
-/** Subset of AgentConfig fields sourced from a file-tree agent.yaml. */
-interface FileTreeAgentConfig {
-  id?: string;
-  name?: string;
-  role?: string;
-  description?: string;
-  domains?: string[];
-  principles?: string[];
-  tone?: string;
-  greeting?: string;
-  persona?: Record<string, unknown>;
-  vaults?: Array<{ name: string; path: string; priority?: number }>;
-  setupTarget?: string;
-}
-
-function readFileTreeAgentConfig(agentPath: string): FileTreeAgentConfig | null {
+function readFileTreeAgentConfig(agentPath: string): AgentConfig | null {
   try {
     const yamlPath = join(agentPath, 'agent.yaml');
     if (!existsSync(yamlPath)) return null;
 
     const parsed = AgentYamlSchema.parse(parseYaml(readFileSync(yamlPath, 'utf-8')));
-    const cfg: FileTreeAgentConfig = {
+    return {
       id: parsed.id,
       name: parsed.name,
       role: parsed.role,
       description: parsed.description,
-      domains: parsed.domains,
-      principles: parsed.principles,
+      domains: parsed.domains ?? [],
+      principles: parsed.principles ?? [],
       tone: parsed.tone,
       greeting: parsed.greeting,
       persona: parsed.persona,
       vaults: parsed.vaults,
       setupTarget: parsed.setup?.target ?? 'claude',
-    };
-    return cfg;
+    } as AgentConfig;
   } catch {
     return null;
   }
@@ -491,7 +475,7 @@ export function registerAgent(program: Command): void {
         );
 
         // 4. Regenerate AGENTS.md for Codex/OpenCode
-        const agentsMd = generateAgentsMd(config as AgentConfig);
+        const agentsMd = generateAgentsMd(config);
         writeFileSync(agentsMdPath, agentsMd, 'utf-8');
         p.log.success(`Regenerated ${agentsMdPath} (${agentsMd.length} bytes)`);
         return;
