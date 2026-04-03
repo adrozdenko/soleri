@@ -80,11 +80,28 @@ describe('resolveEngineBin', () => {
 });
 
 describe('npx fallback warning', () => {
-  it('resolveEngineBin returns npx when @soleri/core is not locally installed', () => {
-    // In the monorepo, core IS locally installed so command === 'node'.
-    // We verify the shape here; the warning branch is exercised in e2e (npx install).
-    const result = resolveEngineBin();
-    expect(typeof result.command).toBe('string');
+  afterEach(() => {
+    vi.resetModules();
+    vi.doUnmock('node:module');
+  });
+
+  it('returns npx fallback when core resolution fails', async () => {
+    vi.doMock('node:module', async () => {
+      const actual = await vi.importActual<typeof import('node:module')>('node:module');
+      return {
+        ...actual,
+        createRequire: () =>
+          ({
+            resolve: () => {
+              throw new Error('MODULE_NOT_FOUND');
+            },
+          }) as ReturnType<typeof import('node:module').createRequire>,
+      };
+    });
+
+    const { resolveEngineBin: resolveEngineBinFresh } = await import('../commands/install.js');
+    const result = resolveEngineBinFresh();
+    expect(result.command).toBe('npx');
     expect(typeof result.bin).toBe('string');
   });
 });

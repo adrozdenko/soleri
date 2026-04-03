@@ -48,6 +48,7 @@ export function registerUpdate(program: Command): void {
         spinner.stop('Failed');
         p.log.error(err instanceof Error ? err.message : String(err));
         process.exit(1);
+        return;
       }
 
       spinner.stop(`Latest version: ${latest}`);

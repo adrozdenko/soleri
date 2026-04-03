@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock @clack/prompts
 vi.mock('@clack/prompts', () => ({
@@ -13,28 +13,49 @@ vi.mock('@clack/prompts', () => ({
   },
 }));
 
-// Mock child_process
+// Mock child_process — hoisted, so update.ts always gets the mock
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn(() => Buffer.from('9.99.0\n')),
+  execSync: vi.fn(),
 }));
 
+// Import after mocks are hoisted
+import { execSync } from 'node:child_process';
+import * as p from '@clack/prompts';
+import { registerUpdate } from '../commands/update.js';
+
+/** Helper: capture the action handler from registerUpdate */
+function captureAction(): () => Promise<void> {
+  let action: (() => Promise<void>) | undefined;
+  const mockProgram = {
+    command: vi.fn(() => ({
+      description: vi.fn().mockReturnThis(),
+      action: vi.fn((fn: () => Promise<void>) => {
+        action = fn;
+        return { description: vi.fn(), action: vi.fn() };
+      }),
+    })),
+  };
+  registerUpdate(mockProgram as never);
+  if (!action) throw new Error('action not registered');
+  return action;
+}
+
 describe('update command', () => {
-  it('exports registerUpdate function', async () => {
-    const mod = await import('../commands/update.js');
-    expect(typeof mod.registerUpdate).toBe('function');
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('registers a command named "update" on the program', async () => {
-    const { registerUpdate } = await import('../commands/update.js');
+  it('exports registerUpdate function', () => {
+    expect(typeof registerUpdate).toBe('function');
+  });
 
+  it('registers a command named "update" on the program', () => {
     const mockCommand = {
       command: vi.fn().mockReturnThis(),
       description: vi.fn().mockReturnThis(),
       action: vi.fn().mockReturnThis(),
     };
-    const mockProgram = {
-      command: vi.fn(() => mockCommand),
-    };
+    const mockProgram = { command: vi.fn(() => mockCommand) };
 
     registerUpdate(mockProgram as never);
 
@@ -43,9 +64,39 @@ describe('update command', () => {
     expect(mockCommand.action).toHaveBeenCalledWith(expect.any(Function));
   });
 
-  it('execSync is called to fetch the latest version', async () => {
-    const { execSync } = await import('node:child_process');
-    // execSync mock is set — just verify it's mockable (behavior tested via integration)
-    expect(typeof execSync).toBe('function');
+  it('prints already-on-latest when current version matches latest', async () => {
+    // getCurrentVersion() falls back to 'unknown' in test env (no package.json in require path).
+    // Return 'unknown' from npm view to match, triggering the "already on latest" branch.
+    vi.mocked(execSync).mockReturnValue(Buffer.from('unknown\n'));
+
+    const action = captureAction();
+    await action();
+
+    expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining('Already on latest'));
+  });
+
+  it('prints "Updated" when an update is available and install succeeds', async () => {
+    vi.mocked(execSync)
+      .mockReturnValueOnce(Buffer.from('9.99.0\n')) // npm view latest
+      .mockReturnValueOnce(Buffer.from('')) // npm install -g (stdio: inherit path skipped)
+      .mockReturnValueOnce(Buffer.from('9.99.0\n')); // npm view verify
+
+    const action = captureAction();
+    await action();
+
+    expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining('Updated'));
+  });
+
+  it('exits with code 1 when npm registry is unreachable', async () => {
+    vi.mocked(execSync).mockImplementation(() => {
+      throw new Error('network error');
+    });
+
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const action = captureAction();
+    await action();
+
+    expect(mockExit).toHaveBeenCalledWith(1);
+    mockExit.mockRestore();
   });
 });
