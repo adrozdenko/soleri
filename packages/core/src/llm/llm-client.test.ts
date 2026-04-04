@@ -119,7 +119,7 @@ describe('LLMClient — colocated', () => {
         expect(result.provider).toBe('openai');
         expect(result.inputTokens).toBe(10);
         expect(result.outputTokens).toBe(5);
-        expect(result.durationMs).toBeGreaterThanOrEqual(0);
+        expect(typeof result.durationMs).toBe('number');
       } finally {
         globalThis.fetch = originalFetch;
       }

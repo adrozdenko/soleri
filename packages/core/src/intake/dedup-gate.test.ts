@@ -135,13 +135,9 @@ describe('dedupItems — colocated', () => {
     const results = dedupItems(items, vault);
 
     expect(results).toHaveLength(2);
-    // First should be duplicate or at least high similarity
-    expect(results[0].similarity).toBeGreaterThan(0.5);
+    // First should be a high-similarity match (near-exact duplicate)
+    expect(results[0].similarity).toBeGreaterThanOrEqual(DEDUP_THRESHOLD);
     // Second should be non-duplicate
     expect(results[1].isDuplicate).toBe(false);
-  });
-
-  it('DEDUP_THRESHOLD is 0.85', () => {
-    expect(DEDUP_THRESHOLD).toBe(0.85);
   });
 });

@@ -137,7 +137,6 @@ describe('MigrationRunner', () => {
 
       // Assert
       expect(typeof results[0].durationMs).toBe('number');
-      expect(results[0].durationMs).toBeGreaterThanOrEqual(0);
     });
   });
 

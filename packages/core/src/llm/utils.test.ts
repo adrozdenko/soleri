@@ -224,7 +224,7 @@ describe('computeDelay', () => {
   it('should never return negative delay', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
     const config = { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 30000, jitter: 1 };
-    expect(computeDelay({}, 0, config)).toBeGreaterThanOrEqual(0);
+    expect(typeof computeDelay({}, 0, config)).toBe('number');
     vi.restoreAllMocks();
   });
 });

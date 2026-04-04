@@ -86,7 +86,7 @@ describe('TextIngester — ingestText', () => {
     expect(result.duplicates).toBe(0);
     expect(result.entries).toHaveLength(1);
     expect(result.entries[0].title).toBe('Pattern A');
-    expect(vault._seeded.length).toBeGreaterThan(0);
+    expect(vault._seeded.length).toBe(1);
   });
 
   it('returns empty result when LLM is null', async () => {
@@ -120,8 +120,7 @@ describe('TextIngester — ingestText', () => {
     const result = await ingester.ingestText('text', { type: 'documentation', title: 'Doc' }, opts);
 
     expect(result.ingested).toBe(1);
-    // Seeded entries should exist
-    expect(vault._seeded.length).toBeGreaterThan(0);
+    expect(vault._seeded.length).toBe(1);
   });
 
   it('splits long text into chunks based on chunkSize option', async () => {
@@ -155,7 +154,7 @@ describe('TextIngester — ingestText', () => {
     const longText = 'A'.repeat(100);
     await ingester.ingestText(longText, { type: 'notes', title: 'Test' }, { chunkSize: 30 });
 
-    expect(callCount.n).toBeGreaterThan(1);
+    expect(callCount.n).toBe(4);
   });
 });
 

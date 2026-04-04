@@ -233,7 +233,7 @@ describe('PackInstaller', () => {
 
       const result = installer.validate(packDir);
       expect(result.valid).toBe(true);
-      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result.warnings.length).toBe(2);
     });
   });
 
@@ -271,7 +271,7 @@ describe('PackInstaller', () => {
 
       // Verify vault was seeded
       const entries = vault.list({ domain: 'test' });
-      expect(entries.length).toBeGreaterThan(0);
+      expect(entries.length).toBe(1);
     });
 
     it('should install a pack with facades', async () => {
