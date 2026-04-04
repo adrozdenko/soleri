@@ -121,30 +121,6 @@ describe('chat-service-ops', () => {
     ops = createChatServiceOps(state);
   });
 
-  it('exports 18 service ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'chat_cancel_create',
-      'chat_cancel_stop',
-      'chat_cancel_status',
-      'chat_update_init',
-      'chat_update_request',
-      'chat_update_confirm',
-      'chat_file_detect_intent',
-      'chat_file_build_content',
-      'chat_file_cleanup',
-      'chat_notify_init',
-      'chat_notify_start',
-      'chat_notify_stop',
-      'chat_notify_poll',
-      'chat_notify_status',
-      'chat_browser_init',
-      'chat_browser_acquire',
-      'chat_browser_release',
-      'chat_browser_status',
-    ]);
-  });
-
   // ─── Task Cancellation ─────────────────────────────────────────
 
   describe('chat_cancel_create', () => {

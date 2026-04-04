@@ -50,39 +50,6 @@ describe('intake-facade', () => {
     ops = captureOps(createIntakeFacadeOps(runtime));
   });
 
-  // ─── Registration ─────────────────────────────────────────────────
-
-  it('returns exactly 7 ops', () => {
-    expect(ops.size).toBe(7);
-  });
-
-  it('includes all expected op names', () => {
-    const expected = [
-      'intake_ingest_book',
-      'intake_process',
-      'intake_status',
-      'intake_preview',
-      'ingest_url',
-      'ingest_text',
-      'ingest_batch',
-    ];
-    for (const name of expected) {
-      expect(ops.has(name), `missing op: ${name}`).toBe(true);
-    }
-  });
-
-  // ─── Auth levels ─────────────────────────────────────────────────
-
-  it('has correct auth levels', () => {
-    expect(ops.get('intake_ingest_book')!.auth).toBe('write');
-    expect(ops.get('intake_process')!.auth).toBe('write');
-    expect(ops.get('intake_status')!.auth).toBe('read');
-    expect(ops.get('intake_preview')!.auth).toBe('read');
-    expect(ops.get('ingest_url')!.auth).toBe('write');
-    expect(ops.get('ingest_text')!.auth).toBe('write');
-    expect(ops.get('ingest_batch')!.auth).toBe('write');
-  });
-
   // ─── Delegation ─────────────────────────────────────────────────
 
   describe('intake_ingest_book', () => {

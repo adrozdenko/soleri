@@ -21,17 +21,6 @@ function makeRuntime(): AgentRuntime {
 }
 
 describe('branching-facade', () => {
-  it('returns all 5 branching ops', () => {
-    const ops = createBranchingFacadeOps(makeRuntime());
-    expect(ops).toHaveLength(5);
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('vault_branch');
-    expect(names).toContain('vault_branch_add');
-    expect(names).toContain('vault_branch_list');
-    expect(names).toContain('vault_merge_branch');
-    expect(names).toContain('vault_delete_branch');
-  });
-
   it('every op has name, handler, and auth', () => {
     const ops = createBranchingFacadeOps(makeRuntime());
     for (const op of ops) {

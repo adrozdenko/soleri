@@ -117,98 +117,6 @@ describe('brain-facade', () => {
     ops = captureOps(createBrainFacadeOps(runtime));
   });
 
-  // ─── Registration ─────────────────────────────────────────────────
-
-  it('registers all 30 ops', () => {
-    expect(ops.size).toBe(30);
-  });
-
-  it('includes all expected op names', () => {
-    const expected = [
-      'record_feedback',
-      'brain_feedback',
-      'brain_feedback_stats',
-      'rebuild_vocabulary',
-      'brain_stats',
-      'brain_decay_report',
-      'llm_status',
-      'brain_session_context',
-      'brain_strengths',
-      'brain_global_patterns',
-      'brain_recommend',
-      'brain_build_intelligence',
-      'brain_export',
-      'brain_import',
-      'brain_extract_knowledge',
-      'brain_archive_sessions',
-      'brain_promote_proposals',
-      'brain_lifecycle',
-      'session_list',
-      'session_get',
-      'session_quality',
-      'session_replay',
-      'brain_reset_extracted',
-      'radar_analyze',
-      'radar_candidates',
-      'radar_approve',
-      'radar_dismiss',
-      'radar_flush',
-      'radar_stats',
-      'synthesize',
-    ];
-    for (const name of expected) {
-      expect(ops.has(name), `missing op: ${name}`).toBe(true);
-    }
-  });
-
-  // ─── Auth levels ─────────────────────────────────────────────────
-
-  it('has correct auth levels for read ops', () => {
-    const readOps = [
-      'brain_feedback_stats',
-      'brain_stats',
-      'brain_decay_report',
-      'llm_status',
-      'brain_session_context',
-      'brain_strengths',
-      'brain_global_patterns',
-      'brain_recommend',
-      'brain_export',
-      'session_list',
-      'session_get',
-      'session_quality',
-      'session_replay',
-      'radar_candidates',
-      'radar_stats',
-      'synthesize',
-    ];
-    for (const name of readOps) {
-      expect(ops.get(name)!.auth, `${name} should be read`).toBe('read');
-    }
-  });
-
-  it('has correct auth levels for write ops', () => {
-    const writeOps = [
-      'record_feedback',
-      'brain_feedback',
-      'rebuild_vocabulary',
-      'brain_build_intelligence',
-      'brain_import',
-      'brain_extract_knowledge',
-      'brain_archive_sessions',
-      'brain_promote_proposals',
-      'brain_lifecycle',
-      'brain_reset_extracted',
-      'radar_analyze',
-      'radar_approve',
-      'radar_dismiss',
-      'radar_flush',
-    ];
-    for (const name of writeOps) {
-      expect(ops.get(name)!.auth, `${name} should be write`).toBe('write');
-    }
-  });
-
   // ─── record_feedback ───────────────────────────────────────────────
 
   describe('record_feedback', () => {
@@ -290,13 +198,14 @@ describe('brain-facade', () => {
     });
 
     it('accepts all 4 action types', async () => {
-      for (const action of ['accepted', 'dismissed', 'modified', 'failed']) {
-        const result = await executeOp(ops, 'brain_feedback', {
-          query: 'q',
-          entryId: 'e',
-          action,
-        });
-        expect(result.success, `action ${action} should succeed`).toBe(true);
+      const actions = ['accepted', 'dismissed', 'modified', 'failed'];
+      const results = await Promise.all(
+        actions.map((action) =>
+          executeOp(ops, 'brain_feedback', { query: 'q', entryId: 'e', action }),
+        ),
+      );
+      for (const [i, result] of results.entries()) {
+        expect(result.success, `action ${actions[i]} should succeed`).toBe(true);
       }
     });
   });

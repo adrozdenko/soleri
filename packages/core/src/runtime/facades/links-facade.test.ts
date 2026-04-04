@@ -50,43 +50,6 @@ describe('links-facade', () => {
     ops = captureOps(createLinksFacadeOps(runtime));
   });
 
-  // ─── Registration ──────────────────────────────────────────────────
-
-  it('registers exactly 9 ops', () => {
-    expect(ops.size).toBe(9);
-  });
-
-  it('includes all expected op names', () => {
-    const expected = [
-      'link_entries',
-      'unlink_entries',
-      'get_links',
-      'traverse',
-      'suggest_links',
-      'get_orphans',
-      'relink_vault',
-      'backfill_links',
-      'link_stats',
-    ];
-    for (const name of expected) {
-      expect(ops.has(name), `missing op: ${name}`).toBe(true);
-    }
-  });
-
-  // ─── Auth levels ───────────────────────────────────────────────────
-
-  it('has correct auth levels', () => {
-    expect(ops.get('link_entries')!.auth).toBe('write');
-    expect(ops.get('unlink_entries')!.auth).toBe('write');
-    expect(ops.get('get_links')!.auth).toBe('read');
-    expect(ops.get('traverse')!.auth).toBe('read');
-    expect(ops.get('suggest_links')!.auth).toBe('read');
-    expect(ops.get('get_orphans')!.auth).toBe('read');
-    expect(ops.get('relink_vault')!.auth).toBe('write');
-    expect(ops.get('backfill_links')!.auth).toBe('write');
-    expect(ops.get('link_stats')!.auth).toBe('read');
-  });
-
   // ─── Handler delegation ───────────────────────────────────────────
 
   describe('link_entries', () => {

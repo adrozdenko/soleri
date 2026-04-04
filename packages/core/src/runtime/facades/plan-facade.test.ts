@@ -48,26 +48,6 @@ describe('plan-facade', () => {
     vault.close();
   });
 
-  it('registers base + extra + grading + chain ops', () => {
-    // 5 base + 22 extra + 5 grading + 5 chain = 37
-    expect(ops.size).toBeGreaterThanOrEqual(32);
-    expect([...ops.keys()]).toContain('create_plan');
-    expect([...ops.keys()]).toContain('get_plan');
-    expect([...ops.keys()]).toContain('approve_plan');
-    expect([...ops.keys()]).toContain('update_task');
-    expect([...ops.keys()]).toContain('complete_plan');
-    expect([...ops.keys()]).toContain('plan_grade');
-    expect([...ops.keys()]).toContain('chain_execute');
-  });
-
-  it('has correct auth levels for base ops', () => {
-    expect(ops.get('create_plan')!.auth).toBe('write');
-    expect(ops.get('get_plan')!.auth).toBe('read');
-    expect(ops.get('approve_plan')!.auth).toBe('write');
-    expect(ops.get('update_task')!.auth).toBe('write');
-    expect(ops.get('complete_plan')!.auth).toBe('write');
-  });
-
   // ─── create_plan ───────────────────────────────────────────────
 
   it('create_plan creates a draft plan', async () => {

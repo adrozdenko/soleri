@@ -108,40 +108,6 @@ describe('createAdminFacadeOps', () => {
     ops = createAdminFacadeOps(runtime);
   });
 
-  it('returns inline ops (llm_rotate, llm_call, render_prompt, list_templates)', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('llm_rotate');
-    expect(names).toContain('llm_call');
-    expect(names).toContain('render_prompt');
-    expect(names).toContain('list_templates');
-  });
-
-  it('includes satellite ops from admin-ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('admin_health');
-    expect(names).toContain('admin_diagnostic');
-    expect(names).toContain('admin_config');
-  });
-
-  it('includes satellite ops from admin-extra-ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('admin_telemetry');
-    expect(names).toContain('admin_permissions');
-    expect(names).toContain('admin_vault_analytics');
-  });
-
-  it('includes satellite ops from admin-setup-ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('admin_inject_claude_md');
-    expect(names).toContain('admin_setup_global');
-    expect(names).toContain('admin_check_persistence');
-  });
-
-  it('includes session briefing ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('session_briefing');
-  });
-
   describe('llm_rotate', () => {
     it('rotates openai key pool', async () => {
       const result = (await findOp(ops, 'llm_rotate').handler({

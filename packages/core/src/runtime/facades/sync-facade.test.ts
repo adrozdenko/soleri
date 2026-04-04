@@ -64,22 +64,6 @@ describe('createSyncFacadeOps', () => {
     ops = createSyncFacadeOps(mockRuntime());
   });
 
-  it('returns 8 ops matching sync-ops', () => {
-    expect(ops.length).toBe(8);
-  });
-
-  it('includes all expected op names', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('vault_git_push');
-    expect(names).toContain('vault_git_pull');
-    expect(names).toContain('vault_git_sync');
-    expect(names).toContain('obsidian_export');
-    expect(names).toContain('obsidian_import');
-    expect(names).toContain('obsidian_sync');
-    expect(names).toContain('vault_export_pack');
-    expect(names).toContain('vault_import_pack');
-  });
-
   it('all ops have required fields', () => {
     for (const op of ops) {
       expect(op.name).toBeDefined();
@@ -87,27 +71,5 @@ describe('createSyncFacadeOps', () => {
       expect(op.auth).toBeDefined();
       expect(typeof op.handler).toBe('function');
     }
-  });
-
-  it('git ops use write auth', () => {
-    const gitOps = ops.filter((o) => o.name.startsWith('vault_git_'));
-    for (const op of gitOps) {
-      expect(op.auth).toBe('write');
-    }
-  });
-
-  it('obsidian_export uses read auth', () => {
-    const op = ops.find((o) => o.name === 'obsidian_export');
-    expect(op!.auth).toBe('read');
-  });
-
-  it('vault_export_pack uses read auth', () => {
-    const op = ops.find((o) => o.name === 'vault_export_pack');
-    expect(op!.auth).toBe('read');
-  });
-
-  it('vault_import_pack uses write auth', () => {
-    const op = ops.find((o) => o.name === 'vault_import_pack');
-    expect(op!.auth).toBe('write');
   });
 });

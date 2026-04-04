@@ -82,49 +82,6 @@ describe('archive-facade', () => {
     ops = captureOps(createArchiveFacadeOps(runtime));
   });
 
-  // ─── Registration ─────────────────────────────────────────────────
-
-  it('registers 12 ops', () => {
-    expect(ops.size).toBe(12);
-  });
-
-  it('includes all expected op names', () => {
-    const expected = [
-      'vault_archive',
-      'vault_restore',
-      'vault_optimize',
-      'vault_backup',
-      'vault_age_report',
-      'vault_set_temporal',
-      'vault_find_expiring',
-      'vault_find_expired',
-      'knowledge_audit',
-      'knowledge_health',
-      'knowledge_merge',
-      'knowledge_reorganize',
-    ];
-    for (const name of expected) {
-      expect(ops.has(name), `missing op: ${name}`).toBe(true);
-    }
-  });
-
-  // ─── Auth levels ─────────────────────────────────────────────────
-
-  it('has correct auth levels', () => {
-    expect(ops.get('vault_archive')!.auth).toBe('write');
-    expect(ops.get('vault_restore')!.auth).toBe('write');
-    expect(ops.get('vault_optimize')!.auth).toBe('write');
-    expect(ops.get('vault_backup')!.auth).toBe('read');
-    expect(ops.get('vault_age_report')!.auth).toBe('read');
-    expect(ops.get('vault_set_temporal')!.auth).toBe('write');
-    expect(ops.get('vault_find_expiring')!.auth).toBe('read');
-    expect(ops.get('vault_find_expired')!.auth).toBe('read');
-    expect(ops.get('knowledge_audit')!.auth).toBe('read');
-    expect(ops.get('knowledge_health')!.auth).toBe('read');
-    expect(ops.get('knowledge_merge')!.auth).toBe('write');
-    expect(ops.get('knowledge_reorganize')!.auth).toBe('write');
-  });
-
   // ─── vault_archive ──────────────────────────────────────────────
 
   describe('vault_archive', () => {

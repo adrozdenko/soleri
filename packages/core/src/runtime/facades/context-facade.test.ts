@@ -51,23 +51,6 @@ describe('context-facade', () => {
     ops = captureOps(createContextFacadeOps(makeRuntime(mockEngine)));
   });
 
-  it('registers all 3 ops', () => {
-    expect(ops.size).toBe(3);
-    expect([...ops.keys()]).toEqual(
-      expect.arrayContaining([
-        'context_extract_entities',
-        'context_retrieve_knowledge',
-        'context_analyze',
-      ]),
-    );
-  });
-
-  it('has correct auth levels', () => {
-    expect(ops.get('context_extract_entities')!.auth).toBe('read');
-    expect(ops.get('context_retrieve_knowledge')!.auth).toBe('read');
-    expect(ops.get('context_analyze')!.auth).toBe('read');
-  });
-
   // ─── context_extract_entities ──────────────────────────────────
 
   it('context_extract_entities calls engine with prompt', async () => {

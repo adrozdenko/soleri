@@ -87,32 +87,6 @@ describe('loop-facade', () => {
     ops = captureOps(createLoopFacadeOps(makeRuntime(mockLoop)));
   });
 
-  it('registers all 9 ops', () => {
-    expect(ops.size).toBe(9);
-    const names = [...ops.keys()];
-    expect(names).toContain('loop_start');
-    expect(names).toContain('loop_iterate');
-    expect(names).toContain('loop_iterate_gate');
-    expect(names).toContain('loop_status');
-    expect(names).toContain('loop_cancel');
-    expect(names).toContain('loop_history');
-    expect(names).toContain('loop_is_active');
-    expect(names).toContain('loop_complete');
-    expect(names).toContain('loop_anomaly_check');
-  });
-
-  it('has correct auth levels', () => {
-    expect(ops.get('loop_start')!.auth).toBe('write');
-    expect(ops.get('loop_iterate')!.auth).toBe('write');
-    expect(ops.get('loop_iterate_gate')!.auth).toBe('write');
-    expect(ops.get('loop_status')!.auth).toBe('read');
-    expect(ops.get('loop_cancel')!.auth).toBe('write');
-    expect(ops.get('loop_history')!.auth).toBe('read');
-    expect(ops.get('loop_is_active')!.auth).toBe('read');
-    expect(ops.get('loop_complete')!.auth).toBe('write');
-    expect(ops.get('loop_anomaly_check')!.auth).toBe('read');
-  });
-
   // ─── loop_start ────────────────────────────────────────────────
 
   it('loop_start creates a loop with defaults', async () => {

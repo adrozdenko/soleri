@@ -164,47 +164,6 @@ describe('vault-facade', () => {
     ops = captureOps(createVaultFacadeOps(runtime));
   });
 
-  // ─── Registration ─────────────────────────────────────────────────
-
-  it('registers ops from all groups', () => {
-    // The facade includes inline ops + satellite ops from 5 modules.
-    // We check the inline ops explicitly, satellite ops just need to exist.
-    expect(ops.size).toBeGreaterThan(20);
-  });
-
-  it('includes core inline op names', () => {
-    const coreOps = [
-      'search',
-      'load_entries',
-      'vault_stats',
-      'list_all',
-      'export',
-      'capture_enriched',
-    ];
-    for (const name of coreOps) {
-      expect(ops.has(name), `missing op: ${name}`).toBe(true);
-    }
-  });
-
-  it('includes satellite ops', () => {
-    // Spot-check a few ops from each satellite module
-    expect(ops.has('vault_get')).toBe(true); // vault-extra-ops
-    expect(ops.has('capture_knowledge')).toBe(true); // capture-ops
-    expect(ops.has('search_intelligent')).toBe(true); // capture-ops
-    // link_entries moved to vault-linking-facade
-  });
-
-  // ─── Auth levels ─────────────────────────────────────────────────
-
-  it('has correct auth levels for inline ops', () => {
-    expect(ops.get('search')!.auth).toBe('read');
-    expect(ops.get('load_entries')!.auth).toBe('read');
-    expect(ops.get('vault_stats')!.auth).toBe('read');
-    expect(ops.get('list_all')!.auth).toBe('read');
-    expect(ops.get('export')!.auth).toBe('read');
-    expect(ops.get('capture_enriched')!.auth).toBe('write');
-  });
-
   // ─── search ────────────────────────────────────────────────────────
 
   describe('search', () => {

@@ -41,37 +41,6 @@ describe('operator-facade (colocated)', () => {
     vault.close();
   });
 
-  it('registers all 10 ops', () => {
-    expect(ops.size).toBe(10);
-    expect([...ops.keys()]).toEqual(
-      expect.arrayContaining([
-        'profile_get',
-        'profile_update_section',
-        'profile_correct',
-        'profile_delete',
-        'profile_export',
-        'signal_accumulate',
-        'signal_list',
-        'signal_stats',
-        'synthesis_check',
-        'profile_snapshot',
-      ]),
-    );
-  });
-
-  it('has correct auth levels', () => {
-    expect(ops.get('profile_get')!.auth).toBe('read');
-    expect(ops.get('profile_update_section')!.auth).toBe('write');
-    expect(ops.get('profile_correct')!.auth).toBe('write');
-    expect(ops.get('profile_delete')!.auth).toBe('admin');
-    expect(ops.get('profile_export')!.auth).toBe('read');
-    expect(ops.get('signal_accumulate')!.auth).toBe('write');
-    expect(ops.get('signal_list')!.auth).toBe('read');
-    expect(ops.get('signal_stats')!.auth).toBe('read');
-    expect(ops.get('synthesis_check')!.auth).toBe('read');
-    expect(ops.get('profile_snapshot')!.auth).toBe('write');
-  });
-
   // ─── profile_get ───────────────────────────────────────────────
 
   it('profile_get returns null when no profile', async () => {

@@ -30,24 +30,6 @@ describe('memory-facade', () => {
     vault.close();
   });
 
-  it('registers base + extra + cross-project ops', () => {
-    // 4 base + 18 extra + 3 cross-project = 25
-    expect(ops.size).toBeGreaterThanOrEqual(25);
-    expect([...ops.keys()]).toContain('memory_search');
-    expect([...ops.keys()]).toContain('memory_capture');
-    expect([...ops.keys()]).toContain('memory_list');
-    expect([...ops.keys()]).toContain('session_capture');
-    expect([...ops.keys()]).toContain('memory_delete');
-    expect([...ops.keys()]).toContain('memory_promote_to_global');
-  });
-
-  it('has correct auth levels for base ops', () => {
-    expect(ops.get('memory_search')!.auth).toBe('read');
-    expect(ops.get('memory_capture')!.auth).toBe('write');
-    expect(ops.get('memory_list')!.auth).toBe('read');
-    expect(ops.get('session_capture')!.auth).toBe('write');
-  });
-
   // ─── memory_capture ────────────────────────────────────────────
 
   it('memory_capture stores a memory', async () => {

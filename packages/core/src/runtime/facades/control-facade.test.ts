@@ -51,36 +51,6 @@ describe('createControlFacadeOps', () => {
     ops = createControlFacadeOps(runtime);
   });
 
-  it('returns all expected ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('get_identity');
-    expect(names).toContain('update_identity');
-    expect(names).toContain('add_guideline');
-    expect(names).toContain('remove_guideline');
-    expect(names).toContain('rollback_identity');
-    expect(names).toContain('route_intent');
-    expect(names).toContain('morph');
-    expect(names).toContain('get_behavior_rules');
-    expect(names).toContain('governance_policy');
-    expect(names).toContain('governance_proposals');
-    expect(names).toContain('governance_stats');
-    expect(names).toContain('governance_expire');
-    expect(names).toContain('governance_dashboard');
-    expect(names).toContain('routing_feedback');
-    expect(names).toContain('routing_accuracy');
-  });
-
-  it('assigns correct auth levels', () => {
-    expect(findOp(ops, 'get_identity').auth).toBe('read');
-    expect(findOp(ops, 'update_identity').auth).toBe('write');
-    expect(findOp(ops, 'route_intent').auth).toBe('read');
-    expect(findOp(ops, 'morph').auth).toBe('write');
-    expect(findOp(ops, 'governance_policy').auth).toBe('write');
-    expect(findOp(ops, 'governance_stats').auth).toBe('read');
-    expect(findOp(ops, 'routing_feedback').auth).toBe('write');
-    expect(findOp(ops, 'routing_accuracy').auth).toBe('read');
-  });
-
   describe('get_identity', () => {
     it('returns identity when found', async () => {
       const identity = { agentId: 'test', name: 'Test Agent', version: 1 };

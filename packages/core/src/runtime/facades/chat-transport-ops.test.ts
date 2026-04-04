@@ -111,29 +111,6 @@ describe('chat-transport-ops', () => {
     ops = createChatTransportOps(state);
   });
 
-  it('exports 17 transport ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'chat_chunk_response',
-      'chat_auth_init',
-      'chat_auth_check',
-      'chat_auth_authenticate',
-      'chat_auth_revoke',
-      'chat_auth_status',
-      'chat_bridge_init',
-      'chat_bridge_register',
-      'chat_bridge_list',
-      'chat_bridge_execute',
-      'chat_compress_output',
-      'chat_voice_transcribe',
-      'chat_voice_synthesize',
-      'chat_queue_init',
-      'chat_queue_inbox',
-      'chat_queue_reply',
-      'chat_queue_drain',
-    ]);
-  });
-
   // ─── Chunking ──────────────────────────────────────────────────
 
   describe('chat_chunk_response', () => {

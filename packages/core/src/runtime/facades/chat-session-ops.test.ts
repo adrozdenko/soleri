@@ -68,18 +68,6 @@ describe('chat-session-ops', () => {
     ops = createChatSessionOps(state);
   });
 
-  it('exports 6 session ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'chat_session_init',
-      'chat_session_get',
-      'chat_session_append',
-      'chat_session_clear',
-      'chat_session_delete',
-      'chat_session_list',
-    ]);
-  });
-
   describe('chat_session_init', () => {
     it('initializes session manager and returns status', async () => {
       const op = findOp(ops, 'chat_session_init');

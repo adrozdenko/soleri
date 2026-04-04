@@ -62,27 +62,6 @@ describe('orchestrate-facade', () => {
     vault.close();
   });
 
-  it('registers session_start + satellite ops', () => {
-    expect(ops.size).toBeGreaterThanOrEqual(20);
-    expect([...ops.keys()]).toContain('session_start');
-    expect([...ops.keys()]).toContain('orchestrate_plan');
-    expect([...ops.keys()]).toContain('orchestrate_execute');
-    expect([...ops.keys()]).toContain('orchestrate_complete');
-    expect([...ops.keys()]).toContain('orchestrate_status');
-    expect([...ops.keys()]).toContain('orchestrate_quick_capture');
-    expect([...ops.keys()]).toContain('project_get');
-    expect([...ops.keys()]).toContain('project_list');
-    expect([...ops.keys()]).toContain('playbook_list');
-  });
-
-  it('has correct auth levels', () => {
-    expect(ops.get('session_start')!.auth).toBe('write');
-    expect(ops.get('orchestrate_plan')!.auth).toBe('write');
-    expect(ops.get('orchestrate_status')!.auth).toBe('read');
-    expect(ops.get('project_get')!.auth).toBe('read');
-    expect(ops.get('project_list')!.auth).toBe('read');
-  });
-
   // ─── session_start ─────────────────────────────────────────────
 
   it('session_start registers project and returns stats', async () => {

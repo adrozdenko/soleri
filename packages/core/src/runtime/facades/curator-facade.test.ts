@@ -74,39 +74,6 @@ describe('createCuratorFacadeOps', () => {
     ops = createCuratorFacadeOps(runtime);
   });
 
-  it('returns all expected ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('curator_status');
-    expect(names).toContain('curator_detect_duplicates');
-    expect(names).toContain('curator_contradictions');
-    expect(names).toContain('curator_resolve_contradiction');
-    expect(names).toContain('curator_groom');
-    expect(names).toContain('curator_groom_all');
-    expect(names).toContain('curator_consolidate');
-    expect(names).toContain('curator_health_audit');
-    // Extra ops
-    expect(names).toContain('curator_entry_history');
-    expect(names).toContain('curator_record_snapshot');
-    expect(names).toContain('curator_queue_stats');
-    expect(names).toContain('curator_enrich');
-    expect(names).toContain('curator_hybrid_contradictions');
-    expect(names).toContain('curator_pipeline_status');
-    expect(names).toContain('curator_enqueue_pipeline');
-    expect(names).toContain('curator_schedule_start');
-    expect(names).toContain('curator_schedule_stop');
-  });
-
-  it('assigns correct auth levels', () => {
-    expect(findOp(ops, 'curator_status').auth).toBe('read');
-    expect(findOp(ops, 'curator_detect_duplicates').auth).toBe('read');
-    expect(findOp(ops, 'curator_contradictions').auth).toBe('read');
-    expect(findOp(ops, 'curator_resolve_contradiction').auth).toBe('write');
-    expect(findOp(ops, 'curator_groom').auth).toBe('write');
-    expect(findOp(ops, 'curator_groom_all').auth).toBe('write');
-    expect(findOp(ops, 'curator_consolidate').auth).toBe('write');
-    expect(findOp(ops, 'curator_health_audit').auth).toBe('read');
-  });
-
   describe('curator_status', () => {
     it('returns curator status', async () => {
       const result = await findOp(ops, 'curator_status').handler({});

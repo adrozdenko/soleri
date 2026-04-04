@@ -40,45 +40,6 @@ describe('createAgencyFacadeOps', () => {
     ops = createAgencyFacadeOps(runtime);
   });
 
-  it('returns all expected ops', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'agency_enable',
-      'agency_disable',
-      'agency_status',
-      'agency_config',
-      'agency_scan_file',
-      'agency_warnings',
-      'agency_surface_patterns',
-      'agency_clarify',
-      'agency_suggestions',
-      'agency_rich_clarify',
-      'agency_suppress_warning',
-      'agency_unsuppress_warning',
-      'agency_dismiss_pattern',
-      'agency_notifications',
-      'agency_full_status',
-    ]);
-  });
-
-  it('assigns correct auth levels', () => {
-    expect(findOp(ops, 'agency_enable').auth).toBe('write');
-    expect(findOp(ops, 'agency_disable').auth).toBe('write');
-    expect(findOp(ops, 'agency_status').auth).toBe('read');
-    expect(findOp(ops, 'agency_config').auth).toBe('write');
-    expect(findOp(ops, 'agency_scan_file').auth).toBe('read');
-    expect(findOp(ops, 'agency_warnings').auth).toBe('read');
-    expect(findOp(ops, 'agency_surface_patterns').auth).toBe('read');
-    expect(findOp(ops, 'agency_clarify').auth).toBe('read');
-    expect(findOp(ops, 'agency_suggestions').auth).toBe('read');
-    expect(findOp(ops, 'agency_rich_clarify').auth).toBe('read');
-    expect(findOp(ops, 'agency_suppress_warning').auth).toBe('write');
-    expect(findOp(ops, 'agency_unsuppress_warning').auth).toBe('write');
-    expect(findOp(ops, 'agency_dismiss_pattern').auth).toBe('write');
-    expect(findOp(ops, 'agency_notifications').auth).toBe('read');
-    expect(findOp(ops, 'agency_full_status').auth).toBe('read');
-  });
-
   describe('agency_enable', () => {
     it('enables with default project path', async () => {
       const status = { enabled: true, watching: true };

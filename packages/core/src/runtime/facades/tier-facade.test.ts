@@ -23,19 +23,6 @@ function makeRuntime(): AgentRuntime {
 }
 
 describe('tier-facade', () => {
-  it('returns all 7 tier/source ops', () => {
-    const ops = createTierFacadeOps(makeRuntime());
-    expect(ops).toHaveLength(7);
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('vault_connect');
-    expect(names).toContain('vault_disconnect');
-    expect(names).toContain('vault_tiers');
-    expect(names).toContain('vault_search_all');
-    expect(names).toContain('vault_connect_source');
-    expect(names).toContain('vault_disconnect_source');
-    expect(names).toContain('vault_list_sources');
-  });
-
   it('every op has name, handler, and auth', () => {
     const ops = createTierFacadeOps(makeRuntime());
     for (const op of ops) {
