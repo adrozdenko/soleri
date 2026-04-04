@@ -283,6 +283,42 @@ describe('createOrchestrateOps', () => {
       expect('example' in recs[0]).toBe(false);
     });
 
+    it('sets mandatory:true for critical vault entries', async () => {
+      // A critical anti-pattern must surface as mandatory so gate injection (#627)
+      // can promote it to a hard stop. If severity is ignored, critical rules are
+      // treated identically to suggestions — the whole enforcement chain breaks.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.vault.search).mockReturnValue([
+        { entry: { id: 'c1', title: 'Critical Rule', severity: 'critical' }, score: 0.95 },
+        { entry: { id: 'w1', title: 'Warning Rule', severity: 'warning' }, score: 0.75 },
+        { entry: { id: 's1', title: 'Suggestion', severity: 'suggestion' }, score: 0.5 },
+      ] as never);
+      const result = (await op.handler({ prompt: 'plan something' })) as Record<string, unknown>;
+      const recs = result.recommendations as Array<Record<string, unknown>>;
+      const critical = recs.find((r) => r.pattern === 'Critical Rule');
+      const warning = recs.find((r) => r.pattern === 'Warning Rule');
+      const suggestion = recs.find((r) => r.pattern === 'Suggestion');
+      expect(critical?.mandatory).toBe(true);
+      expect(critical?.strength).toBe(100);
+      expect(warning?.mandatory).toBe(false);
+      expect(suggestion?.mandatory).toBe(false);
+    });
+
+    it('sets mandatory:false for all brain-sourced recommendations', async () => {
+      // Brain learns from usage frequency, not from curated rules — it cannot
+      // declare a rule mandatory. If brain recs were mandatory, spurious patterns
+      // from frequent usage would block plans with no policy basis.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.vault.search).mockReturnValue([] as never);
+      vi.mocked(rt.brainIntelligence.recommend).mockReturnValue([
+        { pattern: 'Brain Pattern', strength: 75 },
+      ] as never);
+      const result = (await op.handler({ prompt: 'build feature' })) as Record<string, unknown>;
+      const recs = result.recommendations as Array<Record<string, unknown>>;
+      expect(recs[0].source).toBe('brain');
+      expect(recs[0].mandatory).toBe(false);
+    });
+
     it('creates a planner plan for lifecycle tracking', async () => {
       const op = findOp(ops, 'orchestrate_plan');
       await op.handler({ prompt: 'Build something' });

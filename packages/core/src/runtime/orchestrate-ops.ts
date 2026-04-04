@@ -384,17 +384,20 @@ export function createOrchestrateOps(
           source: 'vault' | 'brain';
           context?: string;
           example?: string;
+          mandatory: boolean;
         }> = [];
 
         // Vault always runs first — curated explicit knowledge takes precedence
         try {
           const vaultResults = vault.search(prompt, { domain, limit: 5 });
           recommendations = vaultResults.map((r) => {
+            const isCritical = r.entry.severity === 'critical';
             const rec: (typeof recommendations)[number] = {
               pattern: r.entry.title,
-              strength: 80,
+              strength: isCritical ? 100 : 80,
               entryId: r.entry.id,
               source: 'vault',
+              mandatory: isCritical,
             };
             if (r.entry.context) rec.context = r.entry.context;
             if (r.entry.example) rec.example = r.entry.example;
@@ -413,7 +416,12 @@ export function createOrchestrateOps(
           });
           for (const r of brainResults) {
             if (!recommendations.find((rec) => rec.pattern === r.pattern)) {
-              recommendations.push({ pattern: r.pattern, strength: r.strength, source: 'brain' });
+              recommendations.push({
+                pattern: r.pattern,
+                strength: r.strength,
+                source: 'brain',
+                mandatory: false,
+              });
             }
           }
         } catch {
