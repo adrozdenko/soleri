@@ -35,9 +35,9 @@ describe('chainToCapability', () => {
     expect(chainToCapability('get-stack-guidelines')).toBe('stack.guidelines');
   });
 
-  it('maps architecture and cognee chains', () => {
+  it('maps architecture and zettelcaster chains', () => {
     expect(chainToCapability('architecture-search')).toBe('architecture.search');
-    expect(chainToCapability('cognee-design-search')).toBe('cognee.search');
+    expect(chainToCapability('zettelcaster-search')).toBe('zettelcaster.search');
   });
 
   it('maps planning chains', () => {
