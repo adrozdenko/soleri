@@ -50,6 +50,12 @@ export interface PlaybookGate {
   checkType: string;
   /** Whether this gate blocks progression (blocking) or is advisory only (advisory). Defaults to 'blocking'. */
   severity?: 'blocking' | 'advisory';
+  /**
+   * When true, only user-sourced evidence satisfies this gate.
+   * Agent-collected evidence (e.g. automated test runs) does not count.
+   * Defaults to false.
+   */
+  requiresUserEvidence?: boolean;
 }
 
 // =============================================================================

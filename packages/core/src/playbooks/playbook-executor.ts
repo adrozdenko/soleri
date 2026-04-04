@@ -72,6 +72,16 @@ export interface CompleteResult {
   duration: number;
 }
 
+/**
+ * Evidence record for a gate result.
+ * `source` distinguishes agent-collected evidence from explicit user confirmation.
+ */
+export interface GateEvidence {
+  satisfied: boolean;
+  /** Who produced the evidence. Defaults to 'agent' when omitted. */
+  source?: 'agent' | 'user';
+}
+
 // =============================================================================
 // STEP PARSER
 // =============================================================================
@@ -227,7 +237,7 @@ export class PlaybookExecutor {
    */
   complete(
     sessionId: string,
-    options?: { abort?: boolean; gateResults?: Record<string, boolean> },
+    options?: { abort?: boolean; gateResults?: Record<string, boolean | GateEvidence> },
   ): CompleteResult | { error: string } {
     const session = this.sessions.get(sessionId);
     if (!session) return { error: `Session not found: ${sessionId}` };
@@ -251,8 +261,19 @@ export class PlaybookExecutor {
     const completionGates = session.gates.filter((g) => g.phase === 'completion');
     const unsatisfiedGates: string[] = [];
     for (const gate of completionGates) {
-      if (!gateResults[gate.checkType]) {
-        unsatisfiedGates.push(`${gate.checkType}: ${gate.requirement}`);
+      const raw = gateResults[gate.checkType];
+      const evidence: GateEvidence =
+        typeof raw === 'object' && raw !== null ? raw : { satisfied: !!raw, source: 'agent' };
+
+      const satisfied =
+        evidence.satisfied && !(gate.requiresUserEvidence && evidence.source !== 'user');
+
+      if (!satisfied) {
+        const reason =
+          gate.requiresUserEvidence && evidence.satisfied && evidence.source !== 'user'
+            ? `${gate.checkType}: ${gate.requirement} (requires user confirmation)`
+            : `${gate.checkType}: ${gate.requirement}`;
+        unsatisfiedGates.push(reason);
       }
     }
 

@@ -217,6 +217,82 @@ describe('PlaybookExecutor', () => {
       const result = executor.complete(sessionId);
       expect('error' in result).toBe(true);
     });
+
+    // ── evidence source ──────────────────────────────────────────────
+
+    describe('evidence source', () => {
+      function makePlaybookWithUserGate(): PlaybookDefinition {
+        return makePlaybook({
+          gates: [
+            {
+              phase: 'completion',
+              requirement: 'User confirmed result',
+              checkType: 'user-confirm',
+              requiresUserEvidence: true,
+            },
+          ],
+        });
+      }
+
+      it('agent-source evidence fails a requiresUserEvidence gate', () => {
+        const { sessionId, totalSteps } = executor.start(makePlaybookWithUserGate());
+        for (let i = 0; i < totalSteps; i++) executor.step(sessionId);
+
+        const result = executor.complete(sessionId, {
+          gateResults: { 'user-confirm': { satisfied: true, source: 'agent' } },
+        });
+
+        expect('error' in result).toBe(false);
+        if ('error' in result) return;
+
+        expect(result.gatesPassed).toBe(false);
+        expect(result.unsatisfiedGates[0]).toContain('user-confirm');
+        expect(result.unsatisfiedGates[0]).toContain('requires user confirmation');
+      });
+
+      it('user-source evidence satisfies a requiresUserEvidence gate', () => {
+        const { sessionId, totalSteps } = executor.start(makePlaybookWithUserGate());
+        for (let i = 0; i < totalSteps; i++) executor.step(sessionId);
+
+        const result = executor.complete(sessionId, {
+          gateResults: { 'user-confirm': { satisfied: true, source: 'user' } },
+        });
+
+        expect('error' in result).toBe(false);
+        if ('error' in result) return;
+
+        expect(result.gatesPassed).toBe(true);
+        expect(result.unsatisfiedGates).toHaveLength(0);
+      });
+
+      it('plain boolean true satisfies a gate without requiresUserEvidence', () => {
+        const { sessionId, totalSteps } = executor.start(makePlaybook());
+        for (let i = 0; i < totalSteps; i++) executor.step(sessionId);
+
+        const result = executor.complete(sessionId, {
+          gateResults: { 'test-pass': true },
+        });
+
+        expect('error' in result).toBe(false);
+        if ('error' in result) return;
+        expect(result.gatesPassed).toBe(true);
+      });
+
+      it('plain boolean true does not satisfy a requiresUserEvidence gate', () => {
+        const { sessionId, totalSteps } = executor.start(makePlaybookWithUserGate());
+        for (let i = 0; i < totalSteps; i++) executor.step(sessionId);
+
+        // bare true = no source = treated as agent
+        const result = executor.complete(sessionId, {
+          gateResults: { 'user-confirm': true },
+        });
+
+        expect('error' in result).toBe(false);
+        if ('error' in result) return;
+        expect(result.gatesPassed).toBe(false);
+        expect(result.unsatisfiedGates[0]).toContain('requires user confirmation');
+      });
+    });
   });
 
   // ─── getSession / listSessions ──────────────────────────────────
