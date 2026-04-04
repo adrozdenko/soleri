@@ -6,8 +6,6 @@
 export type {
   Flow,
   FlowStep,
-  Gate,
-  GateAction,
   ProbeName,
   ProbeResults,
   PlanStep,
@@ -38,7 +36,7 @@ export {
 
 // Context router
 export { detectContext, applyContextOverrides, getFlowOverrides } from './context-router.js';
-export type { ContextOverride } from './context-router.js';
+// ContextOverride is intentionally unexported — internal use only
 
 // Gate evaluator
 export { evaluateGate, evaluateCondition, extractScore, resolvePath } from './gate-evaluator.js';

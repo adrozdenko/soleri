@@ -4,12 +4,12 @@ import { join, relative } from 'node:path';
 import { homedir } from 'node:os';
 import * as log from '../utils/logger.js';
 
-export const STAGING_ROOT = join(homedir(), '.soleri', 'staging');
+const STAGING_ROOT = join(homedir(), '.soleri', 'staging');
 
 /** Default max age for stale staging entries (7 days). */
 const DEFAULT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-export interface StagedEntry {
+interface StagedEntry {
   id: string;
   timestamp: string;
   path: string;
@@ -20,7 +20,7 @@ export interface StagedEntry {
 /**
  * Walk a directory tree and collect all items with their relative paths.
  */
-export function walkDir(dir: string, base: string): { relPath: string; size: number }[] {
+function walkDir(dir: string, base: string): { relPath: string; size: number }[] {
   const results: { relPath: string; size: number }[] = [];
   if (!existsSync(dir)) return results;
 
@@ -41,7 +41,7 @@ export function walkDir(dir: string, base: string): { relPath: string; size: num
 /**
  * List all staged entries.
  */
-export function listStaged(): StagedEntry[] {
+function listStaged(): StagedEntry[] {
   if (!existsSync(STAGING_ROOT)) return [];
 
   const entries: StagedEntry[] = [];
@@ -69,7 +69,7 @@ export function listStaged(): StagedEntry[] {
 /**
  * Parse a duration string like "7d", "24h", "30m" into milliseconds.
  */
-export function parseDuration(duration: string): number | null {
+function parseDuration(duration: string): number | null {
   const match = duration.match(/^(\d+)(d|h|m)$/);
   if (!match) return null;
 
