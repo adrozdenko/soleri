@@ -59,6 +59,11 @@ if [ ! -f "$SETTINGS_FILE" ]; then
         "type": "command",
         "command": "sh $AGENT_DIR/scripts/clean-worktrees.sh",
         "timeout": 10
+      },
+      {
+        "type": "command",
+        "command": "echo 'SESSION_START: Invoke the ${config.id}-mode skill now to load full routing context and command reference.'",
+        "timeout": 5
       }
     ]
   }
@@ -99,6 +104,24 @@ else
       fs.writeFileSync('$SETTINGS_FILE', JSON.stringify(settings, null, 2) + '\\n');
     "
     echo "[ok] Added SessionStart worktree cleanup hook"
+  fi
+  # Add SessionStart ernesto-mode skill hook
+  if grep -q "${config.id}-mode skill" "$SETTINGS_FILE" 2>/dev/null; then
+    echo "[ok] SessionStart ${config.id}-mode skill hook already configured"
+  else
+    node -e "
+      const fs = require('fs');
+      const settings = JSON.parse(fs.readFileSync('$SETTINGS_FILE', 'utf-8'));
+      if (!settings.hooks) settings.hooks = {};
+      if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+      settings.hooks.SessionStart.push({
+        type: 'command',
+        command: 'echo \\'SESSION_START: Invoke the ${config.id}-mode skill now to load full routing context and command reference.\\'',
+        timeout: 5
+      });
+      fs.writeFileSync('$SETTINGS_FILE', JSON.stringify(settings, null, 2) + '\\n');
+    "
+    echo "[ok] Added SessionStart ${config.id}-mode skill hook"
   fi
 fi
 
