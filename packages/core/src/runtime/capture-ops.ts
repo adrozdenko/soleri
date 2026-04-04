@@ -30,42 +30,56 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
       description:
         'Batch-capture knowledge entries with governance gating and auto-enrichment via TF-IDF tagging.',
       auth: 'write',
-      schema: z.object({
-        projectPath: z.string().optional().default('.'),
-        tier: z
-          .enum(['agent', 'project', 'team'])
-          .optional()
-          .describe('Manual tier override. If omitted, tier is auto-detected from content.'),
-        entries: coerceArray(
-          z.object({
-            id: z.string().optional(),
-            type: z
-              .enum([
-                'pattern',
-                'anti-pattern',
-                'rule',
-                'playbook',
-                'workflow',
-                'principle',
-                'reference',
-              ])
-              .describe('Entry type'),
-            domain: z.string(),
-            title: z.string(),
-            severity: z.enum(['critical', 'warning', 'info']).optional().default('info'),
-            description: z.string(),
-            tags: z.array(z.string()).optional().default([]),
-            context: z.string().optional(),
-            example: z.string().optional(),
-            counterExample: z.string().optional(),
-            why: z.string().optional(),
-            tier: z
-              .enum(['agent', 'project', 'team'])
-              .optional()
-              .describe('Per-entry tier override. Falls back to top-level tier, then auto-detect.'),
-          }),
-        ),
-      }),
+      schema: z.preprocess(
+        (val) => {
+          // Auto-wrap flat entry fields into { entries: [val] } so callers don't need the wrapper
+          if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+            const obj = val as Record<string, unknown>;
+            if (obj.entries === undefined && (obj.type !== undefined || obj.title !== undefined)) {
+              return { entries: [obj] };
+            }
+          }
+          return val;
+        },
+        z.object({
+          projectPath: z.string().optional().default('.'),
+          tier: z
+            .enum(['agent', 'project', 'team'])
+            .optional()
+            .describe('Manual tier override. If omitted, tier is auto-detected from content.'),
+          entries: coerceArray(
+            z.object({
+              id: z.string().optional(),
+              type: z
+                .enum([
+                  'pattern',
+                  'anti-pattern',
+                  'rule',
+                  'playbook',
+                  'workflow',
+                  'principle',
+                  'reference',
+                ])
+                .describe('Entry type'),
+              domain: z.string(),
+              title: z.string(),
+              severity: z.enum(['critical', 'warning', 'info']).optional().default('info'),
+              description: z.string(),
+              tags: z.array(z.string()).optional().default([]),
+              context: z.string().optional(),
+              example: z.string().optional(),
+              counterExample: z.string().optional(),
+              why: z.string().optional(),
+              tier: z
+                .enum(['agent', 'project', 'team'])
+                .optional()
+                .describe(
+                  'Per-entry tier override. Falls back to top-level tier, then auto-detect.',
+                ),
+            }),
+          ),
+        }),
+      ),
       handler: async (params) => {
         const projectPath = (params.projectPath as string | undefined) ?? '.';
         const topTier = params.tier as ScopeTier | undefined;

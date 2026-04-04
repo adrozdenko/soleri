@@ -1047,17 +1047,19 @@ export function createOrchestrateOps(
           };
         }
 
-        // End brain session — runs regardless of plan existence
+        // End brain session — only if we have a valid sessionId
         const fixTrail = evidenceReport ? buildFixTrailSummary(evidenceReport) : undefined;
-        const session = brainIntelligence.lifecycle({
-          action: 'end',
-          sessionId,
-          planId,
-          planOutcome: outcome,
-          toolsUsed,
-          filesModified,
-          ...(fixTrail ? { context: `Fix trail: ${fixTrail}` } : {}),
-        });
+        const session = sessionId
+          ? brainIntelligence.lifecycle({
+              action: 'end',
+              sessionId,
+              planId,
+              planOutcome: outcome,
+              toolsUsed,
+              filesModified,
+              ...(fixTrail ? { context: `Fix trail: ${fixTrail}` } : {}),
+            })
+          : null;
 
         // Record brain feedback for vault entries referenced in plan decisions
         if (planObj && planObj.decisions) {
