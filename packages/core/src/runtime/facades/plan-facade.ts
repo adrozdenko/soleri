@@ -271,6 +271,20 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           }
         }
 
+        // Collect unenforced playbook warnings before completing
+        const playbookWarnings: string[] = [];
+        if (currentPlan?.playbookMatch) {
+          if (!currentPlan.playbookSessionId) {
+            // Playbook was matched at create_plan time but executor session was never started
+            playbookWarnings.push(
+              `WARNING: Playbook "${currentPlan.playbookMatch.label}" was matched but its gates were never evaluated — enforcement was entirely skipped.`,
+            );
+          }
+          // If session existed, the blocking gate check above already ran.
+          // Advisory gates that were unsatisfied become warnings here (non-blocking).
+          // (Future: track per-gate evaluation status for richer reporting)
+        }
+
         const plan = planner.complete(params.planId as string);
         const taskSummary = {
           completed: plan.tasks.filter((t) => t.status === 'completed').length,
@@ -278,7 +292,12 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           failed: plan.tasks.filter((t) => t.status === 'failed').length,
           total: plan.tasks.length,
         };
-        return { completed: true, plan, taskSummary };
+        return {
+          completed: true,
+          plan,
+          taskSummary,
+          ...(playbookWarnings.length > 0 ? { playbookWarnings } : {}),
+        };
       },
     },
 
