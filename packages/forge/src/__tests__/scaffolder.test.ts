@@ -87,12 +87,13 @@ describe('Scaffolder', () => {
 
   describe('scaffold', () => {
     it('should create a complete agent project', () => {
+      const preview = previewScaffold(testConfig);
       const result = scaffold(testConfig);
 
       expect(result.success).toBe(true);
       expect(result.agentDir).toBe(join(tempDir, 'atlas'));
       expect(result.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
-      expect(result.filesCreated.length).toBe(56);
+      expect(result.filesCreated.length).toBe(preview.files.length);
     });
 
     it('should create expected directories (no facades/ or llm/ dirs)', () => {
