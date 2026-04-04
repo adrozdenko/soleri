@@ -35,72 +35,15 @@ echo "Registering ${config.name} with Claude Code..."
 claude mcp add --scope user "$AGENT_NAME" -- node "$AGENT_DIR/dist/index.js"
 echo "[ok] Registered ${config.name} as MCP server (Claude Code)"
 
-# Configure PreCompact hook for session capture
-SETTINGS_FILE="$HOME/.claude/settings.json"
+# Sync lifecycle hooks into ~/.claude/settings.json
 echo ""
-echo "Configuring Claude session capture hook..."
-
-if [ ! -d "$HOME/.claude" ]; then
-  mkdir -p "$HOME/.claude"
-fi
-
-if [ ! -f "$SETTINGS_FILE" ]; then
-  cat > "$SETTINGS_FILE" << SETTINGS
-{
-  "hooks": {
-    "PreCompact": [
-      {
-        "type": "prompt",
-        "prompt": "Before context is compacted, capture a session summary by calling ${config.id}_core op:session_capture with a brief summary of what was accomplished, the topics covered, files modified, and tools used."
-      }
-    ],
-    "SessionStart": [
-      {
-        "type": "command",
-        "command": "sh $AGENT_DIR/scripts/clean-worktrees.sh",
-        "timeout": 10
-      }
-    ]
-  }
-}
-SETTINGS
-  echo "[ok] Created $SETTINGS_FILE with PreCompact + SessionStart hooks"
+echo "Syncing lifecycle hooks..."
+if command -v soleri &>/dev/null; then
+  soleri hooks sync
 else
-  if grep -q "PreCompact" "$SETTINGS_FILE" 2>/dev/null; then
-    echo "[ok] PreCompact hook already configured — skipping"
-  else
-    node -e "
-      const fs = require('fs');
-      const settings = JSON.parse(fs.readFileSync('$SETTINGS_FILE', 'utf-8'));
-      if (!settings.hooks) settings.hooks = {};
-      if (!settings.hooks.PreCompact) settings.hooks.PreCompact = [];
-      settings.hooks.PreCompact.push({
-        type: 'prompt',
-        prompt: 'Before context is compacted, capture a session summary by calling ${config.id}_core op:session_capture with a brief summary of what was accomplished, the topics covered, files modified, and tools used.'
-      });
-      fs.writeFileSync('$SETTINGS_FILE', JSON.stringify(settings, null, 2) + '\\n');
-    "
-    echo "[ok] Added PreCompact hook to $SETTINGS_FILE"
-  fi
-  # Add SessionStart worktree cleanup hook
-  if grep -q "clean-worktrees" "$SETTINGS_FILE" 2>/dev/null; then
-    echo "[ok] SessionStart worktree cleanup hook already configured"
-  else
-    node -e "
-      const fs = require('fs');
-      const settings = JSON.parse(fs.readFileSync('$SETTINGS_FILE', 'utf-8'));
-      if (!settings.hooks) settings.hooks = {};
-      if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
-      settings.hooks.SessionStart.push({
-        type: 'command',
-        command: 'sh $AGENT_DIR/scripts/clean-worktrees.sh',
-        timeout: 10
-      });
-      fs.writeFileSync('$SETTINGS_FILE', JSON.stringify(settings, null, 2) + '\\n');
-    "
-    echo "[ok] Added SessionStart worktree cleanup hook"
-  fi
+  npx --yes soleri hooks sync
 fi
+echo "[ok] Lifecycle hooks synced"
 
 # Install skills to ~/.claude/skills/
 SKILLS_DIR="$AGENT_DIR/skills"
