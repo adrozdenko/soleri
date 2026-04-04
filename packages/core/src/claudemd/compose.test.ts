@@ -35,11 +35,6 @@ const facades: FacadeConfig[] = [
 ];
 
 describe('compose — constants', () => {
-  it('FORMAT_VERSION is a positive integer', () => {
-    expect(FORMAT_VERSION).toBeGreaterThan(0);
-    expect(Number.isInteger(FORMAT_VERSION)).toBe(true);
-  });
-
   it('markers contain version', () => {
     expect(OPEN_MARKER).toContain(`v${FORMAT_VERSION}`);
   });

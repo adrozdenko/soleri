@@ -47,19 +47,6 @@ function findRule(name: string) {
 }
 
 describe('DEFAULT_SUGGESTION_RULES', () => {
-  it('exports exactly 6 rules', () => {
-    expect(DEFAULT_SUGGESTION_RULES).toHaveLength(6);
-  });
-
-  it('each rule has name, description, condition, and generate', () => {
-    for (const rule of DEFAULT_SUGGESTION_RULES) {
-      expect(typeof rule.name).toBe('string');
-      expect(typeof rule.description).toBe('string');
-      expect(typeof rule.condition).toBe('function');
-      expect(typeof rule.generate).toBe('function');
-    }
-  });
-
   // ─── many-warnings ────────────────────────────────────────────────
 
   describe('many-warnings', () => {

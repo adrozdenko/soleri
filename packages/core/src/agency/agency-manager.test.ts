@@ -219,7 +219,7 @@ describe('AgencyManager', () => {
     it('returns patterns from vault for .ts files', () => {
       seedVaultWithPattern(vault);
       const p = manager.surfacePatterns('/project/src/module.ts');
-      expect(p.length).toBeGreaterThan(0);
+      expect(p.length).toBe(1);
       expect(p[0].trigger).toBe('/project/src/module.ts');
       expect(p[0].entryId).toBe('ts-pattern-1');
     });
@@ -238,14 +238,14 @@ describe('AgencyManager', () => {
     it('different files are independent of each other cooldown', () => {
       seedVaultWithPattern(vault);
       manager.surfacePatterns('/project/src/a.ts');
-      expect(manager.surfacePatterns('/project/src/b.ts').length).toBeGreaterThan(0);
+      expect(manager.surfacePatterns('/project/src/b.ts').length).toBe(1);
     });
 
     it('accumulates in getSurfacedPatterns', () => {
       seedVaultWithPattern(vault);
       manager.surfacePatterns('/project/a.ts');
       manager.surfacePatterns('/project/b.tsx');
-      expect(manager.getSurfacedPatterns().length).toBeGreaterThanOrEqual(2);
+      expect(manager.getSurfacedPatterns().length).toBe(2);
     });
 
     it('clearSurfacedPatterns resets accumulator', () => {
@@ -536,7 +536,7 @@ describe('AgencyManager', () => {
     it('creates notifications for each suggestion', () => {
       expect(manager.getPendingNotificationCount()).toBe(0);
       manager.generateSuggestions(); // first-session fires
-      expect(manager.getPendingNotificationCount()).toBeGreaterThan(0);
+      expect(manager.getPendingNotificationCount()).toBe(1);
     });
   });
 

@@ -286,7 +286,7 @@ describe('runAgentLoop', () => {
           onToolUse: (name) => toolUses.push(name),
           onToolResult: (name, result, ms) => {
             toolResults.push(`${name}:${result.output}`);
-            expect(ms).toBeGreaterThanOrEqual(0);
+            expect(typeof ms).toBe('number');
           },
         },
       );

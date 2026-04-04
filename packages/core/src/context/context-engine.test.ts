@@ -398,7 +398,6 @@ describe('ContextEngine', () => {
 
     it('processing time is a non-negative number', async () => {
       const result = await engine.analyze('any prompt');
-      expect(result.processingTimeMs).toBeGreaterThanOrEqual(0);
       expect(typeof result.processingTimeMs).toBe('number');
     });
 

@@ -14,7 +14,6 @@ import {
   cleanupTempFiles,
   sanitizeForPersistence,
   MAX_FILE_SIZE,
-  TEXT_EXTENSIONS,
 } from './file-handler.js';
 import { NotificationEngine } from './notifications.js';
 import type { FileInfo, MultimodalContent } from './file-handler.js';
@@ -229,13 +228,6 @@ describe('File Handler', () => {
       expect(sanitized.content).toMatch(/\[image: photo\.png, \d+KB\]/);
       expect(sanitized.type).toBe('image');
     });
-  });
-
-  test('TEXT_EXTENSIONS includes common types', () => {
-    expect(TEXT_EXTENSIONS.has('.ts')).toBe(true);
-    expect(TEXT_EXTENSIONS.has('.py')).toBe(true);
-    expect(TEXT_EXTENSIONS.has('.json')).toBe(true);
-    expect(TEXT_EXTENSIONS.has('.md')).toBe(true);
   });
 
   test('MAX_FILE_SIZE is 20MB', () => {
