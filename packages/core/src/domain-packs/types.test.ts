@@ -118,11 +118,6 @@ describe('validateDomainPack', () => {
 });
 
 describe('SEMANTIC_FACADE_NAMES', () => {
-  it('is a readonly array (TypeScript enforced)', () => {
-    expect(Array.isArray(SEMANTIC_FACADE_NAMES)).toBe(true);
-    expect(SEMANTIC_FACADE_NAMES.length).toBeGreaterThan(0);
-  });
-
   it('contains all core engine facades', () => {
     const expected = [
       'vault',

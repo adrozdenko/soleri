@@ -57,7 +57,7 @@ describe('IntentRouter', () => {
       expect(result.mode).toBe('FIX-MODE');
       expect(result.method).toBe('keyword');
       expect(result.confidence).toBeGreaterThan(0);
-      expect(result.matchedKeywords.length).toBeGreaterThan(0);
+      expect(result.matchedKeywords.length).toBe(2);
     });
 
     it('classifies "build a new component" as BUILD intent', () => {
@@ -117,7 +117,7 @@ describe('IntentRouter', () => {
       // "fix bug broken error" has 4 FIX keywords vs anything else
       const result = router.routeIntent('fix bug broken error');
       expect(result.intent).toBe('fix');
-      expect(result.matchedKeywords.length).toBeGreaterThanOrEqual(4);
+      expect(result.matchedKeywords.length).toBe(4);
     });
 
     it('confidence is capped at 1.0', () => {

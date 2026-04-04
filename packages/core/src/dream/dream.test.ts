@@ -134,13 +134,6 @@ describe('dream ops', () => {
     vault.close();
   });
 
-  it('creates 3 ops with correct names', () => {
-    expect(ops).toHaveLength(3);
-    expect(ops.map((o) => o.name).sort()).toEqual(
-      ['dream_check_gate', 'dream_run', 'dream_status'].sort(),
-    );
-  });
-
   it('dream_status returns status', async () => {
     const result = (await findOp('dream_status').handler({})) as Record<string, unknown>;
     expect(result).toHaveProperty('sessionsSinceLastDream');

@@ -136,7 +136,7 @@ describe('EnforcementRegistry', () => {
       const result = registry.translate('claude-code');
       expect(result.host).toBe('claude-code');
       // Only r1 should be translated (r2 is disabled)
-      expect(result.files.length).toBeGreaterThan(0);
+      expect(result.files.length).toBe(1);
     });
   });
 
@@ -250,7 +250,7 @@ describe('ClaudeCodeAdapter', () => {
           makeRule({ id: 'bad', trigger: 'on-save' }),
         ],
       });
-      expect(result.files.length).toBeGreaterThan(0);
+      expect(result.files.length).toBe(1);
       expect(result.skipped).toHaveLength(1);
       expect(result.skipped[0].ruleId).toBe('bad');
     });
