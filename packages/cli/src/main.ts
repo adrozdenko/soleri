@@ -37,6 +37,7 @@ import { registerBrain } from './commands/brain.js';
 import { registerValidateSkills } from './commands/validate-skills.js';
 import { registerKnowledge } from './commands/knowledge.js';
 import { registerSchedule } from './commands/schedule.js';
+import { registerChat } from './commands/chat.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -106,4 +107,5 @@ registerBrain(program);
 registerValidateSkills(program);
 registerKnowledge(program);
 registerSchedule(program);
+registerChat(program);
 program.parse();
