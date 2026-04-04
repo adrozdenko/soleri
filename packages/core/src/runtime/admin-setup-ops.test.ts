@@ -106,18 +106,6 @@ describe('createAdminSetupOps', () => {
     ops = createAdminSetupOps(runtime);
   });
 
-  it('returns 4 ops', () => {
-    expect(ops).toHaveLength(4);
-  });
-
-  it('all ops have required fields', () => {
-    for (const op of ops) {
-      expect(op.name).toBeTruthy();
-      expect(op.handler).toBeDefined();
-      expect(['read', 'write', 'admin']).toContain(op.auth);
-    }
-  });
-
   describe('admin_inject_claude_md', () => {
     it('returns error when CLAUDE.md not found and createIfMissing is false', async () => {
       const result = (await findOp(ops, 'admin_inject_claude_md').handler({

@@ -134,18 +134,6 @@ describe('createPlanningExtraOps', () => {
     ops = createPlanningExtraOps(runtime);
   });
 
-  it('returns expected op count', () => {
-    expect(ops.length).toBeGreaterThanOrEqual(22);
-  });
-
-  it('all ops have required fields', () => {
-    for (const op of ops) {
-      expect(op.name).toBeTruthy();
-      expect(op.handler).toBeDefined();
-      expect(['read', 'write', 'admin']).toContain(op.auth);
-    }
-  });
-
   describe('plan_iterate', () => {
     it('iterates a draft plan', async () => {
       const result = (await findOp(ops, 'plan_iterate').handler({

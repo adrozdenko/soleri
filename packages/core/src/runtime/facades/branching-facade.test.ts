@@ -1,6 +1,5 @@
 /**
  * Colocated contract tests for branching-facade.ts.
- * Verifies the facade wrapper delegates to branching-ops.
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -21,12 +20,37 @@ function makeRuntime(): AgentRuntime {
 }
 
 describe('branching-facade', () => {
-  it('every op has name, handler, and auth', () => {
-    const ops = createBranchingFacadeOps(makeRuntime());
-    for (const op of ops) {
-      expect(typeof op.name).toBe('string');
-      expect(typeof op.handler).toBe('function');
-      expect(typeof op.auth).toBe('string');
-    }
+  describe('vault_branch', () => {
+    it('creates branch and returns created: true', async () => {
+      const runtime = makeRuntime();
+      const ops = createBranchingFacadeOps(runtime);
+      const op = ops.find((o) => o.name === 'vault_branch')!;
+      const result = (await op.handler({ name: 'feature-x' })) as {
+        created: boolean;
+        name: string;
+      };
+      expect(result.created).toBe(true);
+      expect(result.name).toBe('feature-x');
+    });
+  });
+
+  describe('vault_branch_list', () => {
+    it('returns empty list when no branches exist', async () => {
+      const runtime = makeRuntime();
+      const ops = createBranchingFacadeOps(runtime);
+      const op = ops.find((o) => o.name === 'vault_branch_list')!;
+      const result = (await op.handler({})) as { branches: unknown[] };
+      expect(result.branches).toEqual([]);
+    });
+  });
+
+  describe('vault_delete_branch', () => {
+    it('returns deleted: true on success', async () => {
+      const runtime = makeRuntime();
+      const ops = createBranchingFacadeOps(runtime);
+      const op = ops.find((o) => o.name === 'vault_delete_branch')!;
+      const result = (await op.handler({ name: 'feature-x' })) as { deleted: boolean };
+      expect(result.deleted).toBe(true);
+    });
   });
 });

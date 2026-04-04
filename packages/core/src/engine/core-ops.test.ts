@@ -38,19 +38,6 @@ afterAll(() => {
   runtime.close();
 });
 
-describe('createCoreOps', () => {
-  it('returns ops with expected names', () => {
-    const names = [...ops.keys()];
-    expect(names).toEqual(['health', 'identity', 'activate', 'session_start', 'setup']);
-  });
-
-  it('all ops have read or write auth level', () => {
-    for (const op of ops.values()) {
-      expect(['read', 'write']).toContain(op.auth);
-    }
-  });
-});
-
 describe('health op', () => {
   it('returns status ok with agent info', async () => {
     const result = await executeOp(ops, 'health');

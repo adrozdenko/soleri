@@ -187,15 +187,8 @@ export function registerCreate(program: Command): void {
             const outputDir = opts?.dir ? resolve(opts.dir) : (config.outputDir ?? process.cwd());
 
             // Preflight: ensure output directory exists and is writable
-            if (!existsSync(outputDir)) {
-              try {
-                mkdirSync(outputDir, { recursive: true });
-              } catch {
-                p.log.error(`Cannot create ${outputDir} — check permissions`);
-                process.exit(1);
-              }
-            }
             try {
+              mkdirSync(outputDir, { recursive: true });
               accessSync(outputDir, fsConstants.W_OK);
             } catch {
               p.log.error(`Cannot write to ${outputDir} — check permissions`);
@@ -400,15 +393,8 @@ export function registerCreate(program: Command): void {
 
           // Preflight: ensure output directory exists and is writable
           const legacyOutputDir = resolve(config.outputDir ?? process.cwd());
-          if (!existsSync(legacyOutputDir)) {
-            try {
-              mkdirSync(legacyOutputDir, { recursive: true });
-            } catch {
-              p.log.error(`Cannot create ${legacyOutputDir} — check permissions`);
-              process.exit(1);
-            }
-          }
           try {
+            mkdirSync(legacyOutputDir, { recursive: true });
             accessSync(legacyOutputDir, fsConstants.W_OK);
           } catch {
             p.log.error(`Cannot write to ${legacyOutputDir} — check permissions`);

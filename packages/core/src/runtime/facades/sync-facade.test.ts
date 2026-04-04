@@ -64,12 +64,33 @@ describe('createSyncFacadeOps', () => {
     ops = createSyncFacadeOps(mockRuntime());
   });
 
-  it('all ops have required fields', () => {
-    for (const op of ops) {
-      expect(op.name).toBeDefined();
-      expect(op.description).toBeDefined();
-      expect(op.auth).toBeDefined();
-      expect(typeof op.handler).toBe('function');
-    }
+  describe('vault_git_push', () => {
+    it('pushes vault entries and returns pushed count', async () => {
+      const op = ops.find((o) => o.name === 'vault_git_push')!;
+      const result = (await op.handler({ remote: 'origin', branch: 'main' })) as {
+        pushed: number;
+      };
+      expect(result.pushed).toBe(5);
+    });
+  });
+
+  describe('vault_git_pull', () => {
+    it('pulls from remote and returns imported count', async () => {
+      const op = ops.find((o) => o.name === 'vault_git_pull')!;
+      const result = (await op.handler({ remote: 'origin', branch: 'main' })) as {
+        imported: number;
+        conflicts: number;
+      };
+      expect(result.imported).toBe(3);
+      expect(result.conflicts).toBe(0);
+    });
+  });
+
+  describe('obsidian_export', () => {
+    it('exports entries and returns exported count', async () => {
+      const op = ops.find((o) => o.name === 'obsidian_export')!;
+      const result = (await op.handler({ vaultPath: '/tmp/obsidian' })) as { exported: number };
+      expect(result.exported).toBe(10);
+    });
   });
 });
