@@ -52,6 +52,11 @@ describe('hooks sync command', () => {
       packageName: 'myagent-mcp',
       hasBrain: false,
     });
+    mockSyncHooksToClaudeSettings.mockReturnValue({
+      installed: ['SessionStart', 'PreCompact', 'Stop'],
+      updated: [],
+      skipped: [],
+    });
 
     await runSyncCommand();
 
@@ -89,6 +94,11 @@ describe('hooks sync command', () => {
       format: 'filetree',
       packageName: 'my-filetree-agent',
       hasBrain: true,
+    });
+    mockSyncHooksToClaudeSettings.mockReturnValue({
+      installed: ['SessionStart'],
+      updated: ['Stop'],
+      skipped: ['PreCompact'],
     });
 
     await runSyncCommand();

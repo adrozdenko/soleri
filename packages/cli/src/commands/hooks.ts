@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { SUPPORTED_EDITORS, type EditorId } from '../hooks/templates.js';
 import { installHooks, removeHooks, detectInstalledHooks } from '../hooks/generator.js';
 import { detectAgent } from '../utils/agent-context.js';
+import { syncHooksToClaudeSettings } from '@soleri/core';
 import { listPacks, getPack } from '../hook-packs/registry.js';
 import { installPack, removePack, isPackInstalled } from '../hook-packs/installer.js';
 import { promotePack, demotePack } from '../hook-packs/graduation.js';
@@ -23,6 +24,37 @@ import * as log from '../utils/logger.js';
 
 export function registerHooks(program: Command): void {
   const hooks = program.command('hooks').description('Manage editor hooks and hook packs');
+
+  hooks
+    .command('sync')
+    .description(
+      'Sync lifecycle hooks into ~/.claude/settings.json (runs automatically on postinstall)',
+    )
+    .action(() => {
+      const ctx = detectAgent();
+      if (!ctx) {
+        log.fail('No agent project detected. Run from an agent directory.');
+        process.exit(1);
+      }
+      const result = syncHooksToClaudeSettings(ctx.agentId);
+      if (result.error) {
+        log.fail(`Failed to sync hooks for ${ctx.agentId}: ${result.error}`);
+        process.exit(1);
+      }
+      const events = [...result.installed, ...result.updated, ...result.skipped];
+      if (result.installed.length > 0) {
+        log.pass(`Installed hooks for ${ctx.agentId}: ${result.installed.join(', ')}`);
+      }
+      if (result.updated.length > 0) {
+        log.pass(`Updated hooks for ${ctx.agentId}: ${result.updated.join(', ')}`);
+      }
+      if (result.skipped.length > 0) {
+        log.info(`Already up to date: ${result.skipped.join(', ')}`);
+      }
+      if (events.length === 0) {
+        log.info(`No hooks found for ${ctx.agentId}`);
+      }
+    });
 
   hooks
     .command('add')

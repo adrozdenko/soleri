@@ -297,13 +297,19 @@ describe('createAdminSetupOps', () => {
 
   describe('syncHooksToClaudeSettings', () => {
     it('installs SessionStart, PreCompact, and Stop hooks on fresh settings', () => {
-      syncHooksToClaudeSettings('test-agent');
+      const result = syncHooksToClaudeSettings('test-agent');
       const written = mockFs['/mock-home/.claude/settings.json'];
       expect(written).toBeDefined();
       const settings = JSON.parse(written);
       expect(settings.hooks.SessionStart).toHaveLength(2);
       expect(settings.hooks.PreCompact).toHaveLength(1);
       expect(settings.hooks.Stop).toHaveLength(1);
+      expect(result.installed).toContain('SessionStart');
+      expect(result.installed).toContain('PreCompact');
+      expect(result.installed).toContain('Stop');
+      expect(result.updated).toHaveLength(0);
+      expect(result.skipped).toHaveLength(0);
+      expect(result.error).toBeUndefined();
     });
 
     it('includes the {agentId}-mode skill hook in SessionStart', () => {
@@ -327,9 +333,12 @@ describe('createAdminSetupOps', () => {
     it('is idempotent — running twice produces the same output', () => {
       syncHooksToClaudeSettings('test-agent');
       const after1 = mockFs['/mock-home/.claude/settings.json'];
-      syncHooksToClaudeSettings('test-agent');
+      const result2 = syncHooksToClaudeSettings('test-agent');
       const after2 = mockFs['/mock-home/.claude/settings.json'];
       expect(after1).toBe(after2);
+      expect(result2.skipped).toContain('SessionStart');
+      expect(result2.installed).toHaveLength(0);
+      expect(result2.updated).toHaveLength(0);
     });
 
     it('preserves non-agent hooks already in settings', () => {
@@ -364,13 +373,27 @@ describe('createAdminSetupOps', () => {
           ],
         },
       });
-      syncHooksToClaudeSettings('test-agent');
+      const result = syncHooksToClaudeSettings('test-agent');
       const settings = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
       const commands = settings.hooks.SessionStart.flatMap((g: { hooks: { command?: string }[] }) =>
         g.hooks.map((h) => h.command),
       );
       expect(commands.some((c: string) => c.includes('OLD_STALE_OP'))).toBe(false);
       expect(commands.some((c: string) => c.includes('admin_health'))).toBe(true);
+      expect(result.updated).toContain('SessionStart');
+      expect(result.error).toBeUndefined();
+    });
+
+    it('returns error field when write fails', async () => {
+      const { writeFileSync } = await import('node:fs');
+      vi.mocked(writeFileSync).mockImplementationOnce(() => {
+        throw new Error('EACCES: permission denied');
+      });
+      const result = syncHooksToClaudeSettings('test-agent');
+      expect(result.error).toMatch(/EACCES/);
+      expect(result.installed).toHaveLength(0);
+      expect(result.updated).toHaveLength(0);
+      expect(result.skipped).toHaveLength(0);
     });
   });
 

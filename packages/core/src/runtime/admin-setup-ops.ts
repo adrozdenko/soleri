@@ -320,17 +320,30 @@ function mergeSettingsHooks(
 /**
  * Auto-sync lifecycle hooks into ~/.claude/settings.json at engine startup.
  * Idempotent — skips hooks already present, updates stale ones.
+ * Returns a summary of what was installed, updated, or skipped.
  */
-export function syncHooksToClaudeSettings(agentId: string): void {
+export function syncHooksToClaudeSettings(agentId: string): {
+  installed: string[];
+  updated: string[];
+  skipped: string[];
+  error?: string;
+} {
   try {
     const settings = readSettingsJson();
     const currentHooks = (settings.hooks ?? {}) as Record<string, SettingsHookGroup[]>;
-    const { hooks, installed, updated } = mergeSettingsHooks(currentHooks, agentId);
+    const { hooks, installed, updated, skipped } = mergeSettingsHooks(currentHooks, agentId);
     if (installed.length > 0 || updated.length > 0) {
       writeSettingsJson({ ...settings, hooks });
     }
-  } catch {
+    return { installed, updated, skipped };
+  } catch (err) {
     // Non-fatal — hooks will be installed on next run or via admin_setup_global
+    return {
+      installed: [],
+      updated: [],
+      skipped: [],
+      error: err instanceof Error ? err.message : String(err),
+    };
   }
 }
 
