@@ -382,17 +382,24 @@ export function createOrchestrateOps(
           strength: number;
           entryId?: string;
           source: 'vault' | 'brain';
+          context?: string;
+          example?: string;
         }> = [];
 
         // Vault always runs first — curated explicit knowledge takes precedence
         try {
           const vaultResults = vault.search(prompt, { domain, limit: 5 });
-          recommendations = vaultResults.map((r) => ({
-            pattern: r.entry.title,
-            strength: 80,
-            entryId: r.entry.id,
-            source: 'vault' as const,
-          }));
+          recommendations = vaultResults.map((r) => {
+            const rec: (typeof recommendations)[number] = {
+              pattern: r.entry.title,
+              strength: 80,
+              entryId: r.entry.id,
+              source: 'vault',
+            };
+            if (r.entry.context) rec.context = r.entry.context;
+            if (r.entry.example) rec.example = r.entry.example;
+            return rec;
+          });
         } catch {
           // Vault unavailable — brain will cover below
         }

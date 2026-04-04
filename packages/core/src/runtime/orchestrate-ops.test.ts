@@ -245,6 +245,44 @@ describe('createOrchestrateOps', () => {
       expect(recs[0].pattern).toBe('Brain Only Pattern');
     });
 
+    it('includes context and example from vault entry body in recommendations', async () => {
+      // SearchResult.entry already contains the full IntelligenceEntry — context and example
+      // must be forwarded into the recommendations payload, not dropped.
+      // If this regresses (title-only mapping), the planner has no rules to apply.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.vault.search).mockReturnValue([
+        {
+          entry: {
+            id: 'e-full',
+            title: 'Anti-Pattern: Skip Tests',
+            context: 'Never skip tests when under time pressure.',
+            example: 'Adding --passWithNoTests to CI.',
+          },
+          score: 0.9,
+        },
+      ] as never);
+      const result = (await op.handler({ prompt: 'write tests quickly' })) as Record<
+        string,
+        unknown
+      >;
+      const recs = result.recommendations as Array<Record<string, unknown>>;
+      expect(recs[0].context).toBe('Never skip tests when under time pressure.');
+      expect(recs[0].example).toBe('Adding --passWithNoTests to CI.');
+    });
+
+    it('omits context key when vault entry has no body', async () => {
+      // Title-only entries must not surface context: null or context: "" — the key should
+      // be absent so consumers can reliably check `if (rec.context)`.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.vault.search).mockReturnValue([
+        { entry: { id: 'e-bare', title: 'Pattern B' }, score: 0.7 },
+      ] as never);
+      const result = (await op.handler({ prompt: 'build something' })) as Record<string, unknown>;
+      const recs = result.recommendations as Array<Record<string, unknown>>;
+      expect('context' in recs[0]).toBe(false);
+      expect('example' in recs[0]).toBe(false);
+    });
+
     it('creates a planner plan for lifecycle tracking', async () => {
       const op = findOp(ops, 'orchestrate_plan');
       await op.handler({ prompt: 'Build something' });
