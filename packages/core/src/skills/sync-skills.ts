@@ -259,10 +259,9 @@ export function syncSkillsToClaudeCode(
     }
   }
 
-  // Task 3: Clean up stale global entries when doing a project-local install
-  if (!isGlobal && agentName) {
-    cleanStaleGlobalSkills(agentName, result);
-  }
+  // Task 3: (removed — cleanStaleGlobalSkills was wiping valid ernesto-soleri-* entries
+  // that the global sync installed. Task 2 orphan removal handles stale entries during
+  // global sync; project-local sync must not touch ~/.claude/skills/.)
 
   // Task 4: Scaffold global ~/.claude/CLAUDE.md when doing a global install
   if (isGlobal && agentName && result.installed.length + result.updated.length > 0) {
@@ -276,45 +275,6 @@ export function syncSkillsToClaudeCode(
   }
 
   return result;
-}
-
-/**
- * Remove ALL `{agent}-soleri-*` entries from ~/.claude/skills/
- * to clean up duplicates left by the old global-install behavior.
- *
- * Cleans entries from ALL agents, not just the current one — any
- * `*-soleri-*` entry in the global dir is a stale copy from a previous
- * global install. Canonical skills now live in project-local .claude/skills/.
- */
-function cleanStaleGlobalSkills(agentName: string, result: SyncResult): void {
-  const globalSkillsDir = join(homedir(), '.claude', 'skills');
-  if (!existsSync(globalSkillsDir)) return;
-
-  // Match any agent-prefixed soleri skill: <anything>-soleri-<skillname>
-  // Canonical project-local names look like "soleri-*" (no agent prefix).
-  const stalePattern = /^.+-soleri-.+$/;
-
-  try {
-    const entries = readdirSync(globalSkillsDir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      if (!stalePattern.test(entry.name)) continue;
-
-      const staleDir = join(globalSkillsDir, entry.name);
-      try {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const stagingDir = join(homedir(), '.soleri', 'staging', timestamp);
-        mkdirSync(stagingDir, { recursive: true });
-        cpSync(staleDir, join(stagingDir, entry.name), { recursive: true });
-        rmSync(staleDir, { recursive: true, force: true });
-        result.cleanedGlobal.push(entry.name);
-      } catch {
-        // Best-effort cleanup — don't fail the sync
-      }
-    }
-  } catch {
-    // Global skills dir unreadable — nothing to clean
-  }
 }
 
 // =============================================================================

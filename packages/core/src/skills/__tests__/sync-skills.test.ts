@@ -173,25 +173,11 @@ describe('syncSkillsToClaudeCode — project-local install', () => {
     expect(stat.isSymbolicLink()).toBe(true);
   });
 
-  it('cleans stale global entries with agent-soleri- prefix', async () => {
+  it('does NOT touch ~/.claude/skills/ during project-local install', async () => {
     createSourceSkill('soleri-vault-capture');
-    // Simulate old global duplicates
+    // Global dir has ernesto-soleri-* entries — project-local sync must leave them alone
     createGlobalSkillDir('ernesto-soleri-vault-capture');
     createGlobalSkillDir('ernesto-soleri-vault-navigator');
-
-    const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
-    const result = syncSkillsToClaudeCode([sourceDir], 'Ernesto', {
-      projectRoot: fakeProject,
-    });
-
-    expect(result.cleanedGlobal).toContain('ernesto-soleri-vault-capture');
-    expect(result.cleanedGlobal).toContain('ernesto-soleri-vault-navigator');
-    expect(globalDirExists('ernesto-soleri-vault-capture')).toBe(false);
-    expect(globalDirExists('ernesto-soleri-vault-navigator')).toBe(false);
-  });
-
-  it('does not clean global entries that do not match agent-soleri- prefix', async () => {
-    createSourceSkill('soleri-vault-capture');
     createGlobalSkillDir('other-agent-skill');
 
     const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
@@ -199,7 +185,10 @@ describe('syncSkillsToClaudeCode — project-local install', () => {
       projectRoot: fakeProject,
     });
 
-    expect(result.cleanedGlobal).not.toContain('other-agent-skill');
+    // cleanedGlobal must be empty — project-local sync must not remove global entries
+    expect(result.cleanedGlobal).toHaveLength(0);
+    expect(globalDirExists('ernesto-soleri-vault-capture')).toBe(true);
+    expect(globalDirExists('ernesto-soleri-vault-navigator')).toBe(true);
     expect(globalDirExists('other-agent-skill')).toBe(true);
   });
 });
