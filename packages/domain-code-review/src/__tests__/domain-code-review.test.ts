@@ -141,6 +141,42 @@ describe('check_architecture', () => {
 
     expect(result.verdict).toBe('PASS');
   });
+
+  it('should return zero violations and PASS for empty imports array', async () => {
+    const result = (await op.handler({
+      imports: [],
+    })) as { violationsFound: number; verdict: string; totalImports: number };
+
+    expect(result.violationsFound).toBe(0);
+    expect(result.verdict).toBe('PASS');
+    expect(result.totalImports).toBe(0);
+  });
+
+  it('should return zero violations for multiple valid imports', async () => {
+    const result = (await op.handler({
+      imports: [
+        { fromFile: 'src/features/auth/Login.tsx', importPath: './useAuth' },
+        { fromFile: 'src/features/auth/Login.tsx', importPath: '../shared/utils' },
+        { fromFile: 'src/utils/format.ts', importPath: '../lib/date' },
+      ],
+    })) as { violationsFound: number; verdict: string };
+
+    expect(result.violationsFound).toBe(0);
+    expect(result.verdict).toBe('PASS');
+  });
+
+  it('should report exact count for multiple violations in one call', async () => {
+    const result = (await op.handler({
+      imports: [
+        { fromFile: 'src/features/auth/Login.tsx', importPath: '../features/billing/api' },
+        { fromFile: 'src/features/auth/Register.tsx', importPath: '../features/dashboard/utils' },
+        { fromFile: 'src/components/UserCard.tsx', importPath: '../../services/userService' },
+      ],
+    })) as { violationsFound: number; verdict: string };
+
+    expect(result.violationsFound).toBe(3);
+    expect(result.verdict).toBe('FAIL');
+  });
 });
 
 describe('search_review_context', () => {
@@ -162,6 +198,28 @@ describe('search_review_context', () => {
 
     expect(result.resultsFound).toBe(1); // 'low-contrast' entry matches 'contrast' in accessibility category
     result.results.forEach((r) => expect(r.category).toBe('accessibility'));
+  });
+
+  it('should return all entries for empty string query (every entry matches empty string)', async () => {
+    const result = (await op.handler({
+      query: '',
+    })) as { resultsFound: number; query: string; category: string; source: string };
+
+    expect(result.resultsFound).toBe(10); // all 10 static knowledge entries include ''
+    expect(result.query).toBe('');
+    expect(result.category).toBe('all');
+    expect(result.source).toBe('static');
+  });
+
+  it('should return zero results for a query with no matching knowledge entries', async () => {
+    // This query string does not appear in any pattern, issue, id, or category in the knowledge base
+    const result = (await op.handler({
+      query: 'xyzzy-nonexistent-query-zzz',
+    })) as { resultsFound: number; category: string; source: string };
+
+    expect(result.resultsFound).toBe(0);
+    expect(result.category).toBe('all');
+    expect(result.source).toBe('static');
   });
 });
 
@@ -190,6 +248,30 @@ describe('generate_review_summary', () => {
 
     expect(result.verdict).toBe('APPROVED');
   });
+
+  it('should return CHANGES_REQUESTED and bySeverity.error of 1 for single error issue', async () => {
+    const result = (await op.handler({
+      issues: [{ issue: 'Missing alt text', severity: 'error', category: 'accessibility' }],
+    })) as { totalIssues: number; bySeverity: Record<string, number>; verdict: string };
+
+    expect(result.verdict).toBe('CHANGES_REQUESTED');
+    expect(result.bySeverity.error).toBe(1);
+    expect(result.bySeverity.warning).toBe(0);
+    expect(result.totalIssues).toBe(1);
+  });
+
+  it('should return REVIEW_WARNINGS and bySeverity.error of 0 when all issues are warnings', async () => {
+    const result = (await op.handler({
+      issues: [
+        { issue: 'Arbitrary value p-[13px]', severity: 'warning', category: 'tokens' },
+        { issue: 'UI-data coupling', severity: 'warning', category: 'architecture' },
+      ],
+    })) as { bySeverity: Record<string, number>; verdict: string };
+
+    expect(result.verdict).toBe('REVIEW_WARNINGS');
+    expect(result.bySeverity.error).toBe(0);
+    expect(result.bySeverity.warning).toBe(2);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -198,6 +280,25 @@ describe('generate_review_summary', () => {
 
 describe('accessibility_audit', () => {
   const op = pack.ops.find((o) => o.name === 'accessibility_audit')!;
+
+  it('should return zero issues and PASS for empty elements array', async () => {
+    const result = (await op.handler({
+      elements: [],
+    })) as { issuesFound: number; verdict: string; totalElements: number };
+
+    expect(result.issuesFound).toBe(0);
+    expect(result.verdict).toBe('PASS');
+    expect(result.totalElements).toBe(0);
+  });
+
+  it('should NOT flag contrastRatio exactly at WCAG AA threshold (4.5 is not below 4.5)', async () => {
+    const result = (await op.handler({
+      elements: [{ tag: 'p', contrastRatio: 4.5, ariaLabel: 'text' }],
+    })) as { issuesFound: number; verdict: string };
+
+    expect(result.issuesFound).toBe(0);
+    expect(result.verdict).toBe('PASS');
+  });
 
   it('should find missing aria-labels on interactive elements', async () => {
     const result = (await op.handler({
@@ -261,6 +362,17 @@ describe('accessibility_audit', () => {
 
 describe('validate_component_states', () => {
   const op = pack.ops.find((o) => o.name === 'validate_component_states')!;
+
+  it('should report all required states missing for empty states array', async () => {
+    const result = (await op.handler({
+      component: 'Button',
+      states: [],
+    })) as { missingStates: string[]; verdict: string; coverage: number };
+
+    expect(result.missingStates).toEqual(['default', 'hover', 'focus', 'disabled', 'error']);
+    expect(result.verdict).toBe('FAIL');
+    expect(result.coverage).toBe(0);
+  });
 
   it('should detect missing required states', async () => {
     const result = (await op.handler({
