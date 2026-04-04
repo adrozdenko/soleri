@@ -165,6 +165,8 @@ export interface PlanStep {
     min?: number;
     onFail?: { action: string; goto?: string; message?: string };
   };
+  /** Output keys this step produces — merged into stepContext for subsequent steps. */
+  output?: string[];
   status:
     | 'pending'
     | 'running'

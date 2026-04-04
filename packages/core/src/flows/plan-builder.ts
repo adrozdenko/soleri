@@ -121,6 +121,7 @@ export function flowStepsToPlanSteps(
       tools,
       parallel: step.parallel ?? false,
       requires,
+      output: step.output,
       status: 'pending',
     };
 

@@ -104,6 +104,9 @@ export class FlowExecutor {
     let branchIterations = 0;
     let currentIndex = 0;
 
+    // Accumulated outputs from completed steps — passed as context to subsequent dispatches
+    const stepContext: Record<string, unknown> = {};
+
     // Set up persistence if configured
     let runDir: string | undefined;
     let manifest: PlanRunManifest | undefined;
@@ -118,12 +121,13 @@ export class FlowExecutor {
       step.status = 'running';
 
       const toolResults: StepResult['toolResults'] = {};
+      const dispatchParams = { stepId: step.id, planId: plan.planId, context: { ...stepContext } };
 
       try {
         if (step.parallel && step.tools.length > 1) {
           // Execute tools in parallel
           const results = await Promise.allSettled(
-            step.tools.map((tool) => this.dispatch(tool, { stepId: step.id, planId: plan.planId })),
+            step.tools.map((tool) => this.dispatch(tool, dispatchParams)),
           );
           for (let i = 0; i < step.tools.length; i++) {
             const toolName = step.tools[i];
@@ -144,10 +148,7 @@ export class FlowExecutor {
           // Execute tools sequentially
           for (const toolName of step.tools) {
             try {
-              toolResults[toolName] = await this.dispatch(toolName, {
-                stepId: step.id,
-                planId: plan.planId,
-              });
+              toolResults[toolName] = await this.dispatch(toolName, dispatchParams);
             } catch (_err) {
               toolResults[toolName] = {
                 tool: toolName,
@@ -177,6 +178,15 @@ export class FlowExecutor {
         flatData[key] = val;
         if (val.data && typeof val.data === 'object') {
           Object.assign(flatData, val.data as Record<string, unknown>);
+        }
+      }
+
+      // Accumulate declared step outputs into stepContext for subsequent steps
+      if (step.output) {
+        for (const outputKey of step.output) {
+          if (outputKey in flatData) {
+            stepContext[outputKey] = flatData[outputKey];
+          }
         }
       }
 

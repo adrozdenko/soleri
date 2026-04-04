@@ -260,4 +260,50 @@ describe('FlowExecutor', () => {
       expect(result.stepResults[0].gateResult?.message).toBe('Blocked');
     });
   });
+
+  describe('step context (output → input flow)', () => {
+    it('passes prior step outputs as context to subsequent steps', async () => {
+      const received: Array<Record<string, unknown>> = [];
+
+      const dispatch = vi.fn(async (tool: string, params: Record<string, unknown>) => {
+        received.push({ tool, context: params.context });
+        return {
+          tool,
+          status: 'ok',
+          data: { 'vault-patterns': ['pattern-A', 'pattern-B'] },
+        };
+      });
+
+      const executor = new FlowExecutor(dispatch);
+      const plan = makePlan([
+        step('search-vault', ['vault.search'], { output: ['vault-patterns'] }),
+        step('brainstorm', ['brain.recommend']),
+      ]);
+
+      await executor.execute(plan);
+
+      // Step 1 receives empty context
+      expect(received[0].context).toEqual({});
+
+      // Step 2 receives vault-patterns from step 1
+      expect(received[1].context).toEqual({ 'vault-patterns': ['pattern-A', 'pattern-B'] });
+    });
+
+    it('steps with no output declaration do not pollute context', async () => {
+      const received: Array<Record<string, unknown>> = [];
+
+      const dispatch = vi.fn(async (tool: string, params: Record<string, unknown>) => {
+        received.push({ tool, context: params.context });
+        return { tool, status: 'ok', data: { 'some-key': 'value' } };
+      });
+
+      const executor = new FlowExecutor(dispatch);
+      const plan = makePlan([step('s1', ['tool-a']), step('s2', ['tool-b'])]);
+
+      await executor.execute(plan);
+
+      // No output declared on s1 — context stays empty for s2
+      expect(received[1].context).toEqual({});
+    });
+  });
 });
