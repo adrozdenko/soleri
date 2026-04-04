@@ -1,5 +1,6 @@
 ---
 name: soleri-fix-and-learn
+tier: default
 description: >
   Use when the user says "fix it", "apply the fix", "patch this and remember",
   or "fix and capture". Executes a fix AFTER root cause is identified and

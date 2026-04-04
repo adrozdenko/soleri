@@ -1,5 +1,6 @@
 ---
 name: soleri-second-opinion
+tier: default
 description: >
   Use when the user says "second opinion", "technical decision",
   "comparing approaches", or "which approach". Provides informed recommendations

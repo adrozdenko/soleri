@@ -1,5 +1,6 @@
 ---
 name: soleri-parallel-execute
+tier: default
 description: >
   Use when the user says "run in parallel", "fan out", "concurrent execution",
   "batch execute", or "dispatch subagents". Executes independent plan tasks

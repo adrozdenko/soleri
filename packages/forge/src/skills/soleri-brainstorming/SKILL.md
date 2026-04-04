@@ -1,5 +1,6 @@
 ---
 name: soleri-brainstorming
+tier: default
 description: >
   Use when the user says "I want to build something", "let's think about",
   "what if we", "creative exploration", or "ideate". For open-ended creative

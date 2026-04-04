@@ -1,5 +1,6 @@
 ---
 name: soleri-agent-issues
+tier: default
 description: >
   Use when the user says "create issue", "file bug", "gh issue",
   "create task", "report bug", or "create tickets". Creates structured

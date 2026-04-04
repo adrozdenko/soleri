@@ -1,5 +1,6 @@
 ---
 name: soleri-verification-before-completion
+tier: default
 description: >
   Use when the user says "verify this works", "check output", "quality gate",
   or "run tests before done". Internal quality gate before claiming any task

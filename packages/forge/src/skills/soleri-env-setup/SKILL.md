@@ -1,5 +1,6 @@
 ---
 name: soleri-env-setup
+tier: default
 description: >
   Use when the user says "setup environment", "post-clone setup", "broken build",
   "missing dependencies", or "MODULE_NOT_FOUND". Detects what a project needs,

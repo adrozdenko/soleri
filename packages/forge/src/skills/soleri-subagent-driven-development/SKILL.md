@@ -1,5 +1,6 @@
 ---
 name: soleri-subagent-driven-development
+tier: default
 description: >
   Use when the user says "use subagents", "parallel agents",
   "subagent driven", or "isolated execution". Decomposes work into isolated

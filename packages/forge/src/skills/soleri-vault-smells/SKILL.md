@@ -1,5 +1,6 @@
 ---
 name: soleri-vault-smells
+tier: default
 description: >
   Use when the user says "vault quality", "vault analysis", "knowledge quality",
   "knowledge debt", "stale patterns", or "find contradictions". Deep knowledge

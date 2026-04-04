@@ -1,5 +1,6 @@
 ---
 name: soleri-deliver-and-ship
+tier: default
 description: >
   Use when the user says "ship it", "pre-PR check", "delivery checklist", "is this ready",
   "final review", or "ready to deploy". Runs pre-delivery quality gates

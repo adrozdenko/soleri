@@ -1,5 +1,6 @@
 ---
 name: soleri-code-patrol
+tier: default
 description: >
   Use when the user says "check against patterns", "pattern compliance",
   "convention check", "review against vault", or "institutional review".

@@ -1,5 +1,6 @@
 ---
 name: soleri-systematic-debugging
+tier: default
 description: >
   Use as the FIRST response when something is broken — "bug", "failing test",
   "not working", "debug this", "error", "crash", or "weird issue". Diagnoses

@@ -1,5 +1,6 @@
 ---
 name: soleri-research-scout
+tier: default
 description: >
   Use when the user says "scout", "research scout", "find new info",
   "what's new", or "scan the web". Discovers new information that challenges

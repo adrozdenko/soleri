@@ -1,5 +1,6 @@
 ---
 name: soleri-vault-curate
+tier: default
 description: >
   Use when the user says "clean vault", "deduplicate vault", "groom knowledge",
   "merge patterns", or "vault maintenance". Maintains vault quality through

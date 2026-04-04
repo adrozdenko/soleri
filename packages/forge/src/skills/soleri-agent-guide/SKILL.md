@@ -1,5 +1,6 @@
 ---
 name: soleri-agent-guide
+tier: default
 description: >
   Use when the user says "what can you do", "how do I use this",
   "what features", "what tools available", "who are you", or "show capabilities".

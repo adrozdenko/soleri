@@ -1,5 +1,6 @@
 ---
 name: soleri-discovery-phase
+tier: default
 description: >
   Use when the user says "I don't know where to start", "investigate",
   "research this", "explore the problem", or "discovery". Structured exploration

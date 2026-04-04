@@ -1,5 +1,6 @@
 ---
 name: soleri-dream
+tier: default
 description: >
   Use when the user says "dream", "consolidate memory", "clean up memory",
   "memory cleanup", or "dream status". Runs automatic memory consolidation

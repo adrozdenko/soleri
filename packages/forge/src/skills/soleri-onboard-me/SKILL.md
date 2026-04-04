@@ -1,5 +1,6 @@
 ---
 name: soleri-onboard-me
+tier: default
 description: >
   Use when the user says "onboard me", "I'm new here", "project overview",
   or "what should I know about this codebase". Provides a structured tour

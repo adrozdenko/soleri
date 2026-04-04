@@ -1,5 +1,6 @@
 ---
 name: soleri-writing-plans
+tier: default
 description: >
   Use when the user says "create a plan", "write up a plan", "break this down",
   or "plan the implementation". Produces a human-readable markdown plan file.

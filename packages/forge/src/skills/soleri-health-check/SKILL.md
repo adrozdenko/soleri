@@ -1,5 +1,6 @@
 ---
 name: soleri-health-check
+tier: default
 description: >
   Use when the user says "system health", "agent health", "run diagnostics",
   "system status", or "check health". Read-only health assessment of the

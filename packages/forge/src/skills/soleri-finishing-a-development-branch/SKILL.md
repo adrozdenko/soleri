@@ -1,5 +1,6 @@
 ---
 name: soleri-finishing-a-development-branch
+tier: default
 description: >
   Use when the user says "finish branch", "ready to merge", "PR ready",
   "submit PR", or "close branch". Handles pre-merge checks, PR creation,

@@ -1,5 +1,6 @@
 ---
 name: soleri-context-resume
+tier: default
 description: >
   Use when the user says "where did I leave off", "what was I working on",
   "catch me up", "resume session", or "continue where we stopped".

@@ -1,5 +1,6 @@
 ---
 name: soleri-curator
+tier: default
 description: >
   Use when the user says "curator status", "vault health", "how is the vault",
   "curator health", "check vault quality", or "what needs grooming".

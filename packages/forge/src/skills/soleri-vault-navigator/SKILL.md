@@ -1,5 +1,6 @@
 ---
 name: soleri-vault-navigator
+tier: default
 description: >
   Use when the user says "search the vault", "find patterns for",
   "have we seen this before", "vault search", or "best practice for".

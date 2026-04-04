@@ -1,5 +1,6 @@
 ---
 name: soleri-knowledge-harvest
+tier: default
 description: >
   Use when the user says "learn from this", "harvest knowledge", "ingest this",
   or "extract patterns from". Extracts multiple patterns from a source like

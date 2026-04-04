@@ -1,5 +1,6 @@
 ---
 name: soleri-vault-capture
+tier: default
 description: >
   Use when the user says "save this to vault", "capture this", "remember this pattern",
   "add to vault", "vault capture", or when persisting learnings from a work session.

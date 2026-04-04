@@ -1,5 +1,6 @@
 ---
 name: soleri-retrospective
+tier: default
 description: >
   Use when the user says "sprint retro", "weekly summary", "what went well",
   "end of sprint", or "monthly report". Time-bound reflection on recent work

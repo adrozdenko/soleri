@@ -1,5 +1,6 @@
 ---
 name: soleri-using-git-worktrees
+tier: default
 description: >
   Use when the user says "worktree", "parallel branch", "safe branch",
   or "isolated branch". Provides the protocol for creating, working in,

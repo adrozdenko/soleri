@@ -1,5 +1,6 @@
 ---
 name: soleri-agent-persona
+tier: default
 description: >
   Use when the user says "activate persona", "be yourself",
   "stay in character", or "hello [agent name]". Reinforces character

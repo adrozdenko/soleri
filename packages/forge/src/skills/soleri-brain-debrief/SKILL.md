@@ -1,5 +1,6 @@
 ---
 name: soleri-brain-debrief
+tier: default
 description: >
   Use when the user says "brain stats", "pattern strengths",
   "intelligence report", "show brain data", or "what patterns are strongest".

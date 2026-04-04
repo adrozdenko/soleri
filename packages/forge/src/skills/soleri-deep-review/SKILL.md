@@ -1,5 +1,6 @@
 ---
 name: soleri-deep-review
+tier: default
 description: >
   Use when the user says "deep review", "code smells", "architecture review",
   "is this well architected", or "optimization review". Multi-pass code review

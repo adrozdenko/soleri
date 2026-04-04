@@ -1,5 +1,6 @@
 ---
 name: soleri-agent-dev
+tier: default
 description: >
   Use when the user says "add a facade", "new tool", "extend vault",
   "add brain feature", "new skill", or "extend agent". For extending

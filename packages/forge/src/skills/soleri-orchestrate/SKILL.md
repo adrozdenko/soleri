@@ -1,5 +1,6 @@
 ---
 name: soleri-orchestrate
+tier: default
 description: >
   Use when the user gives a work task: "implement X", "build Y", "fix Z",
   "add feature", or any request that requires planning and execution.

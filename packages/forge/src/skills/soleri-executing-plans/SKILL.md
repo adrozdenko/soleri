@@ -1,5 +1,6 @@
 ---
 name: soleri-executing-plans
+tier: default
 description: >
   Use when the user says "execute my plan", "run the plan", "start executing",
   or "implement the plan". Executes tasks sequentially with review checkpoints.

@@ -1,5 +1,6 @@
 ---
 name: soleri-intake
+tier: default
 description: >
   Use when the user says "ingest this", "add this URL", "import this book",
   "read and capture", "ingest batch", or when processing external content

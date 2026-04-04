@@ -1,5 +1,6 @@
 ---
 name: soleri-loop
+tier: default
 description: >
   Use when the user says "start a loop", "run until done", "iterate until X",
   "loop status", or "cancel loop". Manages iterative execution loops that

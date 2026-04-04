@@ -1,5 +1,6 @@
 ---
 name: soleri-mcp-doctor
+tier: default
 description: >
   Use when the user says "MCP not working", "tools missing", "fix MCP",
   "mcp doctor", or "server not connecting". Diagnoses and repairs MCP server

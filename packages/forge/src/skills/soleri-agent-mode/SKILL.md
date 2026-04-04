@@ -1,5 +1,6 @@
 ---
 name: soleri-agent-mode
+tier: default
 description: >
   Use when the user addresses the agent directly ("AgentName, ...", "Hey AgentName"),
   asks about available commands ("what commands do I have", "what can you do with MCP"),

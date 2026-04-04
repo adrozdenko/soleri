@@ -1,5 +1,6 @@
 ---
 name: soleri-yolo-mode
+tier: default
 description: >
   Use when the user says "yolo", "autonomous", "skip approvals",
   "full auto", or "hands off". Activates autonomous execution mode

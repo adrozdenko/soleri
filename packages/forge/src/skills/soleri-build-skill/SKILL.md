@@ -1,5 +1,6 @@
 ---
 name: soleri-build-skill
+tier: default
 description: >
   Use when creating a new skill, updating an existing skill, or scaffolding a skill
   template for a Soleri agent. Triggers on "create a skill", "new skill", "build skill",
@@ -24,6 +25,7 @@ Skills live in two places:
 ```yaml
 ---
 name: soleri-{skill-name}
+tier: default
 description: >
   Use when the user says "trigger1", "trigger2", "trigger3",
   or wants to [brief purpose]. [One sentence about what the skill does].

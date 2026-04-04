@@ -1,5 +1,6 @@
 ---
 name: soleri-test-driven-development
+tier: default
 description: >
   Use when the user says "TDD", "write tests first", "red green refactor",
   or "test driven". Write failing tests before implementation code for any
