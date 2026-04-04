@@ -65,9 +65,8 @@ export function createCoreOps(
         } catch {
           vaultConnected = false;
         }
-        const brainReady =
-          typeof (runtime as Record<string, unknown>).brain === 'object' &&
-          (runtime as Record<string, unknown>).brain !== null;
+        const runtimeAny = runtime as unknown as Record<string, unknown>;
+        const brainReady = typeof runtimeAny.brain === 'object' && runtimeAny.brain !== null;
         return {
           status: 'ok',
           version: getCoreVersion(),
