@@ -33,6 +33,7 @@ async function runFileTreeDev(agentPath: string, agentId: string): Promise<void>
   p.log.info('Press Ctrl+C to stop.\n');
 
   await regenerateClaudeMd(agentPath);
+  await syncSkills(agentPath, agentId);
 
   // Start the engine server
   let engineBin: string;
@@ -88,6 +89,7 @@ async function runFileTreeDev(agentPath: string, agentId: string): Promise<void>
           const changedFile = filename ? ` (${filename})` : '';
           p.log.info(`Change detected${changedFile} — regenerating CLAUDE.md`);
           await regenerateClaudeMd(agentPath);
+          await syncSkills(agentPath, agentId);
         }, 200);
       });
     } catch (err: unknown) {
@@ -127,6 +129,25 @@ async function regenerateClaudeMd(agentPath: string): Promise<void> {
     p.log.error(
       `Failed to regenerate CLAUDE.md: ${err instanceof Error ? err.message : String(err)}`,
     );
+  }
+}
+
+async function syncSkills(agentPath: string, agentId: string): Promise<void> {
+  try {
+    const { syncSkillsToClaudeCode } = await import('@soleri/core');
+    const skillsDir = join(agentPath, 'skills');
+    const result = syncSkillsToClaudeCode([skillsDir], agentId, { projectRoot: agentPath });
+    const total = result.installed.length + result.updated.length;
+    if (total > 0) {
+      p.log.success(
+        `Skills synced: ${result.installed.length} installed, ${result.updated.length} updated`,
+      );
+    }
+    if (result.removed.length > 0) {
+      p.log.info(`Skills removed: ${result.removed.join(', ')}`);
+    }
+  } catch (err) {
+    p.log.warn(`Skill sync failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
