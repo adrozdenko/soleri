@@ -7,11 +7,29 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { scaffold } from '@soleri/forge/lib';
+
+// Resolve the bundled skills directory — same source the scaffolder reads.
+// This makes the count self-updating: adding a skill to forge/src/skills
+// automatically changes what the scaffolder installs AND what this test expects.
+const FORGE_SKILLS_DIR = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../packages/forge/dist/skills',
+);
+function countForgeSkills(): number {
+  try {
+    return readdirSync(FORGE_SKILLS_DIR).filter((entry) =>
+      statSync(join(FORGE_SKILLS_DIR, entry)).isDirectory(),
+    ).length;
+  } catch {
+    return 0;
+  }
+}
 
 describe('E2E: skills-and-domains', () => {
   const tempDir = join(tmpdir(), `soleri-e2e-skills-${Date.now()}`);
@@ -58,56 +76,19 @@ describe('E2E: skills-and-domains', () => {
     expect(existsSync(join(agentDir, 'skills'))).toBe(true);
   });
 
-  it('should have exactly 41 built-in skills', () => {
-    const skillDirs = readdirSync(join(agentDir, 'skills'), { encoding: 'utf-8' });
-    expect(skillDirs.length).toBe(41);
+  it('scaffolded skills match bundled forge skills (count auto-updates)', () => {
+    const scaffoldedSkills = readdirSync(join(agentDir, 'skills'), { encoding: 'utf-8' });
+    const forgeCount = countForgeSkills();
 
-    // Verify all expected skill names are present
-    const expectedSkills = [
-      'soleri-agent-dev',
-      'soleri-agent-guide',
-      'soleri-agent-issues',
-      'soleri-agent-mode',
-      'soleri-agent-persona',
-      'soleri-brain-debrief',
-      'soleri-brainstorming',
-      'soleri-build-skill',
-      'soleri-code-patrol',
-      'soleri-context-resume',
-      'soleri-curator',
-      'soleri-deep-review',
-      'soleri-deliver-and-ship',
-      'soleri-discovery-phase',
-      'soleri-dream',
-      'soleri-env-setup',
-      'soleri-executing-plans',
-      'soleri-finishing-a-development-branch',
-      'soleri-fix-and-learn',
-      'soleri-health-check',
-      'soleri-intake',
-      'soleri-knowledge-harvest',
-      'soleri-loop',
-      'soleri-mcp-doctor',
-      'soleri-onboard-me',
-      'soleri-orchestrate',
-      'soleri-parallel-execute',
-      'soleri-research-scout',
-      'soleri-retrospective',
-      'soleri-second-opinion',
-      'soleri-subagent-driven-development',
-      'soleri-systematic-debugging',
-      'soleri-test-driven-development',
-      'soleri-using-git-worktrees',
-      'soleri-vault-capture',
-      'soleri-vault-curate',
-      'soleri-vault-navigator',
-      'soleri-vault-smells',
-      'soleri-verification-before-completion',
-      'soleri-writing-plans',
-      'soleri-yolo-mode',
-    ];
-    for (const skill of expectedSkills) {
-      expect(skillDirs, `Missing expected skill: ${skill}`).toContain(skill);
+    // Count must match — no manual update needed when skills are added or removed.
+    expect(scaffoldedSkills.length).toBe(forgeCount);
+
+    // Every forge skill must appear in the scaffolded agent.
+    const forgeSkills = readdirSync(FORGE_SKILLS_DIR).filter((entry) =>
+      statSync(join(FORGE_SKILLS_DIR, entry)).isDirectory(),
+    );
+    for (const skill of forgeSkills) {
+      expect(scaffoldedSkills, `Missing skill: ${skill}`).toContain(skill);
     }
   });
 
