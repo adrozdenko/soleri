@@ -78,7 +78,18 @@ YOUR_AGENT_core op:brain_build_intelligence
 
 Rebuild brain intelligence with the freshly consolidated vault data.
 
-### Step 5: Capture to Memory
+### Step 5: Normalize Relative Dates
+
+If the dream report includes entries with relative date references ("today", "yesterday", "last week"), normalize them. Search for entries containing relative dates and update to absolute ISO dates:
+
+```
+YOUR_AGENT_vault op:search_intelligent
+  params: { query: "today OR yesterday OR last week OR last month", limit: 20 }
+```
+
+For each entry with relative dates, update `content` to replace relative references with absolute dates based on the entry's `capturedAt` timestamp.
+
+### Step 6: Capture to Memory
 
 ```
 YOUR_AGENT_memory op:session_capture
@@ -95,6 +106,24 @@ Auto-dream triggers automatically on session start when BOTH conditions are met:
 - **24+ hours** since last dream
 
 Manual `/dream` always runs immediately (force=true).
+
+## Auto-Dream Scheduling
+
+To enable periodic auto-dream (runs every 24h after 5+ sessions):
+
+```
+YOUR_AGENT_core op:curator_schedule_start
+  params: {
+    intervalHours: 24,
+    minSessions: 5
+  }
+```
+
+To disable:
+
+```
+YOUR_AGENT_core op:curator_schedule_stop
+```
 
 ## Background
 
