@@ -36,6 +36,7 @@ describe('Telemetry', () => {
       expect(stats.callsByOp).toEqual({});
       expect(stats.errorsByOp).toEqual({});
       expect(stats.slowestOps).toEqual([]);
+      expect(typeof stats.since).toBe('number');
       expect(stats.since).toBeLessThanOrEqual(Date.now());
     });
 

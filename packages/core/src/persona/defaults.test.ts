@@ -12,21 +12,21 @@ describe('ITALIAN_CRAFTSPERSON', () => {
   });
 
   it('has non-empty voice, culture, and inspiration', () => {
-    expect(ITALIAN_CRAFTSPERSON.voice.length).toBeGreaterThan(0);
+    expect(ITALIAN_CRAFTSPERSON.voice).toContain('Italian mentor');
     expect(ITALIAN_CRAFTSPERSON.culture).toBe('Italian');
-    expect(ITALIAN_CRAFTSPERSON.inspiration.length).toBeGreaterThan(0);
+    expect(ITALIAN_CRAFTSPERSON.inspiration).toContain('Paolo Soleri');
   });
 
   it('provides greetings and signoffs pools', () => {
-    expect(ITALIAN_CRAFTSPERSON.greetings.length).toBeGreaterThan(0);
-    expect(ITALIAN_CRAFTSPERSON.signoffs.length).toBeGreaterThan(0);
+    expect(ITALIAN_CRAFTSPERSON.greetings).toHaveLength(5);
+    expect(ITALIAN_CRAFTSPERSON.signoffs).toHaveLength(5);
   });
 
   it('includes expected trait and quirk arrays', () => {
-    expect(ITALIAN_CRAFTSPERSON.traits.length).toBeGreaterThan(0);
-    expect(ITALIAN_CRAFTSPERSON.quirks.length).toBeGreaterThan(0);
-    expect(ITALIAN_CRAFTSPERSON.metaphors.length).toBeGreaterThan(0);
-    expect(ITALIAN_CRAFTSPERSON.opinions.length).toBeGreaterThan(0);
+    expect(ITALIAN_CRAFTSPERSON.traits).toHaveLength(7);
+    expect(ITALIAN_CRAFTSPERSON.quirks).toHaveLength(6);
+    expect(ITALIAN_CRAFTSPERSON.metaphors).toHaveLength(8);
+    expect(ITALIAN_CRAFTSPERSON.opinions).toHaveLength(6);
   });
 });
 
@@ -36,26 +36,26 @@ describe('NEUTRAL_PERSONA', () => {
   });
 
   it('has non-empty voice and inspiration', () => {
-    expect(NEUTRAL_PERSONA.voice.length).toBeGreaterThan(0);
-    expect(NEUTRAL_PERSONA.inspiration.length).toBeGreaterThan(0);
+    expect(NEUTRAL_PERSONA.voice).toContain('helpful assistant');
+    expect(NEUTRAL_PERSONA.inspiration).toContain('reliable professional');
   });
 
   it('has no cultural flavor', () => {
     expect(NEUTRAL_PERSONA.culture).toBe('');
   });
 
-  it('has all arrays populated with minimum counts', () => {
-    expect(NEUTRAL_PERSONA.traits.length).toBeGreaterThanOrEqual(3);
-    expect(NEUTRAL_PERSONA.quirks.length).toBeGreaterThanOrEqual(3);
-    expect(NEUTRAL_PERSONA.opinions.length).toBeGreaterThanOrEqual(3);
-    expect(NEUTRAL_PERSONA.metaphors.length).toBeGreaterThanOrEqual(3);
-    expect(NEUTRAL_PERSONA.greetings.length).toBeGreaterThanOrEqual(2);
-    expect(NEUTRAL_PERSONA.signoffs.length).toBeGreaterThanOrEqual(2);
+  it('has all arrays populated with exact counts', () => {
+    expect(NEUTRAL_PERSONA.traits).toHaveLength(6);
+    expect(NEUTRAL_PERSONA.quirks).toHaveLength(4);
+    expect(NEUTRAL_PERSONA.opinions).toHaveLength(6);
+    expect(NEUTRAL_PERSONA.metaphors).toHaveLength(5);
+    expect(NEUTRAL_PERSONA.greetings).toHaveLength(3);
+    expect(NEUTRAL_PERSONA.signoffs).toHaveLength(3);
   });
 
   it('has non-empty language and name rules', () => {
-    expect(NEUTRAL_PERSONA.languageRule.length).toBeGreaterThan(0);
-    expect(NEUTRAL_PERSONA.nameRule.length).toBeGreaterThan(0);
+    expect(NEUTRAL_PERSONA.languageRule).toContain("user's language");
+    expect(NEUTRAL_PERSONA.nameRule).toContain('name changes');
   });
 });
 

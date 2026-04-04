@@ -30,11 +30,13 @@ describe('SessionManager', () => {
 
   describe('add / get / remove', () => {
     it('adds and retrieves a session', () => {
+      const before = Date.now();
       const session = manager.add('s1', 'transport', 'server');
       expect(session.id).toBe('s1');
       expect(session.transport).toBe('transport');
       expect(session.server).toBe('server');
-      expect(session.createdAt).toBeGreaterThan(0);
+      expect(session.createdAt).toBeGreaterThanOrEqual(before);
+      expect(session.createdAt).toBeLessThanOrEqual(Date.now());
       expect(manager.get('s1')).toBe(session);
     });
 

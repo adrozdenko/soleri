@@ -214,10 +214,12 @@ describe('ProjectRegistry', () => {
 
   describe('register', () => {
     it('creates a new project and returns it', () => {
+      const before = Date.now();
       const proj = registry.register('/tmp/myproj', 'My Project');
       expect(proj.path).toBe('/tmp/myproj');
       expect(proj.name).toBe('My Project');
       expect(proj.id).toBeTruthy();
+      expect(proj.registeredAt).toBeGreaterThanOrEqual(before);
       expect(proj.registeredAt).toBeLessThanOrEqual(Date.now());
     });
 

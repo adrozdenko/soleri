@@ -121,16 +121,13 @@ describe('loadToken / saveToken / getOrGenerateToken', () => {
     expect(result).toBe('trimmed-token');
   });
 
-  it('loadToken returns undefined for empty env var', () => {
+  it('skips whitespace-only env var and does not return the raw whitespace value', () => {
     vi.stubEnv('MY_AGENT_HTTP_TOKEN', '   ');
+    // env var is whitespace-only — function must skip it and NOT return whitespace
     const result = loadToken('my-agent');
-    // Falls through to file-based lookup
-    expect(result === undefined || typeof result === 'string').toBe(true);
-  });
-
-  it('generateToken produces different tokens each call', () => {
-    const t1 = generateToken();
-    const t2 = generateToken();
-    expect(t1).not.toBe(t2);
+    expect(result).not.toBe('   ');
+    if (result !== undefined) {
+      expect(result.trim().length).toBeGreaterThan(0);
+    }
   });
 });

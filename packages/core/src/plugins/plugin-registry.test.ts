@@ -47,13 +47,15 @@ describe('PluginRegistry — colocated', () => {
 
   describe('register', () => {
     it('registers a plugin and sets initial status to registered', () => {
+      const before = Date.now();
       const loaded = makeLoaded();
       const registered = registry.register(loaded);
 
       expect(registered.id).toBe('test-plugin');
       expect(registered.status).toBe('registered');
       expect(registered.facades).toEqual([]);
-      expect(registered.registeredAt).toBeGreaterThan(0);
+      expect(registered.registeredAt).toBeGreaterThanOrEqual(before);
+      expect(registered.registeredAt).toBeLessThanOrEqual(Date.now());
     });
 
     it('throws when registering duplicate id', () => {
@@ -86,11 +88,13 @@ describe('PluginRegistry — colocated', () => {
         }),
       });
 
+      const before = Date.now();
       registry.register(loaded);
       const result = await registry.activate('test-plugin', makeContext(loaded));
 
       expect(result.status).toBe('active');
-      expect(result.activatedAt).toBeGreaterThan(0);
+      expect(result.activatedAt).toBeGreaterThanOrEqual(before);
+      expect(result.activatedAt).toBeLessThanOrEqual(Date.now());
       expect(result.facades).toHaveLength(1);
       expect(result.facades[0].name).toBe('my_facade');
       expect(result.facades[0].ops).toHaveLength(2);

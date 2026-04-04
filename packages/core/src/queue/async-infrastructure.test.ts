@@ -104,8 +104,7 @@ describe('JobQueue', () => {
 
   it('enqueue creates a job and returns ID', () => {
     const id = queue.enqueue('tag-normalize', { entryId: 'e1' });
-    expect(id).toBeTruthy();
-    expect(id.length).toBeGreaterThan(0);
+    expect(id).toHaveLength(12);
   });
 
   it('dequeue returns oldest pending job', () => {
@@ -200,16 +199,18 @@ describe('JobQueue', () => {
 
   it('getStats returns correct counts', () => {
     const stats = queue.getStats();
-    expect(stats.total).toBeGreaterThan(0);
+    expect(typeof stats.total).toBe('number');
     expect(typeof stats.pending).toBe('number');
     expect(typeof stats.running).toBe('number');
     expect(typeof stats.completed).toBe('number');
     expect(typeof stats.failed).toBe('number');
+    expect(stats.total).toBe(stats.pending + stats.running + stats.completed + stats.failed);
   });
 
   it('purge removes old completed/failed jobs', () => {
     // purge with 0 days should remove all completed/failed
     const purged = queue.purge(0);
+    expect(typeof purged).toBe('number');
     expect(purged).toBeGreaterThanOrEqual(0);
   });
 });
@@ -275,7 +276,8 @@ describe('PipelineRunner', () => {
     const status = runner.getStatus();
     expect(status.running).toBe(false); // Not started yet
     expect(status.pollIntervalMs).toBe(100);
-    expect(status.jobsProcessed).toBeGreaterThanOrEqual(1);
+    // At this point: process-test succeeded = 1 processed; flaky-type threw so it's retried, not counted
+    expect(status.jobsProcessed).toBe(1);
   });
 
   it('start/stop controls background polling', async () => {

@@ -124,7 +124,11 @@ describe('WsMcpServer', () => {
   describe('standalone start / stop', () => {
     it('starts and stops without error', async () => {
       await server.start(0);
-      expect(server.getStats().uptime).toBeGreaterThanOrEqual(0);
+      const uptime = server.getStats().uptime;
+      expect(typeof uptime).toBe('number');
+      // uptime is elapsed ms since start — should be a small non-negative number
+      expect(uptime).toBeGreaterThanOrEqual(0);
+      expect(uptime).toBeLessThan(5000); // must have started in under 5s
       await server.stop();
     });
 
@@ -145,7 +149,11 @@ describe('WsMcpServer', () => {
         callbacks,
       );
       wsServer.attachTo(httpServer);
-      expect(wsServer.getStats().uptime).toBeGreaterThanOrEqual(0);
+      const attachUptime = wsServer.getStats().uptime;
+      expect(typeof attachUptime).toBe('number');
+      // uptime is elapsed ms since attach — valid non-negative number
+      expect(attachUptime).toBeGreaterThanOrEqual(0);
+      expect(attachUptime).toBeLessThan(5000);
 
       await wsServer.stop();
       await new Promise<void>((resolve, reject) => {

@@ -147,15 +147,15 @@ YOUR_AGENT_core op:capture_knowledge params: { entries: [{ type: "pattern", doma
 
     const result = validateSkillDocs(skillsDir);
 
-    if (result.errors.length > 0) {
-      const err = result.errors[0];
-      expect(err).toHaveProperty('file');
-      expect(err).toHaveProperty('op');
-      expect(err).toHaveProperty('message');
-      expect(typeof err.file).toBe('string');
-      expect(typeof err.op).toBe('string');
-      expect(typeof err.message).toBe('string');
-    }
+    // "suggestion" is not a valid severity — expect at least one error
+    expect(result.errors.length).toBeGreaterThan(0);
+    const err = result.errors[0];
+    expect(err).toHaveProperty('file');
+    expect(err).toHaveProperty('op');
+    expect(err).toHaveProperty('message');
+    expect(typeof err.file).toBe('string');
+    expect(typeof err.op).toBe('string');
+    expect(typeof err.message).toBe('string');
   });
 
   it('includes the file path and op name in each error', () => {
@@ -178,9 +178,10 @@ YOUR_AGENT_core op:capture_knowledge params: { entries: [{ type: "pattern", doma
     expect(err.op).toBe('capture_knowledge');
   });
 
-  it('builds a non-empty schema registry', () => {
+  it('builds a schema registry covering core ops', () => {
     const result = validateSkillDocs(skillsDir);
-    expect(result.registrySize).toBeGreaterThan(50);
+    // Registry must cover: capture_knowledge, capture_quick, create_plan, approve_plan, etc.
+    expect(result.registrySize).toBeGreaterThanOrEqual(60);
   });
 
   it('handles a skills directory that does not exist', () => {

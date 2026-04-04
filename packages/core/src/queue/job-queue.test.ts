@@ -131,11 +131,14 @@ describe('JobQueue', () => {
     queue = new JobQueue(provider);
   });
 
-  it('initializes the table on construction', () => {
-    expect(provider.execSql).toHaveBeenCalledTimes(1);
-    expect((provider.execSql as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain(
-      'CREATE TABLE IF NOT EXISTS job_queue',
-    );
+  it('initializes the job_queue table on construction', () => {
+    // Verify the correct DDL was executed — not just that something was called
+    const ddl = (provider.execSql as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as
+      | string
+      | undefined;
+    expect(ddl).toContain('CREATE TABLE IF NOT EXISTS job_queue');
+    expect(ddl).toContain('status');
+    expect(ddl).toContain('retry_count');
   });
 
   describe('enqueue', () => {
@@ -281,7 +284,8 @@ describe('JobQueue', () => {
       queue.dequeue();
       queue.complete(id);
       const stats = queue.getStats();
-      expect(stats.total).toBeGreaterThan(0);
+      expect(stats.total).toBe(stats.pending + stats.running + stats.completed + stats.failed);
+      expect(stats.completed).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -321,7 +325,9 @@ describe('JobQueue', () => {
       queue.complete(id1);
       queue.fail(id2, 'err');
       const deleted = queue.purge(30);
-      expect(deleted).toBeGreaterThanOrEqual(0);
+      // The mock purges all completed/failed — 2 were just created
+      expect(typeof deleted).toBe('number');
+      expect(deleted).toBeGreaterThanOrEqual(2);
     });
   });
 });

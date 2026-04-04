@@ -128,7 +128,10 @@ describe('HttpMcpServer', () => {
     it('starts and stops without error', async () => {
       await server.start();
       const stats = server.getStats();
+      expect(typeof stats.uptime).toBe('number');
+      // uptime is elapsed ms since start — should be a small non-negative number
       expect(stats.uptime).toBeGreaterThanOrEqual(0);
+      expect(stats.uptime).toBeLessThan(5000); // must have completed in under 5s
       await server.stop();
     });
 
