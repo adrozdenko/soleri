@@ -186,7 +186,7 @@ const ENGINE_RULES_LINES: string[] = [
   '',
   'The vault is a **Zettelkasten** — a connected knowledge graph. Every knowledge operation follows Zettelkasten principles: atomic entries, typed links, dense connections.',
   '',
-  '**MANDATORY lookup order for every question, problem, or task — always, regardless of whether agent MCP is active:**',
+  '**SHOULD follow this lookup order for every question, problem, or task — regardless of whether agent MCP is active:**',
   '',
   '1. **Vault** — `op:search_intelligent` + traverse links 2 hops (when agent MCP is active)',
   '2. **Web** — `WebSearch` tool (always — never skip if vault returns no answer)',
