@@ -33,9 +33,11 @@ describe('shouldRetry', () => {
 });
 
 describe('getRetryDelay', () => {
-  it('should return a positive number', () => {
+  it('should return a non-negative number', () => {
     const delay = getRetryDelay(0, 'fast');
+    expect(typeof delay).toBe('number');
     expect(delay).toBeGreaterThanOrEqual(0);
+    expect(delay).toBeLessThanOrEqual(RETRY_PRESETS.fast.maxIntervalMs * 1.25);
   });
 
   it('should increase with attempt number', () => {

@@ -39,11 +39,6 @@ afterAll(() => {
 });
 
 describe('createCoreOps', () => {
-  it('returns exactly 5 ops', () => {
-    const opDefs = createCoreOps(runtime, TEST_IDENTITY);
-    expect(opDefs).toHaveLength(5);
-  });
-
   it('returns ops with expected names', () => {
     const names = [...ops.keys()];
     expect(names).toEqual(['health', 'identity', 'activate', 'session_start', 'setup']);
@@ -75,7 +70,7 @@ describe('health op', () => {
     const data = result.data as Record<string, unknown>;
     const vault = data.vault as Record<string, unknown>;
     expect(typeof vault.entries).toBe('number');
-    expect(Array.isArray(vault.domains)).toBe(true);
+    expect(vault.domains).toEqual([]);
   });
 
   it('has read auth level', () => {
@@ -122,7 +117,7 @@ describe('activate op', () => {
     const vault = data.vault as Record<string, unknown>;
     expect(vault.connected).toBe(true);
     expect(typeof vault.entries).toBe('number');
-    expect(Array.isArray(vault.domains)).toBe(true);
+    expect(vault.domains).toEqual([]);
   });
 
   it('returns deactivation response when deactivate=true', async () => {
@@ -202,8 +197,8 @@ describe('setup op', () => {
     const data = result.data as Record<string, unknown>;
     const vault = data.vault as Record<string, unknown>;
     expect(typeof vault.entries).toBe('number');
-    expect(Array.isArray(vault.domains)).toBe(true);
-    expect(vault.byType).toBeDefined();
+    expect(vault.domains).toEqual([]);
+    expect(vault.byType).toEqual({});
   });
 
   it('recommends action when vault is empty', async () => {

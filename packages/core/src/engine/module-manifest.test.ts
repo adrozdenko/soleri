@@ -6,12 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  ENGINE_MODULE_MANIFEST,
-  CORE_KEY_OPS,
-  ENGINE_MAJOR_VERSION,
-  type ModuleManifestEntry,
-} from './module-manifest.js';
+import { ENGINE_MODULE_MANIFEST, CORE_KEY_OPS, ENGINE_MAJOR_VERSION } from './module-manifest.js';
 
 describe('ENGINE_MODULE_MANIFEST', () => {
   it('contains all expected engine modules', () => {
@@ -30,10 +25,6 @@ describe('ENGINE_MODULE_MANIFEST', () => {
     expect(suffixes).toContain('chat');
     expect(suffixes).toContain('operator');
     expect(suffixes).toContain('intake');
-  });
-
-  it('has exactly 22 modules', () => {
-    expect(ENGINE_MODULE_MANIFEST).toHaveLength(22);
   });
 
   it('has no duplicate suffixes', () => {
@@ -86,16 +77,6 @@ describe('ENGINE_MODULE_MANIFEST', () => {
     }
   });
 
-  it('satisfies ModuleManifestEntry interface shape', () => {
-    const testEntry: ModuleManifestEntry = {
-      suffix: 'test',
-      description: 'Test module',
-      keyOps: ['op1'],
-    };
-    expect(testEntry.suffix).toBe('test');
-    expect(testEntry.conditional).toBeUndefined();
-  });
-
   it('intentSignals is optional and a Record<string, string> when present', () => {
     for (const entry of ENGINE_MODULE_MANIFEST) {
       if (entry.intentSignals !== undefined) {
@@ -144,20 +125,9 @@ describe('CORE_KEY_OPS', () => {
   it('contains the 4 core ops', () => {
     expect(CORE_KEY_OPS).toEqual(['health', 'identity', 'session_start', 'activate']);
   });
-
-  it('is a string array', () => {
-    for (const op of CORE_KEY_OPS) {
-      expect(typeof op).toBe('string');
-    }
-  });
 });
 
 describe('ENGINE_MAJOR_VERSION', () => {
-  it('is a positive integer', () => {
-    expect(Number.isInteger(ENGINE_MAJOR_VERSION)).toBe(true);
-    expect(ENGINE_MAJOR_VERSION).toBeGreaterThan(0);
-  });
-
   it('is currently version 9', () => {
     expect(ENGINE_MAJOR_VERSION).toBe(9);
   });

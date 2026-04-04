@@ -63,10 +63,6 @@ describe('registerEngine — module completeness', () => {
     expect(moduleSuffixes).toEqual(manifestSuffixes);
   });
 
-  it('ENGINE_MODULES and manifest have same count', () => {
-    expect(ENGINE_MODULES.length).toBe(ENGINE_MODULE_MANIFEST.length);
-  });
-
   it('registers all unconditional modules', () => {
     const server = makeServer();
     const result = registerEngine(server, runtime, { agentId: 'check' });
@@ -203,10 +199,9 @@ describe('registerEngine — return value', () => {
   it('returns tools array, totalOps count, and registerTool function', () => {
     const server = makeServer();
     const result = registerEngine(server, runtime, { agentId: 'ret' });
-    expect(Array.isArray(result.tools)).toBe(true);
+    expect(result.tools.length).toBeGreaterThan(0);
     expect(typeof result.totalOps).toBe('number');
     expect(typeof result.registerTool).toBe('function');
-    expect(result.totalOps).toBeGreaterThan(0);
   });
 
   it('registerTool adds a new tool at runtime', () => {
@@ -247,8 +242,8 @@ describe('registerEngine — op visibility', () => {
     expect(INTERNAL_OPS.has('create_plan')).toBe(false);
   });
 
-  it('INTERNAL_OPS has at least 25 entries', () => {
-    expect(INTERNAL_OPS.size).toBeGreaterThanOrEqual(25);
+  it('INTERNAL_OPS has exactly 29 entries', () => {
+    expect(INTERNAL_OPS.size).toBe(29);
   });
 
   it('ops without visibility field default to user (backward compat)', () => {
@@ -264,31 +259,6 @@ describe('registerEngine — op visibility', () => {
       domainPacks: [{ name: 'test', facades: [{ name: 'test', ops: [userOp] }] }],
     });
     expect(result.tools).toContain('vis_test');
-  });
-
-  it('ops with visibility: internal are excluded from MCP tool description but remain callable', () => {
-    const server = makeServer();
-    const visibleOp: OpDefinition = {
-      name: 'public_op',
-      description: 'Public op',
-      auth: 'read',
-      handler: async () => 'visible',
-    };
-    const internalOp: OpDefinition = {
-      name: 'secret_op',
-      description: 'Internal op',
-      auth: 'admin',
-      visibility: 'internal',
-      handler: async () => 'hidden',
-    };
-    // Register both ops under a pack facade
-    registerEngine(server, runtime, {
-      agentId: 'vt',
-      domainPacks: [{ name: 'test', facades: [{ name: 'check', ops: [visibleOp, internalOp] }] }],
-    });
-    // We can't easily inspect the MCP schema description string, but we verify
-    // that registration succeeds with mixed visibility ops
-    expect(true).toBe(true);
   });
 
   it('every INTERNAL_OPS entry corresponds to a real op in some facade', () => {

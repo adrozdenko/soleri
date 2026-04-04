@@ -21,6 +21,7 @@ describe('HealthRegistry', () => {
   });
 
   it('tracks transitions: healthy -> degraded -> healthy', () => {
+    const before = Date.now();
     const reg = new HealthRegistry();
     reg.register('svc');
     reg.update('svc', 'degraded', 'timeout');
@@ -31,7 +32,8 @@ describe('HealthRegistry', () => {
     reg.update('svc', 'healthy');
     expect(reg.get('svc')!.failureCount).toBe(0);
     expect(reg.get('svc')!.lastError).toBeNull();
-    expect(reg.get('svc')!.lastHealthyAt).toBeGreaterThan(0);
+    expect(reg.get('svc')!.lastHealthyAt).toBeGreaterThanOrEqual(before);
+    expect(reg.get('svc')!.lastHealthyAt).toBeLessThanOrEqual(Date.now());
   });
 
   it('auto-registers on update if not previously registered', () => {
