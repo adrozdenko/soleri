@@ -74,6 +74,26 @@ describe('Planner', () => {
       const planner2 = new Planner(join(tempDir, 'plans.json'));
       expect(planner2.list()).toHaveLength(1);
     });
+
+    it('should make newly created plans visible to other planner instances', () => {
+      const planner2 = new Planner(join(tempDir, 'plans.json'));
+      const plan = planner.create({ objective: 'Shared plan', scope: 'sync' });
+
+      expect(planner2.get(plan.id)?.objective).toBe('Shared plan');
+    });
+
+    it('should merge plans created by multiple planner instances', () => {
+      const planner2 = new Planner(join(tempDir, 'plans.json'));
+      const planA = planner.create({ objective: 'Plan A', scope: 'sync-a' });
+      const planB = planner2.create({ objective: 'Plan B', scope: 'sync-b' });
+
+      const reloaded = new Planner(join(tempDir, 'plans.json'));
+      const ids = reloaded.list().map((plan) => plan.id);
+
+      expect(ids).toContain(planA.id);
+      expect(ids).toContain(planB.id);
+      expect(ids).toHaveLength(2);
+    });
   });
 
   describe('get', () => {
@@ -120,26 +140,36 @@ describe('Planner', () => {
 
     it('should approve a plan with A+ grade', () => {
       const plan = planner.create({
-        objective: 'Well-graded plan',
-        scope: 'test',
+        objective: 'Implement a Redis caching layer for the API to reduce DB load by 50%',
+        scope: 'Backend API services only. Does not include frontend caching or CDN.',
         tasks: [
-          { title: 'Task 1', description: 'A well-described task for implementation' },
-          { title: 'Task 2', description: 'Another well-described task for testing' },
+          {
+            title: 'Set up Redis client',
+            description: 'Install and configure Redis connection pool',
+          },
+          {
+            title: 'Add cache middleware',
+            description: 'Express middleware for transparent caching',
+          },
+          {
+            title: 'Add invalidation logic',
+            description: 'Purge cache on write operations to ensure consistency',
+          },
+          {
+            title: 'Write integration tests',
+            description: 'Test cache hit/miss scenarios with Redis',
+          },
+          { title: 'Add monitoring', description: 'Track and verify cache hit rate metrics' },
         ],
-        decisions: ['Use TypeScript for type safety'],
+        decisions: [
+          'Use Redis because it provides sub-millisecond latency and supports TTL natively',
+          'Set TTL to 5 minutes since average data freshness requirement is 10 minutes',
+        ],
+        alternatives: TWO_ALTERNATIVES,
       });
-      // Grade the plan — set an A+ grade check
-      const p = planner.get(plan.id)!;
-      p.latestCheck = {
-        checkId: 'chk-test-aplus',
-        planId: plan.id,
-        grade: 'A+',
-        score: 98,
-        gaps: [],
-        iteration: 1,
-        checkedAt: Date.now(),
-      };
-      p.checks = [p.latestCheck];
+      const check = planner.grade(plan.id);
+      expect(check.score).toBeGreaterThanOrEqual(95);
+      expect(check.grade).toMatch(/^A/);
       const approved = planner.approve(plan.id);
       expect(approved.status).toBe('approved');
     });
@@ -149,27 +179,8 @@ describe('Planner', () => {
         objective: 'Bad plan',
         scope: 'test',
       });
-      // Manually set a B grade check on the plan
-      const p = planner.get(plan.id)!;
-      p.latestCheck = {
-        checkId: 'chk-test',
-        planId: plan.id,
-        grade: 'B',
-        score: 82,
-        gaps: [
-          {
-            id: 'gap-1',
-            severity: 'major',
-            category: 'completeness',
-            description: 'Missing tasks',
-            recommendation: 'Add tasks',
-            location: 'tasks',
-          },
-        ],
-        iteration: 1,
-        checkedAt: Date.now(),
-      };
-      p.checks = [p.latestCheck];
+      const check = planner.grade(plan.id);
+      expect(check.score).toBeLessThan(90);
       expect(() => planner.approve(plan.id)).toThrow(PlanGradeRejectionError);
     });
 
@@ -184,67 +195,51 @@ describe('Planner', () => {
       const lenientPlanner = new Planner(join(tempDir, 'lenient-plans.json'), {
         minGradeForApproval: 'B',
       });
-      const plan = lenientPlanner.create({ objective: 'B-grade plan', scope: 'test' });
-      // Set a B grade check
-      const p = lenientPlanner.get(plan.id)!;
-      p.latestCheck = {
-        checkId: 'chk-test-b',
-        planId: plan.id,
-        grade: 'B',
-        score: 82,
-        gaps: [],
-        iteration: 1,
-        checkedAt: Date.now(),
-      };
-      p.checks = [p.latestCheck];
-      // B grade should pass with B threshold
+      const plan = lenientPlanner.create({
+        objective: 'B-grade plan with enough detail',
+        scope: 'Test scope with clear boundary',
+        decisions: ['Use TypeScript for compile-time safety'],
+        tasks: [
+          { title: 'Task 1', description: 'Implement the first part of the change' },
+          { title: 'Task 2', description: 'Validate the second part of the change' },
+        ],
+      });
+      const check = lenientPlanner.grade(plan.id);
+      expect(check.grade).toBe('B');
       const approved = lenientPlanner.approve(plan.id);
       expect(approved.status).toBe('approved');
     });
 
     it('should reject with PlanGradeRejectionError containing gap details', () => {
-      const plan = planner.create({ objective: 'Gap details', scope: 'test' });
-      const p = planner.get(plan.id)!;
-      const testGaps = [
-        {
-          id: 'gap-crit',
-          severity: 'critical' as const,
-          category: 'structure',
-          description: 'Missing critical structure',
-          recommendation: 'Fix structure',
-          location: 'tasks',
-        },
-        {
-          id: 'gap-maj',
-          severity: 'major' as const,
-          category: 'completeness',
-          description: 'Incomplete scope',
-          recommendation: 'Add scope details',
-          location: 'scope',
-        },
-      ];
-      p.latestCheck = {
-        checkId: 'chk-test-gaps',
-        planId: plan.id,
-        grade: 'C',
-        score: 65,
-        gaps: testGaps,
-        iteration: 1,
-        checkedAt: Date.now(),
-      };
-      p.checks = [p.latestCheck];
+      const plan = planner.create({ objective: '', scope: '' });
+      const check = planner.grade(plan.id);
       try {
         planner.approve(plan.id);
         expect.unreachable('Should have thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(PlanGradeRejectionError);
         const rejection = err as PlanGradeRejectionError;
-        expect(rejection.grade).toBe('C');
-        expect(rejection.score).toBe(65);
+        expect(rejection.grade).toBe(check.grade);
+        expect(rejection.score).toBe(check.score);
         expect(rejection.minGrade).toBe('A');
-        expect(rejection.gaps).toHaveLength(2);
+        expect(rejection.gaps).toEqual(check.gaps);
         expect(rejection.message).toContain('below the minimum required grade A');
       }
+    });
+
+    it('should respect grading performed by another planner instance', () => {
+      const strictPlanner = new Planner(join(tempDir, 'shared-plans.json'), {
+        minGradeForApproval: 'A',
+      });
+      const gradingPlanner = new Planner(join(tempDir, 'shared-plans.json'), {
+        minGradeForApproval: 'A',
+      });
+      const plan = strictPlanner.create({ objective: '', scope: '' });
+
+      const check = gradingPlanner.grade(plan.id);
+
+      expect(check.grade).toBe('F');
+      expect(() => strictPlanner.approve(plan.id)).toThrow(PlanGradeRejectionError);
     });
   });
 
@@ -592,10 +587,11 @@ describe('Planner', () => {
           { title: 'Task C', description: 'Third task (not in cycle)' },
         ],
       });
-      // Manually create circular deps
-      const p = planner.get(plan.id)!;
-      p.tasks[0].dependsOn = ['task-2'];
-      p.tasks[1].dependsOn = ['task-1'];
+      planner.splitTasks(plan.id, [
+        { title: 'Task A', description: 'First task in the cycle', dependsOn: ['task-2'] },
+        { title: 'Task B', description: 'Second task in the cycle', dependsOn: ['task-1'] },
+        { title: 'Task C', description: 'Third task (not in cycle)' },
+      ]);
       const check = planner.grade(plan.id);
       const circGap = check.gaps.find((g) => g.description.includes('Circular'));
       expect(circGap).toBeDefined();

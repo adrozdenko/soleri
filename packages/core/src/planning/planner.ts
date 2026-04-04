@@ -77,8 +77,38 @@ export class Planner {
     }
   }
 
-  private save(): void {
+  private refresh(): void {
+    this.store = this.load();
+  }
+
+  private mergeLatestStore(deletedPlanIds: string[] = []): void {
+    const deleted = new Set(deletedPlanIds);
+    const latest = this.load();
+    const merged = new Map<string, Plan>();
+
+    for (const plan of latest.plans) {
+      if (!deleted.has(plan.id)) {
+        merged.set(plan.id, plan);
+      }
+    }
+
+    for (const plan of this.store.plans) {
+      if (deleted.has(plan.id)) continue;
+      const existing = merged.get(plan.id);
+      if (!existing || plan.updatedAt >= existing.updatedAt) {
+        merged.set(plan.id, plan);
+      }
+    }
+
+    this.store = {
+      version: latest.version ?? this.store.version ?? '1.0',
+      plans: [...merged.values()],
+    };
+  }
+
+  private save(deletedPlanIds: string[] = []): void {
     mkdirSync(dirname(this.filePath), { recursive: true });
+    this.mergeLatestStore(deletedPlanIds);
     writeFileSync(this.filePath, JSON.stringify(this.store, null, 2), 'utf-8');
   }
 
@@ -88,8 +118,13 @@ export class Planner {
     plan.updatedAt = r.updatedAt;
   }
 
+  private findPlan(planId: string): Plan | null {
+    return this.store.plans.find((p) => p.id === planId) ?? null;
+  }
+
   private requirePlan(planId: string): Plan {
-    const plan = this.get(planId);
+    this.refresh();
+    const plan = this.findPlan(planId);
     if (!plan) throw new Error(`Plan not found: ${planId}`);
     return plan;
   }
@@ -101,6 +136,7 @@ export class Planner {
   }
 
   create(params: Parameters<typeof createPlanObject>[0]): Plan {
+    this.refresh();
     const plan = createPlanObject(params);
     this.store.plans.push(plan);
     this.save();
@@ -108,18 +144,21 @@ export class Planner {
   }
 
   get(planId: string): Plan | null {
-    return this.store.plans.find((p) => p.id === planId) ?? null;
+    this.refresh();
+    return this.findPlan(planId);
   }
 
   list(): Plan[] {
+    this.refresh();
     return [...this.store.plans];
   }
 
   remove(planId: string): boolean {
+    this.refresh();
     const idx = this.store.plans.findIndex((p) => p.id === planId);
     if (idx < 0) return false;
     this.store.plans.splice(idx, 1);
-    this.save();
+    this.save([planId]);
     return true;
   }
 
@@ -220,10 +259,12 @@ export class Planner {
   }
 
   getExecuting(): Plan[] {
+    this.refresh();
     return this.store.plans.filter((p) => p.status === 'executing' || p.status === 'validating');
   }
 
   getActive(): Plan[] {
+    this.refresh();
     return this.store.plans.filter(
       (p) =>
         p.status === 'brainstorming' ||
@@ -435,6 +476,7 @@ export class Planner {
   }
 
   archive(olderThanDays?: number): Plan[] {
+    this.refresh();
     const cutoff =
       olderThanDays !== undefined
         ? Date.now() - olderThanDays * 24 * 60 * 60 * 1000
@@ -460,6 +502,7 @@ export class Planner {
     closedIds: string[];
     closedPlans: Array<{ id: string; previousStatus: string; reason: string }>;
   } {
+    this.refresh();
     const now = Date.now();
     const forceAll = olderThanMs === 0;
     const defaultTtl = forceAll ? 0 : 30 * 60 * 1000; // 30 minutes for draft/approved
@@ -522,6 +565,7 @@ export class Planner {
     totalTasks: number;
     tasksByStatus: Record<TaskStatus, number>;
   } {
+    this.refresh();
     const plans = this.store.plans;
     const byStatus = {
       brainstorming: 0,

@@ -46,6 +46,11 @@ vi.mock('./claude-md-helpers.js', () => ({
   injectEngineRulesBlock: vi.fn((content: string) => content),
 }));
 
+vi.mock('../paths.js', () => ({
+  agentPlansPath: vi.fn(() => '/mock-home/.soleri/test-agent/plans.json'),
+  agentVaultPath: vi.fn(() => '/mock-home/.soleri/test-agent/vault.db'),
+}));
+
 vi.mock('../skills/sync-skills.js', () => ({
   discoverSkills: vi.fn(() => [{ name: 'skill-1', path: '/mock/skills/skill-1' }]),
   syncSkillsToClaudeCode: vi.fn(() => ({
@@ -329,6 +334,45 @@ describe('createAdminSetupOps', () => {
       expect(activePlans).toHaveLength(1);
       expect(activePlans[0].status).toBe('executing');
       expect(result.recommendation).toContain('need attention');
+    });
+
+    it('uses configured or resolved .soleri plan paths and understands planner stores', async () => {
+      runtime = {
+        ...createMockRuntime(),
+        config: {
+          agentId: 'test-agent',
+          dataDir: '/mock/agent-data',
+          agentDir: '/mock/agent-dir',
+        },
+      } as unknown as AgentRuntime;
+      ops = createAdminSetupOps(runtime);
+
+      mockDirs.add('/mock-home/.soleri/test-agent');
+      mockFs['/mock-home/.soleri/test-agent/vault.db'] = 'binary';
+      mockFs['/mock-home/.soleri/test-agent/plans.json'] = JSON.stringify({
+        version: '1.0',
+        plans: [
+          { id: 'plan-1', status: 'executing' },
+          { id: 'plan-2', status: 'completed' },
+        ],
+      });
+
+      const result = (await findOp(ops, 'admin_check_persistence').handler({})) as Record<
+        string,
+        unknown
+      >;
+
+      expect((result.storageDirectory as Record<string, unknown>).path).toBe(
+        '/mock-home/.soleri/test-agent',
+      );
+      expect(
+        ((result.files as Record<string, unknown>).plans as Record<string, unknown>).path,
+      ).toBe('/mock-home/.soleri/test-agent/plans.json');
+      expect(
+        ((result.files as Record<string, unknown>).plans as Record<string, unknown>).items,
+      ).toBe(2);
+      expect(result.status).toBe('PERSISTENCE_ACTIVE');
+      expect(result.activePlans).toEqual([{ id: 'plan-1', status: 'executing' }]);
     });
   });
 });

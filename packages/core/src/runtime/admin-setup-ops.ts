@@ -28,6 +28,10 @@ import { homedir } from 'node:os';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import {
+  agentPlansPath as getAgentPlansPath,
+  agentVaultPath as getAgentVaultPath,
+} from '../paths.js';
+import {
   hasSections,
   removeSections,
   injectAtPosition,
@@ -74,17 +78,61 @@ function getFileInfo(path: string): { exists: boolean; size: number; items: numb
   try {
     const stat = statSync(path);
     const content = JSON.parse(readFileSync(path, 'utf-8'));
-    const items = content.items
-      ? Object.keys(content.items).length
-      : content.contexts
-        ? content.contexts.length
-        : Array.isArray(content)
-          ? content.length
-          : 0;
+    const items = countPersistedItems(content);
     return { exists: true, size: stat.size, items };
   } catch {
     return { exists: true, size: 0, items: -1 };
   }
+}
+
+function countPersistedItems(content: unknown): number {
+  if (Array.isArray(content)) return content.length;
+  if (!content || typeof content !== 'object') return 0;
+
+  const data = content as Record<string, unknown>;
+  if (Array.isArray(data.plans)) return data.plans.length;
+  if (data.items && typeof data.items === 'object') return Object.keys(data.items).length;
+  if (Array.isArray(data.contexts)) return data.contexts.length;
+  return 0;
+}
+
+function extractActivePlans(content: unknown): Array<{ id: string; status: string }> {
+  if (!content || typeof content !== 'object') return [];
+
+  const plans = Array.isArray((content as Record<string, unknown>).plans)
+    ? ((content as Record<string, unknown>).plans as unknown[])
+    : null;
+  if (plans) {
+    return plans.flatMap((plan) => {
+      if (!plan || typeof plan !== 'object') return [];
+      const p = plan as Record<string, unknown>;
+      const id = typeof p.id === 'string' ? p.id : null;
+      const lifecycle =
+        typeof p.lifecycleStatus === 'string'
+          ? p.lifecycleStatus
+          : typeof p.status === 'string'
+            ? p.status
+            : null;
+      if (!id || (lifecycle !== 'executing' && lifecycle !== 'reconciling')) return [];
+      return [{ id, status: lifecycle }];
+    });
+  }
+
+  const items = (content as Record<string, unknown>).items;
+  if (!items || typeof items !== 'object') return [];
+
+  return Object.entries(items).flatMap(([id, plan]) => {
+    if (!plan || typeof plan !== 'object') return [];
+    const p = plan as Record<string, unknown>;
+    const lifecycle =
+      typeof p.lifecycleStatus === 'string'
+        ? p.lifecycleStatus
+        : typeof p.status === 'string'
+          ? p.status
+          : null;
+    if (lifecycle !== 'executing' && lifecycle !== 'reconciling') return [];
+    return [{ id, status: lifecycle }];
+  });
 }
 
 /** Discover hookify rule files in a directory */
@@ -621,15 +669,15 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'read',
       handler: async () => {
         const { agentId, plansPath, vaultPath } = config;
-        const storageDir = join(homedir(), `.${agentId}`);
+        const plansFile = plansPath ?? getAgentPlansPath(agentId);
+        const vaultFile = vaultPath ?? getAgentVaultPath(agentId);
+        const storageDir = dirname(plansFile);
         const storageDirExists = existsSync(storageDir);
 
         // Check plan storage
-        const plansFile = plansPath ?? join(storageDir, 'plans.json');
         const plansInfo = getFileInfo(plansFile);
 
         // Check vault
-        const vaultFile = vaultPath ?? join(storageDir, 'vault.db');
         const vaultExists = existsSync(vaultFile);
         let vaultSize = 0;
         if (vaultExists) {
@@ -655,16 +703,7 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
         if (plansInfo.exists) {
           try {
             const plansData = JSON.parse(readFileSync(plansFile, 'utf-8'));
-            const items = plansData.items ?? plansData;
-            if (typeof items === 'object' && items !== null) {
-              for (const [id, plan] of Object.entries(items)) {
-                const p = plan as Record<string, unknown>;
-                const lifecycle = (p.lifecycleStatus ?? p.status) as string | undefined;
-                if (lifecycle === 'executing' || lifecycle === 'reconciling') {
-                  activePlans.push({ id, status: lifecycle });
-                }
-              }
-            }
+            activePlans.push(...extractActivePlans(plansData));
           } catch {
             // Parse error — not critical
           }

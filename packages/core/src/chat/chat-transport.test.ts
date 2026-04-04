@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { ChatSessionManager } from './chat-session.js';
@@ -136,6 +136,19 @@ describe('ChatSessionManager', () => {
       expect(all).toContain('chat-2');
     });
 
+    test('listAll ignores non-session JSON files in the storage root', () => {
+      manager.getOrCreate('chat-1');
+      writeFileSync(
+        join(dir, 'plans.json'),
+        JSON.stringify({ version: '1.0', plans: [] }),
+        'utf-8',
+      );
+
+      const all = manager.listAll();
+      expect(all).toContain('chat-1');
+      expect(all).not.toContain('plans');
+    });
+
     test('setMeta updates metadata', () => {
       manager.getOrCreate('chat-1');
       manager.setMeta('chat-1', { mood: 'happy' });
@@ -160,6 +173,23 @@ describe('ChatSessionManager', () => {
       expect(session.messages.length).toBe(1);
       expect(session.messages[0].content).toBe('persist me');
       manager2.close();
+    });
+
+    test('session files are namespaced away from plans.json collisions', () => {
+      writeFileSync(
+        join(dir, 'plans.json'),
+        JSON.stringify({ version: '1.0', plans: [{ id: 'plan-1' }] }),
+        'utf-8',
+      );
+
+      const session = manager.getOrCreate('plans');
+
+      expect(session.messages).toEqual([]);
+      expect(JSON.parse(readFileSync(join(dir, 'plans.json'), 'utf-8'))).toEqual({
+        version: '1.0',
+        plans: [{ id: 'plan-1' }],
+      });
+      expect(existsSync(join(dir, 'sessions', 'plans.json'))).toBe(true);
     });
 
     test('delete removes from disk', () => {

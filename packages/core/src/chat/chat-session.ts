@@ -16,6 +16,7 @@ const DEFAULT_TTL_MS = 7_200_000; // 2 hours
 const DEFAULT_COMPACTION_THRESHOLD = 100;
 const DEFAULT_COMPACTION_KEEP = 40;
 const REAPER_INTERVAL_MS = 60_000; // 1 minute
+const SESSION_SUBDIR = 'sessions';
 
 export class ChatSessionManager {
   private sessions = new Map<string, ChatSession>();
@@ -31,6 +32,7 @@ export class ChatSessionManager {
     };
 
     mkdirSync(this.config.storageDir, { recursive: true });
+    mkdirSync(this.sessionDir(), { recursive: true });
   }
 
   // ─── Lifecycle ──────────────────────────────────────────────────
@@ -78,7 +80,8 @@ export class ChatSessionManager {
    */
   has(sessionId: string): boolean {
     if (this.sessions.has(sessionId)) return true;
-    return existsSync(this.sessionPath(sessionId));
+    if (existsSync(this.sessionPath(sessionId))) return true;
+    return this.loadSessionFile(this.legacySessionPath(sessionId)) !== undefined;
   }
 
   // ─── Message Management ─────────────────────────────────────────
@@ -159,15 +162,11 @@ export class ChatSessionManager {
    */
   listAll(): string[] {
     const memoryIds = new Set(this.sessions.keys());
-    try {
-      const files = readdirSync(this.config.storageDir);
-      for (const f of files) {
-        if (f.endsWith('.json')) {
-          memoryIds.add(f.replace('.json', ''));
-        }
-      }
-    } catch {
-      // Directory may not exist yet
+    for (const id of this.readPersistedSessionIds(this.sessionDir())) {
+      memoryIds.add(id);
+    }
+    for (const id of this.readPersistedSessionIds(this.config.storageDir)) {
+      memoryIds.add(id);
     }
     return [...memoryIds];
   }
@@ -246,38 +245,97 @@ export class ChatSessionManager {
     session.messages = session.messages.slice(-keep);
   }
 
+  private sessionDir(): string {
+    return join(this.config.storageDir, SESSION_SUBDIR);
+  }
+
   private sessionPath(sessionId: string): string {
     // Sanitize ID for filesystem safety
+    const safe = sessionId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    return join(this.sessionDir(), `${safe}.json`);
+  }
+
+  private legacySessionPath(sessionId: string): string {
     const safe = sessionId.replace(/[^a-zA-Z0-9_-]/g, '_');
     return join(this.config.storageDir, `${safe}.json`);
   }
 
   private persistToDisk(session: ChatSession): void {
     try {
+      mkdirSync(this.sessionDir(), { recursive: true });
       writeFileSync(this.sessionPath(session.id), JSON.stringify(session), 'utf-8');
+
+      // Clean up valid legacy session files after migrating to the namespaced path.
+      const legacyPath = this.legacySessionPath(session.id);
+      if (this.loadSessionFile(legacyPath)) {
+        this.removeFile(legacyPath);
+      }
     } catch {
       // Disk write failure is non-critical — session lives in memory
     }
   }
 
   private loadFromDisk(sessionId: string): ChatSession | undefined {
-    const path = this.sessionPath(sessionId);
-    if (!existsSync(path)) return undefined;
+    const current = this.loadSessionFile(this.sessionPath(sessionId));
+    if (current) return current;
 
-    try {
-      const data = readFileSync(path, 'utf-8');
-      return JSON.parse(data) as ChatSession;
-    } catch {
-      return undefined;
+    const legacyPath = this.legacySessionPath(sessionId);
+    const legacy = this.loadSessionFile(legacyPath);
+    if (legacy) {
+      this.persistToDisk(legacy);
+      return legacy;
     }
+
+    return undefined;
   }
 
   private removeFromDisk(sessionId: string): void {
-    const path = this.sessionPath(sessionId);
+    this.removeFile(this.sessionPath(sessionId));
+    const legacyPath = this.legacySessionPath(sessionId);
+    if (this.loadSessionFile(legacyPath)) {
+      this.removeFile(legacyPath);
+    }
+  }
+
+  private removeFile(path: string): void {
     try {
       rmSync(path, { force: true });
     } catch {
       // Removal failure is non-critical
     }
+  }
+
+  private loadSessionFile(path: string): ChatSession | undefined {
+    if (!existsSync(path)) return undefined;
+
+    try {
+      const data = JSON.parse(readFileSync(path, 'utf-8'));
+      return this.isChatSession(data) ? data : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private readPersistedSessionIds(dir: string): string[] {
+    try {
+      return readdirSync(dir).flatMap((file) => {
+        if (!file.endsWith('.json')) return [];
+        const session = this.loadSessionFile(join(dir, file));
+        return session ? [session.id] : [];
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  private isChatSession(value: unknown): value is ChatSession {
+    if (!value || typeof value !== 'object') return false;
+    const session = value as Partial<ChatSession>;
+    return (
+      typeof session.id === 'string' &&
+      Array.isArray(session.messages) &&
+      typeof session.createdAt === 'number' &&
+      typeof session.lastActiveAt === 'number'
+    );
   }
 }
