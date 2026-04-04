@@ -253,6 +253,17 @@ export function syncSkillsToClaudeCode(
     cleanStaleGlobalSkills(agentName, result);
   }
 
+  // Task 4: Scaffold global ~/.claude/CLAUDE.md when doing a global install
+  if (isGlobal && agentName && result.installed.length + result.updated.length > 0) {
+    try {
+      const agentId = agentName.toLowerCase().replace(/\s+/g, '-');
+      const displayName = agentName.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      scaffoldGlobalClaudeMd(agentId, displayName);
+    } catch {
+      // Best-effort — don't fail the sync
+    }
+  }
+
   return result;
 }
 
@@ -293,6 +304,111 @@ function cleanStaleGlobalSkills(agentName: string, result: SyncResult): void {
   } catch {
     // Global skills dir unreadable — nothing to clean
   }
+}
+
+// =============================================================================
+// GLOBAL CLAUDE.MD SCAFFOLDING
+// =============================================================================
+
+/**
+ * Sentinel markers that bracket an agent's section in ~/.claude/CLAUDE.md.
+ * Using HTML comments so they don't render in markdown viewers.
+ */
+function agentSectionStart(agentId: string): string {
+  return `<!-- soleri:agent:${agentId} start -->`;
+}
+function agentSectionEnd(agentId: string): string {
+  return `<!-- soleri:agent:${agentId} end -->`;
+}
+
+/**
+ * Build the minimal routing section for one agent in the global CLAUDE.md.
+ */
+function buildAgentSection(agentId: string, displayName: string): string {
+  return [
+    agentSectionStart(agentId),
+    `## ${displayName}`,
+    '',
+    `Skills for **${displayName}** are installed globally. Agent-specific instructions`,
+    `are in each project's \`CLAUDE.md\`.`,
+    '',
+    `**Routing:** When you see \`${agentId}_*\` MCP tools, follow the project's \`CLAUDE.md\`.`,
+    agentSectionEnd(agentId),
+  ].join('\n');
+}
+
+/**
+ * Create or update ~/.claude/CLAUDE.md to include a routing section for the
+ * given agent. Idempotent — replaces the agent's existing section if present,
+ * appends otherwise. Does not touch other agents' sections.
+ */
+export function scaffoldGlobalClaudeMd(agentId: string, displayName: string): void {
+  const claudeMdPath = join(homedir(), '.claude', 'CLAUDE.md');
+
+  const header = [
+    '# Soleri Engine',
+    '',
+    'Active Soleri agents are installed on this system. Agent-specific instructions',
+    "are in each project's `CLAUDE.md`.",
+    '',
+    '## Routing',
+    '',
+    "- When working in a Soleri agent project, follow that project's `CLAUDE.md`",
+    '- Agent sections below are managed automatically — do not edit manually',
+    '',
+  ].join('\n');
+
+  const newSection = buildAgentSection(agentId, displayName);
+  const start = agentSectionStart(agentId);
+  const end = agentSectionEnd(agentId);
+
+  mkdirSync(join(homedir(), '.claude'), { recursive: true });
+
+  let existing = '';
+  if (existsSync(claudeMdPath)) {
+    existing = readFileSync(claudeMdPath, 'utf-8');
+  }
+
+  const startIdx = existing.indexOf(start);
+  const endIdx = existing.indexOf(end);
+
+  let updated: string;
+  if (startIdx !== -1 && endIdx !== -1) {
+    // Replace the existing section
+    updated = existing.slice(0, startIdx) + newSection + existing.slice(endIdx + end.length);
+  } else if (existing.length === 0) {
+    // New file — write header + section
+    updated = header + newSection + '\n';
+  } else {
+    // Append to existing file
+    updated = existing.trimEnd() + '\n\n' + newSection + '\n';
+  }
+
+  writeFileSync(claudeMdPath, updated);
+}
+
+/**
+ * Remove an agent's section from ~/.claude/CLAUDE.md.
+ * No-op if the file or section doesn't exist.
+ */
+export function removeAgentFromGlobalClaudeMd(agentId: string): void {
+  const claudeMdPath = join(homedir(), '.claude', 'CLAUDE.md');
+  if (!existsSync(claudeMdPath)) return;
+
+  const content = readFileSync(claudeMdPath, 'utf-8');
+  const start = agentSectionStart(agentId);
+  const end = agentSectionEnd(agentId);
+
+  const startIdx = content.indexOf(start);
+  const endIdx = content.indexOf(end);
+  if (startIdx === -1 || endIdx === -1) return;
+
+  // Remove the section and any leading blank line before it
+  const before = content.slice(0, startIdx).trimEnd();
+  const after = content.slice(endIdx + end.length);
+
+  const updated = (before.length > 0 ? before + '\n' : '') + after.replace(/^\n+/, '\n');
+  writeFileSync(claudeMdPath, updated.trimEnd() + '\n');
 }
 
 // =============================================================================
