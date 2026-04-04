@@ -49,7 +49,27 @@ const TEAM_CONTENT_PATTERNS: Array<{ pattern: RegExp; weight: number; desc: stri
   { pattern: /error\s+handling|error\s+boundary/i, weight: 0.6, desc: 'error handling' },
   { pattern: /touch\s+target|tap\s+target|fitts/i, weight: 0.8, desc: 'UX touch targets' },
   { pattern: /focus\s+(ring|state|indicator)/i, weight: 0.8, desc: 'focus states' },
-  { pattern: /best\s+practice|anti.?pattern/i, weight: 0.65, desc: 'best practice' },
+  // Reduced weight: "best practice" alone is too weak to push to team tier
+  { pattern: /best\s+practice|anti.?pattern/i, weight: 0.4, desc: 'best practice' },
+];
+
+/**
+ * Project-specific negative signals — agent/tool names and framework-specific patterns
+ * that indicate the entry is project-scoped, not universally applicable.
+ */
+const PROJECT_SPECIFIC_PATTERNS: Array<{ pattern: RegExp; weight: number; desc: string }> = [
+  { pattern: /\bsoleri\b/i, weight: 0.9, desc: 'Soleri project reference' },
+  { pattern: /\bernesto\b/i, weight: 0.9, desc: 'Ernesto agent reference' },
+  { pattern: /\bsalvador\b/i, weight: 0.9, desc: 'Salvador agent reference' },
+  {
+    pattern: /\bskill\s+(file|system|pack|registry|sync)/i,
+    weight: 0.7,
+    desc: 'skill system specific',
+  },
+  { pattern: /vault\s+(entry|search|op|facade)/i, weight: 0.65, desc: 'vault system specific' },
+  { pattern: /domain\s+pack|hook\s+pack/i, weight: 0.7, desc: 'Soleri pack system' },
+  { pattern: /plan\s+(grade|facade|lifecycle)/i, weight: 0.65, desc: 'Soleri planning system' },
+  { pattern: /soleri\s+(agent|cli|core|forge)/i, weight: 0.95, desc: 'Soleri package reference' },
 ];
 
 const PROJECT_CONTENT_PATTERNS: Array<{ pattern: RegExp; weight: number; desc: string }> = [
@@ -128,6 +148,11 @@ function analyzeContent(text: string): ScopeSignal[] {
       signals.push({ tier: 'project', source: 'content', indicator: desc, weight });
     }
   }
+  for (const { pattern, weight, desc } of PROJECT_SPECIFIC_PATTERNS) {
+    if (pattern.test(text)) {
+      signals.push({ tier: 'project', source: 'content', indicator: desc, weight });
+    }
+  }
   for (const { pattern, weight, desc } of AGENT_CONTENT_PATTERNS) {
     if (pattern.test(text)) {
       signals.push({ tier: 'agent', source: 'content', indicator: desc, weight });
@@ -165,7 +190,11 @@ function analyzeTags(tags: string[]): ScopeSignal[] {
   return signals;
 }
 
-function computeConfidence(scores: Record<ScopeTier, number>, winner: ScopeTier): ConfidenceLevel {
+function computeConfidence(
+  scores: Record<ScopeTier, number>,
+  winner: ScopeTier,
+  signals: ScopeSignal[],
+): ConfidenceLevel {
   const winScore = scores[winner];
   const others = Object.entries(scores)
     .filter(([t]) => t !== winner)
@@ -173,7 +202,16 @@ function computeConfidence(scores: Record<ScopeTier, number>, winner: ScopeTier)
   const runnerUp = Math.max(...others, 0);
 
   if (winScore === 0) return 'LOW';
-  if (runnerUp === 0 && winScore >= 0.5) return 'HIGH';
+  if (runnerUp === 0 && winScore >= 0.5) {
+    // Cap team tier at MEDIUM when only generic/methodology signals drove the win
+    if (winner === 'team') {
+      const genericOnly = signals
+        .filter((s) => s.tier === 'team')
+        .every((s) => s.indicator === 'best practice' || s.source === 'category');
+      if (genericOnly) return 'MEDIUM';
+    }
+    return 'HIGH';
+  }
   const ratio = winScore / (winScore + runnerUp);
   if (ratio >= 0.7 && winScore >= 1.0) return 'HIGH';
   if (ratio >= 0.55) return 'MEDIUM';
@@ -205,7 +243,7 @@ export function detectScope(input: ScopeInput): ScopeDetectionResult {
     }
   }
 
-  const confidence = computeConfidence(scores, winner);
+  const confidence = computeConfidence(scores, winner, signals);
   const topSignals = signals
     .filter((s) => s.tier === winner)
     .sort((a, b) => b.weight - a.weight)

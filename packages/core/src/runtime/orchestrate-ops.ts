@@ -1115,6 +1115,18 @@ export function createOrchestrateOps(
           }
         }
 
+        // Best-effort worktree cleanup after plan completion
+        try {
+          const { worktreeReap } = await import('../utils/worktree-reaper.js');
+          Promise.resolve()
+            .then(() => worktreeReap((params.projectPath as string) ?? '.'))
+            .catch(() => {
+              /* best-effort */
+            });
+        } catch {
+          /* skip silently */
+        }
+
         return {
           plan: completedPlan,
           session,

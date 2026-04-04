@@ -849,5 +849,35 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
         };
       },
     },
+    {
+      name: 'worktree_status',
+      description: 'List stale .claude/worktrees/ entries without removing them.',
+      auth: 'read' as const,
+      schema: z.object({
+        projectPath: z.string().optional().default('.'),
+      }),
+      handler: async (params) => {
+        const { worktreeStatus } = await import('../utils/worktree-reaper.js');
+        const { resolve } = await import('node:path');
+        const projectPath = resolve((params.projectPath as string) ?? '.');
+        const status = worktreeStatus(projectPath);
+        return { ...status, projectPath };
+      },
+    },
+    {
+      name: 'worktree_reap',
+      description: 'Remove stale .claude/worktrees/ entries and prune git worktree refs.',
+      auth: 'write' as const,
+      schema: z.object({
+        projectPath: z.string().optional().default('.'),
+      }),
+      handler: async (params) => {
+        const { worktreeReap } = await import('../utils/worktree-reaper.js');
+        const { resolve } = await import('node:path');
+        const projectPath = resolve((params.projectPath as string) ?? '.');
+        const report = worktreeReap(projectPath);
+        return { ...report, projectPath };
+      },
+    },
   ];
 }

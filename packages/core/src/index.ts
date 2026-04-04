@@ -18,6 +18,8 @@ export { WorkspaceResolver } from './subagent/workspace-resolver.js';
 export { ConcurrencyManager } from './subagent/concurrency-manager.js';
 export { OrphanReaper } from './subagent/orphan-reaper.js';
 export type { ReapResult } from './subagent/orphan-reaper.js';
+export { worktreeReap, worktreeStatus } from './utils/worktree-reaper.js';
+export type { ReapReport, WorktreeStatus } from './utils/worktree-reaper.js';
 export { aggregate as aggregateResults } from './subagent/result-aggregator.js';
 export type {
   SubagentTask,

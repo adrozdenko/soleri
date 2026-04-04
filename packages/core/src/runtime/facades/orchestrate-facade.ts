@@ -120,6 +120,18 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           /* dream module not available — skip silently */
         }
 
+        // Auto-reap stale worktrees — best-effort, non-blocking
+        try {
+          const { worktreeReap } = await import('../../utils/worktree-reaper.js');
+          Promise.resolve()
+            .then(() => worktreeReap(projectPath))
+            .catch(() => {
+              /* best-effort */
+            });
+        } catch {
+          /* worktree-reaper not available — skip silently */
+        }
+
         // ─── Pre-flight manifest ───────────────────────────────
         let skills: string[] = [];
         try {
