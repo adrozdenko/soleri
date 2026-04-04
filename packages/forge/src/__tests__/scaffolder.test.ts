@@ -264,7 +264,7 @@ describe('Scaffolder', () => {
   });
 
   describe('skills', () => {
-    it('should create skills directory with 10 SKILL.md files', () => {
+    it('should create skills directory with SKILL.md files', () => {
       scaffold(testConfig);
       const skillsDir = join(tempDir, 'atlas', 'skills');
 
@@ -274,7 +274,7 @@ describe('Scaffolder', () => {
         .filter((e) => e.isDirectory())
         .map((e) => e.name);
 
-      expect(skillDirs.length).toBe(36);
+      expect(skillDirs.length).toBe(37);
 
       // Verify each skill dir has a SKILL.md
       for (const dir of skillDirs) {
