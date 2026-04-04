@@ -405,6 +405,15 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
                   result.reviewNote =
                     'Low confidence scope detection — consider reviewing tier assignment';
                 }
+                const PLANNING_TYPES = new Set(['anti-pattern', 'pattern']);
+                const PLANNING_TAGS = new Set(['planning-gate', 'rules', 'quality']);
+                const hasPlanningType = PLANNING_TYPES.has(mappedType);
+                const hasPlanningTag = tags.some((t) => PLANNING_TAGS.has(t));
+                if (hasPlanningType || hasPlanningTag) {
+                  result.planningNote =
+                    'This entry type influences planning but has no content body (context/example/why). ' +
+                    'Use capture_knowledge to add those fields — without them, the orchestrator cannot apply this rule during planning.';
+                }
                 // Fire-and-forget markdown sync
                 fireAndForgetSync(
                   {

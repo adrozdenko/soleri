@@ -368,6 +368,43 @@ describe('createCaptureOps', () => {
       // Capture should still succeed despite sync error
       expect(result.captured).toBe(true);
     });
+
+    it('adds planningNote when type is anti-pattern', async () => {
+      const result = (await findOp(ops, 'capture_quick').handler({
+        type: 'anti-pattern',
+        domain: 'testing',
+        title: 'No content body',
+        description: 'captured without context/example/why',
+      })) as Record<string, unknown>;
+      expect(result.captured).toBe(true);
+      expect(typeof result.planningNote).toBe('string');
+      expect(result.planningNote as string).toContain('capture_knowledge');
+    });
+
+    it('adds planningNote when tags include planning-gate', async () => {
+      const result = (await findOp(ops, 'capture_quick').handler({
+        type: 'rule',
+        domain: 'testing',
+        title: 'Gated rule',
+        description: 'should warn',
+        tags: ['planning-gate'],
+      })) as Record<string, unknown>;
+      expect(result.captured).toBe(true);
+      expect(typeof result.planningNote).toBe('string');
+      expect(result.planningNote as string).toContain('capture_knowledge');
+    });
+
+    it('does not add planningNote for non-planning types without planning tags', async () => {
+      const result = (await findOp(ops, 'capture_quick').handler({
+        type: 'reference',
+        domain: 'docs',
+        title: 'A plain reference',
+        description: 'no planning intent',
+        tags: ['docs'],
+      })) as Record<string, unknown>;
+      expect(result.captured).toBe(true);
+      expect(result.planningNote).toBeUndefined();
+    });
   });
 
   describe('search_intelligent', () => {
