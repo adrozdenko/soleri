@@ -30,7 +30,7 @@
  *                         brain-recommend, validate-component, validate-tokens
  *   explore.flow.yaml  — vault-search, memory-search, brain-strengths,
  *                         brain-recommend, playbook-search
- *   fix.flow.yaml      — vault-search-antipatterns, memory-search,
+ *   fix.flow.yaml      — vault-search, memory-search,
  *                         error-pattern-search, brain-recommend,
  *                         validate-component, validate-tokens
  *   plan.flow.yaml     — vault-search, memory-search, brain-recommend,
@@ -42,7 +42,6 @@
 const CHAIN_TO_CAPABILITY: Record<string, string> = {
   // Vault & Knowledge
   'vault-search': 'vault.search',
-  'vault-search-antipatterns': 'vault.search',
   'memory-search': 'memory.search',
   'playbook-search': 'vault.playbook',
 

@@ -6,10 +6,6 @@ describe('chainToCapability', () => {
     expect(chainToCapability('vault-search')).toBe('vault.search');
   });
 
-  it('maps vault-search-antipatterns to vault.search', () => {
-    expect(chainToCapability('vault-search-antipatterns')).toBe('vault.search');
-  });
-
   it('maps memory-search to memory.search', () => {
     expect(chainToCapability('memory-search')).toBe('memory.search');
   });

@@ -27,7 +27,7 @@ steps:
     description: Search vault for known anti-patterns related to the reported issue.
     needs: [vault.search, memory.search]
     chains:
-      - vault-search-antipatterns
+      - vault-search
       - memory-search
     output:
       - anti-patterns
