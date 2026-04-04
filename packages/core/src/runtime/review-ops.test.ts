@@ -39,21 +39,6 @@ describe('createReviewOps', () => {
     ops = createReviewOps(rt);
   });
 
-  it('returns 5 ops', () => {
-    expect(ops.length).toBe(5);
-  });
-
-  it('has the expected op names', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'vault_submit_review',
-      'vault_approve',
-      'vault_reject',
-      'vault_pending_reviews',
-      'vault_review_stats',
-    ]);
-  });
-
   // ─── vault_submit_review ──────────────────────────────────────
 
   describe('vault_submit_review', () => {

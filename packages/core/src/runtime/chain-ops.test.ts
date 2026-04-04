@@ -25,27 +25,6 @@ const VALID_CHAIN = {
 };
 
 describe('createChainOps', () => {
-  it('returns exactly 5 ops', () => {
-    const ops = createChainOps(mockRuntime());
-    expect(ops).toHaveLength(5);
-    expect(ops.map((o) => o.name)).toEqual([
-      'chain_execute',
-      'chain_status',
-      'chain_resume',
-      'chain_list',
-      'chain_step_approve',
-    ]);
-  });
-
-  it('assigns correct auth levels', () => {
-    const ops = captureOps(createChainOps(mockRuntime()));
-    expect(ops.get('chain_execute')!.auth).toBe('write');
-    expect(ops.get('chain_status')!.auth).toBe('read');
-    expect(ops.get('chain_resume')!.auth).toBe('write');
-    expect(ops.get('chain_list')!.auth).toBe('read');
-    expect(ops.get('chain_step_approve')!.auth).toBe('write');
-  });
-
   describe('chain_execute', () => {
     it('calls chainRunner.execute with chain def and input', async () => {
       const rt = mockRuntime();

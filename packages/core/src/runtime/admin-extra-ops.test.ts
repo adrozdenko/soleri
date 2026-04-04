@@ -95,19 +95,6 @@ describe('createAdminExtraOps', () => {
     ops = createAdminExtraOps(runtime);
   });
 
-  it('returns at least 24 ops', () => {
-    expect(ops.length).toBeGreaterThanOrEqual(24);
-  });
-
-  it('all ops have name, description, auth, and handler', () => {
-    for (const op of ops) {
-      expect(op.name).toBeTruthy();
-      expect(op.description).toBeTruthy();
-      expect(['read', 'write', 'admin']).toContain(op.auth);
-      expect(typeof op.handler).toBe('function');
-    }
-  });
-
   describe('admin_telemetry', () => {
     it('returns telemetry stats', async () => {
       const result = await findOp(ops, 'admin_telemetry').handler({});

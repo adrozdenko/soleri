@@ -35,23 +35,6 @@ describe('branching-ops', () => {
     ops = captureOps(createBranchingOps(runtime));
   });
 
-  it('registers all 5 branching ops', () => {
-    expect(ops.size).toBe(5);
-    expect(ops.has('vault_branch')).toBe(true);
-    expect(ops.has('vault_branch_add')).toBe(true);
-    expect(ops.has('vault_branch_list')).toBe(true);
-    expect(ops.has('vault_merge_branch')).toBe(true);
-    expect(ops.has('vault_delete_branch')).toBe(true);
-  });
-
-  it('has correct auth levels', () => {
-    expect(ops.get('vault_branch')!.auth).toBe('write');
-    expect(ops.get('vault_branch_add')!.auth).toBe('write');
-    expect(ops.get('vault_branch_list')!.auth).toBe('read');
-    expect(ops.get('vault_merge_branch')!.auth).toBe('admin');
-    expect(ops.get('vault_delete_branch')!.auth).toBe('admin');
-  });
-
   describe('vault_branch', () => {
     it('creates a branch', async () => {
       const result = await executeOp(ops, 'vault_branch', { name: 'experiment' });

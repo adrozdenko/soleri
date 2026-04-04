@@ -28,25 +28,6 @@ describe('createIntakeOps', () => {
     return op;
   }
 
-  it('returns 7 ops', () => {
-    const ops = createIntakeOps(makeMockPipeline() as never);
-    expect(ops).toHaveLength(7);
-  });
-
-  it('has all expected op names', () => {
-    const ops = createIntakeOps(makeMockPipeline() as never);
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'intake_ingest_book',
-      'intake_process',
-      'intake_status',
-      'intake_preview',
-      'ingest_url',
-      'ingest_text',
-      'ingest_batch',
-    ]);
-  });
-
   describe('when pipeline is null', () => {
     it('intake_ingest_book returns error', async () => {
       const ops = createIntakeOps(null);

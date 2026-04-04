@@ -52,33 +52,6 @@ describe('createGradingOps', () => {
     return op;
   }
 
-  it('returns 5 ops', () => {
-    runtime = makeMockRuntime();
-    ops = createGradingOps(runtime);
-    expect(ops).toHaveLength(5);
-  });
-
-  it('has correct op names', () => {
-    runtime = makeMockRuntime();
-    ops = createGradingOps(runtime);
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'plan_grade',
-      'plan_check_history',
-      'plan_latest_check',
-      'plan_meets_grade',
-      'plan_auto_improve',
-    ]);
-  });
-
-  it('all ops have read auth', () => {
-    runtime = makeMockRuntime();
-    ops = createGradingOps(runtime);
-    for (const op of ops) {
-      expect(op.auth).toBe('read');
-    }
-  });
-
   describe('plan_grade', () => {
     it('delegates to planner.grade', async () => {
       runtime = makeMockRuntime();

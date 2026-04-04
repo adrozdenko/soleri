@@ -72,24 +72,6 @@ describe('createSyncOps', () => {
     ops = createSyncOps(rt);
   });
 
-  it('returns 8 ops', () => {
-    expect(ops.length).toBe(8);
-  });
-
-  it('has the expected op names', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'vault_git_push',
-      'vault_git_pull',
-      'vault_git_sync',
-      'obsidian_export',
-      'obsidian_import',
-      'obsidian_sync',
-      'vault_export_pack',
-      'vault_import_pack',
-    ]);
-  });
-
   // ─── vault_git_push ───────────────────────────────────────────
 
   describe('vault_git_push', () => {

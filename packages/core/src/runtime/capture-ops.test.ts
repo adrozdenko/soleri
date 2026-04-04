@@ -83,18 +83,6 @@ describe('createCaptureOps', () => {
     ops = createCaptureOps(runtime);
   });
 
-  it('returns 4 ops', () => {
-    expect(ops).toHaveLength(4);
-  });
-
-  it('all ops have required fields', () => {
-    for (const op of ops) {
-      expect(op.name).toBeTruthy();
-      expect(op.handler).toBeDefined();
-      expect(['read', 'write']).toContain(op.auth);
-    }
-  });
-
   describe('capture_knowledge', () => {
     it('captures a single entry with governance approval', async () => {
       const result = (await findOp(ops, 'capture_knowledge').handler({

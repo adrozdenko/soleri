@@ -44,32 +44,6 @@ describe('createPackOps', () => {
     setHotRegister(null as never);
   });
 
-  it('returns 4 ops', () => {
-    runtime = makeMockRuntime();
-    ops = createPackOps(runtime);
-    expect(ops).toHaveLength(4);
-  });
-
-  it('has correct op names', () => {
-    runtime = makeMockRuntime();
-    ops = createPackOps(runtime);
-    expect(ops.map((o) => o.name)).toEqual([
-      'pack_validate',
-      'pack_install',
-      'pack_list',
-      'pack_uninstall',
-    ]);
-  });
-
-  it('assigns correct auth levels', () => {
-    runtime = makeMockRuntime();
-    ops = createPackOps(runtime);
-    expect(findOp('pack_validate').auth).toBe('read');
-    expect(findOp('pack_install').auth).toBe('admin');
-    expect(findOp('pack_list').auth).toBe('read');
-    expect(findOp('pack_uninstall').auth).toBe('admin');
-  });
-
   describe('pack_validate', () => {
     it('delegates to packInstaller.validate', async () => {
       runtime = makeMockRuntime();

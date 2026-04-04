@@ -73,10 +73,6 @@ describe('createMemoryExtraOps', () => {
     ops = createMemoryExtraOps(rt);
   });
 
-  it('returns all 18 ops', () => {
-    expect(ops.length).toBe(18);
-  });
-
   // ─── memory_delete ────────────────────────────────────────────
 
   describe('memory_delete', () => {

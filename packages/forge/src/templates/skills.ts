@@ -6,8 +6,8 @@ import type { AgentConfig } from '../types.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = join(__dirname, '..', 'skills');
 
-/** Placeholder token in skill templates that gets replaced with agent-specific tool name. */
-const AGENT_PLACEHOLDER = 'YOUR_AGENT_core';
+/** Placeholder token in skill templates that gets replaced with agent-specific tool prefix. */
+const AGENT_PLACEHOLDER = 'YOUR_AGENT_';
 
 // ---------------------------------------------------------------------------
 // Frontmatter step extraction
@@ -136,7 +136,7 @@ export function generateSkills(config: AgentConfig): Array<[string, string]> {
     let content = readFileSync(contentPath, 'utf-8');
 
     if (content.includes(AGENT_PLACEHOLDER)) {
-      content = content.replace(/YOUR_AGENT_core/g, `${config.id}_core`);
+      content = content.replace(/YOUR_AGENT_/g, `${config.id}_`);
     }
 
     // Extract structured steps from frontmatter and append as metadata block

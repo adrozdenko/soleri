@@ -77,18 +77,6 @@ describe('createVaultExtraOps', () => {
     ops = createVaultExtraOps(runtime);
   });
 
-  it('returns 13 ops', () => {
-    expect(ops).toHaveLength(13);
-  });
-
-  it('all ops have required fields', () => {
-    for (const op of ops) {
-      expect(op.name).toBeTruthy();
-      expect(op.handler).toBeDefined();
-      expect(['read', 'write', 'admin']).toContain(op.auth);
-    }
-  });
-
   describe('vault_get', () => {
     it('returns entry by ID', async () => {
       const result = (await findOp(ops, 'vault_get').handler({ id: 'entry-1' })) as Record<

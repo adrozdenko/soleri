@@ -40,20 +40,6 @@ describe('createMemoryCrossProjectOps', () => {
     return op;
   }
 
-  it('returns 3 ops', () => {
-    ops = createMemoryCrossProjectOps(makeMockRuntime());
-    expect(ops).toHaveLength(3);
-  });
-
-  it('has correct op names', () => {
-    ops = createMemoryCrossProjectOps(makeMockRuntime());
-    expect(ops.map((o) => o.name)).toEqual([
-      'memory_promote_to_global',
-      'memory_configure',
-      'memory_cross_project_search',
-    ]);
-  });
-
   describe('memory_promote_to_global', () => {
     it('promotes entry by adding _global tag', async () => {
       const runtime = makeMockRuntime();

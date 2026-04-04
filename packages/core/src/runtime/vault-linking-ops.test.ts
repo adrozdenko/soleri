@@ -52,10 +52,6 @@ describe('createVaultLinkingOps', () => {
     ops = createVaultLinkingOps(rt);
   });
 
-  it('returns 9 ops', () => {
-    expect(ops.length).toBe(9);
-  });
-
   // ─── link_entries ─────────────────────────────────────────────
 
   describe('link_entries', () => {

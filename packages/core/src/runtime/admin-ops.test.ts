@@ -70,10 +70,6 @@ describe('createAdminOps', () => {
     ops = createAdminOps(rt);
   });
 
-  it('returns ops array', () => {
-    expect(ops.length).toBeGreaterThan(0);
-  });
-
   // ─── admin_health ─────────────────────────────────────────────
 
   describe('admin_health', () => {

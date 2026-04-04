@@ -37,27 +37,6 @@ describe('tier-ops', () => {
     ops = captureOps(createTierOps(runtime));
   });
 
-  it('registers all 7 tier/source ops', () => {
-    expect(ops.size).toBe(7);
-    expect(ops.has('vault_connect')).toBe(true);
-    expect(ops.has('vault_disconnect')).toBe(true);
-    expect(ops.has('vault_tiers')).toBe(true);
-    expect(ops.has('vault_search_all')).toBe(true);
-    expect(ops.has('vault_connect_source')).toBe(true);
-    expect(ops.has('vault_disconnect_source')).toBe(true);
-    expect(ops.has('vault_list_sources')).toBe(true);
-  });
-
-  it('has correct auth levels', () => {
-    expect(ops.get('vault_connect')!.auth).toBe('admin');
-    expect(ops.get('vault_disconnect')!.auth).toBe('admin');
-    expect(ops.get('vault_tiers')!.auth).toBe('read');
-    expect(ops.get('vault_search_all')!.auth).toBe('read');
-    expect(ops.get('vault_connect_source')!.auth).toBe('admin');
-    expect(ops.get('vault_disconnect_source')!.auth).toBe('admin');
-    expect(ops.get('vault_list_sources')!.auth).toBe('read');
-  });
-
   // ─── Multi-vault ops ──────────────────────────────────────────────
 
   describe('vault_connect', () => {

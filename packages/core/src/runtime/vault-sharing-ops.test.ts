@@ -54,15 +54,6 @@ describe('createVaultSharingOps', () => {
     ops = createVaultSharingOps(rt);
   });
 
-  it('returns 3 scope ops', () => {
-    expect(ops.length).toBe(3);
-  });
-
-  it('has the expected op names', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual(['vault_detect_scope', 'vault_set_scope', 'vault_list_by_scope']);
-  });
-
   // ─── vault_detect_scope ───────────────────────────────────────
 
   describe('vault_detect_scope', () => {

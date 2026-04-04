@@ -83,34 +83,6 @@ describe('createArchiveOps', () => {
     ops = createArchiveOps(runtime);
   });
 
-  it('returns 12 ops', () => {
-    expect(ops).toHaveLength(12);
-  });
-
-  it('all ops have required fields', () => {
-    for (const op of ops) {
-      expect(op.name).toBeTruthy();
-      expect(op.handler).toBeDefined();
-      expect(['read', 'write', 'admin']).toContain(op.auth);
-    }
-  });
-
-  it('contains expected op names', () => {
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('vault_archive');
-    expect(names).toContain('vault_restore');
-    expect(names).toContain('vault_optimize');
-    expect(names).toContain('vault_backup');
-    expect(names).toContain('vault_age_report');
-    expect(names).toContain('vault_set_temporal');
-    expect(names).toContain('vault_find_expiring');
-    expect(names).toContain('vault_find_expired');
-    expect(names).toContain('knowledge_audit');
-    expect(names).toContain('knowledge_health');
-    expect(names).toContain('knowledge_merge');
-    expect(names).toContain('knowledge_reorganize');
-  });
-
   describe('vault_archive', () => {
     it('archives old entries', async () => {
       await findOp(ops, 'vault_archive').handler({

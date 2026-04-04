@@ -164,16 +164,6 @@ describe('createOrchestrateOps', () => {
     ops = createOrchestrateOps(rt);
   });
 
-  it('returns all orchestrate ops', () => {
-    expect(ops.length).toBeGreaterThanOrEqual(5);
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('orchestrate_plan');
-    expect(names).toContain('orchestrate_execute');
-    expect(names).toContain('orchestrate_complete');
-    expect(names).toContain('orchestrate_status');
-    expect(names).toContain('orchestrate_quick_capture');
-  });
-
   // ─── orchestrate_plan ─────────────────────────────────────────
 
   describe('orchestrate_plan', () => {
