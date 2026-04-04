@@ -9,6 +9,7 @@ export function generatePackageJson(config: AgentConfig): string {
     main: 'dist/index.js',
     bin: { [`${config.id}-mcp`]: 'dist/index.js' },
     scripts: {
+      postinstall: 'soleri hooks sync || true',
       dev: 'tsx src/index.ts',
       build: 'tsc && node scripts/copy-assets.js',
       start: 'node dist/index.js',
@@ -39,6 +40,7 @@ export function generatePackageJson(config: AgentConfig): string {
       '@anthropic-ai/sdk': '^0.39.0',
     },
     devDependencies: {
+      '@soleri/cli': '^9.0.0',
       '@types/node': '^22.13.4',
       '@vitest/coverage-v8': '^3.0.5',
       tsx: '^4.19.2',
