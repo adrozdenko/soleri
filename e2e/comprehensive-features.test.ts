@@ -932,13 +932,15 @@ describe('Component: sync_status', () => {
       synced: number;
       drifted: number;
       missingFile: number;
+      missingMetadata: number;
       unregistered: number;
       unregisteredFiles: string[];
     };
 
     expect(result.total).toBe(3);
     expect(result.synced).toBe(1);
-    expect(result.drifted).toBe(1); // NoFilePathComp has no filePath
+    expect(result.drifted).toBe(0);
+    expect(result.missingMetadata).toBe(1); // NoFilePathComp has no filePath → missing-metadata
     expect(result.missingFile).toBe(1); // MissingFileComp not in file list
     expect(result.unregistered).toBe(1);
     expect(result.unregisteredFiles).toContain('src/components/UnregisteredComp.tsx');
