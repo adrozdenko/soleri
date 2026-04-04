@@ -4,9 +4,9 @@
 id: DESIGN-flow
 name: Design System Recommendation
 description: >
-  Design workflow: search vault for existing design patterns, query zettelcaster
-  for curated design intelligence, then provide a full design system recommendation
-  (style + palette + typography + landing pattern + anti-patterns).
+  Design workflow: search vault for existing design patterns and curated design intelligence
+  (including zettelcaster notes synced into vault), then provide a full design system
+  recommendation (style + palette + typography + landing pattern + anti-patterns).
 version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
@@ -35,15 +35,6 @@ steps:
     output:
       - vault-patterns
       - memory-hits
-
-  - id: search-zettelcaster
-    name: Search Zettelcaster Design Knowledge
-    description: Query zettelcaster for curated design intelligence and linked design notes.
-    needs: [zettelcaster.search]
-    chains:
-      - zettelcaster-search
-    output:
-      - zettelcaster-design-results
 
   - id: recommend-design-system
     name: Recommend Design System
@@ -83,8 +74,7 @@ steps:
 
 scoring:
   weights:
-    vault-search: 0.15
-    zettelcaster-search: 0.10
+    vault-search: 0.25
     design-system: 0.40
     stack-guidelines: 0.15
     brain-recommend: 0.20

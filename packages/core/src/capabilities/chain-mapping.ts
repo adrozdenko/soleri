@@ -22,7 +22,7 @@
  *   deliver.flow.yaml  — validate-component, validate-tokens,
  *                         design-rules-check, test-coverage-check,
  *                         performance-audit, delivery-checklist
- *   design.flow.yaml   — vault-search, memory-search, zettelcaster-search,
+ *   design.flow.yaml   — vault-search, memory-search,
  *                         recommend-design-system, recommend-style,
  *                         recommend-palette, recommend-typography,
  *                         get-stack-guidelines, brain-recommend
@@ -64,9 +64,8 @@ const CHAIN_TO_CAPABILITY: Record<string, string> = {
   'recommend-typography': 'design.typography',
   'get-stack-guidelines': 'stack.guidelines',
 
-  // Architecture & external knowledge
+  // Architecture
   'architecture-search': 'architecture.search',
-  'zettelcaster-search': 'zettelcaster.search',
 
   // Planning
   'plan-create': 'plan.create',
