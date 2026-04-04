@@ -8,8 +8,12 @@ import {
   statSync,
   lstatSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE_SKILLS_DIR = join(__dirname, '..', 'skills');
 import { scaffold, previewScaffold, listAgents } from '../scaffolder.js';
 import type { AgentConfig } from '../types.js';
 
@@ -274,7 +278,10 @@ describe('Scaffolder', () => {
         .filter((e) => e.isDirectory())
         .map((e) => e.name);
 
-      expect(skillDirs.length).toBe(37);
+      const expectedCount = readdirSync(SOURCE_SKILLS_DIR, { withFileTypes: true }).filter((e) =>
+        e.isDirectory(),
+      ).length;
+      expect(skillDirs.length).toBe(expectedCount);
 
       // Verify each skill dir has a SKILL.md
       for (const dir of skillDirs) {

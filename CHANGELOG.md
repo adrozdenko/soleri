@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.16.1] — 2026-04-04
+
+### Fixed
+
+- **Skill count test no longer hardcoded** — scaffolder test now reads the source `skills/` directory to get the expected count, so adding a new built-in skill doesn't break the test.
+
 ## [9.16.0] — 2026-04-04
 
 ### Added
