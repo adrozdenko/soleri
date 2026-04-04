@@ -22,6 +22,17 @@ triggers:
   min-confidence: HIGH
 
 steps:
+  - id: search-vault
+    name: Search Vault Patterns
+    description: Search vault for known delivery anti-patterns and critical rules before shipping.
+    needs: [vault.search, memory.search]
+    chains:
+      - vault-search
+      - memory-search
+    output:
+      - vault-patterns
+      - memory-hits
+
   - id: validate-code
     name: Validate Code Quality
     description: Run full code validation against design system rules and token usage.
