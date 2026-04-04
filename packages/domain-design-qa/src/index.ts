@@ -20,6 +20,7 @@ import {
   fuzzyMatchToken,
   getContrastRatio,
   getWCAGLevel,
+  scoreColorPairs,
 } from './lib/design-qa-utils.js';
 
 // ---------------------------------------------------------------------------
@@ -327,7 +328,7 @@ const designQaOps = [
         const ratio = getContrastRatio(pair.foreground, pair.background);
         const level = getWCAGLevel(ratio);
         const context = pair.context ?? 'text';
-        const minRatio = context === 'text' ? 4.5 : 3.0;
+        const minRatio = context === 'large-text' || context === 'graphics' ? 3.0 : 4.5;
         return {
           foreground: pair.foreground,
           background: pair.background,
@@ -338,7 +339,7 @@ const designQaOps = [
         };
       });
 
-      const passCount = results.filter((r) => r.passes).length;
+      const { passCount } = scoreColorPairs(colorPairs);
 
       return {
         total: results.length,
@@ -463,17 +464,7 @@ const designQaOps = [
             background: string;
             context?: string;
           }>;
-          let a11yScore = 100;
-          if (colorPairs.length > 0) {
-            let passCount = 0;
-            for (const pair of colorPairs) {
-              const ratio = getContrastRatio(pair.foreground, pair.background);
-              const context = pair.context ?? 'text';
-              const minRatio = context === 'text' ? 4.5 : 3.0;
-              if (ratio >= minRatio) passCount++;
-            }
-            a11yScore = Math.round((passCount / colorPairs.length) * 100);
-          }
+          const a11yScore = scoreColorPairs(colorPairs).score;
 
           const compositeScore = Math.round(
             tokenHealthScore * 0.4 + syncScore * 0.3 + a11yScore * 0.3,

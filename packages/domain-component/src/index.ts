@@ -98,35 +98,49 @@ export function detectDriftBetween(
 }
 
 /**
- * Extract prop names from TypeScript/JSX code by scanning interface/type definitions.
+ * Extract prop names from TypeScript/JSX code by scanning Props interface/type blocks.
+ * Uses brace-depth tracking to stay inside the Props block — avoids false positives
+ * from object literals, function bodies, and other type definitions.
  */
 export function extractPropsFromCode(code: string): string[] {
   const props: string[] = [];
-  // Match: propName: type or propName?: type inside Props-like interfaces
-  const propRegex = /^\s*(\w+)\s*\??:\s*/gm;
-  let match: RegExpExecArray | null;
-  while ((match = propRegex.exec(code)) !== null) {
-    const name = match[1];
-    // Filter out common non-prop keywords
-    if (
-      ![
-        'import',
-        'export',
-        'const',
-        'let',
-        'var',
-        'return',
-        'function',
-        'type',
-        'interface',
-        'class',
-      ].includes(name)
-    ) {
-      if (!props.includes(name)) {
-        props.push(name);
+  const lines = code.split('\n');
+
+  // Match `interface FooProps {` or `type FooProps = {`
+  const propsBlockStart = /(?:interface|type)\s+\w*[Pp]rops\s*(?:=\s*)?\{/;
+  // Match prop name: `propName:` or `propName?:`
+  const propLine = /^\s*(\w+)\??\s*:/;
+
+  let depth = 0;
+  let inProps = false;
+
+  for (const line of lines) {
+    if (!inProps) {
+      if (propsBlockStart.test(line)) {
+        inProps = true;
+        depth = (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+      }
+      continue;
+    }
+
+    depth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+
+    if (depth <= 0) {
+      // Left the Props block
+      inProps = false;
+      depth = 0;
+      continue;
+    }
+
+    // Only extract top-level props (depth === 1 means directly inside Props block)
+    if (depth === 1) {
+      const m = propLine.exec(line);
+      if (m && !props.includes(m[1])) {
+        props.push(m[1]);
       }
     }
   }
+
   return props;
 }
 

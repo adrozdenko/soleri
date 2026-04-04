@@ -132,3 +132,24 @@ export function getWCAGLevel(ratio: number): 'AAA' | 'AA' | 'AA-large' | 'Fail' 
   if (ratio >= 3) return 'AA-large';
   return 'Fail';
 }
+
+/**
+ * Score an array of color pairs against WCAG contrast thresholds.
+ * Single source of truth for both accessibility_precheck and handoff_audit.
+ */
+export function scoreColorPairs(
+  colorPairs: Array<{ foreground: string; background: string; context?: string }>,
+): { score: number; passCount: number; total: number } {
+  if (colorPairs.length === 0) return { score: 100, passCount: 0, total: 0 };
+  let passCount = 0;
+  for (const pair of colorPairs) {
+    const ratio = getContrastRatio(pair.foreground, pair.background);
+    const minRatio = pair.context === 'large-text' || pair.context === 'graphics' ? 3.0 : 4.5;
+    if (ratio >= minRatio) passCount++;
+  }
+  return {
+    score: Math.round((passCount / colorPairs.length) * 100),
+    passCount,
+    total: colorPairs.length,
+  };
+}
