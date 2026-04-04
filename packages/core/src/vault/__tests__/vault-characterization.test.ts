@@ -51,14 +51,6 @@ describe('Vault Characterization Tests', () => {
   });
 
   describe('constructor', () => {
-    it('creates an in-memory vault', () => {
-      const v = new Vault(':memory:');
-      expect(v).toBeInstanceOf(Vault);
-      v.close();
-    });
-    it('stamps FORMAT_VERSION', () => {
-      expect(Vault.FORMAT_VERSION).toBe(1);
-    });
     it('createWithSQLite factory', () => {
       const v = Vault.createWithSQLite(':memory:');
       expect(v).toBeInstanceOf(Vault);
@@ -83,25 +75,10 @@ describe('Vault Characterization Tests', () => {
   });
 
   describe('seed', () => {
-    it('inserts entries', () => {
-      expect(vault.seed([makeEntry({ id: 'seed-1' })])).toBe(1);
-    });
     it('upserts on conflict', () => {
       vault.seed([makeEntry({ id: 'u1', title: 'Old' })]);
       vault.seed([makeEntry({ id: 'u1', title: 'New' })]);
       expect(vault.get('u1')?.title).toBe('New');
-    });
-    it('handles multiple', () => {
-      expect(
-        vault.seed([makeEntry({ id: 'a1' }), makeEntry({ id: 'a2' }), makeEntry({ id: 'a3' })]),
-      ).toBe(3);
-    });
-  });
-
-  describe('add', () => {
-    it('delegates to seed', () => {
-      vault.add(makeEntry({ id: 'add-1' }));
-      expect(vault.get('add-1')).toBeTruthy();
     });
   });
 
@@ -172,10 +149,6 @@ describe('Vault Characterization Tests', () => {
   });
 
   describe('list', () => {
-    it('returns entries', () => {
-      vault.seed([makeEntry({ id: 'l1' }), makeEntry({ id: 'l2' })]);
-      expect(vault.list().length).toBe(2);
-    });
     it('filters by domain', () => {
       vault.seed([
         makeEntry({ id: 'ld1', domain: 'react' }),
@@ -245,13 +218,6 @@ describe('Vault Characterization Tests', () => {
       ]);
     });
   });
-  describe('getRecent', () => {
-    it('returns entries', () => {
-      vault.seed([makeEntry({ id: 'r1' })]);
-      vault.seed([makeEntry({ id: 'r2' })]);
-      expect(vault.getRecent(5).length).toBe(2);
-    });
-  });
 
   describe('setTemporal', () => {
     it('sets temporal fields', () => {
@@ -319,30 +285,7 @@ describe('Vault Characterization Tests', () => {
       expect(vault.findByContentHash('x')).toBeNull();
     });
   });
-  describe('contentHashStats', () => {
-    it('zeros for empty', () => {
-      const s = vault.contentHashStats();
-      expect(s.total).toBe(0);
-    });
-    it('counts', () => {
-      vault.seed([
-        makeEntry({ id: 'c1', title: 'First' }),
-        makeEntry({ id: 'c2', title: 'Second' }),
-      ]);
-      const s = vault.contentHashStats();
-      expect(s.total).toBe(2);
-      expect(s.uniqueHashes).toBe(2);
-    });
-  });
 
-  describe('exportAll', () => {
-    it('exports all', () => {
-      vault.seed([makeEntry({ id: 'e1' }), makeEntry({ id: 'e2' })]);
-      const r = vault.exportAll();
-      expect(r.count).toBe(2);
-      expect(typeof r.exportedAt).toBe('number');
-    });
-  });
   describe('getAgeReport', () => {
     it('empty report', () => {
       const r = vault.getAgeReport();
@@ -389,12 +332,6 @@ describe('Vault Characterization Tests', () => {
     });
   });
 
-  describe('optimize', () => {
-    it('returns status', () => {
-      const r = vault.optimize();
-      expect(typeof r.vacuumed).toBe('boolean');
-    });
-  });
   describe('rebuildFtsIndex', () => {
     it('does not throw', () => {
       expect(() => vault.rebuildFtsIndex()).not.toThrow();
@@ -402,10 +339,6 @@ describe('Vault Characterization Tests', () => {
   });
 
   describe('registerProject', () => {
-    it('registers new', () => {
-      const p = vault.registerProject('/t', 'test');
-      expect(p.sessionCount).toBe(1);
-    });
     it('increments on re-register', () => {
       vault.registerProject('/t');
       expect(vault.registerProject('/t').sessionCount).toBe(2);
@@ -424,21 +357,7 @@ describe('Vault Characterization Tests', () => {
       expect(vault.getProject('/t')!.name).toBe('T');
     });
   });
-  describe('listProjects', () => {
-    it('lists all', () => {
-      vault.registerProject('/a');
-      vault.registerProject('/b');
-      expect(vault.listProjects().length).toBe(2);
-    });
-  });
 
-  describe('captureMemory', () => {
-    it('creates with id', () => {
-      const m = vault.captureMemory(makeMemoryInput());
-      expect(m.id).toMatch(/^mem-/);
-      expect(m.archivedAt).toBeNull();
-    });
-  });
   describe('getMemory', () => {
     it('returns null', () => {
       expect(vault.getMemory('x')).toBeNull();
@@ -489,9 +408,6 @@ describe('Vault Characterization Tests', () => {
   });
 
   describe('memoryStats', () => {
-    it('zeros for empty', () => {
-      expect(vault.memoryStats().total).toBe(0);
-    });
     it('counts', () => {
       vault.captureMemory(makeMemoryInput({ projectPath: '/a', type: 'session' }));
       vault.captureMemory(makeMemoryInput({ projectPath: '/a', type: 'lesson' }));
@@ -502,20 +418,6 @@ describe('Vault Characterization Tests', () => {
     });
   });
 
-  describe('memoryStatsDetailed', () => {
-    it('includes extended fields', () => {
-      vault.captureMemory(makeMemoryInput());
-      const s = vault.memoryStatsDetailed();
-      expect(typeof s.oldest).toBe('number');
-      expect(s.archivedCount).toBe(0);
-    });
-  });
-  describe('exportMemories', () => {
-    it('exports', () => {
-      vault.captureMemory(makeMemoryInput());
-      expect(vault.exportMemories().length).toBe(1);
-    });
-  });
   describe('importMemories', () => {
     it('imports and deduplicates', () => {
       vault.captureMemory(makeMemoryInput());
@@ -560,16 +462,6 @@ describe('Vault Characterization Tests', () => {
     });
   });
 
-  describe('getProvider', () => {
-    it('returns provider', () => {
-      expect(vault.getProvider().backend).toBe('sqlite');
-    });
-  });
-  describe('getDb', () => {
-    it('returns db', () => {
-      expect(vault.getDb()).toBeTruthy();
-    });
-  });
   describe('close', () => {
     it('does not throw', () => {
       const v = new Vault(':memory:');

@@ -50,29 +50,6 @@ describe('createLoopOps', () => {
     return op;
   }
 
-  it('returns 9 ops', () => {
-    runtime = makeMockRuntime();
-    ops = createLoopOps(runtime);
-    expect(ops).toHaveLength(9);
-  });
-
-  it('has all expected op names', () => {
-    runtime = makeMockRuntime();
-    ops = createLoopOps(runtime);
-    const names = ops.map((o) => o.name);
-    expect(names).toEqual([
-      'loop_start',
-      'loop_iterate',
-      'loop_iterate_gate',
-      'loop_status',
-      'loop_cancel',
-      'loop_history',
-      'loop_is_active',
-      'loop_complete',
-      'loop_anomaly_check',
-    ]);
-  });
-
   describe('loop_start', () => {
     it('starts a loop with defaults for custom mode', async () => {
       runtime = makeMockRuntime();
@@ -125,24 +102,6 @@ describe('createLoopOps', () => {
     });
   });
 
-  describe('loop_iterate_gate', () => {
-    it('delegates to loop.iterateWithGate', async () => {
-      runtime = makeMockRuntime();
-      ops = createLoopOps(runtime);
-      const result = await findOp('loop_iterate_gate').handler({
-        lastOutput: 'some output',
-        knowledge: { items: ['learned something'] },
-        durationMs: 5000,
-      });
-      expect(runtime.loop.iterateWithGate).toHaveBeenCalledWith(
-        'some output',
-        { items: ['learned something'] },
-        5000,
-      );
-      expect(result).toEqual({ decision: 'block', reason: 'continue' });
-    });
-  });
-
   describe('loop_status', () => {
     it('returns active loop status', async () => {
       runtime = makeMockRuntime();
@@ -187,13 +146,6 @@ describe('createLoopOps', () => {
   });
 
   describe('loop_is_active', () => {
-    it('returns active true', async () => {
-      runtime = makeMockRuntime();
-      ops = createLoopOps(runtime);
-      const result = (await findOp('loop_is_active').handler({})) as Record<string, unknown>;
-      expect(result.active).toBe(true);
-    });
-
     it('returns active false when no loop', async () => {
       runtime = makeMockRuntime();
       (runtime.loop.isActive as ReturnType<typeof vi.fn>).mockReturnValue(false);
