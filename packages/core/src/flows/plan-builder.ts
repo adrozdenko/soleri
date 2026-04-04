@@ -11,6 +11,7 @@ import type {
   OrchestrationPlan,
   ProbeResults,
   ProbeName,
+  VaultRecommendation,
 } from './types.js';
 import { loadFlowById } from './loader.js';
 import { runProbes } from './probes.js';
@@ -56,6 +57,7 @@ export function chainToRequires(chain: string): ProbeName | undefined {
   if (lower.startsWith('component') || lower.startsWith('token') || lower.startsWith('design'))
     return 'designSystem';
   if (lower.startsWith('session')) return 'sessionStore';
+  if (lower.startsWith('test')) return 'test';
   // recommend-* and get-stack-* have no hard requirements
   if (lower.startsWith('recommend') || lower.startsWith('get-stack')) return undefined;
   return undefined;
@@ -196,14 +198,14 @@ export function pruneSteps(
 
 /**
  * A vault entry that should influence plan structure.
- * critical severity OR anti-pattern type entries become gate steps.
+ * critical severity OR anti-pattern type entries are surfaced as mandatory recommendations.
  */
 export interface VaultConstraint {
   entryId: string;
   title: string;
   context?: string;
   mandatory: boolean;
-  entryType?: string;
+  entryType?: 'pattern' | 'anti-pattern' | 'rule' | 'playbook';
 }
 
 /**
@@ -222,6 +224,23 @@ export async function buildPlan(
   const flow = loadFlowById(flowId);
 
   const probes = await runProbes(runtime, projectPath);
+
+  // Map vault constraints to recommendations — surfaced to executor as knowledge context.
+  // Anti-pattern entries are always mandatory regardless of the mandatory flag.
+  const recommendations: VaultRecommendation[] = vaultConstraints.map((c) => ({
+    entryId: c.entryId,
+    title: c.title,
+    ...(c.context ? { context: c.context } : {}),
+    mandatory: c.mandatory || c.entryType === 'anti-pattern',
+    entryType: c.entryType,
+    source: 'vault' as const,
+    strength: c.mandatory ? 100 : 80,
+  }));
+
+  // Detect context entities from prompt before any early returns — blocked plans
+  // should still carry entity context so callers can surface useful information.
+  const entities = { components: [] as string[], actions: [] as string[] };
+  const contexts = prompt ? detectContext(prompt, entities) : [];
 
   let steps: PlanStep[] = [];
   let skipped: SkippedStep[] = [];
@@ -250,10 +269,11 @@ export async function buildPlan(
         summary: prompt ?? `${normalizedIntent} plan blocked`,
         estimatedTools: 0,
         blocked: true,
+        ...(recommendations.length > 0 ? { recommendations } : {}),
         context: {
           intent: normalizedIntent,
           probes,
-          entities: { components: [], actions: [] },
+          entities,
           projectPath,
         },
       };
@@ -261,10 +281,7 @@ export async function buildPlan(
 
     let allSteps = flowStepsToPlanSteps(flow, agentId);
 
-    // Context-sensitive chain routing: detect what's being built/fixed/reviewed
-    // and apply chain overrides (inject, skip, substitute) before pruning.
-    const entities = { components: [] as string[], actions: [] as string[] };
-    const contexts = prompt ? detectContext(prompt, entities) : [];
+    // Apply context-sensitive chain overrides (inject, skip, substitute) before pruning.
     if (contexts.length > 0) {
       allSteps = applyContextOverrides(allSteps, contexts, flowId, agentId);
     }
@@ -275,26 +292,6 @@ export async function buildPlan(
 
     if (pruneResult.skipped.length > 0) {
       warnings.push(`${pruneResult.skipped.length} step(s) skipped due to missing capabilities.`);
-    }
-
-    // Inject gate steps for critical and anti-pattern vault constraints.
-    // These become hard stops in the plan that the executor must pass.
-    for (const c of vaultConstraints) {
-      if (c.mandatory || c.entryType === 'anti-pattern') {
-        steps.push({
-          id: `vault-gate-${c.entryId}`,
-          name: `[Vault gate] ${c.title}`,
-          tools: [],
-          parallel: false,
-          requires: [],
-          gate: {
-            type: 'GATE',
-            condition: c.context,
-            onFail: { action: 'STOP', message: `Vault rule violated: ${c.title}` },
-          },
-          status: 'pending',
-        });
-      }
     }
   } else {
     warnings.push(`Flow "${flowId}" not found — plan will have no steps.`);
@@ -317,10 +314,11 @@ export async function buildPlan(
     warnings,
     summary: prompt ?? `${normalizedIntent} plan with ${steps.length} step(s)`,
     estimatedTools: steps.reduce((acc, s) => acc + s.tools.length, 0),
+    ...(recommendations.length > 0 ? { recommendations } : {}),
     context: {
       intent: normalizedIntent,
       probes,
-      entities: { components: [], actions: [] },
+      entities,
       projectPath,
     },
   };

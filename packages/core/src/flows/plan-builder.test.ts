@@ -7,9 +7,10 @@
  * - buildPlan() builds a normal plan when all blocking capabilities are available
  * - capabilityToProbe() maps known capability ID prefixes to probe names
  * - capabilityToProbe() returns undefined for unmapped capabilities (no spurious blocking)
- * - buildPlan() injects gate steps for mandatory (critical) vault constraints
- * - buildPlan() injects gate steps for anti-pattern vault entries regardless of severity
- * - buildPlan() is unchanged when no critical/anti-pattern constraints are passed
+ * - buildPlan() attaches vault constraints as recommendations (not gate steps)
+ * - buildPlan() marks mandatory entries and anti-patterns as mandatory:true in recommendations
+ * - buildPlan() includes recommendations in blocked plans
+ * - buildPlan() does not inject vault-gate-* steps
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -110,13 +111,14 @@ describe('buildPlan — blocking capability enforcement', () => {
 });
 
 // ---------------------------------------------------------------------------
-// buildPlan vault gate injection
+// buildPlan vault recommendations
 // ---------------------------------------------------------------------------
 
-describe('buildPlan — vault gate injection', () => {
-  it('appends a gate step for a mandatory (critical) vault constraint', async () => {
-    // A critical vault entry must produce a vault-gate-* step with a STOP gate.
-    // Without injection, the constraint is only a hint in recommendations — no enforcement.
+describe('buildPlan — vault recommendations', () => {
+  it('attaches mandatory constraint as recommendation with mandatory:true', async () => {
+    // Critical vault entries must be surfaced as mandatory recommendations so the
+    // executor can enforce them. They must NOT become gate steps (evaluateCondition
+    // cannot parse free-text narrative — gates would always fire STOP).
     const runtime = makeRuntime(true);
     const constraint: VaultConstraint = {
       entryId: 'crit-1',
@@ -127,18 +129,19 @@ describe('buildPlan — vault gate injection', () => {
     };
     const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime, undefined, [constraint]);
 
-    const gate = plan.steps.find((s) => s.id === 'vault-gate-crit-1');
-    expect(gate).toBeDefined();
-    expect(gate?.name).toBe('[Vault gate] No skipping tests');
-    expect(gate?.gate?.type).toBe('GATE');
-    expect(gate?.gate?.condition).toBe('Tests must not be skipped under time pressure.');
-    expect(gate?.gate?.onFail?.action).toBe('STOP');
+    const rec = plan.recommendations?.find((r) => r.entryId === 'crit-1');
+    expect(rec).toBeDefined();
+    expect(rec?.title).toBe('No skipping tests');
+    expect(rec?.context).toBe('Tests must not be skipped under time pressure.');
+    expect(rec?.mandatory).toBe(true);
+    expect(rec?.strength).toBe(100);
+    expect(rec?.source).toBe('vault');
+    // No gate step injected
+    expect(plan.steps.filter((s) => s.id.startsWith('vault-gate-'))).toHaveLength(0);
   });
 
-  it('appends a gate step for an anti-pattern entry even when not marked mandatory', async () => {
-    // anti-pattern type entries are always enforced as gates regardless of severity.
-    // If entryType alone were insufficient to trigger injection, warning-level anti-patterns
-    // would be silently treated as hints — defeating their classification.
+  it('marks anti-pattern entry as mandatory:true even when mandatory flag is false', async () => {
+    // anti-pattern entries are always treated as mandatory regardless of severity flag.
     const runtime = makeRuntime(true);
     const constraint: VaultConstraint = {
       entryId: 'ap-1',
@@ -149,23 +152,22 @@ describe('buildPlan — vault gate injection', () => {
     };
     const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime, undefined, [constraint]);
 
-    const gate = plan.steps.find((s) => s.id === 'vault-gate-ap-1');
-    expect(gate).toBeDefined();
-    expect(gate?.gate?.onFail?.action).toBe('STOP');
+    const rec = plan.recommendations?.find((r) => r.entryId === 'ap-1');
+    expect(rec).toBeDefined();
+    expect(rec?.mandatory).toBe(true);
+    expect(plan.steps.filter((s) => s.id.startsWith('vault-gate-'))).toHaveLength(0);
   });
 
-  it('does not inject any gate steps when no constraints are passed', async () => {
-    // Backward compatibility: existing callers that omit vaultConstraints must get
-    // identical plan structure to before this feature was added.
+  it('does not attach recommendations when no constraints are passed', async () => {
+    // Backward compatibility: callers that omit vaultConstraints get an unchanged plan.
     const runtime = makeRuntime(true);
     const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime);
-    const gateSteps = plan.steps.filter((s) => s.id.startsWith('vault-gate-'));
-    expect(gateSteps).toHaveLength(0);
+    expect(plan.recommendations).toBeUndefined();
+    expect(plan.steps.filter((s) => s.id.startsWith('vault-gate-'))).toHaveLength(0);
   });
 
-  it('does not inject a gate for a non-mandatory, non-anti-pattern constraint', async () => {
-    // Warning and suggestion vault entries are surfaced as recommendations only.
-    // Injecting them as gates would turn non-critical advice into hard stops.
+  it('attaches non-mandatory pattern as recommendation with mandatory:false', async () => {
+    // Warning and suggestion vault entries are surfaced as non-mandatory recommendations.
     const runtime = makeRuntime(true);
     const constraint: VaultConstraint = {
       entryId: 'sug-1',
@@ -174,7 +176,26 @@ describe('buildPlan — vault gate injection', () => {
       entryType: 'pattern',
     };
     const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime, undefined, [constraint]);
-    const gateSteps = plan.steps.filter((s) => s.id.startsWith('vault-gate-'));
-    expect(gateSteps).toHaveLength(0);
+    const rec = plan.recommendations?.find((r) => r.entryId === 'sug-1');
+    expect(rec).toBeDefined();
+    expect(rec?.mandatory).toBe(false);
+    expect(rec?.strength).toBe(80);
+  });
+
+  it('includes recommendations in blocked plans', async () => {
+    // Blocked plans must still carry vault constraints so callers can surface them.
+    const runtime = makeRuntime(false); // vault down → blocked
+    const constraint: VaultConstraint = {
+      entryId: 'crit-2',
+      title: 'No direct DB writes outside repositories',
+      mandatory: true,
+      entryType: 'anti-pattern',
+    };
+    const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime, undefined, [constraint]);
+
+    expect(plan.blocked).toBe(true);
+    const rec = plan.recommendations?.find((r) => r.entryId === 'crit-2');
+    expect(rec).toBeDefined();
+    expect(rec?.mandatory).toBe(true);
   });
 });

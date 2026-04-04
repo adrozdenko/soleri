@@ -2,11 +2,13 @@
  * Epilogue — colocated contract tests.
  *
  * Contract:
- * - runEpilogue() calls capture_knowledge when vault is available
+ * - runEpilogue() calls capture_knowledge with intent-specific title when vault is available
  * - runEpilogue() calls session_capture when sessionStore is available
  * - Returns { captured: true, sessionId } on success
  * - Silently ignores errors from dispatch (best-effort)
  * - Returns { captured: false } when no probes are available
+ * - Title format: "{INTENT} execution — {objective}" (max 120 chars)
+ * - Tags include intent (lowercase) and domain (if provided)
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -33,13 +35,49 @@ describe('runEpilogue', () => {
     expect(dispatch).toHaveBeenCalledWith(
       'capture_knowledge',
       expect.objectContaining({
-        title: 'Flow execution summary',
         content: 'summary',
         type: 'workflow',
         projectPath: '/project',
       }),
     );
     expect(result.captured).toBe(true);
+  });
+
+  it('uses intent-specific title when planContext is provided', async () => {
+    const dispatch = vi.fn(async () => ({ tool: 'capture_knowledge', status: 'ok', data: {} }));
+    await runEpilogue(dispatch, probes({ vault: true }), '/project', 'summary', {
+      intent: 'BUILD',
+      objective: 'add authentication module',
+      domain: 'auth',
+    });
+
+    expect(dispatch).toHaveBeenCalledWith(
+      'capture_knowledge',
+      expect.objectContaining({
+        title: 'BUILD execution — add authentication module',
+        tags: expect.arrayContaining(['auto-captured', 'build', 'auth']),
+      }),
+    );
+  });
+
+  it('falls back to FLOW intent when planContext is absent', async () => {
+    const dispatch = vi.fn(async () => ({ tool: 'capture_knowledge', status: 'ok', data: {} }));
+    await runEpilogue(dispatch, probes({ vault: true }), '/project', 'done summary');
+
+    const call = dispatch.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect((call.title as string).startsWith('FLOW execution —')).toBe(true);
+    expect((call.tags as string[]).includes('flow')).toBe(true);
+  });
+
+  it('omits domain tag when domain is not provided', async () => {
+    const dispatch = vi.fn(async () => ({ tool: 'capture_knowledge', status: 'ok', data: {} }));
+    await runEpilogue(dispatch, probes({ vault: true }), '/project', 'summary', {
+      intent: 'FIX',
+      objective: 'fix login bug',
+    });
+
+    const call = dispatch.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(call.tags).toEqual(['auto-captured', 'fix']);
   });
 
   it('captures session when sessionStore is available', async () => {

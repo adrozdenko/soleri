@@ -956,3 +956,6 @@ export type { WorkflowGate, WorkflowOverride } from './workflows/index.js';
 // ─── Update Check ────────────────────────────────────────────────────
 export { checkForUpdate, buildChangelogUrl, detectBreakingChanges } from './update-check.js';
 export type { UpdateInfo } from './update-check.js';
+
+// ─── Settings Hooks Sync ─────────────────────────────────────────────
+export { syncHooksToClaudeSettings } from './runtime/admin-setup-ops.js';

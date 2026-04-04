@@ -130,7 +130,8 @@ export type ProbeName =
   | 'designSystem'
   | 'sessionStore'
   | 'projectRules'
-  | 'active';
+  | 'active'
+  | 'test';
 
 export interface ProbeResults {
   vault: boolean;
@@ -139,6 +140,7 @@ export interface ProbeResults {
   sessionStore: boolean;
   projectRules: boolean;
   active: boolean;
+  test: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -175,6 +177,22 @@ export interface SkippedStep {
   reason: string;
 }
 
+/**
+ * A vault knowledge entry surfaced as a planning constraint.
+ * Replaces gate-step injection — constraints are carried as metadata
+ * so the executor can apply judgment rather than mechanical evaluation.
+ */
+export interface VaultRecommendation {
+  entryId: string;
+  title: string;
+  context?: string;
+  example?: string;
+  mandatory: boolean;
+  entryType?: 'pattern' | 'anti-pattern' | 'rule' | 'playbook';
+  source: 'vault';
+  strength: number;
+}
+
 export interface ToolDeviation {
   stepId: string;
   expectedTools: string[];
@@ -200,6 +218,8 @@ export interface OrchestrationPlan {
   workflowName?: string;
   /** True when a blocking capability is unavailable — plan cannot run */
   blocked?: boolean;
+  /** Vault knowledge constraints relevant to this plan — executor reads these as context */
+  recommendations?: VaultRecommendation[];
 }
 
 export interface OrchestrationContext {

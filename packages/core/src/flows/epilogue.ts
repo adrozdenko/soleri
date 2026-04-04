@@ -22,18 +22,27 @@ export async function runEpilogue(
   probes: ProbeResults,
   projectPath: string,
   summary: string,
+  planContext?: { intent?: string; objective?: string; domain?: string },
 ): Promise<{ captured: boolean; sessionId?: string }> {
   let captured = false;
   let sessionId: string | undefined;
 
   // Capture knowledge to vault
   if (probes.vault) {
+    const intent = planContext?.intent?.toUpperCase() ?? 'FLOW';
+    const objective = planContext?.objective ?? summary;
+    const title = `${intent} execution — ${objective}`.slice(0, 120);
+    const tags = [
+      'auto-captured',
+      intent.toLowerCase(),
+      ...(planContext?.domain ? [planContext.domain] : []),
+    ];
     try {
       await dispatch('capture_knowledge', {
-        title: 'Flow execution summary',
+        title,
         content: summary,
         type: 'workflow',
-        tags: ['flow-engine', 'auto-captured'],
+        tags,
         projectPath,
       });
       captured = true;

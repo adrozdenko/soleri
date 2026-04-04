@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createOrchestrateOps } from './orchestrate-ops.js';
+import { createOrchestrateOps, mapVaultResults } from './orchestrate-ops.js';
 import { assessTaskComplexity } from '../planning/task-complexity-assessor.js';
 import type { AgentRuntime } from './types.js';
 
@@ -340,6 +340,93 @@ describe('createOrchestrateOps', () => {
       const op = findOp(ops, 'orchestrate_plan');
       await op.handler({ prompt: 'Build something' });
       expect(rt.planner.create).toHaveBeenCalled();
+    });
+
+    it('builds plan with no recommendations when all three retrieval paths fail', async () => {
+      // Triple-failure: intelligentSearch down, vault.search down, brain.recommend down.
+      // The plan must still build — missing recommendations are non-fatal.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.brain.intelligentSearch).mockRejectedValue(new Error('down'));
+      vi.mocked(rt.vault.search).mockImplementation(() => {
+        throw new Error('vault down');
+      });
+      vi.mocked(rt.brainIntelligence.recommend).mockImplementation(() => {
+        throw new Error('brain down');
+      });
+      const result = (await op.handler({ prompt: 'fix bug' })) as Record<string, unknown>;
+      const recs = result.recommendations as Array<Record<string, unknown>>;
+      expect(recs).toHaveLength(0);
+      expect(result.flow).toBeDefined();
+    });
+  });
+
+  // ─── mapVaultResults isolation ─────────────────────────────────
+
+  describe('mapVaultResults', () => {
+    it('maps critical severity to mandatory:true and strength:100', () => {
+      const results = [
+        {
+          entry: {
+            id: 'e1',
+            title: 'No skipping tests',
+            severity: 'critical',
+            type: 'anti-pattern',
+          },
+          score: 0.9,
+          breakdown: {} as never,
+        },
+      ];
+      const recs = mapVaultResults(results);
+      expect(recs[0].mandatory).toBe(true);
+      expect(recs[0].strength).toBe(100);
+      expect(recs[0].source).toBe('vault');
+      expect(recs[0].entryType).toBe('anti-pattern');
+    });
+
+    it('maps warning severity to mandatory:false and strength:80', () => {
+      const results = [
+        {
+          entry: { id: 'e2', title: 'Warning Rule', severity: 'warning', type: 'pattern' },
+          score: 0.7,
+          breakdown: {} as never,
+        },
+      ];
+      const recs = mapVaultResults(results);
+      expect(recs[0].mandatory).toBe(false);
+      expect(recs[0].strength).toBe(80);
+    });
+
+    it('forwards context and example when present', () => {
+      const results = [
+        {
+          entry: {
+            id: 'e3',
+            title: 'Rule',
+            severity: 'warning',
+            type: 'pattern',
+            context: 'ctx',
+            example: 'ex',
+          },
+          score: 0.5,
+          breakdown: {} as never,
+        },
+      ];
+      const recs = mapVaultResults(results);
+      expect(recs[0].context).toBe('ctx');
+      expect(recs[0].example).toBe('ex');
+    });
+
+    it('does not set context or example keys when absent', () => {
+      const results = [
+        {
+          entry: { id: 'e4', title: 'Bare Rule', severity: 'suggestion', type: 'pattern' },
+          score: 0.4,
+          breakdown: {} as never,
+        },
+      ];
+      const recs = mapVaultResults(results);
+      expect('context' in recs[0]).toBe(false);
+      expect('example' in recs[0]).toBe(false);
     });
   });
 

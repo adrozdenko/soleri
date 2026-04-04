@@ -15,6 +15,47 @@ import { z } from 'zod';
 import type { OpDefinition, FacadeConfig } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import { buildPlan, type VaultConstraint } from '../flows/plan-builder.js';
+import type { IntelligenceEntry } from '../intelligence/types.js';
+
+// ---------------------------------------------------------------------------
+// Recommendation types + helpers (module-level for testability)
+// ---------------------------------------------------------------------------
+
+export interface PlanRecommendation {
+  pattern: string;
+  strength: number;
+  entryId?: string;
+  source: 'vault' | 'brain';
+  context?: string;
+  example?: string;
+  mandatory: boolean;
+  entryType?: 'pattern' | 'anti-pattern' | 'rule' | 'playbook';
+}
+
+/**
+ * Map vault search results to PlanRecommendation[].
+ * Accepts both RankedResult[] (semantic search) and SearchResult[] (keyword fallback)
+ * since both share the same entry: IntelligenceEntry shape.
+ * Critical entries get strength:100 and mandatory:true; all others get 80/false.
+ */
+export function mapVaultResults(
+  results: Array<{ entry: IntelligenceEntry; score: number }>,
+): PlanRecommendation[] {
+  return results.map((r) => {
+    const isCritical = r.entry.severity === 'critical';
+    const rec: PlanRecommendation = {
+      pattern: r.entry.title,
+      strength: isCritical ? 100 : 80,
+      entryId: r.entry.id,
+      source: 'vault',
+      mandatory: isCritical,
+      entryType: r.entry.type,
+    };
+    if (r.entry.context) rec.context = r.entry.context;
+    if (r.entry.example) rec.example = r.entry.example;
+    return rec;
+  });
+}
 import { FlowExecutor, getPlanRunDir, loadManifest, saveManifest } from '../flows/executor.js';
 import { createDispatcher } from '../flows/dispatch-registry.js';
 import { runEpilogue } from '../flows/epilogue.js';
@@ -377,45 +418,10 @@ export function createOrchestrateOps(
         const intent = detectIntent(prompt);
 
         // 2. Build recommendations — vault first (authoritative), brain enriches (additive)
-        let recommendations: Array<{
-          pattern: string;
-          strength: number;
-          entryId?: string;
-          source: 'vault' | 'brain';
-          context?: string;
-          example?: string;
-          mandatory: boolean;
-          entryType?: string;
-        }> = [];
+        let recommendations: PlanRecommendation[] = [];
 
         // Vault always runs first — curated explicit knowledge takes precedence.
         // Prefer semantic search (vector-scored); fall back to keyword search.
-        const mapVaultResults = (
-          results: Array<{
-            entry: {
-              title: string;
-              id: string;
-              severity?: string;
-              type?: string;
-              context?: string;
-              example?: string;
-            };
-          }>,
-        ): typeof recommendations =>
-          results.map((r) => {
-            const isCritical = r.entry.severity === 'critical';
-            const rec: (typeof recommendations)[number] = {
-              pattern: r.entry.title,
-              strength: isCritical ? 100 : 80,
-              entryId: r.entry.id,
-              source: 'vault',
-              mandatory: isCritical,
-              entryType: r.entry.type,
-            };
-            if (r.entry.context) rec.context = r.entry.context;
-            if (r.entry.example) rec.example = r.entry.example;
-            return rec;
-          });
 
         try {
           const vaultResults = await brain.intelligentSearch(prompt, {
@@ -552,6 +558,7 @@ export function createOrchestrateOps(
             skippedCount: plan.skipped.length,
             warnings: plan.warnings,
             estimatedTools: plan.estimatedTools,
+            ...(plan.recommendations ? { vaultConstraints: plan.recommendations } : {}),
             ...(workflowApplied ? { workflowOverride: workflowApplied } : {}),
           },
         };
@@ -1078,6 +1085,11 @@ export function createOrchestrateOps(
                 entry.plan.context.probes,
                 entry.plan.context.projectPath,
                 summary,
+                {
+                  intent: entry.plan.intent,
+                  objective: completionSummary || entry.plan.summary,
+                  domain: entry.plan.context.entities?.technologies?.[0],
+                },
               );
             } catch {
               // Epilogue is best-effort

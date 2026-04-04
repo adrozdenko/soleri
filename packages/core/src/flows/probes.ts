@@ -9,19 +9,20 @@ import type { AgentRuntime } from '../runtime/types.js';
 import type { ProbeResults } from './types.js';
 
 /**
- * Run all 6 capability probes in parallel and return results.
+ * Run all capability probes in parallel and return results.
  */
 export async function runProbes(runtime: AgentRuntime, projectPath: string): Promise<ProbeResults> {
-  const [vault, brain, designSystem, sessionStore, projectRules, active] = await Promise.all([
+  const [vault, brain, designSystem, sessionStore, projectRules, active, test] = await Promise.all([
     probeVault(runtime),
     probeBrain(runtime),
     probeDesignSystem(runtime),
     probeSessionStore(),
     probeProjectRules(projectPath),
     probeActive(),
+    probeTestRunner(projectPath),
   ]);
 
-  return { vault, brain, designSystem, sessionStore, projectRules, active };
+  return { vault, brain, designSystem, sessionStore, projectRules, active, test };
 }
 
 async function probeVault(runtime: AgentRuntime): Promise<boolean> {
@@ -67,4 +68,17 @@ async function probeProjectRules(projectPath: string): Promise<boolean> {
 async function probeActive(): Promise<boolean> {
   // Always true when the engine is running
   return true;
+}
+
+async function probeTestRunner(projectPath: string): Promise<boolean> {
+  try {
+    return (
+      existsSync(join(projectPath, 'vitest.config.ts')) ||
+      existsSync(join(projectPath, 'vitest.config.js')) ||
+      existsSync(join(projectPath, 'jest.config.ts')) ||
+      existsSync(join(projectPath, 'jest.config.js'))
+    );
+  } catch {
+    return false;
+  }
 }
