@@ -526,9 +526,11 @@ export function rowToSearchResult(row: Record<string, unknown>): SearchResult {
 
 /** Build FTS5 query from natural language: terms joined with OR for broad matching. */
 export function buildFtsQuery(query: string): string {
+  // Split on whitespace AND punctuation (hyphens, underscores, dots, slashes)
+  // so that "smoke-test-entry" and "snake_case" are treated as multi-term queries.
   const terms = query
     .toLowerCase()
-    .split(/\s+/)
+    .split(/[\s\-_./\\]+/)
     .filter((t) => t.length >= 2)
     .map((t) => t.replace(/[^a-z0-9]/g, ''))
     .filter(Boolean);

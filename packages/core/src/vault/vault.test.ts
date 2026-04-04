@@ -122,6 +122,20 @@ describe('Vault', () => {
       const results = vault.search('xyznonexistent');
       expect(results).toEqual([]);
     });
+
+    it('should find entries by hyphenated query (smoke-test-entry style)', () => {
+      vault.seed([
+        makeEntry({
+          id: 'hyphen-test-1',
+          title: 'smoke-test-entry',
+          description: 'Hyphenated title entry for FTS regression.',
+          domain: 'testing',
+        }),
+      ]);
+      const results = vault.search('smoke-test-entry');
+      expect(results.length).toBeGreaterThan(0);
+      expect(results[0].entry.id).toBe('hyphen-test-1');
+    });
   });
 
   describe('get', () => {
