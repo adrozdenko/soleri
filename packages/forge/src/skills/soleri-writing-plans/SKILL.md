@@ -1,9 +1,11 @@
 ---
 name: soleri-writing-plans
 description: >
-  Use when the user says "create a plan", "break this down", or
-  "plan the implementation". Creates structured implementation plans when
-  requirements are already known. For exploration, use brainstorming.
+  Use when the user says "create a plan", "write up a plan", "break this down",
+  or "plan the implementation". Produces a human-readable markdown plan file.
+  Takes priority over orchestrate_plan MCP op for explicit plan-writing requests.
+  For exploration or ideation, use brainstorming. For automated task orchestration,
+  the engine uses orchestrate_plan directly without this skill.
 ---
 
 # Writing Plans

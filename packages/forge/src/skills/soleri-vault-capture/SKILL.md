@@ -1,11 +1,11 @@
 ---
 name: soleri-vault-capture
 description: >
-  Use when the user says "save this", "capture this", "remember this pattern",
-  "add to vault", "vault capture", or when persisting learnings from a work
-  session. Validated capture with tier scoping, duplicate detection, and
-  abstraction review. For bulk extraction from documents, code, or PRs, use
-  knowledge-harvest instead.
+  Use when the user says "save this to vault", "capture this", "remember this pattern",
+  "add to vault", "vault capture", or when persisting learnings from a work session.
+  Priority over memory_capture for durable knowledge (patterns, decisions, anti-patterns).
+  For quick session notes say "save this as a memory" to use memory_capture instead.
+  For bulk extraction from documents, code, or PRs, use knowledge-harvest.
 ---
 
 # Vault Capture — Validated Knowledge Persistence
