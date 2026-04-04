@@ -237,7 +237,7 @@ describe('CapabilityRegistry', () => {
     it('classifies blocking capabilities correctly', () => {
       const result = registry.validateFlow({
         steps: [{ needs: ['vault.search', 'auth.validate'] }],
-        onMissingCapability: { blocking: ['auth.validate'] },
+        'on-missing-capability': { blocking: ['auth.validate'] },
       });
 
       expect(result.valid).toBe(false);

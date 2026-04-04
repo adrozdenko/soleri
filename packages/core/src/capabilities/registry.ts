@@ -33,7 +33,7 @@ export interface FlowForValidation {
     needs?: string[];
     chains?: string[];
   }>;
-  onMissingCapability?: {
+  'on-missing-capability'?: {
     default?: string;
     blocking?: string[];
   };
@@ -237,7 +237,7 @@ export class CapabilityRegistry {
     }
 
     // Classify missing capabilities by impact
-    const blockingSet = new Set(flow.onMissingCapability?.blocking ?? []);
+    const blockingSet = new Set(flow['on-missing-capability']?.blocking ?? []);
 
     const degraded = missing.map((capability) => ({
       capability,

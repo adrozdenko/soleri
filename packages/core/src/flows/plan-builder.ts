@@ -156,6 +156,19 @@ export function flowStepsToPlanSteps(
 }
 
 /**
+ * Map a capability ID (e.g. "vault.search") to the probe name that covers it.
+ * Returns undefined for capability IDs that have no corresponding probe.
+ */
+export function capabilityToProbe(capId: string): ProbeName | undefined {
+  if (capId.startsWith('vault.') || capId === 'vault') return 'vault';
+  if (capId.startsWith('brain.') || capId === 'brain') return 'brain';
+  if (capId.startsWith('design.') || capId.startsWith('component.') || capId.startsWith('token.'))
+    return 'designSystem';
+  if (capId.startsWith('session.')) return 'sessionStore';
+  return undefined;
+}
+
+/**
  * Remove steps whose required capabilities are not available.
  */
 export function pruneSteps(
@@ -202,6 +215,37 @@ export async function buildPlan(
   const warnings: string[] = [];
 
   if (flow) {
+    // Check blocking capabilities before pruning optional steps.
+    // If any blocking capability maps to an unavailable probe, the plan cannot run.
+    const blockingCaps = flow['on-missing-capability']?.blocking ?? [];
+    const missingBlockers = blockingCaps.filter((capId) => {
+      const probe = capabilityToProbe(capId);
+      return probe !== undefined && !probes[probe];
+    });
+
+    if (missingBlockers.length > 0) {
+      return {
+        planId: randomUUID(),
+        intent: normalizedIntent,
+        flowId,
+        steps: [],
+        skipped: [],
+        epilogue: [],
+        warnings: [
+          `Blocked: required capabilities unavailable — ${missingBlockers.join(', ')}. Resolve these before running this flow.`,
+        ],
+        summary: prompt ?? `${normalizedIntent} plan blocked`,
+        estimatedTools: 0,
+        blocked: true,
+        context: {
+          intent: normalizedIntent,
+          probes,
+          entities: { components: [], actions: [] },
+          projectPath,
+        },
+      };
+    }
+
     let allSteps = flowStepsToPlanSteps(flow, agentId);
 
     // Context-sensitive chain routing: detect what's being built/fixed/reviewed

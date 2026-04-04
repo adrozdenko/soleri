@@ -100,7 +100,7 @@ export const flowSchema = z.object({
     })
     .optional(),
   /** Strategy when a step's capability requirement is not satisfied */
-  onMissingCapability: z
+  'on-missing-capability': z
     .object({
       default: z.enum(['skip-with-warning', 'fail', 'ask-user']).default('skip-with-warning'),
       blocking: z.array(z.string()).optional().default([]),
@@ -198,6 +198,8 @@ export interface OrchestrationPlan {
   workflowPrompt?: string;
   /** Name of the matched workflow */
   workflowName?: string;
+  /** True when a blocking capability is unavailable — plan cannot run */
+  blocked?: boolean;
 }
 
 export interface OrchestrationContext {
