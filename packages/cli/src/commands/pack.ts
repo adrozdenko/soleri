@@ -8,7 +8,7 @@
  */
 
 import { join, resolve as pathResolve } from 'node:path';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import {
@@ -17,8 +17,14 @@ import {
   resolvePack,
   checkNpmVersion,
   getBuiltinKnowledgePacksDirs,
+  LLMClient,
+  KeyPool,
+  loadKeyPoolConfig,
+  Vault,
+  SOLERI_HOME,
 } from '@soleri/core';
 import type { LockEntry, PackSource } from '@soleri/core';
+import { resolveVaultDbPath } from '../utils/vault-db.js';
 
 // ─── Tier display helpers ────────────────────────────────────────────
 
@@ -774,9 +780,221 @@ export function registerPack(program: Command): void {
         process.exit(1);
       }
     });
+
+  // ─── Seed ─────────────────────────────────────────────────────────────
+  pack
+    .command('seed')
+    .argument('<domain>', 'Domain to generate knowledge entries for (e.g. typescript, react)')
+    .option('--entries <count>', 'Number of entries to generate', '15')
+    .option('--dry-run', 'Preview generated entries without seeding vault')
+    .option('--output <path>', 'Save entries as pack files instead of seeding vault')
+    .option('--yes', 'Skip confirmation prompt')
+    .description('Generate domain knowledge entries using LLM and seed them into the vault')
+    .action(
+      async (
+        domain: string,
+        opts: { entries?: string; dryRun?: boolean; output?: string; yes?: boolean },
+      ) => {
+        const ctx = detectAgent();
+        if (!ctx) {
+          p.log.error('No agent project detected in current directory.');
+          process.exit(1);
+        }
+
+        const entryCount = Math.min(Math.max(parseInt(opts.entries ?? '15', 10) || 15, 5), 30);
+
+        // ─── LLM client setup ──────────────────────────────────────
+        const keyConfig = loadKeyPoolConfig(ctx.agentId);
+        const openaiPool = new KeyPool(keyConfig.openai);
+        const anthropicPool = new KeyPool(keyConfig.anthropic);
+        const llm = new LLMClient(openaiPool, anthropicPool, ctx.agentId);
+        const available = llm.isAvailable();
+
+        if (!available.openai && !available.anthropic) {
+          p.log.error(
+            'No LLM API key configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY, ' +
+              `or add keys to ${join(SOLERI_HOME, ctx.agentId, 'keys.json')}.`,
+          );
+          process.exit(1);
+        }
+
+        // ─── Generate entries ──────────────────────────────────────
+        const s = p.spinner();
+        s.start(`Generating ${entryCount} knowledge entries for domain "${domain}"...`);
+
+        const provider = available.anthropic ? 'anthropic' : 'openai';
+        const model = available.anthropic ? 'claude-haiku-4-5-20251001' : 'gpt-4o-mini';
+
+        const systemPrompt = `You are a knowledge engineering expert. Generate structured knowledge entries for developer vaults.
+Each entry must be valid JSON matching this schema:
+{
+  "id": "string (kebab-case, domain-prefixed, unique)",
+  "type": "pattern" | "anti-pattern" | "rule" | "playbook",
+  "domain": "string",
+  "title": "string (concise, searchable)",
+  "severity": "critical" | "warning" | "suggestion",
+  "description": "string (2-3 sentences, actionable)",
+  "why": "string (1-2 sentences explaining the reasoning)",
+  "tags": ["array", "of", "keywords"],
+  "context": "string (optional — when this applies)"
+}
+
+Return ONLY a JSON array of entries, no prose, no markdown fences.`;
+
+        const userPrompt = `Generate exactly ${entryCount} high-quality knowledge vault entries for the "${domain}" domain.
+Focus on: patterns that prevent bugs, common anti-patterns, best practices, and rules experienced developers follow.
+Make entries concrete and actionable — not generic platitudes.
+Return a JSON array of ${entryCount} entries.`;
+
+        let generatedEntries: SeedEntry[] = [];
+
+        try {
+          const result = await llm.complete({
+            caller: 'pack-seed',
+            systemPrompt,
+            userPrompt,
+            provider,
+            model,
+            maxTokens: 8000,
+            temperature: 0.4,
+          });
+
+          s.stop('Generation complete');
+
+          // Parse JSON from response
+          const text = result.text.trim();
+          const jsonStart = text.indexOf('[');
+          const jsonEnd = text.lastIndexOf(']');
+          if (jsonStart === -1 || jsonEnd === -1) {
+            p.log.error('LLM did not return a valid JSON array');
+            process.exit(1);
+          }
+
+          const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as unknown[];
+          generatedEntries = parsed
+            .filter(
+              (e): e is SeedEntry =>
+                typeof e === 'object' &&
+                e !== null &&
+                'id' in e &&
+                'title' in e &&
+                'description' in e,
+            )
+            .map((e) => ({
+              ...e,
+              domain: domain,
+              tags: Array.isArray(e.tags) ? e.tags : [],
+            }));
+        } catch (err) {
+          s.stop('Generation failed');
+          p.log.error(err instanceof Error ? err.message : String(err));
+          process.exit(1);
+        }
+
+        if (generatedEntries.length === 0) {
+          p.log.error('No valid entries generated.');
+          process.exit(1);
+        }
+
+        // ─── Dedup check ───────────────────────────────────────────
+        const vaultDbPath = resolveVaultDbPath(ctx.agentId);
+        let dedupedEntries = generatedEntries;
+
+        if (vaultDbPath) {
+          const vault = new Vault(vaultDbPath);
+          const existing = new Set(vault.list({ domain, limit: 1000 }).map((e) => e.id));
+          vault.close();
+          const before = dedupedEntries.length;
+          dedupedEntries = dedupedEntries.filter((e) => !existing.has(e.id));
+          const skipped = before - dedupedEntries.length;
+          if (skipped > 0) {
+            p.log.info(`Skipped ${skipped} duplicate entries (already in vault)`);
+          }
+        }
+
+        if (dedupedEntries.length === 0) {
+          p.log.success(`All generated entries already exist in vault for domain "${domain}".`);
+          return;
+        }
+
+        // ─── Preview table ─────────────────────────────────────────
+        console.log('');
+        console.log(`  Generated ${dedupedEntries.length} entries for "${domain}":`);
+        console.log('');
+        const idWidth = Math.max(2, ...dedupedEntries.map((e) => e.id.length));
+        const titleWidth = Math.max(5, ...dedupedEntries.map((e) => e.title.length));
+        console.log(
+          `  ${'ID'.padEnd(idWidth)}  ${'Title'.padEnd(titleWidth)}  Type         Severity`,
+        );
+        console.log(`  ${'-'.repeat(idWidth)}  ${'-'.repeat(titleWidth)}  -----------  --------`);
+        for (const entry of dedupedEntries) {
+          console.log(
+            `  ${entry.id.padEnd(idWidth)}  ${entry.title.padEnd(titleWidth)}  ${(entry.type ?? 'pattern').padEnd(11)}  ${entry.severity ?? 'suggestion'}`,
+          );
+        }
+        console.log('');
+
+        if (opts.dryRun) {
+          p.log.info(`Dry run — ${dedupedEntries.length} entries generated, vault not modified.`);
+          return;
+        }
+
+        // ─── Output to files ───────────────────────────────────────
+        if (opts.output) {
+          const outDir = pathResolve(opts.output);
+          mkdirSync(outDir, { recursive: true });
+          const outPath = join(outDir, `${domain}.json`);
+          writeFileSync(outPath, JSON.stringify({ domain, entries: dedupedEntries }, null, 2));
+          p.log.success(`Saved ${dedupedEntries.length} entries to ${outPath}`);
+          return;
+        }
+
+        // ─── Confirm + seed vault ──────────────────────────────────
+        if (!opts.yes) {
+          const confirm = await p.confirm({
+            message: `Seed ${dedupedEntries.length} entries into vault for domain "${domain}"?`,
+          });
+          if (p.isCancel(confirm) || !confirm) {
+            p.log.info('Cancelled — vault not modified.');
+            return;
+          }
+        }
+
+        if (!vaultDbPath) {
+          p.log.error('Vault not initialized. Run `soleri install` first.');
+          process.exit(1);
+        }
+
+        const vault = new Vault(vaultDbPath);
+        const seeded = vault.seed(
+          dedupedEntries.map((e) => ({
+            ...e,
+            id: e.id,
+            type: (e.type ?? 'pattern') as 'pattern' | 'anti-pattern' | 'rule' | 'playbook',
+            severity: (e.severity ?? 'suggestion') as 'critical' | 'warning' | 'suggestion',
+            tags: e.tags ?? [],
+          })),
+        );
+        vault.close();
+
+        p.log.success(`Seeded ${seeded} knowledge entries for domain "${domain}" into vault.`);
+      },
+    );
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────
+
+interface SeedEntry {
+  id: string;
+  type?: string;
+  domain: string;
+  title: string;
+  severity?: string;
+  description: string;
+  why?: string;
+  tags: string[];
+  context?: string;
+}
 
 function listMdFiles(dir: string): string[] {
   try {
