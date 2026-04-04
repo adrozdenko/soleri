@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createAdminSetupOps } from './admin-setup-ops.js';
+import { createAdminSetupOps, syncHooksToClaudeSettings } from './admin-setup-ops.js';
 import type { AgentRuntime } from './types.js';
 import type { OpDefinition } from '../facades/types.js';
 
@@ -292,6 +292,167 @@ describe('createAdminSetupOps', () => {
       expect(result.mode).toBe('install');
       expect(result).toHaveProperty('installed');
       expect(result).toHaveProperty('skipped');
+    });
+  });
+
+  describe('syncHooksToClaudeSettings', () => {
+    it('installs SessionStart, PreCompact, and Stop hooks on fresh settings', () => {
+      syncHooksToClaudeSettings('test-agent');
+      const written = mockFs['/mock-home/.claude/settings.json'];
+      expect(written).toBeDefined();
+      const settings = JSON.parse(written);
+      expect(settings.hooks.SessionStart).toHaveLength(2);
+      expect(settings.hooks.PreCompact).toHaveLength(1);
+      expect(settings.hooks.Stop).toHaveLength(1);
+    });
+
+    it('includes the {agentId}-mode skill hook in SessionStart', () => {
+      syncHooksToClaudeSettings('test-agent');
+      const settings = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
+      const commands = settings.hooks.SessionStart.flatMap((g: { hooks: { command?: string }[] }) =>
+        g.hooks.map((h) => h.command),
+      );
+      expect(commands.some((c: string) => c.includes('test-agent-mode skill'))).toBe(true);
+    });
+
+    it('includes the admin_health hook in SessionStart', () => {
+      syncHooksToClaudeSettings('test-agent');
+      const settings = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
+      const commands = settings.hooks.SessionStart.flatMap((g: { hooks: { command?: string }[] }) =>
+        g.hooks.map((h) => h.command),
+      );
+      expect(commands.some((c: string) => c.includes('admin_health'))).toBe(true);
+    });
+
+    it('is idempotent — running twice produces the same output', () => {
+      syncHooksToClaudeSettings('test-agent');
+      const after1 = mockFs['/mock-home/.claude/settings.json'];
+      syncHooksToClaudeSettings('test-agent');
+      const after2 = mockFs['/mock-home/.claude/settings.json'];
+      expect(after1).toBe(after2);
+    });
+
+    it('preserves non-agent hooks already in settings', () => {
+      mockFs['/mock-home/.claude/settings.json'] = JSON.stringify({
+        hooks: {
+          SessionStart: [{ hooks: [{ type: 'command', command: 'echo existing' }] }],
+        },
+      });
+      syncHooksToClaudeSettings('test-agent');
+      const settings = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
+      const commands = settings.hooks.SessionStart.flatMap((g: { hooks: { command?: string }[] }) =>
+        g.hooks.map((h) => h.command),
+      );
+      expect(commands).toContain('echo existing');
+      expect(commands.some((c: string) => c.includes('admin_health'))).toBe(true);
+    });
+
+    it('updates stale agent hooks to match current defaults', () => {
+      // A stale hook contains the agent marker but outdated content
+      mockFs['/mock-home/.claude/settings.json'] = JSON.stringify({
+        hooks: {
+          SessionStart: [
+            {
+              hooks: [
+                {
+                  type: 'command',
+                  command: `root=$(git rev-parse --show-toplevel 2>/dev/null || echo "."); if grep -q '"test-agent"' "$root/.mcp.json" 2>/dev/null; then echo 'Call mcp__test-agent__test-agent_admin op:OLD_STALE_OP'; fi`,
+                  timeout: 5000,
+                },
+              ],
+            },
+          ],
+        },
+      });
+      syncHooksToClaudeSettings('test-agent');
+      const settings = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
+      const commands = settings.hooks.SessionStart.flatMap((g: { hooks: { command?: string }[] }) =>
+        g.hooks.map((h) => h.command),
+      );
+      expect(commands.some((c: string) => c.includes('OLD_STALE_OP'))).toBe(false);
+      expect(commands.some((c: string) => c.includes('admin_health'))).toBe(true);
+    });
+  });
+
+  describe('multi-agent hook coexistence', () => {
+    type HookGroup = { hooks: { command?: string }[] };
+
+    function getSessionStartCommands(): string[] {
+      const settings = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
+      return (settings.hooks.SessionStart as HookGroup[]).flatMap((g) =>
+        g.hooks.map((h) => h.command ?? ''),
+      );
+    }
+
+    function getAgentCommands(agentId: string): string[] {
+      const settings = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
+      return (settings.hooks.SessionStart as HookGroup[])
+        .flatMap((g) => g.hooks)
+        .map((h) => h.command ?? '')
+        .filter((c) => c.includes(agentId));
+    }
+
+    it('install A then B — both sets present, no overlap', () => {
+      syncHooksToClaudeSettings('agent-a');
+      syncHooksToClaudeSettings('agent-b');
+
+      const commands = getSessionStartCommands();
+
+      // Both agents must have hooks present
+      expect(commands.some((c) => c.includes('agent-a'))).toBe(true);
+      expect(commands.some((c) => c.includes('agent-b'))).toBe(true);
+
+      // agent-a commands must not mention agent-b and vice versa
+      const aCommands = getAgentCommands('agent-a');
+      const bCommands = getAgentCommands('agent-b');
+
+      expect(aCommands.every((c) => !c.includes('agent-b'))).toBe(true);
+      expect(bCommands.every((c) => !c.includes('agent-a'))).toBe(true);
+    });
+
+    it('re-install A after B — B hooks untouched', () => {
+      syncHooksToClaudeSettings('agent-a');
+      syncHooksToClaudeSettings('agent-b');
+
+      const beforeB = getAgentCommands('agent-b');
+
+      syncHooksToClaudeSettings('agent-a'); // re-run A (e.g. after update)
+
+      const afterB = getAgentCommands('agent-b');
+
+      expect(afterB).toEqual(beforeB);
+    });
+
+    it('no duplicates after running both twice', () => {
+      syncHooksToClaudeSettings('agent-a');
+      syncHooksToClaudeSettings('agent-b');
+
+      const settings1 = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
+      const groupCountAfterTwo = (settings1.hooks.SessionStart as HookGroup[]).length;
+
+      syncHooksToClaudeSettings('agent-a');
+      syncHooksToClaudeSettings('agent-b');
+
+      const settings2 = JSON.parse(mockFs['/mock-home/.claude/settings.json']);
+      const groupCountAfterFour = (settings2.hooks.SessionStart as HookGroup[]).length;
+
+      expect(groupCountAfterFour).toBe(groupCountAfterTwo);
+    });
+
+    it('manually added non-agent hook survives all agent installs', () => {
+      // Pre-populate settings with a non-agent hook in SessionStart
+      mockFs['/mock-home/.claude/settings.json'] = JSON.stringify({
+        hooks: {
+          SessionStart: [{ hooks: [{ type: 'command', command: 'echo custom-non-agent-hook' }] }],
+        },
+      });
+
+      syncHooksToClaudeSettings('agent-a');
+      syncHooksToClaudeSettings('agent-b');
+      syncHooksToClaudeSettings('agent-a');
+
+      const commands = getSessionStartCommands();
+      expect(commands).toContain('echo custom-non-agent-hook');
     });
   });
 
