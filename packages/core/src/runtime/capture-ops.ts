@@ -340,10 +340,13 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
             'principle',
             'reference',
           ])
-          .describe('Entry type'),
-        domain: z.string(),
+          .optional()
+          .default('pattern')
+          .describe('Entry type (default: "pattern")'),
+        domain: z.string().optional().default('general'),
         title: z.string(),
-        description: z.string(),
+        description: z.string().optional().describe('Knowledge description (alias: content)'),
+        content: z.string().optional().describe('Alias for description'),
         tags: z.array(z.string()).optional().default([]),
         tier: z
           .enum(['agent', 'project', 'team'])
@@ -352,10 +355,13 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
       }),
       handler: async (params) => {
         const projectPath = (params.projectPath as string | undefined) ?? '.';
-        const entryType = params.type as string;
-        const domain = params.domain as string;
+        const entryType = (params.type as string | undefined) ?? 'pattern';
+        const domain = (params.domain as string | undefined) ?? 'general';
         const title = params.title as string;
-        const description = params.description as string;
+        const description =
+          (params.description as string | undefined) ??
+          (params.content as string | undefined) ??
+          '';
         const tags = (params.tags as string[] | undefined) ?? [];
         const manualTier = params.tier as ScopeTier | undefined;
 

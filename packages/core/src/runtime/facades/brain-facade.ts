@@ -513,20 +513,35 @@ export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         'then uses LLM to produce a brief, outline, talking points, or post draft. ' +
         'Includes source attribution, coverage score, and knowledge gap detection.',
       auth: 'read',
-      schema: z.object({
-        query: z.string().describe('Topic to synthesize knowledge about'),
-        format: z
-          .enum(['brief', 'outline', 'talking-points', 'post-draft'])
-          .optional()
-          .default('brief')
-          .describe('Output format (default: "brief")'),
-        maxEntries: z.number().optional().default(10).describe('Max vault entries to consult'),
-        audience: z
-          .enum(['technical', 'executive', 'general'])
-          .optional()
-          .default('general')
-          .describe('Target audience for tone and language'),
-      }),
+      schema: z.preprocess(
+        (val) => {
+          if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+            const obj = val as Record<string, unknown>;
+            // Accept "topic" as alias for "query"
+            if (obj.topic !== undefined && obj.query === undefined) {
+              return { ...obj, query: obj.topic };
+            }
+          }
+          return val;
+        },
+        z.object({
+          query: z.string().describe('Topic to synthesize knowledge about (alias: topic)'),
+          topic: z.string().optional().describe('Alias for query'),
+          format: z
+            .enum(['brief', 'outline', 'talking-points', 'post-draft'])
+            .optional()
+            .default('brief')
+            .describe(
+              'Output format: brief | outline | talking-points | post-draft (default: "brief")',
+            ),
+          maxEntries: z.number().optional().default(10).describe('Max vault entries to consult'),
+          audience: z
+            .enum(['technical', 'executive', 'general'])
+            .optional()
+            .default('general')
+            .describe('Target audience for tone and language'),
+        }),
+      ),
       handler: async (params) => {
         return knowledgeSynthesizer.synthesize(params.query as string, {
           format: params.format as 'brief' | 'outline' | 'talking-points' | 'post-draft',

@@ -62,19 +62,28 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'write',
       schema: z.object({
         projectPath: z.string().optional().default('.'),
-        type: z.enum(['session', 'lesson', 'preference']).optional().default('lesson'),
-        context: z.string(),
-        summary: z.string(),
+        type: z
+          .enum(['session', 'lesson', 'preference'])
+          .optional()
+          .default('lesson')
+          .describe('Memory type: session | lesson | preference (default: "lesson")'),
+        context: z.string().optional().describe('What was happening — situation or task context'),
+        summary: z.string().optional().describe('What was learned or decided'),
+        content: z
+          .string()
+          .optional()
+          .describe('Alias: sets both context and summary when neither is provided'),
         topics: z.array(z.string()).optional().default([]),
         filesModified: z.array(z.string()).optional().default([]),
         toolsUsed: z.array(z.string()).optional().default([]),
       }),
       handler: async (params) => {
+        const rawContent = params.content as string | undefined;
         const memory = vault.captureMemory({
           projectPath: params.projectPath as string,
           type: params.type as 'session' | 'lesson' | 'preference',
-          context: params.context as string,
-          summary: params.summary as string,
+          context: (params.context as string | undefined) ?? rawContent ?? '',
+          summary: (params.summary as string | undefined) ?? rawContent ?? '',
           topics: (params.topics as string[]) ?? [],
           filesModified: (params.filesModified as string[]) ?? [],
           toolsUsed: (params.toolsUsed as string[]) ?? [],

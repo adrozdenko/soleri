@@ -32,14 +32,32 @@ export function createVaultLinkingOps(runtime: AgentRuntime): OpDefinition[] {
       name: 'link_entries',
       description: 'Create a typed link between two vault entries (Zettelkasten)',
       auth: 'write',
-      schema: z.object({
-        sourceId: z.string().describe('REQUIRED: Source entry ID'),
-        targetId: z.string().describe('REQUIRED: Target entry ID'),
-        linkType: z
-          .enum(['supports', 'contradicts', 'extends', 'sequences'])
-          .describe('REQUIRED: Relationship type'),
-        note: z.string().optional().describe('Optional context for the link'),
-      }),
+      schema: z.preprocess(
+        (val) => {
+          if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+            const obj = val as Record<string, unknown>;
+            // Accept "relationship" as alias for "linkType"
+            if (obj.relationship !== undefined && obj.linkType === undefined) {
+              return { ...obj, linkType: obj.relationship };
+            }
+          }
+          return val;
+        },
+        z.object({
+          sourceId: z.string().describe('REQUIRED: Source entry ID'),
+          targetId: z.string().describe('REQUIRED: Target entry ID'),
+          linkType: z
+            .enum(['supports', 'contradicts', 'extends', 'sequences'])
+            .describe(
+              'REQUIRED: Relationship type — supports | contradicts | extends | sequences. Alias: relationship',
+            ),
+          relationship: z
+            .enum(['supports', 'contradicts', 'extends', 'sequences'])
+            .optional()
+            .describe('Alias for linkType'),
+          note: z.string().optional().describe('Optional context for the link'),
+        }),
+      ),
       handler: async (params) => {
         const sourceId = params.sourceId as string;
         const targetId = params.targetId as string;
