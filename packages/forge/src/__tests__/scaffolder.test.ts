@@ -87,13 +87,20 @@ describe('Scaffolder', () => {
 
   describe('scaffold', () => {
     it('should create a complete agent project', () => {
-      const preview = previewScaffold(testConfig);
       const result = scaffold(testConfig);
 
       expect(result.success).toBe(true);
       expect(result.agentDir).toBe(join(tempDir, 'atlas'));
       expect(result.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
-      expect(result.filesCreated.length).toBe(preview.files.length);
+
+      // Split: base scaffold files (stable) + one SKILL.md per source skill (dynamic)
+      const skillFiles = result.filesCreated.filter((f) => f.startsWith('skills/'));
+      const baseFiles = result.filesCreated.filter((f) => !f.startsWith('skills/'));
+      const sourceSkillCount = readdirSync(SOURCE_SKILLS_DIR, { withFileTypes: true }).filter((e) =>
+        e.isDirectory(),
+      ).length;
+      expect(skillFiles.length).toBe(sourceSkillCount);
+      expect(baseFiles.length).toBeGreaterThan(0);
     });
 
     it('should create expected directories (no facades/ or llm/ dirs)', () => {
