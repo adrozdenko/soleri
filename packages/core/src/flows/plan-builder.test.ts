@@ -7,10 +7,13 @@
  * - buildPlan() builds a normal plan when all blocking capabilities are available
  * - capabilityToProbe() maps known capability ID prefixes to probe names
  * - capabilityToProbe() returns undefined for unmapped capabilities (no spurious blocking)
+ * - buildPlan() injects gate steps for mandatory (critical) vault constraints
+ * - buildPlan() injects gate steps for anti-pattern vault entries regardless of severity
+ * - buildPlan() is unchanged when no critical/anti-pattern constraints are passed
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { buildPlan, capabilityToProbe } from './plan-builder.js';
+import { buildPlan, capabilityToProbe, type VaultConstraint } from './plan-builder.js';
 import type { AgentRuntime } from '../runtime/types.js';
 
 // ---------------------------------------------------------------------------
@@ -103,5 +106,75 @@ describe('buildPlan — blocking capability enforcement', () => {
     expect(plan.blocked).toBeUndefined();
     // suppress unused-var lint
     void hasBrainWarning;
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildPlan vault gate injection
+// ---------------------------------------------------------------------------
+
+describe('buildPlan — vault gate injection', () => {
+  it('appends a gate step for a mandatory (critical) vault constraint', async () => {
+    // A critical vault entry must produce a vault-gate-* step with a STOP gate.
+    // Without injection, the constraint is only a hint in recommendations — no enforcement.
+    const runtime = makeRuntime(true);
+    const constraint: VaultConstraint = {
+      entryId: 'crit-1',
+      title: 'No skipping tests',
+      context: 'Tests must not be skipped under time pressure.',
+      mandatory: true,
+      entryType: 'pattern',
+    };
+    const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime, undefined, [constraint]);
+
+    const gate = plan.steps.find((s) => s.id === 'vault-gate-crit-1');
+    expect(gate).toBeDefined();
+    expect(gate?.name).toBe('[Vault gate] No skipping tests');
+    expect(gate?.gate?.type).toBe('GATE');
+    expect(gate?.gate?.condition).toBe('Tests must not be skipped under time pressure.');
+    expect(gate?.gate?.onFail?.action).toBe('STOP');
+  });
+
+  it('appends a gate step for an anti-pattern entry even when not marked mandatory', async () => {
+    // anti-pattern type entries are always enforced as gates regardless of severity.
+    // If entryType alone were insufficient to trigger injection, warning-level anti-patterns
+    // would be silently treated as hints — defeating their classification.
+    const runtime = makeRuntime(true);
+    const constraint: VaultConstraint = {
+      entryId: 'ap-1',
+      title: 'Avoid God Objects',
+      context: 'Classes must not exceed 500 lines.',
+      mandatory: false,
+      entryType: 'anti-pattern',
+    };
+    const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime, undefined, [constraint]);
+
+    const gate = plan.steps.find((s) => s.id === 'vault-gate-ap-1');
+    expect(gate).toBeDefined();
+    expect(gate?.gate?.onFail?.action).toBe('STOP');
+  });
+
+  it('does not inject any gate steps when no constraints are passed', async () => {
+    // Backward compatibility: existing callers that omit vaultConstraints must get
+    // identical plan structure to before this feature was added.
+    const runtime = makeRuntime(true);
+    const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime);
+    const gateSteps = plan.steps.filter((s) => s.id.startsWith('vault-gate-'));
+    expect(gateSteps).toHaveLength(0);
+  });
+
+  it('does not inject a gate for a non-mandatory, non-anti-pattern constraint', async () => {
+    // Warning and suggestion vault entries are surfaced as recommendations only.
+    // Injecting them as gates would turn non-critical advice into hard stops.
+    const runtime = makeRuntime(true);
+    const constraint: VaultConstraint = {
+      entryId: 'sug-1',
+      title: 'Consider using named exports',
+      mandatory: false,
+      entryType: 'pattern',
+    };
+    const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime, undefined, [constraint]);
+    const gateSteps = plan.steps.filter((s) => s.id.startsWith('vault-gate-'));
+    expect(gateSteps).toHaveLength(0);
   });
 });

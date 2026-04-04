@@ -14,7 +14,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import type { OpDefinition, FacadeConfig } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
-import { buildPlan } from '../flows/plan-builder.js';
+import { buildPlan, type VaultConstraint } from '../flows/plan-builder.js';
 import { FlowExecutor, getPlanRunDir, loadManifest, saveManifest } from '../flows/executor.js';
 import { createDispatcher } from '../flows/dispatch-registry.js';
 import { runEpilogue } from '../flows/epilogue.js';
@@ -385,6 +385,7 @@ export function createOrchestrateOps(
           context?: string;
           example?: string;
           mandatory: boolean;
+          entryType?: string;
         }> = [];
 
         // Vault always runs first — curated explicit knowledge takes precedence
@@ -398,6 +399,7 @@ export function createOrchestrateOps(
               entryId: r.entry.id,
               source: 'vault',
               mandatory: isCritical,
+              entryType: r.entry.type,
             };
             if (r.entry.context) rec.context = r.entry.context;
             if (r.entry.example) rec.example = r.entry.example;
@@ -428,8 +430,24 @@ export function createOrchestrateOps(
           // Brain has no data yet
         }
 
-        // 3. Build flow-engine plan
-        const plan = await buildPlan(intent, agentId, projectPath, runtime, prompt);
+        // 3. Build flow-engine plan — pass vault constraints for gate injection
+        const vaultConstraints: VaultConstraint[] = recommendations
+          .filter((r) => r.source === 'vault' && r.entryId)
+          .map((r) => ({
+            entryId: r.entryId!,
+            title: r.pattern,
+            context: r.context,
+            mandatory: r.mandatory,
+            entryType: r.entryType,
+          }));
+        const plan = await buildPlan(
+          intent,
+          agentId,
+          projectPath,
+          runtime,
+          prompt,
+          vaultConstraints,
+        );
 
         // 3b. Merge workflow overrides (gates + tools) if agent has a matching workflow
         let workflowApplied: string | undefined;

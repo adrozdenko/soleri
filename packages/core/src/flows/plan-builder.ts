@@ -195,6 +195,18 @@ export function pruneSteps(
 }
 
 /**
+ * A vault entry that should influence plan structure.
+ * critical severity OR anti-pattern type entries become gate steps.
+ */
+export interface VaultConstraint {
+  entryId: string;
+  title: string;
+  context?: string;
+  mandatory: boolean;
+  entryType?: string;
+}
+
+/**
  * Build a full orchestration plan from intent, agent config, and runtime.
  */
 export async function buildPlan(
@@ -203,6 +215,7 @@ export async function buildPlan(
   projectPath: string,
   runtime: AgentRuntime,
   prompt?: string,
+  vaultConstraints: VaultConstraint[] = [],
 ): Promise<OrchestrationPlan> {
   const normalizedIntent = intent.toUpperCase();
   const flowId = INTENT_TO_FLOW[normalizedIntent] ?? 'BUILD-flow';
@@ -262,6 +275,26 @@ export async function buildPlan(
 
     if (pruneResult.skipped.length > 0) {
       warnings.push(`${pruneResult.skipped.length} step(s) skipped due to missing capabilities.`);
+    }
+
+    // Inject gate steps for critical and anti-pattern vault constraints.
+    // These become hard stops in the plan that the executor must pass.
+    for (const c of vaultConstraints) {
+      if (c.mandatory || c.entryType === 'anti-pattern') {
+        steps.push({
+          id: `vault-gate-${c.entryId}`,
+          name: `[Vault gate] ${c.title}`,
+          tools: [],
+          parallel: false,
+          requires: [],
+          gate: {
+            type: 'GATE',
+            condition: c.context,
+            onFail: { action: 'STOP', message: `Vault rule violated: ${c.title}` },
+          },
+          status: 'pending',
+        });
+      }
     }
   } else {
     warnings.push(`Flow "${flowId}" not found — plan will have no steps.`);
