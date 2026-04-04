@@ -22,6 +22,17 @@ triggers:
   min-confidence: MEDIUM
 
 steps:
+  - id: search-vault
+    name: Search Vault Patterns
+    description: Search vault for known review anti-patterns and rules before validation runs.
+    needs: [vault.search, memory.search]
+    chains:
+      - vault-search
+      - memory-search
+    output:
+      - vault-patterns
+      - memory-hits
+
   - id: validate-code
     name: Validate Component Code
     description: Run component validation against the design system.
@@ -34,15 +45,13 @@ steps:
 
   - id: check-rules
     name: Check Design Rules
-    description: Check code against design rules and vault patterns in parallel.
-    needs: [design.rules, vault.search]
+    description: Check code against design rules in parallel.
+    needs: [design.rules]
     chains:
       - design-rules-check
-      - vault-search
     parallel: true
     output:
       - rules-violations
-      - vault-patterns
 
   - id: check-accessibility
     name: Check Accessibility

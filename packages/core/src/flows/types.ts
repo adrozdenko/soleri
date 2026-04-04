@@ -75,6 +75,11 @@ export const flowSchema = z.object({
     'min-confidence': z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
   }),
   steps: z.array(flowStepSchema),
+  /**
+   * Scoring weights declared per step — parsed but not yet computed by the executor.
+   * Weighted-sum formula is not implemented; gate thresholds in steps are the active enforcement.
+   * @see https://github.com/adrozdenko/soleri/issues/632
+   */
   scoring: z
     .object({
       weights: z.record(z.number()),
