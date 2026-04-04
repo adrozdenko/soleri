@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.16.3] — 2026-04-04
+
+### Fixed
+
+- **Scaffolder test no longer hardcodes total file count** — asserts skill files match source skills directory count; base files asserted separately. Adding a built-in skill no longer breaks CI.
+
 ## [9.16.1] — 2026-04-04
 
 ### Fixed

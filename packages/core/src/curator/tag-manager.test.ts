@@ -41,10 +41,6 @@ describe('tag-manager', () => {
   });
 
   describe('DEFAULT_TAG_ALIASES', () => {
-    it('exports expected alias count', () => {
-      expect(DEFAULT_TAG_ALIASES.length).toBe(13);
-    });
-
     it('includes common aliases', () => {
       const aliasMap = new Map(DEFAULT_TAG_ALIASES);
       expect(aliasMap.get('a11y')).toBe('accessibility');

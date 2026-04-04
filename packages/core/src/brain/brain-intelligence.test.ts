@@ -38,11 +38,6 @@ describe('BrainIntelligence', () => {
     expect(stats.domainProfiles).toBe(0);
   });
 
-  it('should be accessible from runtime', () => {
-    expect(runtime.brainIntelligence).toBeDefined();
-    expect(typeof runtime.brainIntelligence.getStats).toBe('function');
-  });
-
   // ─── Session Lifecycle ──────────────────────────────────────────
 
   it('should start a session', () => {

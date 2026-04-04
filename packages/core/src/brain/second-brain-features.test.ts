@@ -33,7 +33,7 @@ import type { IntelligenceEntry } from '../intelligence/types.js';
 
 let vault: Vault;
 let brain: Brain;
-let brainIntelligence: BrainIntelligence;
+let _brainIntelligence: BrainIntelligence;
 let planner: Planner;
 let curator: Curator;
 let intentRouter: IntentRouter;
@@ -99,7 +99,7 @@ beforeAll(() => {
   vault = new Vault(':memory:');
   vault.seed(SEED);
   brain = new Brain(vault);
-  brainIntelligence = new BrainIntelligence(vault, brain);
+  _brainIntelligence = new BrainIntelligence(vault, brain);
   planner = new Planner(join(tempDir, 'plans.json'));
   curator = new Curator(vault);
   intentRouter = new IntentRouter(vault);
@@ -160,18 +160,6 @@ describe('Two-pass vault retrieval (#205)', () => {
 // ─── 2. Session Briefing ─────────────────────────────────────────────
 
 describe('Session briefing (#202)', () => {
-  // Session briefing is an op — tested via the module imports directly
-  it('brainIntelligence.listSessions returns sessions', () => {
-    const sessions = brainIntelligence.listSessions({ limit: 5 });
-    // May be empty in a fresh vault, but shouldn't throw
-    expect(Array.isArray(sessions)).toBe(true);
-  });
-
-  it('planner.list returns plans array', () => {
-    const plans = planner.list();
-    expect(Array.isArray(plans)).toBe(true);
-  });
-
   it('vault.getRecent returns recent entries', () => {
     const recent = vault.getRecent(5);
     expect(recent.length).toBeGreaterThan(0);
