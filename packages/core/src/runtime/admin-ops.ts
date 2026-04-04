@@ -5,8 +5,9 @@
  * runtime state. No new modules needed — uses existing runtime parts.
  */
 
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
@@ -380,7 +381,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           });
         }
 
-        // 7. Skills
+        // 7. Skills — check discovered vs registered in .claude/skills/
         try {
           const agentDir = runtime.config.agentDir;
           const skillsDirs = agentDir ? [join(agentDir, 'skills')] : [];
@@ -388,12 +389,50 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           const installedPacks = packInstaller.list();
           const packSkillCount = installedPacks.reduce((sum, p) => sum + p.skills.length, 0);
           const totalSkills = agentSkills.length + packSkillCount;
-          const skillStatus = totalSkills > 0 ? 'ok' : agentDir ? 'warn' : 'ok';
-          checks.push({
-            name: 'skills',
-            status: skillStatus,
-            detail: `${totalSkills} skills (${agentSkills.length} agent, ${packSkillCount} pack)`,
-          });
+
+          // Check registration status in .claude/skills/
+          const claudeSkillsDir = join(homedir(), '.claude', 'skills');
+          let registeredCount = 0;
+          let brokenCount = 0;
+          const unregistered: string[] = [];
+
+          if (existsSync(claudeSkillsDir)) {
+            try {
+              const registered = readdirSync(claudeSkillsDir, { withFileTypes: true });
+              registeredCount = registered.length;
+              for (const entry of registered) {
+                if (entry.isSymbolicLink()) {
+                  try {
+                    statSync(join(claudeSkillsDir, entry.name));
+                  } catch {
+                    brokenCount++;
+                  }
+                }
+              }
+            } catch {
+              // Can't read .claude/skills/ — skip registration check
+            }
+          }
+
+          for (const skill of agentSkills) {
+            const skillRegisteredDir = join(claudeSkillsDir, skill.name);
+            if (!existsSync(skillRegisteredDir)) {
+              unregistered.push(skill.name);
+            }
+          }
+
+          const hasIssues = unregistered.length > 0 || brokenCount > 0;
+          const skillStatus = totalSkills === 0 && agentDir ? 'warn' : hasIssues ? 'warn' : 'ok';
+          const detail = [
+            `${totalSkills} discovered (${agentSkills.length} agent, ${packSkillCount} pack)`,
+            `${registeredCount} registered in .claude/skills/`,
+            ...(unregistered.length > 0
+              ? [`${unregistered.length} unregistered: ${unregistered.join(', ')}`]
+              : []),
+            ...(brokenCount > 0 ? [`${brokenCount} broken links`] : []),
+          ].join(' — ');
+
+          checks.push({ name: 'skills', status: skillStatus, detail });
         } catch (err) {
           checks.push({
             name: 'skills',

@@ -9,8 +9,9 @@
  * 5. Return install summary
  */
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join, basename } from 'node:path';
+import { homedir } from 'node:os';
 import {
   packManifestSchema,
   type InstalledPack,
@@ -200,9 +201,18 @@ export class PackInstaller {
         facadesRegistered = true;
       }
 
-      // 3. Discover skills
+      // 3. Discover skills and sync to .claude/skills/<packId>:<skill>/
       const skillsDir = join(packDir, manifest.skills?.dir ?? 'skills');
       const skills = existsSync(skillsDir) ? listMarkdownFiles(skillsDir) : [];
+
+      if (skills.length > 0) {
+        try {
+          const { syncSkillsToClaudeCode } = await import('../skills/sync-skills.js');
+          syncSkillsToClaudeCode([skillsDir], manifest.id, { global: true });
+        } catch {
+          // Skill sync is best-effort — never blocks install
+        }
+      }
 
       // 4. Discover hooks
       const hooksDir = join(packDir, manifest.hooks?.dir ?? 'hooks');
@@ -279,6 +289,22 @@ export class PackInstaller {
     // Deactivate facades
     if (pack.facadesRegistered) {
       this.pluginRegistry.deactivate(packId);
+    }
+
+    // Remove pack skills from .claude/skills/
+    if (pack.skills.length > 0) {
+      try {
+        const claudeSkillsDir = join(homedir(), '.claude', 'skills');
+        for (const skillPath of pack.skills) {
+          const skillName = basename(skillPath, '.md');
+          const registeredPath = join(claudeSkillsDir, `${packId}:${skillName}`);
+          if (existsSync(registeredPath)) {
+            rmSync(registeredPath, { recursive: true, force: true });
+          }
+        }
+      } catch {
+        // Skill cleanup is best-effort
+      }
     }
 
     // Transition to uninstalled
