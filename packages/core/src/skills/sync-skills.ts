@@ -82,7 +82,18 @@ export function discoverSkills(skillsDirs: string[]): SkillEntry[] {
     if (!existsSync(dir)) continue;
     const entries = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
+      // Follow symlinks — project-local installs use symlinks to source skills
+      const isDir =
+        entry.isDirectory() ||
+        (entry.isSymbolicLink() &&
+          (() => {
+            try {
+              return statSync(join(dir, entry.name)).isDirectory();
+            } catch {
+              return false;
+            }
+          })());
+      if (!isDir) continue;
       const skillPath = join(dir, entry.name, 'SKILL.md');
       if (existsSync(skillPath)) {
         skills.push({ name: entry.name, sourcePath: skillPath });
@@ -369,8 +380,29 @@ export function scaffoldGlobalClaudeMd(agentId: string, displayName: string): vo
     existing = readFileSync(claudeMdPath, 'utf-8');
   }
 
-  const startIdx = existing.indexOf(start);
-  const endIdx = existing.indexOf(end);
+  let startIdx = existing.indexOf(start);
+  let endIdx = existing.indexOf(end);
+
+  // Migrate legacy sentinel format: <!-- agent:{id}:mode --> / <!-- /agent:{id}:mode -->
+  if (startIdx === -1) {
+    const legacyStart = `<!-- agent:${agentId}:mode -->`;
+    const legacyEnd = `<!-- /agent:${agentId}:mode -->`;
+    const ls = existing.indexOf(legacyStart);
+    const le = existing.indexOf(legacyEnd);
+    if (ls !== -1 && le !== -1) {
+      startIdx = ls;
+      endIdx = le;
+      // Point past the legacy end sentinel so we replace the whole block
+      existing =
+        existing.slice(0, ls) +
+        start +
+        existing.slice(ls + legacyStart.length, le) +
+        end +
+        existing.slice(le + legacyEnd.length);
+      startIdx = existing.indexOf(start);
+      endIdx = existing.indexOf(end);
+    }
+  }
 
   let updated: string;
   if (startIdx !== -1 && endIdx !== -1) {

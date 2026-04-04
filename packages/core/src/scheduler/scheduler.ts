@@ -17,15 +17,14 @@ export const MAX_TASKS = 10;
 export const MIN_INTERVAL_HOURS = 1;
 
 /** Resolve the platform adapter for the current OS. Throws on unsupported OS. */
-export function resolvePlatformAdapter(): PlatformAdapter {
+export async function resolvePlatformAdapter(): Promise<PlatformAdapter> {
   const os = platform();
   if (os === 'darwin') {
-    // Dynamic import avoids loading macOS-specific code on other platforms
-    const { MacOSAdapter } = require('./platform-macos.js') as typeof import('./platform-macos.js');
+    const { MacOSAdapter } = await import('./platform-macos.js');
     return new MacOSAdapter();
   }
   if (os === 'linux') {
-    const { LinuxAdapter } = require('./platform-linux.js') as typeof import('./platform-linux.js');
+    const { LinuxAdapter } = await import('./platform-linux.js');
     return new LinuxAdapter();
   }
   throw new Error(`Unsupported OS for task scheduler: ${os}. Supported: darwin, linux.`);
@@ -36,12 +35,16 @@ export function resolvePlatformAdapter(): PlatformAdapter {
  * the OS-level platform adapter.
  */
 export class Scheduler {
-  private readonly adapter: PlatformAdapter;
+  private readonly adapterPromise: Promise<PlatformAdapter>;
   private readonly store: SchedulerStore;
 
   constructor(adapter?: PlatformAdapter, store?: SchedulerStore) {
-    this.adapter = adapter ?? resolvePlatformAdapter();
+    this.adapterPromise = adapter ? Promise.resolve(adapter) : resolvePlatformAdapter();
     this.store = store ?? new InMemorySchedulerStore();
+  }
+
+  private async getAdapter(): Promise<PlatformAdapter> {
+    return this.adapterPromise;
   }
 
   async create(input: CreateTaskInput): Promise<ScheduledTask | { error: string }> {
@@ -77,7 +80,7 @@ export class Scheduler {
     };
 
     // Create OS-level task
-    const platformId = await this.adapter.create(task);
+    const platformId = await (await this.getAdapter()).create(task);
     task.platformId = platformId;
 
     await this.store.save(task);
@@ -89,7 +92,9 @@ export class Scheduler {
     const entries: TaskListEntry[] = [];
 
     for (const task of tasks) {
-      const platformSynced = task.platformId ? await this.adapter.exists(task.platformId) : false;
+      const platformSynced = task.platformId
+        ? await (await this.getAdapter()).exists(task.platformId)
+        : false;
       entries.push({ ...task, platformSynced });
     }
 
@@ -102,7 +107,7 @@ export class Scheduler {
 
     if (task.platformId) {
       try {
-        await this.adapter.remove(task.platformId);
+        await (await this.getAdapter()).remove(task.platformId);
       } catch {
         // Best-effort — remove from DB even if OS cleanup fails
       }
@@ -118,7 +123,7 @@ export class Scheduler {
     if (!task.enabled) return { paused: false, error: 'Task is already paused' };
     if (!task.platformId) return { paused: false, error: 'Task has no platform ID' };
 
-    await this.adapter.pause(task.platformId);
+    await (await this.getAdapter()).pause(task.platformId);
     task.enabled = false;
     await this.store.save(task);
     return { paused: true };
@@ -130,7 +135,7 @@ export class Scheduler {
     if (task.enabled) return { resumed: false, error: 'Task is already running' };
     if (!task.platformId) return { resumed: false, error: 'Task has no platform ID' };
 
-    await this.adapter.resume(task.platformId);
+    await (await this.getAdapter()).resume(task.platformId);
     task.enabled = true;
     await this.store.save(task);
     return { resumed: true };
