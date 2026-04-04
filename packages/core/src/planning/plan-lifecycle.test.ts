@@ -68,9 +68,11 @@ describe('plan-lifecycle', () => {
 
   describe('applyTransition', () => {
     it('returns new status and timestamp for valid transition', () => {
+      const before = Date.now();
       const result = applyTransition('draft', 'approved');
       expect(result.status).toBe('approved');
-      expect(result.updatedAt).toBeGreaterThan(0);
+      expect(result.updatedAt).toBeGreaterThanOrEqual(before);
+      expect(result.updatedAt).toBeLessThanOrEqual(Date.now());
     });
     it('throws for invalid transition', () => {
       expect(() => applyTransition('draft', 'executing')).toThrow('Invalid transition');
@@ -312,9 +314,11 @@ describe('plan-lifecycle', () => {
     });
 
     it('sets startedAt on first in_progress', () => {
+      const before = Date.now();
       const task = makeTask();
       applyTaskStatusUpdate(task, 'in_progress');
-      expect(task.startedAt).toBeGreaterThan(0);
+      expect(task.startedAt).toBeGreaterThanOrEqual(before);
+      expect(task.startedAt).toBeLessThanOrEqual(Date.now());
       expect(task.status).toBe('in_progress');
     });
     it('does not overwrite startedAt on repeated in_progress', () => {
@@ -324,22 +328,26 @@ describe('plan-lifecycle', () => {
       expect(task.startedAt).toBe(1000);
     });
     it('sets completedAt and durationMs on completed', () => {
+      const before = Date.now();
       const task = makeTask();
-      task.startedAt = Date.now() - 500;
+      task.startedAt = before - 500;
       applyTaskStatusUpdate(task, 'completed');
-      expect(task.completedAt).toBeGreaterThan(0);
-      expect(task.metrics?.durationMs).toBeGreaterThanOrEqual(0);
+      expect(task.completedAt).toBeGreaterThanOrEqual(before);
+      expect(task.completedAt).toBeLessThanOrEqual(Date.now());
+      expect(task.metrics?.durationMs).toBeGreaterThanOrEqual(500);
     });
     it('sets completedAt on skipped', () => {
+      const before = Date.now();
       const task = makeTask();
       applyTaskStatusUpdate(task, 'skipped');
-      expect(task.completedAt).toBeGreaterThan(0);
+      expect(task.completedAt).toBeGreaterThanOrEqual(before);
       expect(task.status).toBe('skipped');
     });
     it('sets completedAt on failed', () => {
+      const before = Date.now();
       const task = makeTask();
       applyTaskStatusUpdate(task, 'failed');
-      expect(task.completedAt).toBeGreaterThan(0);
+      expect(task.completedAt).toBeGreaterThanOrEqual(before);
       expect(task.status).toBe('failed');
     });
 

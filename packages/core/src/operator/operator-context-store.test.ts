@@ -51,19 +51,6 @@ describe('OperatorContextStore', () => {
     vault.close();
   });
 
-  // ─── Table Creation ─────────────────────────────────────────────────
-
-  describe('init', () => {
-    it('creates table without error on a fresh database', () => {
-      expect(store).toBeDefined();
-    });
-
-    it('is idempotent — second init does not throw', () => {
-      const store2 = new OperatorContextStore(vault.getProvider());
-      expect(store2).toBeDefined();
-    });
-  });
-
   // ─── Empty State ──────────────────────────────────────────────────
 
   describe('getContext (empty)', () => {

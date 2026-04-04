@@ -14,13 +14,6 @@ import {
   analyzeCompleteness,
   analyzeFeasibility,
   analyzeRisk,
-  METRIC_PATTERNS,
-  EXCLUSION_KEYWORDS,
-  OVERLY_BROAD_PATTERNS,
-  DEPENDENCY_KEYWORDS,
-  BREAKING_CHANGE_KEYWORDS,
-  MITIGATION_KEYWORDS,
-  VERIFICATION_KEYWORDS,
 } from './gap-patterns.js';
 
 function makePlan(overrides: Partial<Plan> = {}): Plan {
@@ -158,41 +151,6 @@ describe('Helper functions', () => {
     it('returns false for empty patterns', () => {
       expect(containsAny('hello world', [])).toBe(false);
     });
-  });
-});
-
-describe('Pattern constants', () => {
-  it('METRIC_PATTERNS matches numbers', () => {
-    expect(METRIC_PATTERNS.some((p) => p.test('reduce latency by 50%'))).toBe(true);
-  });
-
-  it('EXCLUSION_KEYWORDS includes common exclusion words', () => {
-    expect(EXCLUSION_KEYWORDS).toContain('exclude');
-    expect(EXCLUSION_KEYWORDS).toContain('not');
-  });
-
-  it('OVERLY_BROAD_PATTERNS includes dangerous scope terms', () => {
-    expect(OVERLY_BROAD_PATTERNS).toContain('complete rewrite');
-  });
-
-  it('DEPENDENCY_KEYWORDS includes ordering terms', () => {
-    expect(DEPENDENCY_KEYWORDS).toContain('depends');
-    expect(DEPENDENCY_KEYWORDS).toContain('prerequisite');
-  });
-
-  it('BREAKING_CHANGE_KEYWORDS includes migration terms', () => {
-    expect(BREAKING_CHANGE_KEYWORDS).toContain('breaking change');
-    expect(BREAKING_CHANGE_KEYWORDS).toContain('database migration');
-  });
-
-  it('MITIGATION_KEYWORDS includes safety terms', () => {
-    expect(MITIGATION_KEYWORDS).toContain('rollback');
-    expect(MITIGATION_KEYWORDS).toContain('feature flag');
-  });
-
-  it('VERIFICATION_KEYWORDS includes testing terms', () => {
-    expect(VERIFICATION_KEYWORDS).toContain('test');
-    expect(VERIFICATION_KEYWORDS).toContain('coverage');
   });
 });
 

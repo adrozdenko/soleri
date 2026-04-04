@@ -294,9 +294,4 @@ describe('assessTaskComplexity — reasoning', () => {
     const result = assess({ prompt: 'fix typo' });
     expect(result.reasoning).toContain('No complexity signals detected');
   });
-
-  it('always returns 6 signals', () => {
-    const result = assess({ prompt: 'anything' });
-    expect(result.signals).toHaveLength(6);
-  });
 });

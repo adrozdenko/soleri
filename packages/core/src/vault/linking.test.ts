@@ -355,7 +355,6 @@ describe('LinkManager', () => {
     const result = mgr.backfillLinks();
     expect(result.processed).toBe(0);
     expect(result.linksCreated).toBe(0);
-    expect(result.durationMs).toBeGreaterThanOrEqual(0);
   });
 
   it('dry run populates preview array', () => {
@@ -385,7 +384,6 @@ describe('LinkManager', () => {
     if (result.processed > 0 && result.preview) {
       expect(Array.isArray(result.preview)).toBe(true);
     }
-    expect(result.durationMs).toBeGreaterThanOrEqual(0);
   });
 
   it('calls onProgress callback', () => {

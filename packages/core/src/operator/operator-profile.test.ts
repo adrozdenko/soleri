@@ -47,15 +47,6 @@ describe('OperatorProfileStore', () => {
     vault.close();
   });
 
-  // ─── Table Creation ─────────────────────────────────────────────
-
-  it('creates tables without error on new runtime', () => {
-    // Constructor ran initTables — no error means tables exist.
-    // Creating a second instance also succeeds (IF NOT EXISTS).
-    const store2 = new OperatorProfileStore(vault);
-    expect(store2).toBeDefined();
-  });
-
   // ─── getProfile ─────────────────────────────────────────────────
 
   it('returns null when no profile exists', () => {
@@ -186,8 +177,8 @@ describe('OperatorProfileStore', () => {
       'SELECT trigger, version FROM operator_profile_history WHERE profile_id = ?',
       [profileBefore!.id],
     );
-    expect(history.length).toBeGreaterThanOrEqual(1);
-    expect(history.some((h) => h.trigger === 'correction')).toBe(true);
+    expect(history.length).toBe(1);
+    expect(history[0].trigger).toBe('correction');
   });
 
   // ─── snapshot ───────────────────────────────────────────────────
@@ -319,14 +310,5 @@ describe('OperatorProfileStore', () => {
     expect(section.style).toBe('detailed');
     expect(section.signalWords).toContain('please');
     expect(section.adaptationRules).toHaveLength(1);
-  });
-
-  // ─── No `any` types ────────────────────────────────────────────
-
-  it('type system enforced — file compiles with strict TypeScript', () => {
-    // This test is a compile-time assertion:
-    // if operator-profile.ts had `any` types, tsc --noEmit would catch it.
-    // The fact that this test file compiles is the proof.
-    expect(true).toBe(true);
   });
 });

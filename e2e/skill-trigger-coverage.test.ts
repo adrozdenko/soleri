@@ -197,6 +197,10 @@ const TRIGGER_MAP: Record<string, string> = {
 
   // Skill building
   'build a new skill for the agent': 'build-skill',
+
+  // Agent mode routing
+  'ernesto orchestrate this feature': 'agent-mode',
+  'what commands do I have in agent mode': 'agent-mode',
 };
 
 // These skills are agent-specific (not in the base Soleri scaffold).

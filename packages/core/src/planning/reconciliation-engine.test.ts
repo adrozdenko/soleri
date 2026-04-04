@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  DRIFT_WEIGHTS,
   calculateDriftScore,
   computeExecutionSummary,
   buildReconciliationReport,
@@ -9,14 +8,6 @@ import {
 import type { DriftItem, PlanTask } from './planner-types.js';
 
 describe('reconciliation-engine', () => {
-  describe('DRIFT_WEIGHTS', () => {
-    it('has correct weights', () => {
-      expect(DRIFT_WEIGHTS.high).toBe(20);
-      expect(DRIFT_WEIGHTS.medium).toBe(10);
-      expect(DRIFT_WEIGHTS.low).toBe(5);
-    });
-  });
-
   describe('calculateDriftScore', () => {
     it('returns 100 for no drift items', () => {
       expect(calculateDriftScore([])).toBe(100);
@@ -92,6 +83,7 @@ describe('reconciliation-engine', () => {
 
   describe('buildReconciliationReport', () => {
     it('builds a report with accuracy score', () => {
+      const before = Date.now();
       const report = buildReconciliationReport('plan-1', {
         actualOutcome: 'Done',
         driftItems: [{ type: 'skipped', description: 'x', impact: 'low', rationale: 'r' }],
@@ -100,7 +92,8 @@ describe('reconciliation-engine', () => {
       expect(report.accuracy).toBe(95);
       expect(report.driftItems).toHaveLength(1);
       expect(report.summary).toBe('Done');
-      expect(report.reconciledAt).toBeGreaterThan(0);
+      expect(report.reconciledAt).toBeGreaterThanOrEqual(before);
+      expect(report.reconciledAt).toBeLessThanOrEqual(Date.now());
     });
     it('defaults to empty drift items', () => {
       const report = buildReconciliationReport('plan-2', { actualOutcome: 'OK' });

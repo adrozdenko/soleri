@@ -25,6 +25,7 @@ describe('task-verifier', () => {
       const existing: TaskEvidence[] = [
         { criterion: 'cr1', content: 'result', type: 'description', submittedAt: 100 },
       ];
+      const before = Date.now();
       const result = createEvidence(existing, {
         criterion: 'cr2',
         content: 'output',
@@ -32,7 +33,8 @@ describe('task-verifier', () => {
       });
       expect(result).toHaveLength(2);
       expect(result[1].criterion).toBe('cr2');
-      expect(result[1].submittedAt).toBeGreaterThan(0);
+      expect(result[1].submittedAt).toBeGreaterThanOrEqual(before);
+      expect(result[1].submittedAt).toBeLessThanOrEqual(Date.now());
     });
     it('does not mutate original array', () => {
       const existing: TaskEvidence[] = [];

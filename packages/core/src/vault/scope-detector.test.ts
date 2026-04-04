@@ -165,11 +165,13 @@ describe('detectScope', () => {
     const result = detectScope(
       makeInput({ description: 'Use focus ring for keyboard navigation' }),
     );
+    expect(result.signals.length).toBeGreaterThan(0);
     for (const signal of result.signals) {
       expect(signal).toHaveProperty('tier');
       expect(signal).toHaveProperty('source');
       expect(signal).toHaveProperty('indicator');
       expect(signal).toHaveProperty('weight');
+      // Weight must be in (0, 1] range
       expect(signal.weight).toBeGreaterThan(0);
       expect(signal.weight).toBeLessThanOrEqual(1);
     }
@@ -179,7 +181,7 @@ describe('detectScope', () => {
     const result = detectScope(
       makeInput({ description: 'Accessibility best practice for a11y compliance' }),
     );
-    expect(result.reason.length).toBeGreaterThan(0);
+    expect(result.reason).toMatch(/accessibility|a11y/i);
     expect(result.reason).not.toContain('defaulting');
   });
 });

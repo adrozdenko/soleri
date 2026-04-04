@@ -287,8 +287,10 @@ describe('JsonGoalRepository', () => {
   });
 
   it('should create and retrieve a goal', () => {
+    const before = Date.now();
     const goal = repo.create({ id: 'g1', title: 'Ship it', level: 'objective', status: 'planned' });
-    expect(goal.createdAt).toBeGreaterThan(0);
+    expect(goal.createdAt).toBeGreaterThanOrEqual(before);
+    expect(goal.createdAt).toBeLessThanOrEqual(Date.now());
     expect(repo.getById('g1')?.title).toBe('Ship it');
   });
 

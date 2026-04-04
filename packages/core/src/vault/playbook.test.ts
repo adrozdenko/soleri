@@ -95,7 +95,10 @@ describe('validatePlaybook', () => {
     const steps = [makeStep({ title: '', description: '' }, 1)];
     const result = validatePlaybook(makePlaybook({ title: '', steps }));
     expect(result.valid).toBe(false);
-    expect(result.errors.length).toBeGreaterThanOrEqual(3);
+    expect(result.errors).toHaveLength(3);
+    expect(result.errors).toContain('Playbook title must not be empty');
+    expect(result.errors).toContain('Step 1 title must not be empty');
+    expect(result.errors).toContain('Step 1 description must not be empty');
   });
 });
 

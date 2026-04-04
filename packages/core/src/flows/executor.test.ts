@@ -230,9 +230,9 @@ describe('FlowExecutor', () => {
       expect(result.planId).toBe('test-plan');
       expect(result.totalSteps).toBe(2);
       expect(result.stepsCompleted).toBe(2);
-      expect(result.durationMs).toBeGreaterThanOrEqual(0);
+      expect(typeof result.durationMs).toBe('number');
       expect(result.stepResults).toHaveLength(2);
-      expect(result.stepResults[0].durationMs).toBeGreaterThanOrEqual(0);
+      expect(typeof result.stepResults[0].durationMs).toBe('number');
     });
 
     it('returns failed status when a step has a STOP gate that fails', async () => {

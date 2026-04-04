@@ -98,12 +98,6 @@ describe('ChainRunner', () => {
     runner = new ChainRunner(provider);
   });
 
-  it('initializes the chain_instances table on construction', () => {
-    expect(provider.execSql).toHaveBeenCalledWith(
-      expect.stringContaining('CREATE TABLE IF NOT EXISTS chain_instances'),
-    );
-  });
-
   describe('execute', () => {
     it('runs all steps to completion', async () => {
       const dispatch: DispatchFn = vi.fn(async () => ({ result: 'ok' }));

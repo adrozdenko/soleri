@@ -127,7 +127,7 @@ describe('VaultManager — named connections', () => {
     const results = mgr.search('shared entry');
     const sameResults = results.filter((r) => r.entry.id === 'same-id');
     expect(sameResults.length).toBe(1);
-    // Score should reflect agent weight (1.0) not external (0.7)
+    // Dedup keeps only one result — agent tier wins, score is positive
     expect(sameResults[0].score).toBeGreaterThan(0);
   });
 

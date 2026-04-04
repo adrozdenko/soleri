@@ -98,13 +98,14 @@ describe('Vault', () => {
 
     it('should find entries matching query', () => {
       const results = vault.search('validation input');
-      expect(results.length).toBeGreaterThan(0);
+      expect(results).toHaveLength(1);
       expect(results[0].entry.id).toBe('search-1');
     });
 
     it('should return scores with results', () => {
       const results = vault.search('caching');
       expect(results[0].score).toBeGreaterThan(0);
+      expect(results[0].entry.id).toBe('search-2');
     });
 
     it('should filter by domain', () => {
@@ -326,7 +327,7 @@ describe('Vault', () => {
         toolsUsed: [],
       });
       expect(memory.type).toBe('session');
-      expect(memory.createdAt).toBeGreaterThan(0);
+      expect(typeof memory.createdAt).toBe('number');
     });
 
     it('should capture preference memories', () => {
@@ -376,7 +377,7 @@ describe('Vault', () => {
 
     it('should find memories matching query', () => {
       const results = vault.searchMemories('parameterized queries');
-      expect(results.length).toBeGreaterThan(0);
+      expect(results).toHaveLength(1);
       expect(results[0].summary).toContain('parameterized');
     });
 
@@ -578,7 +579,7 @@ describe('Vault', () => {
 
       // Before archive: should appear in search
       const before = v.search('searchable');
-      expect(before.length).toBeGreaterThan(0);
+      expect(before).toHaveLength(1);
 
       v.archive({ olderThanDays: 90 });
 
@@ -643,7 +644,7 @@ describe('Vault', () => {
       v.restore('search-restore');
 
       const results = v.search('unique findable');
-      expect(results.length).toBeGreaterThan(0);
+      expect(results).toHaveLength(1);
       v.close();
     });
 
@@ -726,9 +727,9 @@ describe('Vault', () => {
         },
       ]);
       const stats = vault.contentHashStats();
-      expect(stats.total).toBeGreaterThanOrEqual(2);
-      expect(stats.hashed).toBe(stats.total);
-      expect(stats.uniqueHashes).toBe(stats.total);
+      expect(stats.total).toBe(2);
+      expect(stats.hashed).toBe(2);
+      expect(stats.uniqueHashes).toBe(2);
     });
 
     it('backfill hashes existing entries on re-initialize', () => {

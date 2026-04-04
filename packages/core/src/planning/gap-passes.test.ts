@@ -10,12 +10,6 @@ import {
   analyzeSemanticQuality,
   analyzeKnowledgeDepth,
   analyzeAlternatives,
-  AMBIGUOUS_WORDS,
-  GENERIC_OBJECTIVE_PATTERNS,
-  RATIONALE_INDICATORS,
-  SHALLOW_INDICATORS,
-  KNOWLEDGE_INDICATORS,
-  NAMED_PATTERN_REGEX,
 } from './gap-passes.js';
 
 function makePlan(overrides: Partial<Plan> = {}): Plan {
@@ -76,46 +70,6 @@ function makeAlternative(overrides: Partial<PlanAlternative> = {}): PlanAlternat
     ...overrides,
   };
 }
-
-describe('Pattern constants (passes 5-8)', () => {
-  it('AMBIGUOUS_WORDS contains common vague terms', () => {
-    expect(AMBIGUOUS_WORDS).toContain('maybe');
-    expect(AMBIGUOUS_WORDS).toContain('probably');
-    expect(AMBIGUOUS_WORDS).toContain('etc');
-  });
-
-  it('GENERIC_OBJECTIVE_PATTERNS matches simple verb-noun objectives', () => {
-    expect(GENERIC_OBJECTIVE_PATTERNS.some((p) => p.test('Create something'))).toBe(true);
-    expect(GENERIC_OBJECTIVE_PATTERNS.some((p) => p.test('Fix bug'))).toBe(true);
-  });
-
-  it('GENERIC_OBJECTIVE_PATTERNS does not match detailed objectives', () => {
-    expect(
-      GENERIC_OBJECTIVE_PATTERNS.some((p) => p.test('Create a user auth module with JWT')),
-    ).toBe(false);
-  });
-
-  it('RATIONALE_INDICATORS contains reasoning words', () => {
-    expect(RATIONALE_INDICATORS).toContain('because');
-    expect(RATIONALE_INDICATORS).toContain('due to');
-  });
-
-  it('SHALLOW_INDICATORS contains subjective words', () => {
-    expect(SHALLOW_INDICATORS).toContain('better');
-    expect(SHALLOW_INDICATORS).toContain('good');
-  });
-
-  it('KNOWLEDGE_INDICATORS match domain patterns', () => {
-    expect(KNOWLEDGE_INDICATORS.some((p) => p.test('vault pattern'))).toBe(true);
-    expect(KNOWLEDGE_INDICATORS.some((p) => p.test('WCAG 2.1'))).toBe(true);
-    expect(KNOWLEDGE_INDICATORS.some((p) => p.test('aria-label'))).toBe(true);
-  });
-
-  it('NAMED_PATTERN_REGEX matches hyphenated identifiers', () => {
-    expect(NAMED_PATTERN_REGEX.test('zod-form-validation')).toBe(true);
-    expect(NAMED_PATTERN_REGEX.test('simple')).toBe(false);
-  });
-});
 
 describe('Pass 5: Clarity', () => {
   it('flags ambiguous language in objective', () => {

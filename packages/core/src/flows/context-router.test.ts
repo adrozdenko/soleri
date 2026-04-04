@@ -11,7 +11,7 @@ import { getFlowOverrides, detectContext } from './context-router.js';
 describe('getFlowOverrides', () => {
   it('returns overrides for BUILD-flow', () => {
     const overrides = getFlowOverrides('BUILD-flow');
-    expect(overrides.length).toBeGreaterThan(0);
+    expect(overrides).toHaveLength(4);
     const contexts = overrides.map((o) => o.context);
     expect(contexts).toContain('small-component');
     expect(contexts).toContain('large-component');
@@ -19,7 +19,7 @@ describe('getFlowOverrides', () => {
 
   it('returns overrides for FIX-flow', () => {
     const overrides = getFlowOverrides('FIX-flow');
-    expect(overrides.length).toBeGreaterThan(0);
+    expect(overrides).toHaveLength(2);
     const contexts = overrides.map((o) => o.context);
     expect(contexts).toContain('design-fix');
     expect(contexts).toContain('a11y-fix');
@@ -27,7 +27,7 @@ describe('getFlowOverrides', () => {
 
   it('returns overrides for REVIEW-flow', () => {
     const overrides = getFlowOverrides('REVIEW-flow');
-    expect(overrides.length).toBeGreaterThan(0);
+    expect(overrides).toHaveLength(2);
     const contexts = overrides.map((o) => o.context);
     expect(contexts).toContain('pr-review');
     expect(contexts).toContain('architecture-review');
