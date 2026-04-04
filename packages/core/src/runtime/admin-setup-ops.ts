@@ -145,6 +145,37 @@ function discoverHookifyFiles(dir: string): Array<{ name: string; path: string }
 
 // discoverSkills imported from '../skills/sync-skills.js'
 
+// ─── Deep Equality Helper ─────────────────────────────────────────────
+
+/** Recursively compare two values by structure, independent of key insertion order. */
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+  if (typeof a !== typeof b) return false;
+  if (typeof a !== 'object') return false;
+
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  const objA = a as Record<string, unknown>;
+  const objB = b as Record<string, unknown>;
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(objB, key)) return false;
+    if (!deepEqual(objA[key], objB[key])) return false;
+  }
+  return true;
+}
+
 // ─── Settings.json Hook Merging ───────────────────────────────────────
 
 interface SettingsHook {
@@ -167,7 +198,7 @@ interface SettingsHookGroup {
 function buildConditionalHookCommand(agentId: string, instruction: string): string {
   // Escape single quotes in instruction for safe shell embedding
   const escaped = instruction.replace(/'/g, "'\\''");
-  return `root=$(git rev-parse --show-toplevel 2>/dev/null || echo "."); if grep -q '"${agentId}"' "$root/.mcp.json" 2>/dev/null; then echo '${escaped}'; fi`;
+  return `root=$(git rev-parse --show-toplevel 2>/dev/null || echo "."); if grep -qF '"${agentId}"' "$root/.mcp.json" 2>/dev/null; then echo '${escaped}'; fi`;
 }
 
 /** Default lifecycle hooks for any Soleri agent */
@@ -186,6 +217,16 @@ function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookG
               `Call ${marker}admin op:admin_health to verify agent is ready. Do not show the result unless there are errors.`,
             ),
             timeout: 5000,
+          },
+        ],
+      },
+      {
+        matcher: '',
+        hooks: [
+          {
+            type: 'command',
+            command: `echo 'SESSION_START: Invoke the ${agentId}-mode skill now to load full routing context and command reference.'`,
+            timeout: 5,
           },
         ],
       },
@@ -226,8 +267,11 @@ function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookG
 /** Check if a hook group belongs to this agent by inspecting prompts for the marker */
 function isAgentHookGroup(group: SettingsHookGroup, agentId: string): boolean {
   const marker = `mcp__${agentId}__${agentId}_`;
+  const skillMarker = `${agentId}-mode skill`;
   return group.hooks.some(
-    (h) => (h.prompt && h.prompt.includes(marker)) || (h.command && h.command.includes(marker)),
+    (h) =>
+      (h.prompt && (h.prompt.includes(marker) || h.prompt.includes(skillMarker))) ||
+      (h.command && (h.command.includes(marker) || h.command.includes(skillMarker))),
   );
 }
 
@@ -254,27 +298,40 @@ function mergeSettingsHooks(
       continue;
     }
 
-    // Check if agent group already exists
-    const existingIdx = merged[event].findIndex((g) => isAgentHookGroup(g, agentId));
+    // Remove all existing agent-owned groups, keep non-agent hooks
+    const nonAgentGroups = merged[event].filter((g) => !isAgentHookGroup(g, agentId));
+    const existingAgentGroups = merged[event].filter((g) => isAgentHookGroup(g, agentId));
 
-    if (existingIdx === -1) {
-      // Append agent hooks (don't touch non-agent hooks)
-      merged[event].push(...groups);
+    if (deepEqual(existingAgentGroups, groups)) {
+      skipped.push(event);
+    } else if (existingAgentGroups.length === 0) {
+      merged[event] = [...nonAgentGroups, ...groups];
       installed.push(event);
     } else {
-      // Check if template matches
-      const existing = JSON.stringify(merged[event][existingIdx]);
-      const template = JSON.stringify(groups[0]);
-      if (existing === template) {
-        skipped.push(event);
-      } else {
-        merged[event][existingIdx] = groups[0];
-        updated.push(event);
-      }
+      // Replace all agent groups with current defaults
+      merged[event] = [...nonAgentGroups, ...groups];
+      updated.push(event);
     }
   }
 
   return { hooks: merged, installed, updated, skipped };
+}
+
+/**
+ * Auto-sync lifecycle hooks into ~/.claude/settings.json at engine startup.
+ * Idempotent — skips hooks already present, updates stale ones.
+ */
+export function syncHooksToClaudeSettings(agentId: string): void {
+  try {
+    const settings = readSettingsJson();
+    const currentHooks = (settings.hooks ?? {}) as Record<string, SettingsHookGroup[]>;
+    const { hooks, installed, updated } = mergeSettingsHooks(currentHooks, agentId);
+    if (installed.length > 0 || updated.length > 0) {
+      writeSettingsJson({ ...settings, hooks });
+    }
+  } catch {
+    // Non-fatal — hooks will be installed on next run or via admin_setup_global
+  }
 }
 
 // ─── Op Definitions ───────────────────────────────────────────────────
