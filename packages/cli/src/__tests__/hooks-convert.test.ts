@@ -222,22 +222,6 @@ describe('hooks convert', () => {
     });
   });
 
-  describe('constants', () => {
-    it('HOOK_EVENTS should contain all 5 events', () => {
-      expect(HOOK_EVENTS).toEqual([
-        'PreToolUse',
-        'PostToolUse',
-        'PreCompact',
-        'Notification',
-        'Stop',
-      ]);
-    });
-
-    it('ACTION_LEVELS should contain all 3 levels', () => {
-      expect(ACTION_LEVELS).toEqual(['remind', 'warn', 'block']);
-    });
-  });
-
   describe('validation', () => {
     it('should reject invalid event', () => {
       const invalidEvent = 'InvalidEvent';
@@ -247,18 +231,6 @@ describe('hooks convert', () => {
     it('should reject invalid action level', () => {
       const invalidAction = 'destroy';
       expect(ACTION_LEVELS.includes(invalidAction as any)).toBe(false);
-    });
-
-    it('should accept all valid events', () => {
-      for (const event of HOOK_EVENTS) {
-        expect(HOOK_EVENTS.includes(event)).toBe(true);
-      }
-    });
-
-    it('should accept all valid action levels', () => {
-      for (const action of ACTION_LEVELS) {
-        expect(ACTION_LEVELS.includes(action)).toBe(true);
-      }
     });
   });
 

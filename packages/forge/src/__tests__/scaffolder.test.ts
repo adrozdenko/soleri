@@ -50,7 +50,7 @@ describe('Scaffolder', () => {
       expect(preview.persona.name).toBe('Atlas');
       expect(preview.persona.role).toBe('Data Engineering Advisor');
       expect(preview.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
-      expect(preview.files.length).toBeGreaterThan(10);
+      expect(preview.files.length).toBe(19);
 
       const paths = preview.files.map((f) => f.path);
       expect(paths).toContain('README.md');
@@ -64,7 +64,7 @@ describe('Scaffolder', () => {
       expect(paths).not.toContain('src/facades/data-pipelines.facade.ts');
 
       // Should have domain facades + core facade in preview (3 domains + semantic + agent core)
-      expect(preview.facades.length).toBeGreaterThanOrEqual(10);
+      expect(preview.facades.length).toBe(13);
       expect(preview.facades[0].name).toBe('atlas_data_pipelines');
 
       // Agent-specific facade has 5 ops
@@ -88,7 +88,7 @@ describe('Scaffolder', () => {
       expect(result.success).toBe(true);
       expect(result.agentDir).toBe(join(tempDir, 'atlas'));
       expect(result.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
-      expect(result.filesCreated.length).toBeGreaterThan(8);
+      expect(result.filesCreated.length).toBe(56);
     });
 
     it('should create expected directories (no facades/ or llm/ dirs)', () => {
@@ -274,7 +274,7 @@ describe('Scaffolder', () => {
         .filter((e) => e.isDirectory())
         .map((e) => e.name);
 
-      expect(skillDirs.length).toBeGreaterThanOrEqual(10);
+      expect(skillDirs.length).toBe(36);
 
       // Verify each skill dir has a SKILL.md
       for (const dir of skillDirs) {

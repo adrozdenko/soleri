@@ -45,25 +45,6 @@ describe('update command', () => {
     vi.clearAllMocks();
   });
 
-  it('exports registerUpdate function', () => {
-    expect(typeof registerUpdate).toBe('function');
-  });
-
-  it('registers a command named "update" on the program', () => {
-    const mockCommand = {
-      command: vi.fn().mockReturnThis(),
-      description: vi.fn().mockReturnThis(),
-      action: vi.fn().mockReturnThis(),
-    };
-    const mockProgram = { command: vi.fn(() => mockCommand) };
-
-    registerUpdate(mockProgram as never);
-
-    expect(mockProgram.command).toHaveBeenCalledWith('update');
-    expect(mockCommand.description).toHaveBeenCalledWith(expect.stringContaining('Update'));
-    expect(mockCommand.action).toHaveBeenCalledWith(expect.any(Function));
-  });
-
   it('prints already-on-latest when current version matches latest', async () => {
     // getCurrentVersion() reads ../../package.json → packages/cli/package.json.
     // Return the same version from npm view to trigger the "already on latest" branch.

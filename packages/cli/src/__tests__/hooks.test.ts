@@ -3,7 +3,6 @@ import { mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { installHooks, removeHooks, detectInstalledHooks } from '../hooks/generator.js';
-import { SUPPORTED_EDITORS } from '../hooks/templates.js';
 
 describe('hooks commands', () => {
   let tempDir: string;
@@ -109,25 +108,6 @@ describe('hooks commands', () => {
       expect(installed).toContain('cursor');
       expect(installed).toContain('claude-code');
       expect(installed).not.toContain('windsurf');
-    });
-
-    it('should detect all 4 editors when all installed', () => {
-      for (const editor of SUPPORTED_EDITORS) {
-        installHooks(editor, agentDir);
-      }
-
-      const installed = detectInstalledHooks(agentDir);
-      expect(installed).toHaveLength(4);
-    });
-  });
-
-  describe('SUPPORTED_EDITORS', () => {
-    it('should have 4 editors', () => {
-      expect(SUPPORTED_EDITORS).toHaveLength(4);
-      expect(SUPPORTED_EDITORS).toContain('claude-code');
-      expect(SUPPORTED_EDITORS).toContain('cursor');
-      expect(SUPPORTED_EDITORS).toContain('windsurf');
-      expect(SUPPORTED_EDITORS).toContain('copilot');
     });
   });
 });

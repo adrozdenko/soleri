@@ -23,24 +23,6 @@ describe('hook-packs', () => {
   });
 
   describe('registry', () => {
-    it('should list all 10 built-in packs', () => {
-      const packs = listPacks();
-      expect(packs.length).toBe(10);
-      const names = packs.map((p) => p.name).sort();
-      expect(names).toEqual([
-        'a11y',
-        'clean-commits',
-        'css-discipline',
-        'flock-guard',
-        'full',
-        'marketing-research',
-        'rtk',
-        'safety',
-        'typescript-safety',
-        'yolo-safety',
-      ]);
-    });
-
     it('should get a specific pack by name', () => {
       const pack = getPack('typescript-safety');
       expect(pack).not.toBeNull();

@@ -52,22 +52,6 @@ describe('validator', () => {
       expect(fixtures).toHaveLength(15);
     });
 
-    it('matching PreToolUse fixtures should have shouldMatch: true', () => {
-      const fixtures = generateFixtures('PreToolUse', 'Bash');
-      const matching = fixtures.filter((f) => f.shouldMatch);
-      for (const f of matching) {
-        expect(f.shouldMatch).toBe(true);
-      }
-    });
-
-    it('non-matching PreToolUse fixtures should have shouldMatch: false', () => {
-      const fixtures = generateFixtures('PreToolUse', 'Write');
-      const nonMatching = fixtures.filter((f) => !f.shouldMatch);
-      for (const f of nonMatching) {
-        expect(f.shouldMatch).toBe(false);
-      }
-    });
-
     it('PreToolUse matching fixtures should contain tool_name and tool_input', () => {
       const fixtures = generateFixtures('PreToolUse', 'Write|Edit');
       const matching = fixtures.filter((f) => f.shouldMatch);

@@ -38,7 +38,7 @@ describe('scaffoldFileTree', () => {
 
     expect(result.success).toBe(true);
     expect(result.agentDir).toBe(join(tempDir, 'test-agent'));
-    expect(result.filesCreated.length).toBeGreaterThan(10);
+    expect(result.filesCreated.length).toBe(34);
 
     // Core files exist
     expect(existsSync(join(result.agentDir, 'agent.yaml'))).toBe(true);
