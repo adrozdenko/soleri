@@ -388,10 +388,21 @@ export function createOrchestrateOps(
           entryType?: string;
         }> = [];
 
-        // Vault always runs first — curated explicit knowledge takes precedence
-        try {
-          const vaultResults = vault.search(prompt, { domain, limit: 5 });
-          recommendations = vaultResults.map((r) => {
+        // Vault always runs first — curated explicit knowledge takes precedence.
+        // Prefer semantic search (vector-scored); fall back to keyword search.
+        const mapVaultResults = (
+          results: Array<{
+            entry: {
+              title: string;
+              id: string;
+              severity?: string;
+              type?: string;
+              context?: string;
+              example?: string;
+            };
+          }>,
+        ): typeof recommendations =>
+          results.map((r) => {
             const isCritical = r.entry.severity === 'critical';
             const rec: (typeof recommendations)[number] = {
               pattern: r.entry.title,
@@ -405,8 +416,21 @@ export function createOrchestrateOps(
             if (r.entry.example) rec.example = r.entry.example;
             return rec;
           });
+
+        try {
+          const vaultResults = await brain.intelligentSearch(prompt, {
+            domain,
+            limit: 5,
+          });
+          recommendations = mapVaultResults(vaultResults);
         } catch {
-          // Vault unavailable — brain will cover below
+          // Semantic search unavailable — fall back to keyword search
+          try {
+            const vaultResults = vault.search(prompt, { domain, limit: 5 });
+            recommendations = mapVaultResults(vaultResults);
+          } catch {
+            // Vault unavailable — brain will cover below
+          }
         }
 
         // Brain enriches with learned usage patterns — additive, never replaces vault

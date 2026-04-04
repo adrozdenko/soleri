@@ -104,6 +104,7 @@ function mockRuntime(): AgentRuntime {
     },
     brain: {
       recordFeedback: vi.fn(),
+      intelligentSearch: vi.fn().mockResolvedValue([]),
     },
     brainIntelligence: {
       recommend: vi.fn().mockReturnValue([]),
@@ -180,13 +181,13 @@ describe('createOrchestrateOps', () => {
       expect(flow.intent).toBe('BUILD');
     });
 
-    it('vault results appear when brain has no data', async () => {
-      // Vault runs first regardless of brain state. When brain throws, vault results still appear.
+    it('vault results appear when brain recommend has no data', async () => {
+      // intelligentSearch succeeds; vault results appear even when brain.recommend throws.
       const op = findOp(ops, 'orchestrate_plan');
       vi.mocked(rt.brainIntelligence.recommend).mockImplementation(() => {
         throw new Error('no data');
       });
-      vi.mocked(rt.vault.search).mockReturnValue([
+      vi.mocked(rt.brain.intelligentSearch).mockResolvedValue([
         { entry: { id: 'e1', title: 'Pattern A' }, score: 0.8 },
       ] as never);
       const result = (await op.handler({ prompt: 'fix a bug' })) as Record<string, unknown>;
@@ -196,24 +197,25 @@ describe('createOrchestrateOps', () => {
       expect(recs[0].source).toBe('vault');
     });
 
-    it('vault is always searched even when brain returns results', async () => {
-      // Brain returning data must NOT skip vault — vault is authoritative, brain is additive.
-      // If vault search were conditional on brain being empty, vault.search would not be called here.
+    it('intelligentSearch is called for vault retrieval — semantic search is primary', async () => {
+      // The primary vault retrieval path must use semantic search, not keyword search.
+      // If intelligentSearch were not called, ranking would fall back to TF-IDF keyword
+      // frequency, missing semantically related entries.
       const op = findOp(ops, 'orchestrate_plan');
       vi.mocked(rt.brainIntelligence.recommend).mockReturnValue([
         { pattern: 'Brain Pattern', strength: 70 },
       ] as never);
-      vi.mocked(rt.vault.search).mockReturnValue([
+      vi.mocked(rt.brain.intelligentSearch).mockResolvedValue([
         { entry: { id: 'v1', title: 'Vault Pattern' }, score: 0.9 },
       ] as never);
       await op.handler({ prompt: 'build a feature' });
-      expect(rt.vault.search).toHaveBeenCalled();
+      expect(rt.brain.intelligentSearch).toHaveBeenCalled();
     });
 
     it('vault results precede brain results and brain does not duplicate vault entries', async () => {
       // Vault patterns come first; brain adds only novel patterns.
       const op = findOp(ops, 'orchestrate_plan');
-      vi.mocked(rt.vault.search).mockReturnValue([
+      vi.mocked(rt.brain.intelligentSearch).mockResolvedValue([
         { entry: { id: 'v1', title: 'Vault Pattern' }, score: 0.9 },
       ] as never);
       vi.mocked(rt.brainIntelligence.recommend).mockReturnValue([
@@ -229,9 +231,25 @@ describe('createOrchestrateOps', () => {
       expect(recs[1].pattern).toBe('Brain Pattern');
     });
 
-    it('brain results used alone when vault is unavailable', async () => {
-      // If vault throws, brain results cover the gap — no silent empty recommendations.
+    it('falls back to vault.search when intelligentSearch throws', async () => {
+      // If the semantic layer is unavailable, keyword search covers it.
+      // Without this fallback, any intelligentSearch failure would silently drop all vault results.
       const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.brain.intelligentSearch).mockRejectedValue(new Error('embedding unavailable'));
+      vi.mocked(rt.vault.search).mockReturnValue([
+        { entry: { id: 'k1', title: 'Keyword Pattern' }, score: 0.6 },
+      ] as never);
+      const result = (await op.handler({ prompt: 'fix bug' })) as Record<string, unknown>;
+      const recs = result.recommendations as Array<Record<string, unknown>>;
+      expect(recs).toHaveLength(1);
+      expect(recs[0].pattern).toBe('Keyword Pattern');
+      expect(recs[0].source).toBe('vault');
+    });
+
+    it('brain results used alone when both vault search paths are unavailable', async () => {
+      // If intelligentSearch and vault.search both fail, brain results cover the gap.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.brain.intelligentSearch).mockRejectedValue(new Error('down'));
       vi.mocked(rt.vault.search).mockImplementation(() => {
         throw new Error('vault down');
       });
@@ -246,11 +264,10 @@ describe('createOrchestrateOps', () => {
     });
 
     it('includes context and example from vault entry body in recommendations', async () => {
-      // SearchResult.entry already contains the full IntelligenceEntry — context and example
+      // RankedResult.entry contains the full IntelligenceEntry — context and example
       // must be forwarded into the recommendations payload, not dropped.
-      // If this regresses (title-only mapping), the planner has no rules to apply.
       const op = findOp(ops, 'orchestrate_plan');
-      vi.mocked(rt.vault.search).mockReturnValue([
+      vi.mocked(rt.brain.intelligentSearch).mockResolvedValue([
         {
           entry: {
             id: 'e-full',
@@ -274,7 +291,7 @@ describe('createOrchestrateOps', () => {
       // Title-only entries must not surface context: null or context: "" — the key should
       // be absent so consumers can reliably check `if (rec.context)`.
       const op = findOp(ops, 'orchestrate_plan');
-      vi.mocked(rt.vault.search).mockReturnValue([
+      vi.mocked(rt.brain.intelligentSearch).mockResolvedValue([
         { entry: { id: 'e-bare', title: 'Pattern B' }, score: 0.7 },
       ] as never);
       const result = (await op.handler({ prompt: 'build something' })) as Record<string, unknown>;
@@ -284,11 +301,11 @@ describe('createOrchestrateOps', () => {
     });
 
     it('sets mandatory:true for critical vault entries', async () => {
-      // A critical anti-pattern must surface as mandatory so gate injection (#627)
-      // can promote it to a hard stop. If severity is ignored, critical rules are
-      // treated identically to suggestions — the whole enforcement chain breaks.
+      // A critical entry must surface as mandatory so gate injection can promote
+      // it to a hard stop. If severity is ignored, critical rules are treated
+      // identically to suggestions — the whole enforcement chain breaks.
       const op = findOp(ops, 'orchestrate_plan');
-      vi.mocked(rt.vault.search).mockReturnValue([
+      vi.mocked(rt.brain.intelligentSearch).mockResolvedValue([
         { entry: { id: 'c1', title: 'Critical Rule', severity: 'critical' }, score: 0.95 },
         { entry: { id: 'w1', title: 'Warning Rule', severity: 'warning' }, score: 0.75 },
         { entry: { id: 's1', title: 'Suggestion', severity: 'suggestion' }, score: 0.5 },
@@ -309,7 +326,7 @@ describe('createOrchestrateOps', () => {
       // declare a rule mandatory. If brain recs were mandatory, spurious patterns
       // from frequent usage would block plans with no policy basis.
       const op = findOp(ops, 'orchestrate_plan');
-      vi.mocked(rt.vault.search).mockReturnValue([] as never);
+      vi.mocked(rt.brain.intelligentSearch).mockResolvedValue([] as never);
       vi.mocked(rt.brainIntelligence.recommend).mockReturnValue([
         { pattern: 'Brain Pattern', strength: 75 },
       ] as never);
