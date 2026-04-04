@@ -14,6 +14,10 @@ export function coerceArray<T extends z.ZodTypeAny>(itemSchema: T) {
         /* fall through to let Zod reject */
       }
     }
+    // Wrap a bare object in an array so callers can omit the array wrapper
+    if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+      return [val];
+    }
     return val;
   }, z.array(itemSchema));
 }

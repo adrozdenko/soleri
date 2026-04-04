@@ -8,9 +8,30 @@
  * Now they're created dynamically by the engine at startup.
  */
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from '../runtime/types.js';
+
+function getCoreVersion(): string {
+  try {
+    const thisDir = dirname(fileURLToPath(import.meta.url));
+    let dir = thisDir;
+    for (let i = 0; i < 5; i++) {
+      try {
+        const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'));
+        return pkg.version ?? 'unknown';
+      } catch {
+        dir = dirname(dir);
+      }
+    }
+  } catch {
+    // import.meta.url unavailable in some test envs
+  }
+  return 'unknown';
+}
 
 export interface AgentIdentityConfig {
   id: string;
@@ -38,10 +59,25 @@ export function createCoreOps(
       auth: 'read',
       handler: async () => {
         const s = runtime.vault.stats();
+        let vaultConnected = true;
+        try {
+          runtime.vault.stats();
+        } catch {
+          vaultConnected = false;
+        }
+        const brainReady =
+          typeof (runtime as Record<string, unknown>).brain === 'object' &&
+          (runtime as Record<string, unknown>).brain !== null;
         return {
           status: 'ok',
+          version: getCoreVersion(),
           agent: { name: identity.name, role: identity.role, format: 'filetree' },
-          vault: { entries: s.totalEntries, domains: Object.keys(s.byDomain) },
+          vault: {
+            connected: vaultConnected,
+            entries: s.totalEntries,
+            domains: Object.keys(s.byDomain),
+          },
+          brain: { ready: brainReady },
         };
       },
     },

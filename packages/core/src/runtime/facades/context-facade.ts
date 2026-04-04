@@ -15,11 +15,18 @@ export function createContextFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       description:
         'Extract named entities from a prompt — files, functions, domains, actions, technologies, patterns.',
       auth: 'read',
-      schema: z.object({
-        prompt: z.string().describe('The user prompt to analyze.'),
-      }),
+      schema: z
+        .object({
+          prompt: z.string().optional().describe('The user prompt to analyze.'),
+          text: z.string().optional().describe('Alias for prompt — use either field.'),
+        })
+        .refine((v) => v.prompt !== undefined || v.text !== undefined, {
+          message: 'Provide either "prompt" or "text"',
+        }),
       handler: async (params) => {
-        return contextEngine.extractEntities(params.prompt as string);
+        const input =
+          (params.prompt as string | undefined) ?? (params.text as string | undefined) ?? '';
+        return contextEngine.extractEntities(input);
       },
     },
     {

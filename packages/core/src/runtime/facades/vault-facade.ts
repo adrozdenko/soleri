@@ -66,13 +66,36 @@ export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'load_entries',
       description:
-        'Two-pass retrieval — Pass 2: Load full entries by IDs (from a previous scan search).',
+        'Two-pass retrieval — Pass 2: Load full entries by IDs (from a previous scan search). ' +
+        'Alternative: pass domain + limit to list entries by domain without a prior scan.',
       auth: 'read',
       schema: z.object({
-        ids: z.array(z.string()).min(1).describe('Entry IDs from a previous scan search'),
+        ids: z
+          .array(z.string())
+          .min(1)
+          .optional()
+          .describe('Entry IDs from a previous scan search'),
+        domain: z.string().optional().describe('Alternative to ids: filter entries by domain'),
+        limit: z
+          .number()
+          .optional()
+          .default(20)
+          .describe('Max entries when using domain filter (default: 20)'),
       }),
       handler: async (params) => {
-        return brain.loadEntries(params.ids as string[]);
+        const ids = params.ids as string[] | undefined;
+        if (ids && ids.length > 0) {
+          return brain.loadEntries(ids);
+        }
+        const domain = params.domain as string | undefined;
+        if (domain) {
+          const entries = vault.list({ domain, limit: (params.limit as number) ?? 20 });
+          return { entries, total: entries.length };
+        }
+        throw new Error(
+          'Provide ids (from search_intelligent scan) or domain to filter entries. ' +
+            'Example: { ids: ["entry-id-1"] } or { domain: "testing", limit: 10 }',
+        );
       },
     },
     {

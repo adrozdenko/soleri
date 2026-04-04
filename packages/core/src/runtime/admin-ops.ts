@@ -148,20 +148,21 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           };
         }
         // Fallback — just describe admin ops
+        const adminOps = [
+          'admin_health',
+          'admin_tool_list',
+          'admin_config',
+          'admin_vault_size',
+          'admin_uptime',
+          'admin_version',
+          'admin_reset_cache',
+          'admin_diagnostic',
+        ];
         return {
-          count: 8,
-          ops: {
-            admin: [
-              'admin_health',
-              'admin_tool_list',
-              'admin_config',
-              'admin_vault_size',
-              'admin_uptime',
-              'admin_version',
-              'admin_reset_cache',
-              'admin_diagnostic',
-            ],
-          },
+          count: adminOps.length,
+          scope: 'admin-only',
+          note: 'Pass _allOps for full system op count',
+          ops: { admin: adminOps },
           routing: buildRoutingHints(),
         };
       },

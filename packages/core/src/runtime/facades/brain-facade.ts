@@ -517,7 +517,9 @@ export function createBrainFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         query: z.string().describe('Topic to synthesize knowledge about'),
         format: z
           .enum(['brief', 'outline', 'talking-points', 'post-draft'])
-          .describe('Output format'),
+          .optional()
+          .default('brief')
+          .describe('Output format (default: "brief")'),
         maxEntries: z.number().optional().default(10).describe('Max vault entries to consult'),
         audience: z
           .enum(['technical', 'executive', 'general'])

@@ -61,8 +61,8 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       description: 'Capture a memory — session summary, lesson learned, or preference.',
       auth: 'write',
       schema: z.object({
-        projectPath: z.string(),
-        type: z.enum(['session', 'lesson', 'preference']),
+        projectPath: z.string().optional().default('.'),
+        type: z.enum(['session', 'lesson', 'preference']).optional().default('lesson'),
         context: z.string(),
         summary: z.string(),
         topics: z.array(z.string()).optional().default([]),

@@ -575,10 +575,13 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
         'Record feedback on search results to improve future ranking via brain learning.',
       auth: 'write',
       schema: z.object({
-        query: z.string(),
-        entryId: z.string(),
-        helpful: z.boolean(),
-        context: z.string().optional(),
+        query: z.string().describe('The search query that produced this result (required)'),
+        entryId: z.string().describe('ID of the vault entry being rated (required)'),
+        helpful: z.boolean().describe('Whether the result was helpful — true or false (required)'),
+        context: z
+          .string()
+          .optional()
+          .describe('Optional context about why it was or was not helpful'),
       }),
       handler: async (params) => {
         const query = params.query as string;

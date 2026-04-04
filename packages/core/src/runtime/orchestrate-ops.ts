@@ -871,7 +871,10 @@ export function createOrchestrateOps(
           .string()
           .optional()
           .describe('ID of the executing plan to complete (optional for direct tasks)'),
-        sessionId: z.string().describe('ID of the brain session to end'),
+        sessionId: z
+          .string()
+          .optional()
+          .describe('ID of the brain session to end (auto-resolved from planId if omitted)'),
         outcome: z
           .enum(['completed', 'abandoned', 'partial'])
           .optional()
@@ -938,7 +941,10 @@ export function createOrchestrateOps(
       }),
       handler: async (params) => {
         const planId = params.planId as string | undefined;
-        const sessionId = params.sessionId as string;
+        const sessionId =
+          (params.sessionId as string | undefined) ??
+          (planId ? brainIntelligence.getSessionByPlanId(planId)?.id : undefined) ??
+          '';
         const outcome = (params.outcome as string) ?? 'completed';
         const completionSummary = (params.summary as string) ?? '';
         const toolsUsed = (params.toolsUsed as string[]) ?? [];
@@ -1160,7 +1166,11 @@ export function createOrchestrateOps(
           plan: completedPlan,
           session,
           extraction,
-          epilogue: epilogueResult,
+          epilogue: epilogueResult ?? {
+            completed: true,
+            captured: false,
+            note: 'no flow plan in store',
+          },
           ...(impactReport ? { impactAnalysis: impactReport } : {}),
           evidenceReport,
           ...(warnings.length > 0 ? { warnings } : {}),

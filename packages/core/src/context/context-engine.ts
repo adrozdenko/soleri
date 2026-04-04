@@ -48,7 +48,7 @@ const ENTITY_PATTERNS: Array<{ type: EntityType; pattern: RegExp; confidence: nu
   {
     type: 'technology',
     pattern:
-      /\b(?:react|vue|svelte|angular|typescript|javascript|node\.?js|python|rust|go|docker|kubernetes|postgres|sqlite|redis|tailwind|css|html|graphql|rest|grpc)\b/gi,
+      /\b(?:react|vue|svelte|angular|typescript|javascript|node\.?js|python|rust|go|docker|kubernetes|postgres|sqlite|redis|tailwind|css|html|graphql|rest|grpc|vitest|jest|mocha|playwright|cypress)\b/gi,
     confidence: 0.85,
   },
   // Patterns: kebab-case compound terms that look like patterns
