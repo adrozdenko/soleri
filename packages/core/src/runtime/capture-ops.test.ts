@@ -179,7 +179,7 @@ describe('createCaptureOps', () => {
         entries: [{ type: 'pattern', domain: 'a', title: 'A', description: 'a', tags: [] }],
       })) as Record<string, unknown>;
       expect(result.autoLinkedCount).toBe(1);
-      expect(result.suggestedLinks).toBeDefined();
+      expect((result.suggestedLinks as unknown[]).length).toBe(1); // one suggestion returned by mock
     });
 
     it('maps extended types correctly', async () => {
@@ -240,7 +240,8 @@ describe('createCaptureOps', () => {
         description: 'A quick capture',
       })) as Record<string, unknown>;
       expect(result.captured).toBe(true);
-      expect(result.id).toBeDefined();
+      expect(typeof result.id).toBe('string');
+      expect((result.id as string).startsWith('testing-')).toBe(true); // id is generated as <domain>-<timestamp>-<random>
       expect((result.governance as Record<string, unknown>).action).toBe('capture');
     });
 
@@ -412,8 +413,7 @@ describe('createCaptureOps', () => {
       const result = (await findOp(ops, 'search_intelligent').handler({
         query: 'auth patterns',
       })) as Array<Record<string, unknown>>;
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
+      expect(result).toHaveLength(1); // brain.intelligentSearch mock returns exactly 1 result
       expect(result[0].source).toBe('vault');
     });
 

@@ -37,7 +37,7 @@ describe('playbook execution ops', () => {
 
       expect(result.sessionId).toMatch(/^pbk-/);
       expect(result.label).toBe('Test-Driven Development');
-      expect(result.totalSteps).toBeGreaterThan(0);
+      expect(result.totalSteps).toBe(4); // TDD playbook has 4 steps: RED, GREEN, REFACTOR, VERIFY
     });
 
     it('should start by intent auto-match', async () => {
@@ -48,7 +48,7 @@ describe('playbook execution ops', () => {
       })) as { sessionId: string; label: string };
 
       expect(result.sessionId).toMatch(/^pbk-/);
-      expect(result.label).toBeDefined();
+      expect(result.label).toBe('Test-Driven Development'); // BUILD + "tests" triggers TDD playbook
     });
 
     it('should return error for unknown playbookId', async () => {
@@ -60,21 +60,19 @@ describe('playbook execution ops', () => {
       expect(result.error).toContain('not found');
     });
 
-    it('should return available playbooks when no match', async () => {
+    it('should start Verification playbook for DELIVER intent', async () => {
       setup();
       const result = (await findOp('playbook_start').handler({
         intent: 'DELIVER',
         text: 'something very obscure with no keyword matches',
-      })) as { error: string; available: Array<{ id: string }> };
+      })) as { sessionId: string; label: string };
 
-      // May or may not match — if error, should list available
-      if (result.error) {
-        expect(result.available).toBeDefined();
-        expect(result.available.length).toBeGreaterThan(0);
-      }
+      // DELIVER intent always matches Verification Before Completion
+      expect(result.sessionId).toMatch(/^pbk-/);
+      expect(result.label).toBe('Verification Before Completion');
     });
 
-    it('should return error with no params', async () => {
+    it('should return error with all 7 available playbooks listed when no params', async () => {
       setup();
       const result = (await findOp('playbook_start').handler({})) as {
         error: string;
@@ -82,7 +80,7 @@ describe('playbook execution ops', () => {
       };
 
       expect(result.error).toContain('Provide');
-      expect(result.available.length).toBeGreaterThan(0);
+      expect(result.available).toHaveLength(7); // 7 built-in playbooks
     });
   });
 

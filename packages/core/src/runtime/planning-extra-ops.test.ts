@@ -448,7 +448,7 @@ describe('createPlanningExtraOps', () => {
         intent: 'BUILD',
       })) as Record<string, unknown>;
       expect(result.matched).toBe(true);
-      expect(result.sections).toBeDefined();
+      expect(result.sections).toEqual(['design', 'scope', 'tokens']); // generic + domain brainstorm sections
     });
 
     it('returns not-matched when no playbook fits', async () => {
@@ -486,7 +486,7 @@ describe('createPlanningExtraOps', () => {
         planId: 'plan-1',
       })) as Record<string, unknown>;
       expect(result.planId).toBe('plan-1');
-      expect(result.taskMetrics).toBeDefined();
+      expect(result.taskMetrics).toHaveLength(1); // mock plan has exactly 1 task
     });
 
     it('returns error for missing plan', async () => {

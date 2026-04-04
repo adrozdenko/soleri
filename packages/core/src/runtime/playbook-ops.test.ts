@@ -188,9 +188,11 @@ describe('playbook-ops', () => {
       const { ops } = setup();
       const res = await executeOp(ops, 'playbook_start', {});
       expect(res.success).toBe(true);
-      const data = res.data as { error: string; available: unknown[] };
+      const data = res.data as { error: string; available: Array<{ id: string; title: string }> };
       expect(data.error).toContain('Provide playbookId or intent');
-      expect(data.available).toBeDefined();
+      expect(data.available).toHaveLength(7); // 7 built-in playbooks
+      expect(data.available[0]).toHaveProperty('id');
+      expect(data.available[0]).toHaveProperty('title');
     });
 
     it('returns error for unknown playbookId', async () => {

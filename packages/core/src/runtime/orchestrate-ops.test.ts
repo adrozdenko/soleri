@@ -968,11 +968,10 @@ describe('createOrchestrateOps', () => {
       expect(rt.planner.complete).toHaveBeenCalledWith('plan-1');
     });
 
-    it('assessment result includes non-empty reasoning for simple tasks', () => {
+    it('assessment result includes default reasoning when no signals triggered', () => {
       const result = assessTaskComplexity({ prompt: 'fix typo in README' });
       expect(result.classification).toBe('simple');
-      expect(typeof result.reasoning).toBe('string');
-      expect(result.reasoning.length).toBeGreaterThan(0);
+      expect(result.reasoning).toBe('No complexity signals detected — treating as simple task');
     });
 
     it('orchestrate_complete compounds operator signals when provided', async () => {
@@ -1168,15 +1167,16 @@ describe('createOrchestrateOps', () => {
       expect(fs.writeFileSync).not.toHaveBeenCalled();
     });
 
-    it('assessment result includes non-empty reasoning for complex tasks', () => {
+    it('assessment result lists triggered signals in reasoning for complex tasks', () => {
       const result = assessTaskComplexity({
         prompt: 'add authentication across all API routes',
         filesEstimated: 8,
         domains: ['auth', 'api', 'middleware'],
       });
       expect(result.classification).toBe('complex');
-      expect(typeof result.reasoning).toBe('string');
-      expect(result.reasoning.length).toBeGreaterThan(0);
+      expect(result.reasoning).toBe(
+        'Complex: file-count, cross-cutting-keywords, multi-domain (score 50)',
+      );
     });
   });
 });

@@ -346,11 +346,11 @@ describe('plan-facade', () => {
       vaultEntryIds: string[];
     };
     expect(data.created).toBe(true);
-    expect(data.vaultEntryIds.length).toBeGreaterThan(0);
+    expect(data.vaultEntryIds).toHaveLength(1); // exactly one seeded entry matches
     // Decisions should contain vault pattern references with entryId markers
     const decisions = data.plan.decisions as string[];
     const vaultDecisions = decisions.filter((d) => d.startsWith('Vault pattern:'));
-    expect(vaultDecisions.length).toBeGreaterThan(0);
+    expect(vaultDecisions).toHaveLength(1); // one vault entry injected one decision
     // Each vault decision should have an [entryId:...] marker for brain feedback
     for (const vd of vaultDecisions) {
       expect(vd).toMatch(/\[entryId:[^\]]+\]/);
@@ -393,18 +393,13 @@ describe('plan-facade', () => {
     const decisions = data.plan.decisions as string[];
     // User decision preserved
     expect(decisions).toContain('Use vitest as test runner');
-    // Vault enrichment added
-    if (data.vaultEntryIds.length > 0) {
-      const vaultDecisions = decisions.filter((d) => d.startsWith('Vault pattern:'));
-      expect(vaultDecisions.length).toBeGreaterThan(0);
-    }
+    // Vault enrichment added — one seeded entry matches the 'testing' query
+    expect(data.vaultEntryIds).toHaveLength(1);
+    const vaultDecisions = decisions.filter((d) => d.startsWith('Vault pattern:'));
+    expect(vaultDecisions).toHaveLength(1);
   });
 
   // ─── plan_close_stale ─────────────────────────────────────────
-
-  it('plan_close_stale op is registered', () => {
-    expect([...ops.keys()]).toContain('plan_close_stale');
-  });
 
   it('plan_close_stale returns no plans when none are stale', async () => {
     const result = await executeOp(ops, 'plan_close_stale', {});

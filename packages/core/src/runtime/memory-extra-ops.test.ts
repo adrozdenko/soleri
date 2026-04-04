@@ -245,8 +245,8 @@ describe('createMemoryExtraOps', () => {
     it('returns results without archived by default', async () => {
       const op = findOp(ops, 'session_search');
       vi.mocked(rt.vault.searchMemories).mockReturnValue([{ id: 's1' }] as never);
-      const result = (await op.handler({ query: 'test', limit: 10 })) as Record<string, unknown>;
-      expect(result.results).toBeDefined();
+      const result = (await op.handler({ query: 'test', limit: 10 })) as { results: unknown[] };
+      expect(result.results).toHaveLength(1); // mock returns exactly one session result
     });
 
     it('includes archived when includeArchived is true', async () => {
@@ -260,8 +260,8 @@ describe('createMemoryExtraOps', () => {
         includeArchived: true,
         limit: 10,
       })) as Record<string, unknown>;
-      expect(result.active).toBeDefined();
-      expect(result.archived).toBeDefined();
+      expect((result as { active: unknown[] }).active).toHaveLength(1); // mock searchMemories returns 1
+      expect((result as { archived: unknown[] }).archived).toHaveLength(1); // mock provider.all returns 1
     });
   });
 

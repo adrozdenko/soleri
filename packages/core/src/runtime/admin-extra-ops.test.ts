@@ -428,7 +428,7 @@ describe('createAdminExtraOps', () => {
         subsystem: 'nonexistent',
       })) as Record<string, unknown>;
       expect(result.error).toContain('Unknown subsystem');
-      expect(result.available).toBeDefined();
+      expect(result.available).toEqual(['vault', 'brain']); // keys from mock snapshot.subsystems
     });
   });
 
@@ -468,33 +468,51 @@ describe('createAdminExtraOps', () => {
   });
 
   describe('admin_persistence_info', () => {
-    it('returns backend and table counts', async () => {
-      const result = (await findOp(ops, 'admin_persistence_info').handler({})) as Record<
-        string,
-        unknown
-      >;
+    it('returns backend and table counts for each known table', async () => {
+      const result = (await findOp(ops, 'admin_persistence_info').handler({})) as {
+        backend: string;
+        tables: Record<string, number>;
+      };
       expect(result.backend).toBe('sqlite');
-      expect(result.tables).toBeDefined();
+      // Mock provider.get returns { count: 42 } for every table
+      expect(result.tables).toEqual({
+        entries: 42,
+        entries_archive: 42,
+        memories: 42,
+        projects: 42,
+        brain_vocabulary: 42,
+        brain_feedback: 42,
+      });
     });
   });
 
   describe('admin_setup_check', () => {
-    it('returns readiness with per-subsystem checks', async () => {
-      const result = (await findOp(ops, 'admin_setup_check').handler({})) as Record<
-        string,
-        unknown
-      >;
+    it('returns ready: true with vault, brain, llm, and health checks all passing', async () => {
+      const result = (await findOp(ops, 'admin_setup_check').handler({})) as {
+        agentId: string;
+        ready: boolean;
+        checks: Record<string, { ok: boolean }>;
+      };
       expect(result.agentId).toBe('test-agent');
-      expect(result.checks).toBeDefined();
-      expect(typeof result.ready).toBe('boolean');
+      expect(result.ready).toBe(true);
+      expect(result.checks.vault.ok).toBe(true);
+      expect(result.checks.brain.ok).toBe(true);
+      expect(result.checks.llm.ok).toBe(true);
     });
   });
 
   describe('admin_setup_run', () => {
-    it('runs setup actions', async () => {
-      const result = (await findOp(ops, 'admin_setup_run').handler({})) as Record<string, unknown>;
+    it('runs all three setup actions and returns their names', async () => {
+      const result = (await findOp(ops, 'admin_setup_run').handler({})) as {
+        setup: boolean;
+        actions: string[];
+      };
       expect(result.setup).toBe(true);
-      expect((result.actions as string[]).length).toBeGreaterThan(0);
+      expect(result.actions).toEqual([
+        'brain_vocabulary_rebuilt',
+        'fts_index_rebuilt',
+        'templates_reloaded',
+      ]);
     });
   });
 });
