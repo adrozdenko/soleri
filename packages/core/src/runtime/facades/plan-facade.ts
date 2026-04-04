@@ -10,6 +10,7 @@ import { createPlanningExtraOps } from '../planning-extra-ops.js';
 import { createGradingOps } from '../grading-ops.js';
 import { createChainOps } from '../chain-ops.js';
 import { PlanGradeRejectionError } from '../../planning/planner.js';
+import { matchPlaybooks } from '../../playbooks/playbook-registry.js';
 
 export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { planner, vault } = runtime;
@@ -64,16 +65,68 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           // Vault search failed — proceed without enrichment
         }
 
+        // Playbook matching: inject task templates + start executor session
+        const userTasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];
+        const matchResult = matchPlaybooks('BUILD', objective);
+        const playbook = matchResult.playbook;
+        const playbookTasks: Array<{ title: string; description: string }> = [];
+        let playbookSessionId: string | undefined;
+        let playbookMatch: { label: string; genericId?: string; domainId?: string } | undefined;
+
+        if (playbook) {
+          playbookMatch = {
+            label: playbook.label,
+            genericId: playbook.generic?.id,
+            domainId: playbook.domain?.id,
+          };
+
+          // Inject task templates (before-implementation first, then user tasks)
+          for (const tmpl of playbook.mergedTasks) {
+            const title = tmpl.titleTemplate.replace('{objective}', objective);
+            playbookTasks.push({ title, description: tmpl.acceptanceCriteria.join('\n') });
+          }
+
+          // Start executor session to track gate enforcement
+          if (runtime.playbookExecutor) {
+            const startResult = runtime.playbookExecutor.start(playbook);
+            playbookSessionId = startResult.sessionId;
+          }
+        }
+
+        const beforeTasks = playbookTasks.filter((_, i) => {
+          const tmpl = playbook?.mergedTasks[i];
+          return !tmpl || tmpl.order === 'before-implementation';
+        });
+        const afterTasks = playbookTasks.filter((_, i) => {
+          const tmpl = playbook?.mergedTasks[i];
+          return tmpl?.order === 'after-implementation';
+        });
+
+        const allTasks = [...beforeTasks, ...userTasks, ...afterTasks];
+
         const plan = planner.create({
           objective,
           scope: params.scope as string,
           decisions,
-          tasks: (params.tasks as Array<{ title: string; description: string }>) ?? [],
+          tasks: allTasks,
           alternatives: params.alternatives as
             | Array<{ approach: string; pros: string[]; cons: string[]; rejected_reason: string }>
             | undefined,
         });
-        return { created: true, plan, vaultEntryIds };
+
+        if (playbookMatch) plan.playbookMatch = playbookMatch;
+        if (playbookSessionId) {
+          planner.patchPlan(plan.id, { playbookSessionId });
+        }
+
+        return {
+          created: true,
+          plan,
+          vaultEntryIds,
+          playbook: playbook
+            ? { label: playbook.label, tasksInjected: playbookTasks.length }
+            : null,
+        };
       },
     },
     {
@@ -144,10 +197,43 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         status: z.enum(['pending', 'in_progress', 'completed', 'skipped', 'failed']),
       }),
       handler: async (params) => {
+        const targetStatus = params.status as
+          | 'pending'
+          | 'in_progress'
+          | 'completed'
+          | 'skipped'
+          | 'failed';
+
+        // Gate check: enforce blocking post-task gates before allowing completion
+        if (targetStatus === 'completed') {
+          const currentPlan = planner.get(params.planId as string);
+          if (currentPlan?.playbookSessionId && runtime.playbookExecutor) {
+            const session = runtime.playbookExecutor.getSession(currentPlan.playbookSessionId);
+            if (session) {
+              const blockingPostTaskGates = session.gates.filter(
+                (g) =>
+                  g.phase === 'post-task' &&
+                  (g.severity === 'blocking' || g.severity === undefined),
+              );
+              if (blockingPostTaskGates.length > 0) {
+                return {
+                  updated: false,
+                  blocked: true,
+                  reason: 'post-task gates unsatisfied',
+                  gates: blockingPostTaskGates.map((g) => ({
+                    checkType: g.checkType,
+                    requirement: g.requirement,
+                  })),
+                };
+              }
+            }
+          }
+        }
+
         const plan = planner.updateTask(
           params.planId as string,
           params.taskId as string,
-          params.status as 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed',
+          targetStatus,
         );
         const task = plan.tasks.find((t) => t.id === params.taskId);
         return { updated: true, task, plan: { id: plan.id, status: plan.status } };
@@ -162,6 +248,29 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         planId: z.string(),
       }),
       handler: async (params) => {
+        // Enforce playbook completion gates before allowing plan completion
+        const currentPlan = planner.get(params.planId as string);
+        if (currentPlan?.playbookSessionId && runtime.playbookExecutor) {
+          const completeResult = runtime.playbookExecutor.complete(
+            currentPlan.playbookSessionId,
+            {},
+          );
+          if ('error' in completeResult) {
+            // Session not found — executor may have been reset; proceed without gate check
+          } else if (!completeResult.gatesPassed && completeResult.unsatisfiedGates.length > 0) {
+            // Session is consumed after complete() — use the result's unsatisfied gate list
+            // All completion gates are blocking unless marked advisory
+            return {
+              completed: false,
+              blocked: true,
+              reason: 'completion gates unsatisfied',
+              unsatisfiedGates: completeResult.unsatisfiedGates,
+              recommendation:
+                'Satisfy the listed playbook gates before completing this plan. Pass gate results via the playbook executor if checks were completed externally.',
+            };
+          }
+        }
+
         const plan = planner.complete(params.planId as string);
         const taskSummary = {
           completed: plan.tasks.filter((t) => t.status === 'completed').length,

@@ -48,6 +48,8 @@ export interface PlaybookGate {
   requirement: string;
   /** Check type to create/validate */
   checkType: string;
+  /** Whether this gate blocks progression (blocking) or is advisory only (advisory). Defaults to 'blocking'. */
+  severity?: 'blocking' | 'advisory';
 }
 
 // =============================================================================

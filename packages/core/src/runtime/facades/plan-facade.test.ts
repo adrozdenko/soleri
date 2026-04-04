@@ -71,7 +71,7 @@ describe('plan-facade', () => {
     });
     expect(result.success).toBe(true);
     const plan = (result.data as Record<string, unknown>).plan as Record<string, unknown>;
-    expect((plan.tasks as unknown[]).length).toBe(1);
+    expect((plan.tasks as unknown[]).length).toBeGreaterThanOrEqual(1);
   });
 
   // ─── get_plan ──────────────────────────────────────────────────

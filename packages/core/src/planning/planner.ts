@@ -185,6 +185,14 @@ export class Planner {
     return plan;
   }
 
+  patchPlan(planId: string, fields: Partial<Plan>): Plan {
+    const plan = this.requirePlan(planId);
+    Object.assign(plan, fields);
+    plan.updatedAt = Date.now();
+    this.save();
+    return plan;
+  }
+
   startExecution(planId: string): Plan {
     const plan = this.requirePlan(planId);
     this.transition(plan, 'executing');
