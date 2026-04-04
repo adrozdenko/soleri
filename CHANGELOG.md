@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.16.0] — 2026-04-04
+
+### Added
+
+- **`soleri-agent-mode` built-in skill** — ships with every scaffolded agent. Provides a natural language to facade + op routing reference, disambiguation matrix for ambiguous phrases ("save this", "remember this"), and the full orchestrate flow. Replaces the inline facade table in CLAUDE.md with a skill that auto-triggers on agent commands.
+- **Broader skill token replacement** — `YOUR_AGENT_` prefix is now substituted for all facade references (vault, brain, plan, memory, etc.), not just `_core`. Custom skills can now reference any facade using `YOUR_AGENT_vault`, `YOUR_AGENT_brain`, etc. and get correct agent-specific names on install.
+- **Mandatory web search in vault protocol** — engine rule updated: `WebSearch` is now position 2 in the lookup order (after vault, before memory and codebase), applies regardless of whether agent MCP is active.
+
+### Changed
+
+- **CLAUDE.md template slimmed** — Essential Tools facade table removed from the injected agent block. Replaced by a one-line pointer to the `agent-mode` skill and `admin_tool_list`. Reduces context overhead for every session.
+
+### Removed
+
+- **Manifest noise tests (Wave 2)** — deleted ~300 lines of op count and name presence assertions across core runtime test files. Behavior tests cover presence implicitly.
+
 ## [9.15.0] — 2026-04-04
 
 ### Added
