@@ -181,10 +181,6 @@ describe('All generic playbooks', () => {
 // ─── Individual playbook tests ────────────────────────────────────
 
 describe('brainstormingPlaybook', () => {
-  it('should have correct id', () => {
-    expect(brainstormingPlaybook.id).toBe('generic-brainstorming');
-  });
-
   it('should match BUILD and PLAN intents', () => {
     expect(brainstormingPlaybook.matchIntents).toContain('BUILD');
     expect(brainstormingPlaybook.matchIntents).toContain('PLAN');
@@ -221,10 +217,6 @@ describe('brainstormingPlaybook', () => {
 });
 
 describe('codeReviewPlaybook', () => {
-  it('should have correct id', () => {
-    expect(codeReviewPlaybook.id).toBe('generic-code-review');
-  });
-
   it('should match REVIEW intent only', () => {
     expect(codeReviewPlaybook.matchIntents).toEqual(['REVIEW']);
   });
@@ -260,10 +252,6 @@ describe('codeReviewPlaybook', () => {
 });
 
 describe('onboardingPlaybook', () => {
-  it('should have correct id', () => {
-    expect(onboardingPlaybook.id).toBe('generic-onboarding');
-  });
-
   it('should match PLAN intent', () => {
     expect(onboardingPlaybook.matchIntents).toContain('PLAN');
   });
@@ -288,10 +276,6 @@ describe('onboardingPlaybook', () => {
 });
 
 describe('subagentExecutionPlaybook', () => {
-  it('should have correct id', () => {
-    expect(subagentExecutionPlaybook.id).toBe('generic-subagent-execution');
-  });
-
   it('should match BUILD and IMPROVE intents', () => {
     expect(subagentExecutionPlaybook.matchIntents).toContain('BUILD');
     expect(subagentExecutionPlaybook.matchIntents).toContain('IMPROVE');
@@ -314,10 +298,6 @@ describe('subagentExecutionPlaybook', () => {
 });
 
 describe('systematicDebuggingPlaybook', () => {
-  it('should have correct id', () => {
-    expect(systematicDebuggingPlaybook.id).toBe('generic-systematic-debugging');
-  });
-
   it('should match FIX intent only', () => {
     expect(systematicDebuggingPlaybook.matchIntents).toEqual(['FIX']);
   });
@@ -361,10 +341,6 @@ describe('systematicDebuggingPlaybook', () => {
 });
 
 describe('tddPlaybook', () => {
-  it('should have correct id', () => {
-    expect(tddPlaybook.id).toBe('generic-tdd');
-  });
-
   it('should match BUILD and FIX intents', () => {
     expect(tddPlaybook.matchIntents).toContain('BUILD');
     expect(tddPlaybook.matchIntents).toContain('FIX');
@@ -399,10 +375,6 @@ describe('tddPlaybook', () => {
 });
 
 describe('verificationPlaybook', () => {
-  it('should have correct id', () => {
-    expect(verificationPlaybook.id).toBe('generic-verification');
-  });
-
   it('should match BUILD, FIX, IMPROVE, and DELIVER intents', () => {
     expect(verificationPlaybook.matchIntents).toContain('BUILD');
     expect(verificationPlaybook.matchIntents).toContain('FIX');

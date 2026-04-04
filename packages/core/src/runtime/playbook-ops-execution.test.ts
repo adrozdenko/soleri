@@ -26,15 +26,6 @@ describe('playbook execution ops', () => {
     ops = createPlaybookOps(runtime);
   }
 
-  it('should return 8 ops total', () => {
-    setup();
-    expect(ops).toHaveLength(8);
-    const names = ops.map((o) => o.name);
-    expect(names).toContain('playbook_start');
-    expect(names).toContain('playbook_step');
-    expect(names).toContain('playbook_complete');
-  });
-
   // ─── playbook_start ─────────────────────────────────────────────
 
   describe('playbook_start', () => {

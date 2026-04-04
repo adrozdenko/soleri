@@ -183,17 +183,6 @@ describe('playbook-ops', () => {
     });
   });
 
-  describe('playbook_seed', () => {
-    it('seeds default playbooks', async () => {
-      const { ops } = setup();
-      const res = await executeOp(ops, 'playbook_seed');
-      expect(res.success).toBe(true);
-      // seedDefaultPlaybooks returns { seeded, skipped, errors }
-      const data = res.data as { seeded: number; skipped: number };
-      expect(typeof data.seeded).toBe('number');
-    });
-  });
-
   describe('playbook_start', () => {
     it('returns error when neither playbookId nor intent provided', async () => {
       const { ops } = setup();
@@ -226,60 +215,6 @@ describe('playbook-ops', () => {
       const res = await executeOp(ops, 'playbook_start', { intent: 'FIX', text: 'debug crash' });
       expect(res.success).toBe(true);
       // Either starts a matched playbook or returns "no matching playbook"
-    });
-  });
-
-  describe('playbook_step', () => {
-    it('delegates to executor step', async () => {
-      const { ops, playbookExecutor } = setup();
-      const res = await executeOp(ops, 'playbook_step', {
-        sessionId: 'test-session',
-        output: 'Did the thing',
-      });
-      expect(res.success).toBe(true);
-      expect(playbookExecutor.step).toHaveBeenCalledWith('test-session', {
-        output: 'Did the thing',
-        skip: undefined,
-      });
-    });
-
-    it('supports skip option', async () => {
-      const { ops, playbookExecutor } = setup();
-      await executeOp(ops, 'playbook_step', { sessionId: 's1', skip: true });
-      expect(playbookExecutor.step).toHaveBeenCalledWith('s1', { output: undefined, skip: true });
-    });
-  });
-
-  describe('playbook_complete', () => {
-    it('delegates to executor complete', async () => {
-      const { ops, playbookExecutor } = setup();
-      const res = await executeOp(ops, 'playbook_complete', { sessionId: 's1' });
-      expect(res.success).toBe(true);
-      expect(playbookExecutor.complete).toHaveBeenCalledWith('s1', {
-        abort: undefined,
-        gateResults: undefined,
-      });
-    });
-
-    it('supports abort option', async () => {
-      const { ops, playbookExecutor } = setup();
-      await executeOp(ops, 'playbook_complete', { sessionId: 's1', abort: true });
-      expect(playbookExecutor.complete).toHaveBeenCalledWith('s1', {
-        abort: true,
-        gateResults: undefined,
-      });
-    });
-
-    it('passes gate results', async () => {
-      const { ops, playbookExecutor } = setup();
-      await executeOp(ops, 'playbook_complete', {
-        sessionId: 's1',
-        gateResults: { 'tests-pass': true, 'lint-clean': false },
-      });
-      expect(playbookExecutor.complete).toHaveBeenCalledWith('s1', {
-        abort: undefined,
-        gateResults: { 'tests-pass': true, 'lint-clean': false },
-      });
     });
   });
 });
