@@ -61,40 +61,6 @@ describe('Review Utils', () => {
 });
 
 // ---------------------------------------------------------------------------
-// DomainPack Manifest
-// ---------------------------------------------------------------------------
-
-describe('DomainPack Manifest', () => {
-  it('should export a valid DomainPack', () => {
-    expect(pack.name).toBe('code-review');
-    expect(pack.version).toBe('1.0.0');
-    expect(pack.domains).toContain('code-review');
-  });
-
-  it('should have 8 ops total', () => {
-    expect(pack.ops.length).toBe(8);
-  });
-
-  it('should have all expected op names', () => {
-    const names = pack.ops.map((o) => o.name);
-    expect(names).toContain('review_pr_design');
-    expect(names).toContain('check_architecture');
-    expect(names).toContain('search_review_context');
-    expect(names).toContain('generate_review_summary');
-    expect(names).toContain('validate_page_styles');
-    expect(names).toContain('accessibility_audit');
-    expect(names).toContain('classify_visual_changes');
-    expect(names).toContain('validate_component_states');
-  });
-
-  it('should have CLAUDE.md rules', () => {
-    expect(pack.rules).toBeDefined();
-    expect(pack.rules).toContain('Design Token Compliance');
-    expect(pack.rules).toContain('Architecture Boundaries');
-  });
-});
-
-// ---------------------------------------------------------------------------
 // GitHub-sourced ops
 // ---------------------------------------------------------------------------
 

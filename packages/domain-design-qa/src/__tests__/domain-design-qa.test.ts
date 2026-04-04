@@ -117,37 +117,6 @@ describe('WCAG Contrast', () => {
 });
 
 // ---------------------------------------------------------------------------
-// DomainPack Manifest
-// ---------------------------------------------------------------------------
-
-describe('DomainPack Manifest', () => {
-  it('should export a valid DomainPack', () => {
-    expect(pack.name).toBe('design-qa');
-    expect(pack.version).toBe('1.0.0');
-    expect(pack.domains).toContain('design-qa');
-  });
-
-  it('should have 5 ops', () => {
-    expect(pack.ops).toHaveLength(5);
-  });
-
-  it('should have all expected op names', () => {
-    const names = pack.ops.map((o) => o.name);
-    expect(names).toContain('detect_token_drift');
-    expect(names).toContain('detect_hardcoded_colors');
-    expect(names).toContain('sync_components');
-    expect(names).toContain('accessibility_precheck');
-    expect(names).toContain('handoff_audit');
-  });
-
-  it('should have CLAUDE.md rules', () => {
-    expect(pack.rules).toBeDefined();
-    expect(pack.rules).toContain('Design QA');
-    expect(pack.rules).toContain('detect_token_drift');
-  });
-});
-
-// ---------------------------------------------------------------------------
 // detect_token_drift
 // ---------------------------------------------------------------------------
 

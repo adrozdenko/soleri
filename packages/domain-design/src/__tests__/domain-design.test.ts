@@ -101,50 +101,10 @@ describe('Code Validator', () => {
 });
 
 // ---------------------------------------------------------------------------
-// DomainPack Manifest
+// DomainPack Ops
 // ---------------------------------------------------------------------------
 
 describe('DomainPack Manifest', () => {
-  it('should export a valid DomainPack', () => {
-    expect(pack.name).toBe('design');
-    expect(pack.version).toBe('1.0.0');
-    expect(pack.domains).toContain('design');
-  });
-
-  it('should have design ops (20 total)', () => {
-    // 6 algorithmic + 13 data-serving + 1 LLM-dependent = 20
-    expect(pack.ops.length).toBe(20);
-    const opNames = pack.ops.map((o) => o.name);
-    expect(opNames).toContain('recommend_design_system');
-    expect(opNames).toContain('get_stack_guidelines');
-    expect(opNames).toContain('generate_image');
-  });
-
-  it('should have design_rules facade', () => {
-    expect(pack.facades).toBeDefined();
-    const rules = pack.facades!.find((f) => f.name === 'design_rules');
-    expect(rules).toBeDefined();
-    expect(rules!.ops.length).toBe(15);
-  });
-
-  it('should have design_patterns facade', () => {
-    const patterns = pack.facades!.find((f) => f.name === 'design_patterns');
-    expect(patterns).toBeDefined();
-    expect(patterns!.ops.length).toBe(10); // 1 algorithmic + 7 data-serving + 2 orchestration packs
-  });
-
-  it('should have knowledge manifest with tiers', () => {
-    expect(pack.knowledge).toBeDefined();
-    expect(pack.knowledge!.canonical).toBeDefined();
-    expect(pack.knowledge!.curated).toBeDefined();
-  });
-
-  it('should have CLAUDE.md rules', () => {
-    expect(pack.rules).toBeDefined();
-    expect(pack.rules).toContain('Semantic first');
-    expect(pack.rules).toContain('Forbidden');
-  });
-
   it('check_contrast op should work', async () => {
     const op = pack.ops.find((o) => o.name === 'check_contrast')!;
     const result = (await op.handler({

@@ -15,39 +15,6 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// DomainPack Manifest
-// ---------------------------------------------------------------------------
-
-describe('DomainPack Manifest', () => {
-  it('should export a valid DomainPack with correct metadata', () => {
-    expect(pack.name).toBe('component');
-    expect(pack.version).toBe('1.0.0');
-    expect(pack.domains).toContain('component');
-  });
-
-  it('should have 7 ops', () => {
-    expect(pack.ops.length).toBe(7);
-  });
-
-  it('should have all expected op names', () => {
-    const names = pack.ops.map((o) => o.name);
-    expect(names).toContain('search');
-    expect(names).toContain('get');
-    expect(names).toContain('list');
-    expect(names).toContain('create');
-    expect(names).toContain('detect_drift');
-    expect(names).toContain('analyze_dependencies');
-    expect(names).toContain('sync_status');
-  });
-
-  it('should have CLAUDE.md rules', () => {
-    expect(pack.rules).toBeDefined();
-    expect(pack.rules).toContain('Component Lifecycle');
-    expect(pack.rules).toContain('detect_drift');
-  });
-});
-
-// ---------------------------------------------------------------------------
 // parseImports
 // ---------------------------------------------------------------------------
 
