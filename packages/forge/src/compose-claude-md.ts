@@ -407,7 +407,11 @@ function composeWorkflowIndex(workflowsDir: string): string | null {
       const content = readFileSync(promptPath, 'utf-8');
       // Extract first non-heading, non-empty line as description
       const descLine = content.split('\n').find((line) => line.trim() && !line.startsWith('#'));
-      if (descLine) description = descLine.trim().slice(0, 80);
+      if (descLine) {
+        const trimmed = descLine.trim();
+        description =
+          trimmed.length > 120 ? trimmed.slice(0, 117).replace(/\s+\S*$/, '') + '...' : trimmed;
+      }
     }
 
     lines.push(`| \`${dir.name}\` | ${description} |`);

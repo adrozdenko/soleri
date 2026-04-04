@@ -398,6 +398,23 @@ export function registerCreate(program: Command): void {
             }
           }
 
+          // Preflight: ensure output directory exists and is writable
+          const legacyOutputDir = resolve(config.outputDir ?? process.cwd());
+          if (!existsSync(legacyOutputDir)) {
+            try {
+              mkdirSync(legacyOutputDir, { recursive: true });
+            } catch {
+              p.log.error(`Cannot create ${legacyOutputDir} — check permissions`);
+              process.exit(1);
+            }
+          }
+          try {
+            accessSync(legacyOutputDir, fsConstants.W_OK);
+          } catch {
+            p.log.error(`Cannot write to ${legacyOutputDir} — check permissions`);
+            process.exit(1);
+          }
+
           // Scaffold + auto-build
           const s = p.spinner();
           s.start('Scaffolding and building agent...');
