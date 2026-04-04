@@ -58,21 +58,23 @@ describe('E2E: skills-and-domains', () => {
     expect(existsSync(join(agentDir, 'skills'))).toBe(true);
   });
 
-  it('should have exactly 36 built-in skills', () => {
+  it('should have exactly 41 built-in skills', () => {
     const skillDirs = readdirSync(join(agentDir, 'skills'), { encoding: 'utf-8' });
-    expect(skillDirs.length).toBe(36);
+    expect(skillDirs.length).toBe(41);
 
     // Verify all expected skill names are present
     const expectedSkills = [
       'soleri-agent-dev',
       'soleri-agent-guide',
       'soleri-agent-issues',
+      'soleri-agent-mode',
       'soleri-agent-persona',
       'soleri-brain-debrief',
       'soleri-brainstorming',
       'soleri-build-skill',
       'soleri-code-patrol',
       'soleri-context-resume',
+      'soleri-curator',
       'soleri-deep-review',
       'soleri-deliver-and-ship',
       'soleri-discovery-phase',
@@ -82,9 +84,12 @@ describe('E2E: skills-and-domains', () => {
       'soleri-finishing-a-development-branch',
       'soleri-fix-and-learn',
       'soleri-health-check',
+      'soleri-intake',
       'soleri-knowledge-harvest',
+      'soleri-loop',
       'soleri-mcp-doctor',
       'soleri-onboard-me',
+      'soleri-orchestrate',
       'soleri-parallel-execute',
       'soleri-research-scout',
       'soleri-retrospective',

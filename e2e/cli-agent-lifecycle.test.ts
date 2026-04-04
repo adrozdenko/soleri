@@ -579,16 +579,17 @@ describe('Journey 6: CLAUDE.md content generation', () => {
     expect(claudeMdContent).toContain('plan_complete_lifecycle');
   });
 
-  it('should contain agent-specific facade table', () => {
+  it('should reference agent core and orchestrate facades', () => {
+    // Activation line: lifecycle-j6_core op:activate
     expect(claudeMdContent).toContain('lifecycle-j6_core');
-    expect(claudeMdContent).toContain('lifecycle-j6_vault');
-    expect(claudeMdContent).toContain('lifecycle-j6_plan');
-    expect(claudeMdContent).toContain('lifecycle-j6_brain');
+    // Session start line: lifecycle-j6_orchestrate op:session_start
+    expect(claudeMdContent).toContain('lifecycle-j6_orchestrate');
+    // Skill pointer: lifecycle-j6-agent-mode
+    expect(claudeMdContent).toContain('lifecycle-j6-agent-mode');
   });
 
-  it('should contain domain facades in table', () => {
-    expect(claudeMdContent).toContain('lifecycle-j6_devops');
-    expect(claudeMdContent).toContain('lifecycle-j6_monitoring');
+  it('should reference admin tool list for full op reference', () => {
+    expect(claudeMdContent).toContain('lifecycle-j6_admin op:admin_tool_list');
   });
 
   it('should contain agent identity', () => {
