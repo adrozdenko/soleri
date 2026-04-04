@@ -376,39 +376,41 @@ export function createOrchestrateOps(
         // 1. Detect intent from prompt
         const intent = detectIntent(prompt);
 
-        // 2. Get brain recommendations — graceful degradation
-        let recommendations: Array<{ pattern: string; strength: number; entryId?: string }> = [];
+        // 2. Build recommendations — vault first (authoritative), brain enriches (additive)
+        let recommendations: Array<{
+          pattern: string;
+          strength: number;
+          entryId?: string;
+          source: 'vault' | 'brain';
+        }> = [];
+
+        // Vault always runs first — curated explicit knowledge takes precedence
         try {
-          const raw = brainIntelligence.recommend({
+          const vaultResults = vault.search(prompt, { domain, limit: 5 });
+          recommendations = vaultResults.map((r) => ({
+            pattern: r.entry.title,
+            strength: 80,
+            entryId: r.entry.id,
+            source: 'vault' as const,
+          }));
+        } catch {
+          // Vault unavailable — brain will cover below
+        }
+
+        // Brain enriches with learned usage patterns — additive, never replaces vault
+        try {
+          const brainResults = brainIntelligence.recommend({
             domain,
             task: prompt,
             limit: 5,
           });
-          recommendations = raw.map((r) => {
-            // Look up vault entry ID by title for feedback tracking
-            const entries = vault.search(r.pattern, { limit: 1 });
-            const entryId =
-              entries.length > 0 && entries[0].entry.title === r.pattern
-                ? entries[0].entry.id
-                : undefined;
-            return { pattern: r.pattern, strength: r.strength, entryId };
-          });
+          for (const r of brainResults) {
+            if (!recommendations.find((rec) => rec.pattern === r.pattern)) {
+              recommendations.push({ pattern: r.pattern, strength: r.strength, source: 'brain' });
+            }
+          }
         } catch {
           // Brain has no data yet
-        }
-
-        // Fallback to vault if brain empty
-        if (recommendations.length === 0) {
-          try {
-            const vaultResults = vault.search(prompt, { domain, limit: 5 });
-            recommendations = vaultResults.map((r) => ({
-              pattern: r.entry.title,
-              strength: 50,
-              entryId: r.entry.id,
-            }));
-          } catch {
-            // Vault search failed
-          }
         }
 
         // 3. Build flow-engine plan
@@ -436,7 +438,8 @@ export function createOrchestrateOps(
 
         // 5. Also create a planner plan for lifecycle tracking (backward compat)
         const decisions = recommendations.map((r) => {
-          const base = `Brain pattern: ${r.pattern} (strength: ${r.strength.toFixed(1)})`;
+          const label = r.source === 'vault' ? 'Vault pattern' : 'Brain pattern';
+          const base = `${label}: ${r.pattern} (strength: ${r.strength.toFixed(1)})`;
           return r.entryId ? `${base} [entryId:${r.entryId}]` : base;
         });
         const tasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];

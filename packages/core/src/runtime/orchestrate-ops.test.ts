@@ -180,7 +180,8 @@ describe('createOrchestrateOps', () => {
       expect(flow.intent).toBe('BUILD');
     });
 
-    it('falls back to vault search when brain has no recommendations', async () => {
+    it('vault results appear when brain has no data', async () => {
+      // Vault runs first regardless of brain state. When brain throws, vault results still appear.
       const op = findOp(ops, 'orchestrate_plan');
       vi.mocked(rt.brainIntelligence.recommend).mockImplementation(() => {
         throw new Error('no data');
@@ -192,6 +193,56 @@ describe('createOrchestrateOps', () => {
       const recs = result.recommendations as Array<Record<string, unknown>>;
       expect(recs.length).toBe(1);
       expect(recs[0].pattern).toBe('Pattern A');
+      expect(recs[0].source).toBe('vault');
+    });
+
+    it('vault is always searched even when brain returns results', async () => {
+      // Brain returning data must NOT skip vault — vault is authoritative, brain is additive.
+      // If vault search were conditional on brain being empty, vault.search would not be called here.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.brainIntelligence.recommend).mockReturnValue([
+        { pattern: 'Brain Pattern', strength: 70 },
+      ] as never);
+      vi.mocked(rt.vault.search).mockReturnValue([
+        { entry: { id: 'v1', title: 'Vault Pattern' }, score: 0.9 },
+      ] as never);
+      await op.handler({ prompt: 'build a feature' });
+      expect(rt.vault.search).toHaveBeenCalled();
+    });
+
+    it('vault results precede brain results and brain does not duplicate vault entries', async () => {
+      // Vault patterns come first; brain adds only novel patterns.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.vault.search).mockReturnValue([
+        { entry: { id: 'v1', title: 'Vault Pattern' }, score: 0.9 },
+      ] as never);
+      vi.mocked(rt.brainIntelligence.recommend).mockReturnValue([
+        { pattern: 'Vault Pattern', strength: 70 }, // duplicate — should be dropped
+        { pattern: 'Brain Pattern', strength: 60 }, // novel — should be appended
+      ] as never);
+      const result = (await op.handler({ prompt: 'build something' })) as Record<string, unknown>;
+      const recs = result.recommendations as Array<Record<string, unknown>>;
+      expect(recs).toHaveLength(2);
+      expect(recs[0].source).toBe('vault');
+      expect(recs[0].pattern).toBe('Vault Pattern');
+      expect(recs[1].source).toBe('brain');
+      expect(recs[1].pattern).toBe('Brain Pattern');
+    });
+
+    it('brain results used alone when vault is unavailable', async () => {
+      // If vault throws, brain results cover the gap — no silent empty recommendations.
+      const op = findOp(ops, 'orchestrate_plan');
+      vi.mocked(rt.vault.search).mockImplementation(() => {
+        throw new Error('vault down');
+      });
+      vi.mocked(rt.brainIntelligence.recommend).mockReturnValue([
+        { pattern: 'Brain Only Pattern', strength: 65 },
+      ] as never);
+      const result = (await op.handler({ prompt: 'fix bug' })) as Record<string, unknown>;
+      const recs = result.recommendations as Array<Record<string, unknown>>;
+      expect(recs).toHaveLength(1);
+      expect(recs[0].source).toBe('brain');
+      expect(recs[0].pattern).toBe('Brain Only Pattern');
     });
 
     it('creates a planner plan for lifecycle tracking', async () => {
