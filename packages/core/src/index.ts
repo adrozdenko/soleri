@@ -961,3 +961,15 @@ export type { UpdateInfo } from './update-check.js';
 
 // ─── Settings Hooks Sync ─────────────────────────────────────────────
 export { syncHooksToClaudeSettings } from './runtime/admin-setup-ops.js';
+
+// ─── Scheduler ───────────────────────────────────────────────────────
+export { Scheduler, InMemorySchedulerStore } from './scheduler/scheduler.js';
+export type { SchedulerStore } from './scheduler/scheduler.js';
+export { createSchedulerOps } from './scheduler/scheduler-ops.js';
+export { validateCron, estimateMinIntervalHours } from './scheduler/cron-validator.js';
+export type {
+  ScheduledTask,
+  CreateTaskInput,
+  TaskListEntry,
+  PlatformAdapter,
+} from './scheduler/types.js';
