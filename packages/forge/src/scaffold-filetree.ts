@@ -581,8 +581,15 @@ See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) f
   };
   writeFile(agentDir, '.mcp.json', JSON.stringify(mcpJson, null, 2) + '\n', filesCreated);
 
-  // ─── 3a. Write settings.local.json (Claude Code hooks) ─────
+  // ─── 3a. Write settings.local.json (Claude Code hooks + pre-approved permissions) ─────
   const settingsLocal = {
+    permissions: {
+      allow: [
+        // Pre-approve all facades for this agent so users skip approval prompts
+        // on routine ops (session_start, vault search, orchestrate_plan, etc.)
+        `mcp__${config.id}__*`,
+      ],
+    },
     hooks: {
       Stop: [
         {
