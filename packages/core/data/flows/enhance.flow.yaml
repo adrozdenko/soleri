@@ -22,6 +22,16 @@ triggers:
   min-confidence: MEDIUM
 
 steps:
+  - id: capture-baseline
+    name: Capture Current State
+    description: Snapshot the current component or file state before enhancement begins.
+    needs: [component.validate]
+    chains:
+      - capture-baseline-state
+    output:
+      - baseline-score
+      - baseline-state
+
   - id: search-vault
     name: Search Vault Patterns
     description: Search vault for enhancement patterns, best practices, and previous improvements.

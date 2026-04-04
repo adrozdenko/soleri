@@ -60,6 +60,22 @@ steps:
     output:
       - playbook-results
 
+  - id: synthesize
+    name: Synthesize Findings
+    description: Review all search results and flag if any critical findings require action.
+    needs: [vault.search]
+    chains:
+      - vault-synthesize
+    output:
+      - critical-findings
+      - action-required
+    gate:
+      type: GATE
+      condition: 'critical-findings.length == 0'
+      on-false:
+        action: CONTINUE
+        message: 'Critical findings detected — review before proceeding.'
+
 scoring:
   weights:
     vault-search: 0.30
