@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.15.0] — 2026-04-04
+
+### Added
+
+- **`soleri validate-skills` command** — catches skill doc schema mismatches (missing name, description, or type fields) before they cause silent failures in agent sessions (#622)
+- **Skill sync on scaffold** — `forge` now automatically syncs generated skills to `~/.claude/skills/` during scaffold, so skills are immediately available without a manual install step (#623)
+- **Canonical tag taxonomy** — vault tag generation is now constrained to a controlled vocabulary with a normalizer, synonym merge, and migration path to clean up arbitrary tags (#610)
+- **Orphaned session auto-cleanup** — brain closes sessions older than 2 hours on `session_start`, preventing stale session accumulation across conversations (#611, #612, #613)
+
+### Fixed
+
+- **`sync_status` missing-metadata classification** — components with no `filePath` are now correctly classified as `missing-metadata` instead of `drift` (#621)
+- **Accessibility false positives** — `accessibility_audit` no longer flags interactive elements as missing aria-labels when they have visible `textContent` (e.g. `<button>Submit</button>`) (#620)
+
+### Changed
+
+- **Plan persistence** — planner now refreshes before every read and merges on save to prevent concurrent write races across parallel sessions
+- **Chat session storage** — sessions moved to a `sessions/` subdirectory within `storageDir`, with backwards-compatible legacy path fallback and auto-migration on next write
+- **Engine bin resolution** — CLI centralizes engine binary resolution via a shared `core-resolver` utility, removing duplicated resolution logic across commands
+
 ## [9.14.4] — 2026-04-03
 
 ### Fixed
