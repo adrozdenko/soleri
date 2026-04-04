@@ -78,6 +78,63 @@ export function extractStepsFromFrontmatter(content: string): SkillStepDef[] | n
 }
 
 // ---------------------------------------------------------------------------
+// Announce / Complete injection
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the `name:` field from YAML frontmatter.
+ * Returns the raw string value, or null if not found.
+ */
+export function extractNameFromFrontmatter(content: string): string | null {
+  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!fmMatch) return null;
+  const nameMatch = fmMatch[1].match(/^name:\s*(.+)/m);
+  return nameMatch ? nameMatch[1].trim().replace(/^["']|["']$/g, '') : null;
+}
+
+/**
+ * Inject announce and completion feedback instructions into a skill's content.
+ *
+ * Announce goes immediately after the frontmatter block.
+ * Complete goes at the very end of the file.
+ * Both are inside HTML comments so they don't clutter the rendered output.
+ */
+export function injectSkillFeedback(content: string, skillName: string): string {
+  // Count ### headings as "steps"
+  const stepMatches = content.match(/^### .+/gm) ?? [];
+  const stepCount = stepMatches.length;
+  const firstStep = stepMatches[0]?.replace(/^### \d+\.\s*/, '').trim() ?? 'Step 1';
+
+  const displayName = skillName
+    .replace(/^soleri-/, '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const announceBlock = [
+    '',
+    '## Announce',
+    '',
+    `When this skill is invoked, immediately say:`,
+    `> "Using **${displayName}** skill${stepCount > 0 ? ` (${stepCount} steps)` : ''}. Starting with: ${firstStep}"`,
+    '',
+  ].join('\n');
+
+  const completeBlock = [
+    '',
+    '## Completion',
+    '',
+    'After all steps are done, close with a one-line summary:',
+    `> "${displayName} complete: {brief outcome — e.g. '3 captured, 1 skipped'}"`,
+    '',
+  ].join('\n');
+
+  // Insert announce block right after the closing ---  of frontmatter
+  const afterFm = content.replace(/^(---\n[\s\S]*?\n---\n)/, `$1${announceBlock}`);
+
+  return afterFm + completeBlock;
+}
+
+// ---------------------------------------------------------------------------
 // Skill generation
 // ---------------------------------------------------------------------------
 
@@ -138,6 +195,9 @@ export function generateSkills(config: AgentConfig): Array<[string, string]> {
     if (content.includes(AGENT_PLACEHOLDER)) {
       content = content.replace(/YOUR_AGENT_/g, `${config.id}_`);
     }
+
+    // Inject announce / complete feedback blocks
+    content = injectSkillFeedback(content, skillName);
 
     // Extract structured steps from frontmatter and append as metadata block
     const steps = extractStepsFromFrontmatter(content);
