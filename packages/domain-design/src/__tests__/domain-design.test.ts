@@ -48,7 +48,7 @@ describe('Color Science', () => {
       { name: 'light-gray', hex: '#EEEEEE' },
     ];
     const results = suggestAccessibleColors('#FFFFFF', candidates, 'AA');
-    expect(results.length).toBeGreaterThan(0);
+    expect(results.length).toBe(1); // only black (#000000 = 21:1) passes AA against white; white and light-gray fail
     expect(results[0].name).toBe('black');
   });
 
@@ -77,7 +77,7 @@ describe('Code Validator', () => {
   it('should detect arbitrary spacing violations', () => {
     const result = validateComponentCode('<div className="p-[13px] mt-[7px]">Bad spacing</div>');
     expect(result.valid).toBe(false);
-    expect(result.violations.length).toBeGreaterThan(0);
+    expect(result.violations.length).toBe(2); // p-[13px] and mt-[7px] each produce one spacing-violation
     expect(result.violations[0].type).toBe('spacing-violation');
   });
 
@@ -125,14 +125,14 @@ describe('DomainPack Manifest', () => {
       count: number;
       validForegrounds: unknown[];
     };
-    expect(result.count).toBeGreaterThan(0);
+    expect(result.count).toBe(4); // black, neutral-500, neutral-700, neutral-900 all meet AA (≥4.5:1) against white
   });
 
   it('validate_token op should detect forbidden hex', async () => {
     const op = pack.ops.find((o) => o.name === 'validate_token')!;
     const result = (await op.handler({ token: '#FF0000' })) as { valid: boolean; verdict: string };
     // Hex colors should be detected as forbidden or unknown
-    expect(result.verdict).not.toBe('ALLOWED');
+    expect(result.verdict).toBe('FORBIDDEN'); // #FF0000 matches hex color pattern in forbidden list
   });
 
   it('check_button_semantics op should recommend destructive for delete', async () => {
@@ -161,7 +161,7 @@ describe('DomainPack Manifest', () => {
     const op = rulesF.ops.find((o) => o.name === 'get_clean_code_rules')!;
     const result = (await op.handler({ topic: 'naming' })) as { source: string; data: unknown };
     expect(result.source).toBe('get_clean_code_rules');
-    expect(result.data).toBeDefined();
+    expect(result.data).toHaveProperty('naming'); // clean-code-rules.json always contains a 'naming' key
   });
 
   it('generate_image op should fail gracefully without API key', async () => {

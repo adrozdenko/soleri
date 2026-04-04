@@ -98,7 +98,7 @@ describe('verifyInstall', () => {
     const checks = verifyInstall('test-agent', agentDir, 'claude');
 
     expect(Array.isArray(checks)).toBe(true);
-    expect(checks.length).toBeGreaterThan(0);
+    expect(checks.length).toBe(3); // claude config entry + engine binary + agent.yaml
     for (const check of checks) {
       expect(check).toHaveProperty('label');
       expect(check).toHaveProperty('passed');

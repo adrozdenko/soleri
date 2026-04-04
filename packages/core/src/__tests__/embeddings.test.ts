@@ -388,7 +388,7 @@ describe('EmbeddingPipeline', () => {
 
     expect(result.embedded).toBe(2);
     expect(result.failed).toBe(0);
-    expect(result.tokensUsed).toBeGreaterThan(0);
+    expect(result.tokensUsed).toBe(10); // mock provider returns texts.length * 5 = 2 * 5
 
     // Both entries should now have vectors
     expect(getVector(persistence, 'e1')).toBeTruthy();
@@ -405,7 +405,7 @@ describe('EmbeddingPipeline', () => {
       onProgress: (completed, total) => progress.push([completed, total]),
     });
 
-    expect(progress.length).toBeGreaterThan(0);
+    expect(progress.length).toBe(1); // default batchSize=100 processes both entries in one batch, firing onProgress once
     // Last progress call should have completed == total
     const last = progress[progress.length - 1];
     expect(last[0]).toBe(last[1]);
@@ -513,7 +513,7 @@ describe('Brain hybrid search compatibility', () => {
 
     // Should not throw — returns results from FTS only
     expect(Array.isArray(results)).toBe(true);
-    expect(results.length).toBeGreaterThan(0);
+    expect(results.length).toBe(1); // single seeded entry matches FTS query 'backward compatibility'
   });
 
   it('Brain.setEmbeddingProvider can set and clear provider', () => {

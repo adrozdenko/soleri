@@ -224,7 +224,7 @@ main();
       });
 
       expect(result.bundlesInstalled).toBe(1);
-      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result.warnings.length).toBe(8); // 8 validation issues for the invalid entry: missing id (empty string), type, domain, title, severity, description, tags + entry-level check
     });
   });
 

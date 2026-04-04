@@ -78,7 +78,7 @@ describe('review_pr_design', () => {
       ],
     })) as { issuesFound: number; verdict: string };
 
-    expect(result.issuesFound).toBeGreaterThan(0);
+    expect(result.issuesFound).toBe(2); // 1 hex color + 1 inline style attribute
     expect(result.verdict).toBe('FAIL');
   });
 
@@ -151,7 +151,7 @@ describe('search_review_context', () => {
       query: 'hex colors',
     })) as { resultsFound: number };
 
-    expect(result.resultsFound).toBeGreaterThan(0);
+    expect(result.resultsFound).toBe(1); // matches 'hex-colors' entry in static knowledge base
   });
 
   it('should filter by category', async () => {
@@ -160,7 +160,7 @@ describe('search_review_context', () => {
       category: 'accessibility',
     })) as { resultsFound: number; results: Array<{ category: string }> };
 
-    expect(result.resultsFound).toBeGreaterThan(0);
+    expect(result.resultsFound).toBe(1); // 'low-contrast' entry matches 'contrast' in accessibility category
     result.results.forEach((r) => expect(r.category).toBe('accessibility'));
   });
 });

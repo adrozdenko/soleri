@@ -104,7 +104,7 @@ describe('doctor command', () => {
   describe('runAllChecks', () => {
     it('should return array of check results', { timeout: 20_000 }, () => {
       const results = runAllChecks(tempDir);
-      expect(results.length).toBeGreaterThan(0);
+      expect(results.length).toBe(9); // 4 common + 2 non-filetree (nodeModules + agentBuild) + 3 shared (mcpReg + hookPacks + cognee)
       for (const r of results) {
         expect(['pass', 'fail', 'warn']).toContain(r.status);
         expect(r.label).toBeTruthy();
