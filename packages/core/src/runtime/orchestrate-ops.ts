@@ -674,6 +674,27 @@ export function createOrchestrateOps(
           const healthStatus = contextHealth.check();
           const healthWarning = buildHealthWarning(healthStatus, vault);
 
+          // Check for subagent review stage requirements from matched playbook
+          const legacyPlanForReview = planner.get(planId);
+          let reviewStagesRequired: string[] | undefined;
+          if (legacyPlanForReview?.playbookSessionId && runtime.playbookExecutor) {
+            const session_ = runtime.playbookExecutor.getSession(
+              legacyPlanForReview.playbookSessionId,
+            );
+            if (session_) {
+              const postTaskGates = session_.gates.filter((g) => g.phase === 'post-task');
+              if (postTaskGates.length > 0) {
+                reviewStagesRequired = postTaskGates.map((g) => g.checkType);
+              }
+            }
+          } else if (
+            legacyPlanForReview?.playbookMatch?.genericId === 'generic-subagent-execution' ||
+            legacyPlanForReview?.playbookMatch?.label?.toLowerCase().includes('subagent')
+          ) {
+            // Playbook matched but no live session — surface known review stages
+            reviewStagesRequired = ['spec-review', 'quality-review'];
+          }
+
           return {
             plan: { id: planId, status: 'executing' },
             session,
@@ -685,6 +706,14 @@ export function createOrchestrateOps(
               durationMs: aggregated.durationMs,
               totalUsage: aggregated.totalUsage,
             },
+            ...(reviewStagesRequired
+              ? {
+                  reviewStagesRequired,
+                  reviewNote:
+                    'Subagent Execution playbook matched. Each completed task requires review evidence before status can be set to completed: ' +
+                    reviewStagesRequired.join(' → '),
+                }
+              : {}),
             ...(reapedOrphans.length > 0 ? { reapedOrphans } : {}),
             ...(healthWarning ? { contextHealth: healthWarning } : {}),
           };
