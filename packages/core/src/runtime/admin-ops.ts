@@ -423,7 +423,9 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           }
 
           const hasIssues = unregistered.length > 0 || brokenCount > 0;
-          const skillStatus = totalSkills === 0 && agentDir ? 'warn' : hasIssues ? 'warn' : 'ok';
+          // Warn only when agentDir is set but no skills exist anywhere (local OR global)
+          const hasAnySkills = totalSkills > 0 || registeredCount > 0;
+          const skillStatus = !hasAnySkills && agentDir ? 'warn' : hasIssues ? 'warn' : 'ok';
           const detail = [
             `${totalSkills} discovered (${agentSkills.length} agent, ${packSkillCount} pack)`,
             `${registeredCount} registered in .claude/skills/`,
