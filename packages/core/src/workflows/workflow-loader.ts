@@ -49,6 +49,10 @@ export const WORKFLOW_TO_INTENT: Record<string, string> = {
   'component-build': 'BUILD',
   'token-migration': 'ENHANCE',
   'a11y-remediation': 'FIX',
+  deliver: 'DELIVER',
+  plan: 'PLAN',
+  design: 'DESIGN',
+  explore: 'EXPLORE',
 };
 
 // ---------------------------------------------------------------------------

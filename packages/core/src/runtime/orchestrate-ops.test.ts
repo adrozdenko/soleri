@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createOrchestrateOps, mapVaultResults } from './orchestrate-ops.js';
+import { createOrchestrateOps, mapVaultResults, detectIntent } from './orchestrate-ops.js';
 import { assessTaskComplexity } from '../planning/task-complexity-assessor.js';
 import type { AgentRuntime } from './types.js';
 
@@ -1178,5 +1178,113 @@ describe('createOrchestrateOps', () => {
         'Complex: file-count, cross-cutting-keywords, multi-domain (score 50)',
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// detectIntent — unit tests
+// ---------------------------------------------------------------------------
+
+describe('detectIntent', () => {
+  // ─── Happy path: each flow gets its primary keyword ───────────────
+
+  it('routes DELIVER on "deploy"', () => {
+    expect(detectIntent('deploy the release to production')).toBe('DELIVER');
+  });
+
+  it('routes DELIVER on "ship"', () => {
+    expect(detectIntent('ship the feature to staging')).toBe('DELIVER');
+  });
+
+  it('routes DELIVER on "release"', () => {
+    expect(detectIntent('release v2.0 to npm')).toBe('DELIVER');
+  });
+
+  it('routes FIX on "fix"', () => {
+    expect(detectIntent('fix the null pointer in the parser')).toBe('FIX');
+  });
+
+  it('routes FIX on "bug"', () => {
+    expect(detectIntent('there is a bug in the vault search')).toBe('FIX');
+  });
+
+  it('routes REVIEW on "review"', () => {
+    expect(detectIntent('review the auth middleware for security issues')).toBe('REVIEW');
+  });
+
+  it('routes PLAN on "plan"', () => {
+    expect(detectIntent('plan the approach for the new feature')).toBe('PLAN');
+  });
+
+  it('routes PLAN on "architect"', () => {
+    expect(detectIntent('architect the notification service')).toBe('PLAN');
+  });
+
+  it('routes PLAN on "architecture"', () => {
+    expect(detectIntent('plan the architecture for a new real-time system')).toBe('PLAN');
+  });
+
+  it('routes ENHANCE on "improve"', () => {
+    expect(detectIntent('improve the vault search performance')).toBe('ENHANCE');
+  });
+
+  it('routes ENHANCE on "refactor"', () => {
+    expect(detectIntent('refactor the intent router')).toBe('ENHANCE');
+  });
+
+  it('routes EXPLORE on "explore"', () => {
+    expect(detectIntent('explore what patterns we have for caching')).toBe('EXPLORE');
+  });
+
+  it('routes EXPLORE on "research"', () => {
+    expect(detectIntent('research available options for embedding')).toBe('EXPLORE');
+  });
+
+  it('routes DESIGN on "design"', () => {
+    expect(detectIntent('design a color palette for the dashboard')).toBe('DESIGN');
+  });
+
+  it('routes DESIGN on "typography"', () => {
+    expect(detectIntent('choose typography and palette for the landing page')).toBe('DESIGN');
+  });
+
+  it('routes BUILD on "build"', () => {
+    expect(detectIntent('build a UserAvatar component')).toBe('BUILD');
+  });
+
+  it('routes BUILD on "implement"', () => {
+    expect(detectIntent('implement the search endpoint')).toBe('BUILD');
+  });
+
+  it('defaults to BUILD when no keyword matches', () => {
+    expect(detectIntent('do something with the codebase')).toBe('BUILD');
+  });
+
+  // ─── Adversarial: prompts containing "new" must not misfire to BUILD ──
+
+  it('DELIVER beats BUILD when prompt has "ship" + "new"', () => {
+    expect(detectIntent('ship the new vault search v2 feature')).toBe('DELIVER');
+  });
+
+  it('DELIVER beats BUILD when prompt has "deploy" + "new"', () => {
+    expect(detectIntent('deploy the new release to production')).toBe('DELIVER');
+  });
+
+  it('PLAN beats BUILD when prompt has "plan" + "new"', () => {
+    expect(detectIntent('plan the architecture for a new real-time notification system')).toBe(
+      'PLAN',
+    );
+  });
+
+  it('FIX beats BUILD when prompt has "fix" + "new"', () => {
+    expect(detectIntent('fix the new regression in the parser')).toBe('FIX');
+  });
+
+  it('REVIEW beats BUILD when prompt has "review" + "new"', () => {
+    expect(detectIntent('review the new auth implementation')).toBe('REVIEW');
+  });
+
+  it('ENHANCE beats BUILD when prompt has "improve" + "add"', () => {
+    expect(detectIntent('improve performance and add caching')).toBe('ENHANCE');
   });
 });

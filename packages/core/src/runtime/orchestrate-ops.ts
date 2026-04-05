@@ -94,18 +94,21 @@ import {
 // Intent detection — keyword-based mapping from prompt to intent
 // ---------------------------------------------------------------------------
 
+// Ordered from most-specific to least-specific.
+// BUILD is the fallback — its keywords ("new", "add", "create") appear in nearly
+// every prompt, so it must never be an early match.
 const INTENT_KEYWORDS: [RegExp, string][] = [
+  [/\b(deploy|ship|release|publish)\b/i, 'DELIVER'],
   [/\b(fix|bug|broken|error|crash|issue)\b/i, 'FIX'],
-  [/\b(review|audit|check|inspect)\b/i, 'REVIEW'],
-  [/\b(build|create|add|new|implement|scaffold)\b/i, 'BUILD'],
-  [/\b(plan|architect|design-system|roadmap)\b/i, 'PLAN'],
+  [/\b(review|audit|inspect)\b/i, 'REVIEW'],
+  [/\b(plan|architect|architecture|roadmap|design-system)\b/i, 'PLAN'],
   [/\b(enhance|improve|refactor|optimize)\b/i, 'ENHANCE'],
   [/\b(explore|research|investigate|spike)\b/i, 'EXPLORE'],
-  [/\b(deploy|ship|release|publish)\b/i, 'DELIVER'],
   [/\b(design|palette|theme|color|typography)\b/i, 'DESIGN'],
+  [/\b(build|create|add|new|implement|scaffold)\b/i, 'BUILD'],
 ];
 
-function detectIntent(prompt: string): string {
+export function detectIntent(prompt: string): string {
   for (const [pattern, intent] of INTENT_KEYWORDS) {
     if (pattern.test(prompt)) return intent;
   }
