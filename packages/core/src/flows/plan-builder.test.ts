@@ -18,6 +18,7 @@ import {
   buildPlan,
   capabilityToProbe,
   flowStepsToPlanSteps,
+  resolveFlowByIntent,
   type VaultConstraint,
 } from './plan-builder.js';
 import type { AgentRuntime } from '../runtime/types.js';
@@ -297,5 +298,23 @@ describe('flowStepsToPlanSteps — capability-mapped tool names', () => {
     const steps = flowStepsToPlanSteps(makeFlow(['vault.search'], ['vault-search']), agentId);
     const count = steps[0].tools.filter((t) => t === 'myagent_vault_search_intelligent').length;
     expect(count).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveFlowByIntent — dynamic triggers.modes scan
+// ---------------------------------------------------------------------------
+
+describe('resolveFlowByIntent', () => {
+  it('returns BUILD-flow for BUILD intent', () => {
+    expect(resolveFlowByIntent('BUILD')).toBe('BUILD-flow');
+  });
+
+  it('returns DELIVER-flow for DELIVER intent', () => {
+    expect(resolveFlowByIntent('DELIVER')).toBe('DELIVER-flow');
+  });
+
+  it('returns BUILD-flow as fallback for unknown intent', () => {
+    expect(resolveFlowByIntent('UNKNOWN')).toBe('BUILD-flow');
   });
 });

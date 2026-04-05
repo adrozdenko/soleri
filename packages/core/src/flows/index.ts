@@ -26,7 +26,7 @@ export { runProbes } from './probes.js';
 
 // Plan builder
 export {
-  INTENT_TO_FLOW,
+  resolveFlowByIntent,
   chainToToolName,
   chainToRequires,
   flowStepsToPlanSteps,

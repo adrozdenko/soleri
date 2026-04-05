@@ -850,7 +850,7 @@ export {
   loadFlowById,
   loadAllFlows,
   runProbes,
-  INTENT_TO_FLOW,
+  resolveFlowByIntent,
   chainToToolName,
   buildPlan,
   pruneSteps,

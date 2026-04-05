@@ -18,7 +18,7 @@ import type {
   ProbeName,
   VaultRecommendation,
 } from './types.js';
-import { loadFlowById } from './loader.js';
+import { loadFlowById, loadAllFlows } from './loader.js';
 import { runProbes } from './probes.js';
 import { detectContext, applyContextOverrides } from './context-router.js';
 import { chainToCapability } from '../capabilities/index.js';
@@ -29,18 +29,16 @@ import { capabilityToToolName } from './capability-op-map.js';
 // Intent → Flow mapping
 // ---------------------------------------------------------------------------
 
-export const INTENT_TO_FLOW: Record<string, string> = {
-  BUILD: 'BUILD-flow',
-  CREATE: 'BUILD-flow',
-  FIX: 'FIX-flow',
-  REVIEW: 'REVIEW-flow',
-  PLAN: 'PLAN-flow',
-  DESIGN: 'DESIGN-flow',
-  ENHANCE: 'ENHANCE-flow',
-  IMPROVE: 'ENHANCE-flow',
-  EXPLORE: 'EXPLORE-flow',
-  DELIVER: 'DELIVER-flow',
-};
+/**
+ * Dynamically resolve a flow ID by scanning each flow's `triggers.modes` array.
+ * Falls back to `'BUILD-flow'` when no flow declares the given intent.
+ */
+export function resolveFlowByIntent(intent: string, flowsDir?: string): string {
+  const flows = loadAllFlows(flowsDir);
+  const upper = intent.toUpperCase();
+  const match = flows.find((f) => (f.triggers?.modes ?? []).some((m) => m.toUpperCase() === upper));
+  return match?.id ?? 'BUILD-flow';
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -236,7 +234,7 @@ export async function buildPlan(
   vaultConstraints: VaultConstraint[] = [],
 ): Promise<OrchestrationPlan> {
   const normalizedIntent = intent.toUpperCase();
-  const flowId = INTENT_TO_FLOW[normalizedIntent] ?? 'BUILD-flow';
+  const flowId = resolveFlowByIntent(normalizedIntent);
   const flow = loadFlowById(flowId);
 
   const probes = await runProbes(runtime, projectPath);
