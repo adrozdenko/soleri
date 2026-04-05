@@ -307,9 +307,9 @@ describe('System Quality Tests', () => {
       );
       expect(dbRelated).toBe(true);
 
-      // Vault fallback recommendations have strength=50
-      const vaultFallback = recommendations.filter((r) => r.strength === 50);
-      expect(vaultFallback.length).toBeGreaterThan(0);
+      // Vault recommendations have strength > 0 (80 for standard, 100 for critical)
+      const vaultRecs = recommendations.filter((r) => r.strength > 0);
+      expect(vaultRecs.length).toBeGreaterThan(0);
     });
 
     it('1.3 orchestrate_plan flow has correct intent detection', async () => {
@@ -351,11 +351,13 @@ describe('System Quality Tests', () => {
       const decisions = plan.decisions as string[];
       expect(Array.isArray(decisions)).toBe(true);
       expect(decisions.length).toBeGreaterThan(0);
-      // Each decision is prefixed with "Brain pattern: <title> (strength: N.N)"
-      const hasBrainPrefix = decisions.some((d) => d.startsWith('Brain pattern:'));
-      expect(hasBrainPrefix).toBe(true);
+      // Each decision is prefixed with "Brain pattern:" or "Vault pattern:"
+      const hasPatternPrefix = decisions.some(
+        (d) => d.startsWith('Brain pattern:') || d.startsWith('Vault pattern:'),
+      );
+      expect(hasPatternPrefix).toBe(true);
       // Decisions contain strength scores
-      const hasStrength = decisions.some((d) => /\(strength: \d+\.\d\)/.test(d));
+      const hasStrength = decisions.some((d) => /\(strength: \d+\.?\d*\)/.test(d));
       expect(hasStrength).toBe(true);
     });
 

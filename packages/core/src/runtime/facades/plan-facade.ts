@@ -117,6 +117,7 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         if (playbookMatch) plan.playbookMatch = playbookMatch;
         if (playbookSessionId) {
           planner.patchPlan(plan.id, { playbookSessionId });
+          plan.playbookSessionId = playbookSessionId;
         }
 
         return {
@@ -124,7 +125,11 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           plan,
           vaultEntryIds,
           playbook: playbook
-            ? { label: playbook.label, tasksInjected: playbookTasks.length }
+            ? {
+                label: playbook.label,
+                tasksInjected: playbookTasks.length,
+                sessionId: playbookSessionId ?? null,
+              }
             : null,
         };
       },

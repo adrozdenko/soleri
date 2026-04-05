@@ -279,18 +279,27 @@ describe('Agent Simulation: First Week', () => {
       expect(plan.scope).toBe('Frontend error handling for React application');
       expect(plan.status).toBe('draft');
       const tasks = plan.tasks as Array<{ id: string; title: string; status: string }>;
-      expect(tasks.length).toBe(3);
+      // TDD playbook may inject an extra before-implementation task
+      expect(tasks.length).toBeGreaterThanOrEqual(3);
       // All tasks start as pending
       for (const task of tasks) {
         expect(task.id).toBeDefined();
         expect(task.status).toBe('pending');
       }
-      expect(tasks[0].title).toBe('Set up error boundary at route level');
-      expect(tasks[1].title).toBe('Create centralized error service');
-      expect(tasks[2].title).toBe('Add retry logic with exponential backoff');
+      // User-defined tasks exist (playbook may prepend a TDD task)
+      const userTitles = [
+        'Set up error boundary at route level',
+        'Create centralized error service',
+        'Add retry logic with exponential backoff',
+      ];
+      for (const title of userTitles) {
+        expect(tasks.some((t) => t.title === title)).toBe(true);
+      }
 
       state.planId = plan.id;
-      state.taskIds = tasks.map((t) => t.id);
+      state.playbookSessionId = (plan as Record<string, unknown>).playbookSessionId ?? null;
+      // Store only the 3 user-defined task IDs (skip injected playbook tasks)
+      state.taskIds = userTitles.map((title) => tasks.find((t) => t.title === title)!.id);
     });
 
     it('10. Approve the plan', async () => {
@@ -311,6 +320,15 @@ describe('Agent Simulation: First Week', () => {
 
     it('11. Complete task 1', async () => {
       const taskIds = state.taskIds as string[];
+      // Consume the playbook session so TDD post-task gate doesn't block task completion
+      const sessionId = state.playbookSessionId as string | null;
+      if (sessionId) {
+        await op('orchestrate', 'playbook_complete', {
+          sessionId,
+          gateResults: { 'tdd-red': true, 'tdd-green': true },
+        });
+        state.playbookSessionId = null;
+      }
       const res = await op('plan', 'update_task', {
         planId: state.planId,
         taskId: taskIds[0],
@@ -419,10 +437,15 @@ describe('Agent Simulation: First Week', () => {
       const recon = res.reconciliation as Record<string, unknown>;
       expect(recon.accuracy).toBe(100);
       expect(recon.driftItems).toEqual([]);
-      // All 3 tasks are completed
-      const tasks = res.tasks as Array<{ status: string }>;
-      expect(tasks.length).toBe(3);
-      expect(tasks.every((t) => t.status === 'completed')).toBe(true);
+      // The 3 user-defined tasks are completed (playbook may have injected extras)
+      const tasks = res.tasks as Array<{ id: string; status: string }>;
+      expect(tasks.length).toBeGreaterThanOrEqual(3);
+      const completedTaskIds = state.taskIds as string[];
+      for (const tid of completedTaskIds) {
+        const t = tasks.find((task) => task.id === tid);
+        expect(t).toBeDefined();
+        expect(t!.status).toBe('completed');
+      }
     });
   });
 
@@ -1079,7 +1102,7 @@ describe('Agent Simulation: First Week', () => {
 
     it('51. Search with zero results — should return empty array', async () => {
       const res = await op('vault', 'search', {
-        query: 'xyzzy_nonexistent_term_that_matches_nothing_12345',
+        query: 'xyzzynonexistenttermthatmatchesnothing12345',
       });
       // intelligentSearch returns RankedResult[] directly
       const results = res as unknown as Array<unknown>;
@@ -1180,11 +1203,12 @@ describe('Agent Simulation: First Week', () => {
     });
 
     it('57. Update task with invalid taskId on valid plan — should error', async () => {
-      // Use plan2 which is still in draft status
+      // Use plan2 which is still in draft status. Use in_progress (not completed) to bypass
+      // TDD post-task gate check, so the draft-status error surfaces properly.
       const res = await opRaw('plan', 'update_task', {
         planId: state.plan2Id,
         taskId: 'nonexistent-task-id',
-        status: 'completed',
+        status: 'in_progress',
       });
 
       expect(res.success).toBe(false);

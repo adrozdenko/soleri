@@ -70,6 +70,10 @@ const CHAIN_TO_CAPABILITY: Record<string, string> = {
   // Planning
   'plan-create': 'plan.create',
 
+  // Capture & Synthesis
+  'capture-baseline-state': 'vault.capture',
+  'vault-synthesize': 'vault.synthesize',
+
   // Review & Quality
   'review-report': 'review.report',
   'accessibility-audit': 'a11y.audit',

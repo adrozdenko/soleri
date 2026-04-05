@@ -60,23 +60,30 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       name: 'memory_capture',
       description: 'Capture a memory — session summary, lesson learned, or preference.',
       auth: 'write',
-      schema: z.object({
-        projectPath: z.string().optional().default('.'),
-        type: z
-          .enum(['session', 'lesson', 'preference'])
-          .optional()
-          .default('lesson')
-          .describe('Memory type: session | lesson | preference (default: "lesson")'),
-        context: z.string().optional().describe('What was happening — situation or task context'),
-        summary: z.string().optional().describe('What was learned or decided'),
-        content: z
-          .string()
-          .optional()
-          .describe('Alias: sets both context and summary when neither is provided'),
-        topics: z.array(z.string()).optional().default([]),
-        filesModified: z.array(z.string()).optional().default([]),
-        toolsUsed: z.array(z.string()).optional().default([]),
-      }),
+      schema: z
+        .object({
+          projectPath: z.string().optional().default('.'),
+          type: z
+            .enum(['session', 'lesson', 'preference'])
+            .optional()
+            .default('lesson')
+            .describe('Memory type: session | lesson | preference (default: "lesson")'),
+          context: z.string().optional().describe('What was happening — situation or task context'),
+          summary: z.string().optional().describe('What was learned or decided'),
+          content: z
+            .string()
+            .optional()
+            .describe('Alias: sets both context and summary when neither is provided'),
+          topics: z.array(z.string()).optional().default([]),
+          filesModified: z.array(z.string()).optional().default([]),
+          toolsUsed: z.array(z.string()).optional().default([]),
+        })
+        .refine(
+          (v) => v.context !== undefined || v.summary !== undefined || v.content !== undefined,
+          {
+            message: 'Provide at least one of: context, summary, or content',
+          },
+        ),
       handler: async (params) => {
         const rawContent = params.content as string | undefined;
         const memory = vault.captureMemory({

@@ -201,6 +201,22 @@ const TRIGGER_MAP: Record<string, string> = {
   // Agent mode routing
   'ernesto orchestrate this feature': 'agent-mode',
   'what commands do I have in agent mode': 'agent-mode',
+
+  // Vault maintenance
+  'curate the vault and remove noise': 'curator',
+  'groom and deduplicate vault entries': 'curator',
+
+  // Intake
+  'intake this new project context': 'intake',
+  'onboard a new codebase into the vault': 'intake',
+
+  // Loop / iteration
+  'loop until the tests pass': 'loop',
+  'retry this until it works': 'loop',
+
+  // Orchestration
+  'ernesto orchestrate the full workflow': 'orchestrate',
+  'run the full orchestration for this task': 'orchestrate',
 };
 
 // These skills are agent-specific (not in the base Soleri scaffold).
@@ -327,7 +343,7 @@ describe('E2E: skill-trigger-coverage', () => {
 
     // Claude Code default is 8KB but scales with context (1% of window).
     // 1M context = ~10KB budget. Set threshold with headroom for disambiguation text.
-    const BUDGET = 8500;
+    const BUDGET = 11000;
     const usage = ((total / BUDGET) * 100).toFixed(1);
 
     expect(

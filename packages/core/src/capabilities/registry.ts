@@ -33,7 +33,13 @@ export interface FlowForValidation {
     needs?: string[];
     chains?: string[];
   }>;
+  /** Kebab-case (YAML / flow file format). */
   'on-missing-capability'?: {
+    default?: string;
+    blocking?: string[];
+  };
+  /** CamelCase alias for programmatic callers. */
+  onMissingCapability?: {
     default?: string;
     blocking?: string[];
   };
@@ -236,8 +242,9 @@ export class CapabilityRegistry {
       }
     }
 
-    // Classify missing capabilities by impact
-    const blockingSet = new Set(flow['on-missing-capability']?.blocking ?? []);
+    // Classify missing capabilities by impact (accept both kebab and camelCase keys)
+    const missingCapConfig = flow['on-missing-capability'] ?? flow.onMissingCapability;
+    const blockingSet = new Set(missingCapConfig?.blocking ?? []);
 
     const degraded = missing.map((capability) => ({
       capability,
