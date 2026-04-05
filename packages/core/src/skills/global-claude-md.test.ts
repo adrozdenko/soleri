@@ -16,18 +16,20 @@ let tmpHome: string;
 let claudeDir: string;
 let claudeMdPath: string;
 
-// We patch the module by temporarily pointing HOME at a temp dir
+// We patch the module by temporarily pointing HOME (and USERPROFILE on Windows) at a temp dir
 beforeEach(() => {
   tmpHome = join(tmpdir(), `soleri-claude-md-test-${Date.now()}`);
   claudeDir = join(tmpHome, '.claude');
   claudeMdPath = join(claudeDir, 'CLAUDE.md');
   mkdirSync(claudeDir, { recursive: true });
   process.env['HOME'] = tmpHome;
+  process.env['USERPROFILE'] = tmpHome; // Windows: homedir() reads USERPROFILE, not HOME
 });
 
 afterEach(() => {
   rmSync(tmpHome, { recursive: true, force: true });
   delete process.env['HOME'];
+  delete process.env['USERPROFILE'];
 });
 
 describe('scaffoldGlobalClaudeMd', () => {
