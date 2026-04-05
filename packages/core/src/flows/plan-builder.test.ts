@@ -199,3 +199,90 @@ describe('buildPlan — vault recommendations', () => {
     expect(rec?.mandatory).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// DELIVER-flow safety bypass fix
+// ---------------------------------------------------------------------------
+
+describe('buildPlan — DELIVER-flow safety bypass', () => {
+  it('returns blocked:true when designSystem (Salvador) is unavailable', async () => {
+    // DELIVER-flow has a hard STOP gate on validate-code (needs component.validate).
+    // Without Salvador, that gate is silently pruned and code ships without validation.
+    // Fix: component.validate must be in the blocking list so the plan is blocked, not degraded.
+    const runtime = makeRuntime(true); // vault up, but projectRegistry returns [] → designSystem=false
+    const plan = await buildPlan('DELIVER', 'myagent', '/tmp/proj', runtime);
+
+    expect(plan.blocked).toBe(true);
+    expect(plan.steps).toHaveLength(0);
+    expect(plan.warnings[0]).toMatch(/Blocked/);
+    expect(plan.warnings[0]).toMatch(/component\.validate/);
+  });
+
+  it('builds a full DELIVER plan when designSystem is available', async () => {
+    // Ensure blocking check only fires when Salvador is absent — not always.
+    const runtime = {
+      vault: { stats: vi.fn(() => ({ totalEntries: 10 })) },
+      brain: { getVocabularySize: vi.fn(() => 5) },
+      projectRegistry: { list: vi.fn(() => [{ id: 'salvador' }]) }, // designSystem = true
+    } as unknown as AgentRuntime;
+    const plan = await buildPlan('DELIVER', 'myagent', '/tmp/proj', runtime);
+
+    expect(plan.blocked).toBeUndefined();
+    expect(plan.steps.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// REVIEW-flow blocked without Salvador
+// ---------------------------------------------------------------------------
+
+describe('buildPlan — REVIEW-flow blocked without Salvador', () => {
+  it('returns blocked:true when designSystem (Salvador) is unavailable', async () => {
+    // Without Salvador, 4 of 5 REVIEW-flow steps are pruned.
+    // A code review that only does vault search is misleading — should block clearly.
+    const runtime = makeRuntime(true); // vault up, projectRegistry [] → designSystem=false
+    const plan = await buildPlan('REVIEW', 'myagent', '/tmp/proj', runtime);
+
+    expect(plan.blocked).toBe(true);
+    expect(plan.steps).toHaveLength(0);
+    expect(plan.warnings[0]).toMatch(/Blocked/);
+  });
+
+  it('builds a full REVIEW plan when designSystem is available', async () => {
+    const runtime = {
+      vault: { stats: vi.fn(() => ({ totalEntries: 10 })) },
+      brain: { getVocabularySize: vi.fn(() => 5) },
+      projectRegistry: { list: vi.fn(() => [{ id: 'salvador' }]) },
+    } as unknown as AgentRuntime;
+    const plan = await buildPlan('REVIEW', 'myagent', '/tmp/proj', runtime);
+
+    expect(plan.blocked).toBeUndefined();
+    expect(plan.steps.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// capabilityToProbe — extended mappings
+// ---------------------------------------------------------------------------
+
+describe('capabilityToProbe — extended mappings for unprobed capabilities', () => {
+  it('maps debug.* capabilities to brain probe', () => {
+    // debug.patterns has no probe → steps silently no-op at dispatch.
+    // Mapping to brain makes debug steps prune when brain is unavailable.
+    expect(capabilityToProbe('debug.patterns')).toBe('brain');
+    expect(capabilityToProbe('debug.trace')).toBe('brain');
+  });
+
+  it('maps architecture.* capabilities to brain probe', () => {
+    // architecture.search has no probe → silently no-ops.
+    // Brain provides pattern/recommendation system — best available match.
+    expect(capabilityToProbe('architecture.search')).toBe('brain');
+    expect(capabilityToProbe('architecture.guidance')).toBe('brain');
+  });
+
+  it('still returns undefined for truly unmapped capabilities', () => {
+    // Capabilities with no real probe should remain unmapped — not mapped to a wrong probe.
+    expect(capabilityToProbe('unknown.op')).toBeUndefined();
+    expect(capabilityToProbe('auth.validate')).toBeUndefined();
+  });
+});

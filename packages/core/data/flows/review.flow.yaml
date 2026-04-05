@@ -9,7 +9,7 @@ description: >
 version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
-  blocking: [vault.search]
+  blocking: [vault.search, component.validate]
 
 triggers:
   modes:
@@ -74,14 +74,6 @@ steps:
     output:
       - review-summary
       - review-grade
-
-scoring:
-  weights:
-    code-validation: 0.30
-    rules-check: 0.25
-    accessibility: 0.25
-    report: 0.20
-  formula: 'weighted-sum'
 
 on-error:
   default:

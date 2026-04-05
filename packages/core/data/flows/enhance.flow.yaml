@@ -76,13 +76,6 @@ steps:
         goto: get-architecture
         message: 'Enhancement validation below threshold. Revisit architecture guidance.'
 
-scoring:
-  weights:
-    vault-search: 0.20
-    architecture: 0.30
-    validation: 0.50
-  formula: 'weighted-sum'
-
 on-error:
   default:
     action: STOP

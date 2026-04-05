@@ -76,14 +76,6 @@ steps:
         action: CONTINUE
         message: 'Critical findings detected — review before proceeding.'
 
-scoring:
-  weights:
-    vault-search: 0.30
-    memory-search: 0.25
-    brain-check: 0.25
-    playbook-check: 0.20
-  formula: 'weighted-sum'
-
 on-error:
   default:
     action: CONTINUE

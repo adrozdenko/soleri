@@ -66,13 +66,6 @@ steps:
         goto: search-anti-patterns
         message: 'Fix validation below threshold. Re-examine anti-patterns.'
 
-scoring:
-  weights:
-    anti-pattern-search: 0.25
-    error-patterns: 0.25
-    validation: 0.50
-  formula: 'weighted-sum'
-
 on-error:
   default:
     action: STOP

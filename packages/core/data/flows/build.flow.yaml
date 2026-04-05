@@ -99,15 +99,6 @@ steps:
         goto: get-workflow
         message: 'Validation score below threshold. Re-run workflow.'
 
-scoring:
-  weights:
-    vault-search: 0.15
-    duplicate-check: 0.10
-    architecture: 0.15
-    workflow: 0.20
-    validation: 0.40
-  formula: 'weighted-sum'
-
 on-error:
   default:
     action: STOP

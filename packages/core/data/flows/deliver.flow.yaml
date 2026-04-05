@@ -9,7 +9,7 @@ description: >
 version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
-  blocking: [vault.search]
+  blocking: [vault.search, component.validate]
 
 triggers:
   modes:
@@ -93,14 +93,6 @@ steps:
       on-false:
         action: STOP
         message: 'Delivery score below threshold. Address issues before shipping.'
-
-scoring:
-  weights:
-    code-validation: 0.30
-    testing: 0.25
-    performance: 0.20
-    delivery: 0.25
-  formula: 'weighted-sum'
 
 on-error:
   default:

@@ -72,14 +72,6 @@ steps:
     output:
       - brain-recommendations
 
-scoring:
-  weights:
-    vault-search: 0.25
-    design-system: 0.40
-    stack-guidelines: 0.15
-    brain-recommend: 0.20
-  formula: 'weighted-sum'
-
 on-error:
   default:
     action: CONTINUE

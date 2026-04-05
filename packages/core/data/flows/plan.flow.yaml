@@ -64,13 +64,6 @@ steps:
         goto: brainstorm
         message: 'Plan did not meet quality threshold. Re-brainstorm.'
 
-scoring:
-  weights:
-    vault-search: 0.20
-    brainstorm: 0.30
-    plan-creation: 0.50
-  formula: 'weighted-sum'
-
 on-error:
   default:
     action: STOP

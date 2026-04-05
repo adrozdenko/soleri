@@ -1,5 +1,10 @@
 /**
  * Plan builder — converts intent + flow + probes into an OrchestrationPlan.
+ *
+ * TODO(scoring): Flow YAML files previously declared scoring.weights + formula blocks.
+ * These were removed as dead code — buildPlan() and FlowExecutor never computed them.
+ * Wiring up flow-level scoring requires: (1) reading weights from YAML, (2) aggregating
+ * step outputs in FlowExecutor, (3) emitting a plan-level score in OrchestrationPlan.
  */
 
 import { randomUUID } from 'node:crypto';
@@ -58,6 +63,8 @@ export function chainToRequires(chain: string): ProbeName | undefined {
     return 'designSystem';
   if (lower.startsWith('session')) return 'sessionStore';
   if (lower.startsWith('test')) return 'test';
+  // error-pattern-search and architecture-search rely on brain pattern/recommendation system
+  if (lower.startsWith('error-pattern') || lower.startsWith('architecture')) return 'brain';
   // recommend-* and get-stack-* have no hard requirements
   if (lower.startsWith('recommend') || lower.startsWith('get-stack')) return undefined;
   return undefined;
@@ -168,6 +175,9 @@ export function capabilityToProbe(capId: string): ProbeName | undefined {
   if (capId.startsWith('design.') || capId.startsWith('component.') || capId.startsWith('token.'))
     return 'designSystem';
   if (capId.startsWith('session.')) return 'sessionStore';
+  // debug.* and architecture.* map to brain — both rely on brain pattern/recommendation system.
+  // When brain is unavailable these steps cannot provide meaningful output.
+  if (capId.startsWith('debug.') || capId.startsWith('architecture.')) return 'brain';
   return undefined;
 }
 
@@ -292,7 +302,25 @@ export async function buildPlan(
     skipped = pruneResult.skipped;
 
     if (pruneResult.skipped.length > 0) {
-      warnings.push(`${pruneResult.skipped.length} step(s) skipped due to missing capabilities.`);
+      const missingProbes = [
+        ...new Set(
+          pruneResult.skipped.flatMap(
+            (s) =>
+              (s as { reason?: string }).reason
+                ?.match(/Missing capabilities: (.+)/)?.[1]
+                ?.split(', ') ?? [],
+          ),
+        ),
+      ];
+      const majorityPruned = pruneResult.skipped.length > allSteps.length / 2;
+      const severityPrefix = majorityPruned
+        ? `⚠️  ${pruneResult.skipped.length} of ${allSteps.length} flow steps pruned`
+        : `${pruneResult.skipped.length} step(s) skipped`;
+      const capNote =
+        missingProbes.length > 0
+          ? ` — missing: ${missingProbes.join(', ')}. Connect the required subsystem to unlock these steps.`
+          : ' due to missing capabilities.';
+      warnings.push(`${severityPrefix}${capNote}`);
     }
   } else {
     warnings.push(`Flow "${flowId}" not found — plan will have no steps.`);
