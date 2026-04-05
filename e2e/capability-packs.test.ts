@@ -329,19 +329,14 @@ describe('Journey 3: Flow resolves capabilities correctly', () => {
       onMissingCapability: buildFlow['on-missing-capability'],
     });
 
-    // Build flow needs 9 capabilities, all registered in the full-stack pack
+    // Build flow needs 4 capabilities (Salvador-dependent steps removed)
     expect(validation.valid).toBe(true);
     expect(validation.missing).toHaveLength(0);
-    expect(validation.available.length).toBe(9);
+    expect(validation.available.length).toBe(4);
     expect(validation.available).toContain('vault.search');
     expect(validation.available).toContain('memory.search');
-    expect(validation.available).toContain('component.search');
-    expect(validation.available).toContain('design.recommend');
     expect(validation.available).toContain('architecture.search');
     expect(validation.available).toContain('brain.recommend');
-    expect(validation.available).toContain('component.workflow');
-    expect(validation.available).toContain('component.validate');
-    expect(validation.available).toContain('token.check');
   });
 
   it('capability handler should receive params and return result', async () => {

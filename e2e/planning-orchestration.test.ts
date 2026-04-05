@@ -361,10 +361,10 @@ describe('E2E: planning-orchestration', () => {
       expect(data.flow).toBeDefined();
       expect(data.flow.intent).toBe('BUILD');
       expect(data.flow.flowId).toBe('BUILD-flow');
-      // 3 steps kept (vault-search, recommend, validate), 3 skipped (check-duplicates, get-architecture, get-workflow)
-      // Pruning is probe-based: vault=true, brain=false, designSystem=false
-      expect(data.flow.stepsCount).toBe(3);
-      expect(data.flow.skippedCount).toBe(3);
+      // 1 step kept (vault-search), 1 skipped (get-architecture — brain unavailable)
+      // Pruning is probe-based: vault=true, brain=false (CI has no brain vocabulary)
+      expect(data.flow.stepsCount).toBe(1);
+      expect(data.flow.skippedCount).toBe(1);
       expect(Array.isArray(data.flow.warnings)).toBe(true);
       // estimatedTools is a count of total tool calls across kept steps
       expect(typeof data.flow.estimatedTools).toBe('number');
