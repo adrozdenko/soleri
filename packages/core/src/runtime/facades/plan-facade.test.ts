@@ -7,6 +7,7 @@ import { Brain } from '../../brain/brain.js';
 import { BrainIntelligence } from '../../brain/intelligence.js';
 import { Curator } from '../../curator/curator.js';
 import { ChainRunner } from '../../flows/chain-runner.js';
+import { PlaybookExecutor } from '../../playbooks/playbook-executor.js';
 import { createPlanFacadeOps } from './plan-facade.js';
 import { captureOps, executeOp } from '../../engine/test-helpers.js';
 import type { CapturedOp } from '../../engine/test-helpers.js';
@@ -174,6 +175,74 @@ describe('plan-facade', () => {
     expect(result.success).toBe(true);
     const data = result.data as { updated: boolean };
     expect(data.updated).toBe(true);
+  });
+
+  // ─── update_task: TDD gate satisfaction ────────────────────────
+
+  it('update_task allows completion when tdd-red evidence has been submitted', async () => {
+    // Bug: gate check in plan-facade.ts unconditionally blocks update_task when any
+    // blocking post-task gate exists in the playbook session — it never checks whether
+    // the gate has been satisfied via plan_submit_evidence.
+    // Fix: only block if the gate's checkType has NO matching evidence on the task.
+    const playbookExecutor = new PlaybookExecutor();
+    const plansPath = join(tmpdir(), `plan-gate-test-${Date.now()}.json`);
+    const planner = new Planner(plansPath);
+    const brain = new Brain(vault);
+    const gatedRuntime = {
+      vault,
+      planner,
+      brain,
+      brainIntelligence: new BrainIntelligence(vault, brain),
+      curator: new Curator(vault, brain),
+      linkManager: null,
+      chainRunner: new ChainRunner(vault.getProvider()),
+      playbookExecutor,
+    } as unknown as AgentRuntime;
+    const gatedOps = captureOps(createPlanFacadeOps(gatedRuntime));
+
+    // Create a plan — TDD playbook will be matched and session started
+    const createResult = await executeOp(gatedOps, 'create_plan', {
+      objective: 'Implement feature X',
+      scope: 'test',
+      decisions: ['d1', 'd2', 'd3'],
+      tasks: [{ title: 'Write tests', description: 'Write failing tests first' }],
+      alternatives: [
+        { approach: 'A', pros: ['x'], cons: ['y'], rejected_reason: 'z' },
+        { approach: 'B', pros: ['a'], cons: ['b'], rejected_reason: 'c' },
+      ],
+    });
+    const plan = (createResult.data as Record<string, unknown>).plan as Record<string, unknown>;
+    const planId = plan.id as string;
+    const taskId = (plan.tasks as Array<Record<string, unknown>>)[0].id as string;
+    await executeOp(gatedOps, 'approve_plan', { planId, startExecution: true });
+
+    // Without evidence: must be blocked
+    const blockedResult = await executeOp(gatedOps, 'update_task', {
+      planId,
+      taskId,
+      status: 'completed',
+    });
+    const blockedData = blockedResult.data as { updated: boolean; blocked?: boolean };
+    expect(blockedData.blocked).toBe(true);
+    expect(blockedData.updated).toBe(false);
+
+    // Submit evidence directly via planner (plan_submit_evidence lives in planning-extra-ops,
+    // not plan-facade — same underlying planner.submitEvidence() call)
+    planner.submitEvidence(planId, taskId, {
+      criterion: 'tdd-red',
+      content: 'FAIL (4) — tests fail before implementation',
+      type: 'command_output',
+    });
+
+    // After evidence: must be allowed through
+    const passResult = await executeOp(gatedOps, 'update_task', {
+      planId,
+      taskId,
+      status: 'completed',
+    });
+    const passData = passResult.data as { updated: boolean; blocked?: boolean };
+    expect(passData.blocked).toBeUndefined();
+    expect(passData.updated).toBe(true);
   });
 
   // ─── complete_plan ─────────────────────────────────────────────

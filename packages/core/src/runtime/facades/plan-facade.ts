@@ -221,15 +221,25 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
                   (g.severity === 'blocking' || g.severity === undefined),
               );
               if (blockingPostTaskGates.length > 0) {
-                return {
-                  updated: false,
-                  blocked: true,
-                  reason: 'post-task gates unsatisfied',
-                  gates: blockingPostTaskGates.map((g) => ({
-                    checkType: g.checkType,
-                    requirement: g.requirement,
-                  })),
-                };
+                // Only block on gates that have NOT been satisfied by submitted evidence.
+                // Evidence is stored per-task: each entry's `criterion` field matches
+                // the gate's `checkType`. A gate is satisfied when evidence exists for it.
+                const task = currentPlan.tasks.find((t) => t.id === (params.taskId as string));
+                const evidencedCriteria = new Set((task?.evidence ?? []).map((e) => e.criterion));
+                const unsatisfiedGates = blockingPostTaskGates.filter(
+                  (g) => !evidencedCriteria.has(g.checkType),
+                );
+                if (unsatisfiedGates.length > 0) {
+                  return {
+                    updated: false,
+                    blocked: true,
+                    reason: 'post-task gates unsatisfied',
+                    gates: unsatisfiedGates.map((g) => ({
+                      checkType: g.checkType,
+                      requirement: g.requirement,
+                    })),
+                  };
+                }
               }
             }
           }
