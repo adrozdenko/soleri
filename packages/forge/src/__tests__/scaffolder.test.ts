@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
   mkdirSync,
   rmSync,
@@ -17,78 +17,88 @@ const SOURCE_SKILLS_DIR = join(__dirname, '..', 'skills');
 import { scaffold, previewScaffold, listAgents } from '../scaffolder.js';
 import type { AgentConfig } from '../types.js';
 
+const baseConfig: AgentConfig = {
+  id: 'atlas',
+  name: 'Atlas',
+  role: 'Data Engineering Advisor',
+  description:
+    'Atlas provides guidance on data pipelines, ETL patterns, and data quality practices.',
+  domains: ['data-pipelines', 'data-quality', 'etl'],
+  principles: [
+    'Data quality is non-negotiable',
+    'Idempotent pipelines always',
+    'Schema evolution over breaking changes',
+  ],
+  greeting: 'Atlas here. I help with data engineering patterns and best practices.',
+  outputDir: '', // set per describe block
+};
+
+function makeTempDir(suffix: string): string {
+  const dir = join(tmpdir(), `forge-test-${suffix}-${Date.now()}`);
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
 describe('Scaffolder', () => {
-  let tempDir: string;
-
-  const testConfig: AgentConfig = {
-    id: 'atlas',
-    name: 'Atlas',
-    role: 'Data Engineering Advisor',
-    description:
-      'Atlas provides guidance on data pipelines, ETL patterns, and data quality practices.',
-    domains: ['data-pipelines', 'data-quality', 'etl'],
-    principles: [
-      'Data quality is non-negotiable',
-      'Idempotent pipelines always',
-      'Schema evolution over breaking changes',
-    ],
-    greeting: 'Atlas here. I help with data engineering patterns and best practices.',
-    outputDir: '', // set in beforeEach
-  };
-
-  beforeEach(() => {
-    tempDir = join(tmpdir(), `forge-test-${Date.now()}`);
-    mkdirSync(tempDir, { recursive: true });
-    testConfig.outputDir = tempDir;
-  });
-
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true });
-  });
-
   describe('previewScaffold', () => {
     it('should return preview without creating files', () => {
-      const preview = previewScaffold(testConfig);
+      const tempDir = makeTempDir('preview');
+      try {
+        const config = { ...baseConfig, outputDir: tempDir };
+        const preview = previewScaffold(config);
 
-      expect(preview.agentDir).toBe(join(tempDir, 'atlas'));
-      expect(preview.persona.name).toBe('Atlas');
-      expect(preview.persona.role).toBe('Data Engineering Advisor');
-      expect(preview.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
-      expect(preview.files.length).toBe(19);
+        expect(preview.agentDir).toBe(join(tempDir, 'atlas'));
+        expect(preview.persona.name).toBe('Atlas');
+        expect(preview.persona.role).toBe('Data Engineering Advisor');
+        expect(preview.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
+        expect(preview.files.length).toBe(19);
 
-      const paths = preview.files.map((f) => f.path);
-      expect(paths).toContain('README.md');
-      expect(paths).toContain('scripts/setup.sh');
-      expect(paths).toContain('src/index.ts');
-      expect(paths).toContain('src/__tests__/facades.test.ts');
+        const paths = preview.files.map((f) => f.path);
+        expect(paths).toContain('README.md');
+        expect(paths).toContain('scripts/setup.sh');
+        expect(paths).toContain('src/index.ts');
+        expect(paths).toContain('src/__tests__/facades.test.ts');
 
-      // v5.0: These are no longer generated (live in @soleri/core)
-      expect(paths).not.toContain('src/llm/llm-client.ts');
-      expect(paths).not.toContain('src/facades/core.facade.ts');
-      expect(paths).not.toContain('src/facades/data-pipelines.facade.ts');
+        // v5.0: These are no longer generated (live in @soleri/core)
+        expect(paths).not.toContain('src/llm/llm-client.ts');
+        expect(paths).not.toContain('src/facades/core.facade.ts');
+        expect(paths).not.toContain('src/facades/data-pipelines.facade.ts');
 
-      // Should have domain facades + core facade in preview (3 domains + semantic + agent core)
-      expect(preview.facades.length).toBe(13);
-      expect(preview.facades[0].name).toBe('atlas_data_pipelines');
+        // Should have domain facades + core facade in preview (3 domains + semantic + agent core)
+        expect(preview.facades.length).toBe(13);
+        expect(preview.facades[0].name).toBe('atlas_data_pipelines');
 
-      // Agent-specific facade has 5 ops
-      const coreFacade = preview.facades.find((f) => f.name === 'atlas_core')!;
-      expect(coreFacade.ops.length).toBe(5);
-      expect(coreFacade.ops).toContain('health');
+        // Agent-specific facade has 5 ops
+        const coreFacade = preview.facades.find((f) => f.name === 'atlas_core')!;
+        expect(coreFacade.ops.length).toBe(5);
+        expect(coreFacade.ops).toContain('health');
 
-      // Semantic facades cover the rest
-      const vaultFacade = preview.facades.find((f) => f.name === 'atlas_vault')!;
-      expect(vaultFacade).toBeDefined();
+        // Semantic facades cover the rest
+        const vaultFacade = preview.facades.find((f) => f.name === 'atlas_vault')!;
+        expect(vaultFacade).toBeDefined();
 
-      // Should NOT create any files
-      expect(existsSync(join(tempDir, 'atlas'))).toBe(false);
+        // Should NOT create any files
+        expect(existsSync(join(tempDir, 'atlas'))).toBe(false);
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
     });
   });
 
   describe('scaffold', () => {
-    it('should create a complete agent project', () => {
-      const result = scaffold(testConfig);
+    let tempDir: string;
+    let result: ReturnType<typeof scaffold>;
 
+    beforeAll(() => {
+      tempDir = makeTempDir('scaffold');
+      result = scaffold({ ...baseConfig, outputDir: tempDir });
+    }, 60_000);
+
+    afterAll(() => {
+      rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    it('should create a complete agent project', () => {
       expect(result.success).toBe(true);
       expect(result.agentDir).toBe(join(tempDir, 'atlas'));
       expect(result.domains).toEqual(['data-pipelines', 'data-quality', 'etl']);
@@ -104,7 +114,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create expected directories (no facades/ or llm/ dirs)', () => {
-      scaffold(testConfig);
       const agentDir = join(tempDir, 'atlas');
 
       expect(existsSync(join(agentDir, 'src', 'intelligence', 'data'))).toBe(true);
@@ -116,7 +125,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create valid package.json with @soleri/core ^2.0.0', () => {
-      scaffold(testConfig);
       const pkg = JSON.parse(readFileSync(join(tempDir, 'atlas', 'package.json'), 'utf-8'));
 
       expect(pkg.name).toBe('atlas');
@@ -130,7 +138,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create persona with correct config', () => {
-      scaffold(testConfig);
       const persona = readFileSync(
         join(tempDir, 'atlas', 'src', 'identity', 'persona.ts'),
         'utf-8',
@@ -142,7 +149,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create seeded intelligence data files', () => {
-      scaffold(testConfig);
       const dataDir = join(tempDir, 'atlas', 'src', 'intelligence', 'data');
       const files = readdirSync(dataDir);
 
@@ -158,7 +164,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create entry point using runtime factories from @soleri/core', () => {
-      scaffold(testConfig);
       const entry = readFileSync(join(tempDir, 'atlas', 'src', 'index.ts'), 'utf-8');
 
       // v5.0 runtime factory pattern
@@ -179,7 +184,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create .mcp.json for client config', () => {
-      scaffold(testConfig);
       const mcp = JSON.parse(readFileSync(join(tempDir, 'atlas', '.mcp.json'), 'utf-8'));
 
       expect(mcp.mcpServers.atlas).toBeDefined();
@@ -187,7 +191,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create activation files', () => {
-      scaffold(testConfig);
       const activationDir = join(tempDir, 'atlas', 'src', 'activation');
       const files = readdirSync(activationDir);
 
@@ -197,7 +200,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create activation files with correct content', () => {
-      scaffold(testConfig);
       const activationDir = join(tempDir, 'atlas', 'src', 'activation');
 
       const claudeMd = readFileSync(join(activationDir, 'claude-md-content.ts'), 'utf-8');
@@ -215,7 +217,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create README.md with agent-specific content', () => {
-      scaffold(testConfig);
       const readme = readFileSync(join(tempDir, 'atlas', 'README.md'), 'utf-8');
 
       expect(readme).toContain('# Atlas');
@@ -225,7 +226,6 @@ describe('Scaffolder', () => {
     });
 
     it('should create executable setup.sh', () => {
-      scaffold(testConfig);
       const setupPath = join(tempDir, 'atlas', 'scripts', 'setup.sh');
       const setup = readFileSync(setupPath, 'utf-8');
 
@@ -240,7 +240,6 @@ describe('Scaffolder', () => {
     });
 
     it('should generate facade tests using runtime factories', () => {
-      scaffold(testConfig);
       const facadesTest = readFileSync(
         join(tempDir, 'atlas', 'src', '__tests__', 'facades.test.ts'),
         'utf-8',
@@ -267,17 +266,27 @@ describe('Scaffolder', () => {
     });
 
     it('should fail if directory already exists', () => {
-      scaffold(testConfig);
-      const result = scaffold(testConfig);
+      // scaffold already ran in beforeAll — attempt again on the same dir
+      const duplicate = scaffold({ ...baseConfig, outputDir: tempDir });
 
-      expect(result.success).toBe(false);
-      expect(result.summary).toContain('already exists');
+      expect(duplicate.success).toBe(false);
+      expect(duplicate.summary).toContain('already exists');
     });
   });
 
   describe('skills', () => {
+    let tempDir: string;
+
+    beforeAll(() => {
+      tempDir = makeTempDir('skills');
+      scaffold({ ...baseConfig, outputDir: tempDir });
+    }, 60_000);
+
+    afterAll(() => {
+      rmSync(tempDir, { recursive: true, force: true });
+    });
+
     it('should create skills directory with SKILL.md files', () => {
-      scaffold(testConfig);
       const skillsDir = join(tempDir, 'atlas', 'skills');
 
       expect(existsSync(skillsDir)).toBe(true);
@@ -298,7 +307,6 @@ describe('Scaffolder', () => {
     });
 
     it('should include core expected skill names', () => {
-      scaffold(testConfig);
       const skillsDir = join(tempDir, 'atlas', 'skills');
       const skillDirs = readdirSync(skillsDir).sort();
 
@@ -316,7 +324,6 @@ describe('Scaffolder', () => {
     });
 
     it('should have YAML frontmatter in all skills', () => {
-      scaffold(testConfig);
       const skillsDir = join(tempDir, 'atlas', 'skills');
       const skillDirs = readdirSync(skillsDir);
 
@@ -328,7 +335,6 @@ describe('Scaffolder', () => {
     });
 
     it('should substitute YOUR_AGENT_core with agent ID in all skills', () => {
-      scaffold(testConfig);
       const skillsDir = join(tempDir, 'atlas', 'skills');
       const allSkills = readdirSync(skillsDir);
 
@@ -343,7 +349,6 @@ describe('Scaffolder', () => {
     });
 
     it('should have valid content in superpowers-adapted skills', () => {
-      scaffold(testConfig);
       const skillsDir = join(tempDir, 'atlas', 'skills');
       const superpowersSkills = ['soleri-brainstorming', 'soleri-executing-plans'];
 
@@ -357,7 +362,6 @@ describe('Scaffolder', () => {
     });
 
     it('should have no YOUR_AGENT_core placeholder remaining in any skill', () => {
-      scaffold(testConfig);
       const skillsDir = join(tempDir, 'atlas', 'skills');
       const allSkills = readdirSync(skillsDir);
 
@@ -368,18 +372,23 @@ describe('Scaffolder', () => {
     });
 
     it('should include skills in preview', () => {
-      const preview = previewScaffold(testConfig);
+      const preview = previewScaffold({ ...baseConfig, outputDir: tempDir });
       const paths = preview.files.map((f) => f.path);
       expect(paths).toContain('skills/');
     });
 
     it('should mention skills in scaffold summary', () => {
-      const result = scaffold(testConfig);
-      expect(result.summary).toContain('built-in skills');
+      // Re-scaffold to a fresh dir just for this result check
+      const tmpDir2 = makeTempDir('skills-summary');
+      try {
+        const r = scaffold({ ...baseConfig, outputDir: tmpDir2 });
+        expect(r.summary).toContain('built-in skills');
+      } finally {
+        rmSync(tmpDir2, { recursive: true, force: true });
+      }
     });
 
     it('should sync generated skills into .claude/skills/', () => {
-      scaffold(testConfig);
       const agentDir = join(tempDir, 'atlas');
       const claudeSkillsDir = join(agentDir, '.claude', 'skills');
 
@@ -408,9 +417,18 @@ describe('Scaffolder', () => {
   });
 
   describe('listAgents', () => {
-    it('should list scaffolded agents', () => {
-      scaffold(testConfig);
+    let tempDir: string;
 
+    beforeAll(() => {
+      tempDir = makeTempDir('list-agents');
+      scaffold({ ...baseConfig, outputDir: tempDir });
+    }, 60_000);
+
+    afterAll(() => {
+      rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    it('should list scaffolded agents', () => {
       const agents = listAgents(tempDir);
       expect(agents).toHaveLength(1);
       expect(agents[0].id).toBe('atlas');
@@ -424,13 +442,21 @@ describe('Scaffolder', () => {
   });
 
   describe('telegram scaffolding', () => {
-    const telegramConfig: AgentConfig = {
-      ...testConfig,
-      telegram: true,
-    };
+    let tempDir: string;
+    let result: ReturnType<typeof scaffold>;
+
+    beforeAll(() => {
+      tempDir = makeTempDir('telegram');
+      const telegramConfig: AgentConfig = { ...baseConfig, outputDir: tempDir, telegram: true };
+      result = scaffold(telegramConfig);
+    }, 60_000);
+
+    afterAll(() => {
+      rmSync(tempDir, { recursive: true, force: true });
+    });
 
     it('should include telegram files in preview', () => {
-      telegramConfig.outputDir = tempDir;
+      const telegramConfig: AgentConfig = { ...baseConfig, outputDir: tempDir, telegram: true };
       const preview = previewScaffold(telegramConfig);
       const paths = preview.files.map((f) => f.path);
       expect(paths).toContain('src/telegram-bot.ts');
@@ -440,14 +466,12 @@ describe('Scaffolder', () => {
     });
 
     it('should not include telegram files without flag', () => {
-      const preview = previewScaffold(testConfig);
+      const preview = previewScaffold({ ...baseConfig, outputDir: tempDir });
       const paths = preview.files.map((f) => f.path);
       expect(paths).not.toContain('src/telegram-bot.ts');
     });
 
     it('should generate telegram source files', () => {
-      telegramConfig.outputDir = tempDir;
-      const result = scaffold(telegramConfig);
       // Build may fail (grammy not installed) but files should be created
       expect(result.filesCreated).toContain('src/telegram-bot.ts');
       expect(result.filesCreated).toContain('src/telegram-config.ts');
@@ -468,8 +492,6 @@ describe('Scaffolder', () => {
     });
 
     it('should include grammy dependency in package.json', () => {
-      telegramConfig.outputDir = tempDir;
-      scaffold(telegramConfig);
       const pkg = JSON.parse(readFileSync(join(tempDir, 'atlas', 'package.json'), 'utf-8'));
       expect(pkg.dependencies.grammy).toBeDefined();
       expect(pkg.scripts['telegram:start']).toBeDefined();
@@ -477,10 +499,16 @@ describe('Scaffolder', () => {
     });
 
     it('should not include grammy without telegram flag', () => {
-      const result = scaffold(testConfig);
-      if (result.success) {
-        const pkg = JSON.parse(readFileSync(join(tempDir, 'atlas', 'package.json'), 'utf-8'));
-        expect(pkg.dependencies.grammy).toBeUndefined();
+      // scaffold without telegram flag into a separate dir
+      const tmpDir2 = makeTempDir('no-telegram');
+      try {
+        const r = scaffold({ ...baseConfig, outputDir: tmpDir2 });
+        if (r.success) {
+          const pkg = JSON.parse(readFileSync(join(tmpDir2, 'atlas', 'package.json'), 'utf-8'));
+          expect(pkg.dependencies.grammy).toBeUndefined();
+        }
+      } finally {
+        rmSync(tmpDir2, { recursive: true, force: true });
       }
     });
   });
