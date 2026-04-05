@@ -182,6 +182,8 @@ describe('Scaffolder', () => {
       expect(entry).toContain('data-pipelines');
       expect(entry).toContain('data-quality');
       expect(entry).toContain('etl');
+      // flowsDir points to agent-local flows/ directory
+      expect(entry).toContain("flowsDir: join(__dirname, 'flows')");
     });
 
     it('should create .mcp.json for client config', () => {

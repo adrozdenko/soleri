@@ -56,7 +56,8 @@ async function main(): Promise<void> {
   // ─── Runtime — vault, brain, planner, curator, LLM, key pools ───
   const runtime = createAgentRuntime({
     agentId: '${config.id}',
-    dataDir: join(__dirname, 'intelligence', 'data'),${config.sharedVaultPath ? `\n    sharedVaultPath: '${config.sharedVaultPath}',` : ''}
+    dataDir: join(__dirname, 'intelligence', 'data'),
+    flowsDir: join(__dirname, 'flows'),${config.sharedVaultPath ? `\n    sharedVaultPath: '${config.sharedVaultPath}',` : ''}
   });
 
   const tag = PERSONA.name.toLowerCase();
