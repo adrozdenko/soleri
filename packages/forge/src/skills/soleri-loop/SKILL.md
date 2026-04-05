@@ -31,6 +31,7 @@ YOUR_AGENT_loop op:loop_start
 ```
 
 **Modes:**
+
 - `plan-iteration` — repeats `create_plan` until grade >= A (target-based)
 - `custom` — user-defined stop condition; loop continues until promise satisfied
 
@@ -47,12 +48,12 @@ YOUR_AGENT_loop op:loop_status
 
 Report progress to user:
 
-| Field | Value |
-|-------|-------|
-| **Iteration** | {currentIteration} / {maxIterations} |
-| **Status** | {status} |
-| **Last result** | {lastResult} |
-| **Stop condition** | {stopCondition} |
+| Field              | Value                                |
+| ------------------ | ------------------------------------ |
+| **Iteration**      | {currentIteration} / {maxIterations} |
+| **Status**         | {status}                             |
+| **Last result**    | {lastResult}                         |
+| **Stop condition** | {stopCondition}                      |
 
 ### Step 3: Cancel (if needed)
 

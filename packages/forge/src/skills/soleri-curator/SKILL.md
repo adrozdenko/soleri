@@ -29,13 +29,13 @@ YOUR_AGENT_curator op:curator_health
 
 Present results as a status table:
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Total entries** | {totalEntries} | — |
-| **Quality score** | {qualityScore}/100 | {ok/warn/bad} |
-| **Stale entries** | {staleCount} | — |
-| **Duplicates detected** | {duplicateCount} | — |
-| **Grooming needed** | {needsGrooming} | — |
+| Metric                  | Value              | Status        |
+| ----------------------- | ------------------ | ------------- |
+| **Total entries**       | {totalEntries}     | —             |
+| **Quality score**       | {qualityScore}/100 | {ok/warn/bad} |
+| **Stale entries**       | {staleCount}       | —             |
+| **Duplicates detected** | {duplicateCount}   | —             |
+| **Grooming needed**     | {needsGrooming}    | —             |
 
 If health score < 70 or duplicates > 10, recommend running `vault-curate`.
 

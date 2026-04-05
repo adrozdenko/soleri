@@ -25,16 +25,17 @@ Import external content (URLs, books, text, batch files) into the vault with aut
 
 Determine what the user is providing:
 
-| Type | Use Op | When |
-|------|--------|------|
-| URL | `ingest_url` | User pastes a web link |
-| Book / long doc | `ingest_book` | PDF, long markdown, or file path |
-| Raw text | `ingest_text` | User pastes text directly |
-| Multiple sources | `ingest_batch` | List of URLs or file paths |
+| Type             | Use Op         | When                             |
+| ---------------- | -------------- | -------------------------------- |
+| URL              | `ingest_url`   | User pastes a web link           |
+| Book / long doc  | `ingest_book`  | PDF, long markdown, or file path |
+| Raw text         | `ingest_text`  | User pastes text directly        |
+| Multiple sources | `ingest_batch` | List of URLs or file paths       |
 
 ### Step 2: Ingest
 
 **URL:**
+
 ```
 YOUR_AGENT_intake op:ingest_url
   params: {
@@ -45,6 +46,7 @@ YOUR_AGENT_intake op:ingest_url
 ```
 
 **Book / Long Document:**
+
 ```
 YOUR_AGENT_intake op:ingest_book
   params: {
@@ -56,6 +58,7 @@ YOUR_AGENT_intake op:ingest_book
 ```
 
 **Raw Text:**
+
 ```
 YOUR_AGENT_intake op:ingest_text
   params: {
@@ -67,6 +70,7 @@ YOUR_AGENT_intake op:ingest_text
 ```
 
 **Batch:**
+
 ```
 YOUR_AGENT_intake op:ingest_batch
   params: {
@@ -82,12 +86,12 @@ YOUR_AGENT_intake op:ingest_batch
 
 Present a summary table:
 
-| Field | Value |
-|-------|-------|
-| **Entries created** | {count} |
-| **Domain** | {domain} |
-| **Tags** | {tags.join(', ')} |
-| **Status** | {status} |
+| Field               | Value             |
+| ------------------- | ----------------- |
+| **Entries created** | {count}           |
+| **Domain**          | {domain}          |
+| **Tags**            | {tags.join(', ')} |
+| **Status**          | {status}          |
 
 If any sources failed, list them with reasons so the user can retry.
 
