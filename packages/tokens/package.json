@@ -1,6 +1,6 @@
 {
   "name": "@soleri/tokens",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Solarpunk design tokens — primitives, semantic themes, and Tailwind preset for the Soleri design system.",
   "keywords": [
     "css",

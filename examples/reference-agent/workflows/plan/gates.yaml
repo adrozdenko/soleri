@@ -1,0 +1,12 @@
+gates:
+  - phase: brainstorming
+    requirement: At least 2 alternatives considered with pros/cons and rejection rationale
+    check: alternatives-documented
+
+  - phase: pre-execution
+    requirement: Plan grade is B or higher and user has explicitly approved
+    check: plan-approved
+
+  - phase: completion
+    requirement: Architectural decisions captured to vault
+    check: knowledge-captured
