@@ -99,9 +99,10 @@ export interface AgentRuntimeConfig {
    */
   metadataTagPrefixes?: string[];
   /**
-   * Custom flows directory. When set, `buildPlan()` will load flow YAML files from this
-   * directory instead of core's bundled flows directory. Agents can point this at their own
-   * flows directory to use custom or extended flows.
+   * Path to the agent's flows directory. `buildPlan()` loads flow YAML files from here.
+   * Must be set for orchestration to work — if unset, `buildPlan()` returns a blocked plan
+   * with an explanatory warning. Point this at the agent's `flows/` directory (scaffolded
+   * by forge). Core ships zero bundled flow YAMLs — agents supply their own.
    */
   flowsDir?: string;
 }

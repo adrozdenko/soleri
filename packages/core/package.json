@@ -24,6 +24,10 @@
   "bin": {
     "soleri-engine": "dist/engine/bin/soleri-engine.js"
   },
+  "files": [
+    "dist/",
+    "data/knowledge-packs/"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

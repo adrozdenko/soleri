@@ -18,6 +18,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import {
   buildPlan,
   capabilityToProbe,
@@ -28,12 +29,25 @@ import {
 import type { AgentRuntime } from '../runtime/types.js';
 import type { Flow } from './types.js';
 
+// Core data/flows kept as a test fixture (excluded from npm publish via package.json files field)
+const CORE_FLOWS_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'data',
+  'flows',
+);
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function makeRuntime(vaultAvailable: boolean, brainAvailable = false): AgentRuntime {
   return {
+    config: {
+      agentId: 'myagent',
+      flowsDir: CORE_FLOWS_DIR,
+    },
     vault: {
       stats: vi.fn(() =>
         vaultAvailable
@@ -311,15 +325,15 @@ describe('flowStepsToPlanSteps — capability-mapped tool names', () => {
 
 describe('resolveFlowByIntent', () => {
   it('returns BUILD-flow for BUILD intent', () => {
-    expect(resolveFlowByIntent('BUILD')).toBe('BUILD-flow');
+    expect(resolveFlowByIntent('BUILD', CORE_FLOWS_DIR)).toBe('BUILD-flow');
   });
 
   it('returns DELIVER-flow for DELIVER intent', () => {
-    expect(resolveFlowByIntent('DELIVER')).toBe('DELIVER-flow');
+    expect(resolveFlowByIntent('DELIVER', CORE_FLOWS_DIR)).toBe('DELIVER-flow');
   });
 
   it('returns BUILD-flow as fallback for unknown intent', () => {
-    expect(resolveFlowByIntent('UNKNOWN')).toBe('BUILD-flow');
+    expect(resolveFlowByIntent('UNKNOWN', CORE_FLOWS_DIR)).toBe('BUILD-flow');
   });
 });
 

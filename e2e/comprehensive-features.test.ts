@@ -8,6 +8,8 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   createAgentRuntime,
   createDomainFacades,
@@ -19,6 +21,9 @@ import componentPack, { _clearRegistry } from '../packages/domain-component/src/
 import designQaPack from '../packages/domain-design-qa/src/index.js';
 import codeReviewPack from '../packages/domain-code-review/src/index.js';
 import { loadAllFlows, buildPlan, detectContext } from '../packages/core/src/flows/index.js';
+
+// Core data/flows kept as a test fixture (excluded from npm publish via package.json files field)
+const CORE_FLOWS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'packages', 'core', 'data', 'flows');
 
 // ---------------------------------------------------------------------------
 // Setup
@@ -42,7 +47,7 @@ function findOp(facadeName: string, opName: string) {
 }
 
 beforeAll(() => {
-  runtime = createAgentRuntime({ agentId: 'comprehensive-test', vaultPath: ':memory:' });
+  runtime = createAgentRuntime({ agentId: 'comprehensive-test', vaultPath: ':memory:', flowsDir: CORE_FLOWS_DIR });
   const packs = [designPack, componentPack, designQaPack, codeReviewPack];
   const allDomains = [...new Set(['design', ...packs.flatMap((p) => p.domains)])];
   facades = createDomainFacades(runtime, 'comprehensive-test', allDomains, packs);
@@ -1481,7 +1486,7 @@ describe('Code Review: validate_component_states', () => {
 
 describe('Flow Engine: loadAllFlows', () => {
   it('loads all 8 flow definitions', () => {
-    const flows = loadAllFlows();
+    const flows = loadAllFlows(CORE_FLOWS_DIR);
     expect(flows.length).toBe(8);
 
     const ids = flows.map((f) => f.id).sort();
@@ -1496,7 +1501,7 @@ describe('Flow Engine: loadAllFlows', () => {
   });
 
   it('every flow has valid structure', () => {
-    const flows = loadAllFlows();
+    const flows = loadAllFlows(CORE_FLOWS_DIR);
     for (const flow of flows) {
       expect(flow.id).toBeTruthy();
       expect(flow.triggers).toBeDefined();

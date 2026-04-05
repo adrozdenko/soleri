@@ -33,7 +33,7 @@ import { capabilityToToolName } from './capability-op-map.js';
  * Dynamically resolve a flow ID by scanning each flow's `triggers.modes` array.
  * Falls back to `'BUILD-flow'` when no flow declares the given intent.
  */
-export function resolveFlowByIntent(intent: string, flowsDir?: string): string {
+export function resolveFlowByIntent(intent: string, flowsDir: string): string {
   const flows = loadAllFlows(flowsDir);
   const upper = intent.toUpperCase();
   const match = flows.find((f) => (f.triggers?.modes ?? []).some((m) => m.toUpperCase() === upper));
@@ -235,6 +235,38 @@ export async function buildPlan(
 ): Promise<OrchestrationPlan> {
   const normalizedIntent = intent.toUpperCase();
   const flowsDir = runtime.config?.flowsDir;
+
+  if (!flowsDir) {
+    return {
+      planId: randomUUID(),
+      intent: normalizedIntent,
+      flowId: 'unknown',
+      steps: [],
+      skipped: [],
+      epilogue: [],
+      warnings: [
+        "No flows directory configured. Set runtime.config.flowsDir to the agent's flows/ directory.",
+      ],
+      summary: prompt ?? `${normalizedIntent} plan blocked`,
+      estimatedTools: 0,
+      blocked: true,
+      context: {
+        intent: normalizedIntent,
+        probes: {
+          vault: false,
+          brain: false,
+          designSystem: false,
+          sessionStore: false,
+          projectRules: false,
+          active: false,
+          test: false,
+        },
+        entities: { components: [], actions: [] },
+        projectPath,
+      },
+    };
+  }
+
   const flowId = resolveFlowByIntent(normalizedIntent, flowsDir);
   const flow = loadFlowById(flowId, flowsDir);
 

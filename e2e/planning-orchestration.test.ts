@@ -10,10 +10,14 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { createAgentRuntime, createSemanticFacades, registerFacade } from '@soleri/core';
 import type { FacadeConfig, AgentRuntime } from '@soleri/core';
+
+// Point at core's data/flows kept as a test fixture (excluded from npm publish)
+const CORE_FLOWS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'packages', 'core', 'data', 'flows');
 
 const AGENT_ID = 'e2e-planning';
 
@@ -58,6 +62,7 @@ describe('E2E: planning-orchestration', () => {
       agentId: AGENT_ID,
       vaultPath: ':memory:',
       plansPath: join(workDir, 'plans.json'),
+      flowsDir: CORE_FLOWS_DIR,
     });
 
     facades = createSemanticFacades(runtime, AGENT_ID);

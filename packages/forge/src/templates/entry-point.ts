@@ -284,7 +284,7 @@ ${
   }
 
   // Validate flows against installed capabilities
-  const flows = loadAllFlows();
+  const flows = loadAllFlows(join(__dirname, 'flows'));
   for (const flow of flows) {
     const validation = capabilityRegistry.validateFlow(flow);
     if (validation.missing.length > 0) {
