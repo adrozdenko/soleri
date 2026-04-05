@@ -13,7 +13,11 @@
  * - buildPlan() does not inject vault-gate-* steps
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import {
   buildPlan,
   capabilityToProbe,
@@ -316,5 +320,77 @@ describe('resolveFlowByIntent', () => {
 
   it('returns BUILD-flow as fallback for unknown intent', () => {
     expect(resolveFlowByIntent('UNKNOWN')).toBe('BUILD-flow');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildPlan — custom flowsDir via runtime.config
+// ---------------------------------------------------------------------------
+
+describe('buildPlan — custom flowsDir', () => {
+  const tmpDirs: string[] = [];
+
+  afterEach(() => {
+    for (const dir of tmpDirs) {
+      try {
+        fs.rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+    tmpDirs.length = 0;
+  });
+
+  it('loads flows from runtime.config.flowsDir when set', async () => {
+    // Create a temp directory with a custom BUILD-flow that has a distinctive step.
+    // This verifies that buildPlan() passes flowsDir to loadFlowById() rather than
+    // always loading from the bundled core flows directory.
+    const tmpDir = path.join(os.tmpdir(), `soleri-test-flows-${randomUUID()}`);
+    tmpDirs.push(tmpDir);
+    fs.mkdirSync(tmpDir, { recursive: true });
+
+    const customFlowYaml = `
+id: BUILD-flow
+name: Custom Build Flow
+description: Custom flow for testing flowsDir override.
+version: '1.0.0'
+on-missing-capability:
+  default: skip-with-warning
+  blocking: []
+triggers:
+  modes:
+    - BUILD
+  contexts: []
+  min-confidence: LOW
+steps:
+  - id: custom-step-1
+    name: Custom Step One
+    chains: []
+`;
+    fs.writeFileSync(path.join(tmpDir, 'build.flow.yaml'), customFlowYaml, 'utf-8');
+
+    const runtime: AgentRuntime = {
+      vault: {
+        stats: vi.fn(() => ({ totalEntries: 10 })),
+      },
+      brain: {
+        getVocabularySize: vi.fn(() => 0),
+      },
+      projectRegistry: {
+        list: vi.fn(() => []),
+      },
+      config: {
+        agentId: 'myagent',
+        flowsDir: tmpDir,
+      },
+    } as unknown as AgentRuntime;
+
+    const plan = await buildPlan('BUILD', 'myagent', '/tmp/proj', runtime);
+
+    expect(plan.flowId).toBe('BUILD-flow');
+    // The custom flow has exactly one step — 'custom-step-1'
+    // (brain unavailable so no steps get pruned since blocking: [])
+    const stepIds = [...plan.steps, ...plan.skipped].map((s) => s.id);
+    expect(stepIds).toContain('custom-step-1');
   });
 });

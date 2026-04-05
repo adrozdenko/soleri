@@ -234,8 +234,9 @@ export async function buildPlan(
   vaultConstraints: VaultConstraint[] = [],
 ): Promise<OrchestrationPlan> {
   const normalizedIntent = intent.toUpperCase();
-  const flowId = resolveFlowByIntent(normalizedIntent);
-  const flow = loadFlowById(flowId);
+  const flowsDir = runtime.config?.flowsDir;
+  const flowId = resolveFlowByIntent(normalizedIntent, flowsDir);
+  const flow = loadFlowById(flowId, flowsDir);
 
   const probes = await runProbes(runtime, projectPath);
 

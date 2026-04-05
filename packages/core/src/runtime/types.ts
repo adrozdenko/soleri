@@ -98,6 +98,12 @@ export interface AgentRuntimeConfig {
    * Default: ['source:']
    */
   metadataTagPrefixes?: string[];
+  /**
+   * Custom flows directory. When set, `buildPlan()` will load flow YAML files from this
+   * directory instead of core's bundled flows directory. Agents can point this at their own
+   * flows directory to use custom or extended flows.
+   */
+  flowsDir?: string;
 }
 
 /**
