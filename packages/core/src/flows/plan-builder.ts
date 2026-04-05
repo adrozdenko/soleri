@@ -23,6 +23,7 @@ import { runProbes } from './probes.js';
 import { detectContext, applyContextOverrides } from './context-router.js';
 import { chainToCapability } from '../capabilities/index.js';
 import type { CapabilityRegistry } from '../capabilities/index.js';
+import { capabilityToToolName } from './capability-op-map.js';
 
 // ---------------------------------------------------------------------------
 // Intent → Flow mapping
@@ -88,8 +89,16 @@ export function flowStepsToPlanSteps(
   registry?: CapabilityRegistry,
 ): PlanStep[] {
   return flow.steps.map((step) => {
-    // Tool names for dispatch fallback (always computed from chains)
-    const tools = (step.chains ?? []).map((c) => chainToToolName(c, agentId));
+    // Priority 1: capability-mapped tools from needs: (correct registered op names)
+    const capabilityTools: string[] = [];
+    for (const capId of step.needs ?? []) {
+      const toolName = capabilityToToolName(capId, agentId);
+      if (toolName) capabilityTools.push(toolName);
+    }
+    // Priority 2: chain tools as fallback for unmapped capabilities
+    const chainTools = (step.chains ?? []).map((c) => chainToToolName(c, agentId));
+    // Merge with deduplication — capability-mapped names take priority
+    const tools = [...new Set([...capabilityTools, ...chainTools])];
 
     // Resolve capability IDs: prefer needs (v2), fall back to chains (v1)
     const capabilityIds: string[] = [];

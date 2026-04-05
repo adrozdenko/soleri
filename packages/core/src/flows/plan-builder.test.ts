@@ -14,8 +14,14 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { buildPlan, capabilityToProbe, type VaultConstraint } from './plan-builder.js';
+import {
+  buildPlan,
+  capabilityToProbe,
+  flowStepsToPlanSteps,
+  type VaultConstraint,
+} from './plan-builder.js';
 import type { AgentRuntime } from '../runtime/types.js';
+import type { Flow } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -284,5 +290,73 @@ describe('capabilityToProbe — extended mappings for unprobed capabilities', ()
     // Capabilities with no real probe should remain unmapped — not mapped to a wrong probe.
     expect(capabilityToProbe('unknown.op')).toBeUndefined();
     expect(capabilityToProbe('auth.validate')).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// flowStepsToPlanSteps — capability → tool name wiring
+// ---------------------------------------------------------------------------
+
+describe('flowStepsToPlanSteps — capability-mapped tool names', () => {
+  const agentId = 'myagent';
+
+  function makeFlow(needs: string[], chains: string[] = []): Flow {
+    return {
+      id: 'TEST-flow',
+      name: 'Test',
+      description: '',
+      version: '1.0.0',
+      triggers: { modes: ['BUILD'], contexts: [], 'min-confidence': 'MEDIUM' },
+      steps: [{ id: 'step-1', name: 'Step 1', needs, chains }],
+    } as unknown as Flow;
+  }
+
+  it('vault.search → {agentId}_vault_search_intelligent', () => {
+    // vault.search should map to the registered op search_intelligent, not vault_search
+    const steps = flowStepsToPlanSteps(makeFlow(['vault.search'], ['vault-search']), agentId);
+    expect(steps[0].tools).toContain('myagent_vault_search_intelligent');
+  });
+
+  it('brain.recommend → {agentId}_brain_brain_recommend', () => {
+    const steps = flowStepsToPlanSteps(makeFlow(['brain.recommend'], ['brain-recommend']), agentId);
+    expect(steps[0].tools).toContain('myagent_brain_brain_recommend');
+  });
+
+  it('brain.strengths → {agentId}_brain_brain_strengths', () => {
+    const steps = flowStepsToPlanSteps(makeFlow(['brain.strengths'], ['brain-strengths']), agentId);
+    expect(steps[0].tools).toContain('myagent_brain_brain_strengths');
+  });
+
+  it('memory.search → {agentId}_memory_memory_search', () => {
+    const steps = flowStepsToPlanSteps(makeFlow(['memory.search'], ['memory-search']), agentId);
+    expect(steps[0].tools).toContain('myagent_memory_memory_search');
+  });
+
+  it('plan.create → {agentId}_plan_create_plan', () => {
+    const steps = flowStepsToPlanSteps(makeFlow(['plan.create'], ['plan-create']), agentId);
+    expect(steps[0].tools).toContain('myagent_plan_create_plan');
+  });
+
+  it('vault.playbook → {agentId}_vault_search_intelligent (playbooks live in vault)', () => {
+    const steps = flowStepsToPlanSteps(makeFlow(['vault.playbook'], ['playbook-search']), agentId);
+    expect(steps[0].tools).toContain('myagent_vault_search_intelligent');
+  });
+
+  it('unmapped capability falls back to chain tool name', () => {
+    // architecture.search has no capability map entry — chain fallback must kick in
+    const steps = flowStepsToPlanSteps(
+      makeFlow(['architecture.search'], ['architecture-search']),
+      agentId,
+    );
+    expect(steps[0].tools).toContain('myagent_architecture_search');
+    // must NOT generate a capability-mapped name (no entry exists)
+    expect(steps[0].tools).not.toContain('myagent_vault_search_intelligent');
+  });
+
+  it('does not duplicate tools when capability map and chain cover same op', () => {
+    // Even if both resolve to the same tool name, it should appear only once
+    const steps = flowStepsToPlanSteps(makeFlow(['vault.search'], ['vault-search']), agentId);
+    const count = steps[0].tools.filter((t) => t === 'myagent_vault_search_intelligent').length;
+    expect(count).toBe(1);
   });
 });
