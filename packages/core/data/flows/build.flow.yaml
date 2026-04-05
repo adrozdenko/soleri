@@ -1,11 +1,11 @@
 # Build Component Flow
-# Orchestrates component creation with vault-first knowledge and validation gates.
+# Orchestrates component creation with vault-first knowledge and architecture guidance.
 
 id: BUILD-flow
 name: Build Component
 description: >
-  Full component build workflow: search vault for patterns, check for duplicates,
-  gather architecture guidance, get component workflow, then validate the result.
+  Full component build workflow: search vault for patterns, gather architecture
+  guidance and brain recommendations, then plan the implementation.
 version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
@@ -33,30 +33,6 @@ steps:
       - vault-patterns
       - memory-hits
 
-  - id: check-duplicates
-    name: Check for Duplicates
-    description: Verify that a similar component does not already exist before building.
-    needs: [component.search]
-    chains:
-      - component-search
-    output:
-      - duplicate-check-result
-    gate:
-      type: GATE
-      condition: 'count == 0'
-      on-false:
-        action: STOP
-        message: 'Duplicate component detected. Review existing component before building a new one.'
-
-  - id: get-design-recommendation
-    name: Get Design Recommendation
-    description: Query design intelligence for style, palette, and typography guidance before building.
-    needs: [design.recommend]
-    chains:
-      - recommend-design-system
-    output:
-      - design-recommendation
-
   - id: get-architecture
     name: Get Architecture Guidance
     description: Fetch architecture patterns and brain recommendations in parallel.
@@ -68,36 +44,6 @@ steps:
     output:
       - architecture-patterns
       - brain-recommendations
-
-  - id: get-workflow
-    name: Get Component Workflow
-    description: Retrieve the component build workflow from the design system.
-    needs: [component.workflow]
-    chains:
-      - component-workflow
-    output:
-      - workflow-steps
-
-  - id: validate
-    name: Validate Component
-    description: Run design system validation and score the output quality.
-    needs: [component.validate, token.check]
-    chains:
-      - validate-component
-      - validate-tokens
-    output:
-      - validation-score
-    gate:
-      type: SCORE
-      min: 80
-      grade-thresholds:
-        A: 95
-        B: 85
-        C: 75
-      on-false:
-        action: BRANCH
-        goto: get-workflow
-        message: 'Validation score below threshold. Re-run workflow.'
 
 on-error:
   default:

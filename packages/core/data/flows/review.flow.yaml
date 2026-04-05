@@ -1,15 +1,15 @@
 # Code Review Flow
-# Orchestrates thorough code review with parallel checks and reporting.
+# Orchestrates code review with vault pattern lookup and brain recommendations.
 
 id: REVIEW-flow
 name: Code Review
 description: >
-  Code review workflow: validate component code, check design rules and
-  accessibility in parallel, then produce a consolidated review report.
+  Code review workflow: search vault for known review anti-patterns and rules,
+  then surface brain recommendations and architecture guidance.
 version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
-  blocking: [vault.search, component.validate]
+  blocking: [vault.search]
 
 triggers:
   modes:
@@ -24,7 +24,7 @@ triggers:
 steps:
   - id: search-vault
     name: Search Vault Patterns
-    description: Search vault for known review anti-patterns and rules before validation runs.
+    description: Search vault for known review anti-patterns and rules.
     needs: [vault.search, memory.search]
     chains:
       - vault-search
@@ -33,47 +33,17 @@ steps:
       - vault-patterns
       - memory-hits
 
-  - id: validate-code
-    name: Validate Component Code
-    description: Run component validation against the design system.
-    needs: [component.validate, token.check]
+  - id: get-architecture
+    name: Get Architecture Guidance
+    description: Fetch architecture patterns and brain recommendations for the review.
+    needs: [architecture.search, brain.recommend]
     chains:
-      - validate-component
-      - validate-tokens
-    output:
-      - code-validation-result
-
-  - id: check-rules
-    name: Check Design Rules
-    description: Check code against design rules in parallel.
-    needs: [design.rules]
-    chains:
-      - design-rules-check
+      - architecture-search
+      - brain-recommend
     parallel: true
     output:
-      - rules-violations
-
-  - id: check-accessibility
-    name: Check Accessibility
-    description: Run contrast and accessibility checks in parallel.
-    needs: [color.validate, a11y.audit]
-    chains:
-      - contrast-check
-      - accessibility-audit
-    parallel: true
-    output:
-      - contrast-results
-      - accessibility-results
-
-  - id: report
-    name: Generate Review Report
-    description: Consolidate all review results into a final report.
-    needs: [review.report]
-    chains:
-      - review-report
-    output:
-      - review-summary
-      - review-grade
+      - architecture-patterns
+      - brain-recommendations
 
 on-error:
   default:
@@ -87,4 +57,3 @@ metadata:
   tags:
     - review
     - quality
-    - accessibility

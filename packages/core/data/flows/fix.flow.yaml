@@ -1,11 +1,11 @@
 # Fix Issue Flow
-# Orchestrates bug fixing with anti-pattern awareness and validation.
+# Orchestrates bug fixing with anti-pattern awareness and brain recommendations.
 
 id: FIX-flow
 name: Fix Issue
 description: >
-  Issue fix workflow: search for known anti-patterns, gather error patterns
-  in parallel, then validate the fix.
+  Issue fix workflow: search for known anti-patterns, then gather error patterns
+  and brain recommendations in parallel.
 version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
@@ -44,27 +44,6 @@ steps:
     output:
       - error-patterns
       - brain-recommendations
-
-  - id: validate
-    name: Validate Fix
-    description: Validate the fix against design rules and run relevant checks.
-    needs: [component.validate, token.check]
-    chains:
-      - validate-component
-      - validate-tokens
-    output:
-      - validation-score
-    gate:
-      type: SCORE
-      min: 70
-      grade-thresholds:
-        A: 95
-        B: 80
-        C: 70
-      on-false:
-        action: BRANCH
-        goto: search-anti-patterns
-        message: 'Fix validation below threshold. Re-examine anti-patterns.'
 
 on-error:
   default:

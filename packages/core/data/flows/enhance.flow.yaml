@@ -1,11 +1,11 @@
 # Enhance Feature Flow
-# Orchestrates feature improvement with vault knowledge and validation.
+# Orchestrates feature improvement with vault knowledge and architecture guidance.
 
 id: ENHANCE-flow
 name: Enhance Feature
 description: >
   Feature enhancement workflow: search vault for improvement patterns,
-  gather architecture guidance, then validate the enhancement.
+  then gather architecture guidance and brain recommendations.
 version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
@@ -22,16 +22,6 @@ triggers:
   min-confidence: MEDIUM
 
 steps:
-  - id: capture-baseline
-    name: Capture Current State
-    description: Snapshot the current component or file state before enhancement begins.
-    needs: [component.validate]
-    chains:
-      - capture-baseline-state
-    output:
-      - baseline-score
-      - baseline-state
-
   - id: search-vault
     name: Search Vault Patterns
     description: Search vault for enhancement patterns, best practices, and previous improvements.
@@ -54,27 +44,6 @@ steps:
     output:
       - architecture-patterns
       - brain-recommendations
-
-  - id: validate
-    name: Validate Enhancement
-    description: Validate the enhanced code against design rules and quality standards.
-    needs: [component.validate, token.check]
-    chains:
-      - validate-component
-      - validate-tokens
-    output:
-      - validation-score
-    gate:
-      type: SCORE
-      min: 75
-      grade-thresholds:
-        A: 95
-        B: 85
-        C: 75
-      on-false:
-        action: BRANCH
-        goto: get-architecture
-        message: 'Enhancement validation below threshold. Revisit architecture guidance.'
 
 on-error:
   default:

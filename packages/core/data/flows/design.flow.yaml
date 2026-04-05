@@ -1,12 +1,11 @@
-# Design System Recommendation Flow
-# Orchestrates design knowledge queries: style, palette, typography, and stack guidelines.
+# Design Flow
+# Orchestrates design knowledge queries: vault patterns, stack guidelines, brain recommendations.
 
 id: DESIGN-flow
-name: Design System Recommendation
+name: Design Guidance
 description: >
-  Design workflow: search vault for existing design patterns and curated design intelligence
-  (including zettelcaster notes synced into vault), then provide a full design system
-  recommendation (style + palette + typography + landing pattern + anti-patterns).
+  Design workflow: search vault for existing design patterns and decisions,
+  retrieve stack implementation guidelines, then surface brain recommendations.
 version: '1.0.0'
 on-missing-capability:
   default: skip-with-warning
@@ -36,24 +35,6 @@ steps:
       - vault-patterns
       - memory-hits
 
-  - id: recommend-design-system
-    name: Recommend Design System
-    description: >
-      Generate a full design system recommendation: UI style, color palette,
-      font pairing, landing page pattern, and anti-patterns to avoid.
-    needs: [design.recommend, design.style, design.palette, design.typography]
-    chains:
-      - recommend-design-system
-      - recommend-style
-      - recommend-palette
-      - recommend-typography
-    parallel: true
-    output:
-      - design-system-recommendation
-      - style-recommendation
-      - palette-recommendation
-      - typography-recommendation
-
   - id: get-stack-guidelines
     name: Get Stack Guidelines
     description: Retrieve implementation guidelines for the target tech stack.
@@ -75,7 +56,7 @@ steps:
 on-error:
   default:
     action: CONTINUE
-    message: 'Design recommendation step encountered an error. Continuing with available data.'
+    message: 'Design step encountered an error. Continuing with available data.'
   max-retries: 1
 
 metadata:

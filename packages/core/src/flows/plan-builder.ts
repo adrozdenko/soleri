@@ -60,8 +60,6 @@ export function chainToRequires(chain: string): ProbeName | undefined {
   const lower = chain.toLowerCase();
   if (lower.startsWith('vault') || lower.startsWith('memory')) return 'vault';
   if (lower.startsWith('brain')) return 'brain';
-  if (lower.startsWith('component') || lower.startsWith('token') || lower.startsWith('design'))
-    return 'designSystem';
   if (lower.startsWith('session')) return 'sessionStore';
   if (lower.startsWith('test')) return 'test';
   // error-pattern-search and architecture-search rely on brain pattern/recommendation system
@@ -181,8 +179,6 @@ export function flowStepsToPlanSteps(
 export function capabilityToProbe(capId: string): ProbeName | undefined {
   if (capId.startsWith('vault.') || capId === 'vault') return 'vault';
   if (capId.startsWith('brain.') || capId === 'brain') return 'brain';
-  if (capId.startsWith('design.') || capId.startsWith('component.') || capId.startsWith('token.'))
-    return 'designSystem';
   if (capId.startsWith('session.')) return 'sessionStore';
   // debug.* and architecture.* map to brain — both rely on brain pattern/recommendation system.
   // When brain is unavailable these steps cannot provide meaningful output.
