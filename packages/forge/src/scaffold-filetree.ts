@@ -17,6 +17,7 @@ import { getModularEngineRules } from './templates/shared-rules.js';
 import type { EngineFeature } from './templates/shared-rules.js';
 import { composeClaudeMd } from './compose-claude-md.js';
 import { generateSkills } from './templates/skills.js';
+import { generateFlowFiles } from './templates/flows.js';
 import type { AgentConfig } from './types.js';
 
 // ─── Skills Registry ─────────────────────────────────────────────────
@@ -700,6 +701,13 @@ See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) f
     skills: resolvedSkills ?? undefined,
   } as AgentConfig);
   for (const [relativePath, content] of skills) {
+    mkdirSync(join(agentDir, dirname(relativePath)), { recursive: true });
+    writeFile(agentDir, relativePath, content, filesCreated);
+  }
+
+  // ─── 8b. Write default flow YAML files ──────────────────────
+  const flowFiles = generateFlowFiles();
+  for (const { path: relativePath, content } of flowFiles) {
     mkdirSync(join(agentDir, dirname(relativePath)), { recursive: true });
     writeFile(agentDir, relativePath, content, filesCreated);
   }

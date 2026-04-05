@@ -38,7 +38,7 @@ describe('scaffoldFileTree', () => {
 
     expect(result.success).toBe(true);
     expect(result.agentDir).toBe(join(tempDir, 'test-agent'));
-    expect(result.filesCreated.length).toBe(34);
+    expect(result.filesCreated.length).toBe(42);
 
     // Core files exist
     expect(existsSync(join(result.agentDir, 'agent.yaml'))).toBe(true);
@@ -54,6 +54,7 @@ describe('scaffoldFileTree', () => {
     expect(existsSync(join(result.agentDir, 'skills'))).toBe(true);
     expect(existsSync(join(result.agentDir, 'hooks'))).toBe(true);
     expect(existsSync(join(result.agentDir, 'data'))).toBe(true);
+    expect(existsSync(join(result.agentDir, 'flows'))).toBe(true);
   });
 
   it('generates NO TypeScript files', () => {
@@ -320,6 +321,36 @@ describe('scaffoldFileTree', () => {
     const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
     expect(result.success).toBe(true);
     expect(result.summary).toContain('No build step needed');
+  });
+
+  // ─── Flow Files Tests ────────────────────────────────────────
+
+  it('generates flows/ directory with all 8 default flow YAML files', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const flowsDir = join(result.agentDir, 'flows');
+    expect(existsSync(flowsDir)).toBe(true);
+
+    const expectedFlows = [
+      'build.flow.yaml',
+      'deliver.flow.yaml',
+      'design.flow.yaml',
+      'enhance.flow.yaml',
+      'explore.flow.yaml',
+      'fix.flow.yaml',
+      'plan.flow.yaml',
+      'review.flow.yaml',
+    ];
+
+    for (const filename of expectedFlows) {
+      expect(existsSync(join(flowsDir, filename))).toBe(true);
+    }
+
+    // Verify content is valid YAML with an id field
+    const buildContent = readFileSync(join(flowsDir, 'build.flow.yaml'), 'utf-8');
+    expect(buildContent.length).toBeGreaterThan(0);
+    expect(buildContent).toContain('id:');
   });
 
   it('does NOT generate user.md — it is an owner-override file, not a scaffold default', () => {
