@@ -14,11 +14,9 @@ on-missing-capability:
 triggers:
   modes:
     - DESIGN
-    - design-system
   contexts:
     - design
     - style
-    - color
     - typography
     - theme
   min-confidence: MEDIUM
@@ -61,7 +59,7 @@ on-error:
 
 metadata:
   author: soleri
-  domain: design-system
+  domain: design
   tags:
     - design
     - style
