@@ -473,6 +473,14 @@ export function createOrchestrateOps(
             mandatory: r.mandatory,
             entryType: r.entryType,
           }));
+        // Auto-wire flowsDir from agentDir if not explicitly set
+        if (!runtime.config.flowsDir && runtime.config.agentDir) {
+          const inferredFlowsDir = path.join(runtime.config.agentDir, 'flows');
+          if (fs.existsSync(inferredFlowsDir)) {
+            (runtime.config as unknown as Record<string, unknown>).flowsDir = inferredFlowsDir;
+          }
+        }
+
         const plan = await buildPlan(
           intent,
           agentId,
