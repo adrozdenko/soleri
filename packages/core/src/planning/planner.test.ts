@@ -795,6 +795,21 @@ describe('Planner', () => {
       expect(planner.get(plan.id)!.status).toBe('approved');
     });
 
+    it('should allow approved plan to reconcile directly (worktree-agent pattern)', () => {
+      // Create and approve a plan
+      const plan = planner.create({ objective: 'test', scope: 'test' });
+      planner.approve(plan.id, 'tester');
+      expect(planner.get(plan.id)!.status).toBe('approved');
+
+      // Should be able to reconcile directly from approved (no executing transition required)
+      const reconciled = planner.reconcile(plan.id, {
+        actualOutcome: 'tasks completed via worktree agents',
+        driftItems: [],
+        accuracyScore: 100,
+      });
+      expect(reconciled.status).toBe('reconciling');
+    });
+
     it('should support validating state', () => {
       const plan = planner.create({
         objective: 'Validation lifecycle test',

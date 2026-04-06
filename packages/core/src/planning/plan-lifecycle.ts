@@ -32,7 +32,7 @@ export type PlanStatus =
 export const LIFECYCLE_TRANSITIONS: Record<PlanStatus, PlanStatus[]> = {
   brainstorming: ['draft'],
   draft: ['approved'],
-  approved: ['executing'],
+  approved: ['executing', 'reconciling'],
   executing: ['validating', 'reconciling'],
   validating: ['reconciling', 'executing'],
   reconciling: ['completed'],
