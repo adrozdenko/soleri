@@ -55,6 +55,34 @@ on-error:
     action: STOP
     message: 'Build flow failed after retries. Escalate to user.'
 
+overrides:
+  - match: \b(button|icon|badge|chip|tag|pill)\b
+    matchFlags: i
+    context: small-component
+    skipSteps: [get-architecture]
+    injectBefore:
+      validate: [button-semantics-check]
+
+  - match: \b(page|layout|dashboard|screen|view)\b
+    matchFlags: i
+    context: large-component
+    injectBefore:
+      validate: [responsive-patterns]
+    injectAfter:
+      validate: [performance-check]
+
+  - match: \b(form|input|select|textarea|checkbox|radio|switch|dropdown)\b
+    matchFlags: i
+    context: form-component
+    injectBefore:
+      validate: [defensive-design, accessibility-precheck]
+
+  - match: \b(modal|dialog|sheet|drawer|popover|overlay|tooltip)\b
+    matchFlags: i
+    context: container-component
+    injectBefore:
+      validate: [container-pattern-check, dialog-patterns]
+
 metadata:
   author: soleri
   domain: component-build

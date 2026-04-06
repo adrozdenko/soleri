@@ -51,6 +51,19 @@ on-error:
     message: 'Review step failed; continuing with remaining checks.'
   max-retries: 1
 
+overrides:
+  - match: \b(pr|pull.?request|diff|merge)\b
+    matchFlags: i
+    context: pr-review
+    injectAfter:
+      check-rules: [review-pr-design]
+
+  - match: \b(architecture|import|dependency|structure)\b
+    matchFlags: i
+    context: architecture-review
+    injectAfter:
+      check-rules: [check-architecture]
+
 metadata:
   author: soleri
   domain: code-review
