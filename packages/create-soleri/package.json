@@ -1,6 +1,6 @@
 {
   "name": "create-soleri",
-  "version": "9.18.2",
+  "version": "9.18.3",
   "description": "npm create soleri — scaffold AI agents that learn, remember, and grow with you.",
   "keywords": [
     "agent",

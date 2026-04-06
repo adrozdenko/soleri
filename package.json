@@ -1,6 +1,6 @@
 {
   "name": "soleri-monorepo",
-  "version": "9.18.2",
+  "version": "9.18.3",
   "private": true,
   "description": "Open-source second brain builder. Persistent memory, structured knowledge, and intelligence that compounds with every session.",
   "keywords": [
