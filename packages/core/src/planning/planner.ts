@@ -239,11 +239,9 @@ export class Planner {
       );
     plan.reconciliation = buildReconciliationReport(planId, report);
     plan.executionSummary = computeExecutionSummary(plan.tasks);
-    if (plan.status === 'executing' || plan.status === 'validating' || plan.status === 'approved') {
+    if (plan.status === 'executing' || plan.status === 'validating' || plan.status === 'approved')
       plan.status = 'reconciling';
-    } else {
-      plan.status = 'completed';
-    }
+    plan.status = 'completed';
     plan.updatedAt = Date.now();
     this.save();
     return plan;
@@ -251,16 +249,8 @@ export class Planner {
 
   complete(planId: string): Plan {
     const plan = this.requirePlan(planId);
-    if (plan.status === 'executing' || plan.status === 'validating') {
-      this.reconcile(planId, { actualOutcome: 'All tasks completed', reconciledBy: 'auto' });
-      // After reconcile, plan is now in 'reconciling' — re-fetch and transition to completed
-      const reconciledPlan = this.requirePlan(planId);
-      reconciledPlan.executionSummary = computeExecutionSummary(reconciledPlan.tasks);
-      this.transition(reconciledPlan, 'completed');
-      reconciledPlan.updatedAt = Date.now();
-      this.save();
-      return reconciledPlan;
-    }
+    if (plan.status === 'executing' || plan.status === 'validating')
+      return this.reconcile(planId, { actualOutcome: 'All tasks completed', reconciledBy: 'auto' });
     plan.executionSummary = computeExecutionSummary(plan.tasks);
     this.transition(plan, 'completed');
     this.save();

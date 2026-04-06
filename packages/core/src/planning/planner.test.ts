@@ -807,7 +807,7 @@ describe('Planner', () => {
         driftItems: [],
         accuracyScore: 100,
       });
-      expect(reconciled.status).toBe('reconciling');
+      expect(reconciled.status).toBe('completed');
     });
 
     it('should support validating state', () => {
