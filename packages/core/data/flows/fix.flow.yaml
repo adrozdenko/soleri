@@ -14,7 +14,6 @@ on-missing-capability:
 triggers:
   modes:
     - FIX
-    - bug-fix
   contexts:
     - bug
     - error
@@ -51,19 +50,6 @@ on-error:
     message: 'Fix flow encountered an error.'
     recovery: 'Retry from the failed step.'
   max-retries: 2
-
-overrides:
-  - match: \b(styl(e|ing)|color|token|theme|palette|css)\b
-    matchFlags: i
-    context: design-fix
-    injectBefore:
-      validate: [contrast-check, token-validation]
-
-  - match: \b(accessib|a11y|aria|screen.?reader|keyboard|focus)\b
-    matchFlags: i
-    context: a11y-fix
-    injectBefore:
-      validate: [accessibility-audit]
 
 metadata:
   author: soleri
