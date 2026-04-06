@@ -15,6 +15,13 @@ capabilities:
   - brain.recommend
   - brain.strengths
   - plan.create
+capabilityMap:
+  vault.search: { facade: vault, op: search_intelligent }
+  vault.playbook: { facade: vault, op: search_intelligent }
+  memory.search: { facade: memory, op: memory_search }
+  brain.recommend: { facade: brain, op: brain_recommend }
+  brain.strengths: { facade: brain, op: brain_strengths }
+  plan.create: { facade: plan, op: create_plan }
 probes:
   - vault
   - brain
