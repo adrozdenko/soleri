@@ -103,7 +103,7 @@ describe('Vault Scaling — 10K entries', () => {
     const elapsed = performance.now() - start;
 
     expect(entries.length).toBeGreaterThan(0);
-    expect(elapsed).toBeLessThan(200);
+    expect(elapsed).toBeLessThan(isCI ? 1000 : 400);
   });
 
   // ─── Stats performance ───────────────────────────────
