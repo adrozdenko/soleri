@@ -24,17 +24,16 @@ export async function runProbes(
 
   const should = (name: string) => filter === null || filter.has(name);
 
-  const [vault, brain, designSystem, sessionStore, projectRules, active, test] = await Promise.all([
+  const [vault, brain, sessionStore, projectRules, active, test] = await Promise.all([
     should('vault') ? probeVault(runtime) : Promise.resolve(false),
     should('brain') ? probeBrain(runtime) : Promise.resolve(false),
-    should('designSystem') ? probeDesignSystem(runtime) : Promise.resolve(false),
     should('sessionStore') ? probeSessionStore() : Promise.resolve(false),
     should('projectRules') ? probeProjectRules(projectPath) : Promise.resolve(false),
     should('active') ? probeActive() : Promise.resolve(false),
     should('test') ? probeTestRunner(projectPath) : Promise.resolve(false),
   ]);
 
-  return { vault, brain, designSystem, sessionStore, projectRules, active, test };
+  return { vault, brain, sessionStore, projectRules, active, test };
 }
 
 async function probeVault(runtime: AgentRuntime): Promise<boolean> {
@@ -49,14 +48,6 @@ async function probeVault(runtime: AgentRuntime): Promise<boolean> {
 async function probeBrain(runtime: AgentRuntime): Promise<boolean> {
   try {
     return runtime.brain.getVocabularySize() > 0;
-  } catch {
-    return false;
-  }
-}
-
-async function probeDesignSystem(runtime: AgentRuntime): Promise<boolean> {
-  try {
-    return runtime.projectRegistry.list().length > 0;
   } catch {
     return false;
   }

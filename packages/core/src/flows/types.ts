@@ -165,19 +165,11 @@ export interface FlowDefinition extends Flow {
 // Probes
 // ---------------------------------------------------------------------------
 
-export type ProbeName =
-  | 'vault'
-  | 'brain'
-  | 'designSystem'
-  | 'sessionStore'
-  | 'projectRules'
-  | 'active'
-  | 'test';
+export type ProbeName = 'vault' | 'brain' | 'sessionStore' | 'projectRules' | 'active' | 'test';
 
 export interface ProbeResults {
   vault: boolean;
   brain: boolean;
-  designSystem: boolean;
   sessionStore: boolean;
   projectRules: boolean;
   active: boolean;

@@ -32,9 +32,6 @@ function makeRuntime(vaultAvailable = true): AgentRuntime {
     brain: {
       getVocabularySize: vi.fn(() => 5),
     },
-    projectRegistry: {
-      list: vi.fn(() => []),
-    },
   } as unknown as AgentRuntime;
 }
 
@@ -52,7 +49,6 @@ describe('runProbes — no filter (backward compat)', () => {
     const keys: Array<keyof typeof results> = [
       'vault',
       'brain',
-      'designSystem',
       'sessionStore',
       'projectRules',
       'active',
@@ -94,7 +90,6 @@ describe('agent-declared probes', () => {
 
     // All non-declared probes must be false
     expect(results.brain).toBe(false);
-    expect(results.designSystem).toBe(false);
     expect(results.sessionStore).toBe(false);
     expect(results.projectRules).toBe(false);
     expect(results.test).toBe(false);
@@ -107,7 +102,6 @@ describe('agent-declared probes', () => {
     const keys: Array<keyof typeof results> = [
       'vault',
       'brain',
-      'designSystem',
       'sessionStore',
       'projectRules',
       'active',
@@ -129,7 +123,6 @@ describe('agent-declared probes', () => {
 
     expect(results.vault).toBe(false);
     expect(results.brain).toBe(false);
-    expect(results.designSystem).toBe(false);
     expect(results.sessionStore).toBe(false);
     expect(results.projectRules).toBe(false);
     expect(results.active).toBe(false);
@@ -160,7 +153,6 @@ describe('agent-declared probes', () => {
     expect(results.sessionStore).toBe(true);
     expect(results.active).toBe(true);
 
-    expect(results.designSystem).toBe(false);
     expect(results.projectRules).toBe(false);
     expect(results.test).toBe(false);
   });
