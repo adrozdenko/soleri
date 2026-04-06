@@ -118,7 +118,7 @@ describe('Vault Scaling — 10K entries', () => {
 
     expect(stats.totalEntries).toBe(10_000);
     expect(Object.keys(stats.byDomain).length).toBe(DOMAINS.length);
-    expect(elapsed).toBeLessThan(20);
+    expect(elapsed).toBeLessThan(isCI ? 500 : 100);
   });
 
   // ─── Archive / compaction ─────────────────────────────

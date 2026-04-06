@@ -103,7 +103,7 @@ const DEFAULT_MODES: ModeConfig[] = [
     intent: 'deliver',
     description: 'Deploying, shipping, releasing, and publishing',
     behaviorRules: ['Run all checks first', 'Update changelog', 'Tag releases properly'],
-    keywords: ['deploy', 'ship', 'release', 'publish', 'merge', 'pr', 'push', 'package'],
+    keywords: ['deliver', 'deploy', 'ship', 'release', 'publish', 'merge', 'pr', 'push', 'package'],
   },
   {
     mode: 'EXPLORE-MODE',
@@ -117,7 +117,7 @@ const DEFAULT_MODES: ModeConfig[] = [
     intent: 'plan',
     description: 'Planning, architecting, and strategy development',
     behaviorRules: ['Consider trade-offs', 'Break into steps', 'Identify risks'],
-    keywords: ['plan', 'architect', 'strategy', 'approach', 'roadmap'],
+    keywords: ['plan', 'architect', 'architecture', 'strategy', 'approach', 'roadmap'],
   },
   {
     mode: 'REVIEW-MODE',
@@ -221,6 +221,26 @@ export class IntentRouter {
         );
       }
     });
+    // Patch missing keywords in existing rows — handles agents seeded before a keyword was added.
+    // Each entry: [mode, keyword] — adds keyword only if not already present.
+    const patches: [string, string][] = [
+      ['DELIVER-MODE', 'deliver'],
+      ['PLAN-MODE', 'architecture'],
+    ];
+    for (const [mode, keyword] of patches) {
+      const row = this.provider.get<{ keywords: string }>(
+        'SELECT keywords FROM agent_modes WHERE mode = ?',
+        [mode],
+      );
+      if (!row) continue;
+      const existing: string[] = JSON.parse(row.keywords);
+      if (!existing.includes(keyword)) {
+        this.provider.run('UPDATE agent_modes SET keywords = ? WHERE mode = ?', [
+          JSON.stringify([...existing, keyword]),
+          mode,
+        ]);
+      }
+    }
   }
 
   // ─── Intent Classification ──────────────────────────────────────────
@@ -342,7 +362,10 @@ export class IntentRouter {
 
   getModes(): ModeConfig[] {
     if (this.modesCache) return this.modesCache;
-    const rows = this.provider.all<ModeRow>('SELECT * FROM agent_modes ORDER BY mode');
+    // BUILD-MODE is the broadest mode — iterate it last so specific modes win on ties.
+    const rows = this.provider.all<ModeRow>(
+      "SELECT * FROM agent_modes ORDER BY CASE WHEN mode = 'BUILD-MODE' THEN 'zzz_build' ELSE mode END",
+    );
     this.modesCache = rows.map(rowToModeConfig);
     return this.modesCache;
   }

@@ -72,6 +72,13 @@ describe('IntentRouter', () => {
       expect(result.mode).toBe('DELIVER-MODE');
     });
 
+    it('classifies "deliver version 9.18.0 to production" as DELIVER intent', () => {
+      const result = router.routeIntent('deliver version 9.18.0 to production');
+      expect(result.intent).toBe('deliver');
+      expect(result.mode).toBe('DELIVER-MODE');
+      expect(result.matchedKeywords).toContain('deliver');
+    });
+
     it('classifies "refactor the data layer" as IMPROVE intent', () => {
       const result = router.routeIntent('refactor the data layer');
       expect(result.intent).toBe('improve');
@@ -118,6 +125,19 @@ describe('IntentRouter', () => {
       const result = router.routeIntent('fix bug broken error');
       expect(result.intent).toBe('fix');
       expect(result.matchedKeywords.length).toBe(4);
+    });
+
+    it('classifies "plan the architecture for the new auth module" as PLAN (not BUILD)', () => {
+      // Tie-breaking: PLAN matches "plan" + "architecture" (2) vs BUILD matches "new" (1)
+      const result = router.routeIntent('plan the architecture for the new auth module');
+      expect(result.intent).toBe('plan');
+      expect(result.mode).toBe('PLAN-MODE');
+    });
+
+    it('BUILD does not shadow PLAN on a tie — BUILD iterates last', () => {
+      // "new plan" → PLAN matches "plan" (1), BUILD matches "new" (1). Tie → PLAN wins.
+      const result = router.routeIntent('new plan');
+      expect(result.intent).toBe('plan');
     });
 
     it('confidence is capped at 1.0', () => {
@@ -411,10 +431,13 @@ describe('IntentRouter', () => {
   // ─── getModes ─────────────────────────────────────────────────
 
   describe('getModes', () => {
-    it('returns all modes sorted alphabetically', () => {
+    it('returns all modes with BUILD-MODE last (tie-breaking order)', () => {
       const modes = router.getModes();
       const names = modes.map((m) => m.mode);
-      expect(names).toEqual([...names].sort());
+      expect(names[names.length - 1]).toBe('BUILD-MODE');
+      // All non-BUILD modes are in alphabetical order
+      const nonBuild = names.filter((n) => n !== 'BUILD-MODE');
+      expect(nonBuild).toEqual([...nonBuild].sort());
     });
 
     it('each mode has intent, description, behaviorRules, and keywords', () => {
