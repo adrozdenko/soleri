@@ -1549,31 +1549,19 @@ describe('Flow Engine: buildPlan', () => {
 });
 
 describe('Flow Engine: context detection', () => {
-  it('"Build a submit button" → small-component context', () => {
-    const contexts = detectContext('Build a submit button', { components: [], actions: [] });
-    expect(contexts).toContain('small-component');
-  });
-
-  it('"Create a dashboard page" → large-component context', () => {
-    const contexts = detectContext('Create a dashboard page', { components: [], actions: [] });
-    expect(contexts).toContain('large-component');
-  });
-
-  it('"Build a login form with validation" → form-component context', () => {
-    const contexts = detectContext('Build a login form with validation', {
-      components: [],
-      actions: [],
-    });
-    expect(contexts).toContain('form-component');
-  });
-
-  it('"Create a modal dialog" → container-component context', () => {
-    const contexts = detectContext('Create a modal dialog', { components: [], actions: [] });
-    expect(contexts).toContain('container-component');
-  });
-
-  it('"Fix the color tokens" → design-fix context', () => {
-    const contexts = detectContext('Fix the color tokens', { components: [], actions: [] });
-    expect(contexts).toContain('design-fix');
+  it('returns empty array — core flows are domain-agnostic with no hardcoded overrides', () => {
+    // Context overrides live in flow YAML overrides: sections.
+    // Core flows ship with none — domain packs add their own when connected.
+    const prompts = [
+      'Build a submit button',
+      'Create a dashboard page',
+      'Build a login form with validation',
+      'Create a modal dialog',
+      'Fix the color tokens',
+    ];
+    for (const prompt of prompts) {
+      const contexts = detectContext(prompt, { components: [], actions: [] });
+      expect(contexts).toEqual([]);
+    }
   });
 });
