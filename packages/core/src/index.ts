@@ -620,6 +620,10 @@ export { generatePersonaInstructions, getRandomSignoff } from './persona/prompt-
 // ─── Schema Helpers ────────────────────────────────────────────────
 export { coerceArray } from './runtime/schema-helpers.js';
 
+// ─── Agent Config ────────────────────────────────────────────────────
+export { loadAgentConfig, DEFAULT_AGENT_CONFIG } from './runtime/agent-config.js';
+export type { AgentConfig } from './runtime/agent-config.js';
+
 // ─── Runtime Factory ────────────────────────────────────────────────
 export { createAgentRuntime } from './runtime/runtime.js';
 export { createSemanticFacades } from './runtime/facades/index.js';

@@ -1,84 +1,84 @@
 /**
- * Failing tests for agent.yaml config loading.
- *
- * These tests reference `loadAgentConfig` from `./agent-config.js` which does
- * NOT exist yet — they are intentionally red (task 1 of 8 in plan-1775482177429-3rseb0).
+ * Colocated unit tests for agent-config.ts — YAML loading and defaults.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { loadAgentConfig } from './agent-config.js';
-import type { AgentConfig } from './agent-config.js';
-
-vi.mock('node:fs', () => ({
-  default: {
-    existsSync: vi.fn(),
-    readFileSync: vi.fn(),
-  },
-}));
-
-import fs from 'node:fs';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { join } from 'node:path';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { loadAgentConfig, DEFAULT_AGENT_CONFIG } from './agent-config.js';
 
 describe('loadAgentConfig', () => {
+  let tempDir: string;
+
   beforeEach(() => {
-    vi.resetAllMocks();
+    tempDir = mkdtempSync(join(tmpdir(), 'soleri-agent-config-test-'));
   });
 
-  it('returns parsed AgentConfig when agent.yaml exists', () => {
-    (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(`
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('returns empty object when agent.yaml does not exist', () => {
+    const result = loadAgentConfig(tempDir);
+    expect(result).toEqual({});
+  });
+
+  it('parses a valid agent.yaml and returns typed config', () => {
+    writeFileSync(
+      join(tempDir, 'agent.yaml'),
+      `id: ernesto
+capabilities:
+  - vault.search
+  - brain.recommend
+probes:
+  - vault
+  - brain
 workflows:
-  deliver: DELIVER
   feature-dev: BUILD
-probes:
-  - vault
-  - brain
-`);
-
-    const config: AgentConfig = loadAgentConfig('/agent/dir');
-
-    expect(config.workflows).toEqual({ deliver: 'DELIVER', 'feature-dev': 'BUILD' });
-    expect(config.probes).toEqual(['vault', 'brain']);
-  });
-
-  it('returns defaults when agent.yaml is missing — does not throw', () => {
-    (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(false);
-
-    expect(() => loadAgentConfig('/agent/dir')).not.toThrow();
-
-    const config: AgentConfig = loadAgentConfig('/agent/dir');
-    expect(config.workflows).toEqual({});
-    expect(config.probes).toEqual([]);
-  });
-
-  it('config.workflows maps workflow names to intent strings', () => {
-    (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(`
-workflows:
   bug-fix: FIX
-  code-review: REVIEW
-`);
-
-    const config: AgentConfig = loadAgentConfig('/agent/dir');
-
-    expect(typeof config.workflows).toBe('object');
-    expect(config.workflows['bug-fix']).toBe('FIX');
-    expect(config.workflows['code-review']).toBe('REVIEW');
+`,
+    );
+    const result = loadAgentConfig(tempDir);
+    expect(result.id).toBe('ernesto');
+    expect(result.capabilities).toEqual(['vault.search', 'brain.recommend']);
+    expect(result.probes).toEqual(['vault', 'brain']);
+    expect(result.workflows).toEqual({ 'feature-dev': 'BUILD', 'bug-fix': 'FIX' });
   });
 
-  it('config.probes is an array of probe name strings', () => {
-    (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(`
-probes:
-  - vault
-  - brain
-  - designSystem
-`);
+  it('returns empty object for an empty agent.yaml', () => {
+    writeFileSync(join(tempDir, 'agent.yaml'), '');
+    const result = loadAgentConfig(tempDir);
+    expect(result).toEqual({});
+  });
 
-    const config: AgentConfig = loadAgentConfig('/agent/dir');
+  it('returns empty object for a non-object YAML value', () => {
+    writeFileSync(join(tempDir, 'agent.yaml'), 'just a string');
+    const result = loadAgentConfig(tempDir);
+    expect(result).toEqual({});
+  });
 
-    expect(Array.isArray(config.probes)).toBe(true);
-    expect(config.probes).toContain('vault');
-    expect(config.probes).toContain('brain');
-    expect(config.probes).toContain('designSystem');
+  it('returns partial config when only some fields are present', () => {
+    writeFileSync(join(tempDir, 'agent.yaml'), 'id: minimal\n');
+    const result = loadAgentConfig(tempDir);
+    expect(result.id).toBe('minimal');
+    expect(result.capabilities).toBeUndefined();
+    expect(result.probes).toBeUndefined();
+    expect(result.workflows).toBeUndefined();
+  });
+});
+
+describe('DEFAULT_AGENT_CONFIG', () => {
+  it('includes standard probes', () => {
+    expect(DEFAULT_AGENT_CONFIG.probes).toContain('vault');
+    expect(DEFAULT_AGENT_CONFIG.probes).toContain('brain');
+    expect(DEFAULT_AGENT_CONFIG.probes).toContain('sessionStore');
+  });
+
+  it('includes standard workflow → intent mappings', () => {
+    expect(DEFAULT_AGENT_CONFIG.workflows?.['feature-dev']).toBe('BUILD');
+    expect(DEFAULT_AGENT_CONFIG.workflows?.['bug-fix']).toBe('FIX');
+    expect(DEFAULT_AGENT_CONFIG.workflows?.['deliver']).toBe('DELIVER');
+    expect(DEFAULT_AGENT_CONFIG.workflows?.['plan']).toBe('PLAN');
   });
 });
