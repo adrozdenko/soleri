@@ -2,6 +2,16 @@
 
 All notable changes to Soleri Forge (formerly Agent Forge) are documented here.
 
+## [9.18.1] - 2026-04-06
+
+Patch release — three intent routing bug fixes discovered during full smoke test.
+
+### Fixed
+
+- **DELIVER intent misclassified as BUILD** — `'deliver'` keyword was missing from both the IntentRouter DELIVER-MODE seed data and the `detectIntent()` regex in `orchestrate-ops.ts`. Prompts like "deliver version 9.18.0 to production" fell through to BUILD. Fixed in both locations with a patch migration for existing live databases
+- **PLAN intent loses ties to BUILD** — `getModes()` sorted alphabetically, causing BUILD-MODE to always win keyword-count ties (BUILD < PLAN). Fixed via SQL `ORDER BY CASE` to evaluate BUILD-MODE last
+- **`design: 'DESIGN'` missing from default agent config** — `DEFAULT_AGENT_CONFIG.workflows` was missing the `design` → `DESIGN` mapping. Forge-scaffolded agents had it in their `agent.yaml`, but agents without a config file fell back to the default and lost the DESIGN workflow
+
 ## [4.1.0] - 2026-03-04
 
 ### Added
