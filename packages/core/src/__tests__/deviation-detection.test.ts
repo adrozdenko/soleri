@@ -39,7 +39,6 @@ function makePlan(steps: OrchestrationPlan['steps']): OrchestrationPlan {
       probes: {
         vault: true,
         brain: true,
-        designSystem: false,
         sessionStore: false,
         projectRules: false,
         active: true,

@@ -258,7 +258,6 @@ export async function buildPlan(
         probes: {
           vault: false,
           brain: false,
-          designSystem: false,
           sessionStore: false,
           projectRules: false,
           active: false,

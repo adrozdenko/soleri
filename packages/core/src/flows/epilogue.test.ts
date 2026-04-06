@@ -19,7 +19,6 @@ function probes(overrides?: Partial<ProbeResults>): ProbeResults {
   return {
     vault: false,
     brain: false,
-    designSystem: false,
     sessionStore: false,
     projectRules: false,
     active: true,
