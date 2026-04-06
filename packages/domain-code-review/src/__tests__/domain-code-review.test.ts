@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import pack from '../index.js';
+import { describe, it, expect, vi } from 'vitest';
+import pack, { HexColorDetector, ArchitectureBoundaryDetector } from '../index.js';
 import {
   isDesignFile,
   findHexColors,
@@ -461,5 +461,76 @@ describe('validate_page_styles', () => {
 
     expect(result.violationsFound).toBe(2);
     expect(result.verdict).toBe('FAIL');
+  });
+});
+
+describe('HexColorDetector', () => {
+  it('has correct name and extensions', () => {
+    expect(HexColorDetector.name).toBe('hex-color');
+    expect(HexColorDetector.extensions).toContain('.ts');
+    expect(HexColorDetector.extensions).toContain('.tsx');
+    expect(HexColorDetector.extensions).toContain('.css');
+  });
+
+  it('detects hex color in file content', () => {
+    const warnings = HexColorDetector.detect('/src/Button.tsx', 'const color = "#FF0000";');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].severity).toBe('warning');
+    expect(warnings[0].category).toBe('design-tokens');
+    expect(warnings[0].message).toContain('#FF0000');
+    expect(warnings[0].file).toBe('/src/Button.tsx');
+  });
+
+  it('detects multiple hex colors', () => {
+    const warnings = HexColorDetector.detect('/src/theme.css', 'color: #fff; background: #000;');
+    expect(warnings).toHaveLength(2);
+  });
+
+  it('returns empty for content with no hex colors', () => {
+    const warnings = HexColorDetector.detect('/src/util.ts', 'const x = "hello world";');
+    expect(warnings).toHaveLength(0);
+  });
+});
+
+describe('ArchitectureBoundaryDetector', () => {
+  it('has correct name and extensions', () => {
+    expect(ArchitectureBoundaryDetector.name).toBe('architecture-boundary');
+    expect(ArchitectureBoundaryDetector.extensions).toContain('.ts');
+    expect(ArchitectureBoundaryDetector.extensions).toContain('.tsx');
+  });
+
+  it('detects cross-feature import violation', () => {
+    const content = `import { Foo } from '../features/payments/Foo';`;
+    const warnings = ArchitectureBoundaryDetector.detect('/src/features/auth/Login.ts', content);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].severity).toBe('critical');
+    expect(warnings[0].category).toBe('architecture');
+    expect(warnings[0].line).toBe(1);
+  });
+
+  it('returns empty for clean architecture', () => {
+    const content = `import { Button } from '../components/Button';`;
+    const warnings = ArchitectureBoundaryDetector.detect('/src/pages/Home.ts', content);
+    expect(warnings).toHaveLength(0);
+  });
+});
+
+describe('pack.onActivate', () => {
+  it('registers HexColorDetector and ArchitectureBoundaryDetector', async () => {
+    const registerDetector = vi.fn();
+    const mockRuntime = {
+      vault: {} as never,
+      getProject: vi.fn(),
+      listProjects: vi.fn(),
+      createCheck: vi.fn(),
+      validateCheck: vi.fn(),
+      validateAndConsume: vi.fn(),
+      registerDetector,
+    };
+    await pack.onActivate!(mockRuntime);
+    expect(registerDetector).toHaveBeenCalledTimes(2);
+    const names = registerDetector.mock.calls.map((c: [{ name: string }]) => c[0].name);
+    expect(names).toContain('hex-color');
+    expect(names).toContain('architecture-boundary');
   });
 });

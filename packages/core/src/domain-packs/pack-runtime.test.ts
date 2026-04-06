@@ -8,6 +8,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createPackRuntime } from './pack-runtime.js';
 import type { PackProjectContext, PackCheckContext } from './pack-runtime.js';
+import type { WarningDetector } from '../agency/types.js';
 
 function mockVault() {
   return { search: vi.fn(), get: vi.fn(), add: vi.fn() } as unknown;
@@ -136,5 +137,38 @@ describe('createPackRuntime', () => {
     expect(first).not.toBeNull();
     const second = pr.validateAndConsume(id, 'contrast');
     expect(second).toBeNull();
+  });
+
+  describe('registerDetector', () => {
+    it('exposes registerDetector on PackRuntime', () => {
+      const pr = createPackRuntime({ vault: mockVault(), projectRegistry: mockRegistry() });
+      expect(typeof pr.registerDetector).toBe('function');
+    });
+
+    it('delegates to agencyManager.registerDetector when provided', () => {
+      const agencyManager = { registerDetector: vi.fn() };
+      const pr = createPackRuntime({
+        vault: mockVault(),
+        projectRegistry: mockRegistry(),
+        agencyManager,
+      });
+      const detector: WarningDetector = {
+        name: 'test-detector',
+        extensions: ['.ts'],
+        detect: () => [],
+      };
+      pr.registerDetector(detector);
+      expect(agencyManager.registerDetector).toHaveBeenCalledWith(detector);
+    });
+
+    it('no-ops gracefully when agencyManager is not provided', () => {
+      const pr = createPackRuntime({ vault: mockVault(), projectRegistry: mockRegistry() });
+      const detector: WarningDetector = {
+        name: 'test-detector',
+        extensions: ['.ts'],
+        detect: () => [],
+      };
+      expect(() => pr.registerDetector(detector)).not.toThrow();
+    });
   });
 });

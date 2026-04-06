@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod';
-import type { DomainPack } from '@soleri/core';
+import type { DomainPack, WarningDetector, Warning } from '@soleri/core';
 import type { PackRuntime } from '@soleri/core';
 import {
   isDesignFile,
@@ -20,6 +20,62 @@ import {
   findArbitraryValues,
   checkArchitectureBoundary,
 } from './lib/review-utils.js';
+
+// ---------------------------------------------------------------------------
+// WarningDetectors — registered with AgencyManager via onActivate
+// ---------------------------------------------------------------------------
+
+/**
+ * Detects hardcoded hex colors in design-relevant files.
+ * Hex colors bypass the design token system and break theming.
+ */
+export const HexColorDetector: WarningDetector = {
+  name: 'hex-color',
+  extensions: ['.ts', '.tsx', '.js', '.jsx', '.css', '.scss'],
+  detect(filePath: string, content: string): Warning[] {
+    const hexColors = findHexColors(content);
+    return hexColors.map((hex, i) => ({
+      id: `hex-color-${filePath}-${i}`,
+      file: filePath,
+      severity: 'warning',
+      category: 'design-tokens',
+      message: `Hardcoded hex color "${hex}" — use a semantic design token instead`,
+      suggestion: 'Replace with a semantic token (e.g. text-primary, bg-surface, border-default)',
+    }));
+  },
+};
+
+/**
+ * Detects architecture boundary violations in TypeScript files.
+ * Scans import statements and checks cross-feature/layer rules.
+ */
+export const ArchitectureBoundaryDetector: WarningDetector = {
+  name: 'architecture-boundary',
+  extensions: ['.ts', '.tsx'],
+  detect(filePath: string, content: string): Warning[] {
+    const warnings: Warning[] = [];
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const importMatch = lines[i].match(/^import\s+.*?from\s+['"]([^'"]+)['"]/);
+      if (importMatch) {
+        const violation = checkArchitectureBoundary(filePath, importMatch[1]);
+        if (violation) {
+          warnings.push({
+            id: `arch-${filePath}-${i}`,
+            file: filePath,
+            line: i + 1,
+            severity: violation.severity === 'error' ? 'critical' : 'warning',
+            category: 'architecture',
+            message: violation.rule,
+            suggestion:
+              'Refactor to respect architectural boundaries — use shared modules or dependency injection',
+          });
+        }
+      }
+    }
+    return warnings;
+  },
+};
 
 // ---------------------------------------------------------------------------
 // PackRuntime holder — populated via onActivate
@@ -849,8 +905,10 @@ const pack: DomainPack = {
   tier: 'default',
   domains: ['code-review'],
   ops: [...githubOps, ...playwrightOps],
-  onActivate: async (narrowedRuntime: PackRuntime) => {
-    packRuntime = narrowedRuntime;
+  onActivate: async (runtime: PackRuntime) => {
+    packRuntime = runtime;
+    runtime.registerDetector(HexColorDetector);
+    runtime.registerDetector(ArchitectureBoundaryDetector);
   },
   rules: `## Code Review Workflow
 

@@ -196,7 +196,10 @@ async function main(): Promise<void> {
 
       // Packs activate sequentially — order may matter for dependencies
       const { createPackRuntime } = await import('../../domain-packs/pack-runtime.js');
-      const narrowedRuntime = createPackRuntime(runtime);
+      const narrowedRuntime = createPackRuntime({
+        ...runtime,
+        agencyManager: runtime.agencyManager,
+      });
 
       for (const manifest of manifests) {
         if (manifest.onActivate) {

@@ -7,6 +7,7 @@
  */
 
 import type { Vault } from '../vault/vault.js';
+import type { WarningDetector } from '../agency/types.js';
 
 /**
  * Minimal project context for token resolution.
@@ -59,6 +60,13 @@ export interface PackRuntime {
 
   /** Validate and consume a session check (single-use) */
   validateAndConsume(checkId: string, expectedType: string): PackCheckContext | null;
+
+  /**
+   * Register a WarningDetector with the AgencyManager.
+   * Call this in onActivate to wire domain-specific file scanning.
+   * No-ops gracefully if agency mode is not available.
+   */
+  registerDetector(detector: WarningDetector): void;
 }
 
 /**
@@ -78,6 +86,9 @@ export function createPackRuntime(runtime: {
     validateCheck(id: string, type: string): PackCheckContext | null;
     validateAndConsume(id: string, type: string): PackCheckContext | null;
   };
+  agencyManager?: {
+    registerDetector(detector: WarningDetector): void;
+  };
 }): PackRuntime {
   return {
     vault: runtime.vault,
@@ -94,6 +105,9 @@ export function createPackRuntime(runtime: {
     validateAndConsume: (id, type) => {
       if (!runtime.sessionStore) return null;
       return runtime.sessionStore.validateAndConsume(id, type);
+    },
+    registerDetector: (detector) => {
+      runtime.agencyManager?.registerDetector(detector);
     },
   };
 }
