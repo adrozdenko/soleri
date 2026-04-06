@@ -468,6 +468,7 @@ const SKILL_CATEGORIES: Record<string, { label: string; skills: string[] }> = {
       'soleri-verification-before-completion',
       'soleri-deep-review',
       'soleri-deliver-and-ship',
+      'soleri-release',
       'soleri-health-check',
       'soleri-mcp-doctor',
     ],

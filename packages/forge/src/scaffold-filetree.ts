@@ -53,6 +53,7 @@ export const SKILLS_REGISTRY: Record<string, 'essential' | 'optional'> = {
   'soleri-mcp-doctor': 'optional',
   'soleri-onboard-me': 'optional',
   'soleri-parallel-execute': 'optional',
+  'soleri-release': 'optional',
   'soleri-retrospective': 'optional',
   'soleri-second-opinion': 'optional',
   'soleri-subagent-driven-development': 'optional',
