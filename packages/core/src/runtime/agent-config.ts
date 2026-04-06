@@ -22,17 +22,13 @@ export interface AgentConfig {
  * Callers should merge this with the loaded config (loaded config wins).
  */
 export const DEFAULT_AGENT_CONFIG: AgentConfig = {
-  probes: ['vault', 'brain', 'designSystem', 'sessionStore', 'projectRules', 'active', 'test'],
+  probes: ['vault', 'brain', 'sessionStore', 'projectRules', 'active', 'test'],
   workflows: {
     'feature-dev': 'BUILD',
     'bug-fix': 'FIX',
     'code-review': 'REVIEW',
-    'component-build': 'BUILD',
-    'token-migration': 'ENHANCE',
-    'a11y-remediation': 'FIX',
     deliver: 'DELIVER',
     plan: 'PLAN',
-    design: 'DESIGN',
     explore: 'EXPLORE',
   },
   capabilityMap: {
