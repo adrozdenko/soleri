@@ -125,6 +125,28 @@ export type FlowStep = z.infer<typeof flowStepSchema>;
 export type Gate = z.infer<typeof gateSchema>;
 export type GateAction = z.infer<typeof gateActionSchema>;
 
+export interface FlowContextOverride {
+  /** Regex pattern source string (without slashes/flags), e.g. "\\b(button|icon)\\b" */
+  match: string;
+  /** Case-insensitive flag — default true */
+  matchFlags?: string;
+  /** Context label applied when match succeeds */
+  context: string;
+  /** Chain substitutions: original chain ID → replacement chain ID */
+  chainOverrides?: Record<string, string>;
+  /** Chains to inject before a step ID */
+  injectBefore?: Record<string, string[]>;
+  /** Chains to inject after a step ID */
+  injectAfter?: Record<string, string[]>;
+  /** Step IDs to skip in this context */
+  skipSteps?: string[];
+}
+
+export interface FlowDefinition extends Flow {
+  /** Context-sensitive overrides — loaded from flow YAML overrides: section */
+  overrides?: FlowContextOverride[];
+}
+
 // ---------------------------------------------------------------------------
 // Probes
 // ---------------------------------------------------------------------------
