@@ -29,6 +29,7 @@ export const DEFAULT_AGENT_CONFIG: AgentConfig = {
     'code-review': 'REVIEW',
     deliver: 'DELIVER',
     plan: 'PLAN',
+    design: 'DESIGN',
     explore: 'EXPLORE',
   },
   capabilityMap: {
