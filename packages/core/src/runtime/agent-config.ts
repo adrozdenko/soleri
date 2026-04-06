@@ -13,6 +13,8 @@ export interface AgentConfig {
   probes?: string[];
   /** Maps workflow name to intent string (e.g. 'deliver' → 'DELIVER'). */
   workflows?: Record<string, string>;
+  /** Maps capability IDs to their facade/op pairs. Agent-declared overrides extend/replace core defaults. */
+  capabilityMap?: Record<string, { facade: string; op: string }>;
 }
 
 /**
@@ -32,6 +34,14 @@ export const DEFAULT_AGENT_CONFIG: AgentConfig = {
     plan: 'PLAN',
     design: 'DESIGN',
     explore: 'EXPLORE',
+  },
+  capabilityMap: {
+    'vault.search': { facade: 'vault', op: 'search_intelligent' },
+    'vault.playbook': { facade: 'vault', op: 'search_intelligent' },
+    'memory.search': { facade: 'memory', op: 'memory_search' },
+    'brain.recommend': { facade: 'brain', op: 'brain_recommend' },
+    'brain.strengths': { facade: 'brain', op: 'brain_strengths' },
+    'plan.create': { facade: 'plan', op: 'create_plan' },
   },
 };
 
