@@ -232,6 +232,7 @@ export async function buildPlan(
   runtime: AgentRuntime,
   prompt?: string,
   vaultConstraints: VaultConstraint[] = [],
+  probeNames?: string[],
 ): Promise<OrchestrationPlan> {
   const normalizedIntent = intent.toUpperCase();
   const flowsDir = runtime.config?.flowsDir;
@@ -270,7 +271,7 @@ export async function buildPlan(
   const flowId = resolveFlowByIntent(normalizedIntent, flowsDir);
   const flow = loadFlowById(flowId, flowsDir);
 
-  const probes = await runProbes(runtime, projectPath);
+  const probes = await runProbes(runtime, projectPath, probeNames);
 
   // Map vault constraints to recommendations — surfaced to executor as knowledge context.
   // Anti-pattern entries are always mandatory regardless of the mandatory flag.

@@ -64,6 +64,7 @@ import type { ContextHealthStatus } from './context-health.js';
 import type { OperatorSignals } from '../operator/operator-context-types.js';
 import { loadAgentWorkflows, getWorkflowForIntent } from '../workflows/workflow-loader.js';
 import type { WorkflowOverride } from '../workflows/workflow-loader.js';
+import { loadAgentConfig, DEFAULT_AGENT_CONFIG } from './agent-config.js';
 import {
   detectGitHubContext,
   findMatchingMilestone,
@@ -463,7 +464,21 @@ export function createOrchestrateOps(
           // Brain has no data yet
         }
 
-        // 3. Build flow-engine plan — pass vault constraints for gate injection
+        // 3. Load agent config once — single wiring point for data-driven workflow + probe config
+        const agentDir = runtime.config?.agentDir ?? '';
+        const agentConfig = loadAgentConfig(agentDir);
+
+        // Resolve workflow mapping: agent.yaml wins; fall back to DEFAULT_AGENT_CONFIG
+        const workflowMapping =
+          agentConfig.workflows && Object.keys(agentConfig.workflows).length > 0
+            ? agentConfig.workflows
+            : DEFAULT_AGENT_CONFIG.workflows;
+
+        // Resolve probe filter: agent.yaml wins; undefined = run all (backward compat)
+        const probeNames =
+          agentConfig.probes && agentConfig.probes.length > 0 ? agentConfig.probes : undefined;
+
+        // Build flow-engine plan — pass vault constraints for gate injection
         const vaultConstraints: VaultConstraint[] = recommendations
           .filter((r) => r.source === 'vault' && r.entryId)
           .map((r) => ({
@@ -488,16 +503,16 @@ export function createOrchestrateOps(
           runtime,
           prompt,
           vaultConstraints,
+          probeNames,
         );
 
         // 3b. Merge workflow overrides (gates + tools) if agent has a matching workflow
         let workflowApplied: string | undefined;
-        const agentDir = runtime.config.agentDir;
         if (agentDir) {
           try {
             const workflowsDir = path.join(agentDir, 'workflows');
             const agentWorkflows = loadAgentWorkflows(workflowsDir);
-            const workflowOverride = getWorkflowForIntent(agentWorkflows, intent);
+            const workflowOverride = getWorkflowForIntent(agentWorkflows, intent, workflowMapping);
             if (workflowOverride) {
               applyWorkflowOverride(plan, workflowOverride);
               workflowApplied = workflowOverride.name;
