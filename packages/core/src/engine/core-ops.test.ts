@@ -137,6 +137,28 @@ describe('activate op', () => {
   it('has read auth level', () => {
     expect(ops.get('activate')!.auth).toBe('read');
   });
+
+  it('auto-enables AgencyManager when identity.agency is true', async () => {
+    const agencyRuntime = createAgentRuntime({ agentId: 'agency-test', vaultPath: ':memory:' });
+    const agencyOps = captureOps(createCoreOps(agencyRuntime, { ...TEST_IDENTITY, agency: true }));
+    const result = await executeOp(agencyOps, 'activate', { projectPath: '.' });
+    expect(result.success).toBe(true);
+    expect(agencyRuntime.agencyManager.getStatus().enabled).toBe(true);
+    agencyRuntime.close();
+  });
+
+  it('does not enable AgencyManager when identity.agency is false', async () => {
+    const noAgencyRuntime = createAgentRuntime({
+      agentId: 'no-agency-test',
+      vaultPath: ':memory:',
+    });
+    const noAgencyOps = captureOps(
+      createCoreOps(noAgencyRuntime, { ...TEST_IDENTITY, agency: false }),
+    );
+    await executeOp(noAgencyOps, 'activate', { projectPath: '.' });
+    expect(noAgencyRuntime.agencyManager.getStatus().enabled).toBe(false);
+    noAgencyRuntime.close();
+  });
 });
 
 describe('session_start op', () => {

@@ -42,6 +42,8 @@ export interface AgentIdentityConfig {
   principles: string[];
   tone: string;
   greeting?: string;
+  /** Auto-enable AgencyManager (file watching + pattern surfacing) on activate. Default: false. */
+  agency?: boolean;
 }
 
 /**
@@ -132,6 +134,15 @@ export function createCoreOps(
           } catch {
             // Project may already be registered
           }
+        }
+
+        // Auto-enable agency mode if configured in agent.yaml
+        if (
+          identity.agency &&
+          runtime.agencyManager &&
+          !runtime.agencyManager.getStatus().enabled
+        ) {
+          runtime.agencyManager.enable(projectPath);
         }
 
         // Build activation context

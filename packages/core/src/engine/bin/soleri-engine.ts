@@ -222,6 +222,7 @@ async function main(): Promise<void> {
     principles: (config.principles ?? []) as string[],
     tone: (config.tone as string) ?? 'pragmatic',
     greeting: config.greeting as string | undefined,
+    agency: (config.agency as boolean) ?? false,
   };
 
   // 9. Create core ops

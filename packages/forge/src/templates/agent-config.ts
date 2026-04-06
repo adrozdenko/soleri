@@ -8,6 +8,7 @@ export function generateAgentConfig(agentId: string): { path: string; content: s
   return {
     path: 'agent-config.yaml',
     content: `id: ${agentId}
+agency: true
 capabilities:
   - vault.search
   - vault.playbook
