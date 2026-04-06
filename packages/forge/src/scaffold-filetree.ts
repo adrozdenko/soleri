@@ -18,6 +18,7 @@ import type { EngineFeature } from './templates/shared-rules.js';
 import { composeClaudeMd } from './compose-claude-md.js';
 import { generateSkills } from './templates/skills.js';
 import { generateFlowFiles } from './templates/flows.js';
+import { generateAgentConfig } from './templates/agent-config.js';
 import type { AgentConfig } from './types.js';
 
 // ─── Skills Registry ─────────────────────────────────────────────────
@@ -711,6 +712,10 @@ See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) f
     mkdirSync(join(agentDir, dirname(relativePath)), { recursive: true });
     writeFile(agentDir, relativePath, content, filesCreated);
   }
+
+  // ─── 8c. Write agent-config.yaml (capabilities, probes, workflow mappings) ──
+  const agentConfigFile = generateAgentConfig(config.id);
+  writeFile(agentDir, agentConfigFile.path, agentConfigFile.content, filesCreated);
 
   // ─── 9. Write knowledge bundles (seed from starter packs if available) ──
   const starterPacksDir = resolveStarterPacksDir();

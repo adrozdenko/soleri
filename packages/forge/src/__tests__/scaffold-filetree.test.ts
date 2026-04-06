@@ -38,7 +38,7 @@ describe('scaffoldFileTree', () => {
 
     expect(result.success).toBe(true);
     expect(result.agentDir).toBe(join(tempDir, 'test-agent'));
-    expect(result.filesCreated.length).toBe(42);
+    expect(result.filesCreated.length).toBe(43);
 
     // Core files exist
     expect(existsSync(join(result.agentDir, 'agent.yaml'))).toBe(true);
@@ -321,6 +321,28 @@ describe('scaffoldFileTree', () => {
     const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
     expect(result.success).toBe(true);
     expect(result.summary).toContain('No build step needed');
+  });
+
+  // ─── Agent Config Tests ──────────────────────────────────────
+
+  it('generates agent-config.yaml with capabilities, probes, and workflow mappings', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const agentConfigPath = join(result.agentDir, 'agent-config.yaml');
+    expect(existsSync(agentConfigPath)).toBe(true);
+
+    const content = readFileSync(agentConfigPath, 'utf-8');
+    const parsed = parseYaml(content);
+
+    expect(parsed.id).toBe('test-agent');
+    expect(parsed.capabilities).toContain('vault.search');
+    expect(parsed.capabilities).toContain('plan.create');
+    expect(parsed.probes).toContain('vault');
+    expect(parsed.probes).toContain('brain');
+    expect(parsed.workflows['feature-dev']).toBe('BUILD');
+    expect(parsed.workflows['bug-fix']).toBe('FIX');
+    expect(parsed.workflows['code-review']).toBe('REVIEW');
   });
 
   // ─── Flow Files Tests ────────────────────────────────────────
