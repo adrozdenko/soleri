@@ -35,7 +35,12 @@ export {
 } from './plan-builder.js';
 
 // Context router
-export { detectContext, applyContextOverrides, getFlowOverrides } from './context-router.js';
+export {
+  detectContext,
+  applyContextOverrides,
+  getFlowOverrides,
+  getFlowOverridesMap,
+} from './context-router.js';
 // ContextOverride is intentionally unexported — internal use only
 
 // Gate evaluator

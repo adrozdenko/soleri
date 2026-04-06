@@ -118,6 +118,20 @@ export const flowSchema = z.object({
       tags: z.array(z.string()).optional(),
     })
     .optional(),
+  /** Context-sensitive overrides — loaded from the flow YAML overrides: section */
+  overrides: z
+    .array(
+      z.object({
+        match: z.string(),
+        matchFlags: z.string().optional(),
+        context: z.string(),
+        chainOverrides: z.record(z.string()).optional(),
+        injectBefore: z.record(z.array(z.string())).optional(),
+        injectAfter: z.record(z.array(z.string())).optional(),
+        skipSteps: z.array(z.string()).optional(),
+      }),
+    )
+    .optional(),
 });
 
 export type Flow = z.infer<typeof flowSchema>;

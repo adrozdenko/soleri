@@ -3,9 +3,17 @@
  * sequences depending on what's being built/fixed/reviewed.
  *
  * Building a Button follows a different workflow than building a Page layout.
+ *
+ * Overrides are loaded from *.flow.yaml files (overrides: section) instead of
+ * being hardcoded here. The default flows directory is the package's built-in
+ * data/flows/ folder. Pass an explicit `flowsDir` to use a custom directory.
  */
 
+import { fileURLToPath } from 'node:url';
+import { join, dirname } from 'node:path';
 import type { PlanStep, ProbeName } from './types.js';
+import type { FlowContextOverride } from './types.js';
+import { loadAllFlows } from './loader.js';
 import { chainToToolName, chainToRequires } from './plan-builder.js';
 
 // ---------------------------------------------------------------------------
@@ -13,7 +21,7 @@ import { chainToToolName, chainToRequires } from './plan-builder.js';
 // ---------------------------------------------------------------------------
 
 export interface ContextOverride {
-  /** Pattern to match against prompt or entities */
+  /** Compiled regex to match against prompt or entities */
   match: RegExp;
   /** Context label */
   context: string;
@@ -28,86 +36,45 @@ export interface ContextOverride {
 }
 
 // ---------------------------------------------------------------------------
-// Context override definitions
+// Default flows directory (package built-in data/flows/)
 // ---------------------------------------------------------------------------
 
-const BUILD_OVERRIDES: ContextOverride[] = [
-  {
-    match: /\b(button|icon|badge|chip|tag|pill)\b/i,
-    context: 'small-component',
-    skipSteps: ['get-architecture'],
-    injectBefore: {
-      validate: ['button-semantics-check'],
-    },
-  },
-  {
-    match: /\b(page|layout|dashboard|screen|view)\b/i,
-    context: 'large-component',
-    injectBefore: {
-      validate: ['responsive-patterns'],
-    },
-    injectAfter: {
-      validate: ['performance-check'],
-    },
-  },
-  {
-    match: /\b(form|input|select|textarea|checkbox|radio|switch|dropdown)\b/i,
-    context: 'form-component',
-    injectBefore: {
-      validate: ['defensive-design', 'accessibility-precheck'],
-    },
-  },
-  {
-    match: /\b(modal|dialog|sheet|drawer|popover|overlay|tooltip)\b/i,
-    context: 'container-component',
-    injectBefore: {
-      validate: ['container-pattern-check', 'dialog-patterns'],
-    },
-  },
-];
+/**
+ * Resolve the built-in data/flows directory relative to this source file.
+ * Works in both dev (src/) and compiled (dist/) layouts because the relative
+ * path from flows/ to data/flows/ is the same in both cases: ../../data/flows.
+ */
+function defaultFlowsDir(): string {
+  const here = dirname(fileURLToPath(import.meta.url));
+  return join(here, '..', '..', 'data', 'flows');
+}
 
-const FIX_OVERRIDES: ContextOverride[] = [
-  {
-    match: /\b(styl(e|ing)|color|token|theme|palette|css)\b/i,
-    context: 'design-fix',
-    injectBefore: {
-      validate: ['contrast-check', 'token-validation'],
-    },
-  },
-  {
-    match: /\b(accessib|a11y|aria|screen.?reader|keyboard|focus)\b/i,
-    context: 'a11y-fix',
-    injectBefore: {
-      validate: ['accessibility-audit'],
-    },
-  },
-];
-
-const REVIEW_OVERRIDES: ContextOverride[] = [
-  {
-    match: /\b(pr|pull.?request|diff|merge)\b/i,
-    context: 'pr-review',
-    injectAfter: {
-      'check-rules': ['review-pr-design'],
-    },
-  },
-  {
-    match: /\b(architecture|import|dependency|structure)\b/i,
-    context: 'architecture-review',
-    injectAfter: {
-      'check-rules': ['check-architecture'],
-    },
-  },
-];
+// ---------------------------------------------------------------------------
+// Data-driven override map
+// ---------------------------------------------------------------------------
 
 /**
- * Registry mapping flow IDs to their context overrides.
+ * Build the flow-overrides map by loading all *.flow.yaml files from the
+ * given directory and converting YAML FlowContextOverride → runtime ContextOverride.
+ *
+ * The conversion compiles the `match` string into a RegExp using `matchFlags`
+ * (defaulting to `'i'` for case-insensitive matching).
  */
-const FLOW_OVERRIDES: Record<string, ContextOverride[]> = {
-  'BUILD-flow': BUILD_OVERRIDES,
-  'FIX-flow': FIX_OVERRIDES,
-  'REVIEW-flow': REVIEW_OVERRIDES,
-};
+export function getFlowOverridesMap(flowsDir?: string): Record<string, ContextOverride[]> {
+  const dir = flowsDir ?? defaultFlowsDir();
+  const flows = loadAllFlows(dir);
+  const map: Record<string, ContextOverride[]> = {};
+
+  for (const flow of flows) {
+    if (!flow.overrides || flow.overrides.length === 0) continue;
+
+    map[flow.id] = flow.overrides.map(
+      (yamlOverride: FlowContextOverride): ContextOverride => (Object.assign({match:new RegExp(yamlOverride.match,yamlOverride.matchFlags??`i`),context:yamlOverride.context}, yamlOverride.chainOverrides?{chainOverrides:yamlOverride.chainOverrides}:{}, yamlOverride.injectBefore?{injectBefore:yamlOverride.injectBefore}:{}, yamlOverride.injectAfter?{injectAfter:yamlOverride.injectAfter}:{}, yamlOverride.skipSteps?{skipSteps:yamlOverride.skipSteps}:{})),
+    );
+  }
+
+  return map;
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -120,12 +87,14 @@ const FLOW_OVERRIDES: Record<string, ContextOverride[]> = {
 export function detectContext(
   prompt: string,
   entities: { components: string[]; actions: string[] },
+  flowsDir?: string,
 ): string[] {
   const contexts: string[] = [];
   const searchText = [prompt, ...entities.components, ...entities.actions].join(' ');
+  const overridesMap = getFlowOverridesMap(flowsDir);
 
   // Check all flow overrides — a prompt might match contexts across flows
-  for (const overrides of Object.values(FLOW_OVERRIDES)) {
+  for (const overrides of Object.values(overridesMap)) {
     for (const override of overrides) {
       if (override.match.test(searchText) && !contexts.includes(override.context)) {
         contexts.push(override.context);
@@ -145,8 +114,10 @@ export function applyContextOverrides(
   contexts: string[],
   flowId: string,
   agentId: string = 'agent',
+  flowsDir?: string,
 ): PlanStep[] {
-  const overrides = FLOW_OVERRIDES[flowId];
+  const overridesMap = getFlowOverridesMap(flowsDir);
+  const overrides = overridesMap[flowId];
   if (!overrides || contexts.length === 0) return steps;
 
   // Collect active overrides for the detected contexts
@@ -222,8 +193,8 @@ export function applyContextOverrides(
 /**
  * Get all registered context overrides for a flow (useful for introspection).
  */
-export function getFlowOverrides(flowId: string): ContextOverride[] {
-  return FLOW_OVERRIDES[flowId] ?? [];
+export function getFlowOverrides(flowId: string, flowsDir?: string): ContextOverride[] {
+  return getFlowOverridesMap(flowsDir)[flowId] ?? [];
 }
 
 // ---------------------------------------------------------------------------
