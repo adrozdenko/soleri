@@ -99,7 +99,7 @@ import {
 // BUILD is the fallback — its keywords ("new", "add", "create") appear in nearly
 // every prompt, so it must never be an early match.
 const INTENT_KEYWORDS: [RegExp, string][] = [
-  [/\b(deploy|ship|release|publish)\b/i, 'DELIVER'],
+  [/\b(deliver|deploy|ship|release|publish)\b/i, 'DELIVER'],
   [/\b(fix|bug|broken|error|crash|issue)\b/i, 'FIX'],
   [/\b(review|audit|inspect)\b/i, 'REVIEW'],
   [/\b(plan|architect|architecture|roadmap|design-system)\b/i, 'PLAN'],

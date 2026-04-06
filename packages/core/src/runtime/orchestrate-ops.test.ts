@@ -1200,6 +1200,10 @@ describe('detectIntent', () => {
     expect(detectIntent('release v2.0 to npm')).toBe('DELIVER');
   });
 
+  it('routes DELIVER on "deliver"', () => {
+    expect(detectIntent('deliver version 9.18.0 to production')).toBe('DELIVER');
+  });
+
   it('routes FIX on "fix"', () => {
     expect(detectIntent('fix the null pointer in the parser')).toBe('FIX');
   });
