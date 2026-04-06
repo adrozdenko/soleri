@@ -49,12 +49,19 @@ export const CAPABILITY_OP_MAP: Record<string, CapabilityOpEntry> = {
  * Returns the correctly formatted tool name if the capability is in the map,
  * or undefined if no mapping exists (caller should fall back to chain-derived name).
  *
+ * An optional `overrides` map takes precedence over `CAPABILITY_OP_MAP`.
+ *
  * @example
  * capabilityToToolName('vault.search', 'myagent') // → 'myagent_vault_search_intelligent'
  * capabilityToToolName('architecture.search', 'myagent') // → undefined (no map entry)
+ * capabilityToToolName('vault.search', 'myagent', { 'vault.search': { facade: 'v', op: 'find' } }) // → 'myagent_v_find'
  */
-export function capabilityToToolName(capId: string, agentId: string): string | undefined {
-  const entry = CAPABILITY_OP_MAP[capId];
+export function capabilityToToolName(
+  capId: string,
+  agentId: string,
+  overrides?: Record<string, { facade: string; op: string }>,
+): string | undefined {
+  const entry = overrides?.[capId] ?? CAPABILITY_OP_MAP[capId];
   if (!entry) return undefined;
   return `${agentId}_${entry.facade}_${entry.op}`;
 }
