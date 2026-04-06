@@ -1,6 +1,6 @@
 {
   "name": "@soleri/domain-code-review",
-  "version": "9.18.1",
+  "version": "9.18.2",
   "description": "Code review intelligence domain pack for Soleri agents — PR design review, architecture checks, accessibility audits, visual change classification.",
   "license": "Apache-2.0",
   "files": [

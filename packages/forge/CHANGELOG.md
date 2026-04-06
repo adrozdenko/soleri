@@ -2,6 +2,19 @@
 
 All notable changes to Soleri Forge (formerly Agent Forge) are documented here.
 
+## [9.18.2] - 2026-04-06
+
+Auto-enable AgencyManager on activation when `agency: true` is set in `agent.yaml`.
+
+### Added
+
+- **`agency` flag in `agent.yaml`** — Set `agency: true` to have the AgencyManager (file watching, pattern surfacing, warning detection) start automatically when the agent activates. Previously required an explicit `agency_enable` op call; now zero-config for agents that want proactive intelligence
+- **Forge scaffold sets `agency: true` by default** — All newly scaffolded agents get file watching enabled out of the box
+
+### Changed
+
+- `activate` op now checks `identity.agency` and calls `agencyManager.enable(projectPath)` automatically — no double-enable if already running
+
 ## [9.18.1] - 2026-04-06
 
 Patch release — three intent routing bug fixes discovered during full smoke test.

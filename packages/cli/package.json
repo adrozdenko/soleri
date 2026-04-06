@@ -1,6 +1,6 @@
 {
   "name": "@soleri/cli",
-  "version": "9.18.1",
+  "version": "9.18.2",
   "description": "Developer CLI for creating and managing Soleri AI agents.",
   "keywords": [
     "agent",

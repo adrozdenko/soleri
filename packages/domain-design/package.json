@@ -1,6 +1,6 @@
 {
   "name": "@soleri/domain-design",
-  "version": "9.18.1",
+  "version": "9.18.2",
   "description": "Design system intelligence domain pack for Soleri agents — WCAG contrast, token validation, design rules, and patterns.",
   "license": "Apache-2.0",
   "files": [
