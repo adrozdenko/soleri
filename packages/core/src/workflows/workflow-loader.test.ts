@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { loadAgentWorkflows, getWorkflowForIntent, WORKFLOW_TO_INTENT } from './workflow-loader.js';
 import type { WorkflowOverride } from './workflow-loader.js';
+import type { AgentConfig } from '../runtime/agent-config.js';
 
 vi.mock('node:fs', () => ({
   default: {
@@ -144,6 +145,34 @@ describe('workflow-loader', () => {
       expect(WORKFLOW_TO_INTENT['feature-dev']).toBe('BUILD');
       expect(WORKFLOW_TO_INTENT['bug-fix']).toBe('FIX');
       expect(WORKFLOW_TO_INTENT['code-review']).toBe('REVIEW');
+    });
+  });
+
+  describe('AgentConfig override', () => {
+    it('returns deliver workflow when agentConfig.workflows maps deliver → DELIVER', () => {
+      const workflows = new Map<string, WorkflowOverride>([
+        ['deliver', { name: 'deliver', gates: [], tools: ['tool1'] }],
+      ]);
+
+      const agentConfig: AgentConfig = {
+        workflows: { deliver: 'DELIVER' },
+        probes: [],
+      };
+
+      const result = getWorkflowForIntent(workflows, 'DELIVER', agentConfig.workflows);
+      expect(result).not.toBeNull();
+      expect(result!.name).toBe('deliver');
+    });
+
+    it('falls back to WORKFLOW_TO_INTENT behavior when no agentConfig is provided', () => {
+      const workflows = new Map<string, WorkflowOverride>([
+        ['bug-fix', { name: 'bug-fix', gates: [], tools: [] }],
+      ]);
+
+      // No agentConfig — standard mapping should still work
+      const result = getWorkflowForIntent(workflows, 'FIX');
+      expect(result).not.toBeNull();
+      expect(result!.name).toBe('bug-fix');
     });
   });
 });
