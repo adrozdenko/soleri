@@ -478,6 +478,12 @@ export function createOrchestrateOps(
         const probeNames =
           agentConfig.probes && agentConfig.probes.length > 0 ? agentConfig.probes : undefined;
 
+        // Merge capability maps: defaults first, agent wins on conflict
+        const capabilityMap = {
+          ...DEFAULT_AGENT_CONFIG.capabilityMap,
+          ...agentConfig.capabilityMap,
+        };
+
         // Build flow-engine plan — pass vault constraints for gate injection
         const vaultConstraints: VaultConstraint[] = recommendations
           .filter((r) => r.source === 'vault' && r.entryId)
@@ -504,6 +510,7 @@ export function createOrchestrateOps(
           prompt,
           vaultConstraints,
           probeNames,
+          capabilityMap,
         );
 
         // 3b. Merge workflow overrides (gates + tools) if agent has a matching workflow

@@ -83,12 +83,13 @@ export function flowStepsToPlanSteps(
   flow: Flow,
   agentId: string,
   registry?: CapabilityRegistry,
+  capabilityMap?: Record<string, { facade: string; op: string }>,
 ): PlanStep[] {
   return flow.steps.map((step) => {
     // Priority 1: capability-mapped tools from needs: (correct registered op names)
     const capabilityTools: string[] = [];
     for (const capId of step.needs ?? []) {
-      const toolName = capabilityToToolName(capId, agentId);
+      const toolName = capabilityToToolName(capId, agentId, capabilityMap);
       if (toolName) capabilityTools.push(toolName);
     }
     // Priority 2: chain tools as fallback for unmapped capabilities
@@ -233,6 +234,7 @@ export async function buildPlan(
   prompt?: string,
   vaultConstraints: VaultConstraint[] = [],
   probeNames?: string[],
+  capabilityMap?: Record<string, { facade: string; op: string }>,
 ): Promise<OrchestrationPlan> {
   const normalizedIntent = intent.toUpperCase();
   const flowsDir = runtime.config?.flowsDir;
@@ -327,7 +329,7 @@ export async function buildPlan(
       };
     }
 
-    let allSteps = flowStepsToPlanSteps(flow, agentId);
+    let allSteps = flowStepsToPlanSteps(flow, agentId, undefined, capabilityMap);
 
     // Apply context-sensitive chain overrides (inject, skip, substitute) before pruning.
     if (contexts.length > 0) {
