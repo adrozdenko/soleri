@@ -9,17 +9,29 @@ import type { AgentRuntime } from '../runtime/types.js';
 import type { ProbeResults } from './types.js';
 
 /**
- * Run all capability probes in parallel and return results.
+ * Run capability probes in parallel and return results.
+ *
+ * @param probeNames - Optional allowlist of probe names to run. When provided and non-empty,
+ *   only the listed probes execute; all others are set to `false` in the result.
+ *   When omitted (or empty), all probes run as before (backward compatible).
  */
-export async function runProbes(runtime: AgentRuntime, projectPath: string): Promise<ProbeResults> {
+export async function runProbes(
+  runtime: AgentRuntime,
+  projectPath: string,
+  probeNames?: string[],
+): Promise<ProbeResults> {
+  const filter = probeNames && probeNames.length > 0 ? new Set(probeNames) : null;
+
+  const should = (name: string) => filter === null || filter.has(name);
+
   const [vault, brain, designSystem, sessionStore, projectRules, active, test] = await Promise.all([
-    probeVault(runtime),
-    probeBrain(runtime),
-    probeDesignSystem(runtime),
-    probeSessionStore(),
-    probeProjectRules(projectPath),
-    probeActive(),
-    probeTestRunner(projectPath),
+    should('vault') ? probeVault(runtime) : Promise.resolve(false),
+    should('brain') ? probeBrain(runtime) : Promise.resolve(false),
+    should('designSystem') ? probeDesignSystem(runtime) : Promise.resolve(false),
+    should('sessionStore') ? probeSessionStore() : Promise.resolve(false),
+    should('projectRules') ? probeProjectRules(projectPath) : Promise.resolve(false),
+    should('active') ? probeActive() : Promise.resolve(false),
+    should('test') ? probeTestRunner(projectPath) : Promise.resolve(false),
   ]);
 
   return { vault, brain, designSystem, sessionStore, projectRules, active, test };
