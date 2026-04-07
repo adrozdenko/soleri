@@ -1,0 +1,39 @@
+{
+  "$schema": "https://soleri.dev/schemas/pack-registry.json",
+  "version": 1,
+  "updatedAt": "2026-04-07",
+  "packs": [
+    {
+      "name": "domain-design",
+      "package": "@soleri/domain-design",
+      "type": "domain",
+      "description": "Design system intelligence — WCAG contrast, token validation, design rules, and patterns.",
+      "repo": "https://github.com/adrozdenko/soleri-domain-design",
+      "version": "9.18.3"
+    },
+    {
+      "name": "domain-code-review",
+      "package": "@soleri/domain-code-review",
+      "type": "domain",
+      "description": "Code review intelligence — hex color detection, architecture boundary warnings, review patterns.",
+      "repo": "https://github.com/adrozdenko/soleri-domain-code-review",
+      "version": "9.18.3"
+    },
+    {
+      "name": "domain-component",
+      "package": "@soleri/domain-component",
+      "type": "domain",
+      "description": "Component intelligence — component patterns, usage guidance, and best practices.",
+      "repo": "https://github.com/adrozdenko/soleri-domain-component",
+      "version": "9.18.3"
+    },
+    {
+      "name": "domain-design-qa",
+      "package": "@soleri/domain-design-qa",
+      "type": "domain",
+      "description": "Design QA intelligence — visual regression, design-to-code accuracy, QA patterns.",
+      "repo": "https://github.com/adrozdenko/soleri-domain-design-qa",
+      "version": "9.18.3"
+    }
+  ]
+}

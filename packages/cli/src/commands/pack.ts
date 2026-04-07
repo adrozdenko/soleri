@@ -553,6 +553,98 @@ export function registerPack(program: Command): void {
       console.log(`\n  ${allPacks.length} pack(s) available.\n`);
     });
 
+  // ─── registry ──────────────────────────────────────────────
+  pack
+    .command('registry')
+    .description('List packs from the Soleri pack registry')
+    .option('--type <type>', 'Filter by pack type (domain, knowledge, hooks, skills)')
+    .action((opts: { type?: string }) => {
+      let registryPath = join(import.meta.dirname ?? '.', '..', '..', 'data', 'pack-registry.json');
+
+      if (!existsSync(registryPath)) {
+        // Fallback: try from dist/
+        registryPath = join(import.meta.dirname ?? '.', '..', 'data', 'pack-registry.json');
+      }
+
+      if (!existsSync(registryPath)) {
+        p.log.error('Pack registry not found.');
+        return;
+      }
+
+      try {
+        const registry = JSON.parse(readFileSync(registryPath, 'utf-8'));
+        let packs = registry.packs ?? [];
+
+        if (opts.type) {
+          packs = packs.filter((pk: { type?: string }) => pk.type === opts.type);
+        }
+
+        if (packs.length === 0) {
+          p.log.info('No packs found in registry.');
+          return;
+        }
+
+        console.log(`\n  Soleri Pack Registry (${packs.length} packs)\n`);
+        for (const pk of packs) {
+          console.log(`  ${pk.package}@${pk.version}  [${pk.type}]`);
+          console.log(`    ${pk.description}`);
+          if (pk.repo) console.log(`    ${pk.repo}`);
+          console.log();
+        }
+
+        console.log(`  Install: npm install <package-name>\n`);
+      } catch {
+        p.log.error('Failed to read pack registry.');
+      }
+    });
+
+  // ─── add ──────────────────────────────────────────────────
+  pack
+    .command('add')
+    .argument('<name>', 'Pack name from registry (e.g., domain-design)')
+    .description('Install a pack from the registry (convenience for npm install)')
+    .action((name: string) => {
+      let registryPath = join(import.meta.dirname ?? '.', '..', '..', 'data', 'pack-registry.json');
+      if (!existsSync(registryPath)) {
+        registryPath = join(import.meta.dirname ?? '.', '..', 'data', 'pack-registry.json');
+      }
+
+      let npmPackage = name;
+
+      if (existsSync(registryPath)) {
+        try {
+          const registry = JSON.parse(readFileSync(registryPath, 'utf-8'));
+          const entry = (registry.packs ?? []).find(
+            (pk: { name: string; package: string }) => pk.name === name || pk.package === name,
+          );
+          if (entry) {
+            npmPackage = entry.package;
+          }
+        } catch {
+          // Fall through — use name as-is
+        }
+      }
+
+      const s = p.spinner();
+      s.start(`Installing ${npmPackage}...`);
+
+      try {
+        const { execFileSync } = require('node:child_process');
+        execFileSync('npm', ['install', npmPackage], {
+          encoding: 'utf-8',
+          timeout: 60_000,
+          stdio: 'pipe',
+        });
+        s.stop(`Installed ${npmPackage}`);
+        p.log.success(`Add to your agent.yaml packs: section to activate.`);
+      } catch (err) {
+        s.stop('Installation failed');
+        p.log.error(
+          `Could not install ${npmPackage}. ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    });
+
   // ─── create ─────────────────────────────────────────────────
   pack
     .command('create')
