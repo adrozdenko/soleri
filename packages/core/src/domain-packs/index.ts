@@ -2,6 +2,7 @@ export {
   type DomainPack,
   type DomainPackManifest,
   type DomainPackRef,
+  type DomainPackTier,
   type KnowledgeManifest,
   type PackSkillDefinition,
   type ValidateResult,

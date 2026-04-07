@@ -12,6 +12,7 @@ import { coerceArray } from './schema-helpers.js';
 import { detectScope } from '../vault/scope-detector.js';
 import type { ScopeTier, ScopeDetectionResult } from '../vault/scope-detector.js';
 import { syncEntryToMarkdown } from '../vault/vault-markdown-sync.js';
+import { autoLinkWithReport } from '../vault/vault-entries.js';
 import { agentKnowledgeDir, projectKnowledgeDir, findProjectRoot } from '../paths.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
@@ -267,11 +268,8 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
         }
 
         // Auto-link captured entries (Zettelkasten enrichment)
-        // Creates links for suggestions above threshold; returns remaining as suggestions
-        const AUTO_LINK_THRESHOLD = 0.7;
-        const AUTO_LINK_MAX = 3;
         let autoLinkedCount = 0;
-        const suggestedLinks: Array<{
+        let suggestedLinks: Array<{
           entryId: string;
           title: string;
           suggestedType: string;
@@ -280,32 +278,10 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
         }> = [];
         try {
           if (captured > 0 && vault.isAutoLinkEnabled()) {
-            // Use runtime's linkManager (respects vault auto-link setting)
-            const capturedEntries = results.filter((r) => r.action === 'capture');
-            for (const capturedEntry of capturedEntries) {
-              const suggestions = linkManager.suggestLinks(capturedEntry.id, AUTO_LINK_MAX + 2);
-              const filtered = suggestions.filter(
-                (s) => s.entryId !== capturedEntry.id && !s.entryId.endsWith(capturedEntry.id),
-              );
-
-              let linkedForThisEntry = 0;
-              for (const s of filtered) {
-                const aboveThreshold = s.score >= AUTO_LINK_THRESHOLD;
-                const canAutoLink = aboveThreshold && linkedForThisEntry < AUTO_LINK_MAX;
-                if (canAutoLink) {
-                  linkManager.addLink(capturedEntry.id, s.entryId, s.suggestedType);
-                  linkedForThisEntry++;
-                  autoLinkedCount++;
-                }
-                suggestedLinks.push({
-                  entryId: s.entryId,
-                  title: s.title,
-                  suggestedType: s.suggestedType,
-                  score: s.score,
-                  autoLinked: canAutoLink,
-                });
-              }
-            }
+            const capturedIds = results.filter((r) => r.action === 'capture').map((r) => r.id);
+            const report = autoLinkWithReport(capturedIds, linkManager);
+            autoLinkedCount = report.autoLinkedCount;
+            suggestedLinks = report.suggestedLinks;
           }
         } catch {
           /* never break capture for linking failures */

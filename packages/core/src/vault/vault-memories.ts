@@ -3,7 +3,7 @@
  * Extracted from vault.ts as part of Wave 0C decomposition.
  */
 import type { PersistenceProvider } from '../persistence/types.js';
-import type { Memory, MemoryStats } from './vault-types.js';
+import type { Memory, MemoryStats } from './vault.js';
 
 export function captureMemory(
   provider: PersistenceProvider,

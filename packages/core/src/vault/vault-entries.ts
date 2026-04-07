@@ -7,7 +7,7 @@ import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { StoredVector } from '../embeddings/types.js';
 import type { LinkManager } from './linking.js';
 import { computeContentHash } from './content-hash.js';
-import type { SearchResult, VaultStats } from './vault-types.js';
+import type { SearchResult, VaultStats } from './vault.js';
 
 export interface AutoLinkConfig {
   linkManager: LinkManager | null;

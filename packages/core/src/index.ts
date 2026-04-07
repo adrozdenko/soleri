@@ -497,6 +497,7 @@ export type { RegisterOptions } from './facades/facade-factory.js';
 export { facadeInputSchema, AUTH_LEVEL_RANK } from './facades/types.js';
 export type {
   OpHandler,
+  OpVisibility,
   AuthLevel,
   AuthMode,
   AuthPolicy,
@@ -820,6 +821,7 @@ export type {
   DomainPack,
   DomainPackManifest,
   DomainPackRef,
+  DomainPackTier,
   KnowledgeManifest,
   PackSkillDefinition,
   ValidateResult as DomainPackValidateResult,
