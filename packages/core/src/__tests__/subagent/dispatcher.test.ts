@@ -284,6 +284,47 @@ describe('SubagentDispatcher', () => {
     vi.useRealTimers();
   });
 
+  it('dispatch() clears timeout timer on successful task completion', async () => {
+    vi.useFakeTimers();
+
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+    (mockAdapter.execute as ReturnType<typeof vi.fn>).mockImplementation(async (ctx) => {
+      ctx.onMeta?.({ pid: 5555 });
+      return { exitCode: 0, summary: 'done' };
+    });
+
+    const tasks = [makeTask({ taskId: 'timer-cleanup' })];
+    const result = await dispatcher.dispatch(tasks, { parallel: false, timeout: 30_000 });
+
+    expect(result.completed).toBe(1);
+
+    // clearTimeout must have been called with the timer id (a number or Timeout object)
+    const clearCalls = clearTimeoutSpy.mock.calls;
+    expect(clearCalls.length).toBeGreaterThanOrEqual(1);
+    // The last clearTimeout call should have received a defined timer id
+    const lastCall = clearCalls[clearCalls.length - 1];
+    expect(lastCall[0]).toBeDefined();
+
+    // Advance well past the timeout — no rejection should occur
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    // The process.kill should NOT have been called with SIGTERM for this pid
+    // (if the timer leaked, it would fire and try to kill pid 5555)
+    const killSpy = vi.spyOn(process, 'kill');
+    killSpy.mockImplementation(() => true);
+    // Advance again to be sure
+    await vi.advanceTimersByTimeAsync(10_000);
+    const termCalls = killSpy.mock.calls.filter(
+      (c) => c[0] === 5555 && (c[1] === 'SIGTERM' || c[1] === 'SIGKILL'),
+    );
+    expect(termCalls).toHaveLength(0);
+
+    killSpy.mockRestore();
+    clearTimeoutSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
   it('dispatch() does not attempt kill when no pid is reported', async () => {
     vi.useFakeTimers();
 

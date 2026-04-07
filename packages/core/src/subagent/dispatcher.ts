@@ -277,8 +277,9 @@ export class SubagentDispatcher {
         },
       });
 
+      let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
+        timeoutTimer = setTimeout(() => {
           reject(new Error('Task timed out'));
           // Kill the child process if we have a PID
           if (childPid !== undefined) {
@@ -290,7 +291,12 @@ export class SubagentDispatcher {
         }, timeout);
       });
 
-      const adapterResult = await Promise.race([resultPromise, timeoutPromise]);
+      let adapterResult;
+      try {
+        adapterResult = await Promise.race([resultPromise, timeoutPromise]);
+      } finally {
+        clearTimeout(timeoutTimer);
+      }
 
       // Normal completion — unregister from reaper
       if (childPid !== undefined) {
