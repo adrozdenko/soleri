@@ -202,11 +202,17 @@ async function main(): Promise<void> {
       });
 
       for (const manifest of manifests) {
-        if (manifest.onActivate) {
-          await manifest.onActivate(narrowedRuntime, runtime); // eslint-disable-line no-await-in-loop
+        try {
+          if (manifest.onActivate) {
+            await manifest.onActivate(narrowedRuntime, runtime); // eslint-disable-line no-await-in-loop
+          }
+          loadedPacks.push(manifest);
+          console.error(`${tag} Domain pack: ${manifest.name}`);
+        } catch (err) {
+          console.error(
+            `${tag} Warning: domain pack "${manifest.name}" activation failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
-        loadedPacks.push(manifest);
-        console.error(`${tag} Domain pack: ${manifest.name}`);
       }
     } catch (err) {
       console.error(

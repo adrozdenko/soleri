@@ -101,6 +101,100 @@ describe('validateDomainPack', () => {
     }
   });
 
+  it('rejects facade ops with missing name', () => {
+    const result = validateDomainPack(
+      minimalPack({
+        facades: [
+          {
+            name: 'my_facade',
+            description: 'A facade.',
+            ops: [{ description: 'No name.', auth: 'read', handler: async () => ({}) }],
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects facade ops with invalid auth level', () => {
+    const result = validateDomainPack(
+      minimalPack({
+        facades: [
+          {
+            name: 'my_facade',
+            description: 'A facade.',
+            ops: [
+              {
+                name: 'bad_auth',
+                description: 'Bad auth.',
+                auth: 'superuser',
+                handler: async () => ({}),
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts facade with valid ops', () => {
+    const result = validateDomainPack(
+      minimalPack({
+        facades: [
+          {
+            name: 'my_facade',
+            description: 'A facade.',
+            ops: [
+              {
+                name: 'facade_op',
+                description: 'Valid.',
+                auth: 'read',
+                handler: async () => ({}),
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects scalar schema value on an op', () => {
+    const result = validateDomainPack(
+      minimalPack({
+        ops: [
+          {
+            name: 'bad_schema',
+            description: 'Has scalar schema.',
+            auth: 'read',
+            handler: async () => ({}),
+            schema: 42,
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts op with Zod-compatible schema object', () => {
+    const fakeSchema = { parse: () => ({}) };
+    const result = validateDomainPack(
+      minimalPack({
+        ops: [
+          {
+            name: 'good_schema',
+            description: 'Has object schema.',
+            auth: 'read',
+            handler: async () => ({}),
+            schema: fakeSchema,
+          },
+        ],
+      }),
+    );
+    expect(result.success).toBe(true);
+  });
+
   it('rejects duplicate op names with correct error message', () => {
     const result = validateDomainPack(
       minimalPack({

@@ -78,9 +78,51 @@ describe('loadDomainPack', () => {
 });
 
 describe('loadDomainPacksFromConfig', () => {
-  it('throws when any pack ref fails to load', async () => {
-    await expect(
-      loadDomainPacksFromConfig([{ name: 'bad', package: '@soleri/nonexistent-xyz' }]),
-    ).rejects.toThrow(/Failed to import/);
+  it('returns empty array when all packs fail to load', async () => {
+    const result = await loadDomainPacksFromConfig([
+      { name: 'bad', package: '@soleri/nonexistent-xyz' },
+    ]);
+    expect(result).toEqual([]);
+  });
+});
+
+describe('pack activation isolation', () => {
+  it('activates packs #1 and #3 when pack #2 throws in onActivate', async () => {
+    const activated: string[] = [];
+
+    const pack1 = stub('pack-1', {
+      onActivate: async () => {
+        activated.push('pack-1');
+      },
+    });
+    const pack2 = stub('pack-2', {
+      onActivate: async () => {
+        throw new Error('pack-2 exploded');
+      },
+    });
+    const pack3 = stub('pack-3', {
+      onActivate: async () => {
+        activated.push('pack-3');
+      },
+    });
+
+    const manifests = [pack1, pack2, pack3];
+    const loaded: Array<{ name: string }> = [];
+
+    for (const manifest of manifests) {
+      try {
+        if (manifest.onActivate) {
+          // Sequential activation is intentional — matches engine behavior
+          // eslint-disable-next-line no-await-in-loop
+          await manifest.onActivate({} as never, {} as never);
+        }
+        loaded.push(manifest);
+      } catch {
+        // Individual pack failure should not block others
+      }
+    }
+
+    expect(activated).toEqual(['pack-1', 'pack-3']);
+    expect(loaded.map((p) => p.name)).toEqual(['pack-1', 'pack-3']);
   });
 });

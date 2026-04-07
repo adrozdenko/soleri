@@ -355,6 +355,46 @@ describe('Planner', () => {
     });
   });
 
+  describe('reconcile', () => {
+    it('should set status to reconciling and persist (not completed)', () => {
+      const plan = planner.create({ objective: 'Reconcile test', scope: 'test' });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      const reconciled = planner.reconcile(plan.id, {
+        actualOutcome: 'tasks done',
+        driftItems: [],
+        accuracyScore: 95,
+      });
+      expect(reconciled.status).toBe('reconciling');
+      // Verify persisted state matches
+      const reloaded = planner.get(plan.id);
+      expect(reloaded!.status).toBe('reconciling');
+      expect(reloaded!.reconciliation).toBeDefined();
+      expect(reloaded!.reconciliation!.summary).toBe('tasks done');
+    });
+
+    it('should allow reconciling from validating state', () => {
+      const plan = planner.create({ objective: 'Validate then reconcile', scope: 'test' });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      planner.startValidation(plan.id);
+      const reconciled = planner.reconcile(plan.id, {
+        actualOutcome: 'validated and reconciled',
+      });
+      expect(reconciled.status).toBe('reconciling');
+    });
+
+    it('should not transition to completed until complete() is called', () => {
+      const plan = planner.create({ objective: 'Two-step completion', scope: 'test' });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      planner.reconcile(plan.id, { actualOutcome: 'done' });
+      expect(planner.get(plan.id)!.status).toBe('reconciling');
+      const completed = planner.complete(plan.id);
+      expect(completed.status).toBe('completed');
+    });
+  });
+
   describe('getExecuting', () => {
     it('should return only executing plans', () => {
       const p1 = planner.create({ objective: 'Executing', scope: 'a' });
@@ -807,7 +847,7 @@ describe('Planner', () => {
         driftItems: [],
         accuracyScore: 100,
       });
-      expect(reconciled.status).toBe('completed');
+      expect(reconciled.status).toBe('reconciling');
     });
 
     it('should support validating state', () => {

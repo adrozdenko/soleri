@@ -11,8 +11,8 @@
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
-import type { ZodType, ZodError } from 'zod';
-import type { OpDefinition } from '../facades/types.js';
+import type { ZodError } from 'zod';
+import type { OpDefinition, OpSchema } from '../facades/types.js';
 import type { AgentRuntime } from '../runtime/types.js';
 
 // ── Facade factory imports ──────────────────────────────────────────────
@@ -84,9 +84,9 @@ function createNoopProxy(): AgentRuntime {
 // ── Schema registry ─────────────────────────────────────────────────────
 // Build a flat map of opName → ZodSchema from all facades.
 
-function buildSchemaRegistry(): Map<string, ZodType> {
+function buildSchemaRegistry(): Map<string, OpSchema> {
   const runtime = createNoopProxy();
-  const registry = new Map<string, ZodType>();
+  const registry = new Map<string, OpSchema>();
 
   const facadeFactories: Array<(rt: AgentRuntime) => OpDefinition[]> = [
     createVaultFacadeOps,
@@ -403,7 +403,7 @@ function getNestedValue(obj: Record<string, unknown>, path: (string | number)[])
 
 function validateExamples(
   examples: OpExample[],
-  registry: Map<string, ZodType>,
+  registry: Map<string, OpSchema>,
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 

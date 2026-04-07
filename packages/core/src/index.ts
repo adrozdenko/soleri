@@ -500,6 +500,7 @@ export type {
   AuthLevel,
   AuthMode,
   AuthPolicy,
+  OpSchema,
   OpDefinition,
   FacadeConfig,
   FacadeResponse,

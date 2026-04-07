@@ -68,7 +68,18 @@ export async function loadDomainPack(packageName: string): Promise<DomainPackMan
 export async function loadDomainPacksFromConfig(
   refs: DomainPackRef[],
 ): Promise<DomainPackManifest[]> {
-  const packs = await Promise.all(refs.map((ref) => loadDomainPack(ref.package)));
+  const results = await Promise.allSettled(refs.map((ref) => loadDomainPack(ref.package)));
+  const packs: DomainPackManifest[] = [];
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (result.status === 'fulfilled') {
+      packs.push(result.value);
+    } else {
+      console.error(
+        `[warn] Failed to load domain pack "${refs[i].package}": ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
+      );
+    }
+  }
   return resolveDependencies(packs);
 }
 

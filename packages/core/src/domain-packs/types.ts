@@ -151,28 +151,40 @@ const packSkillSchema = z.object({
   path: z.string(),
 });
 
+/**
+ * Shared op shape — reused for both top-level ops and facade ops.
+ * The `schema` field accepts any value that exposes a `.parse` method
+ * (e.g. a Zod schema) or is nullish.  Plain scalars like `42` are rejected.
+ */
+const opSchema = z.object({
+  name: z.string().min(1),
+  description: z.string(),
+  auth: z.enum(['read', 'write', 'admin']),
+  handler: z.function(),
+  schema: z
+    .any()
+    .optional()
+    .refine(
+      (v) =>
+        v === null || v === undefined || (typeof v === 'object' && typeof v.parse === 'function'),
+      { message: 'schema must be a Zod-compatible object with a .parse method (or omitted)' },
+    ),
+  hot: z.boolean().optional(),
+});
+
 /** Zod schema for validating DomainPack structure (data fields only). */
 const domainPackSchema = z.object({
   name: z.string().min(1),
   version: z.string().min(1),
   tier: z.enum(['default', 'community', 'premium']).optional(),
   domains: z.array(z.string().min(1)).min(1),
-  ops: z.array(
-    z.object({
-      name: z.string().min(1),
-      description: z.string(),
-      auth: z.enum(['read', 'write', 'admin']),
-      handler: z.function(),
-      schema: z.any().optional(),
-      hot: z.boolean().optional(),
-    }),
-  ),
+  ops: z.array(opSchema),
   facades: z
     .array(
       z.object({
         name: z.string().min(1),
         description: z.string(),
-        ops: z.array(z.any()),
+        ops: z.array(opSchema),
       }),
     )
     .optional(),

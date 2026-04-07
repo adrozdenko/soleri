@@ -195,6 +195,63 @@ describe('facade-factory schema validation — colocated', () => {
 });
 
 // =============================================================================
+// Non-Zod schema (duck-typed OpSchema)
+// =============================================================================
+
+describe('facade-factory non-Zod schema — colocated', () => {
+  it('accepts a plain object with parse/safeParse as schema', async () => {
+    const facade = createFacade({
+      ops: [
+        {
+          name: 'duck_op',
+          description: 'Uses plain schema',
+          auth: 'read',
+          schema: {
+            parse: (input: unknown) => input,
+            safeParse: (input: unknown) => ({ success: true as const, data: input }),
+          },
+          handler: async (params) => ({ echo: params }),
+        },
+      ],
+    });
+    const handler = captureHandler(facade);
+
+    const result = await callOp(handler, 'duck_op', { foo: 'bar' });
+
+    expect(result.success).toBe(true);
+    expect((result.data as { echo: unknown }).echo).toEqual({ foo: 'bar' });
+  });
+
+  it('rejects when non-Zod safeParse returns failure', async () => {
+    const facade = createFacade({
+      ops: [
+        {
+          name: 'strict_duck_op',
+          description: 'Rejects everything',
+          auth: 'read',
+          schema: {
+            parse: () => {
+              throw new Error('nope');
+            },
+            safeParse: () => ({
+              success: false as const,
+              error: { message: 'custom validation failed' },
+            }),
+          },
+          handler: async (params) => ({ echo: params }),
+        },
+      ],
+    });
+    const handler = captureHandler(facade);
+
+    const result = await callOp(handler, 'strict_duck_op', { foo: 'bar' });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('custom validation failed');
+  });
+});
+
+// =============================================================================
 // Auth enforcement
 // =============================================================================
 

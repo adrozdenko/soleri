@@ -241,16 +241,18 @@ export class Planner {
     plan.executionSummary = computeExecutionSummary(plan.tasks);
     if (plan.status === 'executing' || plan.status === 'validating' || plan.status === 'approved')
       plan.status = 'reconciling';
-    plan.status = 'completed';
     plan.updatedAt = Date.now();
     this.save();
     return plan;
   }
 
   complete(planId: string): Plan {
-    const plan = this.requirePlan(planId);
-    if (plan.status === 'executing' || plan.status === 'validating')
-      return this.reconcile(planId, { actualOutcome: 'All tasks completed', reconciledBy: 'auto' });
+    let plan = this.requirePlan(planId);
+    if (plan.status === 'executing' || plan.status === 'validating') {
+      this.reconcile(planId, { actualOutcome: 'All tasks completed', reconciledBy: 'auto' });
+      // Re-fetch after reconcile since refresh() replaces store objects
+      plan = this.requirePlan(planId);
+    }
     plan.executionSummary = computeExecutionSummary(plan.tasks);
     this.transition(plan, 'completed');
     this.save();
@@ -548,7 +550,9 @@ export class Planner {
 
       if (shouldClose) {
         const previousStatus = plan.status;
-        // Force transition to completed (bypass FSM since these are stale)
+        // Intentional FSM bypass: force-complete stale plans regardless of current state.
+        // This skips the normal reconciling → completed transition because stale plans
+        // may be in any state (draft, approved, executing, etc.).
         plan.status = 'completed';
         plan.updatedAt = now;
         if (!plan.reconciliation) {

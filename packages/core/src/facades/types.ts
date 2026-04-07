@@ -28,13 +28,25 @@ export const AUTH_LEVEL_RANK: Record<AuthLevel, number> = {
 /** Op visibility — controls whether an op is exposed via MCP tool registration */
 export type OpVisibility = 'user' | 'internal';
 
+/**
+ * Duck-typed schema interface that Zod objects naturally satisfy.
+ * Pack authors can use any validation library (or a plain object) that
+ * exposes `parse` and `safeParse`.
+ */
+export interface OpSchema {
+  parse: (input: unknown) => unknown;
+  safeParse: (
+    input: unknown,
+  ) => { success: true; data: unknown } | { success: false; error: { message: string } };
+}
+
 /** Operation definition within a facade */
 export interface OpDefinition {
   name: string;
   description: string;
   auth: AuthLevel;
   handler: OpHandler;
-  schema?: z.ZodType;
+  schema?: OpSchema;
   /** Promote to a first-class MCP tool with full schema discovery. */
   hot?: boolean;
   /** Controls MCP exposure: 'user' (default) = listed in tool, 'internal' = hidden from MCP but callable programmatically. */
