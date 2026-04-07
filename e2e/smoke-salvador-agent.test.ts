@@ -17,10 +17,10 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 // Import all 4 domain packs (from source — packages not built yet)
-import designPack from '../packages/domain-design/src/index.js';
-import componentPack from '../packages/domain-component/src/index.js';
-import designQaPack from '../packages/domain-design-qa/src/index.js';
-import codeReviewPack from '../packages/domain-code-review/src/index.js';
+import designPack from '@soleri/domain-design';
+import componentPack from '@soleri/domain-component';
+import designQaPack from '@soleri/domain-design-qa';
+import codeReviewPack from '@soleri/domain-code-review';
 
 const TEST_DIR = join(tmpdir(), 'soleri-smoke-salvador-' + Date.now());
 const AGENT_ID = 'salvador-test';

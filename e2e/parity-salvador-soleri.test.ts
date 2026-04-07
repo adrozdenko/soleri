@@ -12,10 +12,10 @@ import {
   type AgentRuntime,
   type FacadeConfig,
 } from '@soleri/core';
-import designPack from '../packages/domain-design/src/index.js';
-import componentPack from '../packages/domain-component/src/index.js';
-import designQaPack from '../packages/domain-design-qa/src/index.js';
-import codeReviewPack from '../packages/domain-code-review/src/index.js';
+import designPack from '@soleri/domain-design';
+import componentPack from '@soleri/domain-component';
+import designQaPack from '@soleri/domain-design-qa';
+import codeReviewPack from '@soleri/domain-code-review';
 
 let runtime: AgentRuntime;
 let facades: FacadeConfig[];
