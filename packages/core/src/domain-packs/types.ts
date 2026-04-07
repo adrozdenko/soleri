@@ -98,14 +98,8 @@ export interface DomainPack {
   requires?: string[];
   /** Called after pack is installed (one-time setup). */
   onInstall?: (runtime: AgentRuntime) => Promise<void>;
-  /**
-   * Called each time the agent starts (runtime initialization).
-   *
-   * Receives `PackRuntime` (narrowed interface with vault, projects, session checks).
-   * The full `AgentRuntime` is passed as second argument for backwards compatibility
-   * but is deprecated — packs should only use `PackRuntime`.
-   */
-  onActivate?: (packRuntime: PackRuntime, runtime?: AgentRuntime) => Promise<void>;
+  /** Called each time the agent starts (runtime initialization). */
+  onActivate?: (packRuntime: PackRuntime) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

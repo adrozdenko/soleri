@@ -114,7 +114,7 @@ describe('pack activation isolation', () => {
         if (manifest.onActivate) {
           // Sequential activation is intentional — matches engine behavior
           // eslint-disable-next-line no-await-in-loop
-          await manifest.onActivate({} as never, {} as never);
+          await manifest.onActivate({} as never);
         }
         loaded.push(manifest);
       } catch {

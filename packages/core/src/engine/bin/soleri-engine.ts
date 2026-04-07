@@ -204,7 +204,7 @@ async function main(): Promise<void> {
       for (const manifest of manifests) {
         try {
           if (manifest.onActivate) {
-            await manifest.onActivate(narrowedRuntime, runtime); // eslint-disable-line no-await-in-loop
+            await manifest.onActivate(narrowedRuntime); // eslint-disable-line no-await-in-loop
           }
           loadedPacks.push(manifest);
           console.error(`${tag} Domain pack: ${manifest.name}`);

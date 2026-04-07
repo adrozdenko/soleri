@@ -265,7 +265,7 @@ ${
   console.error(\`[\${tag}] Loaded \${domainPacks.length} domain packs\`);
   for (const pack of domainPacks) {
     const packRuntime = createPackRuntime(runtime);
-    if (pack.onActivate) await pack.onActivate(packRuntime, runtime);
+    if (pack.onActivate) await pack.onActivate(packRuntime);
   }
 
   // ─── Capability Registry ─────────────────────────────────────
