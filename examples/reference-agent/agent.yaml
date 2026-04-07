@@ -37,7 +37,7 @@ setup:
   target: claude
   model: claude-code-sonnet-4
 
-# ─── Domain Packs ──────────────────────────
+# ─── Domain Packs (install from npm: soleri pack add <name>) ───
 packs:
   - name: design
     package: '@soleri/domain-design'

@@ -6,7 +6,7 @@
 | ---------------- | ------------------------------------- | ---------------------------- |
 | Bug fixes, typos | Standard PR                           | Anywhere                     |
 | Engine features  | RFC issue first, 2 maintainer reviews | `packages/core/`             |
-| Domain packs     | Architecture review                   | `packages/domain-*/`         |
+| Domain packs     | Architecture review                   | Standalone repos (`soleri-domain-*`) |
 | Knowledge packs  | Domain expert review                  | `knowledge-packs/community/` |
 | Skills & hooks   | Quality review                        | Pack directories             |
 
@@ -41,8 +41,9 @@ All PRs must pass the full test suite. Do not submit a PR with failing tests.
 - Run `npm run deadcode:knip` to verify no dead exports introduced
 - Vault search relevance: if changing FTS, run `vault-scaling.test.ts`
 
-**Domain pack changes** (`packages/domain-*/`):
+**Domain pack changes** (standalone repos — `soleri-domain-*`):
 
+- Domain packs live in their own repositories, not in this monorepo
 - Unit tests for algorithmic ops (contrast checking, code validation)
 - Verify pack loads without error: `npm run build && npm test`
 - Test graceful degradation: ops must work when `PackRuntime` has no project registered
@@ -94,7 +95,7 @@ Brain intelligence produces probabilistic results (TF-IDF scoring, recency weigh
 
 ### Domain Packs
 
-1. Implement the `DomainPack` interface (see `packages/domain-design/` for reference)
+1. Scaffold with `npm create soleri-pack <name>` (implements `DomainPack` interface)
 2. Declare `@soleri/core` peer dependency with correct major version
 3. Include unit tests for all ops
 4. Architecture review required

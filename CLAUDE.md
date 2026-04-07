@@ -30,7 +30,11 @@ Consult the vault for full architecture docs, package map, testing protocol, and
 | `@soleri/forge` | `packages/forge/` | Agent scaffolder |
 | `@soleri/cli` | `packages/cli/` | Developer CLI |
 | `create-soleri` | `packages/create-soleri/` | npm create shorthand |
-| `@soleri/domain-*` | `packages/domain-*/` | Domain packs |
+| `@soleri/engine` | `packages/engine/` | Engine package |
+| `@soleri/tokens` | `packages/tokens/` | Token system |
+
+Domain packs (`@soleri/domain-*`) are standalone community repos — not part of this monorepo.
+Use `soleri pack registry` to discover available packs, `soleri pack add <name>` to install.
 
 ## Testing
 
