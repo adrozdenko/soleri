@@ -101,7 +101,14 @@ Drop JSON bundles in `knowledge/`. They're seeded into the vault on engine start
 
 ## Adding domain packs
 
-Domain packs are npm packages that add specialized ops and knowledge. Add them to `agent.yaml`:
+Domain packs are standalone community packages that add specialized ops and knowledge. Install via CLI or npm:
+
+```bash
+soleri pack add domain-design
+# or: npm install @soleri/domain-design
+```
+
+Then add to `agent.yaml`:
 
 ```yaml
 packs:
@@ -111,7 +118,7 @@ packs:
     package: '@my-org/domain-security'
 ```
 
-The engine loads them at startup and registers their tools automatically.
+The engine loads them at startup and registers their tools automatically. Browse available packs with `soleri pack registry`. Create your own with `npm create soleri-pack <name>`.
 
 ## Adding skills
 

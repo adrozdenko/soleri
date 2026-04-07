@@ -271,7 +271,7 @@ npx @soleri/cli agent migrate <agentId>
 
 ### pack
 
-Unified pack manager for hooks, skills, knowledge, and domains. See [Creating Packs](/docs/guides/pack-authoring/) for authoring guide and [Domain Packs](/docs/guides/domain-packs/) for built-in packs.
+Unified pack manager for hooks, skills, knowledge, and domains. See [Creating Packs](/docs/guides/pack-authoring/) for authoring guide and [Domain Packs](/docs/guides/domain-packs/) for available community packs.
 
 ```bash
 npx @soleri/cli pack <subcommand> [options]
@@ -282,13 +282,15 @@ npx @soleri/cli pack <subcommand> [options]
 | Subcommand  | Description                                       |
 | ----------- | ------------------------------------------------- |
 | `list`      | List installed packs                              |
-| `install`   | Install a pack from local path, built-in, or npm  |
+| `install`   | Install a pack from local path or npm              |
 | `remove`    | Remove an installed pack                          |
 | `info`      | Show detailed info about an installed pack        |
 | `outdated`  | Check for packs with available updates on npm     |
 | `update`    | Update installed packs to latest compatible version |
 | `search`    | Search for packs on the npm registry              |
-| `available` | List available knowledge packs (built-in and community) |
+| `available` | List available knowledge packs                    |
+| `registry`  | List packs from the Soleri pack registry          |
+| `add`       | Install a pack from the registry by name          |
 | `create`    | Scaffold a new pack project (interactive wizard)  |
 | `validate`  | Validate a pack before publishing                 |
 | `publish`   | Publish pack to npm registry                      |

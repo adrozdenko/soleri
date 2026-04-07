@@ -5,7 +5,11 @@ description: 'Specialized intelligence modules that add domain-specific operatio
 
 Domain packs are npm packages that register specialized operations with the Soleri engine. Unlike knowledge packs (which add static vault entries), domain packs add algorithmic capabilities — operations that compute results, validate data, and enforce rules.
 
-Soleri ships with four built-in domain packs. All are free and included at the `default` tier.
+Domain packs are **standalone community packages** — they live in their own repositories, have their own release cycles, and are installed via npm. The Soleri engine provides the infrastructure (loader, types, runtime) but ships with zero domain-specific code.
+
+## Available packs
+
+Discover available packs with `soleri pack registry` or install directly with `soleri pack add <name>`.
 
 ## @soleri/domain-design
 
@@ -96,13 +100,35 @@ All ops process pre-extracted data — no external API calls required. The `hand
 
 ## Installing domain packs
 
-Domain packs are npm packages. Install them as dependencies of your agent project:
+Domain packs are npm packages. Install them with the CLI or directly via npm:
 
 ```bash
-npm install @soleri/domain-design @soleri/domain-component
+# Via Soleri CLI
+soleri pack add domain-design
+
+# Or directly via npm
+npm install @soleri/domain-design
 ```
 
-Then register them in your agent's entry point (see [Extending Your Agent](/docs/extending/) for details). The engine discovers domain pack ops automatically when the pack is imported and activated.
+Then add the pack to your `agent.yaml`:
+
+```yaml
+packs:
+  - name: design
+    package: '@soleri/domain-design'
+```
+
+The engine discovers domain pack ops automatically when the pack is installed and the agent starts.
+
+## Creating your own domain pack
+
+Scaffold a new pack with:
+
+```bash
+npm create soleri-pack my-pack
+```
+
+This generates a complete repo with `DomainPack` interface, TypeScript config, tests, and CI workflow. See [Creating Packs](/docs/guides/pack-authoring/) for the full authoring guide.
 
 ## When to use domain packs vs. knowledge packs
 

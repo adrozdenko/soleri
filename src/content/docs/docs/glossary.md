@@ -49,7 +49,7 @@ The gradual reduction of an unused pattern's strength score over time. Ensures s
 
 ### Domain pack
 
-An npm package that adds specialized operations and knowledge for a specific domain (e.g., `@soleri/domain-design`, `@soleri/domain-code-review`). Installed via `agent.yaml` packs configuration. See [Domain Packs](/docs/guides/domain-packs/) and [Customizing Your Agent](/docs/guides/customizing/#domain-packs).
+A standalone community npm package that adds specialized operations and knowledge for a specific domain (e.g., `@soleri/domain-design`, `@soleri/domain-code-review`). Each pack has its own repository and release cycle. Install with `soleri pack add <name>` and register in `agent.yaml`. See [Domain Packs](/docs/guides/domain-packs/) and [Customizing Your Agent](/docs/guides/customizing/#domain-packs).
 
 ### Domain
 
