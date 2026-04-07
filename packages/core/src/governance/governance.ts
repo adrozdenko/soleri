@@ -3,83 +3,38 @@ import type { PersistenceProvider } from '../persistence/types.js';
 import type {
   PolicyType,
   PolicyPreset,
-  QuotaPolicy,
-  RetentionPolicy,
-  AutoCapturePolicy,
   VaultPolicy,
   QuotaStatus,
   PolicyDecision,
   BatchDecision,
   PolicyAuditEntry,
   Proposal,
-  ProposalStatus,
   ProposalStats,
   GovernanceDashboard,
 } from './types.js';
+import { GovernancePolicies } from './governance-policies.js';
+import { GovernanceProposals } from './governance-proposals.js';
+import { GovernanceDashboardModule } from './governance-dashboard.js';
 
-// ─── Default Presets ────────────────────────────────────────────────
-
-interface PresetConfig {
-  quotas: QuotaPolicy;
-  retention: RetentionPolicy;
-  autoCapture: AutoCapturePolicy;
-}
-
-const POLICY_PRESETS: Record<PolicyPreset, PresetConfig> = {
-  strict: {
-    quotas: {
-      maxEntriesTotal: 200,
-      maxEntriesPerCategory: 50,
-      maxEntriesPerType: 100,
-      warnAtPercent: 70,
-    },
-    retention: { archiveAfterDays: 30, minHitsToKeep: 5, deleteArchivedAfterDays: 90 },
-    autoCapture: { enabled: true, requireReview: true, maxPendingProposals: 10, autoExpireDays: 7 },
-  },
-  moderate: {
-    quotas: {
-      maxEntriesTotal: 500,
-      maxEntriesPerCategory: 150,
-      maxEntriesPerType: 250,
-      warnAtPercent: 80,
-    },
-    retention: { archiveAfterDays: 90, minHitsToKeep: 2, deleteArchivedAfterDays: 180 },
-    autoCapture: {
-      enabled: true,
-      requireReview: false,
-      maxPendingProposals: 25,
-      autoExpireDays: 14,
-    },
-  },
-  permissive: {
-    quotas: {
-      maxEntriesTotal: 2000,
-      maxEntriesPerCategory: 500,
-      maxEntriesPerType: 1000,
-      warnAtPercent: 90,
-    },
-    retention: { archiveAfterDays: 365, minHitsToKeep: 0, deleteArchivedAfterDays: 730 },
-    autoCapture: {
-      enabled: true,
-      requireReview: false,
-      maxPendingProposals: 100,
-      autoExpireDays: 30,
-    },
-  },
-};
-
-const DEFAULT_PRESET: PolicyPreset = 'moderate';
-
-// ─── Governance Class ───────────────────────────────────────────────
+// ─── Governance Facade ──────────────────────────────────────────────
 
 export class Governance {
-  private vault: Vault;
   private provider: PersistenceProvider;
+  private policies: GovernancePolicies;
+  private proposals: GovernanceProposals;
+  private dashboardModule: GovernanceDashboardModule;
 
   constructor(vault: Vault) {
-    this.vault = vault;
     this.provider = vault.getProvider();
     this.initializeTables();
+
+    this.policies = new GovernancePolicies(this.provider);
+    this.proposals = new GovernanceProposals(this.provider, vault);
+    this.dashboardModule = new GovernanceDashboardModule(
+      this.provider,
+      this.policies,
+      this.proposals,
+    );
   }
 
   // ─── Schema ─────────────────────────────────────────────────────
@@ -146,28 +101,10 @@ export class Governance {
     `);
   }
 
-  // ─── Policy CRUD ────────────────────────────────────────────────
+  // ─── Policy Delegates ───────────────────────────────────────────
 
   getPolicy(projectPath: string): VaultPolicy {
-    const defaults = POLICY_PRESETS[DEFAULT_PRESET];
-
-    const rows = this.provider.all<{ policy_type: string; config: string }>(
-      'SELECT policy_type, config FROM vault_policies WHERE project_path = ? AND enabled = 1',
-      [projectPath],
-    );
-
-    let quotas = defaults.quotas;
-    let retention = defaults.retention;
-    let autoCapture = defaults.autoCapture;
-
-    for (const row of rows) {
-      const parsed = JSON.parse(row.config);
-      if (row.policy_type === 'quota') quotas = parsed;
-      else if (row.policy_type === 'retention') retention = parsed;
-      else if (row.policy_type === 'auto-capture') autoCapture = parsed;
-    }
-
-    return { projectPath, quotas, retention, autoCapture };
+    return this.policies.getPolicy(projectPath);
   }
 
   setPolicy(
@@ -176,225 +113,42 @@ export class Governance {
     config: Record<string, unknown>,
     changedBy?: string,
   ): void {
-    // Get old config for audit trail
-    const existing = this.provider.get<{ config: string }>(
-      'SELECT config FROM vault_policies WHERE project_path = ? AND policy_type = ?',
-      [projectPath, policyType],
-    );
-    const oldConfig = existing ? existing.config : null;
-
-    // UPSERT policy
-    this.provider.run(
-      `INSERT INTO vault_policies (project_path, policy_type, config, updated_at)
-       VALUES (?, ?, ?, unixepoch())
-       ON CONFLICT(project_path, policy_type)
-       DO UPDATE SET config = excluded.config, updated_at = excluded.updated_at`,
-      [projectPath, policyType, JSON.stringify(config)],
-    );
-
-    // Audit trail
-    this.provider.run(
-      'INSERT INTO vault_policy_changes (project_path, policy_type, old_config, new_config, changed_by) VALUES (?, ?, ?, ?, ?)',
-      [projectPath, policyType, oldConfig, JSON.stringify(config), changedBy ?? null],
-    );
+    this.policies.setPolicy(projectPath, policyType, config, changedBy);
   }
 
   applyPreset(projectPath: string, preset: PolicyPreset, changedBy?: string): void {
-    const config = POLICY_PRESETS[preset];
-    if (!config) throw new Error(`Unknown preset: ${preset}`);
-
-    this.setPolicy(
-      projectPath,
-      'quota',
-      config.quotas as unknown as Record<string, unknown>,
-      changedBy,
-    );
-    this.setPolicy(
-      projectPath,
-      'retention',
-      config.retention as unknown as Record<string, unknown>,
-      changedBy,
-    );
-    this.setPolicy(
-      projectPath,
-      'auto-capture',
-      config.autoCapture as unknown as Record<string, unknown>,
-      changedBy,
-    );
+    this.policies.applyPreset(projectPath, preset, changedBy);
   }
 
   getQuotaStatus(projectPath: string): QuotaStatus {
-    const policy = this.getPolicy(projectPath);
-
-    const totalRow = this.provider.get<{ count: number }>('SELECT COUNT(*) as count FROM entries');
-    const total = totalRow?.count ?? 0;
-
-    // Count by domain (used as category proxy)
-    const categoryRows = this.provider.all<{ domain: string; count: number }>(
-      'SELECT domain, COUNT(*) as count FROM entries GROUP BY domain',
-    );
-    const byCategory: Record<string, number> = {};
-    for (const row of categoryRows) {
-      byCategory[row.domain] = row.count;
-    }
-
-    // Count by type
-    const typeRows = this.provider.all<{ type: string; count: number }>(
-      'SELECT type, COUNT(*) as count FROM entries GROUP BY type',
-    );
-    const byType: Record<string, number> = {};
-    for (const row of typeRows) {
-      byType[row.type] = row.count;
-    }
-
-    const warnAtPercent = policy.quotas.warnAtPercent;
-    const isWarning = total >= (policy.quotas.maxEntriesTotal * warnAtPercent) / 100;
-
-    return {
-      total,
-      maxTotal: policy.quotas.maxEntriesTotal,
-      byCategory,
-      byType,
-      warnAtPercent,
-      isWarning,
-    };
+    return this.policies.getQuotaStatus(projectPath);
   }
 
   getAuditTrail(projectPath: string, limit?: number): PolicyAuditEntry[] {
-    const rows = this.provider.all<{
-      id: number;
-      project_path: string;
-      policy_type: string;
-      old_config: string | null;
-      new_config: string;
-      changed_by: string | null;
-      changed_at: number;
-    }>(
-      'SELECT id, project_path, policy_type, old_config, new_config, changed_by, changed_at FROM vault_policy_changes WHERE project_path = ? ORDER BY changed_at DESC LIMIT ?',
-      [projectPath, limit ?? 50],
-    );
-
-    return rows.map((row) => ({
-      id: row.id,
-      projectPath: row.project_path,
-      policyType: row.policy_type,
-      oldConfig: row.old_config ? JSON.parse(row.old_config) : null,
-      newConfig: JSON.parse(row.new_config),
-      changedBy: row.changed_by,
-      changedAt: row.changed_at,
-    }));
+    return this.policies.getAuditTrail(projectPath, limit);
   }
 
-  // ─── Evaluation ─────────────────────────────────────────────────
+  // ─── Evaluation Delegates ───────────────────────────────────────
 
   evaluateCapture(
     projectPath: string,
     entry: { type: string; category: string; title?: string },
   ): PolicyDecision {
-    const policy = this.getPolicy(projectPath);
-    const quotaStatus = this.getQuotaStatus(projectPath);
-    let decision: PolicyDecision;
-
-    // 1. Auto-capture disabled → reject
-    if (!policy.autoCapture.enabled) {
-      decision = {
-        allowed: false,
-        action: 'reject',
-        reason: 'Auto-capture is disabled',
-        quotaStatus,
-      };
-    }
-    // 2. Require review → propose (if pending < max)
-    else if (policy.autoCapture.requireReview) {
-      const pendingCount = this.countPending(projectPath);
-      if (pendingCount >= policy.autoCapture.maxPendingProposals) {
-        decision = {
-          allowed: false,
-          action: 'reject',
-          reason: `Too many pending proposals (${pendingCount}/${policy.autoCapture.maxPendingProposals})`,
-          quotaStatus,
-        };
-      } else {
-        decision = { allowed: false, action: 'propose', reason: 'Review required', quotaStatus };
-      }
-    }
-    // 3. Total quota exceeded → reject
-    else if (quotaStatus.total >= policy.quotas.maxEntriesTotal) {
-      decision = {
-        allowed: false,
-        action: 'reject',
-        reason: `Total quota exceeded (${quotaStatus.total}/${policy.quotas.maxEntriesTotal})`,
-        quotaStatus,
-      };
-    }
-    // 4. Per-category quota exceeded → quarantine
-    else if ((quotaStatus.byCategory[entry.category] ?? 0) >= policy.quotas.maxEntriesPerCategory) {
-      decision = {
-        allowed: false,
-        action: 'quarantine',
-        reason: `Category quota exceeded for "${entry.category}"`,
-        quotaStatus,
-      };
-    }
-    // 5. Per-type quota exceeded → quarantine
-    else if ((quotaStatus.byType[entry.type] ?? 0) >= policy.quotas.maxEntriesPerType) {
-      decision = {
-        allowed: false,
-        action: 'quarantine',
-        reason: `Type quota exceeded for "${entry.type}"`,
-        quotaStatus,
-      };
-    }
-    // 6. All clear → capture
-    else {
-      decision = { allowed: true, action: 'capture', quotaStatus };
-    }
-
-    // Log evaluation (fire-and-forget)
-    this.logEvaluation(projectPath, entry, decision);
-
-    return decision;
+    return this.policies.evaluateCapture(projectPath, entry, (pp) =>
+      this.proposals.countPending(pp),
+    );
   }
 
   evaluateBatch(
     projectPath: string,
     entries: Array<{ type: string; category: string; title?: string }>,
   ): BatchDecision[] {
-    const results: BatchDecision[] = [];
-    for (const entry of entries) {
-      const decision = this.evaluateCapture(projectPath, entry);
-      results.push({ entry, decision });
-    }
-    return results;
+    return this.policies.evaluateBatch(projectPath, entries, (pp) =>
+      this.proposals.countPending(pp),
+    );
   }
 
-  private logEvaluation(
-    projectPath: string,
-    entry: { type: string; category: string; title?: string },
-    decision: PolicyDecision,
-  ): void {
-    try {
-      this.provider.run(
-        `INSERT INTO vault_policy_evaluations
-         (project_path, entry_type, entry_category, entry_title, action, reason, quota_total, quota_max)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          projectPath,
-          entry.type,
-          entry.category,
-          entry.title ?? null,
-          decision.action,
-          decision.reason ?? null,
-          decision.quotaStatus?.total ?? null,
-          decision.quotaStatus?.maxTotal ?? null,
-        ],
-      );
-    } catch {
-      // Fire-and-forget — don't fail capture because of evaluation logging
-    }
-  }
-
-  // ─── Proposals ──────────────────────────────────────────────────
+  // ─── Proposal Delegates ─────────────────────────────────────────
 
   propose(
     projectPath: string,
@@ -407,31 +161,15 @@ export class Governance {
     },
     source?: string,
   ): number {
-    const result = this.provider.run(
-      `INSERT INTO vault_proposals (project_path, entry_id, title, type, category, proposed_data, source)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        projectPath,
-        entryData.entryId ?? null,
-        entryData.title,
-        entryData.type,
-        entryData.category,
-        JSON.stringify(entryData.data ?? {}),
-        source ?? 'auto-capture',
-      ],
-    );
-    return Number(result.lastInsertRowid);
+    return this.proposals.propose(projectPath, entryData, source);
   }
 
   approveProposal(proposalId: number, decidedBy?: string): Proposal | null {
-    const proposal = this.resolveProposal(proposalId, 'approved', decidedBy);
-    if (!proposal) return null;
-    this.captureFromProposal(proposal);
-    return proposal;
+    return this.proposals.approveProposal(proposalId, decidedBy);
   }
 
   rejectProposal(proposalId: number, decidedBy?: string, note?: string): Proposal | null {
-    return this.resolveProposal(proposalId, 'rejected', decidedBy, note);
+    return this.proposals.rejectProposal(proposalId, decidedBy, note);
   }
 
   modifyProposal(
@@ -439,243 +177,24 @@ export class Governance {
     modifications: Record<string, unknown>,
     decidedBy?: string,
   ): Proposal | null {
-    const existing = this.getProposalById(proposalId);
-    if (!existing || existing.status !== 'pending') return null;
-
-    // Merge modifications into proposed data
-    const merged = { ...existing.proposedData, ...modifications };
-
-    this.provider.run(
-      `UPDATE vault_proposals
-       SET status = 'modified', proposed_data = ?, decided_at = unixepoch(),
-           decided_by = ?, modification_note = ?
-       WHERE id = ?`,
-      [
-        JSON.stringify(merged),
-        decidedBy ?? null,
-        `Modified fields: ${Object.keys(modifications).join(', ')}`,
-        proposalId,
-      ],
-    );
-
-    const proposal = this.getProposalById(proposalId);
-    if (proposal) this.captureFromProposal(proposal);
-    return proposal;
+    return this.proposals.modifyProposal(proposalId, modifications, decidedBy);
   }
 
   listPendingProposals(projectPath?: string, limit?: number): Proposal[] {
-    if (projectPath) {
-      const rows = this.provider.all<RawProposal>(
-        'SELECT * FROM vault_proposals WHERE project_path = ? AND status = ? ORDER BY proposed_at DESC LIMIT ?',
-        [projectPath, 'pending', limit ?? 50],
-      );
-      return rows.map(mapProposal);
-    }
-    const rows = this.provider.all<RawProposal>(
-      'SELECT * FROM vault_proposals WHERE status = ? ORDER BY proposed_at DESC LIMIT ?',
-      ['pending', limit ?? 50],
-    );
-    return rows.map(mapProposal);
+    return this.proposals.listPendingProposals(projectPath, limit);
   }
 
   getProposalStats(projectPath?: string): ProposalStats {
-    const whereClause = projectPath ? 'WHERE project_path = ?' : '';
-    const params = projectPath ? [projectPath] : [];
-
-    const statusRows = this.provider.all<{ status: string; count: number }>(
-      `SELECT status, COUNT(*) as count FROM vault_proposals ${whereClause} GROUP BY status`,
-      params,
-    );
-
-    const stats: ProposalStats = {
-      total: 0,
-      pending: 0,
-      approved: 0,
-      rejected: 0,
-      modified: 0,
-      expired: 0,
-      acceptanceRate: 0,
-      byCategory: {},
-    };
-
-    for (const row of statusRows) {
-      stats.total += row.count;
-      switch (row.status) {
-        case 'pending':
-          stats.pending = row.count;
-          break;
-        case 'approved':
-          stats.approved = row.count;
-          break;
-        case 'rejected':
-          stats.rejected = row.count;
-          break;
-        case 'modified':
-          stats.modified = row.count;
-          break;
-        case 'expired':
-          stats.expired = row.count;
-          break;
-      }
-    }
-
-    const decided = stats.approved + stats.modified + stats.rejected;
-    stats.acceptanceRate = decided > 0 ? (stats.approved + stats.modified) / decided : 0;
-
-    // Category breakdown
-    const catRows = this.provider.all<{ category: string; status: string; count: number }>(
-      `SELECT category, status, COUNT(*) as count FROM vault_proposals ${whereClause} GROUP BY category, status`,
-      params,
-    );
-
-    for (const row of catRows) {
-      if (!stats.byCategory[row.category]) {
-        stats.byCategory[row.category] = { total: 0, accepted: 0, rate: 0 };
-      }
-      stats.byCategory[row.category].total += row.count;
-      if (row.status === 'approved' || row.status === 'modified') {
-        stats.byCategory[row.category].accepted += row.count;
-      }
-    }
-
-    for (const cat of Object.values(stats.byCategory)) {
-      cat.rate = cat.total > 0 ? cat.accepted / cat.total : 0;
-    }
-
-    return stats;
+    return this.proposals.getProposalStats(projectPath);
   }
 
   expireStaleProposals(maxAgeDays?: number): number {
-    const days = maxAgeDays ?? 14;
-    const cutoff = Math.floor(Date.now() / 1000) - days * 86400;
-
-    const result = this.provider.run(
-      "UPDATE vault_proposals SET status = 'expired', decided_at = unixepoch() WHERE status = 'pending' AND proposed_at < ?",
-      [cutoff],
-    );
-
-    return result.changes;
+    return this.proposals.expireStaleProposals(maxAgeDays);
   }
 
-  // ─── Dashboard ──────────────────────────────────────────────────
+  // ─── Dashboard Delegate ─────────────────────────────────────────
 
   getDashboard(projectPath: string): GovernanceDashboard {
-    const policy = this.getPolicy(projectPath);
-    const quotaStatus = this.getQuotaStatus(projectPath);
-    const proposalStats = this.getProposalStats(projectPath);
-
-    // Evaluation trend — count by action in last 7 days
-    const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 86400;
-    const trendRows = this.provider.all<{ action: string; count: number }>(
-      'SELECT action, COUNT(*) as count FROM vault_policy_evaluations WHERE project_path = ? AND evaluated_at > ? GROUP BY action',
-      [projectPath, sevenDaysAgo],
-    );
-
-    const evaluationTrend: Record<string, number> = {};
-    for (const row of trendRows) {
-      evaluationTrend[row.action] = row.count;
-    }
-
-    return {
-      vaultSize: quotaStatus.total,
-      quotaPercent:
-        quotaStatus.maxTotal > 0 ? Math.round((quotaStatus.total / quotaStatus.maxTotal) * 100) : 0,
-      quotaStatus,
-      pendingProposals: proposalStats.pending,
-      acceptanceRate: proposalStats.acceptanceRate,
-      evaluationTrend,
-      policySummary: {
-        maxEntries: policy.quotas.maxEntriesTotal,
-        requireReview: policy.autoCapture.requireReview,
-        archiveAfterDays: policy.retention.archiveAfterDays,
-        autoExpireDays: policy.autoCapture.autoExpireDays,
-      },
-    };
+    return this.dashboardModule.getDashboard(projectPath);
   }
-
-  // ─── Private Helpers ────────────────────────────────────────────
-
-  private countPending(projectPath: string): number {
-    const row = this.provider.get<{ count: number }>(
-      "SELECT COUNT(*) as count FROM vault_proposals WHERE project_path = ? AND status = 'pending'",
-      [projectPath],
-    );
-    return row?.count ?? 0;
-  }
-
-  private captureFromProposal(proposal: Proposal): void {
-    const data = proposal.proposedData as Record<string, unknown>;
-    const entryId = proposal.entryId ?? `proposal-${proposal.id}`;
-    this.vault.add({
-      id: entryId,
-      type: (proposal.type as 'pattern' | 'anti-pattern' | 'rule') ?? 'pattern',
-      domain: proposal.category,
-      title: proposal.title,
-      severity: (data.severity as 'critical' | 'warning' | 'suggestion') ?? 'warning',
-      description: (data.description as string) ?? proposal.title,
-      context: data.context as string | undefined,
-      example: data.example as string | undefined,
-      counterExample: data.counterExample as string | undefined,
-      why: data.why as string | undefined,
-      tags: (data.tags as string[]) ?? [],
-    });
-  }
-
-  private resolveProposal(
-    proposalId: number,
-    status: ProposalStatus,
-    decidedBy?: string,
-    note?: string,
-  ): Proposal | null {
-    const existing = this.getProposalById(proposalId);
-    if (!existing || existing.status !== 'pending') return null;
-
-    this.provider.run(
-      'UPDATE vault_proposals SET status = ?, decided_at = unixepoch(), decided_by = ?, modification_note = ? WHERE id = ?',
-      [status, decidedBy ?? null, note ?? null, proposalId],
-    );
-
-    return this.getProposalById(proposalId);
-  }
-
-  private getProposalById(id: number): Proposal | null {
-    const row = this.provider.get<RawProposal>('SELECT * FROM vault_proposals WHERE id = ?', [id]);
-    return row ? mapProposal(row) : null;
-  }
-}
-
-// ─── Row Mapping ──────────────────────────────────────────────────
-
-interface RawProposal {
-  id: number;
-  project_path: string;
-  entry_id: string | null;
-  title: string;
-  type: string;
-  category: string;
-  proposed_data: string;
-  status: string;
-  proposed_at: number;
-  decided_at: number | null;
-  decided_by: string | null;
-  modification_note: string | null;
-  source: string;
-}
-
-function mapProposal(row: RawProposal): Proposal {
-  return {
-    id: row.id,
-    projectPath: row.project_path,
-    entryId: row.entry_id,
-    title: row.title,
-    type: row.type,
-    category: row.category,
-    proposedData: JSON.parse(row.proposed_data),
-    status: row.status as ProposalStatus,
-    proposedAt: row.proposed_at,
-    decidedAt: row.decided_at,
-    decidedBy: row.decided_by,
-    modificationNote: row.modification_note,
-    source: row.source,
-  };
 }
