@@ -64,34 +64,22 @@ export class MigrationRunner {
 
       const start = Date.now();
       try {
-        migration.up(this.db);
+        // Wrap up() + recordApplied in a transaction so partial applies
+        // don't leave the DB inconsistent when verify() fails.
+        const applyMigration = this.db.transaction(() => {
+          migration.up(this.db);
 
-        // Verify if verifier provided
-        if (migration.verify && !migration.verify(this.db)) {
-          // Rollback if possible
-          if (migration.down) {
-            migration.down(this.db);
-            results.push({
-              version: migration.version,
-              description: migration.description,
-              status: 'rolled-back',
-              error: 'Verification failed after apply',
-              durationMs: Date.now() - start,
-            });
-          } else {
-            results.push({
-              version: migration.version,
-              description: migration.description,
-              status: 'failed',
-              error: 'Verification failed, no rollback available',
-              durationMs: Date.now() - start,
-            });
+          // Verify if verifier provided
+          if (migration.verify && !migration.verify(this.db)) {
+            throw new MigrationVerificationError(migration.down ? 'rolled-back' : 'failed');
           }
-          continue;
-        }
 
-        // Record as applied
-        this.recordApplied(migration);
+          // Record as applied (inside the same transaction)
+          this.recordApplied(migration);
+        });
+
+        applyMigration();
+
         results.push({
           version: migration.version,
           description: migration.description,
@@ -99,13 +87,19 @@ export class MigrationRunner {
           durationMs: Date.now() - start,
         });
       } catch (err) {
-        // Attempt rollback
-        if (migration.down) {
-          try {
-            migration.down(this.db);
-          } catch {
-            // Rollback failed — nothing we can do
-          }
+        // Transaction auto-rolls back on throw, so DB is clean.
+        if (err instanceof MigrationVerificationError) {
+          results.push({
+            version: migration.version,
+            description: migration.description,
+            status: err.rollbackStatus,
+            error:
+              err.rollbackStatus === 'rolled-back'
+                ? 'Verification failed after apply'
+                : 'Verification failed, no rollback available',
+            durationMs: Date.now() - start,
+          });
+          continue;
         }
 
         results.push({
@@ -169,6 +163,15 @@ export class MigrationRunner {
         description TEXT NOT NULL
       )
     `);
+  }
+}
+
+// ─── Errors ──────────────────────────────────────────────────────────
+
+class MigrationVerificationError extends Error {
+  constructor(public readonly rollbackStatus: 'rolled-back' | 'failed') {
+    super('Migration verification failed');
+    this.name = 'MigrationVerificationError';
   }
 }
 

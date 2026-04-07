@@ -172,9 +172,9 @@ describe('MigrationRunner', () => {
       // Act
       const results = runner.run([migration]);
 
-      // Assert
+      // Assert — transaction auto-rolls back; down() is not called explicitly
       expect(upSpy).toHaveBeenCalledOnce();
-      expect(downSpy).toHaveBeenCalledOnce();
+      expect(downSpy).not.toHaveBeenCalled();
       expect(results[0].status).toBe('rolled-back');
       expect(results[0].error).toBe('Verification failed after apply');
     });
@@ -228,7 +228,7 @@ describe('MigrationRunner', () => {
       expect(secondUp).not.toHaveBeenCalled();
     });
 
-    test('attempts rollback on up() error when down handler exists', () => {
+    test('transaction auto-rolls back on up() error without calling down()', () => {
       // Arrange
       const downSpy = vi.fn();
       const migration = createFailingMigration('1.0.0', 'crash', {
@@ -238,8 +238,8 @@ describe('MigrationRunner', () => {
       // Act
       runner.run([migration]);
 
-      // Assert
-      expect(downSpy).toHaveBeenCalledOnce();
+      // Assert — transaction handles rollback; down() is not called
+      expect(downSpy).not.toHaveBeenCalled();
     });
 
     test('does not throw when up() fails and no down handler exists', () => {
