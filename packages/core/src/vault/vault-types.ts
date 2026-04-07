@@ -1,6 +1,71 @@
 /**
- * Vault Types — tier definitions and multi-vault configuration.
+ * Vault Types — shared type definitions for vault modules.
+ *
+ * Types that are consumed by decomposed vault files (vault-entries, vault-memories,
+ * vault-maintenance) live here to avoid circular imports back into vault.ts.
  */
+
+import type { IntelligenceEntry } from '../intelligence/types.js';
+
+// =============================================================================
+// SEARCH & STATS
+// =============================================================================
+
+export interface SearchResult {
+  entry: IntelligenceEntry;
+  score: number;
+  source?: string;
+}
+export interface VaultStats {
+  totalEntries: number;
+  byType: Record<string, number>;
+  byDomain: Record<string, number>;
+  bySeverity: Record<string, number>;
+}
+
+// =============================================================================
+// PROJECT
+// =============================================================================
+
+export interface ProjectInfo {
+  path: string;
+  name: string;
+  registeredAt: number;
+  lastSeenAt: number;
+  sessionCount: number;
+}
+
+// =============================================================================
+// MEMORY
+// =============================================================================
+
+export interface Memory {
+  id: string;
+  projectPath: string;
+  type: 'session' | 'lesson' | 'preference';
+  context: string;
+  summary: string;
+  topics: string[];
+  filesModified: string[];
+  toolsUsed: string[];
+  /** What the user was trying to accomplish. */
+  intent: string | null;
+  /** Key decisions made and their rationale. */
+  decisions: string[];
+  /** Where things stand at capture time. */
+  currentState: string | null;
+  /** What should happen next session. */
+  nextSteps: string[];
+  /** Vault entries that informed this session. */
+  vaultEntriesReferenced: string[];
+  createdAt: number;
+  archivedAt: number | null;
+}
+export interface MemoryStats {
+  total: number;
+  byType: Record<string, number>;
+  byProject: Record<string, number>;
+}
 
 // =============================================================================
 // VAULT TIERS

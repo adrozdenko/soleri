@@ -4,7 +4,7 @@
  */
 import type { PersistenceProvider } from '../persistence/types.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
-import type { ProjectInfo } from './vault.js';
+import type { ProjectInfo } from './vault-types.js';
 import { rowToEntry } from './vault-entries.js';
 
 export function optimize(provider: PersistenceProvider): {
