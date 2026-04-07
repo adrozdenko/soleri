@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { readFileSync, existsSync } from 'node:fs';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import { rebuildRuntimeCaches } from './runtime-helpers.js';
 
 type PermissionLevel = 'strict' | 'moderate' | 'permissive';
 
@@ -537,34 +538,7 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
         'Hot-reload runtime caches — rebuilds brain vocabulary, vault FTS index, and prompt templates. Use after bulk vault changes.',
       auth: 'write',
       handler: async () => {
-        const reloaded: string[] = [];
-        let brainTerms = 0;
-        let templateCount = 0;
-
-        try {
-          brain.rebuildVocabulary();
-          brainTerms = brain.getStats().vocabularySize;
-          reloaded.push('brain');
-        } catch {
-          // Graceful degradation
-        }
-
-        try {
-          vault.rebuildFtsIndex();
-          reloaded.push('vault_fts');
-        } catch {
-          // Graceful degradation
-        }
-
-        try {
-          runtime.templateManager.load();
-          templateCount = runtime.templateManager.listTemplates().length;
-          reloaded.push('templates');
-        } catch {
-          // Graceful degradation
-        }
-
-        return { reloaded, brainTerms, templateCount };
+        return rebuildRuntimeCaches(runtime);
       },
     },
 
@@ -816,31 +790,14 @@ export function createAdminExtraOps(runtime: AgentRuntime): OpDefinition[] {
         'Run first-time agent setup — rebuild brain vocabulary, validate vault schema, seed defaults if empty.',
       auth: 'admin',
       handler: async () => {
-        const actions: string[] = [];
-
-        // Rebuild brain vocabulary
-        try {
-          brain.rebuildVocabulary();
-          actions.push('brain_vocabulary_rebuilt');
-        } catch {
-          // Non-fatal
-        }
-
-        // Rebuild FTS index
-        try {
-          vault.rebuildFtsIndex();
-          actions.push('fts_index_rebuilt');
-        } catch {
-          // Non-fatal
-        }
-
-        // Reload templates
-        try {
-          runtime.templateManager.load();
-          actions.push('templates_reloaded');
-        } catch {
-          // Non-fatal
-        }
+        const { reloaded } = rebuildRuntimeCaches(runtime);
+        const actions = reloaded.map((r) =>
+          r === 'brain'
+            ? 'brain_vocabulary_rebuilt'
+            : r === 'vault_fts'
+              ? 'fts_index_rebuilt'
+              : 'templates_reloaded',
+        );
 
         return {
           setup: true,
