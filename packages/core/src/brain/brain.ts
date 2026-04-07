@@ -11,7 +11,6 @@ import {
   cosineSimilarity,
   jaccardSimilarity,
 } from '../text/similarity.js';
-import { rowToEntry, cosineSearch, getVector } from '../vault/vault-entries.js';
 import type { EmbeddingProvider } from '../embeddings/types.js';
 import type {
   ScoringWeights,
@@ -161,8 +160,7 @@ export class Brain {
         const embResult = await this.embeddingProvider.embed([query]);
         if (embResult.vectors.length > 0 && embResult.vectors[0].length > 0) {
           queryEmbedding = embResult.vectors[0];
-          const provider = this.vault.getProvider();
-          const vectorHits = cosineSearch(provider, queryEmbedding, fetchLimit);
+          const vectorHits = this.vault.cosineSearch(queryEmbedding, fetchLimit);
 
           // Build similarity lookup and merge vector-only candidates into rawResults
           const ftsIds = new Set(rawResults.map((r) => r.entry.id));
@@ -244,13 +242,7 @@ export class Brain {
    */
   loadEntries(ids: string[]): IntelligenceEntry[] {
     if (ids.length === 0) return [];
-    const provider = this.vault.getProvider();
-    const placeholders = ids.map(() => '?').join(',');
-    const rows = provider.all<Record<string, unknown>>(
-      `SELECT * FROM entries WHERE id IN (${placeholders})`,
-      ids,
-    );
-    return rows.map(rowToEntry);
+    return this.vault.loadEntries(ids);
   }
 
   /** Rough token estimate for an entry (chars / 4). */
@@ -634,7 +626,7 @@ export class Brain {
       vector = precomputedVectorSim;
     } else if (queryEmbedding) {
       try {
-        const stored = getVector(this.vault.getProvider(), entry.id);
+        const stored = this.vault.getVector(entry.id);
         if (stored) {
           vector = vectorCosineSimilarity(queryEmbedding, stored.vector);
         }

@@ -36,17 +36,133 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js"
+    },
+    "./agency": {
+      "types": "./dist/agency/index.d.ts",
+      "import": "./dist/agency/index.js"
+    },
+    "./brain": {
+      "types": "./dist/brain/index.d.ts",
+      "import": "./dist/brain/index.js"
+    },
+    "./capabilities": {
+      "types": "./dist/capabilities/index.d.ts",
+      "import": "./dist/capabilities/index.js"
+    },
+    "./chat": {
+      "types": "./dist/chat/index.d.ts",
+      "import": "./dist/chat/index.js"
+    },
+    "./claudemd": {
+      "types": "./dist/claudemd/index.d.ts",
+      "import": "./dist/claudemd/index.js"
+    },
+    "./context": {
+      "types": "./dist/context/index.d.ts",
+      "import": "./dist/context/index.js"
+    },
+    "./domain-packs": {
+      "types": "./dist/domain-packs/index.d.ts",
+      "import": "./dist/domain-packs/index.js"
+    },
+    "./dream": {
+      "types": "./dist/dream/index.d.ts",
+      "import": "./dist/dream/index.js"
+    },
+    "./enforcement": {
+      "types": "./dist/enforcement/index.d.ts",
+      "import": "./dist/enforcement/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js"
+    },
+    "./extensions": {
+      "types": "./dist/extensions/index.d.ts",
+      "import": "./dist/extensions/index.js"
+    },
+    "./flows": {
+      "types": "./dist/flows/index.d.ts",
+      "import": "./dist/flows/index.js"
+    },
+    "./health": {
+      "types": "./dist/health/index.d.ts",
+      "import": "./dist/health/index.js"
+    },
+    "./migrations": {
+      "types": "./dist/migrations/index.d.ts",
+      "import": "./dist/migrations/index.js"
+    },
     "./module-manifest": {
       "types": "./dist/engine/module-manifest.d.ts",
       "import": "./dist/engine/module-manifest.js"
+    },
+    "./packs": {
+      "types": "./dist/packs/index.d.ts",
+      "import": "./dist/packs/index.js"
+    },
+    "./persistence": {
+      "types": "./dist/persistence/index.d.ts",
+      "import": "./dist/persistence/index.js"
+    },
+    "./planning": {
+      "types": "./dist/planning/index.d.ts",
+      "import": "./dist/planning/index.js"
+    },
+    "./playbooks": {
+      "types": "./dist/playbooks/index.d.ts",
+      "import": "./dist/playbooks/index.js"
     },
     "./personas": {
       "types": "./dist/persona/defaults.d.ts",
       "import": "./dist/persona/defaults.js"
     },
+    "./plugins": {
+      "types": "./dist/plugins/index.d.ts",
+      "import": "./dist/plugins/index.js"
+    },
+    "./prompts": {
+      "types": "./dist/prompts/index.d.ts",
+      "import": "./dist/prompts/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./scheduler": {
+      "types": "./dist/scheduler/index.d.ts",
+      "import": "./dist/scheduler/index.js"
+    },
+    "./session": {
+      "types": "./dist/session/index.d.ts",
+      "import": "./dist/session/index.js"
+    },
     "./skills/validate-skills": {
       "types": "./dist/skills/validate-skills.d.ts",
       "import": "./dist/skills/validate-skills.js"
+    },
+    "./streams": {
+      "types": "./dist/streams/index.d.ts",
+      "import": "./dist/streams/index.js"
+    },
+    "./subagent": {
+      "types": "./dist/subagent/index.d.ts",
+      "import": "./dist/subagent/index.js"
+    },
+    "./transport": {
+      "types": "./dist/transport/index.d.ts",
+      "import": "./dist/transport/index.js"
+    },
+    "./vault": {
+      "types": "./dist/vault/index.d.ts",
+      "import": "./dist/vault/index.js"
+    },
+    "./workflows": {
+      "types": "./dist/workflows/index.d.ts",
+      "import": "./dist/workflows/index.js"
     }
   },
   "publishConfig": {

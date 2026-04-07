@@ -57,6 +57,59 @@ export function autoLink(entryId: string, config: AutoLinkConfig): void {
   }
 }
 
+/** Result of a single link suggestion with auto-link status. */
+export interface AutoLinkSuggestion {
+  entryId: string;
+  title: string;
+  suggestedType: string;
+  score: number;
+  autoLinked: boolean;
+}
+
+/** Aggregated result of auto-linking one or more entries. */
+export interface AutoLinkReport {
+  autoLinkedCount: number;
+  suggestedLinks: AutoLinkSuggestion[];
+}
+
+export function autoLinkWithReport(
+  entryIds: string[],
+  linkManager: LinkManager,
+  opts: { threshold?: number; maxLinks?: number } = {},
+): AutoLinkReport {
+  const threshold = opts.threshold ?? 0.7;
+  const maxLinks = opts.maxLinks ?? 3;
+  let autoLinkedCount = 0;
+  const suggestedLinks: AutoLinkSuggestion[] = [];
+
+  for (const entryId of entryIds) {
+    const suggestions = linkManager.suggestLinks(entryId, maxLinks + 2);
+    const filtered = suggestions.filter(
+      (s) => s.entryId !== entryId && !s.entryId.endsWith(entryId),
+    );
+
+    let linkedForThisEntry = 0;
+    for (const s of filtered) {
+      const aboveThreshold = s.score >= threshold;
+      const canAutoLink = aboveThreshold && linkedForThisEntry < maxLinks;
+      if (canAutoLink) {
+        linkManager.addLink(entryId, s.entryId, s.suggestedType);
+        linkedForThisEntry++;
+        autoLinkedCount++;
+      }
+      suggestedLinks.push({
+        entryId: s.entryId,
+        title: s.title,
+        suggestedType: s.suggestedType,
+        score: s.score,
+        autoLinked: canAutoLink,
+      });
+    }
+  }
+
+  return { autoLinkedCount, suggestedLinks };
+}
+
 export function seed(
   provider: PersistenceProvider,
   entries: IntelligenceEntry[],
@@ -193,6 +246,16 @@ export function search(
 export function get(provider: PersistenceProvider, id: string): IntelligenceEntry | null {
   const row = provider.get<Record<string, unknown>>('SELECT * FROM entries WHERE id = ?', [id]);
   return row ? rowToEntry(row) : null;
+}
+
+export function getByIds(provider: PersistenceProvider, ids: string[]): IntelligenceEntry[] {
+  if (ids.length === 0) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const rows = provider.all<Record<string, unknown>>(
+    `SELECT * FROM entries WHERE id IN (${placeholders})`,
+    ids,
+  );
+  return rows.map(rowToEntry);
 }
 
 export function list(

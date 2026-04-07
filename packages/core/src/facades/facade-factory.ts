@@ -109,10 +109,11 @@ function registerHotOp(
   authPolicy?: () => AuthPolicy,
 ): void {
   const toolName = `${agentId}_${op.name}`;
-  const schema = op.schema
-    ? (op.schema as z.ZodObject<z.ZodRawShape>).shape
-      ? (op.schema as z.ZodObject<z.ZodRawShape>)
-      : z.object({ params: op.schema })
+  const rawSchema = op.schema as z.ZodType | undefined;
+  const schema = rawSchema
+    ? (rawSchema as z.ZodObject<z.ZodRawShape>).shape
+      ? (rawSchema as z.ZodObject<z.ZodRawShape>)
+      : z.object({ params: rawSchema })
     : z.object({});
 
   server.tool(

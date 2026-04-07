@@ -1,6 +1,7 @@
 import type { PersistenceProvider } from '../persistence/types.js';
 import { SQLitePersistenceProvider } from '../persistence/sqlite-provider.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import type { StoredVector } from '../embeddings/types.js';
 import type { LinkManager } from './linking.js';
 import { initializeSchema, checkFormatVersion, VAULT_FORMAT_VERSION } from './vault-schema.js';
 import * as entries from './vault-entries.js';
@@ -136,6 +137,9 @@ export class Vault {
   get(id: string): IntelligenceEntry | null {
     return entries.get(this.provider, id);
   }
+  loadEntries(ids: string[]): IntelligenceEntry[] {
+    return entries.getByIds(this.provider, ids);
+  }
   list(options?: {
     domain?: string;
     type?: string;
@@ -186,6 +190,15 @@ export class Vault {
   }
   contentHashStats(): { total: number; hashed: number; uniqueHashes: number } {
     return entries.contentHashStats(this.provider);
+  }
+  getVector(entryId: string): StoredVector | null {
+    return entries.getVector(this.provider, entryId);
+  }
+  cosineSearch(
+    queryVector: number[],
+    topK: number,
+  ): Array<{ entryId: string; similarity: number }> {
+    return entries.cosineSearch(this.provider, queryVector, topK);
   }
 
   // ── Maintenance operations (vault-maintenance.ts) ─────────────────────

@@ -17,6 +17,10 @@ function plistPath(label: string): string {
   return join(LAUNCH_AGENTS_DIR, `${label}.plist`);
 }
 
+export function macOSPlatformIdForName(name: string): string {
+  return `com.soleri.${name}`;
+}
+
 /** Convert a 5-field cron expression to launchd StartCalendarInterval. */
 function cronToCalendarInterval(cron: string): Record<string, number>[] {
   const [minute, hour, day, month, weekday] = cron.split(/\s+/);
@@ -58,6 +62,9 @@ function cronToCalendarInterval(cron: string): Record<string, number>[] {
 function buildPlist(task: ScheduledTask, label: string): string {
   const intervals = cronToCalendarInterval(task.cronExpression);
   const logBase = join(homedir(), '.soleri', 'logs', 'scheduler', task.name);
+  const dangerArg = task.dangerouslySkipPermissions
+    ? '\t\t<string>--dangerously-skip-permissions</string>\n'
+    : '';
 
   const intervalXml = intervals
     .map((interval) => {
@@ -77,7 +84,7 @@ function buildPlist(task: ScheduledTask, label: string): string {
 \t<key>ProgramArguments</key>
 \t<array>
 \t\t<string>/usr/local/bin/claude</string>
-\t\t<string>-p</string>
+\t\t${dangerArg}\t\t<string>-p</string>
 \t\t<string>${task.prompt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</string>
 \t\t<string>--project-dir</string>
 \t\t<string>${task.projectPath}</string>
@@ -101,50 +108,70 @@ ${intervalXml}
 `;
 }
 
+export function createMacOSTask(task: ScheduledTask): string {
+  const label = macOSPlatformIdForName(task.name);
+  mkdirSync(LAUNCH_AGENTS_DIR, { recursive: true });
+  mkdirSync(join(homedir(), '.soleri', 'logs', 'scheduler'), { recursive: true });
+
+  const plist = buildPlist(task, label);
+  writeFileSync(plistPath(label), plist, 'utf-8');
+
+  try {
+    // Unload first if it exists (idempotent update)
+    execFileSync('launchctl', ['unload', plistPath(label)], { stdio: 'pipe' });
+  } catch {
+    // OK — not loaded yet
+  }
+
+  if (task.enabled) {
+    execFileSync('launchctl', ['load', '-w', plistPath(label)], { stdio: 'pipe' });
+  }
+
+  return label;
+}
+
+export function removeMacOSTask(platformId: string): void {
+  const path = plistPath(platformId);
+  try {
+    execFileSync('launchctl', ['unload', path], { stdio: 'pipe' });
+  } catch {
+    // OK — may not be loaded
+  }
+  if (existsSync(path)) {
+    rmSync(path);
+  }
+}
+
+export function macOSTaskExists(platformId: string): boolean {
+  return existsSync(plistPath(platformId));
+}
+
+export function pauseMacOSTask(platformId: string): void {
+  execFileSync('launchctl', ['unload', plistPath(platformId)], { stdio: 'pipe' });
+}
+
+export function resumeMacOSTask(platformId: string): void {
+  execFileSync('launchctl', ['load', '-w', plistPath(platformId)], { stdio: 'pipe' });
+}
+
 export class MacOSAdapter implements PlatformAdapter {
   async create(task: ScheduledTask): Promise<string> {
-    const label = `com.soleri.${task.name}`;
-    mkdirSync(LAUNCH_AGENTS_DIR, { recursive: true });
-    mkdirSync(join(homedir(), '.soleri', 'logs', 'scheduler'), { recursive: true });
-
-    const plist = buildPlist(task, label);
-    writeFileSync(plistPath(label), plist, 'utf-8');
-
-    try {
-      // Unload first if it exists (idempotent update)
-      execFileSync('launchctl', ['unload', plistPath(label)], { stdio: 'pipe' });
-    } catch {
-      // OK — not loaded yet
-    }
-
-    if (task.enabled) {
-      execFileSync('launchctl', ['load', '-w', plistPath(label)], { stdio: 'pipe' });
-    }
-
-    return label;
+    return createMacOSTask(task);
   }
 
   async remove(platformId: string): Promise<void> {
-    const path = plistPath(platformId);
-    try {
-      execFileSync('launchctl', ['unload', path], { stdio: 'pipe' });
-    } catch {
-      // OK — may not be loaded
-    }
-    if (existsSync(path)) {
-      rmSync(path);
-    }
+    removeMacOSTask(platformId);
   }
 
   async exists(platformId: string): Promise<boolean> {
-    return existsSync(plistPath(platformId));
+    return macOSTaskExists(platformId);
   }
 
   async pause(platformId: string): Promise<void> {
-    execFileSync('launchctl', ['unload', plistPath(platformId)], { stdio: 'pipe' });
+    pauseMacOSTask(platformId);
   }
 
   async resume(platformId: string): Promise<void> {
-    execFileSync('launchctl', ['load', '-w', plistPath(platformId)], { stdio: 'pipe' });
+    resumeMacOSTask(platformId);
   }
 }

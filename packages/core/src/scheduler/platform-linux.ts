@@ -16,6 +16,10 @@ function unitPath(name: string, ext: 'service' | 'timer'): string {
   return join(SYSTEMD_USER_DIR, `soleri-${name}.${ext}`);
 }
 
+export function linuxPlatformIdForName(name: string): string {
+  return `soleri-${name}`;
+}
+
 /** Convert a 5-field cron to systemd OnCalendar format (simplified). */
 function cronToOnCalendar(cron: string): string {
   const [minute, hour, day, month, weekday] = cron.split(/\s+/);
@@ -37,12 +41,13 @@ function dowName(dow: string): string {
 }
 
 function buildService(task: ScheduledTask, logPath: string): string {
+  const dangerArg = task.dangerouslySkipPermissions ? '--dangerously-skip-permissions ' : '';
   return `[Unit]
 Description=Soleri scheduled task: ${task.name}
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/claude -p "${task.prompt.replace(/"/g, '\\"')}" --project-dir ${task.projectPath}
+ExecStart=/usr/local/bin/claude ${dangerArg}-p "${task.prompt.replace(/"/g, '\\"')}" --project-dir ${task.projectPath}
 WorkingDirectory=${task.projectPath}
 StandardOutput=append:${logPath}.log
 StandardError=append:${logPath}.err
@@ -63,60 +68,84 @@ WantedBy=timers.target
 `;
 }
 
+export function createLinuxTask(task: ScheduledTask): string {
+  mkdirSync(SYSTEMD_USER_DIR, { recursive: true });
+  const logDir = join(homedir(), '.soleri', 'logs', 'scheduler');
+  mkdirSync(logDir, { recursive: true });
+  const logPath = join(logDir, task.name);
+
+  writeFileSync(unitPath(task.name, 'service'), buildService(task, logPath), 'utf-8');
+  writeFileSync(unitPath(task.name, 'timer'), buildTimer(task), 'utf-8');
+
+  execFileSync('systemctl', ['--user', 'daemon-reload'], { stdio: 'pipe' });
+
+  if (task.enabled) {
+    execFileSync(
+      'systemctl',
+      ['--user', 'enable', '--now', `${linuxPlatformIdForName(task.name)}.timer`],
+      {
+        stdio: 'pipe',
+      },
+    );
+  }
+
+  return linuxPlatformIdForName(task.name);
+}
+
+export function removeLinuxTask(platformId: string): void {
+  try {
+    execFileSync('systemctl', ['--user', 'disable', '--now', `${platformId}.timer`], {
+      stdio: 'pipe',
+    });
+  } catch {
+    // OK — may not exist
+  }
+  const name = platformId.replace(/^soleri-/, '');
+  for (const ext of ['service', 'timer'] as const) {
+    const path = unitPath(name, ext);
+    if (existsSync(path)) rmSync(path);
+  }
+  try {
+    execFileSync('systemctl', ['--user', 'daemon-reload'], { stdio: 'pipe' });
+  } catch {
+    // Best-effort
+  }
+}
+
+export function linuxTaskExists(platformId: string): boolean {
+  const name = platformId.replace(/^soleri-/, '');
+  return existsSync(unitPath(name, 'timer'));
+}
+
+export function pauseLinuxTask(platformId: string): void {
+  execFileSync('systemctl', ['--user', 'disable', `${platformId}.timer`], { stdio: 'pipe' });
+  execFileSync('systemctl', ['--user', 'stop', `${platformId}.timer`], { stdio: 'pipe' });
+}
+
+export function resumeLinuxTask(platformId: string): void {
+  execFileSync('systemctl', ['--user', 'enable', '--now', `${platformId}.timer`], {
+    stdio: 'pipe',
+  });
+}
+
 export class LinuxAdapter implements PlatformAdapter {
   async create(task: ScheduledTask): Promise<string> {
-    mkdirSync(SYSTEMD_USER_DIR, { recursive: true });
-    const logDir = join(homedir(), '.soleri', 'logs', 'scheduler');
-    mkdirSync(logDir, { recursive: true });
-    const logPath = join(logDir, task.name);
-
-    writeFileSync(unitPath(task.name, 'service'), buildService(task, logPath), 'utf-8');
-    writeFileSync(unitPath(task.name, 'timer'), buildTimer(task), 'utf-8');
-
-    execFileSync('systemctl', ['--user', 'daemon-reload'], { stdio: 'pipe' });
-
-    if (task.enabled) {
-      execFileSync('systemctl', ['--user', 'enable', '--now', `soleri-${task.name}.timer`], {
-        stdio: 'pipe',
-      });
-    }
-
-    return `soleri-${task.name}`;
+    return createLinuxTask(task);
   }
 
   async remove(platformId: string): Promise<void> {
-    try {
-      execFileSync('systemctl', ['--user', 'disable', '--now', `${platformId}.timer`], {
-        stdio: 'pipe',
-      });
-    } catch {
-      // OK — may not exist
-    }
-    const name = platformId.replace(/^soleri-/, '');
-    for (const ext of ['service', 'timer'] as const) {
-      const path = unitPath(name, ext);
-      if (existsSync(path)) rmSync(path);
-    }
-    try {
-      execFileSync('systemctl', ['--user', 'daemon-reload'], { stdio: 'pipe' });
-    } catch {
-      // Best-effort
-    }
+    removeLinuxTask(platformId);
   }
 
   async exists(platformId: string): Promise<boolean> {
-    const name = platformId.replace(/^soleri-/, '');
-    return existsSync(unitPath(name, 'timer'));
+    return linuxTaskExists(platformId);
   }
 
   async pause(platformId: string): Promise<void> {
-    execFileSync('systemctl', ['--user', 'disable', `${platformId}.timer`], { stdio: 'pipe' });
-    execFileSync('systemctl', ['--user', 'stop', `${platformId}.timer`], { stdio: 'pipe' });
+    pauseLinuxTask(platformId);
   }
 
   async resume(platformId: string): Promise<void> {
-    execFileSync('systemctl', ['--user', 'enable', '--now', `${platformId}.timer`], {
-      stdio: 'pipe',
-    });
+    resumeLinuxTask(platformId);
   }
 }

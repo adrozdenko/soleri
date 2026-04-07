@@ -1,11 +1,32 @@
-import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
+import {
+  createMacOSTask,
+  macOSPlatformIdForName,
+  macOSTaskExists,
+  removeMacOSTask,
+} from '../scheduler/platform-macos.js';
+import {
+  createLinuxTask,
+  linuxPlatformIdForName,
+  linuxTaskExists,
+  removeLinuxTask,
+} from '../scheduler/platform-linux.js';
+import type { ScheduledTask } from '../scheduler/types.js';
 
-const CRON_TAG = '# soleri:dream';
+const DREAM_TASK_NAME = 'dream';
 const SOLERI_DIR = join(homedir(), '.soleri');
-const LOG_PATH = join(SOLERI_DIR, 'dream-cron.log');
+const LOG_PATH = join(SOLERI_DIR, 'logs', 'scheduler', `${DREAM_TASK_NAME}.log`);
+const METADATA_PATH = join(SOLERI_DIR, 'dream-schedule.json');
+
+interface DreamScheduleMetadata {
+  version: 1;
+  time: string;
+  projectDir: string;
+  cronExpression: string;
+  platformId: string;
+}
 
 export interface CronSchedule {
   isScheduled: boolean;
@@ -20,96 +41,156 @@ function ensureSoleriDir(): void {
   }
 }
 
-function getCurrentCrontab(): string {
+function readMetadata(): DreamScheduleMetadata | null {
+  if (!existsSync(METADATA_PATH)) return null;
   try {
-    return execSync('crontab -l 2>/dev/null', { encoding: 'utf-8' });
+    const raw = JSON.parse(readFileSync(METADATA_PATH, 'utf-8')) as Partial<DreamScheduleMetadata>;
+    if (
+      raw.version !== 1 ||
+      typeof raw.time !== 'string' ||
+      typeof raw.projectDir !== 'string' ||
+      typeof raw.cronExpression !== 'string' ||
+      typeof raw.platformId !== 'string'
+    ) {
+      return null;
+    }
+    return {
+      version: 1,
+      time: raw.time,
+      projectDir: raw.projectDir,
+      cronExpression: raw.cronExpression,
+      platformId: raw.platformId,
+    };
   } catch {
-    return '';
+    return null;
   }
 }
 
-function writeCrontab(content: string): void {
-  execSync(`echo ${JSON.stringify(content)} | crontab -`, { encoding: 'utf-8' });
+function writeMetadata(data: DreamScheduleMetadata): void {
+  ensureSoleriDir();
+  writeFileSync(METADATA_PATH, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-function resolveClaudePath(): string {
-  try {
-    const result = execSync('which claude 2>/dev/null', { encoding: 'utf-8' }).trim();
-    if (result) return result;
-  } catch {
-    // fall through to default
+function clearMetadata(): void {
+  if (existsSync(METADATA_PATH)) rmSync(METADATA_PATH);
+}
+
+function parseTime(time: string): { hour: number; minute: number } | null {
+  const match = time.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23) return null;
+  if (minute < 0 || minute > 59) return null;
+  return { hour, minute };
+}
+
+function toCronExpression(hour: number, minute: number): string {
+  return `${minute} ${hour} * * *`;
+}
+
+function formatTime(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function buildDreamTask(cronExpression: string, projectDir: string): ScheduledTask {
+  return {
+    id: `sched-dream-${Date.now()}`,
+    name: DREAM_TASK_NAME,
+    cronExpression,
+    prompt: 'Run /ernesto-dream',
+    dangerouslySkipPermissions: true,
+    projectPath: projectDir,
+    enabled: true,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function platformIdForDream(): string | null {
+  const os = platform();
+  if (os === 'darwin') return macOSPlatformIdForName(DREAM_TASK_NAME);
+  if (os === 'linux') return linuxPlatformIdForName(DREAM_TASK_NAME);
+  return null;
+}
+
+function createDreamTask(task: ScheduledTask): string | null {
+  const os = platform();
+  if (os === 'darwin') return createMacOSTask(task);
+  if (os === 'linux') return createLinuxTask(task);
+  return null;
+}
+
+function removeDreamTask(platformId: string): void {
+  const os = platform();
+  if (os === 'darwin') {
+    removeMacOSTask(platformId);
+    return;
   }
-  return join(homedir(), '.claude', 'local', 'claude');
+  if (os === 'linux') {
+    removeLinuxTask(platformId);
+  }
 }
 
-function parseDreamLine(line: string): { minute: string; hour: string; projectDir: string } | null {
-  if (!line.includes(CRON_TAG)) return null;
-  const parts = line.trim().split(/\s+/);
-  if (parts.length < 6) return null;
-  const minute = parts[0];
-  const hour = parts[1];
-  // Extract --project-dir value from the line
-  const projDirMatch = line.match(/--project-dir\s+(\S+)/);
-  const projectDir = projDirMatch ? projDirMatch[1] : '';
-  return { minute, hour, projectDir };
+function dreamTaskExists(platformId: string): boolean {
+  const os = platform();
+  if (os === 'darwin') return macOSTaskExists(platformId);
+  if (os === 'linux') return linuxTaskExists(platformId);
+  return false;
 }
 
 export function getSchedule(): CronSchedule {
-  try {
-    const crontab = getCurrentCrontab();
-    const dreamLine = crontab.split('\n').find((l) => l.includes(CRON_TAG));
-    if (!dreamLine) {
-      return { isScheduled: false, time: null, logPath: null, projectDir: null };
-    }
-    const parsed = parseDreamLine(dreamLine);
-    if (!parsed) {
-      return { isScheduled: false, time: null, logPath: null, projectDir: null };
-    }
-    const time = `${parsed.hour.padStart(2, '0')}:${parsed.minute.padStart(2, '0')}`;
-    return {
-      isScheduled: true,
-      time,
-      logPath: LOG_PATH,
-      projectDir: parsed.projectDir || null,
-    };
-  } catch {
+  const meta = readMetadata();
+  if (!meta) {
     return { isScheduled: false, time: null, logPath: null, projectDir: null };
   }
+
+  if (!dreamTaskExists(meta.platformId)) {
+    clearMetadata();
+    return { isScheduled: false, time: null, logPath: null, projectDir: null };
+  }
+
+  return {
+    isScheduled: true,
+    time: meta.time,
+    logPath: LOG_PATH,
+    projectDir: meta.projectDir,
+  };
 }
 
 export function schedule(time: string, projectDir: string): CronSchedule {
-  ensureSoleriDir();
+  const parsed = parseTime(time);
+  if (!parsed) return { isScheduled: false, time: null, logPath: null, projectDir: null };
 
-  const match = time.match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) {
-    return { isScheduled: false, time: null, logPath: null, projectDir: null };
+  // Keep historical behavior: avoid :00 to reduce top-of-hour contention.
+  const minute = parsed.minute === 0 ? 3 : parsed.minute;
+  const formattedTime = formatTime(parsed.hour, minute);
+  const cronExpression = toCronExpression(parsed.hour, minute);
+
+  const platformId = platformIdForDream();
+  if (!platformId) return { isScheduled: false, time: null, logPath: null, projectDir: null };
+
+  // Idempotent replace.
+  try {
+    removeDreamTask(platformId);
+  } catch {
+    // Best effort
   }
-
-  const hour = parseInt(match[1], 10);
-  let minute = parseInt(match[2], 10);
-
-  // Add a few minutes offset to avoid running exactly on the hour
-  if (minute === 0) {
-    minute = 3;
-  }
-
-  const claudePath = resolveClaudePath();
-  const cronLine = `${minute} ${hour} * * * ${claudePath} --dangerously-skip-permissions -p "Run /ernesto-dream" --project-dir ${projectDir} >> ${LOG_PATH} 2>&1 ${CRON_TAG}`;
 
   try {
-    const crontab = getCurrentCrontab();
-    // Remove any existing dream lines (idempotent)
-    const filtered = crontab
-      .split('\n')
-      .filter((l) => !l.includes(CRON_TAG))
-      .join('\n');
+    const task = buildDreamTask(cronExpression, projectDir);
+    const createdPlatformId = createDreamTask(task);
+    if (!createdPlatformId) {
+      return { isScheduled: false, time: null, logPath: null, projectDir: null };
+    }
 
-    const newCrontab = filtered.endsWith('\n')
-      ? `${filtered}${cronLine}\n`
-      : `${filtered}\n${cronLine}\n`;
-    writeCrontab(newCrontab);
+    writeMetadata({
+      version: 1,
+      time: formattedTime,
+      projectDir,
+      cronExpression,
+      platformId: createdPlatformId,
+    });
 
-    const formattedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
     return {
       isScheduled: true,
       time: formattedTime,
@@ -122,16 +203,17 @@ export function schedule(time: string, projectDir: string): CronSchedule {
 }
 
 export function unschedule(): CronSchedule {
-  try {
-    const crontab = getCurrentCrontab();
-    const filtered = crontab
-      .split('\n')
-      .filter((l) => !l.includes(CRON_TAG))
-      .join('\n');
+  const meta = readMetadata();
+  const platformId = meta?.platformId ?? platformIdForDream();
 
-    writeCrontab(filtered);
-  } catch {
-    // Graceful degradation — if crontab fails, just return unscheduled
+  if (platformId) {
+    try {
+      removeDreamTask(platformId);
+    } catch {
+      // Best effort
+    }
   }
+
+  clearMetadata();
   return { isScheduled: false, time: null, logPath: null, projectDir: null };
 }

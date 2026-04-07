@@ -10,6 +10,11 @@ export interface ScheduledTask {
   cronExpression: string;
   /** Prompt passed to `claude -p` when the task fires */
   prompt: string;
+  /**
+   * When true, scheduler runs Claude with --dangerously-skip-permissions.
+   * Intended for fully autonomous maintenance tasks.
+   */
+  dangerouslySkipPermissions?: boolean;
   /** Absolute path to the agent project directory */
   projectPath: string;
   /** OS-specific task identifier (plist label, systemd unit name, etc.) */

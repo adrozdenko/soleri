@@ -49,13 +49,6 @@ export {
   sharedVaultPath,
 } from './paths.js';
 
-// ─── Vault Markdown Sync ───────────────────────────────────────────
-export {
-  syncAllToMarkdown,
-  syncEntryToMarkdown,
-  entryToMarkdown,
-} from './vault/vault-markdown-sync.js';
-
 // ─── Intelligence ────────────────────────────────────────────────────
 export type {
   IntelligenceEntry,
@@ -65,51 +58,7 @@ export type {
 export { loadIntelligenceData, loadPacks } from './intelligence/loader.js';
 
 // ─── Vault ───────────────────────────────────────────────────────────
-export { Vault } from './vault/vault.js';
-export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault/vault.js';
-export { VaultManager, type ConnectedVault } from './vault/vault-manager.js';
-export { TIER_WEIGHTS } from './vault/vault-types.js';
-export { VaultBranching } from './vault/vault-branching.js';
-export { GitVaultSync } from './vault/git-vault-sync.js';
-export type { GitVaultSyncConfig } from './vault/git-vault-sync.js';
-export {
-  ObsidianSync,
-  toObsidianMarkdown,
-  fromObsidianMarkdown,
-  titleToSlug,
-} from './vault/obsidian-sync.js';
-export type {
-  ObsidianSyncConfig,
-  ExportOptions as ObsidianExportOptions,
-  ImportOptions as ObsidianImportOptions,
-  SyncMode as ObsidianSyncMode,
-  SyncOptions as ObsidianSyncOptions,
-  ExportResult as ObsidianExportResult,
-  ImportResult as ObsidianImportResult,
-  SyncResult as ObsidianSyncResult,
-  ConflictInfo,
-} from './vault/obsidian-sync.js';
-export type {
-  BranchAction,
-  BranchEntry,
-  BranchSummary,
-  MergeResult,
-} from './vault/vault-branching.js';
-export type {
-  VaultTier,
-  VaultTierConfig,
-  VaultManagerConfig,
-  VaultTierInfo,
-} from './vault/vault-types.js';
-export { validatePlaybook, parsePlaybookFromEntry } from './vault/playbook.js';
-export type { Playbook, PlaybookStep, PlaybookValidationResult } from './vault/playbook.js';
-export { DEFAULT_CANONICAL_TAGS } from './vault/default-canonical-tags.js';
-export {
-  normalizeTag as normalizeTagCanonical,
-  normalizeTags as normalizeTagsCanonical,
-  isMetadataTag,
-  computeEditDistance,
-} from './vault/tag-normalizer.js';
+export * from './vault/index.js';
 
 // ─── Playbook System (registry, matching, seeding) ─────────────────
 export {
@@ -201,38 +150,7 @@ export type {
 } from './governance/types.js';
 
 // ─── Brain ───────────────────────────────────────────────────────────
-export { Brain } from './brain/brain.js';
-export { BrainIntelligence } from './brain/intelligence.js';
-export type {
-  ScoringWeights,
-  ScoreBreakdown,
-  RankedResult,
-  SearchOptions,
-  CaptureResult,
-  BrainStats,
-  QueryContext,
-  FeedbackType,
-  FeedbackSource,
-  FeedbackInput,
-  FeedbackEntry,
-  FeedbackStats,
-  PatternStrength,
-  StrengthsQuery,
-  BrainSession,
-  SessionLifecycleInput,
-  KnowledgeProposal,
-  ExtractionResult,
-  GlobalPattern,
-  DomainProfile,
-  BuildIntelligenceResult,
-  BrainIntelligenceStats,
-  SessionContext,
-  BrainExportData,
-  BrainImportResult,
-  SessionListQuery,
-  SessionQuality,
-  SessionReplay,
-} from './brain/types.js';
+export * from './brain/index.js';
 
 // ─── Agency Mode ────────────────────────────────────────────────────
 export { AgencyManager } from './agency/index.js';
@@ -345,100 +263,7 @@ export type {
 export type { DedupResult } from './intake/dedup-gate.js';
 
 // ─── Planning ────────────────────────────────────────────────────────
-export {
-  Planner,
-  calculateScore,
-  calculateDriftScore,
-  isValidTransition,
-  getValidNextStatuses,
-  shouldExpire,
-  LIFECYCLE_TRANSITIONS,
-  NON_EXPIRING_STATUSES,
-  DRIFT_WEIGHTS,
-  PlanGradeRejectionError,
-} from './planning/planner.js';
-export type {
-  PlanStatus,
-  TaskStatus,
-  TaskEvidence,
-  TaskMetrics,
-  TaskDeliverable,
-  ExecutionSummary,
-  VerificationFinding,
-  TaskVerification,
-  PlanTask,
-  PlanDecision,
-  Plan,
-  PlanStore,
-  DriftItem,
-  ReconciliationReport,
-  ReviewEvidence,
-  PlanGrade,
-  PlanCheck,
-  PlannerOptions,
-} from './planning/planner.js';
-
-// ─── Plan Gap Analysis ──────────────────────────────────────────────
-export {
-  runGapAnalysis,
-  createToolFeasibilityPass,
-  createFlowAlignmentPass,
-  createAntiPatternPass,
-} from './planning/gap-analysis.js';
-export type { GapAnalysisOptions, GapAnalysisPass } from './planning/gap-analysis.js';
-export {
-  SEVERITY_WEIGHTS,
-  CATEGORY_PENALTY_CAPS,
-  MIN_OBJECTIVE_LENGTH,
-  MIN_SCOPE_LENGTH,
-  MIN_DECISION_LENGTH,
-  generateGapId,
-} from './planning/gap-types.js';
-export type { GapSeverity, GapCategory, PlanGap } from './planning/gap-types.js';
-
-// ─── Goal Ancestry ──────────────────────────────────────────────────
-export { GoalAncestry, JsonGoalRepository, generateGoalId } from './planning/goal-ancestry.js';
-export type {
-  GoalLevel,
-  GoalStatus,
-  Goal,
-  GoalStore,
-  GoalRepository,
-} from './planning/goal-ancestry.js';
-
-// ─── Task Complexity Assessor ────────────────────────────────────────
-export { assessTaskComplexity } from './planning/task-complexity-assessor.js';
-export type {
-  AssessmentInput,
-  AssessmentSignal,
-  AssessmentResult,
-} from './planning/task-complexity-assessor.js';
-
-// ─── GitHub Projection ───────────────────────────────────────────────
-export {
-  parseGitHubRemote,
-  detectGitHubRemote,
-  isGhAuthenticated,
-  detectGitHubContext,
-  findMatchingMilestone,
-  findDuplicateIssue,
-  formatIssueBody,
-  createGitHubIssue,
-  updateGitHubIssueBody,
-  listMilestones,
-  listOpenIssues,
-  listLabels,
-} from './planning/github-projection.js';
-export type {
-  GitHubRepo,
-  GitHubMilestone,
-  GitHubIssue,
-  GitHubLabel,
-  GitHubContext,
-  GitHubProjection,
-  ProjectedIssue,
-  PlanMetadataForIssue,
-} from './planning/github-projection.js';
+export * from './planning/index.js';
 
 // ─── Loop ────────────────────────────────────────────────────────────
 export {
@@ -540,25 +365,6 @@ export type { FacadeCall, TelemetryStats } from './telemetry/telemetry.js';
 export { Logger, createLogger } from './logging/logger.js';
 export type { LogLevel, LogEntry, LogContext, LoggerConfig } from './logging/types.js';
 
-// ─── Scope Detection ────────────────────────────────────────────────
-export { detectScope } from './vault/scope-detector.js';
-export type {
-  ScopeTier,
-  ConfidenceLevel,
-  ScopeSignal,
-  ScopeDetectionResult,
-  ScopeInput,
-} from './vault/scope-detector.js';
-
-// ─── Knowledge Review ──────────────────────────────────────────────
-export { KnowledgeReview } from './vault/knowledge-review.js';
-export type {
-  ReviewStatus,
-  ReviewEntry,
-  ReviewSubmission,
-  ReviewDecision,
-} from './vault/knowledge-review.js';
-
 // ─── Enforcement ────────────────────────────────────────────────────
 export { EnforcementRegistry, ClaudeCodeAdapter } from './enforcement/index.js';
 export type {
@@ -619,28 +425,8 @@ export {
 export { loadPersona } from './persona/loader.js';
 export { generatePersonaInstructions, getRandomSignoff } from './persona/prompt-generator.js';
 
-// ─── Schema Helpers ────────────────────────────────────────────────
-export { coerceArray } from './runtime/schema-helpers.js';
-
-// ─── Agent Config ────────────────────────────────────────────────────
-export { loadAgentConfig, DEFAULT_AGENT_CONFIG } from './runtime/agent-config.js';
-export type { AgentConfig } from './runtime/agent-config.js';
-
 // ─── Runtime Factory ────────────────────────────────────────────────
-export { createAgentRuntime } from './runtime/runtime.js';
-export { createSemanticFacades } from './runtime/facades/index.js';
-export { createDomainFacade, createDomainFacades } from './runtime/domain-ops.js';
-export { FeatureFlags } from './runtime/feature-flags.js';
-export type { FlagDefinition } from './runtime/feature-flags.js';
-export { ShutdownRegistry } from './runtime/shutdown-registry.js';
-export type { ShutdownCallback } from './runtime/shutdown-registry.js';
-export type { AgentRuntimeConfig, AgentRuntime } from './runtime/types.js';
-export {
-  deprecationWarning,
-  wrapDeprecated,
-  resetDeprecationWarnings,
-} from './runtime/deprecation.js';
-export type { DeprecationInfo } from './runtime/deprecation.js';
+export * from './runtime/index.js';
 
 // ─── Engine (v7 — direct registration, replaces facade factory) ───────
 export { registerEngine } from './engine/register-engine.js';
@@ -692,10 +478,6 @@ export type {
 export { ReplayableStream, fanOut } from './streams/index.js';
 export { normalize, collect } from './streams/index.js';
 export type { NestableInput } from './streams/index.js';
-
-// ─── Content Hashing ──────────────────────────────────────────────────
-export { computeContentHash } from './vault/content-hash.js';
-export type { HashableEntry } from './vault/content-hash.js';
 
 // ─── Knowledge Packs ────────────────────────────────────────────────────
 export {
@@ -966,17 +748,5 @@ export type { WorkflowGate, WorkflowOverride } from './workflows/index.js';
 export { checkForUpdate, buildChangelogUrl, detectBreakingChanges } from './update-check.js';
 export type { UpdateInfo } from './update-check.js';
 
-// ─── Settings Hooks Sync ─────────────────────────────────────────────
-export { syncHooksToClaudeSettings } from './runtime/admin-setup-ops.js';
-
 // ─── Scheduler ───────────────────────────────────────────────────────
-export { Scheduler, InMemorySchedulerStore } from './scheduler/scheduler.js';
-export type { SchedulerStore } from './scheduler/scheduler.js';
-export { createSchedulerOps } from './scheduler/scheduler-ops.js';
-export { validateCron, estimateMinIntervalHours } from './scheduler/cron-validator.js';
-export type {
-  ScheduledTask,
-  CreateTaskInput,
-  TaskListEntry,
-  PlatformAdapter,
-} from './scheduler/types.js';
+export * from './scheduler/index.js';

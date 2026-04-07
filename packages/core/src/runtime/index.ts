@@ -1,0 +1,14 @@
+export { coerceArray } from './schema-helpers.js';
+export { loadAgentConfig, DEFAULT_AGENT_CONFIG } from './agent-config.js';
+export type { AgentConfig } from './agent-config.js';
+export { createAgentRuntime } from './runtime.js';
+export { createSemanticFacades } from './facades/index.js';
+export { createDomainFacade, createDomainFacades } from './domain-ops.js';
+export { FeatureFlags } from './feature-flags.js';
+export type { FlagDefinition } from './feature-flags.js';
+export { ShutdownRegistry } from './shutdown-registry.js';
+export type { ShutdownCallback } from './shutdown-registry.js';
+export type { AgentRuntimeConfig, AgentRuntime } from './types.js';
+export { deprecationWarning, wrapDeprecated, resetDeprecationWarnings } from './deprecation.js';
+export type { DeprecationInfo } from './deprecation.js';
+export { syncHooksToClaudeSettings } from './admin-setup-ops.js';
