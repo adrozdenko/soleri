@@ -42,6 +42,7 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
         const maxSections = params.maxSections as number;
         const sections: BriefingSection[] = [];
         let dataPoints = 0;
+        let failedSections = 0;
 
         // 0. Day-one welcome (vault has few non-playbook entries)
         try {
@@ -54,6 +55,7 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
             });
           }
         } catch {
+          failedSections++;
           // Vault stats unavailable — skip
         }
 
@@ -111,6 +113,7 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
             }
           }
         } catch {
+          failedSections++;
           // Session data unavailable — skip
         }
 
@@ -145,6 +148,7 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
             });
           }
         } catch {
+          failedSections++;
           // Planner unavailable — skip
         }
 
@@ -161,6 +165,7 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
             });
           }
         } catch {
+          failedSections++;
           // Vault unavailable — skip
         }
 
@@ -176,6 +181,7 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
             });
           }
         } catch {
+          failedSections++;
           // Brain unavailable — skip
         }
 
@@ -205,6 +211,7 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
             });
           }
         } catch {
+          failedSections++;
           // Brain proposals unavailable — skip
         }
 
@@ -226,6 +233,7 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
             });
           }
         } catch {
+          failedSections++;
           // Curator unavailable — skip
         }
 
@@ -240,7 +248,16 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
             }
           }
         } catch {
+          failedSections++;
           // Operator profile unavailable — skip
+        }
+
+        // Warn when majority of subsystems failed
+        if (failedSections > 3) {
+          sections.push({
+            label: 'Warning',
+            content: `\u26A0\uFE0F ${failedSections} of 8 briefing sections failed to load. Some subsystems may be unavailable.`,
+          });
         }
 
         return {
