@@ -57,6 +57,7 @@ export interface MemoryStats {
 
 /** Apply critical PRAGMAs that every vault database must have. */
 function applyVaultPragmas(provider: PersistenceProvider): void {
+  provider.run('PRAGMA busy_timeout = 5000');
   provider.run('PRAGMA journal_mode = WAL');
   provider.run('PRAGMA foreign_keys = ON');
   provider.run('PRAGMA synchronous = NORMAL');

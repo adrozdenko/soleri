@@ -84,6 +84,17 @@ export function isMetadataTag(tag: string, prefixes: string[]): boolean {
   return prefixes.some((prefix) => tag.startsWith(prefix));
 }
 
+// ─── Base normalization ─────────────────────────────────────────────────────
+
+/**
+ * Shared base normalization: lowercase + trim.
+ * This is the single source of truth for the first normalization step,
+ * used by both vault canonical matching and curator alias resolution.
+ */
+export function baseNormalizeTag(tag: string): string {
+  return tag.toLowerCase().trim();
+}
+
 // ─── Single tag normalization ────────────────────────────────────────────────
 
 /**
@@ -101,7 +112,7 @@ export function normalizeTag(
 ): string | null {
   if (mode === 'off') return tag;
 
-  const lower = tag.toLowerCase().trim();
+  const lower = baseNormalizeTag(tag);
 
   // Always drop noise words
   if (isNoisy(lower)) return null;

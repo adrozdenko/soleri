@@ -40,6 +40,7 @@ function loadDriver(): DatabaseConstructor {
 
 /** Apply performance-tuning PRAGMAs for file-backed SQLite databases. */
 export function applyPerformancePragmas(db: Database.Database): void {
+  db.pragma('busy_timeout = 5000'); // 5s wait on lock for multi-process safety
   db.pragma('cache_size = -64000'); // 64MB
   db.pragma('temp_store = MEMORY');
   db.pragma('mmap_size = 268435456'); // 256MB

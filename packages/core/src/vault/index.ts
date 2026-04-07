@@ -34,6 +34,7 @@ export { validatePlaybook, parsePlaybookFromEntry } from './playbook.js';
 export type { Playbook, PlaybookStep, PlaybookValidationResult } from './playbook.js';
 export { DEFAULT_CANONICAL_TAGS } from './default-canonical-tags.js';
 export {
+  baseNormalizeTag,
   normalizeTag as normalizeTagCanonical,
   normalizeTags as normalizeTagsCanonical,
   isMetadataTag,

@@ -1,10 +1,15 @@
 /**
- * Tag Manager — tag normalization, aliasing, and suggestion logic.
+ * Tag Manager — tag aliasing and suggestion logic.
+ *
+ * Base normalization (lowercase, trim, noise filtering) is delegated to
+ * the vault's tag-normalizer — the single canonical implementation.
+ * This module adds alias-store resolution on top.
  *
  * Pure logic where possible; database access is delegated via a TagStore interface.
  */
 
 import type { TagNormalizationResult, CanonicalTag } from './types.js';
+import { baseNormalizeTag } from '../vault/tag-normalizer.js';
 
 // ─── Constants ──────────────────────────────────────────────────────
 
@@ -41,7 +46,9 @@ export interface TagStore {
 // ─── Normalize ──────────────────────────────────────────────────────
 
 export function normalizeTag(tag: string, store: TagStore): TagNormalizationResult {
-  const lower = tag.toLowerCase().trim();
+  // Delegate base normalization (lowercase, trim) to the vault's shared normalizer
+  // so there is a single source of truth for the first normalization step.
+  const lower = baseNormalizeTag(tag);
   const canonical = store.getAlias(lower);
   if (canonical) {
     return { original: tag, normalized: canonical, wasAliased: true };
@@ -78,8 +85,8 @@ export function normalizeAndDedup(
 // ─── Alias Management ───────────────────────────────────────────────
 
 export function addTagAlias(alias: string, canonical: string, store: TagStore): void {
-  const lower = alias.toLowerCase().trim();
-  const canonicalLower = canonical.toLowerCase().trim();
+  const lower = baseNormalizeTag(alias);
+  const canonicalLower = baseNormalizeTag(canonical);
   store.insertCanonical(canonicalLower);
   store.upsertAlias(lower, canonicalLower);
 }
