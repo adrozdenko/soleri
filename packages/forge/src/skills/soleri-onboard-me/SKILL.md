@@ -102,6 +102,14 @@ YOUR_AGENT_core op:vault_age_report
 
 **Tip:** Use vault-navigator to search topics as you work. Use second-opinion before architectural decisions.
 
+### Installed Packs
+
+```
+YOUR_AGENT_core op:admin_health
+```
+
+Show which domain packs and knowledge packs are installed. Mention `soleri pack list` for discovering more, and `soleri pack add <name>` for installation.
+
 ### Record Onboarding
 
 ```

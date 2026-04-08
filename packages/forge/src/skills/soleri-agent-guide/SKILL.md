@@ -108,7 +108,17 @@ You have persistent knowledge (vault), learned patterns (brain), structured plan
 
 ### "How do I add new capabilities?"
 
-Extensions can add new ops, facades, middleware, and hooks. Use `soleri extend add-op <name>` to add capabilities.
+Install **domain packs** — community packages that add ops, facades, and knowledge to your agent:
+
+```bash
+soleri pack list              # Browse available packs
+soleri pack add <name>        # Install a pack
+soleri pack list --installed  # See what's installed
+```
+
+Packs come in several types: **domain** (ops + knowledge), **knowledge** (vault entries only), **skills** (skill files), and **hooks** (lifecycle scripts). Use `soleri pack info <name>` for details.
+
+To create your own pack, see the [Pack Authoring Guide](docs/guides/pack-authoring.md).
 
 ## Anti-Patterns
 
