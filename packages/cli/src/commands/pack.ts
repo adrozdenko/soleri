@@ -656,6 +656,7 @@ export function registerPack(program: Command): void {
       const packType = await p.select({
         message: 'Pack type:',
         options: [
+          { value: 'domain', label: 'Domain — TypeScript ops, facades, and knowledge' },
           { value: 'knowledge', label: 'Knowledge — vault entries, patterns, anti-patterns' },
           { value: 'skills', label: 'Skills — workflow skill files' },
           { value: 'hooks', label: 'Hooks — editor hook files' },
@@ -700,6 +701,125 @@ export function registerPack(program: Command): void {
         license: 'MIT',
         soleri: '>=2.0.0',
       };
+
+      // Scaffold domain pack as full TypeScript project
+      if (packType === 'domain') {
+        const srcDir = join(dir, 'src');
+        mkdirSync(srcDir, { recursive: true });
+        const vaultDir = join(dir, 'vault');
+        mkdirSync(vaultDir, { recursive: true });
+
+        // package.json
+        writeFileSync(
+          join(dir, 'package.json'),
+          JSON.stringify(
+            {
+              name: `@soleri/domain-${name}`,
+              version: '1.0.0',
+              description: description || '',
+              type: 'module',
+              main: 'dist/index.js',
+              types: 'dist/index.d.ts',
+              exports: { '.': { import: './dist/index.js', types: './dist/index.d.ts' } },
+              scripts: {
+                build: 'tsc',
+                test: 'vitest run',
+                prepublishOnly: 'npm run build',
+              },
+              keywords: ['soleri', 'soleri-domain-pack', `domain-${name}`],
+              author: author || '',
+              license: 'MIT',
+              peerDependencies: { '@soleri/core': '>=9.0.0' },
+              devDependencies: { '@soleri/core': '*', typescript: '^5.5.0', vitest: '^3.0.0' },
+            },
+            null,
+            2,
+          ) + '\n',
+          'utf-8',
+        );
+
+        // tsconfig.json
+        writeFileSync(
+          join(dir, 'tsconfig.json'),
+          JSON.stringify(
+            {
+              compilerOptions: {
+                target: 'ES2022',
+                module: 'NodeNext',
+                moduleResolution: 'NodeNext',
+                declaration: true,
+                outDir: 'dist',
+                rootDir: 'src',
+                strict: true,
+                esModuleInterop: true,
+                skipLibCheck: true,
+              },
+              include: ['src'],
+            },
+            null,
+            2,
+          ) + '\n',
+          'utf-8',
+        );
+
+        // vitest.config.ts
+        writeFileSync(
+          join(dir, 'vitest.config.ts'),
+          `import { defineConfig } from 'vitest/config';\n\nexport default defineConfig({ test: { include: ['src/**/*.test.ts'] } });\n`,
+          'utf-8',
+        );
+
+        // src/index.ts
+        writeFileSync(
+          join(dir, 'src', 'index.ts'),
+          `import type { DomainPack, PackRuntime } from '@soleri/core';\n\nconst pack: DomainPack = {\n  name: '${name}',\n  version: '1.0.0',\n  tier: '${tier || 'community'}',\n  domains: ['${name}'],\n  ops: [\n    {\n      name: 'hello',\n      description: 'Example operation — replace with your own',\n      auth: 'read',\n      handler: async (params) => {\n        return { success: true, data: { message: 'Hello from ${name}!' } };\n      },\n    },\n  ],\n  onActivate: async (_runtime: PackRuntime) => {\n    // Optional setup when the pack loads\n  },\n};\n\nexport default pack;\n`,
+          'utf-8',
+        );
+
+        // src/index.test.ts
+        writeFileSync(
+          join(dir, 'src', 'index.test.ts'),
+          `import { describe, it, expect } from 'vitest';\nimport pack from './index.js';\n\ndescribe('${name} domain pack', () => {\n  it('has required fields', () => {\n    expect(pack.name).toBe('${name}');\n    expect(pack.domains).toContain('${name}');\n    expect(pack.ops.length).toBeGreaterThan(0);\n  });\n\n  it('hello op returns success', async () => {\n    const result = await pack.ops[0].handler({});\n    expect(result).toEqual({ success: true, data: { message: 'Hello from ${name}!' } });\n  });\n});\n`,
+          'utf-8',
+        );
+
+        // vault/patterns.json
+        writeFileSync(join(vaultDir, 'patterns.json'), JSON.stringify([], null, 2) + '\n', 'utf-8');
+
+        // .gitignore
+        writeFileSync(join(dir, '.gitignore'), 'node_modules/\ndist/\n', 'utf-8');
+
+        // README.md
+        writeFileSync(
+          join(dir, 'README.md'),
+          `# @soleri/domain-${name}\n\n${description || 'A Soleri domain pack.'}\n\n## Install\n\n\`\`\`bash\nnpm install @soleri/domain-${name}\n\`\`\`\n\nAdd to your \`agent.yaml\`:\n\n\`\`\`yaml\npacks:\n  - name: ${name}\n    package: '@soleri/domain-${name}'\n\`\`\`\n\n## Develop\n\n\`\`\`bash\nnpm install\nnpm test\nnpm run build\n\`\`\`\n\n## Publish\n\n\`\`\`bash\nnpm publish --access public\n\`\`\`\n`,
+          'utf-8',
+        );
+
+        // soleri-pack.json (overwrite the generic one)
+        writeFileSync(
+          join(dir, 'soleri-pack.json'),
+          JSON.stringify(
+            { ...manifest, type: 'domain', domains: [String(name)], vault: { dir: 'vault' } },
+            null,
+            2,
+          ) + '\n',
+          'utf-8',
+        );
+
+        p.log.success(`Created domain pack ${name}/`);
+        p.log.info('  package.json');
+        p.log.info('  tsconfig.json');
+        p.log.info('  vitest.config.ts');
+        p.log.info('  src/index.ts');
+        p.log.info('  src/index.test.ts');
+        p.log.info('  vault/patterns.json');
+        p.log.info('  .gitignore');
+        p.log.info('  README.md');
+        p.log.info('  soleri-pack.json');
+        p.log.info('\nNext: npm install && npm test && npm run build');
+        return;
+      }
 
       // Scaffold content directories based on type
       if (packType === 'knowledge' || packType === 'bundle') {
