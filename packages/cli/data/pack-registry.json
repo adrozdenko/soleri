@@ -9,7 +9,7 @@
       "type": "domain",
       "description": "Design system intelligence — WCAG contrast, token validation, design rules, and patterns.",
       "repo": "https://github.com/adrozdenko/soleri-domain-design",
-      "version": "9.18.3"
+      "version": "1.0.0"
     },
     {
       "name": "domain-code-review",
@@ -17,7 +17,7 @@
       "type": "domain",
       "description": "Code review intelligence — hex color detection, architecture boundary warnings, review patterns.",
       "repo": "https://github.com/adrozdenko/soleri-domain-code-review",
-      "version": "9.18.3"
+      "version": "1.0.0"
     },
     {
       "name": "domain-component",
@@ -25,7 +25,7 @@
       "type": "domain",
       "description": "Component intelligence — component patterns, usage guidance, and best practices.",
       "repo": "https://github.com/adrozdenko/soleri-domain-component",
-      "version": "9.18.3"
+      "version": "1.0.0"
     },
     {
       "name": "domain-design-qa",
@@ -33,7 +33,7 @@
       "type": "domain",
       "description": "Design QA intelligence — visual regression, design-to-code accuracy, QA patterns.",
       "repo": "https://github.com/adrozdenko/soleri-domain-design-qa",
-      "version": "9.18.3"
+      "version": "1.0.0"
     }
   ]
 }
