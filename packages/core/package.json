@@ -184,9 +184,16 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@bcoe/v8-coverage": "^1.0.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/pdf-parse": "^1.1.5",
-    "@vitest/coverage-v8": "^4.0.18"
+    "@vitest/coverage-v8": "^4.0.18",
+    "ast-v8-to-istanbul": "^0.3.12",
+    "istanbul-lib-coverage": "^3.2.2",
+    "istanbul-lib-report": "^3.0.1",
+    "istanbul-reports": "^3.2.0",
+    "magicast": "^0.5.2",
+    "obug": "^2.1.1"
   },
   "peerDependencies": {
     "@anthropic-ai/sdk": ">=0.30.0",
