@@ -1,7 +1,9 @@
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const files = new Map<string, string>();
 let currentPlatform: 'darwin' | 'linux' | 'win32' = 'darwin';
+const TEST_HOME = '/home/test';
 
 vi.mock('node:os', () => ({
   homedir: vi.fn(() => '/home/test'),
@@ -45,8 +47,8 @@ import { getSchedule, schedule, unschedule } from '../dream/cron-manager.js';
 import { macOSTaskExists, removeMacOSTask } from '../scheduler/platform-macos.js';
 import { createLinuxTask, removeLinuxTask } from '../scheduler/platform-linux.js';
 
-const METADATA_PATH = '/home/test/.soleri/dream-schedule.json';
-const LOG_PATH = '/home/test/.soleri/logs/scheduler/dream.log';
+const METADATA_PATH = join(TEST_HOME, '.soleri', 'dream-schedule.json');
+const LOG_PATH = join(TEST_HOME, '.soleri', 'logs', 'scheduler', 'dream.log');
 
 describe('cron-manager', () => {
   beforeEach(() => {
