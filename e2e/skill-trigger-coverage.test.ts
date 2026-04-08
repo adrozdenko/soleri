@@ -217,6 +217,10 @@ const TRIGGER_MAP: Record<string, string> = {
   // Orchestration
   'ernesto orchestrate the full workflow': 'orchestrate',
   'run the full orchestration for this task': 'orchestrate',
+
+  // Release
+  'bump version and publish packages': 'release',
+  'cut a release for the monorepo': 'release',
 };
 
 // These skills are agent-specific (not in the base Soleri scaffold).

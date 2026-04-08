@@ -95,6 +95,9 @@ export {
   loadDomainPack,
   loadDomainPacksFromConfig,
   createPackRuntime,
+  resolveToken,
+  listProjectTokens,
+  buildReverseIndex,
 } from './domain-packs/index.js';
 export type {
   DomainPack,
@@ -306,7 +309,7 @@ export { OperatorContextStore } from './operator/operator-context-store.js';
 export { OperatorProfileStore } from './operator/operator-profile.js';
 
 // ─── Flow Engine ───────────────────────────────────────────────────
-export { FlowExecutor, createDispatcher } from './flows/index.js';
+export { FlowExecutor, createDispatcher, loadAllFlows } from './flows/index.js';
 export type { Flow, FlowStep, OrchestrationPlan, ExecutionResult } from './flows/index.js';
 
 // ─── Packs (CLI needs these) ─────────────────────────────────────

@@ -489,7 +489,7 @@ describe('Journey 4: Missing capabilities degrade gracefully', () => {
 
 describe('Journey 5: New user onboarding', () => {
   it('onboarding playbook should exist in builtin registry', async () => {
-    const { getAllBuiltinPlaybooks, getBuiltinPlaybook } = await import('@soleri/core');
+    const { getAllBuiltinPlaybooks, getBuiltinPlaybook } = await import('@soleri/core/playbooks');
 
     const all = getAllBuiltinPlaybooks();
     // 7 built-in: tdd, brainstorming, code-review, subagent-execution, systematic-debugging, verification, onboarding

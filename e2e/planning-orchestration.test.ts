@@ -94,6 +94,7 @@ describe('E2E: planning-orchestration', () => {
 
   describe('Journey 1: Full planning lifecycle', () => {
     let planId: string;
+    let playbookSessionId: string | null = null;
 
     it('create_plan should return a plan with id, objective, and tasks', async () => {
       const res = await callOp(planFacade, 'create_plan', {
@@ -126,6 +127,7 @@ describe('E2E: planning-orchestration', () => {
           status: string;
           tasks: Array<{ id: string; title: string; status: string }>;
         };
+        playbook?: { sessionId: string | null };
       };
       expect(data.created).toBe(true);
       expect(data.plan.id).toBeDefined();
@@ -137,6 +139,7 @@ describe('E2E: planning-orchestration', () => {
       expect(data.plan.tasks[0].status).toBe('pending');
 
       planId = data.plan.id;
+      playbookSessionId = data.playbook?.sessionId ?? null;
     });
 
     it('approve_plan should transition plan to approved', async () => {
@@ -204,6 +207,16 @@ describe('E2E: planning-orchestration', () => {
       });
       expect(execRes.success).toBe(true);
 
+      // Satisfy playbook gates before completing tasks (TDD playbook requires
+      // tdd-red post-task gate and tdd-green completion gate)
+      if (playbookSessionId) {
+        await callOp(orchestrateFacade, 'playbook_complete', {
+          sessionId: playbookSessionId,
+          gateResults: { 'tdd-red': true, 'tdd-green': true },
+        });
+        playbookSessionId = null;
+      }
+
       // Mark all tasks as completed
       for (let i = 1; i <= 4; i++) {
         const taskRes = await callOp(planFacade, 'update_task', {
@@ -232,6 +245,14 @@ describe('E2E: planning-orchestration', () => {
       expect(data.reconciled).toBe(true);
       expect(data.accuracy).toBe(100);
       expect(data.driftCount).toBe(0);
+    });
+
+    it('complete_plan should transition from reconciling to completed', async () => {
+      const res = await callOp(planFacade, 'complete_plan', { planId });
+      expect(res.success).toBe(true);
+      const data = res.data as { completed: boolean; plan: { status: string } };
+      expect(data.completed).toBe(true);
+      expect(data.plan.status).toBe('completed');
     });
 
     it('plan_complete_lifecycle should capture knowledge', async () => {
@@ -423,16 +444,17 @@ describe('E2E: planning-orchestration', () => {
       });
       expect(reconcileRes.success).toBe(true);
 
-      // After reconcile, plan is already 'completed'. orchestrate_complete
-      // will fail trying to complete it again. We test the full orchestrate
-      // flow separately with a fresh plan.
-
-      // Verify the plan ended up completed via reconcile
+      // After reconcile, plan is in 'reconciling' (FSM no longer auto-completes).
+      // Verify the plan is in reconciling status with reconciliation data.
       const getRes = await callOp(planFacade, 'get_plan', { planId: orchPlanId });
       expect(getRes.success).toBe(true);
       const planData = getRes.data as { status: string; reconciliation: { accuracy: number } };
-      expect(planData.status).toBe('completed');
+      expect(planData.status).toBe('reconciling');
       expect(planData.reconciliation.accuracy).toBe(100);
+
+      // Complete the plan so it reaches 'completed' status
+      const completeRes = await callOp(planFacade, 'complete_plan', { planId: orchPlanId });
+      expect(completeRes.success).toBe(true);
     });
 
     it('orchestrate_complete on a separate plan should capture knowledge', async () => {
@@ -460,15 +482,16 @@ describe('E2E: planning-orchestration', () => {
         status: 'completed',
       });
 
-      // Reconcile (auto-completes the plan)
+      // Reconcile (transitions plan to 'reconciling')
       await callOp(planFacade, 'plan_reconcile', {
         planId: freshId,
         actualOutcome: 'Task completed',
         driftItems: [],
       });
 
-      // Now call orchestrate_complete — plan is already completed, but we still
-      // expect the brain session end + knowledge extraction to work
+      // Now call orchestrate_complete — plan is in 'reconciling', so
+      // planner.complete() transitions it to 'completed' and the epilogue
+      // (brain session end, knowledge extraction, brain feedback) runs.
       const res = await callOp(orchestrateFacade, 'orchestrate_complete', {
         planId: freshId,
         sessionId: freshSessionId,
@@ -477,22 +500,13 @@ describe('E2E: planning-orchestration', () => {
         filesModified: [],
       });
 
-      // orchestrate_complete on an already-completed plan succeeds with a warning.
-      // The plan transition is best-effort — planner.complete() cannot transition
-      // from 'completed' to 'completed', but the epilogue (brain session end,
-      // knowledge extraction, brain feedback) still runs.
       expect(res.success).toBe(true);
       const data = res.data as {
         plan: { id: string; status: string };
         warnings?: string[];
       };
       expect(data.plan).toBeDefined();
-      // The warnings array should contain the skipped transition message
-      expect(data.warnings).toBeDefined();
-      expect(data.warnings!.length).toBeGreaterThanOrEqual(1);
-      // The "Plan transition skipped" warning may not be first — evidence-based
-      // reconciliation can push a "Low evidence accuracy" warning before it.
-      expect(data.warnings!.some((w) => w.includes('Plan transition skipped'))).toBe(true);
+      expect(data.plan.status).toBe('completed');
     });
   });
 
@@ -905,7 +919,7 @@ describe('E2E: planning-orchestration', () => {
       expect(typeof data.byStatus.draft).toBe('number');
       expect(typeof data.byStatus.approved).toBe('number');
       expect(typeof data.byStatus.completed).toBe('number');
-      // Should include completed plans from Journey 1 and 5
+      // Should include completed plans from Journey 1 and Journey 3
       expect(data.byStatus.completed).toBeGreaterThanOrEqual(2);
       // Task aggregates
       expect(typeof data.totalTasks).toBe('number');

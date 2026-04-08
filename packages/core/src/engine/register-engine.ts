@@ -388,7 +388,7 @@ function registerModuleTool(
     params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
   };
 
-  // @ts-expect-error -- MCP SDK Zod type inference hits TS depth limit; runtime is correct
+  // @ts-ignore -- MCP SDK Zod type inference hits TS depth limit; runtime is correct
   server.tool(toolName, description, facadeSchema, async ({ op: opName, params }) => {
     const op = opMap.get(opName);
     if (!op) {
