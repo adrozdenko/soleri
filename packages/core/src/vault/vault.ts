@@ -8,52 +8,9 @@ import * as entries from './vault-entries.js';
 import * as memories from './vault-memories.js';
 import * as maintenance from './vault-maintenance.js';
 import type { AutoLinkConfig, EntryUpdateFields } from './vault-entries.js';
+import type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault-types.js';
 
-export interface SearchResult {
-  entry: IntelligenceEntry;
-  score: number;
-  source?: string;
-}
-export interface VaultStats {
-  totalEntries: number;
-  byType: Record<string, number>;
-  byDomain: Record<string, number>;
-  bySeverity: Record<string, number>;
-}
-export interface ProjectInfo {
-  path: string;
-  name: string;
-  registeredAt: number;
-  lastSeenAt: number;
-  sessionCount: number;
-}
-export interface Memory {
-  id: string;
-  projectPath: string;
-  type: 'session' | 'lesson' | 'preference';
-  context: string;
-  summary: string;
-  topics: string[];
-  filesModified: string[];
-  toolsUsed: string[];
-  /** What the user was trying to accomplish. */
-  intent: string | null;
-  /** Key decisions made and their rationale. */
-  decisions: string[];
-  /** Where things stand at capture time. */
-  currentState: string | null;
-  /** What should happen next session. */
-  nextSteps: string[];
-  /** Vault entries that informed this session. */
-  vaultEntriesReferenced: string[];
-  createdAt: number;
-  archivedAt: number | null;
-}
-export interface MemoryStats {
-  total: number;
-  byType: Record<string, number>;
-  byProject: Record<string, number>;
-}
+export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault-types.js';
 
 /** Apply critical PRAGMAs that every vault database must have. */
 function applyVaultPragmas(provider: PersistenceProvider): void {
