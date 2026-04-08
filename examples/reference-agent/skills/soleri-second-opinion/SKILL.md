@@ -15,7 +15,7 @@ Get an informed recommendation that synthesizes vault knowledge, brain patterns,
 ### 1. Understand the Decision
 
 ```
-salvador_core op:route_intent
+archie_core op:route_intent
   params: { prompt: "<user's question>" }
 ```
 
@@ -24,22 +24,22 @@ salvador_core op:route_intent
 **Vault** — previous decisions, patterns, anti-patterns:
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "<the decision or options>" }
 ```
 
 **Brain** — proven approaches:
 
 ```
-salvador_core op:brain_strengths
-salvador_core op:brain_recommend
+archie_core op:brain_strengths
+archie_core op:brain_recommend
   params: { projectName: "<current project>" }
 ```
 
 **Cross-project** — what other projects chose:
 
 ```
-salvador_core op:memory_cross_project_search
+archie_core op:memory_cross_project_search
   params: { query: "<topic>", crossProject: true }
 ```
 
@@ -75,7 +75,7 @@ salvador_core op:memory_cross_project_search
 ### 4. Capture the Decision
 
 ```
-salvador_core op:capture_knowledge
+archie_core op:capture_knowledge
   params: {
     title: "<decision title>",
     description: "<chosen option, rationale, rejected alternatives>",

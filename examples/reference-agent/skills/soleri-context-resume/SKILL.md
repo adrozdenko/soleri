@@ -15,9 +15,9 @@ Reconstruct full working context in seconds. Chains memory, plans, sessions, and
 ### 1. Load Active Plans
 
 ```
-salvador_core op:plan_stats
-salvador_core op:get_plan
-salvador_core op:plan_list_tasks
+archie_core op:plan_stats
+archie_core op:get_plan
+archie_core op:plan_list_tasks
   params: { planId: "<id>" }
 ```
 
@@ -26,29 +26,29 @@ Present: plan objective, task status (completed/in-progress/pending), what's nex
 ### 2. Search Recent Memory
 
 ```
-salvador_core op:memory_search
+archie_core op:memory_search
   params: { query: "session summary" }
-salvador_core op:memory_list
-salvador_core op:vault_recent
+archie_core op:memory_list
+archie_core op:vault_recent
 ```
 
 ### 3. Check Active Loops
 
 ```
-salvador_core op:loop_is_active
-salvador_core op:loop_status
+archie_core op:loop_is_active
+archie_core op:loop_status
 ```
 
 ### 4. Brain Snapshot
 
 ```
-salvador_core op:brain_strengths
+archie_core op:brain_strengths
 ```
 
 ### 5. System Health
 
 ```
-salvador_core op:admin_health
+archie_core op:admin_health
 ```
 
 ## Presenting the Resume

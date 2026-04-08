@@ -75,7 +75,7 @@ Present findings before moving to Pass 2.
 **Vault Context** (optional — only if vault is connected):
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "<module name> architecture pattern" }
 ```
 
@@ -167,7 +167,7 @@ If vault has relevant patterns, check alignment. If not, skip — this pass work
 If the review uncovers a pattern or anti-pattern worth remembering:
 
 ```
-salvador_core op:capture_knowledge
+archie_core op:capture_knowledge
   params: {
     title: "<pattern name>",
     description: "<what was found, why it matters>",

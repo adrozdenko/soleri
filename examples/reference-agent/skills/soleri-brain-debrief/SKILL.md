@@ -14,20 +14,20 @@ Surface what the brain has learned across sessions and projects. Turns raw vault
 
 ### "What have I learned?" (General debrief)
 
-1. `salvador_core op:brain_stats` — total sessions, patterns, quality scores
-2. `salvador_core op:brain_strengths` — patterns ranked by strength (focus >= 70)
-3. `salvador_core op:memory_topics` — knowledge clusters
-4. `salvador_core op:vault_age_report` — stale entries needing refresh
-5. `salvador_core op:curator_health_audit` — vault quality score
+1. `archie_core op:brain_stats` — total sessions, patterns, quality scores
+2. `archie_core op:brain_strengths` — patterns ranked by strength (focus >= 70)
+3. `archie_core op:memory_topics` — knowledge clusters
+4. `archie_core op:vault_age_report` — stale entries needing refresh
+5. `archie_core op:curator_health_audit` — vault quality score
 
 Present: top 5 patterns, top 3 anti-patterns, stale entries, coverage gaps.
 
 ### "What's working across projects?" (Cross-project)
 
-1. `salvador_core op:brain_global_patterns` — promoted patterns
-2. `salvador_core op:brain_recommend params: { projectName: "<project>" }` — similarity-based recommendations
-3. `salvador_core op:project_linked_projects` — connected projects
-4. `salvador_core op:memory_cross_project_search params: { query: "<topic>", crossProject: true }`
+1. `archie_core op:brain_global_patterns` — promoted patterns
+2. `archie_core op:brain_recommend params: { projectName: "<project>" }` — similarity-based recommendations
+3. `archie_core op:project_linked_projects` — connected projects
+4. `archie_core op:memory_cross_project_search params: { query: "<topic>", crossProject: true }`
 
 ### "Am I getting smarter?" (Learning velocity)
 
@@ -35,8 +35,8 @@ Compare `brain_stats` for 7-day vs 30-day periods. Check `memory_stats`, `admin_
 
 ### "Build fresh intelligence" (Rebuild)
 
-1. `salvador_core op:brain_build_intelligence` — full pipeline rebuild
-2. `salvador_core op:curator_consolidate` — vault cleanup
+1. `archie_core op:brain_build_intelligence` — full pipeline rebuild
+2. `archie_core op:curator_consolidate` — vault cleanup
 3. Show updated `brain_stats`
 
 ### "Export what I know" (Portability)

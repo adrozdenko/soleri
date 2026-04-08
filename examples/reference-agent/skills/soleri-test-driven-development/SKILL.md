@@ -15,14 +15,14 @@ description: >
 ### Check Vault for Testing Patterns
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "<domain> testing patterns" }
 ```
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "<what you're about to test>" }
-salvador_core op:brain_strengths
+archie_core op:brain_strengths
 ```
 
 If vault has testing guidance for this domain, follow it.
@@ -30,7 +30,7 @@ If vault has testing guidance for this domain, follow it.
 ## Start a TDD Loop
 
 ```
-salvador_core op:loop_start
+archie_core op:loop_start
   params: { prompt: "TDD: <feature>", mode: "custom" }
 ```
 
@@ -73,8 +73,8 @@ Next failing test for next behavior.
 ## After TDD
 
 ```
-salvador_core op:loop_complete
-salvador_core op:capture_quick
+archie_core op:loop_complete
+archie_core op:capture_quick
   params: { title: "<testing pattern>", description: "<what you learned>" }
 ```
 

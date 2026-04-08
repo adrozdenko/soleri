@@ -143,7 +143,7 @@ Checklist before committing:
 - [ ] `description:` has 4-8 specific trigger phrases in quotes
 - [ ] No trigger overlap with existing skills
 - [ ] All ops use `YOUR_AGENT_core` placeholder
-- [ ] No hardcoded agent names (`ernesto_core`, `salvador_core`, etc.)
+- [ ] No hardcoded agent names (`ernesto_core`, `archie_core`, etc.)
 - [ ] Imperative writing style throughout
 - [ ] Agent Tools Reference table at the end
 - [ ] Under 3,000 words (ideally 1,500-2,000)

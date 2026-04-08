@@ -27,14 +27,14 @@ The vault is the authoritative source for how the agent works. Do not rely on ge
 Before reading any source file, before making any plan, before offering any advice:
 
 ```
-salvador_core op:search_vault_intelligent
+archie_core op:search_vault_intelligent
   params: { query: "<description of planned work>", options: { intent: "pattern" } }
 ```
 
 Search again with architecture-specific terms: the facade name, tool name, or subsystem being modified.
 
 ```
-salvador_core op:query_vault_knowledge
+archie_core op:query_vault_knowledge
   params: { type: "workflow", category: "<relevant category>" }
 ```
 
@@ -45,12 +45,12 @@ Review all results. Extract file paths, module names, function references, conve
 ### Step 2: Check Brain for Proven Patterns
 
 ```
-salvador_core op:strengths
+archie_core op:strengths
   params: { days: 30, minStrength: 60 }
 ```
 
 ```
-salvador_core op:recommend
+archie_core op:recommend
   params: { projectPath: "." }
 ```
 
@@ -95,7 +95,7 @@ Run the relevant test suite. Rebuild — must complete without errors.
 If this work revealed new architectural knowledge, a useful pattern, or a surprising anti-pattern:
 
 ```
-salvador_core op:capture_knowledge
+archie_core op:capture_knowledge
   params: {
     title: "<what was learned>",
     description: "<the pattern or anti-pattern>",

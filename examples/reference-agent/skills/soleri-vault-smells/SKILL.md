@@ -17,7 +17,7 @@ Detects structural problems in the knowledge base that degrade decision quality 
 Entries that give conflicting guidance. The most dangerous smell — leads to inconsistent decisions.
 
 ```
-salvador_core op:curator_contradictions
+archie_core op:curator_contradictions
 ```
 
 **What to look for:**
@@ -33,7 +33,7 @@ salvador_core op:curator_contradictions
 Knowledge that was true once but may not be anymore.
 
 ```
-salvador_core op:vault_age_report
+archie_core op:vault_age_report
 ```
 
 **Indicators:**
@@ -50,8 +50,8 @@ salvador_core op:vault_age_report
 Entries with no connections to the rest of the knowledge graph.
 
 ```
-salvador_core op:admin_vault_analytics
-salvador_core op:curator_detect_duplicates
+archie_core op:admin_vault_analytics
+archie_core op:curator_detect_duplicates
 ```
 
 **Indicators:**
@@ -70,7 +70,7 @@ salvador_core op:curator_detect_duplicates
 Multiple entries covering the same ground with slight variations.
 
 ```
-salvador_core op:curator_detect_duplicates
+archie_core op:curator_detect_duplicates
 ```
 
 **Indicators:**
@@ -87,7 +87,7 @@ salvador_core op:curator_detect_duplicates
 Entries that exist but lack substance — captured in a hurry, never enriched.
 
 ```
-salvador_core op:curator_health_audit
+archie_core op:curator_health_audit
 ```
 
 **Indicators:**
@@ -105,8 +105,8 @@ salvador_core op:curator_health_audit
 The taxonomy has grown inconsistent over time.
 
 ```
-salvador_core op:vault_domains
-salvador_core op:vault_tags
+archie_core op:vault_domains
+archie_core op:vault_tags
 ```
 
 **Indicators:**
@@ -123,7 +123,7 @@ salvador_core op:vault_tags
 Brain patterns losing strength without reinforcement.
 
 ```
-salvador_core op:brain_strengths
+archie_core op:brain_strengths
 ```
 
 **Indicators:**
@@ -139,7 +139,7 @@ salvador_core op:brain_strengths
 Areas where the vault _should_ have knowledge but doesn't.
 
 ```
-salvador_core op:admin_search_insights
+archie_core op:admin_search_insights
 ```
 
 **Indicators:**
@@ -156,16 +156,16 @@ salvador_core op:admin_search_insights
 ### Step 1: Gather Data
 
 ```
-salvador_core op:admin_health
-salvador_core op:admin_vault_analytics
-salvador_core op:curator_health_audit
-salvador_core op:curator_contradictions
-salvador_core op:curator_detect_duplicates
-salvador_core op:vault_age_report
-salvador_core op:vault_domains
-salvador_core op:vault_tags
-salvador_core op:brain_strengths
-salvador_core op:admin_search_insights
+archie_core op:admin_health
+archie_core op:admin_vault_analytics
+archie_core op:curator_health_audit
+archie_core op:curator_contradictions
+archie_core op:curator_detect_duplicates
+archie_core op:vault_age_report
+archie_core op:vault_domains
+archie_core op:vault_tags
+archie_core op:brain_strengths
+archie_core op:admin_search_insights
 ```
 
 ### Step 2: Classify Smells

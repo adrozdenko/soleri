@@ -15,43 +15,43 @@ Comprehensive maintenance cycle on the knowledge base. Finds stale entries, dupl
 ### 1. System Health
 
 ```
-salvador_core op:admin_health
-salvador_core op:admin_diagnostic
+archie_core op:admin_health
+archie_core op:admin_diagnostic
 ```
 
 ### 2. Vault Metrics
 
 ```
-salvador_core op:admin_vault_size
-salvador_core op:admin_vault_analytics
-salvador_core op:vault_domains
-salvador_core op:vault_tags
+archie_core op:admin_vault_size
+archie_core op:admin_vault_analytics
+archie_core op:vault_domains
+archie_core op:vault_tags
 ```
 
 ### 3. Quality Audit
 
 ```
-salvador_core op:curator_health_audit
+archie_core op:curator_health_audit
 ```
 
 ### 4. Find Duplicates
 
 ```
-salvador_core op:curator_detect_duplicates
+archie_core op:curator_detect_duplicates
 ```
 
 ### 5. Find Contradictions
 
 ```
-salvador_core op:curator_contradictions
-salvador_core op:curator_resolve_contradiction
+archie_core op:curator_contradictions
+archie_core op:curator_resolve_contradiction
   params: { contradictionId: "<id>" }
 ```
 
 ### 6. Find Stale Entries
 
 ```
-salvador_core op:vault_age_report
+archie_core op:vault_age_report
 ```
 
 Entries >30 days without updates: refresh, archive, or delete.
@@ -59,21 +59,21 @@ Entries >30 days without updates: refresh, archive, or delete.
 ### 7. Check Search Quality
 
 ```
-salvador_core op:admin_search_insights
+archie_core op:admin_search_insights
 ```
 
 ### 8. Memory Health
 
 ```
-salvador_core op:memory_stats
-salvador_core op:memory_deduplicate
+archie_core op:memory_stats
+archie_core op:memory_deduplicate
 ```
 
 ### 9. Governance Queue
 
 ```
-salvador_core op:governance_proposals params: { action: "list" }
-salvador_core op:governance_expire
+archie_core op:governance_proposals params: { action: "list" }
+archie_core op:governance_expire
 ```
 
 ### 10. Fix Everything (Optional, with user approval)

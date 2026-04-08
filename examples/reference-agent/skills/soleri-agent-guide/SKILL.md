@@ -24,7 +24,7 @@ Help users understand what this agent can do, how to use it effectively, and wha
 ### Step 1: Identity
 
 ```
-salvador_core op:activate
+archie_core op:activate
   params: { projectPath: "." }
 ```
 
@@ -33,10 +33,10 @@ This returns the agent's persona: name, role, description, tone, principles, and
 ### Step 2: Health & Status
 
 ```
-salvador_core op:admin_health
-salvador_core op:vault_stats
-salvador_core op:brain_stats
-salvador_core op:memory_stats
+archie_core op:admin_health
+archie_core op:vault_stats
+archie_core op:brain_stats
+archie_core op:memory_stats
 ```
 
 Shows what subsystems are active: vault (how many entries), brain (vocabulary size), LLM availability, cognee status. This tells the user what the agent currently has to work with.
@@ -44,7 +44,7 @@ Shows what subsystems are active: vault (how many entries), brain (vocabulary si
 ### Step 3: Available Tools
 
 ```
-salvador_core op:admin_tool_list
+archie_core op:admin_tool_list
 ```
 
 Lists all facades and operations. Present them grouped by category with plain-language descriptions.

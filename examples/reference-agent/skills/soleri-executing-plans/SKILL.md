@@ -17,10 +17,10 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 ### Step 1: Load and Review Plan
 
 ```
-salvador_core op:get_plan
-salvador_core op:plan_list_tasks
+archie_core op:get_plan
+archie_core op:plan_list_tasks
   params: { planId: "<id>" }
-salvador_core op:plan_stats
+archie_core op:plan_stats
 ```
 
 If no tracked plan exists, read from `docs/plans/`. Review critically — raise concerns before starting.
@@ -28,7 +28,7 @@ If no tracked plan exists, read from `docs/plans/`. Review critically — raise 
 ### Step 2: Start Execution Loop
 
 ```
-salvador_core op:loop_start
+archie_core op:loop_start
   params: { prompt: "<plan objective>", mode: "custom" }
 ```
 
@@ -53,10 +53,10 @@ Apply feedback, execute next batch, repeat until complete.
 ### Step 6: Complete Development
 
 1. Run final verification (use verification-before-completion skill)
-2. `salvador_core op:loop_complete`
-3. `salvador_core op:plan_reconcile` — compare planned vs actual
-4. `salvador_core op:plan_complete_lifecycle` — extract knowledge, archive
-5. `salvador_core op:session_capture` — save session context
+2. `archie_core op:loop_complete`
+3. `archie_core op:plan_reconcile` — compare planned vs actual
+4. `archie_core op:plan_complete_lifecycle` — extract knowledge, archive
+5. `archie_core op:session_capture` — save session context
 
 Capture mid-execution learnings with `op:capture_quick` as they happen — don't wait until the end.
 

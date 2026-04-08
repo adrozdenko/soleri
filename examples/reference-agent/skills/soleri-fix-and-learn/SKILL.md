@@ -24,16 +24,16 @@ Fix bugs through a structured recovery workflow, then capture the root cause as 
 ### Step 1: Classify and Route
 
 ```
-salvador_core op:route_intent
+archie_core op:route_intent
   params: { prompt: "<bug description>" }
 ```
 
 ### Step 2: Check Vault First
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "<error message or bug description>" }
-salvador_core op:memory_search
+archie_core op:memory_search
   params: { query: "<bug description>" }
 ```
 
@@ -46,7 +46,7 @@ If vault has no answer, search for known issues, Stack Overflow answers, GitHub 
 ### Step 4: Start Fix Loop
 
 ```
-salvador_core op:loop_start
+archie_core op:loop_start
   params: { prompt: "Fix: <bug description>", mode: "custom" }
 ```
 
@@ -62,12 +62,12 @@ If Steps 2-3 didn't produce a solution, use systematic-debugging skill:
 
 ### Step 6: Validate
 
-Run test suite. Use verification-before-completion skill. Complete loop: `salvador_core op:loop_complete`.
+Run test suite. Use verification-before-completion skill. Complete loop: `archie_core op:loop_complete`.
 
 ### Step 7: Capture the Learning
 
 ```
-salvador_core op:capture_knowledge
+archie_core op:capture_knowledge
   params: {
     title: "<bug title>",
     description: "<root cause, solution, what made it hard to find>",
@@ -77,7 +77,7 @@ salvador_core op:capture_knowledge
   }
 ```
 
-Run `salvador_core op:curator_detect_duplicates` to avoid redundant entries.
+Run `archie_core op:curator_detect_duplicates` to avoid redundant entries.
 
 ## Exit Criteria
 

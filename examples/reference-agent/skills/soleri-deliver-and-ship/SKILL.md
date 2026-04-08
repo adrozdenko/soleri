@@ -31,7 +31,7 @@ Any type error or lint failure is a blocker.
 Run the full test suite to catch regressions:
 
 ```
-salvador_core op:admin_health
+archie_core op:admin_health
 ```
 
 Verify the agent itself is healthy, then run project tests. All tests must pass.
@@ -49,12 +49,12 @@ Classify the changes as safe or breaking:
 Check if patterns discovered during this work session should be captured before shipping:
 
 ```
-salvador_core op:memory_search
+archie_core op:memory_search
   params: { query: "current session" }
 ```
 
 ```
-salvador_core op:brain_stats
+archie_core op:brain_stats
 ```
 
 Look for:
@@ -66,7 +66,7 @@ Look for:
 Uncaptured knowledge is lost knowledge. If something should be captured:
 
 ```
-salvador_core op:capture_knowledge
+archie_core op:capture_knowledge
   params: {
     title: "<what was learned>",
     description: "<the pattern or anti-pattern>",

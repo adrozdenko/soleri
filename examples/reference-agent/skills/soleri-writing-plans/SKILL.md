@@ -19,16 +19,16 @@ Write implementation plans assuming the engineer has zero codebase context. Docu
 ### 1. Vault First
 
 ```
-salvador_core op:memory_search
+archie_core op:memory_search
   params: { query: "<plan topic>", crossProject: true }
 ```
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "<feature being planned>" }
-salvador_core op:brain_strengths
-salvador_core op:vault_domains
-salvador_core op:vault_tags
+archie_core op:brain_strengths
+archie_core op:vault_domains
+archie_core op:vault_tags
 ```
 
 ### 2. Web Search Second
@@ -42,7 +42,7 @@ Incorporate vault insights and web findings. Reference specific entries.
 ## Create a Tracked Plan
 
 ```
-salvador_core op:create_plan
+archie_core op:create_plan
   params: {
     objective: "<one-sentence goal>",
     scope: { included: [...], excluded: [...] },
@@ -53,16 +53,16 @@ salvador_core op:create_plan
 ## Grade and Improve
 
 ```
-salvador_core op:plan_grade params: { planId: "<id>" }
-salvador_core op:plan_auto_improve params: { planId: "<id>" }
-salvador_core op:plan_meets_grade params: { planId: "<id>", targetGrade: "A" }
+archie_core op:plan_grade params: { planId: "<id>" }
+archie_core op:plan_auto_improve params: { planId: "<id>" }
+archie_core op:plan_meets_grade params: { planId: "<id>", targetGrade: "A" }
 ```
 
 Iterate with: `op:plan_iterate params: { planId: "<id>", feedback: "<improvement>" }`
 
 ## Split into Tasks
 
-After approval: `salvador_core op:plan_split params: { planId: "<id>" }`
+After approval: `archie_core op:plan_split params: { planId: "<id>" }`
 
 ## Task Granularity
 
@@ -88,7 +88,7 @@ Each step is one action (2-5 minutes): write failing test, run it, implement, ru
 ## After Approval
 
 ```
-salvador_core op:approve_plan params: { planId: "<id>" }
+archie_core op:approve_plan params: { planId: "<id>" }
 ```
 
 Offer execution choice: subagent-driven (this session) or parallel session with executing-plans.

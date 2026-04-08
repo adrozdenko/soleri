@@ -15,59 +15,59 @@ Structured tour of everything the vault knows about this project. Decisions, pat
 ### 1. Project Overview
 
 ```
-salvador_core op:identity
-salvador_core op:project_get
-salvador_core op:project_list_rules
-salvador_core op:get_behavior_rules
+archie_core op:identity
+archie_core op:project_get
+archie_core op:project_list_rules
+archie_core op:get_behavior_rules
 ```
 
 ### 2. Knowledge Landscape
 
 ```
-salvador_core op:vault_domains
-salvador_core op:vault_tags
-salvador_core op:admin_vault_size
+archie_core op:vault_domains
+archie_core op:vault_tags
+archie_core op:admin_vault_size
 ```
 
 ### 3. Critical Knowledge
 
 ```
-salvador_core op:search
+archie_core op:search
   params: { severity: "critical" }
 ```
 
 ### 4. Key Decisions
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "architectural decision design choice" }
 ```
 
 ### 5. Strongest Patterns
 
 ```
-salvador_core op:brain_strengths
+archie_core op:brain_strengths
 ```
 
 ### 6. Anti-Patterns to Avoid
 
 ```
-salvador_core op:search
+archie_core op:search
   params: { type: "anti-pattern" }
 ```
 
 ### 7. Cross-Project Context
 
 ```
-salvador_core op:project_linked_projects
-salvador_core op:brain_global_patterns
+archie_core op:project_linked_projects
+archie_core op:brain_global_patterns
 ```
 
 ### 8. Knowledge Gaps
 
 ```
-salvador_core op:admin_search_insights
-salvador_core op:vault_age_report
+archie_core op:admin_search_insights
+archie_core op:vault_age_report
 ```
 
 ## Presenting the Onboarding
@@ -104,7 +104,7 @@ salvador_core op:vault_age_report
 ### Record Onboarding
 
 ```
-salvador_core op:capture_knowledge
+archie_core op:capture_knowledge
   params: { title: "Onboarding completed for <project>", description: "<key takeaways and knowledge gaps identified>", type: "workflow", tags: ["onboarding", "<project>"] }
 ```
 

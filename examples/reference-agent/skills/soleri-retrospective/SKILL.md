@@ -15,24 +15,24 @@ Generate a data-driven retrospective from session data, vault captures, plan out
 ### 1. Gather Data
 
 ```
-salvador_core op:brain_stats
-salvador_core op:brain_stats params: { since: "<start of period>" }
-salvador_core op:brain_strengths
-salvador_core op:vault_recent
-salvador_core op:memory_topics
-salvador_core op:memory_stats
-salvador_core op:plan_stats
-salvador_core op:admin_search_insights
-salvador_core op:admin_vault_analytics
+archie_core op:brain_stats
+archie_core op:brain_stats params: { since: "<start of period>" }
+archie_core op:brain_strengths
+archie_core op:vault_recent
+archie_core op:memory_topics
+archie_core op:memory_stats
+archie_core op:plan_stats
+archie_core op:admin_search_insights
+archie_core op:admin_vault_analytics
 ```
 
 ### 2. Analyze Patterns
 
 ```
-salvador_core op:vault_age_report
-salvador_core op:curator_detect_duplicates
-salvador_core op:curator_contradictions
-salvador_core op:curator_health_audit
+archie_core op:vault_age_report
+archie_core op:curator_detect_duplicates
+archie_core op:curator_contradictions
+archie_core op:curator_health_audit
 ```
 
 ### 3. Present the Retrospective
@@ -65,7 +65,7 @@ Quality: X/100 | Duplicates: N | Contradictions: N | Stale: N
 ### 4. Capture the Retrospective
 
 ```
-salvador_core op:capture_knowledge
+archie_core op:capture_knowledge
   params: {
     title: "Retrospective — [period]",
     description: "<key findings and action items>",

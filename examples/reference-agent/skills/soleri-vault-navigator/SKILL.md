@@ -15,7 +15,7 @@ Navigate the vault intelligently. Picks the right search strategy based on what 
 ### "Have we seen this?" / "Best practice for X"
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "<question>" }
 ```
 
@@ -24,30 +24,30 @@ If results are weak, fall back to `op:search` with explicit filters (type, categ
 ### "Show me everything about X" (Exploration)
 
 ```
-salvador_core op:vault_tags
-salvador_core op:vault_domains
-salvador_core op:vault_recent
+archie_core op:vault_tags
+archie_core op:vault_domains
+archie_core op:vault_recent
 ```
 
 ### "What's stale?" / "What needs updating?"
 
 ```
-salvador_core op:vault_age_report
+archie_core op:vault_age_report
 ```
 
 ### "What do other projects do?"
 
 ```
-salvador_core op:memory_cross_project_search
+archie_core op:memory_cross_project_search
   params: { query: "<topic>", crossProject: true }
-salvador_core op:project_linked_projects
+archie_core op:project_linked_projects
 ```
 
 ### "Has brain learned about X?"
 
 ```
-salvador_core op:brain_strengths
-salvador_core op:brain_global_patterns
+archie_core op:brain_strengths
+archie_core op:brain_global_patterns
   params: { domain: "<domain>" }
 ```
 
@@ -56,7 +56,7 @@ salvador_core op:brain_global_patterns
 For queries about recent work or session-specific knowledge:
 
 ```
-salvador_core op:memory_search
+archie_core op:memory_search
   params: { query: "<session-specific query>" }
 ```
 

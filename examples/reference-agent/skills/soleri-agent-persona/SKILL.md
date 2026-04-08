@@ -25,7 +25,7 @@ Every agent has a persona defined in `agent.yaml`. The persona contains:
 When the user triggers activation (greeting phrase or explicit request):
 
 ```
-salvador_core op:activate
+archie_core op:activate
   params: { projectPath: "." }
 ```
 
@@ -51,7 +51,7 @@ Long sessions trigger context compaction. To survive:
 When the user says "deactivate", "stop persona", "be normal", or uses the agent's deactivation phrase:
 
 ```
-salvador_core op:activate
+archie_core op:activate
   params: { deactivate: true }
 ```
 

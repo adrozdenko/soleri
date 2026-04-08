@@ -36,7 +36,7 @@ If you haven't run the verification command in this message, you cannot claim it
 If this task is part of a tracked loop:
 
 ```
-salvador_core op:loop_status
+archie_core op:loop_status
 ```
 
 Report loop iteration status before claiming completion.
@@ -45,9 +45,9 @@ Report loop iteration status before claiming completion.
 
 After passing verification commands:
 
-- `salvador_core op:admin_health` — catches vault corruption, stale caches
-- `salvador_core op:admin_diagnostic` — module status, database integrity, config validity
-- `salvador_core op:admin_vault_analytics` — knowledge quality metrics
+- `archie_core op:admin_health` — catches vault corruption, stale caches
+- `archie_core op:admin_diagnostic` — module status, database integrity, config validity
+- `archie_core op:admin_vault_analytics` — knowledge quality metrics
 
 If any check reports problems, address before claiming completion.
 
@@ -76,7 +76,7 @@ If any check reports problems, address before claiming completion.
 
 ## After Verification
 
-Capture session summary: `salvador_core op:session_capture params: { summary: "<what was accomplished>" }`
+Capture session summary: `archie_core op:session_capture params: { summary: "<what was accomplished>" }`
 
 ## Common Mistakes
 

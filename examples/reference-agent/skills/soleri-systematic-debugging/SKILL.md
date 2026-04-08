@@ -15,10 +15,10 @@ description: >
 **BEFORE touching any code:**
 
 ```
-salvador_core op:search_intelligent
+archie_core op:search_intelligent
   params: { query: "<bug or error message>" }
-salvador_core op:brain_strengths
-salvador_core op:memory_search
+archie_core op:brain_strengths
+archie_core op:memory_search
   params: { query: "<error or symptom>" }
 ```
 
@@ -29,7 +29,7 @@ Only if vault and web produce no answer, proceed to Phase 1.
 ## Start a Debug Loop
 
 ```
-salvador_core op:loop_start
+archie_core op:loop_start
   params: { prompt: "Debug: <bug>", mode: "custom" }
 ```
 
@@ -63,8 +63,8 @@ Form single hypothesis, test minimally (one variable at a time), verify before c
 ## Phase 5: Capture the Learning
 
 ```
-salvador_core op:loop_complete
-salvador_core op:capture_knowledge
+archie_core op:loop_complete
+archie_core op:capture_knowledge
   params: {
     title: "<bug>",
     description: "<root cause, solution, what made it hard to find>",
@@ -72,7 +72,7 @@ salvador_core op:capture_knowledge
     category: "<domain>",
     tags: ["<relevant>"]
   }
-salvador_core op:session_capture
+archie_core op:session_capture
 ```
 
 ## Red Flags — STOP and Return to Phase 1

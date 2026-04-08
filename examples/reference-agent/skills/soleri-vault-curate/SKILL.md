@@ -19,11 +19,11 @@ Periodically (weekly or after heavy capture sessions), when search quality degra
 ### Step 1: Health Assessment
 
 ```
-salvador_core op:knowledge_health
+archie_core op:knowledge_health
 ```
 
 ```
-salvador_core op:get_vault_analytics
+archie_core op:get_vault_analytics
 ```
 
 Present the health summary to the user before proceeding: total entries, quality scores, staleness, coverage gaps.
@@ -31,7 +31,7 @@ Present the health summary to the user before proceeding: total entries, quality
 ### Step 2: Detect Duplicates
 
 ```
-salvador_core op:curator_detect_duplicates
+archie_core op:curator_detect_duplicates
 ```
 
 This finds entries with overlapping titles, descriptions, or content. Review the duplicate pairs — some may be intentional (different contexts) while others are true duplicates.
@@ -39,7 +39,7 @@ This finds entries with overlapping titles, descriptions, or content. Review the
 For true duplicates:
 
 ```
-salvador_core op:merge_patterns
+archie_core op:merge_patterns
   params: { patternIds: ["<id1>", "<id2>"] }
 ```
 
@@ -48,7 +48,7 @@ Preserve the best content from each.
 ### Step 3: Find Contradictions
 
 ```
-salvador_core op:curator_contradictions
+archie_core op:curator_contradictions
 ```
 
 Contradictions erode trust in vault search results. For each contradiction: decide which entry is correct (check dates, context, evidence), then archive or update the incorrect one.
@@ -56,7 +56,7 @@ Contradictions erode trust in vault search results. For each contradiction: deci
 ### Step 4: Groom Entries
 
 ```
-salvador_core op:curator_groom_all
+archie_core op:curator_groom_all
 ```
 
 Runs tag enrichment and metadata cleanup across all entries. This improves searchability and categorization.
@@ -64,14 +64,14 @@ Runs tag enrichment and metadata cleanup across all entries. This improves searc
 For targeted grooming of specific entries:
 
 ```
-salvador_core op:curator_groom
+archie_core op:curator_groom
   params: { entryIds: ["<id>"], tags: ["<tag>"] }
 ```
 
 ### Step 5: Full Consolidation
 
 ```
-salvador_core op:curator_consolidate
+archie_core op:curator_consolidate
 ```
 
 Runs the complete pipeline: dedup + archive stale entries + resolve contradictions. This is the heavy-duty cleanup.
@@ -79,7 +79,7 @@ Runs the complete pipeline: dedup + archive stale entries + resolve contradictio
 ### Step 6: Knowledge Reorganization
 
 ```
-salvador_core op:knowledge_reorganize
+archie_core op:knowledge_reorganize
   params: { mode: "preview" }
 ```
 
@@ -88,7 +88,7 @@ Preview first, then run again with `mode: "apply"` if the preview looks good.
 ### Step 7: Rebuild Brain Intelligence
 
 ```
-salvador_core op:brain_build_intelligence
+archie_core op:brain_build_intelligence
 ```
 
 Rebuild brain intelligence after vault has been cleaned/reorganized.
@@ -96,7 +96,7 @@ Rebuild brain intelligence after vault has been cleaned/reorganized.
 ### Step 8: Verify Results
 
 ```
-salvador_core op:knowledge_health
+archie_core op:knowledge_health
 ```
 
 Compare with Step 1 metrics. Vault health should improve: fewer duplicates, no contradictions, better coverage.

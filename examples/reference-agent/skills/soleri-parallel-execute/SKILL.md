@@ -33,8 +33,8 @@ You MUST have an approved, split plan before using this skill. If no plan exists
 ### Step 1: Load Plan and Build Dependency Graph
 
 ```
-salvador_core op:get_plan
-salvador_core op:plan_list_tasks params:{ planId: "<id>" }
+archie_core op:get_plan
+archie_core op:plan_list_tasks params:{ planId: "<id>" }
 ```
 
 Map out which tasks are independent by checking `dependsOn` for each task. Group tasks into **waves** — sets of tasks that can run in parallel:
@@ -62,7 +62,7 @@ For each task in the current wave:
 1. Check readiness:
 
    ```
-   salvador_core op:plan_dispatch params:{ planId: "<id>", taskId: "<taskId>" }
+   archie_core op:plan_dispatch params:{ planId: "<id>", taskId: "<taskId>" }
    ```
 
    Only dispatch tasks where `ready: true`.
@@ -70,13 +70,13 @@ For each task in the current wave:
 2. Mark as in_progress:
 
    ```
-   salvador_core op:update_task params:{ planId: "<id>", taskIndex: <n>, status: "in_progress" }
+   archie_core op:update_task params:{ planId: "<id>", taskIndex: <n>, status: "in_progress" }
    ```
 
 3. Gather vault context for the task:
 
    ```
-   salvador_core op:search params:{ query: "<task topic>", mode: "scan" }
+   archie_core op:search params:{ query: "<task topic>", mode: "scan" }
    ```
 
 4. **Launch all ready tasks as parallel Agent calls in a single message.** Each subagent gets:
@@ -120,7 +120,7 @@ As subagents complete, collect their results. For each completed task:
 1. **Run spec review** — spawn a reviewer subagent:
 
    ```
-   salvador_core op:plan_review_spec params:{ planId: "<id>", taskId: "<taskId>" }
+   archie_core op:plan_review_spec params:{ planId: "<id>", taskId: "<taskId>" }
    ```
 
    Use the returned prompt to launch a spec-review Agent that reads the ACTUAL code changes (not the implementer's self-report).
@@ -128,7 +128,7 @@ As subagents complete, collect their results. For each completed task:
 2. **Record spec review outcome:**
 
    ```
-   salvador_core op:plan_review_outcome params:{
+   archie_core op:plan_review_outcome params:{
      planId: "<id>", taskId: "<taskId>",
      reviewType: "spec", reviewer: "spec-reviewer",
      outcome: "approved|rejected|needs_changes",
@@ -139,7 +139,7 @@ As subagents complete, collect their results. For each completed task:
 3. **If spec passes, run quality review:**
 
    ```
-   salvador_core op:plan_review_quality params:{ planId: "<id>", taskId: "<taskId>" }
+   archie_core op:plan_review_quality params:{ planId: "<id>", taskId: "<taskId>" }
    ```
 
    Launch a quality-review Agent with the returned prompt.
@@ -147,7 +147,7 @@ As subagents complete, collect their results. For each completed task:
 4. **Record quality review outcome:**
 
    ```
-   salvador_core op:plan_review_outcome params:{
+   archie_core op:plan_review_outcome params:{
      planId: "<id>", taskId: "<taskId>",
      reviewType: "quality", reviewer: "quality-reviewer",
      outcome: "approved|rejected|needs_changes",
@@ -166,7 +166,7 @@ As subagents complete, collect their results. For each completed task:
 
 1. **Mark completed:**
    ```
-   salvador_core op:update_task params:{ planId: "<id>", taskIndex: <n>, status: "completed" }
+   archie_core op:update_task params:{ planId: "<id>", taskIndex: <n>, status: "completed" }
    ```
 
 ### Step 4: Advance to Next Wave
@@ -208,19 +208,19 @@ After all waves complete:
 Same as executing-plans — reconcile, capture knowledge, archive:
 
 ```
-salvador_core op:plan_reconcile params:{
+archie_core op:plan_reconcile params:{
   planId: "<id>",
   actualOutcome: "<what happened>",
   driftItems: [{ type: "...", description: "...", impact: "...", rationale: "..." }]
 }
 
-salvador_core op:plan_complete_lifecycle params:{
+archie_core op:plan_complete_lifecycle params:{
   planId: "<id>",
   patterns: ["<patterns discovered>"],
   antiPatterns: ["<anti-patterns discovered>"]
 }
 
-salvador_core op:session_capture params:{
+archie_core op:session_capture params:{
   summary: "<execution summary with parallel metrics>"
 }
 ```
@@ -250,7 +250,7 @@ When using worktree isolation, the controller must merge worktree changes back a
 During execution, capture insights about parallelization:
 
 ```
-salvador_core op:capture_quick params:{
+archie_core op:capture_quick params:{
   title: "<what you learned about parallel execution>",
   description: "<context: which tasks parallelized well, which conflicted>"
 }
