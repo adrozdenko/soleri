@@ -69,7 +69,17 @@ export function getFlowOverridesMap(flowsDir?: string): Record<string, ContextOv
     if (!flow.overrides || flow.overrides.length === 0) continue;
 
     map[flow.id] = flow.overrides.map(
-      (yamlOverride: FlowContextOverride): ContextOverride => (Object.assign({match:new RegExp(yamlOverride.match,yamlOverride.matchFlags??`i`),context:yamlOverride.context}, yamlOverride.chainOverrides?{chainOverrides:yamlOverride.chainOverrides}:{}, yamlOverride.injectBefore?{injectBefore:yamlOverride.injectBefore}:{}, yamlOverride.injectAfter?{injectAfter:yamlOverride.injectAfter}:{}, yamlOverride.skipSteps?{skipSteps:yamlOverride.skipSteps}:{})),
+      (yamlOverride: FlowContextOverride): ContextOverride =>
+        Object.assign(
+          {
+            match: new RegExp(yamlOverride.match, yamlOverride.matchFlags ?? `i`),
+            context: yamlOverride.context,
+          },
+          yamlOverride.chainOverrides ? { chainOverrides: yamlOverride.chainOverrides } : {},
+          yamlOverride.injectBefore ? { injectBefore: yamlOverride.injectBefore } : {},
+          yamlOverride.injectAfter ? { injectAfter: yamlOverride.injectAfter } : {},
+          yamlOverride.skipSteps ? { skipSteps: yamlOverride.skipSteps } : {},
+        ),
     );
   }
 

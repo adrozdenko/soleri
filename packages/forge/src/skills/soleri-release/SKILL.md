@@ -49,11 +49,11 @@ If any package version is out of sync, stop and flag it to the user before proce
 
 Ask the user if not specified. Follow semver:
 
-| Type | When | Example |
-|------|------|---------|
+| Type    | When                                                | Example             |
+| ------- | --------------------------------------------------- | ------------------- |
 | `patch` | Bug fixes, minor improvements, non-breaking changes | `9.18.2` → `9.18.3` |
-| `minor` | New features, backward-compatible additions | `9.18.2` → `9.19.0` |
-| `major` | Breaking changes | `9.18.2` → `10.0.0` |
+| `minor` | New features, backward-compatible additions         | `9.18.2` → `9.19.0` |
+| `major` | Breaking changes                                    | `9.18.2` → `10.0.0` |
 
 Default to **patch** if the user just says "bump" or "release" without specifying.
 
@@ -120,6 +120,7 @@ gh run list --limit 3
 ```
 
 Report the workflow run status to the user. If it failed to trigger, check:
+
 - Was the tag pushed? (`git ls-remote --tags origin | grep vX.Y.Z`)
 - Does the workflow trigger on `v*` tags? (check `.github/workflows/release.yml`)
 
@@ -161,7 +162,7 @@ Each publish step handles "already published" gracefully — if a version alread
 
 ## Agent Tools Reference
 
-| Op | When to Use |
-|----|-------------|
-| `search_intelligent` | Check vault for release anti-patterns before starting |
-| `capture_knowledge` | Persist new release gotchas (only when something unusual happens) |
+| Op                   | When to Use                                                       |
+| -------------------- | ----------------------------------------------------------------- |
+| `search_intelligent` | Check vault for release anti-patterns before starting             |
+| `capture_knowledge`  | Persist new release gotchas (only when something unusual happens) |
