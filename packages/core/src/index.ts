@@ -32,6 +32,7 @@ export type {
   OpHandler,
   OpSchema,
   OpDefinition,
+  OpVisibility,
   FacadeConfig,
   FacadeResponse,
   FacadeInput,
@@ -52,19 +53,201 @@ export {
 export type { EngineProfile } from './engine/module-registry.js';
 
 // ─── Vault ─────────────────────────────────────────────────────────
-export * from './vault/index.js';
+export { syncAllToMarkdown, syncEntryToMarkdown, entryToMarkdown } from './vault/index.js';
+export { Vault } from './vault/index.js';
+export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault/index.js';
+export { VaultManager, type ConnectedVault } from './vault/index.js';
+export { TIER_WEIGHTS } from './vault/index.js';
+export { VaultBranching } from './vault/index.js';
+export { GitVaultSync } from './vault/index.js';
+export type { GitVaultSyncConfig } from './vault/index.js';
+export {
+  ObsidianSync,
+  toObsidianMarkdown,
+  fromObsidianMarkdown,
+  titleToSlug,
+} from './vault/index.js';
+export type {
+  ObsidianSyncConfig,
+  ObsidianExportOptions,
+  ObsidianImportOptions,
+  ObsidianSyncMode,
+  ObsidianSyncOptions,
+  ObsidianExportResult,
+  ObsidianImportResult,
+  ObsidianSyncResult,
+  ConflictInfo,
+} from './vault/index.js';
+export type { BranchAction, BranchEntry, BranchSummary, MergeResult } from './vault/index.js';
+export type {
+  VaultTier,
+  VaultTierConfig,
+  VaultManagerConfig,
+  VaultTierInfo,
+} from './vault/index.js';
+export { validatePlaybook, parsePlaybookFromEntry } from './vault/index.js';
+export type { Playbook, PlaybookStep, PlaybookValidationResult } from './vault/index.js';
+export { DEFAULT_CANONICAL_TAGS } from './vault/index.js';
+export {
+  baseNormalizeTag,
+  normalizeTagCanonical,
+  normalizeTagsCanonical,
+  isMetadataTag,
+  computeEditDistance,
+} from './vault/index.js';
+export { detectScope } from './vault/index.js';
+export type {
+  ScopeTier,
+  ConfidenceLevel,
+  ScopeSignal,
+  ScopeDetectionResult,
+  ScopeInput,
+} from './vault/index.js';
+export { KnowledgeReview } from './vault/index.js';
+export type { ReviewStatus, ReviewEntry, ReviewSubmission, ReviewDecision } from './vault/index.js';
+export { computeContentHash } from './vault/index.js';
+export type { HashableEntry } from './vault/index.js';
 
 // ─── Brain ─────────────────────────────────────────────────────────
-export * from './brain/index.js';
+export { Brain } from './brain/index.js';
+export { BrainIntelligence } from './brain/index.js';
+export type {
+  ScoringWeights,
+  ScoreBreakdown,
+  RankedResult,
+  SearchOptions,
+  CaptureResult,
+  BrainStats,
+  QueryContext,
+  FeedbackType,
+  FeedbackSource,
+  FeedbackInput,
+  FeedbackEntry,
+  FeedbackStats,
+  PatternStrength,
+  StrengthsQuery,
+  BrainSession,
+  SessionLifecycleInput,
+  KnowledgeProposal,
+  ExtractionResult,
+  GlobalPattern,
+  DomainProfile,
+  BuildIntelligenceResult,
+  BrainIntelligenceStats,
+  SessionContext,
+  BrainExportData,
+  BrainImportResult,
+  SessionListQuery,
+  SessionQuality,
+  SessionReplay,
+} from './brain/index.js';
 
 // ─── Planning ──────────────────────────────────────────────────────
-export * from './planning/index.js';
+export {
+  Planner,
+  calculateScore,
+  calculateDriftScore,
+  isValidTransition,
+  getValidNextStatuses,
+  shouldExpire,
+  LIFECYCLE_TRANSITIONS,
+  NON_EXPIRING_STATUSES,
+  DRIFT_WEIGHTS,
+  PlanGradeRejectionError,
+} from './planning/index.js';
+export type {
+  PlanStatus,
+  TaskStatus,
+  TaskEvidence,
+  TaskMetrics,
+  TaskDeliverable,
+  ExecutionSummary,
+  VerificationFinding,
+  TaskVerification,
+  PlanTask,
+  PlanDecision,
+  Plan,
+  PlanStore,
+  DriftItem,
+  ReconciliationReport,
+  ReviewEvidence,
+  PlanGrade,
+  PlanCheck,
+  PlannerOptions,
+} from './planning/index.js';
+export {
+  runGapAnalysis,
+  createToolFeasibilityPass,
+  createFlowAlignmentPass,
+  createAntiPatternPass,
+} from './planning/index.js';
+export type { GapAnalysisOptions, GapAnalysisPass } from './planning/index.js';
+export {
+  SEVERITY_WEIGHTS,
+  CATEGORY_PENALTY_CAPS,
+  MIN_OBJECTIVE_LENGTH,
+  MIN_SCOPE_LENGTH,
+  MIN_DECISION_LENGTH,
+  generateGapId,
+} from './planning/index.js';
+export type { GapSeverity, GapCategory, PlanGap } from './planning/index.js';
+export { GoalAncestry, JsonGoalRepository, generateGoalId } from './planning/index.js';
+export type { GoalLevel, GoalStatus, Goal, GoalStore, GoalRepository } from './planning/index.js';
+export { assessTaskComplexity } from './planning/index.js';
+export type { AssessmentInput, AssessmentSignal, AssessmentResult } from './planning/index.js';
+export {
+  parseGitHubRemote,
+  detectGitHubRemote,
+  isGhAuthenticated,
+  detectGitHubContext,
+  findMatchingMilestone,
+  findDuplicateIssue,
+  formatIssueBody,
+  createGitHubIssue,
+  updateGitHubIssueBody,
+  listMilestones,
+  listOpenIssues,
+  listLabels,
+} from './planning/index.js';
+export type {
+  GitHubRepo,
+  GitHubMilestone,
+  GitHubIssue,
+  GitHubLabel,
+  GitHubContext,
+  GitHubProjection,
+  ProjectedIssue,
+  PlanMetadataForIssue,
+} from './planning/index.js';
 
 // ─── Scheduler ─────────────────────────────────────────────────────
-export * from './scheduler/index.js';
+export { Scheduler, InMemorySchedulerStore } from './scheduler/index.js';
+export type { SchedulerStore } from './scheduler/index.js';
+export { createSchedulerOps } from './scheduler/index.js';
+export { validateCron, estimateMinIntervalHours } from './scheduler/index.js';
+export type {
+  ScheduledTask,
+  CreateTaskInput,
+  TaskListEntry,
+  PlatformAdapter,
+} from './scheduler/index.js';
 
 // ─── Capabilities ──────────────────────────────────────────────────
-export * from './capabilities/index.js';
+export { CapabilityRegistry } from './capabilities/index.js';
+export type { FlowForValidation } from './capabilities/index.js';
+export { chainToCapability } from './capabilities/index.js';
+export type {
+  CapabilityDefinition,
+  CapabilityHandler,
+  CapabilityContext,
+  CapabilityResult,
+  KnowledgeContext,
+  BrainRecommendation,
+  RegisteredCapability,
+  ResolvedCapability,
+  PackSuggestion,
+  FlowValidation,
+} from './capabilities/index.js';
 
 // ─── Errors ────────────────────────────────────────────────────────
 export {
@@ -110,6 +293,7 @@ export type {
   DomainPack,
   DomainPackManifest,
   DomainPackRef,
+  DomainPackTier,
   PackRuntime,
   PackProjectContext,
   PackCheckContext,

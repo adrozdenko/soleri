@@ -13,6 +13,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { parse as parseYaml } from 'yaml';
+import { validateAgentConfig } from './validate-agent-config.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createAgentRuntime } from '../../runtime/runtime.js';
@@ -62,6 +63,7 @@ async function main(): Promise<void> {
   // 1. Read agent.yaml
   const raw = readFileSync(agentYamlPath, 'utf-8');
   const config = parseYaml(raw) as Record<string, unknown>;
+  validateAgentConfig(config, agentYamlPath);
 
   const agentId = config.id as string;
   const tag = `[${agentId}]`;
