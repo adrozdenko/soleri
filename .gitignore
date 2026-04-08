@@ -29,3 +29,8 @@ packages/*/node_modules/
 *.tsbuildinfo
 AGENTS.md
 .soleri/
+
+# Development tool caches
+.serena/
+.salvador/
+.playwright-mcp/
