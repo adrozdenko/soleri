@@ -160,6 +160,10 @@
       "types": "./dist/vault/index.d.ts",
       "import": "./dist/vault/index.js"
     },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    },
     "./workflows": {
       "types": "./dist/workflows/index.d.ts",
       "import": "./dist/workflows/index.js"
