@@ -1,47 +1,57 @@
 /**
- * Brain Intelligence — pattern strength scoring, session knowledge extraction,
- * and cross-domain intelligence pipeline.
+ * Brain Intelligence — thin coordinator that delegates to trait modules.
  *
  * Follows the Curator pattern: separate class, own SQLite tables,
  * takes Vault + Brain as constructor deps.
  */
 
-import { randomUUID } from 'node:crypto';
 import type { Vault } from '../vault/vault.js';
 import type { Brain } from './brain.js';
 import type { PersistenceProvider } from '../persistence/types.js';
 import type { OperatorProfileStore } from '../operator/operator-profile.js';
 import { extractFromBrainStrengths } from '../operator/operator-signals.js';
-import {
-  AUTO_BUILD_INTELLIGENCE_EVERY_N_FEEDBACK,
-  AUTO_BUILD_INTELLIGENCE_EVERY_N_SESSIONS,
-  AUTO_PROMOTE_PENDING_MIN,
-  AUTO_PROMOTE_THRESHOLD,
-} from './intelligence-constants.js';
 import { initializeBrainIntelligenceTables } from './intelligence-schema.js';
 import {
-  buildSessionFrequencies,
-  extractObjectiveFromContext,
-  rowToDomainProfile,
-  rowToGlobalPattern,
-  rowToProposal,
-  rowToSession,
-  type BrainDomainProfileRow,
-  type BrainGlobalPatternRow,
-  type BrainProposalRow,
-  type BrainSessionRow,
-  type BrainStrengthRow,
-} from './intelligence-rows.js';
+  getSession,
+  startOrEndSession,
+  getSessionByPlanId,
+  listSessions as listSessionsFn,
+  getSessionContext as getSessionContextFn,
+  archiveSessions as archiveSessionsFn,
+  computeSessionQuality as computeSessionQualityFn,
+  replaySession as replaySessionFn,
+} from './intelligence-sessions.js';
 import {
-  applySourceAcceptanceBoost,
-  applyTaskContextBoost,
+  maybeAutoBuildAfterSession,
+  maybeAutoBuildAfterFeedback,
+} from './intelligence-feedback.js';
+import {
+  getStats as getStatsFn,
+  exportData as exportDataFn,
+  importData as importDataFn,
+} from './intelligence-export.js';
+import {
+  getProposals as getProposalsFn,
+  extractKnowledge as extractKnowledgeFn,
+  resetExtracted as resetExtractedFn,
+  autoPromoteProposals,
+  promoteProposals as promoteProposalsFn,
+} from './intelligence-proposals.js';
+import {
   computeStrengthsFromFeedback,
   mapStrengthRows,
   persistStrengths,
+  applyTaskContextBoost,
+  applySourceAcceptanceBoost,
   type FeedbackAggregateRow,
 } from './intelligence-strengths.js';
-import { extractKnowledgeProposals } from './intelligence-extraction.js';
 import { buildDomainProfiles, buildGlobalRegistry } from './intelligence-pipeline.js';
+import { rowToGlobalPattern, rowToDomainProfile } from './intelligence-rows.js';
+import type {
+  BrainStrengthRow,
+  BrainGlobalPatternRow,
+  BrainDomainProfileRow,
+} from './intelligence-rows.js';
 import type {
   PatternStrength,
   StrengthsQuery,
@@ -73,7 +83,7 @@ export class BrainIntelligence {
     this.vault = vault;
     this.brain = brain;
     this.provider = vault.getProvider();
-    this.initializeTables();
+    initializeBrainIntelligenceTables(this.provider);
   }
 
   /** Wire operator profile for automatic signal extraction. */
@@ -81,328 +91,71 @@ export class BrainIntelligence {
     this.operatorProfile = profile;
   }
 
-  // ─── Table Initialization ─────────────────────────────────────────
-
-  private initializeTables(): void {
-    initializeBrainIntelligenceTables(this.provider);
-  }
-
   // ─── Session Lifecycle ────────────────────────────────────────────
 
   lifecycle(input: SessionLifecycleInput): BrainSession {
-    if (input.action === 'start') {
-      const id = input.sessionId ?? randomUUID();
-      this.provider.run(
-        `INSERT INTO brain_sessions (id, domain, context, tools_used, files_modified, plan_id)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          id,
-          input.domain ?? null,
-          input.context ?? null,
-          JSON.stringify(input.toolsUsed ?? []),
-          JSON.stringify(input.filesModified ?? []),
-          input.planId ?? null,
-        ],
-      );
-      return this.getSession(id)!;
+    const session = startOrEndSession(this.provider, input);
+
+    if (input.action === 'end') {
+      this.autoExtractIfReady(session);
+      // Return fresh session (extractedAt may have been set by auto-extract)
+      return getSession(this.provider, session.id)!;
     }
 
-    // action === 'end'
-    const sessionId = input.sessionId;
-    if (!sessionId) throw new Error('sessionId required for end action');
-
-    const updates: string[] = ["ended_at = datetime('now')"];
-    const values: unknown[] = [];
-
-    if (input.toolsUsed) {
-      updates.push('tools_used = ?');
-      values.push(JSON.stringify(input.toolsUsed));
-    }
-    if (input.filesModified) {
-      updates.push('files_modified = ?');
-      values.push(JSON.stringify(input.filesModified));
-    }
-    if (input.planId) {
-      updates.push('plan_id = ?');
-      values.push(input.planId);
-    }
-    if (input.planOutcome) {
-      updates.push('plan_outcome = ?');
-      values.push(input.planOutcome);
-    }
-    if (input.context) {
-      updates.push("context = COALESCE(context, '') || ?");
-      values.push(' | ' + input.context);
-    }
-
-    values.push(sessionId);
-    this.provider.run(`UPDATE brain_sessions SET ${updates.join(', ')} WHERE id = ?`, values);
-
-    // Auto-extract knowledge if session has enough signal
-    this.autoExtractIfReady(this.getSession(sessionId)!);
-
-    // Return fresh session (extractedAt may have been set by auto-extract)
-    return this.getSession(sessionId)!;
+    return session;
   }
 
-  /**
-   * Attempt auto-extraction after session end if the session has enough signal.
-   * Gate: at least 1 tool used OR 1 file modified OR a plan was associated.
-   * Silently skips if already extracted or insufficient data.
-   *
-   * After extraction, auto-promotes high-confidence proposals (>= 0.8) via
-   * enrichAndCapture() (which has built-in dedup). Proposals between 0.4-0.8
-   * are queued as pending. Below 0.4 are logged only.
-   *
-   * Also tracks completed sessions and auto-builds intelligence every N sessions.
-   */
   private autoExtractIfReady(session: BrainSession): void {
-    if (!session.endedAt) return;
-    if (session.extractedAt) return;
+    if (!session.endedAt || session.extractedAt) return;
 
     const hasSignal =
       session.toolsUsed.length > 0 || session.filesModified.length > 0 || session.planId !== null;
-
     if (!hasSignal) return;
 
     try {
       const result = this.extractKnowledge(session.id);
-      this.autoPromoteProposals(result.proposals);
+      autoPromoteProposals(this.provider, this.brain, result.proposals);
     } catch {
       // Non-critical — don't break session end
     }
 
-    // Auto-build intelligence after N completed plan sessions
     if (session.planOutcome === 'completed') {
-      this.maybeAutoBuildIntelligence();
+      maybeAutoBuildAfterSession(this.provider, () => this.buildIntelligence());
     }
   }
 
-  /**
-   * Auto-promote high-confidence proposals via enrichAndCapture().
-   * Dedup in enrichAndCapture() handles novelty gating:
-   * - TF-IDF similarity >= 0.8 → blocked (near-duplicate)
-   * - Content-hash match → blocked (exact duplicate)
-   */
-  private autoPromoteProposals(proposals: KnowledgeProposal[]): void {
-    for (const p of proposals) {
-      if (p.confidence >= AUTO_PROMOTE_THRESHOLD) {
-        // High confidence — auto-promote through dedup pipeline
-        try {
-          const vaultType: 'pattern' | 'anti-pattern' | 'rule' =
-            p.type === 'anti-pattern' ? 'anti-pattern' : 'pattern';
-          const result = this.brain.enrichAndCapture({
-            id: `proposal-${p.id}`,
-            type: vaultType,
-            domain: 'brain-intelligence',
-            title: p.title,
-            severity: 'suggestion',
-            description: p.description,
-            tags: ['auto-extracted', 'auto-promoted', p.rule],
-          });
-          if (result.captured) {
-            this.provider.run('UPDATE brain_proposals SET promoted = 1 WHERE id = ?', [p.id]);
-          }
-          // If blocked by dedup, leave as unpromoted — that's correct behavior
-        } catch {
-          // Non-critical — proposal stays as pending
-        }
-      } else if (p.confidence < AUTO_PROMOTE_PENDING_MIN) {
-        // Low confidence — mark as not surfaceable (promoted = false is already default)
-        // Just log, don't surface in briefings
-      }
-      // Medium confidence (0.4-0.8) — stays as pending, surfaced in briefing
-    }
-  }
-
-  /**
-   * Track completed sessions and auto-trigger buildIntelligence() every N sessions.
-   */
-  private maybeAutoBuildIntelligence(): void {
-    try {
-      const row = this.provider.get<{ value: string }>(
-        "SELECT value FROM brain_metadata WHERE key = 'sessions_since_last_build'",
-      );
-      const current = row ? parseInt(row.value, 10) : 0;
-      const next = current + 1;
-
-      if (next >= AUTO_BUILD_INTELLIGENCE_EVERY_N_SESSIONS) {
-        this.buildIntelligence();
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
-           VALUES ('sessions_since_last_build', '0', datetime('now'))`,
-        );
-        // Reset feedback counter too — avoid double-trigger
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
-           VALUES ('feedback_since_last_build', '0', datetime('now'))`,
-        );
-      } else {
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
-           VALUES ('sessions_since_last_build', ?, datetime('now'))`,
-          [String(next)],
-        );
-      }
-    } catch {
-      // Non-critical — don't break session end
-    }
-  }
-
-  /**
-   * Auto-rebuild intelligence after N feedback entries accumulate.
-   * Called from facade after record_feedback / brain_feedback ops.
-   */
   maybeAutoBuildOnFeedback(): void {
-    try {
-      const row = this.provider.get<{ value: string }>(
-        "SELECT value FROM brain_metadata WHERE key = 'feedback_since_last_build'",
-      );
-      const current = row ? parseInt(row.value, 10) : 0;
-      const next = current + 1;
-
-      if (next >= AUTO_BUILD_INTELLIGENCE_EVERY_N_FEEDBACK) {
-        this.buildIntelligence();
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
-           VALUES ('feedback_since_last_build', '0', datetime('now'))`,
-        );
-        // Reset session counter too — avoid double-trigger
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
-           VALUES ('sessions_since_last_build', '0', datetime('now'))`,
-        );
-      } else {
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_metadata (key, value, updated_at)
-           VALUES ('feedback_since_last_build', ?, datetime('now'))`,
-          [String(next)],
-        );
-      }
-    } catch {
-      // Non-critical — don't block feedback recording
-    }
+    maybeAutoBuildAfterFeedback(this.provider, () => this.buildIntelligence());
   }
 
   getSessionContext(limit = 10): SessionContext {
-    const rows = this.provider.all<BrainSessionRow>(
-      'SELECT * FROM brain_sessions ORDER BY started_at DESC LIMIT ?',
-      [limit],
-    );
-    const sessions = rows.map((row) => rowToSession(row));
-    return { recentSessions: sessions, ...buildSessionFrequencies(sessions) };
+    return getSessionContextFn(this.provider, limit);
   }
 
   archiveSessions(olderThanDays = 30): { archived: number } {
-    const result = this.provider.run(
-      `DELETE FROM brain_sessions
-       WHERE ended_at IS NOT NULL
-       AND started_at < datetime('now', '-' || ? || ' days')`,
-      [olderThanDays],
-    );
-    return { archived: result.changes };
+    return archiveSessionsFn(this.provider, olderThanDays);
   }
 
   // ─── Session Query & Quality ─────────────────────────────────────
 
   getSessionById(id: string): BrainSession | null {
-    return this.getSession(id);
+    return getSession(this.provider, id);
   }
 
   getSessionByPlanId(planId: string): BrainSession | null {
-    const row = this.provider.get<BrainSessionRow>(
-      'SELECT * FROM brain_sessions WHERE plan_id = ? ORDER BY started_at DESC LIMIT 1',
-      [planId],
-    );
-
-    if (!row) return null;
-    return rowToSession(row);
+    return getSessionByPlanId(this.provider, planId);
   }
 
   listSessions(query?: SessionListQuery): BrainSession[] {
-    const conditions: string[] = [];
-    const values: unknown[] = [];
-
-    if (query?.domain) {
-      conditions.push('domain = ?');
-      values.push(query.domain);
-    }
-    if (query?.active === true) {
-      conditions.push('ended_at IS NULL');
-    } else if (query?.active === false) {
-      conditions.push('ended_at IS NOT NULL');
-    }
-    if (query?.extracted === true) {
-      conditions.push('extracted_at IS NOT NULL');
-    } else if (query?.extracted === false) {
-      conditions.push('extracted_at IS NULL');
-    }
-
-    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-    const limit = query?.limit ?? 50;
-    const offset = query?.offset ?? 0;
-    values.push(limit, offset);
-
-    const rows = this.provider.all<BrainSessionRow>(
-      `SELECT * FROM brain_sessions ${where} ORDER BY started_at DESC LIMIT ? OFFSET ?`,
-      values,
-    );
-
-    return rows.map((row) => rowToSession(row));
+    return listSessionsFn(this.provider, query);
   }
 
   computeSessionQuality(sessionId: string): SessionQuality {
-    const session = this.getSession(sessionId);
-    if (!session) throw new Error('Session not found: ' + sessionId);
-
-    // Completeness (0-25): session ended + has context + has domain
-    let completeness = 0;
-    if (session.endedAt) completeness += 10;
-    if (session.context) completeness += 8;
-    if (session.domain) completeness += 7;
-
-    // Artifact density (0-25): files modified
-    const fileCount = session.filesModified.length;
-    const artifactDensity = Math.min(25, fileCount * 5);
-
-    // Tool engagement (0-25): unique tools used
-    const uniqueTools = new Set(session.toolsUsed).size;
-    const toolEngagement = Math.min(25, uniqueTools * 5);
-
-    // Outcome clarity (0-25): plan outcome + extraction status
-    let outcomeClarity = 0;
-    if (session.planId) outcomeClarity += 8;
-    if (session.planOutcome === 'completed') outcomeClarity += 10;
-    else if (session.planOutcome === 'abandoned') outcomeClarity += 5;
-    else if (session.planOutcome) outcomeClarity += 7;
-    if (session.extractedAt) outcomeClarity += 7;
-
-    const overall = completeness + artifactDensity + toolEngagement + outcomeClarity;
-
-    return {
-      sessionId,
-      overall,
-      completeness,
-      artifactDensity,
-      toolEngagement,
-      outcomeClarity,
-    };
+    return computeSessionQualityFn(this.provider, sessionId);
   }
 
   replaySession(sessionId: string): SessionReplay {
-    const session = this.getSession(sessionId);
-    if (!session) throw new Error('Session not found: ' + sessionId);
-
-    const quality = this.computeSessionQuality(sessionId);
-    const proposals = this.getProposals({ sessionId });
-
-    let durationMinutes: number | null = null;
-    if (session.startedAt && session.endedAt) {
-      const ms = new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime();
-      durationMinutes = Math.round(ms / 60000);
-    }
-
-    return { session, quality, proposals, durationMinutes };
+    return replaySessionFn(this.provider, sessionId, (opts) => this.getProposals(opts));
   }
 
   // ─── Strength Scoring ─────────────────────────────────────────────
@@ -466,22 +219,14 @@ export class BrainIntelligence {
   }): PatternStrength[] {
     const limit = context.limit ?? 5;
 
-    // Try domain-filtered first, fall back to all domains if too few results
     let strengths = this.getStrengths({
       domain: context.domain,
-      minStrength: 20, // lowered from 30 — small corpus needs lower threshold
+      minStrength: 20,
       limit: limit * 3,
     });
 
-    // If domain-filtered returns too few, try without domain filter
-    // This handles cases where domain was stored as 'unknown' due to
-    // vault.get() returning null during computeStrengths
     if (strengths.length < limit && context.domain) {
-      const allStrengths = this.getStrengths({
-        minStrength: 20,
-        limit: limit * 5,
-      });
-      // Include domain-matching AND entries where domain lookup failed
+      const allStrengths = this.getStrengths({ minStrength: 20, limit: limit * 5 });
       const additional = allStrengths.filter(
         (s) =>
           !strengths.some((existing) => existing.pattern === s.pattern) &&
@@ -490,7 +235,6 @@ export class BrainIntelligence {
       strengths = [...strengths, ...additional];
     }
 
-    // If task context provided, boost patterns with matching terms
     if (context.task) applyTaskContextBoost(strengths, context.task);
     if (context.source) applySourceAcceptanceBoost(this.provider, strengths, context.source);
 
@@ -501,55 +245,15 @@ export class BrainIntelligence {
   // ─── Knowledge Extraction ─────────────────────────────────────────
 
   extractKnowledge(sessionId: string): ExtractionResult {
-    const session = this.getSession(sessionId);
+    const session = getSession(this.provider, sessionId);
     if (!session) throw new Error('Session not found: ' + sessionId);
-    const { proposals, rulesApplied } = extractKnowledgeProposals({
-      sessionId,
-      session,
-      provider: this.provider,
-      createProposal: this.createProposal.bind(this),
-      extractObjective: extractObjectiveFromContext,
-    });
-
-    // Mark session as extracted
-    this.provider.run("UPDATE brain_sessions SET extracted_at = datetime('now') WHERE id = ?", [
-      sessionId,
-    ]);
-
-    return {
-      sessionId,
-      proposals,
-      rulesApplied: [...new Set(rulesApplied)],
-    };
+    return extractKnowledgeFn(this.provider, session);
   }
 
   resetExtracted(options?: { sessionId?: string; since?: string; all?: boolean }): {
     reset: number;
   } {
-    if (options?.sessionId) {
-      const info = this.provider.run(
-        'UPDATE brain_sessions SET extracted_at = NULL WHERE id = ? AND extracted_at IS NOT NULL',
-        [options.sessionId],
-      );
-      return { reset: info.changes };
-    }
-
-    if (options?.since) {
-      const info = this.provider.run(
-        'UPDATE brain_sessions SET extracted_at = NULL WHERE extracted_at >= ?',
-        [options.since],
-      );
-      return { reset: info.changes };
-    }
-
-    if (options?.all) {
-      const info = this.provider.run(
-        'UPDATE brain_sessions SET extracted_at = NULL WHERE extracted_at IS NOT NULL',
-      );
-      return { reset: info.changes };
-    }
-
-    return { reset: 0 };
+    return resetExtractedFn(this.provider, options);
   }
 
   getProposals(options?: {
@@ -557,28 +261,7 @@ export class BrainIntelligence {
     promoted?: boolean;
     limit?: number;
   }): KnowledgeProposal[] {
-    const conditions: string[] = [];
-    const values: unknown[] = [];
-
-    if (options?.sessionId) {
-      conditions.push('session_id = ?');
-      values.push(options.sessionId);
-    }
-    if (options?.promoted !== undefined && options.promoted !== null) {
-      conditions.push('promoted = ?');
-      values.push(options.promoted ? 1 : 0);
-    }
-
-    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-    const limit = options?.limit ?? 50;
-    values.push(limit);
-
-    const rows = this.provider.all<BrainProposalRow>(
-      `SELECT * FROM brain_proposals ${where} ORDER BY created_at DESC LIMIT ?`,
-      values,
-    );
-
-    return rows.map((row) => rowToProposal(row));
+    return getProposalsFn(this.provider, options);
   }
 
   promoteProposals(
@@ -606,92 +289,13 @@ export class BrainIntelligence {
     failed: string[];
     gated: Array<{ id: string; action: string; reason?: string }>;
   } {
-    let promoted = 0;
-    const failed: string[] = [];
-    const gated: Array<{ id: string; action: string; reason?: string }> = [];
-    const pp = projectPath ?? '.';
-
-    for (const id of proposalIds) {
-      const row = this.provider.get<{
-        id: string;
-        session_id: string;
-        rule: string;
-        type: string;
-        title: string;
-        description: string;
-        confidence: number;
-        promoted: number;
-        created_at: string;
-      }>('SELECT * FROM brain_proposals WHERE id = ?', [id]);
-
-      if (!row) {
-        failed.push(id);
-        continue;
-      }
-
-      if (row.promoted) continue; // Already promoted
-
-      // Map type for vault
-      const rawType = row.type;
-      const vaultType: 'pattern' | 'anti-pattern' | 'rule' =
-        rawType === 'anti-pattern' ? 'anti-pattern' : 'pattern';
-
-      // Governance gate (when provided)
-      if (governanceGate) {
-        const decision = governanceGate.evaluateCapture(pp, {
-          type: vaultType,
-          category: 'brain-intelligence',
-          title: row.title,
-        });
-
-        if (decision.action === 'propose') {
-          governanceGate.propose(
-            pp,
-            {
-              entryId: `proposal-${id}`,
-              title: row.title,
-              type: vaultType,
-              category: 'brain-intelligence',
-              data: {
-                severity: 'suggestion',
-                description: row.description,
-                tags: ['auto-extracted', row.rule],
-              },
-            },
-            'brain-promote',
-          );
-          gated.push({ id, action: 'propose', reason: decision.reason });
-          continue;
-        }
-
-        if (decision.action !== 'capture') {
-          gated.push({ id, action: decision.action, reason: decision.reason });
-          continue;
-        }
-      }
-
-      // Capture into vault
-      this.brain.enrichAndCapture({
-        id: `proposal-${id}`,
-        type: vaultType,
-        domain: 'brain-intelligence',
-        title: row.title,
-        severity: 'suggestion',
-        description: row.description,
-        tags: ['auto-extracted', row.rule],
-      });
-
-      this.provider.run('UPDATE brain_proposals SET promoted = 1 WHERE id = ?', [id]);
-      promoted++;
-    }
-
-    return { promoted, failed, gated };
+    return promoteProposalsFn(this.provider, this.brain, proposalIds, governanceGate, projectPath);
   }
 
   // ─── Intelligence Pipeline ────────────────────────────────────────
 
   buildIntelligence(): BuildIntelligenceResult {
-    // Step 0: GC — close orphaned sessions with no execution signal older than 24h
+    // Step 0: GC — close orphaned sessions older than 24h with no signal
     const TTL_MS = 24 * 60 * 60 * 1000;
     const cutoff = new Date(Date.now() - TTL_MS).toISOString();
     const activeSessions = this.listSessions({ active: true, limit: 1000 });
@@ -736,12 +340,7 @@ export class BrainIntelligence {
       // Signal extraction must never break intelligence pipeline
     }
 
-    return {
-      strengthsComputed: strengths.length,
-      globalPatterns,
-      domainProfiles,
-      gcClosed,
-    };
+    return { strengthsComputed: strengths.length, globalPatterns, domainProfiles, gcClosed };
   }
 
   getGlobalPatterns(limit = 20): GlobalPattern[] {
@@ -749,7 +348,6 @@ export class BrainIntelligence {
       'SELECT * FROM brain_global_registry ORDER BY total_strength DESC LIMIT ?',
       [limit],
     );
-
     return rows.map((row) => rowToGlobalPattern(row));
   }
 
@@ -758,7 +356,6 @@ export class BrainIntelligence {
       'SELECT * FROM brain_domain_profiles WHERE domain = ?',
       [domain],
     );
-
     if (!row) return null;
     return rowToDomainProfile(row);
   }
@@ -766,213 +363,19 @@ export class BrainIntelligence {
   // ─── Data Management ──────────────────────────────────────────────
 
   getStats(): BrainIntelligenceStats {
-    const strengths = this.provider.get<{ c: number }>(
-      'SELECT COUNT(*) as c FROM brain_strengths',
-    )!.c;
-    const sessions = this.provider.get<{ c: number }>(
-      'SELECT COUNT(*) as c FROM brain_sessions',
-    )!.c;
-    const activeSessions = this.provider.get<{ c: number }>(
-      'SELECT COUNT(*) as c FROM brain_sessions WHERE ended_at IS NULL',
-    )!.c;
-    const proposals = this.provider.get<{ c: number }>(
-      'SELECT COUNT(*) as c FROM brain_proposals',
-    )!.c;
-    const promotedProposals = this.provider.get<{ c: number }>(
-      'SELECT COUNT(*) as c FROM brain_proposals WHERE promoted = 1',
-    )!.c;
-    const globalPatterns = this.provider.get<{ c: number }>(
-      'SELECT COUNT(*) as c FROM brain_global_registry',
-    )!.c;
-    const domainProfiles = this.provider.get<{ c: number }>(
-      'SELECT COUNT(*) as c FROM brain_domain_profiles',
-    )!.c;
-
-    return {
-      strengths,
-      sessions,
-      activeSessions,
-      proposals,
-      promotedProposals,
-      globalPatterns,
-      domainProfiles,
-    };
+    return getStatsFn(this.provider);
   }
 
   exportData(): BrainExportData {
-    const strengths = this.getStrengths({ limit: 10000 });
-
-    const sessionRows = this.provider.all<BrainSessionRow>(
-      'SELECT * FROM brain_sessions ORDER BY started_at DESC',
+    return exportDataFn(
+      this.provider,
+      (q) => this.getStrengths(q),
+      (o) => this.getProposals(o),
+      (l) => this.getGlobalPatterns(l),
     );
-    const sessions = sessionRows.map((row) => rowToSession(row));
-
-    const proposals = this.getProposals({ limit: 10000 });
-    const globalPatterns = this.getGlobalPatterns(10000);
-
-    const profileRows = this.provider.all<BrainDomainProfileRow>(
-      'SELECT * FROM brain_domain_profiles',
-    );
-    const domainProfiles = profileRows.map((row) => rowToDomainProfile(row));
-
-    return {
-      strengths,
-      sessions,
-      proposals,
-      globalPatterns,
-      domainProfiles,
-      exportedAt: new Date().toISOString(),
-    };
   }
 
   importData(data: BrainExportData): BrainImportResult {
-    const result: BrainImportResult = {
-      imported: { strengths: 0, sessions: 0, proposals: 0, globalPatterns: 0, domainProfiles: 0 },
-    };
-
-    this.provider.transaction(() => {
-      // Import strengths
-      for (const s of data.strengths) {
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_strengths
-           (pattern, domain, strength, usage_score, spread_score, success_score, recency_score,
-            usage_count, unique_contexts, success_rate, last_used, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-          [
-            s.pattern,
-            s.domain,
-            s.strength,
-            s.usageScore,
-            s.spreadScore,
-            s.successScore,
-            s.recencyScore,
-            s.usageCount,
-            s.uniqueContexts,
-            s.successRate,
-            s.lastUsed,
-          ],
-        );
-        result.imported.strengths++;
-      }
-
-      // Import sessions
-      for (const s of data.sessions) {
-        const changes = this.provider.run(
-          `INSERT OR IGNORE INTO brain_sessions
-           (id, started_at, ended_at, domain, context, tools_used, files_modified, plan_id, plan_outcome, extracted_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            s.id,
-            s.startedAt,
-            s.endedAt,
-            s.domain,
-            s.context,
-            JSON.stringify(s.toolsUsed),
-            JSON.stringify(s.filesModified),
-            s.planId,
-            s.planOutcome,
-            s.extractedAt ?? null,
-          ],
-        );
-        if (changes.changes > 0) result.imported.sessions++;
-      }
-
-      // Import proposals
-      for (const p of data.proposals) {
-        const changes = this.provider.run(
-          `INSERT OR IGNORE INTO brain_proposals
-           (id, session_id, rule, type, title, description, confidence, promoted, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            p.id,
-            p.sessionId,
-            p.rule,
-            p.type,
-            p.title,
-            p.description,
-            p.confidence,
-            p.promoted ? 1 : 0,
-            p.createdAt,
-          ],
-        );
-        if (changes.changes > 0) result.imported.proposals++;
-      }
-
-      // Import global patterns
-      for (const g of data.globalPatterns) {
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_global_registry
-           (pattern, domains, total_strength, avg_strength, domain_count, updated_at)
-           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-          [g.pattern, JSON.stringify(g.domains), g.totalStrength, g.avgStrength, g.domainCount],
-        );
-        result.imported.globalPatterns++;
-      }
-
-      // Import domain profiles
-      for (const d of data.domainProfiles) {
-        this.provider.run(
-          `INSERT OR REPLACE INTO brain_domain_profiles
-           (domain, top_patterns, session_count, avg_session_duration, last_activity, updated_at)
-           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-          [
-            d.domain,
-            JSON.stringify(d.topPatterns),
-            d.sessionCount,
-            d.avgSessionDuration,
-            d.lastActivity,
-          ],
-        );
-        result.imported.domainProfiles++;
-      }
-    });
-
-    return result;
-  }
-
-  // ─── Private Helpers ──────────────────────────────────────────────
-
-  private getSession(id: string): BrainSession | null {
-    const row = this.provider.get<BrainSessionRow>('SELECT * FROM brain_sessions WHERE id = ?', [
-      id,
-    ]);
-
-    if (!row) return null;
-    return rowToSession(row);
-  }
-
-  private createProposal(
-    sessionId: string,
-    rule: string,
-    type: 'pattern' | 'anti-pattern' | 'workflow',
-    data: { title: string; description: string; confidence: number },
-  ): KnowledgeProposal {
-    // Dedup guard: skip if a proposal with the same rule + sessionId already exists
-    const existing = this.provider.get<BrainProposalRow>(
-      'SELECT * FROM brain_proposals WHERE session_id = ? AND rule = ? LIMIT 1',
-      [sessionId, rule],
-    );
-    if (existing) {
-      return rowToProposal(existing);
-    }
-
-    const id = randomUUID();
-    this.provider.run(
-      `INSERT INTO brain_proposals (id, session_id, rule, type, title, description, confidence)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, sessionId, rule, type, data.title, data.description, data.confidence],
-    );
-
-    return {
-      id,
-      sessionId,
-      rule,
-      type,
-      title: data.title,
-      description: data.description,
-      confidence: data.confidence,
-      promoted: false,
-      createdAt: new Date().toISOString(),
-    };
+    return importDataFn(this.provider, data);
   }
 }
