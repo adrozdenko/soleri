@@ -25,8 +25,7 @@
     "soleri-engine": "dist/engine/bin/soleri-engine.js"
   },
   "files": [
-    "dist/",
-    "data/knowledge-packs/"
+    "dist/"
   ],
   "type": "module",
   "main": "dist/index.js",
@@ -174,7 +173,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc && rm -rf dist/knowledge-packs && cp -r ../../knowledge-packs dist/knowledge-packs",
+    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
