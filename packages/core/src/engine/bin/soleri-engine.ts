@@ -17,6 +17,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createAgentRuntime } from '../../runtime/runtime.js';
 import { registerEngine } from '../register-engine.js';
+import { resolveModules } from '../module-registry.js';
+import type { EngineProfile } from '../module-registry.js';
 import { createCoreOps } from '../core-ops.js';
 import { seedDefaultPlaybooks } from '../../playbooks/playbook-seeder.js';
 import { agentVaultPath } from '../../paths.js';
@@ -73,6 +75,12 @@ async function main(): Promise<void> {
   const vaultPath = engineConfig.vault
     ? resolve((engineConfig.vault as string).replace(/^~/, homedir()))
     : agentVaultPath(agentId);
+
+  // 2b. Resolve engine profile
+  const engineProfile = engineConfig.profile as EngineProfile | undefined;
+  const engineModules = engineConfig.modules as string[] | undefined;
+  const enabledModules = resolveModules(engineProfile, engineModules);
+  console.error(`${tag} Profile: ${engineProfile ?? 'full'} (${enabledModules.size} modules)`);
 
   // 3. Create runtime (with persona from agent.yaml if present)
   const personaConfig = config.persona as Record<string, unknown> | undefined;
@@ -270,6 +278,7 @@ async function main(): Promise<void> {
       'orchestrate_complete',
     ],
     authPolicy: () => runtime.authPolicy,
+    enabledModules,
   });
 
   console.error(`${tag} Registered ${tools.length} tools (${totalOps} ops)`);

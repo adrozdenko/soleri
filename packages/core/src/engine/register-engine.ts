@@ -62,6 +62,8 @@ export interface EngineRegistrationOptions {
   domainPacks?: Array<{ name: string; facades?: Array<{ name: string; ops: OpDefinition[] }> }>;
   /** Op names to ALSO register as standalone MCP tools (hot ops) */
   hotOps?: string[];
+  /** When set, only register modules whose suffix is in this set. Omit for all modules. */
+  enabledModules?: Set<string>;
 }
 
 export interface EngineRegistrationResult {
@@ -225,6 +227,8 @@ export function registerEngine(
   // 1. Register semantic module tools
   for (const mod of ENGINE_MODULES) {
     if (mod.condition && !mod.condition(runtime)) continue;
+    // Profile-based module filtering
+    if (options.enabledModules && !options.enabledModules.has(mod.suffix)) continue;
 
     const ops = mod.createOps(runtime);
     const toolName = `${agentId}_${mod.suffix}`;

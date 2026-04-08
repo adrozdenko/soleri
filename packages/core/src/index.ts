@@ -43,6 +43,13 @@ export type {
   EngineRegistrationOptions,
   EngineRegistrationResult,
 } from './engine/register-engine.js';
+export {
+  resolveModules,
+  ENGINE_PROFILES,
+  PROFILE_MODULES,
+  ALL_MODULE_SUFFIXES,
+} from './engine/module-registry.js';
+export type { EngineProfile } from './engine/module-registry.js';
 
 // ─── Vault ─────────────────────────────────────────────────────────
 export * from './vault/index.js';
