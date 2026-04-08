@@ -66,7 +66,7 @@ Every agent has a composable persona that defines HOW it communicates — voice,
 
 **Playbooks** — Multi-step validated procedures stored in the vault. Token migrations, component setup, contrast audits — each step includes validation criteria so the agent can execute and verify autonomously.
 
-### Second Brain (v8.0)
+### Second Brain
 
 The engine now acts as a true second brain — it doesn't just store knowledge, it actively helps you use it:
 
