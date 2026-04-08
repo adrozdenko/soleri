@@ -11,11 +11,18 @@ const config: KnipConfig = {
     },
     'packages/core': {
       project: ['src/**/*.ts'],
-      ignore: [
-        'src/adapters/index.ts', // barrel file for external consumers
-        'src/subagent/index.ts', // barrel file for external consumers
+      ignore: [],
+      ignoreDependencies: [
+        // Transitive deps of @vitest/coverage-v8 — added explicitly because
+        // npm workspace hoisting doesn't resolve them. Not dead code.
+        '@bcoe/v8-coverage',
+        'ast-v8-to-istanbul',
+        'istanbul-lib-coverage',
+        'istanbul-lib-report',
+        'istanbul-reports',
+        'magicast',
+        'obug',
       ],
-      ignoreDependencies: [],
     },
     'packages/engine': {
       entry: ['bin/*.js'],
