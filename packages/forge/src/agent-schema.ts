@@ -17,6 +17,10 @@ import { ENGINE_FEATURES } from './templates/shared-rules.js';
 export const TONES = ['precise', 'mentor', 'pragmatic'] as const;
 export type Tone = (typeof TONES)[number];
 
+/** Engine profiles — control which modules load at startup */
+export const ENGINE_PROFILES = ['minimal', 'standard', 'full'] as const;
+export type EngineProfile = (typeof ENGINE_PROFILES)[number];
+
 /** Where to set up client integration */
 export const SETUP_TARGETS = ['claude', 'codex', 'opencode', 'both', 'all'] as const;
 export type SetupTarget = (typeof SETUP_TARGETS)[number];
@@ -71,6 +75,10 @@ const EngineConfigSchema = z.object({
    * Example: ['vault', 'planning'] includes core + vault + planning rules.
    */
   features: z.array(z.enum(ENGINE_FEATURES as unknown as [string, ...string[]])).optional(),
+  /** Engine profile — controls which runtime modules are loaded. Default: 'full' (all modules). */
+  profile: z.enum(['minimal', 'standard', 'full']).optional(),
+  /** Explicit module list — overrides profile. Use module suffixes (e.g., 'vault', 'brain', 'plan'). */
+  modules: z.array(z.string()).optional(),
 });
 
 /** Client setup configuration */

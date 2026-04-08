@@ -878,11 +878,14 @@ function buildAgentYaml(config: AgentYaml): Record<string, unknown> {
     yaml.persona = config.persona;
   }
 
-  // Engine config — only include non-defaults
+  // Engine config — always include learning + profile for explicitness
   const engine: Record<string, unknown> = {};
+  engine.learning = config.engine?.learning !== false;
+  engine.profile = config.engine?.profile ?? 'full';
   if (config.engine?.vault) engine.vault = config.engine.vault;
-  if (config.engine?.learning === false) engine.learning = false;
-  if (Object.keys(engine).length > 0) yaml.engine = engine;
+  if (config.engine?.modules && config.engine.modules.length > 0)
+    engine.modules = config.engine.modules;
+  yaml.engine = engine;
 
   // Vaults
   if (config.vaults && config.vaults.length > 0) {

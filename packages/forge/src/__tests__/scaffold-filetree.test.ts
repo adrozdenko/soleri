@@ -294,8 +294,9 @@ describe('scaffoldFileTree', () => {
     expect(content).not.toContain('tone:');
     // setup.target: claude is the default — should NOT appear
     expect(content).not.toContain('target:');
-    // engine.learning: true is the default — should NOT appear
-    expect(content).not.toContain('learning:');
+    // engine.learning and engine.profile are always explicit
+    expect(content).toContain('learning: true');
+    expect(content).toContain('profile: full');
   });
 
   it('includes non-default values in agent.yaml', () => {

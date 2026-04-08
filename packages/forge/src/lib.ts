@@ -28,8 +28,8 @@ export {
   resolveSkillsFilter,
 } from './scaffold-filetree.js';
 export type { FileTreeScaffoldResult } from './scaffold-filetree.js';
-export { AgentYamlSchema, TONES } from './agent-schema.js';
-export type { AgentYaml, AgentYamlInput } from './agent-schema.js';
+export { AgentYamlSchema, TONES, ENGINE_PROFILES } from './agent-schema.js';
+export type { AgentYaml, AgentYamlInput, EngineProfile } from './agent-schema.js';
 export { composeClaudeMd } from './compose-claude-md.js';
 export type { ComposedClaudeMd, ToolEntry } from './compose-claude-md.js';
 export { generateExtensionsIndex, generateExampleOp } from './templates/extensions.js';
