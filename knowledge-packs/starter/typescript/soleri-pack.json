@@ -1,9 +1,0 @@
-{
-  "id": "starter-typescript",
-  "name": "TypeScript Starter Pack",
-  "version": "1.0.0",
-  "description": "Type narrowing, generics, module patterns, strict config, discriminated unions — essential TypeScript patterns for production code.",
-  "domains": ["typescript"],
-  "tier": "default",
-  "vault": { "dir": "vault" }
-}

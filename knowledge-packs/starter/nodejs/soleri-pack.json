@@ -1,9 +1,0 @@
-{
-  "id": "starter-nodejs",
-  "name": "Node.js Starter Pack",
-  "version": "1.0.0",
-  "description": "Error handling, async patterns, streams, security, module system — essential Node.js patterns for production servers.",
-  "domains": ["nodejs", "backend"],
-  "tier": "default",
-  "vault": { "dir": "vault" }
-}
