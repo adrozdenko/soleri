@@ -10,13 +10,16 @@ export function registerFacade(
 ): void {
   const opNames = facade.ops.map((o) => o.name);
 
+  const facadeSchema = {
+    op: z.string().describe(`Operation: ${opNames.join(' | ')}`),
+    params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
+  };
+
+  // @ts-expect-error -- MCP SDK Zod type inference hits TS depth limit; runtime is correct
   server.tool(
     facade.name,
     facade.description,
-    {
-      op: z.string().describe(`Operation: ${opNames.join(' | ')}`),
-      params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
-    },
+    facadeSchema,
     async ({ op, params }): Promise<{ content: Array<{ type: 'text'; text: string }> }> => {
       const response = await dispatchOp(facade, op, params, authPolicy?.());
       return { content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }] };

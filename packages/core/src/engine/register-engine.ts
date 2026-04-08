@@ -383,53 +383,51 @@ function registerModuleTool(
   const opNames = userOps.map((o) => o.name);
   const opMap = new Map(ops.map((o) => [o.name, o]));
 
-  server.tool(
-    toolName,
-    description,
-    {
-      op: z.string().describe(`Operation: ${opNames.join(' | ')}`),
-      params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
-    },
-    async ({ op: opName, params }) => {
-      const op = opMap.get(opName);
-      if (!op) {
-        return jsonResponse({
-          success: false,
-          error: `Unknown operation "${opName}" on ${toolName}. Available: ${opNames.join(', ')}`,
-          op: opName,
-          facade: toolName,
-        });
-      }
+  const facadeSchema = {
+    op: z.string().describe(`Operation: ${opNames.join(' | ')}`),
+    params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
+  };
 
-      // Auth check
-      const policy = authPolicy?.();
-      const authErr = checkAuth(opName, op.auth, toolName, policy);
-      if (authErr) return jsonResponse(authErr);
+  // @ts-expect-error -- MCP SDK Zod type inference hits TS depth limit; runtime is correct
+  server.tool(toolName, description, facadeSchema, async ({ op: opName, params }) => {
+    const op = opMap.get(opName);
+    if (!op) {
+      return jsonResponse({
+        success: false,
+        error: `Unknown operation "${opName}" on ${toolName}. Available: ${opNames.join(', ')}`,
+        op: opName,
+        facade: toolName,
+      });
+    }
 
-      // Validate + execute
-      try {
-        let validatedParams = params;
-        if (op.schema) {
-          const result = op.schema.safeParse(params);
-          if (!result.success) {
-            return jsonResponse({
-              success: false,
-              error: `Invalid params for ${opName}: ${result.error.message}`,
-              op: opName,
-              facade: toolName,
-            });
-          }
-          validatedParams = result.data as Record<string, unknown>;
+    // Auth check
+    const policy = authPolicy?.();
+    const authErr = checkAuth(opName, op.auth, toolName, policy);
+    if (authErr) return jsonResponse(authErr);
+
+    // Validate + execute
+    try {
+      let validatedParams = params;
+      if (op.schema) {
+        const result = op.schema.safeParse(params);
+        if (!result.success) {
+          return jsonResponse({
+            success: false,
+            error: `Invalid params for ${opName}: ${result.error.message}`,
+            op: opName,
+            facade: toolName,
+          });
         }
-
-        const data = await op.handler(validatedParams);
-        return jsonResponse({ success: true, data, op: opName, facade: toolName });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return jsonResponse({ success: false, error: message, op: opName, facade: toolName });
+        validatedParams = result.data as Record<string, unknown>;
       }
-    },
-  );
+
+      const data = await op.handler(validatedParams);
+      return jsonResponse({ success: true, data, op: opName, facade: toolName });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return jsonResponse({ success: false, error: message, op: opName, facade: toolName });
+    }
+  });
 }
 
 /**

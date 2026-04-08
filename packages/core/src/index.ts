@@ -309,6 +309,17 @@ export { OperatorProfileStore } from './operator/operator-profile.js';
 export { FlowExecutor, createDispatcher } from './flows/index.js';
 export type { Flow, FlowStep, OrchestrationPlan, ExecutionResult } from './flows/index.js';
 
+// ─── Packs (CLI needs these) ─────────────────────────────────────
+export { inferPackType } from './packs/lockfile.js';
+
+// ─── Dream (CLI needs these) ─────────────────────────────────────
+export { ensureDreamSchema } from './dream/schema.js';
+export {
+  schedule as scheduleDream,
+  unschedule as unscheduleDream,
+  getSchedule as getDreamSchedule,
+} from './dream/cron-manager.js';
+
 // ─── Adapters ──────────────────────────────────────────────────────
 export { RuntimeAdapterRegistry } from './adapters/registry.js';
 export type { RuntimeAdapter } from './adapters/types.js';

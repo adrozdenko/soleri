@@ -14,13 +14,16 @@ async function main(): Promise<void> {
   // Register the forge tool with op dispatch
   const opNames = forgeOps.map((o) => o.name);
 
+  const forgeSchema = {
+    op: z.string().describe(`Operation: ${opNames.join(' | ')}`),
+    params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
+  };
+
+  // @ts-expect-error -- MCP SDK Zod type inference hits TS depth limit; runtime is correct
   server.tool(
     'forge',
     `Soleri Forge — scaffold AI agents that learn, remember, and grow.\n\nOperations: ${opNames.join(', ')}\n\nStart by calling 'guide' to get the recommended conversation flow for helping a user create an agent.`,
-    {
-      op: z.string().describe(`Operation: ${opNames.join(' | ')}`),
-      params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
-    },
+    forgeSchema,
     async ({ op, params }) => {
       const opDef = forgeOps.find((o) => o.name === op);
       if (!opDef) {
