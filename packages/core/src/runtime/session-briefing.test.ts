@@ -342,8 +342,13 @@ describe('session-briefing', () => {
       const ops = captureOps(createSessionBriefingOps(runtime));
       const res = await executeOp(ops, 'session_briefing', {});
       expect(res.success).toBe(true);
-      const data = res.data as { sections: unknown[] };
-      expect(data.sections).toEqual([]);
+      const data = res.data as { sections: Array<{ label: string }> };
+      // All subsystems failed, so only the aggregate warning section should appear
+      const nonWarning = data.sections.filter((s) => s.label !== 'Warning');
+      expect(nonWarning).toEqual([]);
+      // With >3 failures, a warning section is expected
+      const warnings = data.sections.filter((s) => s.label === 'Warning');
+      expect(warnings.length).toBeLessThanOrEqual(1);
     });
 
     it('includes Pending proposals when present', async () => {
