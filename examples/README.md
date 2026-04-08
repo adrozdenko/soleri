@@ -47,5 +47,4 @@ agent-name/
 
 ## Also See
 
-- [reference-agent/](reference-agent/) — Full-featured reference (Salvador design system agent)
-- [minimal-agent/](minimal-agent/) — Bare minimum viable agent
+- [minimal-agent/](minimal-agent/) — Bare minimum viable agent (engine profile: minimal)

@@ -1,7 +1,0 @@
-tools:
-  - soleri_vault op:search_intelligent
-  - soleri_vault op:capture_knowledge
-  - soleri_design op:validate_component_code
-  - soleri_design op:check_contrast
-  - soleri_design op:get_clean_code_rules
-  - soleri_brain op:recommend

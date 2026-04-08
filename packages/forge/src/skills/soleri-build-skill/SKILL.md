@@ -158,12 +158,6 @@ Checklist before committing:
 
 ### Step 7: Copy to Reference Agent
 
-If the skill should appear in the reference agent:
-
-```bash
-cp -r packages/forge/src/skills/soleri-{name} examples/reference-agent/skills/
-```
-
 ### Step 8: Register in Scaffold Pipeline
 
 Add the skill to `SKILLS_REGISTRY` in `packages/forge/src/scaffold-filetree.ts` and `SKILL_CATEGORIES` in `packages/forge/src/compose-claude-md.ts` so it gets included in new scaffolds.
