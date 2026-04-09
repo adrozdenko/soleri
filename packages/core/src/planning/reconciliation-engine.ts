@@ -153,7 +153,10 @@ export function buildAutoReconcileInput(tasks: ReadonlyArray<PlanTask>): AutoRec
   return {
     canAutoReconcile: true,
     input: {
-      actualOutcome: `Auto-reconciled: ${completed}/${tasks.length} tasks completed, ${skipped} skipped, ${failed} failed`,
+      actualOutcome:
+        pending === 0 && skipped === 0 && failed === 0
+          ? 'All tasks completed'
+          : `Auto-reconciled: ${completed}/${tasks.length} tasks completed, ${skipped} skipped, ${pending} pending, ${failed} failed`,
       driftItems,
       reconciledBy: 'auto',
     },

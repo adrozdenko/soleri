@@ -257,7 +257,7 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'complete_plan',
       description:
-        'Mark a reconciled plan as completed. If the plan is still executing, it will be auto-reconciled first. Use `plan_reconcile` to provide a detailed drift report before completing.',
+        'Mark a reconciled plan as completed. If the plan is still executing, Soleri will auto-reconcile only when drift is minor; otherwise use `plan_reconcile` first to capture the drift before completing.',
       auth: 'write',
       schema: z.object({
         planId: z.string(),
@@ -302,6 +302,8 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
 
         const plan = planner.complete(params.planId as string);
         const taskSummary = {
+          pending: plan.tasks.filter((t) => t.status === 'pending').length,
+          in_progress: plan.tasks.filter((t) => t.status === 'in_progress').length,
           completed: plan.tasks.filter((t) => t.status === 'completed').length,
           skipped: plan.tasks.filter((t) => t.status === 'skipped').length,
           failed: plan.tasks.filter((t) => t.status === 'failed').length,

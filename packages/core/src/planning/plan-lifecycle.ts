@@ -336,8 +336,7 @@ export function applyIteration(plan: Plan, changes: IterateChanges): number {
  * Apply a task status update with auto-metrics (startedAt, completedAt, durationMs).
  * Caller is responsible for plan status validation and persistence.
  */
-export function applyTaskStatusUpdate(task: PlanTask, status: TaskStatus): void {
-  const now = Date.now();
+export function applyTaskStatusUpdate(task: PlanTask, status: TaskStatus, now = Date.now()): void {
   // Rework detection: completed/failed → in_progress/pending means a fix iteration
   const isRework =
     (task.status === 'completed' || task.status === 'failed') &&

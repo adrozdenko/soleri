@@ -65,12 +65,51 @@ export class Planner {
     this.store = this.load();
   }
 
+  private normalizeTerminalTaskStates(
+    plan: Plan,
+    closedAt = Date.now(),
+  ): { changed: boolean; pending: number; inProgress: number } {
+    let pending = 0;
+    let inProgress = 0;
+
+    for (const task of plan.tasks) {
+      if (task.status === 'pending') pending++;
+      if (task.status === 'in_progress') inProgress++;
+      if (task.status === 'pending' || task.status === 'in_progress') {
+        applyTaskStatusUpdate(task, 'skipped', closedAt);
+      }
+    }
+
+    return { changed: pending + inProgress > 0, pending, inProgress };
+  }
+
+  private repairTerminalPlans(store: PlanStore): boolean {
+    let repaired = false;
+
+    for (const plan of store.plans) {
+      plan.checks = plan.checks ?? [];
+      if (plan.status !== 'completed' && plan.status !== 'archived') continue;
+
+      const closedAt = plan.reconciliation?.reconciledAt ?? plan.updatedAt;
+      const normalized = this.normalizeTerminalTaskStates(plan, closedAt);
+      if (!normalized.changed) continue;
+
+      plan.executionSummary = computeExecutionSummary(plan.tasks);
+      repaired = true;
+    }
+
+    return repaired;
+  }
+
   private load(): PlanStore {
     if (!existsSync(this.filePath)) return { version: '1.0', plans: [] };
     try {
       const data = readFileSync(this.filePath, 'utf-8');
       const store = JSON.parse(data) as PlanStore;
-      for (const plan of store.plans) plan.checks = plan.checks ?? [];
+      if (this.repairTerminalPlans(store)) {
+        mkdirSync(dirname(this.filePath), { recursive: true });
+        writeFileSync(this.filePath, JSON.stringify(store, null, 2), 'utf-8');
+      }
       return store;
     } catch {
       return { version: '1.0', plans: [] };
@@ -249,10 +288,20 @@ export class Planner {
   complete(planId: string): Plan {
     let plan = this.requirePlan(planId);
     if (plan.status === 'executing' || plan.status === 'validating') {
-      this.reconcile(planId, { actualOutcome: 'All tasks completed', reconciledBy: 'auto' });
+      const reconciled = this.autoReconcile(planId);
+      if (!reconciled) {
+        const pending = plan.tasks.filter((task) => task.status === 'pending').length;
+        const inProgress = plan.tasks.filter((task) => task.status === 'in_progress').length;
+        const failed = plan.tasks.filter((task) => task.status === 'failed').length;
+        throw new Error(
+          `Cannot auto-complete plan with unresolved tasks (${pending} pending, ${inProgress} in_progress, ${failed} failed). Run reconcile first to capture drift, then complete the plan.`,
+        );
+      }
       // Re-fetch after reconcile since refresh() replaces store objects
       plan = this.requirePlan(planId);
     }
+    const closedAt = plan.reconciliation?.reconciledAt ?? Date.now();
+    this.normalizeTerminalTaskStates(plan, closedAt);
     plan.executionSummary = computeExecutionSummary(plan.tasks);
     this.transition(plan, 'completed');
     this.save();
@@ -550,11 +599,13 @@ export class Planner {
 
       if (shouldClose) {
         const previousStatus = plan.status;
+        const closedAt = now;
         // Intentional FSM bypass: force-complete stale plans regardless of current state.
         // This skips the normal reconciling → completed transition because stale plans
         // may be in any state (draft, approved, executing, etc.).
         plan.status = 'completed';
         plan.updatedAt = now;
+        this.normalizeTerminalTaskStates(plan, closedAt);
         if (!plan.reconciliation) {
           plan.reconciliation = {
             planId: plan.id,
@@ -564,6 +615,7 @@ export class Planner {
             reconciledAt: now,
           };
         }
+        plan.executionSummary = computeExecutionSummary(plan.tasks);
         closed.push({ id: plan.id, previousStatus, reason });
       }
     }

@@ -3,7 +3,7 @@ import { Planner, PlanGradeRejectionError } from './planner.js';
 import type { PlanGap } from './gap-types.js';
 import type { PlanAlternative } from './planner.js';
 import { generateGapId } from './gap-types.js';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -349,6 +349,66 @@ describe('Planner', () => {
       expect(completed.reconciliation!.summary).toBe('All tasks completed');
     });
 
+    it('should skip unfinished tasks before completing', () => {
+      const plan = planner.create({
+        objective: 'Complete with drift',
+        scope: 'test',
+        tasks: [{ title: 'Unfinished', description: 'left pending' }],
+      });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+
+      const completed = planner.complete(plan.id);
+
+      expect(completed.status).toBe('completed');
+      expect(completed.tasks[0].status).toBe('skipped');
+      expect(completed.executionSummary?.tasksSkipped).toBe(1);
+      expect(completed.reconciliation?.summary).toContain('1 pending');
+    });
+
+    it('should require manual reconcile when auto-reconcile is not possible', () => {
+      const plan = planner.create({
+        objective: 'Too much drift to auto-complete',
+        scope: 'test',
+        tasks: [
+          { title: 'T1', description: 'd1' },
+          { title: 'T2', description: 'd2' },
+          { title: 'T3', description: 'd3' },
+        ],
+      });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+
+      expect(() => planner.complete(plan.id)).toThrow(/Run reconcile first/i);
+    });
+
+    it('should normalize leftover open tasks when completing from reconciling', () => {
+      const plan = planner.create({
+        objective: 'Manual reconcile then complete',
+        scope: 'test',
+        tasks: [
+          { title: 'Done', description: 'finished task' },
+          { title: 'Still open', description: 'left unfinished' },
+        ],
+      });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      planner.updateTask(plan.id, 'task-1', 'in_progress');
+      planner.updateTask(plan.id, 'task-1', 'completed');
+      planner.updateTask(plan.id, 'task-2', 'in_progress');
+      planner.reconcile(plan.id, {
+        actualOutcome: 'Finished the main path, leaving one task behind',
+      });
+
+      const completed = planner.complete(plan.id);
+
+      expect(completed.status).toBe('completed');
+      expect(completed.tasks[0].status).toBe('completed');
+      expect(completed.tasks[1].status).toBe('skipped');
+      expect(completed.executionSummary?.tasksCompleted).toBe(1);
+      expect(completed.executionSummary?.tasksSkipped).toBe(1);
+    });
+
     it('should throw when completing from draft', () => {
       const plan = planner.create({ objective: 'Not executing', scope: 'test' });
       expect(() => planner.complete(plan.id)).toThrow();
@@ -428,6 +488,75 @@ describe('Planner', () => {
       const active = planner.getActive();
       expect(active).toHaveLength(3);
       expect(active.map((p) => p.status).sort()).toEqual(['approved', 'draft', 'executing']);
+    });
+  });
+
+  describe('store repair', () => {
+    it('should repair completed plans with dangling open tasks on load', () => {
+      const plansPath = join(tempDir, 'plans.json');
+      writeFileSync(
+        plansPath,
+        JSON.stringify(
+          {
+            version: '1.0',
+            plans: [
+              {
+                id: 'plan-repair-1',
+                objective: 'Repair historical plan',
+                scope: 'test',
+                status: 'completed',
+                decisions: [],
+                tasks: [
+                  {
+                    id: 'task-1',
+                    title: 'Pending',
+                    description: 'never started',
+                    status: 'pending',
+                    updatedAt: 1000,
+                  },
+                  {
+                    id: 'task-2',
+                    title: 'In progress',
+                    description: 'stuck open',
+                    status: 'in_progress',
+                    startedAt: 900,
+                    updatedAt: 1000,
+                  },
+                ],
+                checks: [],
+                reconciliation: {
+                  planId: 'plan-repair-1',
+                  accuracy: 50,
+                  driftItems: [],
+                  summary: 'Historical completion',
+                  reconciledAt: 1234,
+                },
+                createdAt: 900,
+                updatedAt: 1234,
+              },
+            ],
+          },
+          null,
+          2,
+        ),
+      );
+
+      const repairedPlanner = new Planner(plansPath);
+      const repaired = repairedPlanner.get('plan-repair-1');
+
+      expect(repaired).not.toBeNull();
+      expect(repaired!.tasks.map((task) => task.status)).toEqual(['skipped', 'skipped']);
+      expect(repaired!.executionSummary?.tasksSkipped).toBe(2);
+
+      const stats = repairedPlanner.stats();
+      expect(stats.tasksByStatus.pending).toBe(0);
+      expect(stats.tasksByStatus.in_progress).toBe(0);
+      expect(stats.tasksByStatus.skipped).toBe(2);
+
+      const persisted = JSON.parse(readFileSync(plansPath, 'utf-8')) as {
+        plans: Array<{ tasks: Array<{ status: string }> }>;
+      };
+      expect(persisted.plans[0].tasks.map((task) => task.status)).toEqual(['skipped', 'skipped']);
     });
   });
 

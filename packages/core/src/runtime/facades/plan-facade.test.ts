@@ -264,9 +264,19 @@ describe('plan-facade', () => {
 
     const result = await executeOp(ops, 'complete_plan', { planId });
     expect(result.success).toBe(true);
-    const data = result.data as { completed: boolean; taskSummary: Record<string, number> };
+    const data = result.data as {
+      completed: boolean;
+      taskSummary: Record<string, number>;
+      plan: { tasks: Array<{ status: string }> };
+    };
     expect(data.completed).toBe(true);
     expect(data.taskSummary).toHaveProperty('total');
+    expect(data.taskSummary.pending).toBe(0);
+    expect(data.taskSummary.in_progress).toBe(0);
+    expect(data.taskSummary.skipped).toBeGreaterThanOrEqual(1);
+    expect(
+      data.plan.tasks.every((task) => task.status !== 'pending' && task.status !== 'in_progress'),
+    ).toBe(true);
   });
 
   // ─── plan_iterate ──────────────────────────────────────────────
@@ -504,6 +514,30 @@ describe('plan-facade', () => {
     expect(result.closedPlans.length).toBeGreaterThanOrEqual(1);
     expect(result.closedPlans[0].previousStatus).toBe('draft');
     expect(result.closedPlans[0].reason).toContain('ttl-expired');
+  });
+
+  it('closeStale normalizes unfinished tasks on forced completion', () => {
+    const runtime = makeRuntime(vault);
+    const planner = runtime.planner;
+
+    const plan = planner.create({
+      objective: 'Close stale executing plan',
+      scope: 'test',
+      tasks: [
+        { title: 'Started', description: 'work in progress' },
+        { title: 'Not started', description: 'still pending' },
+      ],
+    });
+    planner.approve(plan.id);
+    planner.startExecution(plan.id);
+    planner.updateTask(plan.id, 'task-1', 'in_progress');
+
+    planner.closeStale(0);
+
+    const closed = planner.get(plan.id);
+    expect(closed?.status).toBe('completed');
+    expect(closed?.tasks.map((task) => task.status)).toEqual(['skipped', 'skipped']);
+    expect(closed?.executionSummary?.tasksSkipped).toBe(2);
   });
 
   it('closeStale does not close completed plans', () => {
