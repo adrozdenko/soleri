@@ -7,7 +7,7 @@ Your Soleri agent is an MCP tool server. It runs locally, stores everything in f
 
 ## Your agent is a tool server
 
-When your AI editor starts, it launches your agent as a child process. The agent registers its tools — 20 engine modules with 160+ operations — over the Model Context Protocol (MCP).
+When your AI editor starts, it launches your agent as a child process. The agent registers its tools — 22 engine modules with 350+ operations — over the Model Context Protocol (MCP).
 
 your AI editor decides when to call these tools based on your conversation. When you ask "what do we know about error handling?", your AI editor recognizes this as a knowledge question and calls the agent's `search_intelligent` tool. The agent returns ranked results, and your AI editor uses them in its response.
 
@@ -135,7 +135,7 @@ You can run curator operations manually, or let them happen as part of the brain
 
 ## All engine modules
 
-The engine registers 20 modules as MCP tools. Each module is a single tool with op-based dispatch:
+The engine registers 22 modules as MCP tools. Each module is a single tool with op-based dispatch:
 
 | Module | Purpose |
 | ------ | ------- |
@@ -159,6 +159,8 @@ The engine registers 20 modules as MCP tools. Each module is a single tool with 
 | **Links** | Zettelkasten connections — link, traverse, orphan detection |
 | **Branching** | Vault branching — isolate, experiment, merge |
 | **Tier** | Multi-tier vault connections — external sources |
+| **Embedding** | Embedding management — vector storage and retrieval |
+| **Dream** | Memory consolidation — dedup, archive stale entries, resolve contradictions |
 
 Domain packs add additional modules on top of these (e.g., `@soleri/domain-design` adds design-specific facades).
 

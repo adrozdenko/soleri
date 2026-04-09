@@ -1,6 +1,6 @@
 ---
 title: API Reference
-description: Facade operations with parameters, auth levels, and usage examples across all 20 engine modules.
+description: Facade operations with parameters, auth levels, and usage examples across all 22 engine modules.
 ---
 
 :::note

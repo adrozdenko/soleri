@@ -1,9 +1,9 @@
 ---
 title: Capabilities
-description: Everything a Soleri agent can do — 350+ operations across 20 facades covering vault, brain, planning, orchestration, and more.
+description: Everything a Soleri agent can do — 350+ operations across 22 facades covering vault, brain, planning, orchestration, and more.
 ---
 
-Every Soleri agent ships with **350+ operations** across **20 engine modules** out of the box. This page shows what your agent can do, grouped by facade.
+Every Soleri agent ships with **350+ operations** across **22 engine modules** out of the box. This page shows what your agent can do, grouped by facade.
 
 For parameter details on common operations, see the [API Reference](/docs/api-reference/). For CLI commands, see the [CLI Reference](/docs/cli-reference/). For term definitions, see the [Glossary](/docs/glossary/).
 

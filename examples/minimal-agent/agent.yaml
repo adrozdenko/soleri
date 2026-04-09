@@ -21,6 +21,7 @@ tone: pragmatic
 # ─── Engine Configuration ──────────────────
 engine:
   learning: true
+  agency: true
   profile: minimal
 
 # ─── Client Setup ─────────────────────────

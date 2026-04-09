@@ -24,7 +24,7 @@ greeting: Atlas here. What are we working on?
 # ─── Engine Configuration ──────────────────
 engine:
   learning: true
-  cognee: false
+  agency: true
 
 # ─── Client Setup ─────────────────────────
 setup:

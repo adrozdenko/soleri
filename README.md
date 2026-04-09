@@ -88,7 +88,7 @@ Two layers, cleanly separated:
 │  Agent Folder     agent.yaml · instructions/ · workflows/ │
 │  (the shell)      knowledge/ · skills/ · CLAUDE.md (auto) │
 ├─────────────────────────────────────────────────────────┤
-│  Knowledge Engine 20 modules: vault · brain · curator · planner │
+│  Knowledge Engine 22 modules: vault · brain · curator · planner │
 │  (the brain)      memory · archive · sync · review · links … │
 ├─────────────────────────────────────────────────────────┤
 │  Transports       MCP · HTTP/SSE · WebSocket · Telegram   │
@@ -96,7 +96,7 @@ Two layers, cleanly separated:
 ```
 
 - **Agent Folder** — Plain files (YAML, Markdown, JSON). your AI editor reads them natively. No code generation, no compilation.
-- **Knowledge Engine (`@soleri/core`)** — Persistent state for all agents. Vault (SQLite + FTS5), Brain (hybrid TF-IDF + optional Cognee vector search), Planner (state machine), Curator (dedup, grooming), and cross-project memory.
+- **Knowledge Engine (`@soleri/core`)** — Persistent state for all agents. Vault (SQLite + FTS5), Brain (TF-IDF scoring), Planner (state machine), Curator (dedup, grooming), and cross-project memory.
 - **Extensions** — Two tiers: **Domain Packs** (npm packages like `@soleri/domain-design`) for published intelligence, and **Local Packs** (project directories with `soleri-pack.json`) for project-specific knowledge, skills, and hooks. All extensions receive a narrowed `PackRuntime` (vault + projects + session checks).
 - **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys. Pure SQLite — no external services required.
 
@@ -119,6 +119,8 @@ The `PersistenceProvider` interface exists for future extensibility, but SQLite 
 | [`@soleri/forge`](packages/forge)         | Agent scaffolder — generates file-tree agents from config                            |
 | [`@soleri/cli`](packages/cli)             | Developer CLI — create, install, dev, doctor, packs, hooks                           |
 | [`create-soleri`](packages/create-soleri) | `npm create soleri` shorthand                                                        |
+| [`@soleri/engine`](packages/engine)       | Engine binary — reads agent.yaml, boots vault/brain/planner via MCP                  |
+| [`@soleri/tokens`](packages/tokens)       | Design system tokens — solarpunk colors, semantic themes, Tailwind preset            |
 | [`@soleri/domain-*`](packages/)           | Domain packs — design, component, figma, code-review                                 |
 
 ### Guides
@@ -173,7 +175,7 @@ npm test                # Unit tests — 313 files, 3,900+ tests
 npm run test:e2e        # E2E tests — 900+ tests across 30 files
 ```
 
-The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), all 20 engine modules across 8 vault-family facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, hook pack validation, and domain pack validation.
+The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot → MCP → ops), all 22 engine modules across 8 vault-family facades, over-the-wire MCP transport, data persistence, concurrency, CLI commands, hook pack validation, and domain pack validation.
 
 ## Contributing
 

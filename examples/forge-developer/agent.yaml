@@ -25,7 +25,7 @@ greeting: Forge online. Show me the code.
 # ─── Engine Configuration ──────────────────
 engine:
   learning: true
-  cognee: false
+  agency: true
 
 # ─── Client Setup ─────────────────────────
 setup:

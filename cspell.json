@@ -107,7 +107,8 @@
     "precheck",
     "flexbox",
     "newbot",
-    "signoffs"
+    "signoffs",
+    "solarpunk"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [

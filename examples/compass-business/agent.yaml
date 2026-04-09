@@ -25,7 +25,7 @@ greeting: Compass here. Let's keep things moving.
 # ─── Engine Configuration ──────────────────
 engine:
   learning: true
-  cognee: false
+  agency: true
 
 # ─── Client Setup ─────────────────────────
 setup:

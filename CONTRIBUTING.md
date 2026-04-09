@@ -28,8 +28,8 @@ All PRs must pass the full test suite. Do not submit a PR with failing tests.
 
 | Layer    | Command                 | Count | What it covers                                                         |
 | -------- | ----------------------- | ----- | ---------------------------------------------------------------------- |
-| Unit     | `npm test`              | ~2000 | Package-level tests (core, forge, CLI, domains, tokens)                |
-| E2E      | `npm run test:e2e`      | ~120  | Cross-package: facades, transports, scaffold, persistence, concurrency |
+| Unit     | `npm test`              | ~3900 | Package-level tests (core, forge, CLI, domains, tokens)                |
+| E2E      | `npm run test:e2e`      | ~900  | Cross-package: facades, transports, scaffold, persistence, concurrency |
 | Deadcode | `npm run deadcode:knip` | —     | Unused files, exports, dependencies                                    |
 
 ### What to Test by Contribution Type

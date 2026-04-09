@@ -37,7 +37,7 @@ The scaffold generates config files for multiple hosts:
 | OpenCode    | `opencode.json`                                | Yes                   |
 | Codex       | Registered via `soleri install --target codex` | CLI command           |
 
-The `soleri install` command supports `--target claude`, `--target codex`, or `--target all`.
+The `soleri install` command supports `--target claude`, `--target codex`, `--target opencode`, or `--target all`.
 
 ## What's Host-Specific
 
