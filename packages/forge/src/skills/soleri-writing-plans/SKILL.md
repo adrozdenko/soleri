@@ -72,6 +72,7 @@ YOUR_AGENT_core op:plan_meets_grade params: { planId: "<id>", targetGrade: "A" }
 ```
 
 Iterate with alternatives:
+
 ```
 YOUR_AGENT_core op:plan_iterate
   params: {
