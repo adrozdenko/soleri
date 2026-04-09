@@ -4,19 +4,23 @@ Soleri packages version independently but must remain compatible. This document 
 
 ## Packages
 
-| Package            | Role             | Versioning                                               |
-| ------------------ | ---------------- | -------------------------------------------------------- |
-| `@soleri/core`     | Engine runtime   | Semver — breaking changes = major bump                   |
-| `@soleri/forge`    | Agent scaffolder | Follows core major version                               |
-| `@soleri/cli`      | Developer CLI    | Follows core major version                               |
-| `@soleri/domain-*` | Domain packs     | Independent semver, declares `@soleri/core` peer dep     |
-| Knowledge packs    | Local packs      | `soleri-pack.json` manifest with optional `engine` field |
+| Package            | Role                 | Versioning                                               |
+| ------------------ | -------------------- | -------------------------------------------------------- |
+| `@soleri/core`     | Engine runtime       | Semver — breaking changes = major bump                   |
+| `@soleri/forge`    | Agent scaffolder     | Lockstep with core                                       |
+| `@soleri/cli`      | Developer CLI        | Lockstep with core — canonical upgrade authority         |
+| `@soleri/engine`   | MCP entry point      | Lockstep with core — thin wrapper for npx fallback       |
+| `create-soleri`    | npm create shorthand | Lockstep with core — delegates to @soleri/cli            |
+| `soleri`           | CLI wrapper          | Lockstep with core — delegates to @soleri/cli            |
+| `@soleri/tokens`   | Design tokens        | Independent cadence                                      |
+| `@soleri/domain-*` | Domain packs         | Independent semver, declares `@soleri/core` peer dep     |
+| Knowledge packs    | Local packs          | `soleri-pack.json` manifest with optional `engine` field |
 
 ## Compatibility Rules
 
-### Rule 1: All first-party packages share a major version
+### Rule 1: All first-party packages release in lockstep
 
-`@soleri/core`, `@soleri/forge`, and `@soleri/cli` are released together. A major version bump in core means a major bump in forge and cli.
+`@soleri/core`, `@soleri/forge`, `@soleri/cli`, `@soleri/engine`, `create-soleri`, and `soleri` are published together on every tag push. All 6 share the same version number. A major version bump in core means a major bump in all lockstep packages. See `docs/architecture/package-topology.md` for the full dependency graph.
 
 ### Rule 2: Domain packs declare peer dependency on core
 

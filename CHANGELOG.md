@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.20.1] — 2026-04-09
+
+### Fixed
+
+- **Fresh-machine drift eliminated** — Quick create (`--yes`) now includes the `ITALIAN_CRAFTSPERSON` persona block, matching interactive wizard behavior. Agents created non-interactively no longer ship without a persona.
+- **`soleri update` targets correct package** — Was installing `soleri@latest` (thin wrapper), now installs `@soleri/cli@latest` (canonical package). `update` and `upgrade` are now true aliases for the same operation.
+- **`dev` command uses shared engine resolution** — Replaced hard-coded `node_modules/@soleri/core/dist/engine/bin/soleri-engine.js` path with the shared `resolveEngineBin()` function. Dev now falls back to npx like install and create do.
+- **`uninstall` removes from all targets** — Was defaulting to `opencode` only, skipping `claude.json` and `codex`. Now defaults to `all` targets, matching install behavior.
+- **Install npx warning references `@soleri/cli`** — Was pointing users to `npm install -g soleri`, now says `npm install -g @soleri/cli`.
+- **Stale plan task normalization** — Plans in terminal state (completed/archived) with lingering `pending` or `in_progress` tasks now auto-skip those tasks on load and on completion. Prevents ghost tasks in plan stats.
+- **Auto-reconcile message clarity** — When all tasks are completed, reconciliation now says "All tasks completed" instead of the verbose "Auto-reconciled: N/N tasks completed, 0 skipped, 0 failed".
+
+### Changed
+
+- **Release workflow publishes all 6 packages** — Added `@soleri/engine` and `soleri` (wrapper) to the lockstep publish pipeline alongside core, forge, cli, and create-soleri. All publishable packages now ship on every tag push.
+
+### Added
+
+- **Architecture doc: `docs/architecture/package-topology.md`** — Defines the canonical package topology, engine resolution strategy, lockstep release invariants, and upgrade authority (`@soleri/cli` is the single upgrade target).
+- **Regression test suite: `fresh-machine-drift.test.ts`** — 6 source-level tests that guard against persona drift, update/upgrade divergence, engine resolution inconsistency, and release coverage gaps.
+
+## [9.20.0] — 2026-04-08
+
+### Added
+
+- **Transcript memory lane** — Raw transcript capture for session replay and brain extraction.
+- **Zod v4 compatibility** — Resolved `z.record()` breaking changes across the codebase.
+
+## [9.19.1] — 2026-04-07
+
+### Fixed
+
+- Bug fixes and stability improvements.
+
 ## [9.16.3] — 2026-04-04
 
 ### Fixed
