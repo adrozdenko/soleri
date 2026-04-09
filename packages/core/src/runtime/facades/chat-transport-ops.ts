@@ -187,7 +187,7 @@ export function createChatTransportOps(state: ChatState): OpDefinition[] {
       schema: z.object({
         name: z.string().describe('Tool name.'),
         description: z.string().describe('Tool description.'),
-        inputSchema: z.record(z.unknown()).describe('JSON Schema for tool input.'),
+        inputSchema: z.record(z.string(), z.unknown()).describe('JSON Schema for tool input.'),
       }),
       handler: async (params) => {
         if (!state.bridge) {
@@ -220,7 +220,7 @@ export function createChatTransportOps(state: ChatState): OpDefinition[] {
       auth: 'write',
       schema: z.object({
         name: z.string().describe('Tool name to execute.'),
-        input: z.record(z.unknown()).optional().describe('Tool input parameters.'),
+        input: z.record(z.string(), z.unknown()).optional().describe('Tool input parameters.'),
       }),
       handler: async (params) => {
         if (!state.bridge) return { output: 'Bridge not initialized', isError: true };

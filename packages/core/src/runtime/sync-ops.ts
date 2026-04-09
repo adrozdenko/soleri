@@ -262,7 +262,7 @@ export function createSyncOps(runtime: AgentRuntime): OpDefinition[] {
           z.object({
             domain: z.string(),
             version: z.string(),
-            entries: z.array(z.record(z.unknown())),
+            entries: z.array(z.record(z.string(), z.unknown())),
           }),
         ).describe('Array of IntelligenceBundle objects to import'),
         tier: z

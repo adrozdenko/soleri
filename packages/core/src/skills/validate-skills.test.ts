@@ -130,7 +130,7 @@ YOUR_AGENT_core op:create_plan params: { title: "My Plan", objective: "Do someth
       (e) => e.op === 'create_plan' && e.message.includes('scope'),
     );
     expect(scopeError).toBeDefined();
-    expect(scopeError!.message).toContain('Expected string');
+    expect(scopeError!.message).toContain('expected string, received object');
   });
 
   it('returns structured error objects with required fields', () => {
