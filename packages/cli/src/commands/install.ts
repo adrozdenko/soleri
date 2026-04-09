@@ -505,7 +505,7 @@ export function registerInstall(program: Command): void {
       // Warn users running via npx — their cache may go stale on next release
       if (resolveEngineBin().command === 'npx') {
         p.log.warn(
-          `Running via npx — updates may be cached. For reliable updates: npm install -g soleri`,
+          `Running via npx — updates may be cached. For reliable updates: npm install -g @soleri/cli`,
         );
       }
 

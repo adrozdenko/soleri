@@ -25,7 +25,7 @@ function getLatestVersion(): string {
 }
 
 function installLatest(): void {
-  execSync('npm install -g soleri@latest', { stdio: 'inherit' });
+  execSync('npm install -g @soleri/cli@latest', { stdio: 'inherit' });
 }
 
 export function registerUpdate(program: Command): void {
@@ -64,7 +64,7 @@ export function registerUpdate(program: Command): void {
       try {
         installLatest();
       } catch {
-        p.log.error('Update failed. Try manually: npm install -g soleri@latest');
+        p.log.error('Update failed. Try manually: npm install -g @soleri/cli@latest');
         process.exit(1);
       }
 

@@ -1,9 +1,10 @@
 import { spawn } from 'node:child_process';
-import { existsSync, watch, writeFileSync } from 'node:fs';
+import { watch, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import * as p from '@clack/prompts';
 import { detectAgent } from '../utils/agent-context.js';
+import { resolveEngineBin } from './install.js';
 
 export function registerDev(program: Command): void {
   program
@@ -35,27 +36,15 @@ async function runFileTreeDev(agentPath: string, agentId: string): Promise<void>
   await regenerateClaudeMd(agentPath);
   await syncSkills(agentPath, agentId);
 
-  // Start the engine server
-  let engineBin: string;
-  try {
-    const candidate = join(
-      agentPath,
-      'node_modules',
-      '@soleri',
-      'core',
-      'dist',
-      'engine',
-      'bin',
-      'soleri-engine.js',
-    );
-    if (!existsSync(candidate)) throw new Error('Engine not found at ' + candidate);
-    engineBin = candidate;
-  } catch {
-    p.log.error('Engine not found. Run: npm install @soleri/core');
-    process.exit(1);
-  }
+  // Start the engine server (shared resolution — local binary or npx fallback)
+  const resolved = resolveEngineBin();
+  const agentYaml = join(agentPath, 'agent.yaml');
+  const engineArgs =
+    resolved.command === 'node'
+      ? [resolved.bin, '--agent', agentYaml]
+      : [resolved.bin, '--agent', agentYaml];
 
-  const engine = spawn('node', [engineBin, '--agent', join(agentPath, 'agent.yaml')], {
+  const engine = spawn(resolved.command, engineArgs, {
     stdio: ['pipe', 'inherit', 'inherit'],
     env: { ...process.env },
   });

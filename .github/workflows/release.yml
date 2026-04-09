@@ -45,6 +45,9 @@ jobs:
       - name: Build create-soleri
         run: npm run build --workspace=create-soleri
 
+      - name: Build @soleri/engine
+        run: npm run build --workspace=@soleri/engine || true
+
       - uses: actions/upload-artifact@v7
         with:
           name: build-output
@@ -79,6 +82,7 @@ jobs:
           npm run build --workspace=@soleri/forge
           npm run build --workspace=@soleri/cli
           npm run build --workspace=create-soleri
+          npm run build --workspace=@soleri/engine || true
 
       - name: Run E2E tests
         run: npm run test:e2e
@@ -112,6 +116,7 @@ jobs:
           npm run build --workspace=@soleri/forge
           npm run build --workspace=@soleri/cli
           npm run build --workspace=create-soleri
+          npm run build --workspace=@soleri/engine || true
 
       - name: Publish @soleri/core
         run: |
@@ -166,6 +171,38 @@ jobs:
           set -euo pipefail
           log="$(mktemp)"
           if ! npm publish --workspace=create-soleri --access public >"$log" 2>&1; then
+            if grep -qE "previously published|You cannot publish over|EPUBLISHCONFLICT" "$log"; then
+              echo "Already published — skipping"
+              cat "$log"
+            else
+              cat "$log"
+              exit 1
+            fi
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @soleri/engine
+        run: |
+          set -euo pipefail
+          log="$(mktemp)"
+          if ! npm publish --workspace=@soleri/engine --access public >"$log" 2>&1; then
+            if grep -qE "previously published|You cannot publish over|EPUBLISHCONFLICT" "$log"; then
+              echo "Already published — skipping"
+              cat "$log"
+            else
+              cat "$log"
+              exit 1
+            fi
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish soleri
+        run: |
+          set -euo pipefail
+          log="$(mktemp)"
+          if ! npm publish --workspace=soleri --access public >"$log" 2>&1; then
             if grep -qE "previously published|You cannot publish over|EPUBLISHCONFLICT" "$log"; then
               echo "Already published — skipping"
               cat "$log"

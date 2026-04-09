@@ -10,6 +10,7 @@ import {
   type SetupTarget,
   scaffoldFileTree,
 } from '@soleri/forge/lib';
+import { ITALIAN_CRAFTSPERSON } from '@soleri/core/personas';
 import { runCreateWizard, type WizardGitConfig } from '../prompts/create-wizard.js';
 import { listPacks } from '../hook-packs/registry.js';
 import { installPack } from '../hook-packs/installer.js';
@@ -76,6 +77,7 @@ export function registerCreate(program: Command): void {
               .toLowerCase()
               .replace(/[^a-z0-9]+/g, '-')
               .replace(/^-|-$/g, '');
+            const persona = { ...ITALIAN_CRAFTSPERSON, name };
             config = AgentConfigSchema.parse({
               id,
               name,
@@ -85,7 +87,10 @@ export function registerCreate(program: Command): void {
               domains: [],
               principles: [],
               tone: 'mentor',
-              greeting: `Ciao! I'm ${name}. Ready to build something beautiful today?`,
+              greeting:
+                persona.greetings[0] ??
+                `Ciao! I'm ${name}. Ready to build something beautiful today?`,
+              persona,
             });
             // Non-interactive default: git init yes, no remote
             if (!skipGit) {
