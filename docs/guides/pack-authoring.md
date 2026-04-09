@@ -13,14 +13,42 @@ Create and publish Soleri packs — reusable bundles of knowledge, ops, and skil
 
 ## Quick Start
 
-### 1. Create the pack
+### Scaffold with the CLI (recommended)
+
+The fastest way to create a pack:
+
+```bash
+soleri pack create
+```
+
+The interactive wizard prompts for:
+
+1. **Pack name** — e.g., `my-react-patterns`
+2. **Pack type** — domain, knowledge, skills, hooks, or bundle
+3. **Description** — what the pack provides
+4. **Tier** — community (free, npm) or premium (platform account)
+5. **Author** — e.g., `@username`
+
+For domain packs, this generates a full TypeScript project with `src/index.ts`, tests, `tsconfig.json`, `vitest.config.ts`, and a `soleri-pack.json` manifest. For other types, it generates the manifest and appropriate directories.
+
+After scaffolding:
+
+```bash
+cd my-pack
+npm install && npm test && npm run build
+soleri pack validate ./
+```
+
+### Manual setup
+
+If you prefer to set things up yourself:
 
 ```bash
 mkdir my-pack && cd my-pack
 npm init -y
 ```
 
-### 2. Add the manifest
+### Add the manifest
 
 Create `soleri-pack.json`:
 
@@ -138,6 +166,7 @@ Ops can define a schema using any library with `.parse()` and `.safeParse()` met
 ## CLI Commands
 
 ```bash
+soleri pack create                  # Interactive pack scaffolder
 soleri pack list                    # All available packs
 soleri pack list --installed        # Installed packs
 soleri pack list --type domain      # Filter by type
@@ -145,6 +174,8 @@ soleri pack list --tier community   # Filter by tier
 soleri pack add <name>              # Install a pack
 soleri pack remove <name>           # Uninstall a pack
 soleri pack info <name>             # Pack details
+soleri pack validate <path>         # Validate manifest and structure
+soleri pack publish [path]          # Publish to npm (supports --dry-run)
 soleri pack seed <topic>            # LLM-generate a knowledge pack
 ```
 
