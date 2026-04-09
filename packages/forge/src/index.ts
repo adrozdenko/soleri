@@ -19,7 +19,6 @@ async function main(): Promise<void> {
     params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
   };
 
-  // @ts-expect-error -- MCP SDK Zod type inference hits TS depth limit; runtime is correct
   server.tool(
     'forge',
     `Soleri Forge — scaffold AI agents that learn, remember, and grow.\n\nOperations: ${opNames.join(', ')}\n\nStart by calling 'guide' to get the recommended conversation flow for helping a user create an agent.`,
