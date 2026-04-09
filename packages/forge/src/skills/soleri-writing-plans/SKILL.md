@@ -49,9 +49,19 @@ YOUR_AGENT_core op:create_plan
   params: {
     objective: "<one-sentence goal>",
     scope: { included: [...], excluded: [...] },
-    steps: [{ title: "Step 1", description: "details" }, ...]
+    steps: [{ title: "Step 1", description: "details" }, ...],
+    alternatives: [
+      {
+        approach: "<rejected approach>",
+        pros: ["advantage 1", "advantage 2"],
+        cons: ["disadvantage 1", "disadvantage 2"],
+        rejected_reason: "<why this approach was not chosen>"
+      }
+    ]
   }
 ```
+
+**Always include 2+ alternatives.** The grader (Pass 8) checks `plan.alternatives` as a structured field — putting alternatives in the objective text does NOT count. Plans without structured alternatives cap at ~85 and cannot reach grade A.
 
 ## Grade and Improve
 
@@ -61,7 +71,18 @@ YOUR_AGENT_core op:plan_auto_improve params: { planId: "<id>" }
 YOUR_AGENT_core op:plan_meets_grade params: { planId: "<id>", targetGrade: "A" }
 ```
 
-Iterate with: `op:plan_iterate params: { planId: "<id>", feedback: "<improvement>" }`
+Iterate with alternatives:
+```
+YOUR_AGENT_core op:plan_iterate
+  params: {
+    planId: "<id>",
+    feedback: "<improvement>",
+    alternatives: [
+      { approach: "...", pros: [...], cons: [...], rejected_reason: "..." },
+      { approach: "...", pros: [...], cons: [...], rejected_reason: "..." }
+    ]
+  }
+```
 
 ## Split into Tasks
 
@@ -102,6 +123,7 @@ Offer execution choice: subagent-driven (this session) or parallel session with 
 - Vague steps like "add validation" instead of exact code
 - Missing test steps in the plan
 - Not grading the plan before presenting to user
+- Putting alternatives in the objective text instead of the `alternatives` parameter — the grader only checks the structured field
 
 ## Quick Reference
 
