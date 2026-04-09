@@ -12,7 +12,10 @@ import { homedir } from 'node:os';
 import * as p from '@clack/prompts';
 import { detectAgent } from '../utils/agent-context.js';
 import { detectArtifacts } from '../utils/agent-artifacts.js';
-import { resolveInstalledEngineBin } from '../utils/core-resolver.js';
+import {
+  resolveInstalledEngineBin,
+  resolveTranscriptCaptureScript,
+} from '../utils/core-resolver.js';
 
 /** Default parent directory for agents: ~/.soleri/ */
 const SOLERI_HOME = process.env.SOLERI_HOME ?? join(homedir(), '.soleri');
@@ -154,6 +157,76 @@ export function installClaudePermissions(agentId: string): void {
     p.log.success(`Pre-approved ${merged.length} facade permissions in settings.local.json`);
   } else {
     p.log.info('Facade permissions already configured in settings.local.json');
+  }
+}
+
+/**
+ * Register PreCompact + Stop hooks for automatic transcript capture.
+ * Writes to ~/.claude/settings.json (user-level hooks).
+ * Idempotent — skips if transcript hooks are already registered.
+ */
+export function installTranscriptHooks(): void {
+  const captureScript = resolveTranscriptCaptureScript();
+  if (!captureScript) {
+    // @soleri/core not installed locally — skip silently
+    return;
+  }
+
+  const settingsPath = join(homedir(), '.claude', 'settings.json');
+  let settings: Record<string, unknown> = {};
+
+  if (existsSync(settingsPath)) {
+    try {
+      settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+    } catch {
+      return; // Don't corrupt a settings file we can't parse
+    }
+  }
+
+  const hooks = (settings.hooks ?? {}) as Record<string, unknown[]>;
+  const scriptPath = toPosix(captureScript);
+  const vaultPath = toPosix(join(homedir(), '.soleri', 'vault.db'));
+
+  // The hook command: read session_id + transcript_path from stdin, call capture script
+  const hookCommand =
+    `INPUT=$(cat); TP=$(echo "$INPUT" | grep -o '"transcript_path":"[^"]*"' | head -1 | cut -d'"' -f4); ` +
+    `SI=$(echo "$INPUT" | grep -o '"session_id":"[^"]*"' | head -1 | cut -d'"' -f4); ` +
+    `[ -z "$TP" ] || [ ! -f "$TP" ] && exit 0; ` +
+    `node "${scriptPath}" --session-id "$SI" --transcript-path "$TP" --project-path "$PWD" --vault-path "${vaultPath}" 2>/dev/null || true`;
+
+  const hookEntry = {
+    hooks: [
+      {
+        type: 'command',
+        command: hookCommand,
+        timeout: 10000,
+        statusMessage: 'Capturing transcript...',
+      },
+    ],
+  };
+
+  // Check if already registered (look for capture-hook.js in any existing hook command)
+  const isRegistered = (eventHooks: unknown[]): boolean =>
+    eventHooks.some((h) => JSON.stringify(h).includes('capture-hook.js'));
+
+  let changed = false;
+
+  for (const event of ['PreCompact', 'Stop'] as const) {
+    if (!hooks[event]) hooks[event] = [];
+    const eventHooks = hooks[event] as unknown[];
+    if (!isRegistered(eventHooks)) {
+      eventHooks.push(hookEntry);
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    settings.hooks = hooks;
+    mkdirSync(dirname(settingsPath), { recursive: true });
+    writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8');
+    p.log.success('Transcript capture hooks registered (PreCompact + Stop)');
+  } else {
+    p.log.info('Transcript capture hooks already registered');
   }
 }
 
@@ -498,6 +571,11 @@ export function registerInstall(program: Command): void {
 
       // Create global launcher script
       installLauncher(ctx.agentId, ctx.agentPath, target);
+
+      // Register transcript capture hooks (PreCompact + Stop)
+      if (isFileTree) {
+        installTranscriptHooks();
+      }
 
       p.log.success(`Install complete for ${ctx.agentId}.`);
       p.log.info(getNextStepMessage(target));

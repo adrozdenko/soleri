@@ -615,6 +615,23 @@ const ENGINE_RULES_LINES: string[] = [
   '- Promote universal patterns to global pool with `op:memory_promote_to_global`.',
   '',
 
+  // ─── Transcript Memory Lane ─────────────────────────────
+  '## Transcript Memory Lane',
+  '<!-- soleri:transcript -->',
+  '',
+  'Three memory shapes: vault knowledge ("what should we do?"), structured memories ("what happened?"), raw transcripts ("what did we SAY?").',
+  '',
+  '| Op | Purpose |',
+  '|-----|---------|',
+  '| `op:transcript_capture` | Persist raw conversation messages as searchable transcript session |',
+  '| `op:transcript_search` | Search transcript segments for exact recall (BM25 + exact phrase + token overlap) |',
+  '| `op:transcript_session_get` | Replay exact messages from a session, with optional range (`aroundSeq`) |',
+  '| `op:transcript_promote` | Promote a transcript span to structured memory or vault knowledge |',
+  '',
+  '- Search transcripts via `op:memory_search` with `source: "transcript"` or `source: "all"`.',
+  '- Transcripts are captured automatically via PreCompact and Stop hooks when installed.',
+  '',
+
   // ─── Tool Advocacy ─────────────────────────────────────
   '## Tool Advocacy',
   '<!-- soleri:tool-advocacy -->',
@@ -631,6 +648,7 @@ const ENGINE_RULES_LINES: string[] = [
   '| Search for knowledge | "do we have", "any patterns for", "best practice" | `op:search_intelligent` — searches indexed vault, not LLM training data |',
   '| Plan work | "let me think about", "how should we", "I want to build" | `op:orchestrate_plan` — vault + brain context, graded plans |',
   '| Recall past work | "what did we do", "last time", "have we seen this" | `op:memory_search` — structured session history, works cross-project |',
+  '| Exact conversation recall | "what did we say", "exact words", "replay conversation" | `op:transcript_search` — raw transcript segments with exact message content |',
   '| Check quality | "is this working", "health check", "status" | `op:admin_health` — real-time subsystem status |',
   '| Debug a problem | "this is broken", "why is this failing" | `op:search_intelligent` — check vault for known bugs first |',
   '| Learn from patterns | "what works for", "recommendations" | `op:strengths` + `op:recommend` — brain-learned patterns from real usage |',

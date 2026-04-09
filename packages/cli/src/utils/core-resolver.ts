@@ -37,3 +37,11 @@ export function resolveInstalledEngineBin(): string | null {
   const engineBinPath = join(dirname(entryPath), 'engine', 'bin', 'soleri-engine.js');
   return existsSync(engineBinPath) ? engineBinPath : null;
 }
+
+export function resolveTranscriptCaptureScript(): string | null {
+  const entryPath = resolveCoreEntryPath();
+  if (!entryPath) return null;
+
+  const scriptPath = join(dirname(entryPath), 'transcript', 'capture-hook.js');
+  return existsSync(scriptPath) ? scriptPath : null;
+}

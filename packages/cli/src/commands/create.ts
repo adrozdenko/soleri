@@ -22,7 +22,7 @@ import {
   gitPush,
   ghCreateRepo,
 } from '../utils/git.js';
-import { installClaudePermissions } from './install.js';
+import { installClaudePermissions, installTranscriptHooks } from './install.js';
 
 function parseSetupTarget(value?: string): SetupTarget | undefined {
   if (!value) return undefined;
@@ -316,6 +316,9 @@ export function registerCreate(program: Command): void {
 
               // Pre-approve facade permissions so users don't hit approval prompts
               installClaudePermissions(config.id);
+
+              // Register transcript capture hooks
+              installTranscriptHooks();
             } catch {
               p.log.warn(
                 'Could not auto-register — run `npx @soleri/cli install --target claude` manually.',
