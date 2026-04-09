@@ -47,8 +47,8 @@ Import individual layers:
 
 ```css
 @import '@soleri/tokens/css/primitives'; /* color scales, shadows, radii */
-@import '@soleri/tokens/css/light';      /* light theme */
-@import '@soleri/tokens/css/dark';       /* dark theme */
+@import '@soleri/tokens/css/light'; /* light theme */
+@import '@soleri/tokens/css/dark'; /* dark theme */
 ```
 
 ### JavaScript
@@ -56,21 +56,21 @@ Import individual layers:
 ```typescript
 import { colors, shadows, radii } from '@soleri/tokens';
 
-colors.primary[400];   // '#e8a847'
-shadows.md;            // '0 8px 24px -8px rgb(var(--color-black-rgb) / 0.12)'
-radii.lg;              // '16px'
+colors.primary[400]; // '#e8a847'
+shadows.md; // '0 8px 24px -8px rgb(var(--color-black-rgb) / 0.12)'
+radii.lg; // '16px'
 ```
 
 ## Color Scales
 
 Four primary scales, each with 10 shades (25-900):
 
-| Scale | Character | Example shades |
-| ----- | --------- | -------------- |
-| **Primary** | Amber/Gold | `#E8A847` (400), `#C88F37` (500) |
-| **Secondary** | Teal/Cyan | `#50B1D3` (400), `#239DC3` (500) |
-| **Tertiary** | Green/Leaf | `#91C96E` (400), `#7AAC5B` (500) |
-| **Neutral** | Slate/Steel | `#919EB2` (400), `#7A899F` (500) |
+| Scale         | Character   | Example shades                   |
+| ------------- | ----------- | -------------------------------- |
+| **Primary**   | Amber/Gold  | `#E8A847` (400), `#C88F37` (500) |
+| **Secondary** | Teal/Cyan   | `#50B1D3` (400), `#239DC3` (500) |
+| **Tertiary**  | Green/Leaf  | `#91C96E` (400), `#7AAC5B` (500) |
+| **Neutral**   | Slate/Steel | `#919EB2` (400), `#7A899F` (500) |
 
 Plus: `white`, `black`, `error-500`, `error-600`, and `zinc` toggle scale.
 
@@ -78,35 +78,37 @@ Plus: `white`, `black`, `error-500`, `error-600`, and `zinc` toggle scale.
 
 Theme-aware tokens that resolve via CSS custom properties:
 
-| Category | Tokens |
-| -------- | ------ |
-| Backgrounds | `background`, `background-warm`, `surface`, `surface-glass`, `surface-elevated` |
-| Foregrounds | `foreground`, `foreground-strong`, `muted` |
-| Borders | `border`, `border-subtle` |
-| Accents | `accent-primary`, `accent-teal`, `accent-green`, `ring` |
-| Code | `code-bg`, `code-fg`, `code-border`, `code-prompt`, `code-cmd`, `code-arg`, `code-comment`, `code-key`, `code-val`, `code-ok` |
-| Effects | `glow-amber`, `glow-teal`, `glow-green` shadows, `hero-gradient`, `card-gradient` |
+| Category    | Tokens                                                                                                                        |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Backgrounds | `background`, `background-warm`, `surface`, `surface-glass`, `surface-elevated`                                               |
+| Foregrounds | `foreground`, `foreground-strong`, `muted`                                                                                    |
+| Borders     | `border`, `border-subtle`                                                                                                     |
+| Accents     | `accent-primary`, `accent-teal`, `accent-green`, `ring`                                                                       |
+| Code        | `code-bg`, `code-fg`, `code-border`, `code-prompt`, `code-cmd`, `code-arg`, `code-comment`, `code-key`, `code-val`, `code-ok` |
+| Effects     | `glow-amber`, `glow-teal`, `glow-green` shadows, `hero-gradient`, `card-gradient`                                             |
 
 ## Themes
 
 Activate via `data-theme` attribute:
 
 ```html
-<html data-theme="light"> <!-- or "dark" -->
+<html data-theme="light">
+  <!-- or "dark" -->
+</html>
 ```
 
 Both themes define identical property names. Dark theme uses brighter accent shades, light theme uses deeper shades.
 
 ## Exports
 
-| Import path | What you get |
-| ----------- | ------------ |
-| `@soleri/tokens` | All primitives + semantic tokens + Tailwind preset |
-| `@soleri/tokens/tailwind` | Tailwind preset only |
-| `@soleri/tokens/css` | All CSS (primitives + both themes) |
-| `@soleri/tokens/css/primitives` | Color scales, shadows, radii |
-| `@soleri/tokens/css/light` | Light theme properties |
-| `@soleri/tokens/css/dark` | Dark theme properties |
+| Import path                     | What you get                                       |
+| ------------------------------- | -------------------------------------------------- |
+| `@soleri/tokens`                | All primitives + semantic tokens + Tailwind preset |
+| `@soleri/tokens/tailwind`       | Tailwind preset only                               |
+| `@soleri/tokens/css`            | All CSS (primitives + both themes)                 |
+| `@soleri/tokens/css/primitives` | Color scales, shadows, radii                       |
+| `@soleri/tokens/css/light`      | Light theme properties                             |
+| `@soleri/tokens/css/dark`       | Dark theme properties                              |
 
 ## License
 
