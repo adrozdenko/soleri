@@ -47,7 +47,7 @@ describe('validateSkillDocs', () => {
       (e) => e.opName === 'create_plan' && e.message.includes('scope'),
     );
     expect(scopeError).toBeDefined();
-    expect(scopeError!.message).toContain('expected string, received object');
+    expect(scopeError!.message).toMatch(/expected string, received object/i);
   });
 
   it('detects unknown ops', () => {
