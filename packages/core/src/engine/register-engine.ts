@@ -389,7 +389,11 @@ function registerModuleTool(
 
   const facadeSchema = {
     op: z.string().describe(`Operation: ${opNames.join(' | ')}`),
-    params: z.record(z.unknown()).optional().default({}).describe('Operation parameters'),
+    params: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .default({})
+      .describe('Operation parameters'),
   };
 
   // @ts-ignore -- MCP SDK Zod type inference hits TS depth limit; runtime is correct

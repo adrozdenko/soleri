@@ -74,7 +74,7 @@ export interface FacadeResponse {
 
 export const facadeInputSchema = z.object({
   op: z.string().describe('Operation name'),
-  params: z.record(z.unknown()).optional().default({}),
+  params: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 export type FacadeInput = z.infer<typeof facadeInputSchema>;

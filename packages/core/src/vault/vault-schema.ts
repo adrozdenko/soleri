@@ -29,6 +29,7 @@ export function initializeSchema(provider: PersistenceProvider): void {
   migrateTierColumn(provider);
   migratePerformanceIndexes(provider);
   migrateVectorStorage(provider);
+  migrateTranscriptTables(provider);
 }
 
 function createCoreTables(provider: PersistenceProvider): void {
@@ -271,4 +272,77 @@ function migrateVectorStorage(provider: PersistenceProvider): void {
     );
   `);
   provider.execSql('CREATE INDEX IF NOT EXISTS idx_entry_vectors_model ON entry_vectors(model)');
+}
+
+function migrateTranscriptTables(provider: PersistenceProvider): void {
+  provider.execSql(`
+    CREATE TABLE IF NOT EXISTS transcript_sessions (
+      id TEXT PRIMARY KEY,
+      project_path TEXT NOT NULL,
+      source_kind TEXT NOT NULL CHECK(source_kind IN ('live_chat', 'imported_text', 'imported_file', 'external')),
+      source_ref TEXT,
+      title TEXT,
+      participants TEXT NOT NULL DEFAULT '[]',
+      tags TEXT NOT NULL DEFAULT '[]',
+      importance REAL NOT NULL DEFAULT 0.5,
+      started_at INTEGER,
+      ended_at INTEGER,
+      message_count INTEGER NOT NULL DEFAULT 0,
+      segment_count INTEGER NOT NULL DEFAULT 0,
+      token_estimate INTEGER NOT NULL DEFAULT 0,
+      meta TEXT NOT NULL DEFAULT '{}',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      archived_at INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS transcript_messages (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES transcript_sessions(id) ON DELETE CASCADE,
+      seq INTEGER NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system', 'tool')),
+      speaker TEXT,
+      content TEXT NOT NULL,
+      token_estimate INTEGER NOT NULL DEFAULT 0,
+      content_hash TEXT,
+      timestamp INTEGER,
+      meta TEXT NOT NULL DEFAULT '{}',
+      UNIQUE(session_id, seq)
+    );
+    CREATE TABLE IF NOT EXISTS transcript_segments (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES transcript_sessions(id) ON DELETE CASCADE,
+      seq_start INTEGER NOT NULL,
+      seq_end INTEGER NOT NULL,
+      kind TEXT NOT NULL CHECK(kind IN ('exchange', 'window')),
+      role_set TEXT NOT NULL DEFAULT '[]',
+      speaker_set TEXT NOT NULL DEFAULT '[]',
+      text TEXT NOT NULL,
+      token_estimate INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE VIRTUAL TABLE IF NOT EXISTS transcript_segments_fts USING fts5(
+      id, session_id, text, role_set, speaker_set,
+      content='transcript_segments',
+      content_rowid='rowid',
+      tokenize='porter unicode61'
+    );
+    CREATE TRIGGER IF NOT EXISTS transcript_segments_ai AFTER INSERT ON transcript_segments BEGIN
+      INSERT INTO transcript_segments_fts(rowid,id,session_id,text,role_set,speaker_set)
+      VALUES(new.rowid,new.id,new.session_id,new.text,new.role_set,new.speaker_set);
+    END;
+    CREATE TRIGGER IF NOT EXISTS transcript_segments_ad AFTER DELETE ON transcript_segments BEGIN
+      INSERT INTO transcript_segments_fts(transcript_segments_fts,rowid,id,session_id,text,role_set,speaker_set)
+      VALUES('delete',old.rowid,old.id,old.session_id,old.text,old.role_set,old.speaker_set);
+    END;
+    CREATE TRIGGER IF NOT EXISTS transcript_segments_au AFTER UPDATE ON transcript_segments BEGIN
+      INSERT INTO transcript_segments_fts(transcript_segments_fts,rowid,id,session_id,text,role_set,speaker_set)
+      VALUES('delete',old.rowid,old.id,old.session_id,old.text,old.role_set,old.speaker_set);
+      INSERT INTO transcript_segments_fts(rowid,id,session_id,text,role_set,speaker_set)
+      VALUES(new.rowid,new.id,new.session_id,new.text,new.role_set,new.speaker_set);
+    END;
+    CREATE INDEX IF NOT EXISTS idx_transcript_sessions_project ON transcript_sessions(project_path, archived_at);
+    CREATE INDEX IF NOT EXISTS idx_transcript_sessions_ended_at ON transcript_sessions(ended_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_transcript_messages_session_seq ON transcript_messages(session_id, seq);
+    CREATE INDEX IF NOT EXISTS idx_transcript_segments_session_range ON transcript_segments(session_id, seq_start, seq_end);
+  `);
 }

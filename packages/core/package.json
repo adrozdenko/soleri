@@ -25,7 +25,9 @@
     "soleri-engine": "dist/engine/bin/soleri-engine.js"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "data/knowledge-packs/",
+    "src/transcript/transcript-capture-hook.sh"
   ],
   "type": "module",
   "main": "dist/index.js",
@@ -167,6 +169,13 @@
     "./workflows": {
       "types": "./dist/workflows/index.d.ts",
       "import": "./dist/workflows/index.js"
+    },
+    "./transcript": {
+      "types": "./dist/transcript/index.d.ts",
+      "import": "./dist/transcript/index.js"
+    },
+    "./transcript/capture-hook": {
+      "import": "./dist/transcript/capture-hook.js"
     }
   },
   "publishConfig": {

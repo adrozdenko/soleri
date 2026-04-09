@@ -1,6 +1,7 @@
 /**
  * Memory facade — session & cross-project memory ops.
  * capture, search, dedup, promote.
+ * Transcript ops — capture, search, replay, promote.
  */
 
 import { z } from 'zod';
@@ -10,6 +11,13 @@ import { createMemoryExtraOps } from '../memory-extra-ops.js';
 import { createMemoryCrossProjectOps } from '../memory-cross-project-ops.js';
 import { extractFromSession } from '../../operator/operator-signals.js';
 import type { SessionCaptureData } from '../../operator/operator-signals.js';
+import {
+  captureTranscriptSession,
+  searchTranscriptSegments,
+  getTranscriptSession,
+  getTranscriptMessages,
+} from '../../vault/vault-transcripts.js';
+import { rankTranscriptCandidates } from '../../transcript/ranker.js';
 
 /** Truncate text to maxLen chars, appending ellipsis when truncated. */
 function truncateSummary(text: string, maxLen = 120): string {
@@ -25,7 +33,8 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'memory_search',
       description:
-        'Search memories using full-text search. Returns summaries by default; pass verbose: true for full objects.',
+        'Search memories using full-text search. Returns summaries by default; pass verbose: true for full objects. ' +
+        'Use source to search transcripts or both memories and transcripts.',
       auth: 'read',
       schema: z.object({
         query: z.string(),
@@ -37,23 +46,60 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           .optional()
           .default(false)
           .describe('Return full memory objects instead of summaries'),
+        source: z
+          .enum(['memory', 'transcript', 'all'])
+          .optional()
+          .default('memory')
+          .describe(
+            'Search source: memory (default), transcript (raw transcript segments), or all (both)',
+          ),
       }),
       handler: async (params) => {
-        const memories = vault.searchMemories(params.query as string, {
-          type: params.type as string | undefined,
-          projectPath: params.projectPath as string | undefined,
-          limit: (params.limit as number) ?? 10,
-        });
-        if (params.verbose) {
-          return memories;
+        const query = params.query as string;
+        const limit = (params.limit as number) ?? 10;
+        const source = (params.source as string) ?? 'memory';
+        const projectPath = params.projectPath as string | undefined;
+
+        const searchMemoriesLocal = () => {
+          const memories = vault.searchMemories(query, {
+            type: params.type as string | undefined,
+            projectPath,
+            limit,
+          });
+          if (params.verbose) {
+            return memories;
+          }
+          return memories.map((m) => ({
+            id: m.id,
+            type: m.type,
+            summary: truncateSummary(m.summary || m.context),
+            score: null,
+            project: m.projectPath,
+          }));
+        };
+
+        const searchTranscriptsLocal = () => {
+          const provider = vault.getProvider();
+          const candidates = searchTranscriptSegments(provider, query, {
+            projectPath,
+            limit,
+          });
+          return rankTranscriptCandidates(candidates, query, { limit });
+        };
+
+        if (source === 'transcript') {
+          return searchTranscriptsLocal();
         }
-        return memories.map((m) => ({
-          id: m.id,
-          type: m.type,
-          summary: truncateSummary(m.summary || m.context),
-          score: null,
-          project: m.projectPath,
-        }));
+
+        if (source === 'all') {
+          return {
+            memories: searchMemoriesLocal(),
+            transcripts: searchTranscriptsLocal(),
+          };
+        }
+
+        // default: 'memory' — existing behavior
+        return searchMemoriesLocal();
       },
     },
     {
@@ -396,6 +442,222 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
             generatedAt: now,
           },
         };
+      },
+    },
+
+    // ─── Transcript ops ─────────────────────────────────────────
+    {
+      name: 'transcript_capture',
+      description: 'Persist raw transcript data as a searchable transcript session.',
+      auth: 'write',
+      schema: z.object({
+        projectPath: z.string().optional(),
+        sessionId: z.string().optional(),
+        title: z.string().optional(),
+        sourceKind: z.enum(['live_chat', 'imported_text', 'imported_file', 'external']).optional(),
+        sourceRef: z.string().optional(),
+        participants: z.array(z.string()).optional(),
+        tags: z.array(z.string()).optional(),
+        importance: z.number().optional(),
+        segmentMode: z.enum(['exchange', 'window']).optional(),
+        messages: z
+          .array(
+            z.object({
+              role: z.enum(['user', 'assistant', 'system', 'tool']),
+              content: z.string(),
+              speaker: z.string().optional(),
+              timestamp: z.number().optional(),
+            }),
+          )
+          .optional(),
+        text: z.string().optional(),
+        transcriptPath: z.string().optional(),
+      }),
+      handler: async (params) => {
+        const provider = vault.getProvider();
+        return captureTranscriptSession(provider, {
+          projectPath: params.projectPath as string | undefined,
+          sessionId: params.sessionId as string | undefined,
+          title: params.title as string | undefined,
+          sourceKind: params.sourceKind as
+            | 'live_chat'
+            | 'imported_text'
+            | 'imported_file'
+            | 'external'
+            | undefined,
+          sourceRef: params.sourceRef as string | undefined,
+          participants: params.participants as string[] | undefined,
+          tags: params.tags as string[] | undefined,
+          importance: params.importance as number | undefined,
+          segmentMode: params.segmentMode as 'exchange' | 'window' | undefined,
+          messages: params.messages as
+            | Array<{
+                role: 'user' | 'assistant' | 'system' | 'tool';
+                content: string;
+                speaker?: string;
+                timestamp?: number;
+              }>
+            | undefined,
+          text: params.text as string | undefined,
+          transcriptPath: params.transcriptPath as string | undefined,
+        });
+      },
+    },
+    {
+      name: 'transcript_search',
+      description: 'Search raw transcript segments for exact recall.',
+      auth: 'read',
+      schema: z.object({
+        query: z.string(),
+        projectPath: z.string().optional(),
+        sessionId: z.string().optional(),
+        sourceKind: z.enum(['live_chat', 'imported_text', 'imported_file', 'external']).optional(),
+        role: z.enum(['user', 'assistant', 'system', 'tool']).optional(),
+        startedAfter: z.number().optional(),
+        startedBefore: z.number().optional(),
+        limit: z.number().optional(),
+        verbose: z.boolean().optional(),
+      }),
+      handler: async (params) => {
+        const provider = vault.getProvider();
+        const query = params.query as string;
+        const limit = (params.limit as number) ?? 10;
+
+        const candidates = searchTranscriptSegments(provider, query, {
+          projectPath: params.projectPath as string | undefined,
+          sessionId: params.sessionId as string | undefined,
+          sourceKind: params.sourceKind as string | undefined,
+          limit,
+        });
+
+        return rankTranscriptCandidates(candidates, query, {
+          limit,
+          verbose: params.verbose as boolean | undefined,
+        });
+      },
+    },
+    {
+      name: 'transcript_session_get',
+      description: 'Replay exact messages for a transcript session or range.',
+      auth: 'read',
+      schema: z.object({
+        sessionId: z.string(),
+        seqStart: z.number().optional(),
+        seqEnd: z.number().optional(),
+        aroundSeq: z.number().optional().describe('Center the range around this sequence number'),
+        before: z.number().optional().describe('Number of messages before aroundSeq (default 5)'),
+        after: z.number().optional().describe('Number of messages after aroundSeq (default 5)'),
+      }),
+      handler: async (params) => {
+        const provider = vault.getProvider();
+        const sessionId = params.sessionId as string;
+
+        const session = getTranscriptSession(provider, sessionId);
+        if (!session) {
+          return { error: `Transcript session not found: ${sessionId}` };
+        }
+
+        let range: { seqStart?: number; seqEnd?: number } | undefined;
+
+        if (params.aroundSeq !== undefined) {
+          const aroundSeq = params.aroundSeq as number;
+          const before = (params.before as number) ?? 5;
+          const after = (params.after as number) ?? 5;
+          range = {
+            seqStart: Math.max(0, aroundSeq - before),
+            seqEnd: aroundSeq + after,
+          };
+        } else if (params.seqStart !== undefined || params.seqEnd !== undefined) {
+          range = {
+            seqStart: params.seqStart as number | undefined,
+            seqEnd: params.seqEnd as number | undefined,
+          };
+        }
+
+        const messages = getTranscriptMessages(provider, sessionId, range);
+
+        return {
+          session,
+          messages,
+          totalMessages: session.messageCount,
+        };
+      },
+    },
+    {
+      name: 'transcript_promote',
+      description: 'Promote a raw transcript span to structured memory or vault knowledge.',
+      auth: 'write',
+      schema: z.object({
+        sessionId: z.string(),
+        seqStart: z.number(),
+        seqEnd: z.number(),
+        target: z.enum(['memory', 'vault']),
+        memoryType: z
+          .enum(['session', 'lesson', 'preference'])
+          .optional()
+          .describe('Memory type when target is memory (default: lesson)'),
+        entryType: z
+          .enum(['pattern', 'anti-pattern', 'rule', 'playbook'])
+          .optional()
+          .describe('Entry type when target is vault (default: pattern)'),
+        title: z.string().optional(),
+        domain: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      }),
+      handler: async (params) => {
+        const provider = vault.getProvider();
+        const sessionId = params.sessionId as string;
+        const seqStart = params.seqStart as number;
+        const seqEnd = params.seqEnd as number;
+        const target = params.target as 'memory' | 'vault';
+
+        const messages = getTranscriptMessages(provider, sessionId, { seqStart, seqEnd });
+        if (messages.length === 0) {
+          return { promoted: false, error: 'No messages found in the specified range.' };
+        }
+
+        const spanText = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
+        const citation = { promotedFrom: { sessionId, seqStart, seqEnd } };
+
+        if (target === 'memory') {
+          const memoryType = (params.memoryType as 'session' | 'lesson' | 'preference') ?? 'lesson';
+          const memory = vault.captureMemory({
+            projectPath: '.',
+            type: memoryType,
+            context: `Promoted from transcript ${sessionId} [${seqStart}-${seqEnd}]`,
+            summary: spanText,
+            topics: (params.tags as string[]) ?? [],
+            filesModified: [],
+            toolsUsed: [],
+            intent: null,
+            decisions: [],
+            currentState: JSON.stringify(citation),
+            nextSteps: [],
+            vaultEntriesReferenced: [],
+          });
+          return { promoted: true, target: 'memory', id: memory.id };
+        }
+
+        // target === 'vault'
+        const entryType =
+          (params.entryType as 'pattern' | 'anti-pattern' | 'rule' | 'playbook') ?? 'pattern';
+        const entryId = `ve-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const title = (params.title as string) ?? `Promoted from transcript ${sessionId}`;
+        const domain = (params.domain as string) ?? 'general';
+        const tags = (params.tags as string[]) ?? [];
+
+        vault.add({
+          id: entryId,
+          type: entryType,
+          domain,
+          title,
+          severity: 'suggestion',
+          description: spanText,
+          context: JSON.stringify(citation),
+          tags,
+        });
+
+        return { promoted: true, target: 'vault', id: entryId };
       },
     },
 

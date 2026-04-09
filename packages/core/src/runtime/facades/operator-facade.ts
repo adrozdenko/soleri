@@ -24,7 +24,7 @@ const sectionEnum = z.enum([
 const signalSchema = z.object({
   id: z.string(),
   signalType: z.string(),
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
   timestamp: z.string(),
   sessionId: z.string(),
   confidence: z.number(),
@@ -119,7 +119,7 @@ export function createOperatorFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'write',
       schema: z.object({
         section: sectionEnum.describe('Section to update'),
-        data: z.record(z.unknown()).describe('New section data'),
+        data: z.record(z.string(), z.unknown()).describe('New section data'),
         evidence: z.array(z.string()).optional().describe('Evidence trail'),
       }),
       handler: async (params) => {
@@ -137,7 +137,7 @@ export function createOperatorFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'write',
       schema: z.object({
         section: sectionEnum.describe('Section to correct'),
-        data: z.record(z.unknown()).describe('Corrected section data'),
+        data: z.record(z.string(), z.unknown()).describe('Corrected section data'),
         reason: z.string().describe('Reason for correction'),
       }),
       handler: async (params) => {

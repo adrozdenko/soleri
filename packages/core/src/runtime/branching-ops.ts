@@ -41,7 +41,7 @@ export function createBranchingOps(runtime: AgentRuntime): OpDefinition[] {
         entryId: z.string().describe('Entry ID'),
         action: z.enum(['add', 'modify', 'remove']).describe('Operation type'),
         entryData: z
-          .record(z.unknown())
+          .record(z.string(), z.unknown())
           .optional()
           .describe('Full entry data (required for add/modify)'),
       }),

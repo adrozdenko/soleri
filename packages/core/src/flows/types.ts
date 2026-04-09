@@ -25,7 +25,7 @@ export const gateSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('SCORE'),
     min: z.number(),
-    'grade-thresholds': z.record(z.number()).optional(),
+    'grade-thresholds': z.record(z.string(), z.number()).optional(),
     'on-false': gateActionSchema,
   }),
   z.object({
@@ -82,7 +82,7 @@ export const flowSchema = z.object({
    */
   scoring: z
     .object({
-      weights: z.record(z.number()),
+      weights: z.record(z.string(), z.number()),
       formula: z.string().optional(),
     })
     .optional(),
