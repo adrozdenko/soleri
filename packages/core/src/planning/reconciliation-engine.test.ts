@@ -110,7 +110,7 @@ describe('reconciliation-engine', () => {
       ];
       const result = buildAutoReconcileInput(tasks);
       expect(result.canAutoReconcile).toBe(true);
-      expect(result.input?.actualOutcome).toContain('2/2 tasks completed');
+      expect(result.input?.actualOutcome).toBe('All tasks completed');
     });
     it('rejects when tasks are in progress', () => {
       const tasks: PlanTask[] = [

@@ -278,8 +278,8 @@ export function registerUninstall(program: Command): void {
           process.exit(1);
         }
 
-        // Default: 'all' when --full, 'opencode' otherwise
-        const defaultTarget = opts?.full ? 'all' : 'opencode';
+        // Default: 'all' — remove from all targets to mirror install behavior
+        const defaultTarget = 'all';
         const target = (opts?.target ?? defaultTarget) as Target;
         const validTargets: Target[] = ['claude', 'codex', 'opencode', 'both', 'all'];
 
