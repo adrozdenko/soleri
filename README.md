@@ -12,26 +12,26 @@
 
 ---
 
-Every AI session starts from zero. You explain your conventions, your architecture, your preferences — and then the session ends and it's all gone. You do it again tomorrow. And the day after that.
+Every AI session starts from zero. You explain your conventions, your architecture, your preferences — and then the session ends and it's all gone.
 
 **Your expertise should compound — not evaporate.**
 
-Soleri is an open-source second brain builder. It gives your AI assistant persistent memory, structured knowledge, and intelligence that grows with every session.
+Soleri is an open-source engine for building AI agents that learn. It gives your agent persistent memory, structured knowledge, and intelligence that grows with every session. Build a personal dev assistant or ship agents to your users — same engine.
 
 ## How It Works
 
-Your second brain is a **folder**. No TypeScript, no build step, no `npm install`.
+Your agent is a **folder**. No TypeScript, no build step, no `npm install`.
 
 ```
-my-brain/
-├── agent.yaml          # what do I know
+my-agent/
+├── agent.yaml          # identity + engine config
 ├── instructions/       # how I think
 ├── workflows/          # how I work
 ├── knowledge/          # what I've learned
 └── .mcp.json           # connects to Soleri Knowledge Engine
 ```
 
-your AI editor reads the folder natively. The **Knowledge Engine** provides the infrastructure — a vault that remembers, a brain that learns what works, and memory that carries across every project and conversation. The more you use it, the smarter it gets.
+Your AI editor reads the folder natively. The **Soleri Engine** provides the infrastructure — a vault that remembers, a brain that learns what works, and a planner that orchestrates. Enable what you need. The more you use it, the smarter it gets.
 
 ## What You Get
 
@@ -42,15 +42,15 @@ your AI editor reads the folder natively. The **Knowledge Engine** provides the 
 - An MCP-compatible AI editor: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://github.com/openai/codex), or [OpenCode](https://github.com/opencode-ai/opencode)
 
 ```bash
-npx --yes soleri create my-brain       # Build your second brain (~3 seconds)
+npx --yes soleri create my-agent       # Build your agent (~3 seconds)
 npx --yes soleri install               # Connect to your editor
 npx --yes soleri dev                   # Start learning
 npx --yes soleri doctor                # Check system health
 ```
 
-> **npx vs global install:** The commands above use `npx --yes` which downloads and runs the CLI without a global install. The `--yes` flag skips the confirmation prompt. If you prefer a persistent install, run `npm install -g soleri` and then use bare `soleri` commands (e.g. `soleri create my-brain`).
+> **npx vs global install:** The commands above use `npx --yes` which downloads and runs the CLI without a global install. The `--yes` flag skips the confirmation prompt. If you prefer a persistent install, run `npm install -g soleri` and then use bare `soleri` commands (e.g. `soleri create my-agent`).
 
-Your second brain is ready the moment it's created. No build step needed.
+Your agent is ready the moment it's created. No build step needed.
 
 ### Persona System
 
@@ -66,9 +66,9 @@ Every agent has a composable persona that defines HOW it communicates — voice,
 
 **Playbooks** — Multi-step validated procedures stored in the vault. Token migrations, component setup, contrast audits — each step includes validation criteria so the agent can execute and verify autonomously.
 
-### Second Brain
+### Intelligence
 
-The engine now acts as a true second brain — it doesn't just store knowledge, it actively helps you use it:
+The engine doesn't just store knowledge — it actively helps you use it:
 
 - **Two-pass search** — Scan titles first, load only what's relevant. Saves 60-80% context tokens.
 - **Session briefing** — Start every session with context: what you did last time, active plans, recent learnings, brain recommendations.
