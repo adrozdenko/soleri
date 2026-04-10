@@ -70,9 +70,11 @@ describe('createGradingOps', () => {
         string,
         unknown
       >;
-      expect(result.planId).toBe('p1');
       expect(result.count).toBe(2);
-      expect(result.checks).toHaveLength(2);
+      const checks = result.checks as Array<Record<string, unknown>>;
+      expect(checks).toHaveLength(2);
+      expect(checks[0]).toEqual({ grade: 'C', score: 70, iteration: 1 });
+      expect(checks[1]).toEqual({ grade: 'B', score: 82, iteration: 2 });
     });
   });
 
@@ -92,7 +94,9 @@ describe('createGradingOps', () => {
         string,
         unknown
       >;
+      expect(result.check).toBeNull();
       expect(result.message).toBe('No checks found for this plan.');
+      expect(Object.keys(result)).toHaveLength(3);
     });
   });
 

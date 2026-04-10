@@ -139,8 +139,10 @@ describe('shared-rules', () => {
     it('is significantly smaller when only one feature is selected', () => {
       const full = getEngineRulesContent();
       const vaultOnly = getModularEngineRules(['vault']);
-      // Vault-only should be meaningfully smaller than full rules
-      expect(vaultOnly.length).toBeLessThan(full.length * 0.8);
+      // Vault-only omits planning, brain, and advanced sections,
+      // so it should be at most 80% of the full rules size.
+      const EXPECTED_MAX_RATIO = 0.8;
+      expect(vaultOnly.length).toBeLessThan(full.length * EXPECTED_MAX_RATIO);
     });
   });
 });

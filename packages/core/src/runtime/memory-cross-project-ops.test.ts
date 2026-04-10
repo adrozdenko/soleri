@@ -58,8 +58,7 @@ describe('createMemoryCrossProjectOps', () => {
       const result = (await findOp('memory_promote_to_global').handler({
         entryId: 'missing',
       })) as Record<string, unknown>;
-      expect(result.promoted).toBe(false);
-      expect(result.error).toContain('Entry not found');
+      expect(result).toEqual({ promoted: false, error: 'Entry not found: missing' });
     });
 
     it('skips if already global', async () => {
@@ -70,8 +69,11 @@ describe('createMemoryCrossProjectOps', () => {
       const result = (await findOp('memory_promote_to_global').handler({
         entryId: 'e1',
       })) as Record<string, unknown>;
-      expect(result.promoted).toBe(false);
-      expect(result.message).toContain('already promoted');
+      expect(result).toEqual({
+        promoted: false,
+        entryId: 'e1',
+        message: 'Entry is already promoted to global.',
+      });
     });
   });
 
@@ -96,8 +98,7 @@ describe('createMemoryCrossProjectOps', () => {
       const result = (await findOp('memory_configure').handler({
         projectPath: '/unknown',
       })) as Record<string, unknown>;
-      expect(result.configured).toBe(false);
-      expect(result.error).toContain('not registered');
+      expect(result).toEqual({ configured: false, error: 'Project not registered: /unknown' });
     });
   });
 
@@ -110,12 +111,33 @@ describe('createMemoryCrossProjectOps', () => {
         projectPath: '/test',
       })) as Record<string, unknown>;
 
-      expect(result.memories).toBeTruthy();
-      expect(result.globalEntries).toBeTruthy();
+      expect(Array.isArray(result.memories)).toBe(true);
+      const memories = result.memories as Array<Record<string, unknown>>;
+      expect(memories).toHaveLength(1);
+      expect(memories).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            memory: { id: 'm1', content: 'memory 1' },
+            weight: 1.0,
+            source: 'current',
+          }),
+        ]),
+      );
+
+      expect(Array.isArray(result.globalEntries)).toBe(true);
       // Global entries should only include _global tagged ones
       const globals = result.globalEntries as Array<Record<string, unknown>>;
       expect(globals).toHaveLength(1);
-      expect((globals[0].entry as Record<string, unknown>).id).toBe('g1');
+      expect(globals[0]).toEqual(
+        expect.objectContaining({
+          entry: { id: 'g1', tags: ['_global'] },
+          score: 0.9,
+          weight: 0.9,
+          source: 'global',
+        }),
+      );
+
+      expect(result.totalResults).toBeGreaterThan(0);
     });
 
     it('searches linked projects and extra paths', async () => {
@@ -151,6 +173,10 @@ describe('createMemoryCrossProjectOps', () => {
       // linkedMemories should be empty because m1 was already in current results
       const linked = result.linkedMemories as unknown[];
       expect(linked).toHaveLength(0);
+      // memories from current project should still be present
+      expect(Array.isArray(result.memories)).toBe(true);
+      expect((result.memories as unknown[]).length).toBeGreaterThan(0);
+      expect(typeof result.totalResults).toBe('number');
     });
 
     it('skips linked search when cross-project disabled', async () => {
@@ -168,7 +194,13 @@ describe('createMemoryCrossProjectOps', () => {
       })) as Record<string, unknown>;
 
       expect(runtime.projectRegistry.getLinkedProjects).not.toHaveBeenCalled();
-      expect((result.linkedMemories as unknown[]).length).toBe(0);
+      expect(result.linkedMemories as unknown[]).toHaveLength(0);
+      // memories and globalEntries should still be populated from current project
+      expect(Array.isArray(result.memories)).toBe(true);
+      expect((result.memories as unknown[]).length).toBeGreaterThan(0);
+      expect(Array.isArray(result.globalEntries)).toBe(true);
+      expect(typeof result.totalResults).toBe('number');
+      expect(result.totalResults).toBeGreaterThan(0);
     });
   });
 });

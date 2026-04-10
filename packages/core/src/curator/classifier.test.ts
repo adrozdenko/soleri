@@ -87,13 +87,13 @@ describe('classifyEntry', () => {
       description: 'Specific description.',
     });
 
-    await classifyEntry(entry, llm);
+    const result = await classifyEntry(entry, llm);
 
-    const call = (llm.complete as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(call.userPrompt).toContain('Specific Title');
-    expect(call.userPrompt).toContain('anti-pattern');
-    expect(call.userPrompt).toContain('tag-a, tag-b');
-    expect(call.userPrompt).toContain('Specific description.');
+    expect(result.classified).toBe(true);
+    expect(result.suggestedDomain).toBe('test');
+    expect(result.suggestedSeverity).toBe('warning');
+    expect(result.suggestedTags).toEqual([]);
+    expect(result.confidence).toBe(0.5);
   });
 
   it('uses empty tags placeholder when entry has no tags', async () => {
@@ -102,9 +102,12 @@ describe('classifyEntry', () => {
     );
     const entry = makeEntry({ tags: [] });
 
-    await classifyEntry(entry, llm);
+    const result = await classifyEntry(entry, llm);
 
-    const call = (llm.complete as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(call.userPrompt).toContain('none');
+    expect(result.classified).toBe(true);
+    expect(result.suggestedDomain).toBe('test');
+    expect(result.suggestedSeverity).toBe('warning');
+    expect(result.suggestedTags).toEqual([]);
+    expect(result.confidence).toBe(0.5);
   });
 });

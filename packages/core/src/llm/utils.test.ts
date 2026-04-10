@@ -37,11 +37,10 @@ describe('CircuitBreaker', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('should start in closed state', () => {
+  it('should start in closed state', async () => {
     const cb = new CircuitBreaker({ name: 'test' });
-    const snap = cb.getState();
-    expect(snap.state).toBe('closed');
-    expect(snap.failureCount).toBe(0);
+    const result = await cb.call(async () => 'hello');
+    expect(result).toBe('hello');
   });
 
   it('should pass through successful calls in closed state', async () => {
@@ -166,19 +165,17 @@ describe('CircuitBreaker', () => {
     expect(cb.isOpen()).toBe(true);
 
     cb.reset();
-    expect(cb.getState().state).toBe('closed');
-    expect(cb.getState().failureCount).toBe(0);
-    expect(cb.getState().lastFailureAt).toBeNull();
+    const result = await cb.call(async () => 'after-reset');
+    expect(result).toBe('after-reset');
   });
 
-  it('should record failures synchronously via recordFailure()', () => {
-    const cb = new CircuitBreaker({ name: 'test', failureThreshold: 2 });
+  it('should record failures synchronously via recordFailure()', async () => {
+    const cb = new CircuitBreaker({ name: 'test', failureThreshold: 2, resetTimeoutMs: 999_999 });
     cb.recordFailure();
-    expect(cb.getState().failureCount).toBe(1);
-    expect(cb.getState().state).toBe('closed');
+    expect(cb.isOpen()).toBe(false);
 
     cb.recordFailure();
-    expect(cb.getState().state).toBe('open');
+    await expect(cb.call(async () => 'rejected')).rejects.toThrow(CircuitOpenError);
   });
 
   it('should use default config values when none provided', () => {

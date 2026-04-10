@@ -75,6 +75,13 @@ describe('createVaultLinkingOps', () => {
         note: 'test note',
       })) as Record<string, unknown>;
       expect(result.success).toBe(true);
+      expect(result.link).toEqual({
+        sourceId: 'a',
+        targetId: 'b',
+        linkType: 'extends',
+        note: 'test note',
+      });
+      expect(result.sourceLinkCount).toBe(1);
       expect(rt.linkManager.addLink).toHaveBeenCalledWith('a', 'b', 'extends', 'test note');
     });
   });
@@ -89,6 +96,7 @@ describe('createVaultLinkingOps', () => {
         targetId: 'b',
       })) as Record<string, unknown>;
       expect(result.success).toBe(true);
+      expect(result.removed).toEqual({ sourceId: 'a', targetId: 'b' });
       expect(rt.linkManager.removeLink).toHaveBeenCalledWith('a', 'b');
     });
   });
@@ -106,7 +114,8 @@ describe('createVaultLinkingOps', () => {
       ] as never);
       const result = (await op.handler({ entryId: 'a' })) as Record<string, unknown>;
       expect(result.totalLinks).toBe(2);
-      expect(result.entryId).toBe('a');
+      expect(result.outgoing).toEqual([{ sourceId: 'a', targetId: 'b', linkType: 'supports' }]);
+      expect(result.incoming).toEqual([{ sourceId: 'c', targetId: 'a', linkType: 'extends' }]);
     });
   });
 
@@ -118,13 +127,18 @@ describe('createVaultLinkingOps', () => {
       vi.mocked(rt.linkManager.traverse).mockReturnValue([{ id: 'b' }] as never);
       const result = (await op.handler({ entryId: 'a' })) as Record<string, unknown>;
       expect(result.totalConnected).toBe(1);
+      expect(result.connectedEntries).toEqual([{ id: 'b' }]);
+      expect(result.depth).toBe(2);
       expect(rt.linkManager.traverse).toHaveBeenCalledWith('a', 2);
     });
 
     it('uses provided depth', async () => {
       const op = findOp(ops, 'traverse');
       vi.mocked(rt.linkManager.traverse).mockReturnValue([] as never);
-      await op.handler({ entryId: 'a', depth: 4 });
+      const result = (await op.handler({ entryId: 'a', depth: 4 })) as Record<string, unknown>;
+      expect(result.totalConnected).toBe(0);
+      expect(result.connectedEntries).toEqual([]);
+      expect(result.depth).toBe(4);
       expect(rt.linkManager.traverse).toHaveBeenCalledWith('a', 4);
     });
   });
@@ -139,6 +153,8 @@ describe('createVaultLinkingOps', () => {
       ] as never);
       const result = (await op.handler({ entryId: 'a', limit: 5 })) as Record<string, unknown>;
       expect(result.totalSuggestions).toBe(1);
+      expect(result.suggestions).toEqual([{ entryId: 'b', score: 0.9, reason: 'similar tags' }]);
+      expect(rt.linkManager.suggestLinks).toHaveBeenCalledWith('a', 5);
     });
   });
 
@@ -150,6 +166,8 @@ describe('createVaultLinkingOps', () => {
       vi.mocked(rt.linkManager.getOrphans).mockReturnValue([{ id: 'orphan1' }] as never);
       const result = (await op.handler({ limit: 20 })) as Record<string, unknown>;
       expect(result.totalOrphans).toBe(1);
+      expect(result.orphans).toEqual([{ id: 'orphan1' }]);
+      expect(rt.linkManager.getOrphans).toHaveBeenCalledWith(20);
     });
   });
 
@@ -177,6 +195,11 @@ describe('createVaultLinkingOps', () => {
         unknown
       >;
       expect(result.dryRun).toBe(true);
+      expect(result.entries).toBe(0);
+      expect(result.candidates).toBe(0);
+      expect(result.llmCallsNeeded).toBe(0);
+      expect(result.manualLinksPreserved).toBe(0);
+      expect(result.batchLinksToRemove).toBe(0);
       expect(provider.run).not.toHaveBeenCalled();
     });
   });
@@ -197,6 +220,13 @@ describe('createVaultLinkingOps', () => {
         batchSize: 50,
       })) as Record<string, unknown>;
       expect(result.created).toBe(5);
+      expect(result.previewSample).toEqual([{ sourceId: 'a', targetId: 'b' }]);
+      expect(rt.linkManager.backfillLinks).toHaveBeenCalledWith({
+        threshold: 0.7,
+        maxLinks: 3,
+        dryRun: false,
+        batchSize: 50,
+      });
     });
   });
 
@@ -218,6 +248,10 @@ describe('createVaultLinkingOps', () => {
       expect(result.totalLinks).toBe(42);
       expect(result.totalEntries).toBe(100);
       expect(result.orphans).toBe(5);
+      expect(result.linksWithNotes).toBe(30);
+      expect(result.linkQuality).toBe('71%');
+      expect(result.byType).toEqual({ extends: 20 });
+      expect(result.mostConnected).toEqual([{ title: 'Top Entry', links: 10 }]);
     });
 
     it('returns zeros on provider error', async () => {
@@ -228,6 +262,10 @@ describe('createVaultLinkingOps', () => {
       });
       const result = (await op.handler({})) as Record<string, unknown>;
       expect(result.totalLinks).toBe(0);
+      expect(result.totalEntries).toBe(0);
+      expect(result.orphans).toBe(0);
+      expect(result.byType).toEqual({});
+      expect(result.mostConnected).toEqual([]);
     });
   });
 });

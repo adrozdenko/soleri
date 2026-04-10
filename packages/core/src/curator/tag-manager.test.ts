@@ -72,8 +72,9 @@ describe('tag-manager', () => {
     });
 
     it('lowercases before lookup', () => {
-      normalizeTag('A11Y', store);
-      expect(store.getAlias).toHaveBeenCalledWith('a11y');
+      (store.getAlias as ReturnType<typeof vi.fn>).mockReturnValue('accessibility');
+      const result = normalizeTag('A11Y', store);
+      expect(result).toEqual({ original: 'A11Y', normalized: 'accessibility', wasAliased: true });
     });
   });
 
@@ -121,14 +122,14 @@ describe('tag-manager', () => {
   describe('addTagAlias', () => {
     it('inserts canonical and upserts alias', () => {
       addTagAlias('react', 'frontend', store);
-      expect(store.insertCanonical).toHaveBeenCalledWith('frontend');
-      expect(store.upsertAlias).toHaveBeenCalledWith('react', 'frontend');
+      const result = normalizeTag('react', store);
+      expect(result).toEqual({ original: 'react', normalized: 'frontend', wasAliased: true });
     });
 
     it('lowercases and trims both alias and canonical', () => {
       addTagAlias('  React  ', '  Frontend  ', store);
-      expect(store.insertCanonical).toHaveBeenCalledWith('frontend');
-      expect(store.upsertAlias).toHaveBeenCalledWith('react', 'frontend');
+      const result = normalizeTag('react', store);
+      expect(result).toEqual({ original: 'react', normalized: 'frontend', wasAliased: true });
     });
   });
 
@@ -154,16 +155,22 @@ describe('tag-manager', () => {
   describe('seedDefaultAliases', () => {
     it('inserts all unique canonical tags', () => {
       seedDefaultAliases(store);
+      const rows = store.getCanonicalRows();
       const uniqueCanonicals = new Set(DEFAULT_TAG_ALIASES.map(([, c]) => c));
-      expect(store.insertCanonical).toHaveBeenCalledTimes(uniqueCanonicals.size);
+      expect(rows).toHaveLength(uniqueCanonicals.size);
+      const rowTags = new Set(rows.map((r: { tag: string }) => r.tag));
+      for (const canonical of uniqueCanonicals) {
+        expect(rowTags).toContain(canonical);
+      }
     });
 
     it('upserts all alias pairs', () => {
       seedDefaultAliases(store);
-      expect(store.upsertAlias).toHaveBeenCalledTimes(DEFAULT_TAG_ALIASES.length);
-      // Spot check
-      expect(store.upsertAlias).toHaveBeenCalledWith('a11y', 'accessibility');
-      expect(store.upsertAlias).toHaveBeenCalledWith('ts', 'typescript');
+      for (const [alias, canonical] of DEFAULT_TAG_ALIASES) {
+        const result = normalizeTag(alias, store);
+        expect(result.normalized).toBe(canonical);
+        expect(result.wasAliased).toBe(true);
+      }
     });
   });
 });
