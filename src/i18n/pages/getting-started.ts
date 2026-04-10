@@ -7,10 +7,10 @@ const content: Record<Locale, GettingStartedContent> = {
     title: 'Getting Started - Soleri',
     description:
       'One command to create. One command to start. Your agent remembers everything.',
-    eyebrow: 'From zero to a learning agent in 30 seconds',
-    heroTitle: 'Set up your first Soleri agent.',
+    eyebrow: 'From zero to a running agent in 30 seconds',
+    heroTitle: 'Build your first agent.',
     heroSubtitle:
-      'One command creates it. Open your editor and start working.',
+      'One command scaffolds it. The engine does the rest.',
     steps: [
       {
         title: 'Create your agent',
@@ -40,7 +40,7 @@ const content: Record<Locale, GettingStartedContent> = {
     nextTitle: "You're running. What now?",
     nextLinks: [
       {
-        title: 'See how it learns',
+        title: 'See the engine',
         desc: 'Ask your agent to plan something. Watch it capture patterns and reuse them next time.',
         href: 'how-it-works.html',
       },

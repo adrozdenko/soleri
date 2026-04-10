@@ -4,51 +4,73 @@ export const personasContent = (locale: Locale) => content[locale];
 
 const content: Record<Locale, PersonasContent> = {
   en: {
-    title: 'Your Agent - Soleri',
+    title: 'The Engine - Soleri',
     description:
-      'Your agent is a folder. Plain files, no build step, configurable with YAML. It learns your project through the plan-work-capture cycle.',
-    heroEyebrow: 'Your agent',
+      'The Soleri engine has six modules: Vault, Brain, Curator, Planner, Memory, and Governance. Enable all of them or just the ones you need.',
+    heroEyebrow: 'The Engine',
     heroTitle:
-      'A folder that learns. An engine that remembers.',
+      'Six systems. Use what you need.',
     heroSubtitle:
-      'Your agent is a folder with plain files. Soleri adds workspaces, routing, and a knowledge engine that gets smarter every session.',
+      'The engine has six modules: Vault, Brain, Curator, Planner, Memory, and Governance. Enable all of them for a full knowledge agent. Or enable just the Vault for persistent memory. Your agent, your choice.',
 
     sections: [
-      // Section 1: The new folder structure with workspaces
+      // Section 0: Vault
       {
-        title: 'Map. Rooms. Tools.',
-        subtitle: 'Three layers. One architecture. Instantly clear.',
-        text: 'The Map (CLAUDE.md) routes tasks to the right workspace. Each Room (CONTEXT.md) describes what happens there. Tools (skills) plug in per workspace. Different tasks load different context automatically.',
-        code: `<span class="key">my-agent/</span>
-\u251C\u2500\u2500 <span class="val">CLAUDE.md</span>           <span class="cmt"># The Map \u2014 routing table</span>
-\u251C\u2500\u2500 <span class="val">agent.yaml</span>          <span class="cmt"># identity + config</span>
-\u251C\u2500\u2500 <span class="val">instructions/</span>
-\u2502   \u2514\u2500\u2500 <span class="val">user.md</span>         <span class="cmt"># your custom rules</span>
-\u251C\u2500\u2500 <span class="key">workspaces/</span>
-\u2502   \u251C\u2500\u2500 <span class="key">planning/</span>
-\u2502   \u2502   \u2514\u2500\u2500 <span class="val">CONTEXT.md</span>  <span class="cmt"># Room: architecture decisions</span>
-\u2502   \u251C\u2500\u2500 <span class="key">src/</span>
-\u2502   \u2502   \u2514\u2500\u2500 <span class="val">CONTEXT.md</span>  <span class="cmt"># Room: code conventions</span>
-\u2502   \u2514\u2500\u2500 <span class="key">docs/</span>
-\u2502       \u2514\u2500\u2500 <span class="val">CONTEXT.md</span>  <span class="cmt"># Room: documentation style</span>
-\u251C\u2500\u2500 <span class="val">skills/</span>             <span class="cmt"># Tools: 7 essential</span>
-\u2514\u2500\u2500 <span class="val">.mcp.json</span>`,
+        title: 'Vault',
+        subtitle: 'Memory that persists.',
+        text: 'SQLite-based, local-first, searchable. Captures patterns, decisions, and context. Shared across sessions, isolated per user when you need it. Your agent\'s long-term memory.',
+        code: `<span class="cmt"># Search the vault</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">search "error handling"</span>
+<span class="ok">\u2713</span> 12 patterns found
+
+<span class="cmt"># Capture a new pattern</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">capture --type pattern</span>
+  <span class="key">title:</span> <span class="val">"Always retry transient failures"</span>
+  <span class="key">context:</span> <span class="val">"API integration"</span>
+<span class="ok">\u2713</span> Persisted to vault
+
+<span class="cmt"># Vault stats</span>
+<span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">stats</span>
+  <span class="val">patterns:</span> <span class="cmt">142</span>   <span class="val">decisions:</span> <span class="cmt">38</span>
+  <span class="val">anti-patterns:</span> <span class="cmt">27</span>   <span class="val">sessions:</span> <span class="cmt">89</span>`,
       },
 
-      // Section 2: Routing table
+      // Section 1: Brain
       {
-        title: 'Tasks route to the right context.',
-        subtitle:
-          'A routing table in your CLAUDE.md maps task patterns to workspaces.',
-        text: 'Write a spec? Load the scripts workspace. Build a feature? Load src with code conventions. Review a PR? Load review standards. Each task gets only the context it needs \u2014 clean input, clean output.',
-        code: `<span class="cmt"># Routing table in CLAUDE.md</span>
+        title: 'Brain',
+        subtitle: 'Intelligence that compounds.',
+        text: 'Tracks which patterns work and which don\'t. Surfaces the right knowledge at the right time. Pattern strength grows with use \u2014 your best practices rise, outdated ones fade.',
+        code: `<span class="cmt"># Brain pattern strength rankings</span>
+<span class="prompt">$</span> <span class="cmd">soleri brain</span> <span class="arg">stats</span>
 
-<span class="key">| Task                | Workspace  | Skills          |</span>
-<span class="val">|---------------------|-----------|-----------------|</span>
-<span class="val">| "write script"      | scripts/  | voice, style    |</span>
-<span class="val">| "implement feature" | src/      | tdd, review     |</span>
-<span class="val">| "review PR"         | review/   | code-patrol     |</span>
-<span class="val">| "plan architecture" | planning/ | writing-plans   |</span>`,
+<span class="key">| Pattern                  | Strength | Hits |</span>
+<span class="val">|--------------------------|----------|------|</span>
+<span class="val">| retry-transient-failures | 0.94     | 47   |</span>
+<span class="val">| vault-first-lookup       | 0.91     | 38   |</span>
+<span class="val">| test-before-ship         | 0.87     | 31   |</span>
+<span class="val">| manual-env-setup         | 0.12     | 2    |</span>
+
+<span class="cmt"># Strong patterns surface automatically.</span>
+<span class="cmt"># Weak ones fade over time.</span>`,
+      },
+
+      // Section 2: Curator + Planner + Packs
+      {
+        title: 'Curator, Planner, and Domain Packs',
+        subtitle: 'Quality, orchestration, and extensibility.',
+        text: 'Curator keeps the vault clean \u2014 deduplicates, grooms, detects contradictions. Planner breaks work into tasks, grades plans, and tracks execution. Domain Packs plug in vertical intelligence \u2014 install community expertise or build your own.',
+        code: `<span class="cmt"># Install a domain pack</span>
+<span class="prompt">$</span> <span class="cmd">soleri pack</span> <span class="arg">add @soleri/domain-react</span>
+<span class="ok">\u2713</span> 34 patterns, 8 anti-patterns, 3 workflows
+
+<span class="cmt"># Plan lifecycle</span>
+<span class="prompt">$</span> <span class="cmd">soleri plan</span> <span class="arg">create "auth system"</span>
+<span class="ok">\u2713</span> Plan created <span class="cmt">(grade: A, 6 tasks)</span>
+
+<span class="prompt">$</span> <span class="cmd">soleri plan</span> <span class="arg">execute</span>
+  <span class="val">Task 1/6:</span> <span class="cmt">Define auth middleware</span> <span class="ok">\u2713</span>
+  <span class="val">Task 2/6:</span> <span class="cmt">Add session store</span> <span class="ok">\u2713</span>
+  <span class="val">Task 3/6:</span> <span class="cmt">Write integration tests...</span>`,
       },
 
       // Section 3: Essential skills
@@ -68,21 +90,6 @@ const content: Record<Locale, PersonasContent> = {
 
 <span class="cmt">Add more:</span>
   <span class="prompt">$</span> <span class="cmd">npx @soleri/cli</span> <span class="arg">skills install deep-review</span>`,
-      },
-
-      // Section 4: Create your agent
-      {
-        title: 'Start in one command.',
-        subtitle:
-          'Name it, pick a persona, start working.',
-        text: 'The scaffold includes instructions, workflows, skills, and knowledge. Choose a built-in persona or describe your own \u2014 the wizard generates the character from your description.',
-        code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
-<span class="prompt">?</span> <span class="cmd">What should your agent be called?</span> <span class="val">my-agent</span>
-<span class="prompt">?</span> <span class="cmd">Persona:</span> <span class="val">Describe your own persona</span>
-<span class="prompt">?</span> <span class="cmd">Describe your agent's personality:</span>
-  <span class="val">Like Bishop from Aliens \u2014 calm, precise, helpful</span>
-
-<span class="ok">\u2713</span> Agent created! <span class="cmt">(28 files, 7 skills, 4 workflows)</span>`,
       },
     ],
   },

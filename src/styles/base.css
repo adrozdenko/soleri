@@ -1373,8 +1373,8 @@ body:not([data-theme='dark']) .toggle-bg-sun {
 }
 
 .persona-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .persona-avatar {

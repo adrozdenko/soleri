@@ -5,12 +5,12 @@ export const homeContent = (locale: Locale) => content[locale];
 const content: Record<Locale, HomeContent> = {
   en: {
     heroTitle:
-      'One <span class="accent-amber">agent</span> that <span class="accent-teal">remembers</span> how you work.',
+      'The open-source <span class="accent-amber">engine</span> for agents that <span class="accent-teal">learn</span>.',
     heroText:
-      '75% orchestration. 20% infrastructure. 5% AI. The model is a tool, not the product. The knowledge engine is the product.',
-    principleTitle: 'Learns your project.',
-    principleSubtitle: 'Onboard once, work forever',
-    principleText: 'Tell your agent to learn the codebase. It captures the structure, patterns, and conventions — then uses them in every session that follows.',
+      'Ship a personal dev assistant or a product with 50,000 users. Same engine. Your rules.',
+    principleTitle: 'Zero memory. Every time.',
+    principleSubtitle: 'Soleri agents don\'t.',
+    principleText: 'You explain the architecture. Again. The naming conventions. Again. The thing you fixed last Tuesday. Again. Soleri agents capture what works and use it next time — without you asking.',
     compareBeforeLabel: '',
     compareAfterLabel: '',
     compareBefore: '',
@@ -24,31 +24,29 @@ const content: Record<Locale, HomeContent> = {
 <span class="hl">Soleri:</span>  Sure. You already have a pattern for events —
          I'll put the type here, the handler there,
          and wire it up the same way.`,
-    howTitle: 'Your folders don\'t learn. Soleri does.<br/>Map. Rooms. Tools.<br/>Pick your starting point.',
+    howTitle: 'Modular by design. Plain files. One command.',
     howText:
       'Your setup, your rules. Share what helps — nothing more.',
     engineTags: [],
     features: [
       {
-        sectionTitle: 'Your folders don\'t learn. Soleri does.',
-        title: 'Memory that compounds',
-        text: 'Manual setups start from zero every session. Soleri\'s vault captures patterns, the brain tracks what works, and memory persists across sessions and projects. Knowledge compounds — it never resets.',
-        code: `<span class="cmt"># Your agent remembers across sessions</span>
-<span class="cmt"># agent.yaml</span>
-<span class="key">id:</span> <span class="val">ernesto</span>
-<span class="key">name:</span> <span class="val">Ernesto</span>
-<span class="key">domains:</span> <span class="val">[frontend, backend, operations]</span>
-<span class="key">tone:</span> <span class="val">pragmatic</span>
-<span class="key">vaults:</span>
-  - <span class="key">name:</span> <span class="val">team-standards</span>
-    <span class="key">path:</span> <span class="val">/vaults/team-standards.db</span>
-    <span class="key">priority:</span> <span class="val">0.6</span>`,
+        sectionTitle: 'Modular by design.',
+        title: 'A modular engine, not a monolith',
+        text: 'Some agents need the full stack — vault, brain, curator, planner, governance. Others just need persistent memory and an LLM client. Enable what you need. Skip what you don\'t. The engine scales from a personal assistant to a product serving thousands of users.',
+        code: `<span class="cmt"># agent.yaml — enable what you need</span>
+<span class="key">id:</span> <span class="val">my-agent</span>
+<span class="key">name:</span> <span class="val">My Agent</span>
+<span class="key">engine:</span>
+  <span class="key">vault:</span> <span class="val">true</span>       <span class="cmt"># persistent memory</span>
+  <span class="key">brain:</span> <span class="val">true</span>       <span class="cmt"># tracks what works</span>
+  <span class="key">curator:</span> <span class="val">false</span>    <span class="cmt"># skip quality gates</span>
+  <span class="key">planner:</span> <span class="val">false</span>    <span class="cmt"># skip orchestration</span>`,
       },
       {
-        sectionTitle: 'Map. Rooms. Tools.',
-        title: 'Three layers, instantly clear',
-        text: 'The Map routes every task to the right workspace. Each Room has its own context. Tools plug in per workspace, not globally. Different tasks load different context — automatically.',
-        code: `<span class="key">my-agent/</span>
+        sectionTitle: 'Plain files. No build step.',
+        title: 'Your agent is plain files',
+        text: 'No build step. No TypeScript project. Your agent is a folder with a YAML config, instructions in markdown, and skills that plug in. The engine handles persistence, search, learning, and planning underneath.',
+        code: `<span class="key">my-agent/</span>              <span class="cmt"># your agent is a folder</span>
 ├── <span class="ok">CLAUDE.md</span>           <span class="cmt"># The Map — routes tasks</span>
 ├── <span class="ok">agent.yaml</span>          <span class="cmt"># identity + config</span>
 ├── <span class="key">instructions/</span>
@@ -62,9 +60,9 @@ const content: Record<Locale, HomeContent> = {
 └── .mcp.json           <span class="cmt"># connects to the engine</span>`,
       },
       {
-        sectionTitle: 'Pick your starting point.',
-        title: 'One command, your agent',
-        text: 'Name it, pick a persona, and start working. The scaffold includes instructions, workflows, skills, and knowledge — ready to customize. Your agent learns everything else from your projects.',
+        sectionTitle: 'One command.',
+        title: 'One command. Start building.',
+        text: 'Name it, pick what engine features you need, and start working. The scaffold gives you everything to customize. Your agent learns the rest from your projects.',
         code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
 <span class="prompt">?</span> <span class="cmd">What should your agent be called?</span> <span class="val">my-agent</span>
 <span class="prompt">?</span> <span class="cmd">Persona:</span> <span class="val">Italian Craftsperson (default)</span>
@@ -72,38 +70,38 @@ const content: Record<Locale, HomeContent> = {
 <span class="ok">✓</span> Agent created! <span class="cmt">(28 files, 7 skills, 4 workflows)</span>`,
       },
     ],
-    cardsTitle: 'One agent. Personal, project, and team knowledge.',
+    cardsTitle: 'From personal tool to shipped product.',
     cards: [
       {
-        title: 'Personal',
-        domain: 'Your machine',
+        title: 'Personal Agent',
+        domain: 'For yourself',
         cls: 'salvador',
-        capabilities: ['Your preferences', 'Recurring fixes', 'Working style', 'Private notes'],
-        ships: 'Keep the parts of the agent that should stay yours.',
+        capabilities: ['Codebase memory', 'Pattern capture', 'Plan surfacing', 'Session learning'],
+        ships: 'The agent that knows your project better than you do.',
       },
       {
-        title: 'Project',
-        domain: 'This repo',
+        title: 'Team Agent',
+        domain: 'For your team',
         cls: 'gaudi',
         capabilities: [
-          'Project rules',
-          'Architecture decisions',
-          'Shared playbooks',
-          'Recent context',
+          'Shared standards',
+          'Review patterns',
+          'Fast onboarding',
+          'Git-synced knowledge',
         ],
-        ships: 'Link the knowledge that helps on this codebase.',
+        ships: 'Everyone gets an agent. Knowledge stays in sync.',
       },
       {
-        title: 'Team',
-        domain: 'Across repos',
+        title: 'Product Agent',
+        domain: 'For your users',
         cls: 'sentinel',
         capabilities: [
-          'Common standards',
-          'Review patterns',
-          'Reusable packs',
-          'Promoted learnings',
+          'Per-user memory',
+          'Domain packs',
+          'Custom ops',
+          'Scales to thousands',
         ],
-        ships: 'Share what helps without maintaining a custom stack for each teammate.',
+        ships: 'Ship agents to your users — each with their own memory.',
       },
     ],
     terminalTitle: 'Quick start',
@@ -118,24 +116,24 @@ const content: Record<Locale, HomeContent> = {
 
 <span class="comment">  ✓ MCP config registered</span>
 <span class="comment">  ✓ CLAUDE.md regenerates on change</span>`,
-    archTitle: '75/20/5 — The engine behind the folder',
-    archSubtitle: '75% orchestration. 20% infrastructure. 5% AI calls. The model is a tool. The knowledge engine is the product.',
+    archTitle: '75/20/5 — The model is 5%. The engine is everything else.',
+    archSubtitle: 'Most AI tools are wrappers around an API call. Soleri is the other 95% — the orchestration, persistence, and learning that make the 5% reliable.',
     layers: [
       {
-        label: 'The Map',
-        text: 'CLAUDE.md routes every task to the right workspace. One file at the root, generated from your agent.yaml and instructions.',
+        label: 'Vault',
+        text: 'Persistent memory that compounds across sessions. SQLite-based, local-first, searchable. Your agent\'s long-term memory.',
       },
       {
-        label: 'The Rooms',
-        text: 'Each workspace has its own CONTEXT.md describing what happens there. Different tasks load different context — clean input, clean output.',
+        label: 'Brain',
+        text: 'Tracks which patterns work and which don\'t. Surfaces the right knowledge at the right time. Gets sharper with use.',
       },
       {
-        label: 'The Tools',
-        text: 'Skills and knowledge packs plug in per workspace. Seven essential skills ship by default. Add more as you grow.',
+        label: 'Curator',
+        text: 'Deduplicates, grooms, detects contradictions. Keeps the vault clean so search stays useful as knowledge grows.',
       },
       {
-        label: 'The Engine',
-        text: 'Vault, Brain, Curator, Planner, Memory. 75% orchestration that makes the 5% AI reliable. Everything stays on your machine.',
+        label: 'Planner',
+        text: 'Breaks work into tasks, grades plans, tracks execution, reconciles drift. The orchestration layer that turns intent into action.',
       },
     ],
   },

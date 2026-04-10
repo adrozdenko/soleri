@@ -9,7 +9,7 @@ const content: Record<Locale, ArticlesContent> = {
       'Articles about building AI agents that learn, remember, and grow. Knowledge compounding, vault architecture, and the philosophy behind Soleri.',
     eyebrow: 'From the team behind Soleri',
     heading: 'Articles',
-    subtitle: 'On knowledge compounding, agent architecture, and building AI that learns.',
+    subtitle: 'On agent architecture, knowledge engines, and building AI that ships.',
     subscribeText: 'Get new articles delivered to your inbox.',
     subscribeLink: 'Subscribe on Substack',
     loading: 'Loading articles...',

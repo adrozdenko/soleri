@@ -2,12 +2,12 @@ import type { Locale } from './types';
 
 export const ui: Record<Locale, Record<string, string>> = {
   en: {
-    'site.title': 'Soleri - One agent that remembers how you work',
+    'site.title': 'Soleri - The open-source engine for agents that learn',
     'site.description':
-      'Open-source memory and shared knowledge for AI coding agents. One agent, multiple domains, linked vaults, playbooks, and learning that compounds over time.',
-    'brand.meta': 'One agent. Shared knowledge. Open source.',
+      'The open-source engine for building AI agents that learn. Ship a personal dev assistant or a product with thousands of users. Same engine, your rules.',
+    'brand.meta': 'Build agents that learn. Open source.',
     'nav.how': 'How it works',
-    'nav.agent': 'Your Agent',
+    'nav.agent': 'The Engine',
     'nav.teams': 'Teams',
     'nav.articles': 'Articles',
     'nav.community': 'Community',
@@ -18,11 +18,11 @@ export const ui: Record<Locale, Record<string, string>> = {
       'Solarpunk cityscape with organic architecture, lush green vegetation, solar panels, and golden sunlight streaming through glass domes',
     'hero.btn.github': 'Explore on GitHub',
     'hero.btn.how': 'See how it works',
-    'cta.title': 'Start with one agent.',
-    'cta.text': 'Keep it personal. Share knowledge when it helps.',
+    'cta.title': 'Start building.',
+    'cta.text': 'Personal agent or shipped product. The engine is the same.',
     'cta.btn.github': 'Explore on GitHub',
     'cta.btn.start': 'Get started',
-    'footer.tagline': 'Soleri — Personal agents with shared knowledge',
+    'footer.tagline': 'Soleri — The engine for agents that learn',
     'footer.contact': 'Contact',
     'footer.copyright': '© 2026 Drozd&Co',
     'named.after':

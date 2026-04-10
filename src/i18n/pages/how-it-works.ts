@@ -8,15 +8,15 @@ const content: Record<Locale, HowItWorksContent> = {
     description:
       'Soleri is the engine that powers your agent. Your agent learns your project, remembers your decisions, and gets sharper over time — all on your machine.',
     eyebrow: 'How it works',
-    heroTitle: '75% orchestration. 20% infrastructure. 5% AI.',
+    heroTitle: 'An engine, not a wrapper.',
     heroSubtitle:
-      'Plans <span class="sun-sep">☀</span> Executes <span class="sun-sep">☀</span> Captures <span class="sun-sep">☀</span> Remembers',
+      'Most AI tools wrap an API. Soleri is the 95% that makes the 5% reliable.',
     sections: [
       {
-        title: 'The model is 5% of the system.',
-        subtitle: 'Most AI products are wrappers around an API. Soleri is an engine.',
-        text: '75% orchestration — vault routing, plan gates, intent classification, knowledge curation. 20% infrastructure — SQLite, transports, file I/O. 5% AI calls — only when intelligence is actually needed. The other 95% is what makes AI reliable.',
-        code: `<span class="cmt"># What the 75% actually does</span>
+        title: 'Six systems working together.',
+        subtitle: 'Pick the ones your agent needs — or use them all.',
+        text: 'Vault remembers. Brain ranks. Curator cleans. Planner orchestrates. Memory persists. Governance gates. Pick the ones your agent needs — or use them all.',
+        code: `<span class="cmt"># Six systems, one engine</span>
 
 <span class="ok">Brain</span>        <span class="dim">— tracks what works, recommends approaches</span>
 <span class="ok">Curator</span>      <span class="dim">— prevents knowledge decay, deduplicates</span>

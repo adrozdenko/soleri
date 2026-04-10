@@ -60,6 +60,10 @@ const content: Record<Locale, CommunityContent> = {
         title: 'Build an agent',
         desc: 'Build your own agent with its own persona, vault, and workflows. Share what works so others can learn from your approach.',
       },
+      {
+        title: 'Build a domain pack',
+        desc: 'Package vertical expertise into a domain pack. React, Rails, accessibility, security — if you know a domain well, turn it into a pack that any agent can use.',
+      },
     ],
     announcementsTitle: 'Announcements',
     announcementsSubtitle: 'Latest updates from the team.',
