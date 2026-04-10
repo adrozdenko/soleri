@@ -7,7 +7,7 @@ const content: Record<Locale, HomeContent> = {
     heroTitle:
       'The open-source <span class="accent-amber">engine</span> for agents that <span class="accent-teal">learn</span>.',
     heroText:
-      'Ship a personal dev assistant or a product with 50,000 users. Same engine. Your rules.',
+      'Build a personal dev assistant or ship agents to your users. Same engine. Your rules.',
     principleTitle: 'Zero memory. Every time.',
     principleSubtitle: 'Soleri agents don\'t.',
     principleText: 'You explain the architecture. Again. The naming conventions. Again. The thing you fixed last Tuesday. Again. Soleri agents capture what works and use it next time — without you asking.',
