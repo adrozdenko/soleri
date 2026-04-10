@@ -12,6 +12,7 @@ import {
   jaccardSimilarity,
 } from '../text/similarity.js';
 import type { EmbeddingProvider } from '../embeddings/types.js';
+import type { LinkManager } from '../vault/linking.js';
 import type {
   ScoringWeights,
   ScoreBreakdown,
@@ -52,22 +53,24 @@ function vectorCosineSimilarity(a: number[], b: number[]): number {
 // ─── Brain Class ─────────────────────────────────────────────────
 
 const DEFAULT_WEIGHTS: ScoringWeights = {
-  semantic: 0.4,
+  semantic: 0.35,
   vector: 0.0,
-  severity: 0.15,
-  temporalDecay: 0.15,
-  tagOverlap: 0.15,
-  domainMatch: 0.15,
+  severity: 0.1,
+  temporalDecay: 0.1,
+  tagOverlap: 0.1,
+  domainMatch: 0.1,
+  graphProximity: 0.15,
 };
 
-/** Weights used when an embedding provider is active — vector gets 0.15, semantic drops to 0.25. */
+/** Weights used when an embedding provider is active — vector gets 0.15, semantic drops to 0.20. */
 const DEFAULT_WEIGHTS_HYBRID: ScoringWeights = {
-  semantic: 0.25,
+  semantic: 0.2,
   vector: 0.15,
-  severity: 0.15,
-  temporalDecay: 0.15,
-  tagOverlap: 0.15,
-  domainMatch: 0.15,
+  severity: 0.1,
+  temporalDecay: 0.1,
+  tagOverlap: 0.1,
+  domainMatch: 0.1,
+  graphProximity: 0.15,
 };
 
 const WEIGHT_BOUND = 0.15;
@@ -87,14 +90,21 @@ export class Brain {
   private vault: Vault;
   private vaultManager: VaultManager | undefined;
   private embeddingProvider: EmbeddingProvider | undefined;
+  private linkManager: LinkManager | undefined;
   private vocabulary: Map<string, number> = new Map();
   private weights: ScoringWeights = { ...DEFAULT_WEIGHTS };
   private canonicalTagConfig: CanonicalTagConfig | undefined;
 
-  constructor(vault: Vault, vaultManager?: VaultManager, embeddingProvider?: EmbeddingProvider) {
+  constructor(
+    vault: Vault,
+    vaultManager?: VaultManager,
+    embeddingProvider?: EmbeddingProvider,
+    linkManager?: LinkManager,
+  ) {
     this.vault = vault;
     this.vaultManager = vaultManager;
     this.embeddingProvider = embeddingProvider;
+    this.linkManager = linkManager;
     this.loadVocabularyFromDb();
     this.recomputeWeights();
   }
@@ -184,6 +194,7 @@ export class Brain {
 
     const seedCount = rawResults.length;
 
+    // ── Pass 1: Score all entries without graph proximity ──
     const ranked = rawResults.map((result) => {
       const entry = result.entry;
       const vectorSim = vectorSimilarityMap.get(entry.id) ?? null;
@@ -201,6 +212,86 @@ export class Brain {
     });
 
     ranked.sort((a, b) => b.score - a.score);
+
+    // ── Pass 2: Graph proximity boost ──
+    // Traverse links of top results, boost neighbors already in the result set,
+    // and pull in graph-discovered entries that weren't in the FTS seed.
+    // Only boost from results with meaningful semantic relevance — if the top result
+    // has no semantic overlap with the query, its graph neighbors are noise.
+    if (this.linkManager && ranked.length > 0) {
+      const topN = Math.min(5, ranked.length);
+      const topIds = ranked
+        .slice(0, topN)
+        .filter((r) => r.breakdown.semantic > 0)
+        .map((r) => r.entry.id);
+
+      // Build proximity map: entryId → best proximity score
+      // Formula: 1 / (distance + 1) — direct neighbors 0.5, depth-2 neighbors 0.33
+      // We compute actual BFS distance by doing depth-1 first, then depth-2.
+      const proximityMap = new Map<string, number>();
+      for (const topId of topIds) {
+        // Depth-1 neighbors (direct links)
+        const directNeighbors = this.linkManager.traverse(topId, 1);
+        const directIds = new Set(directNeighbors.map((n) => n.id));
+        for (const neighbor of directNeighbors) {
+          const score = 1 / (1 + 1); // distance 1 → 0.5
+          const existing = proximityMap.get(neighbor.id) ?? 0;
+          if (score > existing) proximityMap.set(neighbor.id, score);
+        }
+
+        // Depth-2 neighbors (two hops away)
+        const allNeighbors = this.linkManager.traverse(topId, 2);
+        for (const neighbor of allNeighbors) {
+          if (directIds.has(neighbor.id)) continue; // already scored at depth 1
+          const score = 1 / (2 + 1); // distance 2 → 0.33
+          const existing = proximityMap.get(neighbor.id) ?? 0;
+          if (score > existing) proximityMap.set(neighbor.id, score);
+        }
+      }
+
+      // Re-score entries that got a proximity boost
+      const rankedIds = new Set(ranked.map((r) => r.entry.id));
+      for (const r of ranked) {
+        const prox = proximityMap.get(r.entry.id);
+        if (prox && prox > 0) {
+          const vectorSim = vectorSimilarityMap.get(r.entry.id) ?? null;
+          r.breakdown = this.scoreEntry(
+            r.entry,
+            queryTokens,
+            queryTags,
+            queryDomain,
+            now,
+            queryVec,
+            queryEmbedding,
+            vectorSim,
+            prox,
+          );
+          r.score = r.breakdown.total;
+        }
+      }
+
+      // Pull in graph-discovered entries not in the original result set
+      for (const [neighborId, prox] of proximityMap) {
+        if (rankedIds.has(neighborId)) continue;
+        const entry = this.vault.get(neighborId);
+        if (!entry) continue;
+        const vectorSim = vectorSimilarityMap.get(neighborId) ?? null;
+        const breakdown = this.scoreEntry(
+          entry,
+          queryTokens,
+          queryTags,
+          queryDomain,
+          now,
+          queryVec,
+          queryEmbedding,
+          vectorSim,
+          prox,
+        );
+        ranked.push({ entry, score: breakdown.total, breakdown });
+      }
+
+      ranked.sort((a, b) => b.score - a.score);
+    }
 
     // Small corpus guard: when the FTS seed is small (< 50 entries), TF-IDF scoring
     // becomes too aggressive and filters out relevant results. If filtering to `limit`
@@ -594,6 +685,7 @@ export class Brain {
     queryVec: Map<string, number> | null = null,
     queryEmbedding: number[] | null = null,
     precomputedVectorSim: number | null = null,
+    graphProximity: number = 0,
   ): ScoreBreakdown {
     const w = this.weights;
 
@@ -641,9 +733,19 @@ export class Brain {
       w.severity * severity +
       w.temporalDecay * temporalDecay +
       w.tagOverlap * tagOverlap +
-      w.domainMatch * domainMatch;
+      w.domainMatch * domainMatch +
+      w.graphProximity * graphProximity;
 
-    return { semantic, vector, severity, temporalDecay, tagOverlap, domainMatch, total };
+    return {
+      semantic,
+      vector,
+      severity,
+      temporalDecay,
+      tagOverlap,
+      domainMatch,
+      graphProximity,
+      total,
+    };
   }
 
   private generateTags(title: string, description: string, context?: string): string[] {
@@ -839,12 +941,14 @@ export class Brain {
       DEFAULT_WEIGHTS.severity +
       DEFAULT_WEIGHTS.temporalDecay +
       DEFAULT_WEIGHTS.tagOverlap +
-      DEFAULT_WEIGHTS.domainMatch;
+      DEFAULT_WEIGHTS.domainMatch +
+      DEFAULT_WEIGHTS.graphProximity;
     const scale = remaining / otherSum;
     newWeights.severity = DEFAULT_WEIGHTS.severity * scale;
     newWeights.temporalDecay = DEFAULT_WEIGHTS.temporalDecay * scale;
     newWeights.tagOverlap = DEFAULT_WEIGHTS.tagOverlap * scale;
     newWeights.domainMatch = DEFAULT_WEIGHTS.domainMatch * scale;
+    newWeights.graphProximity = DEFAULT_WEIGHTS.graphProximity * scale;
 
     this.weights = newWeights;
   }

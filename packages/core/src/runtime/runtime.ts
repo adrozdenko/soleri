@@ -143,10 +143,15 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     }
   }
 
+  // Link Manager — Zettelkasten auto-linking on vault ingestion
+  const linkManager = new LinkManager(vault.getProvider());
+  vault.setLinkManager(linkManager, { enabled: true, maxLinks: 3 });
+
   // Brain — intelligence layer (TF-IDF scoring, auto-tagging, dedup)
   // Pass vaultManager so intelligentSearch queries all connected sources (not just agent tier)
   // Pass embeddingProvider for hybrid FTS5+vector search when available
-  const brain = new Brain(vault, vaultManager, embeddingProvider);
+  // Pass linkManager so graph proximity boosts linked entries in search results
+  const brain = new Brain(vault, vaultManager, embeddingProvider, linkManager);
 
   // Wire canonical tag config if provided
   if (config.canonicalTags && config.canonicalTags.length > 0) {
@@ -199,10 +204,6 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   const openaiKeyPool = new KeyPool(keyPoolFiles.openai);
   const anthropicKeyPool = new KeyPool(anthropicConfig);
   const llmClient = new LLMClient(openaiKeyPool, anthropicKeyPool, agentId);
-
-  // Link Manager — Zettelkasten auto-linking on vault ingestion
-  const linkManager = new LinkManager(vault.getProvider());
-  vault.setLinkManager(linkManager, { enabled: true, maxLinks: 3 });
 
   // Intake Pipeline — PDF/book ingestion with LLM classification
   const intakePipeline = new IntakePipeline(vault.getProvider(), vault, llmClient);

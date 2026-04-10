@@ -9,6 +9,7 @@ export interface ScoringWeights {
   temporalDecay: number;
   tagOverlap: number;
   domainMatch: number;
+  graphProximity: number;
 }
 
 export interface ScoreBreakdown {
@@ -18,6 +19,7 @@ export interface ScoreBreakdown {
   temporalDecay: number;
   tagOverlap: number;
   domainMatch: number;
+  graphProximity: number;
   total: number;
 }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Vault } from '../vault/vault.js';
 import { Brain } from './brain.js';
+import { LinkManager } from '../vault/linking.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
@@ -95,7 +96,7 @@ describe('Brain', () => {
       expect(results[0].entry.id).toBe('is-1');
     });
 
-    it('should include score breakdown with vector field', async () => {
+    it('should include score breakdown with vector and graphProximity fields', async () => {
       const results = await brain.intelligentSearch('validation');
       expect(results.length).toBeGreaterThan(0);
       const breakdown = results[0].breakdown;
@@ -105,9 +106,11 @@ describe('Brain', () => {
       expect(breakdown).toHaveProperty('temporalDecay');
       expect(breakdown).toHaveProperty('tagOverlap');
       expect(breakdown).toHaveProperty('domainMatch');
+      expect(breakdown).toHaveProperty('graphProximity');
       expect(breakdown).toHaveProperty('total');
       expect(breakdown.total).toBe(results[0].score);
       expect(breakdown.vector).toBe(0);
+      expect(breakdown.graphProximity).toBe(0);
     });
 
     it('should return empty array for no matches', async () => {
@@ -319,7 +322,7 @@ describe('Brain', () => {
         brain.recordFeedback('q' + i, 'e' + i, 'accepted');
       }
       const stats = brain.getStats();
-      expect(stats.weights.semantic).toBeCloseTo(0.4, 2);
+      expect(stats.weights.semantic).toBeCloseTo(0.35, 2);
     });
   });
 
@@ -339,7 +342,7 @@ describe('Brain', () => {
         brain.recordFeedback('query-' + i, 'entry-' + i, 'dismissed');
       }
       const stats = brain.getStats();
-      expect(stats.weights.semantic).toBeLessThan(0.4);
+      expect(stats.weights.semantic).toBeLessThan(0.35);
     });
 
     it('should keep weights bounded within +/-0.15 of defaults', () => {
@@ -347,8 +350,8 @@ describe('Brain', () => {
         brain.recordFeedback('query-' + i, 'entry-' + i, 'accepted');
       }
       const stats = brain.getStats();
-      expect(stats.weights.semantic).toBeLessThanOrEqual(0.55);
-      expect(stats.weights.semantic).toBeGreaterThanOrEqual(0.25);
+      expect(stats.weights.semantic).toBeLessThanOrEqual(0.5);
+      expect(stats.weights.semantic).toBeGreaterThanOrEqual(0.2);
     });
 
     it('should normalize weights to sum to 1.0', () => {
@@ -362,7 +365,8 @@ describe('Brain', () => {
         stats.weights.severity +
         stats.weights.temporalDecay +
         stats.weights.tagOverlap +
-        stats.weights.domainMatch;
+        stats.weights.domainMatch +
+        stats.weights.graphProximity;
       expect(sum).toBeCloseTo(1.0, 5);
     });
 
@@ -374,7 +378,7 @@ describe('Brain', () => {
         brain.recordFeedback('qd-' + i, 'ed-' + i, 'dismissed');
       }
       const stats = brain.getStats();
-      expect(stats.weights.semantic).toBeCloseTo(0.4, 1);
+      expect(stats.weights.semantic).toBeCloseTo(0.35, 1);
     });
 
     it('should keep vector weight at 0 in base weights', () => {
@@ -451,8 +455,9 @@ describe('Brain', () => {
       const stats = brain.getStats();
       expect(stats.vocabularySize).toBe(0);
       expect(stats.feedbackCount).toBe(0);
-      expect(stats.weights.semantic).toBeCloseTo(0.4, 2);
+      expect(stats.weights.semantic).toBeCloseTo(0.35, 2);
       expect(stats.weights.vector).toBe(0);
+      expect(stats.weights.graphProximity).toBeCloseTo(0.15, 2);
     });
 
     it('should return correct vocabulary size after seeding', () => {
@@ -644,7 +649,7 @@ describe('Brain', () => {
       // Weights should have adapted since we have 30+ total but only 20 non-failed
       // (threshold is 30, total is 30, but only 20 are non-failed so threshold not met)
       // The recomputeWeights() counts non-failed, which is 20 < 30, so weights stay default
-      expect(stats.weights.semantic).toBeCloseTo(0.4, 2);
+      expect(stats.weights.semantic).toBeCloseTo(0.35, 2);
     });
   });
 
@@ -685,6 +690,145 @@ describe('Brain', () => {
       });
       expect(result.captured).toBe(true);
       expect(result.autoTags.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ─── Graph Proximity Scoring ────────────────────────────────────
+
+  describe('graph proximity scoring', () => {
+    let linkManager: LinkManager;
+
+    beforeEach(() => {
+      vault.seed([
+        makeEntry({
+          id: 'gp-1',
+          title: 'Input validation pattern',
+          description: 'Always validate user input at system boundaries.',
+          domain: 'security',
+          severity: 'critical',
+          tags: ['validation', 'security'],
+        }),
+        makeEntry({
+          id: 'gp-2',
+          title: 'SQL injection prevention',
+          description: 'Parameterize queries to prevent SQL injection attacks.',
+          domain: 'security',
+          severity: 'critical',
+          tags: ['sql', 'security'],
+        }),
+        makeEntry({
+          id: 'gp-3',
+          title: 'XSS prevention guide',
+          description: 'Escape output to prevent cross-site scripting vulnerabilities.',
+          domain: 'security',
+          severity: 'warning',
+          tags: ['xss', 'security'],
+        }),
+        makeEntry({
+          id: 'gp-4',
+          title: 'Caching strategy for APIs',
+          description: 'Use cache-aside pattern for read-heavy API workloads.',
+          domain: 'performance',
+          severity: 'suggestion',
+          tags: ['caching', 'api'],
+        }),
+      ]);
+      linkManager = new LinkManager(vault.getProvider());
+    });
+
+    it('should boost directly linked entries', async () => {
+      // Link gp-1 → gp-2 (directly related security patterns)
+      linkManager.addLink('gp-1', 'gp-2', 'supports');
+
+      const brainWithLinks = new Brain(vault, undefined, undefined, linkManager);
+      const results = await brainWithLinks.intelligentSearch('input validation security');
+
+      // gp-2 should have a non-zero graphProximity because it's linked to gp-1 (top result)
+      const gp2 = results.find((r) => r.entry.id === 'gp-2');
+      expect(gp2).toBeDefined();
+      expect(gp2!.breakdown.graphProximity).toBeGreaterThan(0);
+    });
+
+    it('should give higher proximity to direct links than depth-2', async () => {
+      // Set up isolated entries where only one matches the query strongly
+      const isolatedVault = new Vault(':memory:');
+      isolatedVault.seed([
+        makeEntry({
+          id: 'dp-1',
+          title: 'Input validation pattern',
+          description: 'Always validate user input at system boundaries.',
+          domain: 'security',
+          severity: 'critical',
+          tags: ['validation'],
+        }),
+        makeEntry({
+          id: 'dp-2',
+          title: 'Middleware chaining technique',
+          description: 'Chain middleware functions for layered processing.',
+          domain: 'architecture',
+          severity: 'suggestion',
+          tags: ['middleware'],
+        }),
+        makeEntry({
+          id: 'dp-3',
+          title: 'Rate limiting strategy',
+          description: 'Throttle requests to protect backend resources.',
+          domain: 'infrastructure',
+          severity: 'suggestion',
+          tags: ['rate-limiting'],
+        }),
+      ]);
+      const isolatedLM = new LinkManager(isolatedVault.getProvider());
+      // Chain: dp-1 → dp-2 → dp-3
+      isolatedLM.addLink('dp-1', 'dp-2', 'supports');
+      isolatedLM.addLink('dp-2', 'dp-3', 'extends');
+
+      const brainWithLinks = new Brain(isolatedVault, undefined, undefined, isolatedLM);
+      // Query matches dp-1 strongly — dp-2 and dp-3 have no keyword overlap
+      const results = await brainWithLinks.intelligentSearch('input validation');
+
+      const dp2 = results.find((r) => r.entry.id === 'dp-2');
+      const dp3 = results.find((r) => r.entry.id === 'dp-3');
+      expect(dp2).toBeDefined();
+      expect(dp3).toBeDefined();
+      // Direct link (distance 1) = 0.5, depth-2 (distance 2) = 0.33
+      expect(dp2!.breakdown.graphProximity).toBeGreaterThan(dp3!.breakdown.graphProximity);
+      isolatedVault.close();
+    });
+
+    it('should gracefully degrade without LinkManager', async () => {
+      const brainNoLinks = new Brain(vault);
+      const results = await brainNoLinks.intelligentSearch('input validation security');
+      expect(results.length).toBeGreaterThan(0);
+      // All graphProximity should be 0
+      for (const r of results) {
+        expect(r.breakdown.graphProximity).toBe(0);
+      }
+    });
+
+    it('should handle circular links without infinite loops', async () => {
+      // Create a cycle: gp-1 → gp-2 → gp-3 → gp-1
+      linkManager.addLink('gp-1', 'gp-2', 'supports');
+      linkManager.addLink('gp-2', 'gp-3', 'extends');
+      linkManager.addLink('gp-3', 'gp-1', 'extends');
+
+      const brainWithLinks = new Brain(vault, undefined, undefined, linkManager);
+      // Should not hang or throw
+      const results = await brainWithLinks.intelligentSearch('input validation security');
+      expect(results.length).toBeGreaterThan(0);
+    });
+
+    it('should not boost unlinked entries', async () => {
+      // Only link gp-1 → gp-2, gp-4 is isolated
+      linkManager.addLink('gp-1', 'gp-2', 'supports');
+
+      const brainWithLinks = new Brain(vault, undefined, undefined, linkManager);
+      const results = await brainWithLinks.intelligentSearch('input validation security');
+
+      const gp4 = results.find((r) => r.entry.id === 'gp-4');
+      if (gp4) {
+        expect(gp4.breakdown.graphProximity).toBe(0);
+      }
     });
   });
 });

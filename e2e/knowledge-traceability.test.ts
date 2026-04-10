@@ -120,6 +120,17 @@ describe('Knowledge Traceability', () => {
     tags: ['rate-limiting', 'authentication', 'brute-force'],
   };
 
+  // An unrelated domain pattern used to verify search relevance
+  const UNRELATED_KNOWLEDGE = {
+    title: 'Use CSS grid and flexbox for responsive layout',
+    description:
+      'CSS grid handles two-dimensional layout while flexbox handles one-dimensional flow. Combine grid for page structure and flexbox for component internals. Avoid float-based layouts.',
+    domain: 'frontend',
+    type: 'pattern' as const,
+    severity: 'suggestion' as const,
+    tags: ['css', 'grid', 'flexbox', 'layout', 'responsive'],
+  };
+
   // State tracking — IDs assigned by the system
   const state: Record<string, string> = {};
 
@@ -218,6 +229,20 @@ describe('Knowledge Traceability', () => {
       const results = res.results as Array<{ id: string }>;
       state.relatedId = results[0].id;
     });
+
+    it('capture an unrelated-domain pattern (for search relevance tests)', async () => {
+      const res = await op('vault', 'capture_quick', {
+        type: UNRELATED_KNOWLEDGE.type,
+        domain: UNRELATED_KNOWLEDGE.domain,
+        title: UNRELATED_KNOWLEDGE.title,
+        description: UNRELATED_KNOWLEDGE.description,
+        severity: UNRELATED_KNOWLEDGE.severity,
+        tags: UNRELATED_KNOWLEDGE.tags,
+      });
+
+      expect(res.captured).toBe(true);
+      state.unrelatedId = res.id as string;
+    });
   });
 
   // ═══════════════════════════════════════════════════════════
@@ -229,7 +254,7 @@ describe('Knowledge Traceability', () => {
       const stats = await op('vault', 'vault_stats');
 
       const totalEntries = stats.totalEntries as number;
-      expect(totalEntries).toBeGreaterThanOrEqual(3); // our 3 + playbooks
+      expect(totalEntries).toBeGreaterThanOrEqual(4); // our 4 + playbooks
 
       const byDomain = stats.byDomain as Record<string, number>;
       expect(byDomain.security).toBeGreaterThanOrEqual(3);
@@ -289,10 +314,10 @@ describe('Knowledge Traceability', () => {
       const results = await op('vault', 'search', { query: 'CSS grid flexbox layout' });
       const entries = results as unknown as Array<{ entry: { id: string }; score: number }>;
 
-      // Our security pattern should NOT be the top result for CSS queries
-      if (entries.length > 0) {
-        expect(entries[0].entry.id).not.toBe(state.knowledgeId);
-      }
+      // The CSS/layout entry should rank above the security JWT pattern
+      expect(entries.length).toBeGreaterThan(0);
+      expect(entries[0].entry.id).toBe(state.unrelatedId);
+      expect(entries[0].entry.id).not.toBe(state.knowledgeId);
     });
 
     it('anti-pattern should also be searchable', async () => {
