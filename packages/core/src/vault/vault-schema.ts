@@ -30,6 +30,7 @@ export function initializeSchema(provider: PersistenceProvider): void {
   migratePerformanceIndexes(provider);
   migrateVectorStorage(provider);
   migrateTranscriptTables(provider);
+  migrateDomainSummaries(provider);
 }
 
 function createCoreTables(provider: PersistenceProvider): void {
@@ -344,5 +345,20 @@ function migrateTranscriptTables(provider: PersistenceProvider): void {
     CREATE INDEX IF NOT EXISTS idx_transcript_sessions_ended_at ON transcript_sessions(ended_at DESC);
     CREATE INDEX IF NOT EXISTS idx_transcript_messages_session_seq ON transcript_messages(session_id, seq);
     CREATE INDEX IF NOT EXISTS idx_transcript_segments_session_range ON transcript_segments(session_id, seq_start, seq_end);
+  `);
+}
+
+function migrateDomainSummaries(provider: PersistenceProvider): void {
+  provider.execSql(`
+    CREATE TABLE IF NOT EXISTS domain_summaries (
+      domain TEXT PRIMARY KEY,
+      summary TEXT NOT NULL DEFAULT '',
+      entry_count INTEGER NOT NULL DEFAULT 0,
+      last_rebuilt INTEGER NOT NULL DEFAULT 0,
+      top_patterns TEXT NOT NULL DEFAULT '[]',
+      top_antipatterns TEXT NOT NULL DEFAULT '[]',
+      stale INTEGER NOT NULL DEFAULT 1
+    );
+    CREATE INDEX IF NOT EXISTS idx_domain_summaries_stale ON domain_summaries(stale) WHERE stale = 1;
   `);
 }

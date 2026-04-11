@@ -55,7 +55,12 @@ function makeRuntime(overrides?: {
     vault: {
       stats: () => o.vaultStats ?? { totalEntries: 50, byType: { playbook: 5 } },
       getRecent: (_n: number) => o.recentEntries ?? [],
+      getDomains: () => [],
       listMemories: () => o.memories ?? [],
+      domainSummaries: {
+        stats: () => ({ totalDomains: 0, staleDomains: 0, freshDomains: 0, totalEntries: 0 }),
+        getMultiple: () => [],
+      },
     },
     curator: {
       healthAudit: () => ({

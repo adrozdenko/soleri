@@ -57,3 +57,5 @@ export type {
 } from './knowledge-review.js';
 export { computeContentHash } from './content-hash.js';
 export type { HashableEntry } from './content-hash.js';
+export { DomainSummaryManager } from './domain-summaries.js';
+export type { DomainSummary, DomainSummaryStats } from './domain-summaries.js';

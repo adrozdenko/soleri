@@ -166,21 +166,65 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
           // Planner unavailable — skip
         }
 
-        // 3. Recent vault captures
+        // 3. Domain context — pre-computed summaries for relevant domains
+        //    Falls back to recent captures if domain summaries are unavailable.
         try {
-          const recent = vault.getRecent(10);
-          dataPoints += recent.length;
-          if (recent.length > 0) {
-            const count = Math.min(recent.length, 5);
-            const titles = recent.slice(0, 3).map((e) => e.title.slice(0, 50));
-            sections.push({
-              label: 'Recent captures',
-              content: `${count} entries — ${titles.join(', ')}${count > 3 ? '...' : ''}`,
-            });
+          const summaryManager = vault.domainSummaries;
+          const stats = summaryManager.stats();
+          let usedDomainSummaries = false;
+
+          if (stats.freshDomains > 0 || stats.staleDomains > 0) {
+            // Pick top domains from brain recommendations or recent activity
+            const recs = brainIntelligence.recommend({ limit: 4 });
+            const recDomains = [...new Set(recs.map((r) => r.domain).filter(Boolean))].slice(0, 4);
+
+            // Supplement with most-populated domains if brain recs are sparse
+            if (recDomains.length < 3) {
+              const allDomains = vault.getDomains();
+              for (const d of allDomains) {
+                if (recDomains.length >= 4) break;
+                if (!recDomains.includes(d.domain)) recDomains.push(d.domain);
+              }
+            }
+
+            const summaries = summaryManager.getMultiple(recDomains);
+            dataPoints += summaries.length;
+
+            if (summaries.length > 0) {
+              const items = summaries.slice(0, 4).map((s) => {
+                const patterns =
+                  s.topPatterns.length > 0
+                    ? ` (${s.topPatterns
+                        .slice(0, 2)
+                        .map((p) => p.slice(0, 40))
+                        .join('; ')})`
+                    : '';
+                return `${s.domain} [${s.entryCount}]${patterns}`;
+              });
+              sections.push({
+                label: 'Domain context',
+                content: items.join(' | '),
+              });
+              usedDomainSummaries = true;
+            }
+          }
+
+          // Fallback: recent captures (when no domain summaries available)
+          if (!usedDomainSummaries) {
+            const recent = vault.getRecent(10);
+            dataPoints += recent.length;
+            if (recent.length > 0) {
+              const count = Math.min(recent.length, 5);
+              const titles = recent.slice(0, 3).map((e) => e.title.slice(0, 50));
+              sections.push({
+                label: 'Recent captures',
+                content: `${count} entries — ${titles.join(', ')}${count > 3 ? '...' : ''}`,
+              });
+            }
           }
         } catch {
           failedSections++;
-          // Vault unavailable — skip
+          // Vault/domain summaries unavailable — skip
         }
 
         // 4. Brain recommendations

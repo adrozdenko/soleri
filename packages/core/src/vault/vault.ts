@@ -7,6 +7,7 @@ import { initializeSchema, checkFormatVersion, VAULT_FORMAT_VERSION } from './va
 import * as entries from './vault-entries.js';
 import * as memories from './vault-memories.js';
 import * as maintenance from './vault-maintenance.js';
+import { DomainSummaryManager } from './domain-summaries.js';
 import type { AutoLinkConfig, EntryUpdateFields } from './vault-entries.js';
 import type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault-types.js';
 
@@ -26,6 +27,7 @@ export class Vault {
   private linkManager: LinkManager | null = null;
   private autoLinkEnabled = true;
   private autoLinkMaxLinks = 3;
+  private _domainSummaries: DomainSummaryManager | null = null;
 
   constructor(providerOrPath: PersistenceProvider | string = ':memory:') {
     if (typeof providerOrPath === 'string') {
@@ -62,6 +64,13 @@ export class Vault {
     return this.autoLinkEnabled && this.linkManager !== null;
   }
 
+  get domainSummaries(): DomainSummaryManager {
+    if (!this._domainSummaries) {
+      this._domainSummaries = new DomainSummaryManager(this.provider);
+    }
+    return this._domainSummaries;
+  }
+
   static createWithSQLite(dbPath: string = ':memory:'): Vault {
     return new Vault(dbPath);
   }
@@ -69,15 +78,21 @@ export class Vault {
   // ── Entry operations (vault-entries.ts) ───────────────────────────────
 
   seed(entryList: IntelligenceEntry[]): number {
-    return entries.seed(this.provider, entryList, this.getAutoLinkConfig());
+    const result = entries.seed(this.provider, entryList, this.getAutoLinkConfig());
+    this.invalidateDomains(entryList);
+    return result;
   }
   installPack(entryList: IntelligenceEntry[]): { installed: number; skipped: number } {
-    return entries.installPack(this.provider, entryList, this.getAutoLinkConfig());
+    const result = entries.installPack(this.provider, entryList, this.getAutoLinkConfig());
+    this.invalidateDomains(entryList);
+    return result;
   }
   seedDedup(
     entryList: IntelligenceEntry[],
   ): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
-    return entries.seedDedup(this.provider, entryList, this.getAutoLinkConfig());
+    const result = entries.seedDedup(this.provider, entryList, this.getAutoLinkConfig());
+    this.invalidateDomains(entryList);
+    return result;
   }
   search(
     query: string,
@@ -115,12 +130,28 @@ export class Vault {
   }
   add(entry: IntelligenceEntry): void {
     entries.add(this.provider, entry, this.getAutoLinkConfig());
+    this.domainSummaries.markStale(entry.domain);
   }
   remove(id: string): boolean {
-    return entries.remove(this.provider, id);
+    // Look up domain before removing so we can invalidate the right summary
+    const existing = entries.get(this.provider, id);
+    const result = entries.remove(this.provider, id);
+    if (result && existing) {
+      this.domainSummaries.markStale(existing.domain);
+    }
+    return result;
   }
   update(id: string, fields: EntryUpdateFields): IntelligenceEntry | null {
-    return entries.update(this.provider, id, fields, this.getAutoLinkConfig());
+    // Invalidate both old and new domain if domain is changing
+    const existing = entries.get(this.provider, id);
+    const result = entries.update(this.provider, id, fields, this.getAutoLinkConfig());
+    if (result) {
+      this.domainSummaries.markStale(result.domain);
+      if (existing && existing.domain !== result.domain) {
+        this.domainSummaries.markStale(existing.domain);
+      }
+    }
+    return result;
   }
   setTemporal(id: string, validFrom?: number, validUntil?: number): boolean {
     return entries.setTemporal(this.provider, id, validFrom, validUntil);
@@ -132,7 +163,13 @@ export class Vault {
     return entries.findExpired(this.provider, limit);
   }
   bulkRemove(ids: string[]): number {
-    return entries.bulkRemove(this.provider, ids);
+    // Look up domains before removing
+    const existing = ids.length > 0 ? entries.getByIds(this.provider, ids) : [];
+    const result = entries.bulkRemove(this.provider, ids);
+    if (result > 0) {
+      this.invalidateDomains(existing);
+    }
+    return result;
   }
   getTags(): Array<{ tag: string; count: number }> {
     return entries.getTags(this.provider);
@@ -269,5 +306,15 @@ export class Vault {
   }
   close(): void {
     this.provider.close();
+  }
+
+  // ── Private helpers ──────────────────────────────────────────────────
+
+  /** Mark domain summaries as stale for all unique domains in the given entries. */
+  private invalidateDomains(entryList: IntelligenceEntry[]): void {
+    const domains = new Set(entryList.map((e) => e.domain));
+    for (const domain of domains) {
+      this.domainSummaries.markStale(domain);
+    }
   }
 }

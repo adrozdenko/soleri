@@ -37,6 +37,10 @@ export interface SearchOptions {
   tags?: string[];
   /** 'full' returns RankedResult[] with complete entries (default). 'scan' returns ScanResult[] — lightweight titles + scores for two-pass retrieval. */
   mode?: 'full' | 'scan';
+  /** Maximum total tokens for returned results. Truncates result set to fit within budget. */
+  maxTokens?: number;
+  /** Score threshold (0-1) above which a result is considered "sufficient". Used with maxTokens for early truncation. Default: 0.8. */
+  confidenceThreshold?: number;
 }
 
 /** Lightweight search result for scan mode — titles + scores without full entry body. */
@@ -51,6 +55,26 @@ export interface ScanResult {
   snippet: string;
   /** Estimated tokens if this entry were loaded in full. */
   tokenEstimate: number;
+}
+
+/** Tier levels for context injection — controls how much detail is returned. */
+export type ContextTier = 1 | 2 | 3;
+
+/** Result from tiered context injection. */
+export interface ContextTierResult {
+  tier: ContextTier;
+  items: ContextTierItem[];
+  totalTokenEstimate: number;
+}
+
+/** A single item in a tiered context response. */
+export interface ContextTierItem {
+  id: string;
+  domain: string;
+  /** Tier 1: domain summary. Tier 2: title + snippet + score. Tier 3: full entry text. */
+  content: string;
+  tokenEstimate: number;
+  score?: number;
 }
 
 export interface CaptureResult {

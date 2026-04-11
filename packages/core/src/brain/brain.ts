@@ -25,7 +25,21 @@ import type {
   FeedbackInput,
   FeedbackEntry,
   FeedbackStats,
+  ContextTier,
+  ContextTierResult,
+  ContextTierItem,
 } from './types.js';
+
+// ─── Token estimation ────────────────────────────────────────────
+
+/** Estimate token count for an entry (~4 chars per token heuristic). */
+function estimateEntryTokens(entry: IntelligenceEntry): number {
+  let chars = (entry.title?.length ?? 0) + (entry.description?.length ?? 0);
+  chars += (entry.context?.length ?? 0) + (entry.example?.length ?? 0);
+  chars += (entry.counterExample?.length ?? 0) + (entry.why?.length ?? 0);
+  chars += JSON.stringify(entry.tags ?? []).length;
+  return Math.ceil(chars / 4);
+}
 
 // ─── Severity scoring ──────────────────────────────────────────────
 
@@ -299,11 +313,43 @@ export class Brain {
     if (seedCount < 50 && limit < seedCount && ranked.length > limit) {
       const wouldKeep = limit;
       if (wouldKeep < seedCount / 2) {
-        return ranked.slice(0, seedCount);
+        return this.applyTokenBudget(ranked.slice(0, seedCount), options);
       }
     }
 
-    return ranked.slice(0, limit);
+    return this.applyTokenBudget(ranked.slice(0, limit), options);
+  }
+
+  /**
+   * Apply progressive sufficiency: truncate results to fit within a token budget.
+   * When maxTokens is set, accumulates results until the budget is exhausted.
+   * When confidenceThreshold is set, stops early if the top result is confident enough
+   * and fewer results suffice.
+   */
+  private applyTokenBudget(results: RankedResult[], options?: SearchOptions): RankedResult[] {
+    if (!options?.maxTokens) return results;
+
+    const maxTokens = options.maxTokens;
+    const confidenceThreshold = options.confidenceThreshold ?? 0.8;
+
+    // If top result exceeds confidence threshold, consider returning fewer results
+    const hasConfidentTop = results.length > 0 && results[0].score >= confidenceThreshold;
+    // With a confident top result, aim for at most 3 results to save tokens
+    const softLimit = hasConfidentTop ? Math.min(3, results.length) : results.length;
+
+    let tokenCount = 0;
+    const budgeted: RankedResult[] = [];
+
+    for (let i = 0; i < results.length; i++) {
+      const estimate = estimateEntryTokens(results[i].entry);
+      if (tokenCount + estimate > maxTokens && budgeted.length > 0) break;
+      // Respect soft limit from progressive sufficiency
+      if (i >= softLimit && tokenCount > 0) break;
+      tokenCount += estimate;
+      budgeted.push(results[i]);
+    }
+
+    return budgeted;
   }
 
   /**
@@ -334,6 +380,130 @@ export class Brain {
   loadEntries(ids: string[]): IntelligenceEntry[] {
     if (ids.length === 0) return [];
     return this.vault.loadEntries(ids);
+  }
+
+  /**
+   * Tiered context injection — returns knowledge at the requested detail level.
+   *
+   * - **Tier 1**: Domain summaries only (~200-300 tokens per domain). Cheapest.
+   * - **Tier 2**: Scan results — title + snippet + score per entry. Medium cost.
+   * - **Tier 3**: Full entry load — complete knowledge records. Most expensive.
+   *
+   * @param query Search query to find relevant knowledge.
+   * @param tier Detail level (1, 2, or 3).
+   * @param options Standard search options plus optional maxTokens budget.
+   */
+  async getContextTier(
+    query: string,
+    tier: ContextTier,
+    options?: SearchOptions,
+  ): Promise<ContextTierResult> {
+    if (tier === 1) {
+      return this.getContextTier1(query, options);
+    }
+    if (tier === 2) {
+      return this.getContextTier2(query, options);
+    }
+    return this.getContextTier3(query, options);
+  }
+
+  private async getContextTier1(
+    query: string,
+    options?: SearchOptions,
+  ): Promise<ContextTierResult> {
+    // Use scan search to find relevant domains, then return domain summaries
+    const scanResults = await this.scanSearch(query, { ...options, limit: options?.limit ?? 20 });
+
+    // Extract unique domains from results, ranked by best score in that domain
+    const domainScores = new Map<string, number>();
+    for (const r of scanResults) {
+      const current = domainScores.get(r.domain) ?? 0;
+      if (r.score > current) domainScores.set(r.domain, r.score);
+    }
+    const rankedDomains = [...domainScores.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([domain]) => domain);
+
+    const items: ContextTierItem[] = [];
+    let totalTokens = 0;
+    const maxTokens = options?.maxTokens ?? Infinity;
+
+    const summaryManager = this.vault.domainSummaries;
+    for (const domain of rankedDomains) {
+      const summary = summaryManager.get(domain);
+      if (!summary || !summary.summary) continue;
+      const tokenEst = Math.ceil(summary.summary.length / 4);
+      if (totalTokens + tokenEst > maxTokens && items.length > 0) break;
+      items.push({
+        id: `domain:${domain}`,
+        domain,
+        content: summary.summary,
+        tokenEstimate: tokenEst,
+        score: domainScores.get(domain),
+      });
+      totalTokens += tokenEst;
+    }
+
+    return { tier: 1, items, totalTokenEstimate: totalTokens };
+  }
+
+  private async getContextTier2(
+    query: string,
+    options?: SearchOptions,
+  ): Promise<ContextTierResult> {
+    const scanResults = await this.scanSearch(query, options);
+    const maxTokens = options?.maxTokens ?? Infinity;
+
+    const items: ContextTierItem[] = [];
+    let totalTokens = 0;
+
+    for (const r of scanResults) {
+      const content = `[${r.score.toFixed(2)}] ${r.title} — ${r.snippet}`;
+      const tokenEst = Math.ceil(content.length / 4);
+      if (totalTokens + tokenEst > maxTokens && items.length > 0) break;
+      items.push({
+        id: r.id,
+        domain: r.domain,
+        content,
+        tokenEstimate: tokenEst,
+        score: r.score,
+      });
+      totalTokens += tokenEst;
+    }
+
+    return { tier: 2, items, totalTokenEstimate: totalTokens };
+  }
+
+  private async getContextTier3(
+    query: string,
+    options?: SearchOptions,
+  ): Promise<ContextTierResult> {
+    const fullResults = await this.intelligentSearch(query, options);
+    const maxTokens = options?.maxTokens ?? Infinity;
+
+    const items: ContextTierItem[] = [];
+    let totalTokens = 0;
+
+    for (const r of fullResults) {
+      const parts = [r.entry.title, r.entry.description];
+      if (r.entry.context) parts.push(r.entry.context);
+      if (r.entry.example) parts.push(`Example: ${r.entry.example}`);
+      if (r.entry.why) parts.push(`Why: ${r.entry.why}`);
+      const content = parts.join('\n');
+      const tokenEst = estimateEntryTokens(r.entry);
+      if (totalTokens + tokenEst > maxTokens && items.length > 0) break;
+      items.push({
+        id: r.entry.id,
+        domain: r.entry.domain,
+        content,
+        tokenEstimate: tokenEst,
+        score: r.score,
+      });
+      totalTokens += tokenEst;
+    }
+
+    return { tier: 3, items, totalTokenEstimate: totalTokens };
   }
 
   /** Rough token estimate for an entry (chars / 4). */

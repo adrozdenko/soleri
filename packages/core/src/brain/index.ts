@@ -29,4 +29,8 @@ export type {
   SessionListQuery,
   SessionQuality,
   SessionReplay,
+  ContextTier,
+  ContextTierResult,
+  ContextTierItem,
+  ScanResult,
 } from './types.js';
