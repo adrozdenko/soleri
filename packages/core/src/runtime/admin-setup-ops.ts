@@ -202,8 +202,14 @@ function buildConditionalHookCommand(agentId: string, instruction: string): stri
 }
 
 /** Default lifecycle hooks for any Soleri agent */
-function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookGroup[]> {
+function getDefaultLifecycleHooks(
+  agentId: string,
+  options?: { memorySyncAutoEnabled?: boolean },
+): Record<string, SettingsHookGroup[]> {
   const marker = `mcp__${agentId}__${agentId}_`;
+  const syncSuffix = options?.memorySyncAutoEnabled
+    ? ` After that, call ${marker}memory op:memory_sync_to_host to sync vault memories to the host auto-memory. This is non-blocking — if it fails, do not report the error.`
+    : '';
 
   return {
     SessionStart: [
@@ -254,7 +260,7 @@ function getDefaultLifecycleHooks(agentId: string): Record<string, SettingsHookG
             type: 'command',
             command: buildConditionalHookCommand(
               agentId,
-              `First, call ${marker}plan op:plan_close_stale params:{ olderThanMs: 0 } to auto-close any plans still in non-terminal states. Then call ${marker}memory op:session_capture with a structured summary of what was accomplished, including any auto-closed plan IDs. Finally check ${marker}loop op:loop_status — if a loop is active, remind the user.`,
+              `First, call ${marker}plan op:plan_close_stale params:{ olderThanMs: 0 } to auto-close any plans still in non-terminal states. Then call ${marker}memory op:session_capture with a structured summary of what was accomplished, including any auto-closed plan IDs. Finally check ${marker}loop op:loop_status — if a loop is active, remind the user.${syncSuffix}`,
             ),
             timeout: 10000,
           },
@@ -279,13 +285,14 @@ function isAgentHookGroup(group: SettingsHookGroup, agentId: string): boolean {
 function mergeSettingsHooks(
   currentHooks: Record<string, SettingsHookGroup[]>,
   agentId: string,
+  options?: { memorySyncAutoEnabled?: boolean },
 ): {
   hooks: Record<string, SettingsHookGroup[]>;
   installed: string[];
   updated: string[];
   skipped: string[];
 } {
-  const defaults = getDefaultLifecycleHooks(agentId);
+  const defaults = getDefaultLifecycleHooks(agentId, options);
   const merged = { ...currentHooks };
   const installed: string[] = [];
   const updated: string[] = [];
@@ -322,7 +329,10 @@ function mergeSettingsHooks(
  * Idempotent — skips hooks already present, updates stale ones.
  * Returns a summary of what was installed, updated, or skipped.
  */
-export function syncHooksToClaudeSettings(agentId: string): {
+export function syncHooksToClaudeSettings(
+  agentId: string,
+  options?: { memorySyncAutoEnabled?: boolean },
+): {
   installed: string[];
   updated: string[];
   skipped: string[];
@@ -331,7 +341,11 @@ export function syncHooksToClaudeSettings(agentId: string): {
   try {
     const settings = readSettingsJson();
     const currentHooks = (settings.hooks ?? {}) as Record<string, SettingsHookGroup[]>;
-    const { hooks, installed, updated, skipped } = mergeSettingsHooks(currentHooks, agentId);
+    const { hooks, installed, updated, skipped } = mergeSettingsHooks(
+      currentHooks,
+      agentId,
+      options,
+    );
     if (installed.length > 0 || updated.length > 0) {
       writeSettingsJson({ ...settings, hooks });
     }
@@ -567,7 +581,9 @@ export function createAdminSetupOps(runtime: AgentRuntime): OpDefinition[] {
         if (!hooksOnly && !skillsOnly) {
           const currentSettings = readSettingsJson();
           const currentHooks = (currentSettings.hooks ?? {}) as Record<string, SettingsHookGroup[]>;
-          const merged = mergeSettingsHooks(currentHooks, config.agentId);
+          const merged = mergeSettingsHooks(currentHooks, config.agentId, {
+            memorySyncAutoEnabled: config.memorySyncAutoEnabled,
+          });
 
           settingsResults.installed = merged.installed;
           settingsResults.updated = merged.updated;

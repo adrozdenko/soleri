@@ -9,6 +9,7 @@ import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 import { createMemoryExtraOps } from '../memory-extra-ops.js';
 import { createMemoryCrossProjectOps } from '../memory-cross-project-ops.js';
+import { createMemorySyncOps } from '../../adapters/memory-sync/memory-sync-ops.js';
 import { extractFromSession } from '../../operator/operator-signals.js';
 import type { SessionCaptureData } from '../../operator/operator-signals.js';
 import {
@@ -664,5 +665,6 @@ export function createMemoryFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     // ─── Satellite ops ───────────────────────────────────────────
     ...createMemoryExtraOps(runtime),
     ...createMemoryCrossProjectOps(runtime),
+    ...createMemorySyncOps(runtime),
   ];
 }

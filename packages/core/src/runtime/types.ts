@@ -105,6 +105,12 @@ export interface AgentRuntimeConfig {
    * by forge). Core ships zero bundled flow YAMLs — agents supply their own.
    */
   flowsDir?: string;
+  /**
+   * When true, automatically sync vault memories to the host's auto-memory system
+   * (e.g., Claude Code MEMORY.md) after session capture in Stop hooks.
+   * Default: false — call `memory_sync_to_host` manually.
+   */
+  memorySyncAutoEnabled?: boolean;
 }
 
 /**
