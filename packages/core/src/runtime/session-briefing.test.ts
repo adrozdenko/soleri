@@ -24,6 +24,8 @@ function makeRuntime(overrides?: {
     summary?: string;
     context?: string;
     type?: string;
+    filesModified?: string[];
+    decisions?: string[];
   }>;
   plans?: Array<{
     id: string;
@@ -124,6 +126,81 @@ describe('session-briefing', () => {
       expect(session).toBeDefined();
       expect(session!.content).toContain('other-app');
       expect(session!.content).toContain('Fixed KPI card layout');
+    });
+
+    it('enriches Last session with filesModified and decisions when present', async () => {
+      const runtime = makeRuntime({
+        memories: [
+          {
+            id: 'mem-git',
+            createdAt: Date.now() - 300_000, // 5 min ago
+            projectPath: '/Users/me/projects/soleri',
+            summary:
+              '[main] 3 commit(s): feat: add git context; fix: handle timeout; refactor: rename fn',
+            type: 'session',
+            filesModified: [
+              'packages/core/src/transcript/capture-hook.ts',
+              'packages/core/src/runtime/session-briefing.ts',
+              'packages/core/src/flows/epilogue.ts',
+            ],
+            decisions: ['abc1234: feat: add git context', 'def5678: fix: handle timeout'],
+          },
+        ],
+      });
+      const ops = captureOps(createSessionBriefingOps(runtime));
+      const res = await executeOp(ops, 'session_briefing', {});
+
+      const data = res.data as { sections: Array<{ label: string; content: string }> };
+      const session = data.sections.find((s) => s.label === 'Last session');
+      expect(session).toBeDefined();
+      expect(session!.content).toContain('3 file(s) changed');
+      expect(session!.content).toContain('abc1234: feat: add git context');
+    });
+
+    it('shows up to 200 chars of summary instead of 100', async () => {
+      const longSummary = 'A'.repeat(180);
+      const runtime = makeRuntime({
+        memories: [
+          {
+            id: 'mem-long',
+            createdAt: Date.now() - 300_000,
+            projectPath: '/project',
+            summary: longSummary,
+            type: 'session',
+          },
+        ],
+      });
+      const ops = captureOps(createSessionBriefingOps(runtime));
+      const res = await executeOp(ops, 'session_briefing', {});
+
+      const data = res.data as { sections: Array<{ label: string; content: string }> };
+      const session = data.sections.find((s) => s.label === 'Last session');
+      expect(session).toBeDefined();
+      // Should contain the full 180-char summary (was truncated to 100 before)
+      expect(session!.content).toContain(longSummary);
+    });
+
+    it('degrades gracefully when filesModified and decisions are empty', async () => {
+      const runtime = makeRuntime({
+        memories: [
+          {
+            id: 'mem-old-style',
+            createdAt: Date.now() - 300_000,
+            projectPath: '/project',
+            summary: 'Old style session without git data',
+            type: 'session',
+          },
+        ],
+      });
+      const ops = captureOps(createSessionBriefingOps(runtime));
+      const res = await executeOp(ops, 'session_briefing', {});
+
+      const data = res.data as { sections: Array<{ label: string; content: string }> };
+      const session = data.sections.find((s) => s.label === 'Last session');
+      expect(session).toBeDefined();
+      expect(session!.content).toContain('Old style session');
+      // Should NOT contain the pipe separator for extras
+      expect(session!.content).not.toContain(' | ');
     });
 
     it('falls back to brain sessions when no fresh memories exist', async () => {

@@ -103,6 +103,37 @@ describe('runEpilogue', () => {
     expect(result.sessionId).toBe('sess-123');
   });
 
+  it('forwards plan task decisions and intent to session_capture', async () => {
+    const dispatch = vi.fn(async (tool: string) => {
+      if (tool === 'plan_list_tasks') {
+        return {
+          tool,
+          status: 'ok',
+          data: {
+            tasks: [
+              { title: 'Add git context', status: 'completed' },
+              { title: 'Write tests', status: 'pending' },
+            ],
+          },
+        };
+      }
+      return { tool, status: 'ok', data: { sessionId: 's-1' } };
+    });
+
+    await runEpilogue(dispatch, probes({ sessionStore: true }), '/p', 'done', {
+      intent: 'FIX',
+      objective: 'fix session accuracy',
+    });
+
+    expect(dispatch).toHaveBeenCalledWith(
+      'session_capture',
+      expect.objectContaining({
+        intent: 'FIX',
+        decisions: ['[completed] Add git context', '[pending] Write tests'],
+      }),
+    );
+  });
+
   it('calls both when vault and sessionStore are available', async () => {
     const dispatch = vi.fn(async (tool: string) => ({
       tool,
@@ -116,7 +147,8 @@ describe('runEpilogue', () => {
       'done',
     );
 
-    expect(dispatch).toHaveBeenCalledTimes(2);
+    // 3 calls: capture_knowledge + plan_list_tasks + session_capture
+    expect(dispatch).toHaveBeenCalledTimes(3);
     expect(result.captured).toBe(true);
     expect(result.sessionId).toBe('s-1');
   });

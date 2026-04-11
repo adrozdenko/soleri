@@ -79,14 +79,28 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
               ? ` [${freshMemory.projectPath.split('/').pop()}]`
               : '';
             const summary = freshMemory.summary
-              ? `: ${freshMemory.summary.slice(0, 100)}`
+              ? `: ${freshMemory.summary.slice(0, 200)}`
               : freshMemory.context
-                ? `: ${freshMemory.context.slice(0, 100)}`
+                ? `: ${freshMemory.context.slice(0, 200)}`
                 : '';
+
+            // Enrich with structured metadata when available
+            const extras: string[] = [];
+            const filesModified = freshMemory.filesModified ?? [];
+            const decisions = freshMemory.decisions ?? [];
+            if (filesModified.length > 0) {
+              extras.push(`${filesModified.length} file(s) changed`);
+            }
+            if (decisions.length > 0) {
+              const topDecisions = decisions.slice(0, 2).join('; ');
+              extras.push(topDecisions);
+            }
+            const extraStr = extras.length > 0 ? ` | ${extras.join(' | ')}` : '';
+
             dataPoints += recentMemories.length;
             sections.push({
               label: 'Last session',
-              content: `(${ago})${project}${summary}`,
+              content: `(${ago})${project}${summary}${extraStr}`,
             });
           } else {
             // Fall back to brain sessions (same-project only) if no fresh memory

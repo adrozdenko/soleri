@@ -51,12 +51,35 @@ export async function runEpilogue(
     }
   }
 
-  // Capture session
+  // Capture session — forward plan context as structured metadata
   if (probes.sessionStore) {
     try {
+      // Gather plan task decisions if available
+      let decisions: string[] = [];
+      const filesModified: string[] = [];
+
+      try {
+        const tasksResult = await dispatch('plan_list_tasks', { projectPath });
+        if (
+          tasksResult.data &&
+          Array.isArray((tasksResult.data as Record<string, unknown>).tasks)
+        ) {
+          const tasks = (tasksResult.data as Record<string, unknown>).tasks as Array<{
+            title: string;
+            status: string;
+          }>;
+          decisions = tasks.map((t) => `[${t.status}] ${t.title}`);
+        }
+      } catch {
+        // Plan tasks unavailable — proceed without
+      }
+
       const result = await dispatch('session_capture', {
         summary,
         projectPath,
+        intent: planContext?.intent ?? null,
+        decisions,
+        filesModified,
       });
       captured = true;
       if (result.data && typeof result.data === 'object') {
