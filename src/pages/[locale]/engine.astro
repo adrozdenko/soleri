@@ -32,7 +32,7 @@ const c = personasContent(locale);
     <>
       {i > 0 && <div class="soleri-mark mark-section"></div>}
       <section class="deep-section">
-        <div class="deep-grid">
+        <div class={`deep-grid${i % 2 === 1 ? ' reverse' : ''}`}>
           <div class="deep-content">
             <h2 class="how-title">{s.title}</h2>
             <p class="how-subtitle">{s.subtitle}</p>

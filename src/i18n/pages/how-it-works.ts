@@ -4,18 +4,18 @@ export const howItWorksContent = (locale: Locale) => content[locale];
 
 const content: Record<Locale, HowItWorksContent> = {
   en: {
-    title: 'How It Works - Soleri',
+    title: 'How It Works -- Soleri',
     description:
-      'Soleri is the engine that powers your agent. Your agent learns your project, remembers your decisions, and gets sharper over time — all on your machine.',
+      'Soleri is the knowledge engine behind your agent. Six systems that handle storage, scoring, cleanup, planning, and governance. Everything runs locally on your machine.',
     eyebrow: 'How it works',
-    heroTitle: 'An engine, not a wrapper.',
+    heroTitle: 'Not a wrapper. An engine.',
     heroSubtitle:
-      'Most AI tools wrap an API. Soleri is the 95% that makes the 5% reliable.',
+      'Most AI tools just pass your prompt to an API and hope for the best. Soleri is the other 95%: the six systems that make the model\'s output actually useful.',
     sections: [
       {
-        title: 'Six systems working together.',
-        subtitle: 'Pick the ones your agent needs — or use them all.',
-        text: 'Vault remembers. Brain ranks. Curator cleans. Planner orchestrates. Memory persists. Governance gates. Pick the ones your agent needs — or use them all.',
+        title: 'Six systems, one engine.',
+        subtitle: 'Turn on what your agent needs. Leave the rest off.',
+        text: 'The Vault stores what your agent learns. The Brain figures out what\'s worth keeping. The Curator cleans up the mess as knowledge grows. The Planner gives work structure. Memory carries context between sessions. Governance sets the quality rules. You can run all six or just one.',
         code: `<span class="cmt"># Six systems, one engine</span>
 
 <span class="ok">Brain</span>        <span class="dim">— tracks what works, recommends approaches</span>
@@ -31,9 +31,9 @@ const content: Record<Locale, HowItWorksContent> = {
 <span class="dim">Everything else? Deterministic. Explainable. Offline-capable.</span>`,
       },
       {
-        title: 'Next time, it already knows.',
-        subtitle: 'Proven patterns show up automatically during planning.',
-        text: 'Start faster on similar work. Your agent surfaces the patterns that actually worked, right when you plan.',
+        title: 'It remembers what worked.',
+        subtitle: 'Next time similar work comes up, the good stuff shows up on its own.',
+        text: 'Fixed something last week? When a similar problem shows up, your agent already knows the approach that worked. You don\'t have to search for it or explain it again.',
         code: `<span class="dim">// A week later, new task</span>
 <span class="hl">You:</span>     Plan: add phone validation to profile.
 <span class="hl">Agent:</span>   Based on what worked before:
@@ -46,9 +46,9 @@ const content: Record<Locale, HowItWorksContent> = {
          Plan ready. Approve?`,
       },
       {
-        title: 'Gets sharper, not messier.',
-        subtitle: 'Three systems keep your knowledge clean.',
-        text: 'Brain tracks pattern strength — your best patterns rise, unused ones fade. Curator deduplicates and resolves contradictions automatically. Governance controls what gets in and enforces review when sharing with a team.',
+        title: 'It stays clean on its own.',
+        subtitle: 'Three systems keep things from turning into a junk drawer.',
+        text: 'The Brain tracks what actually gets used, so the useful stuff rises and the stale stuff fades. The Curator catches duplicates and contradictions without you doing anything. Governance gives you control over what gets shared with the team and what stays private.',
         code: `<span class="cmt"># Your agent's strongest patterns</span>
 
 <span class="ok">email-validation</span>     strength: <span class="val">94</span>   used 12 times
@@ -62,9 +62,9 @@ const content: Record<Locale, HowItWorksContent> = {
         ],
       },
       {
-        title: 'Everything stays on your machine.',
-        subtitle: 'Local-first. Open source. Nothing leaves your computer.',
-        text: 'Your knowledge stays private by default. No cloud, no telemetry, no surprises. Open source under Apache 2.0.',
+        title: 'Nothing leaves your machine.',
+        subtitle: 'Local. Open source. Private by default.',
+        text: 'All of it stays on your computer. No cloud, no tracking, nothing phones home. Apache 2.0.',
         code: `<span class="key">~/.soleri/</span>
 \u251C\u2500\u2500 <span class="ok">vault.db</span>           <span class="cmt"># your knowledge (SQLite)</span>
 \u251C\u2500\u2500 <span class="ok">brain.json</span>         <span class="cmt"># strength scores</span>
@@ -78,54 +78,55 @@ const content: Record<Locale, HowItWorksContent> = {
   uk: {
     title: 'Як це працює - Soleri',
     description:
-      'Soleri — це рушій, що живить вашого агента. Ваш агент вивчає проєкт, запам\'ятовує рішення і стає точнішим з часом — все на вашій машині.',
+      'Soleri -- це рушій знань за твоїм агентом. Шість систем, які обробляють зберігання, скоринг, очистку, планування та governance. Все працює локально на твоїй машині.',
     eyebrow: 'Як це працює',
-    heroTitle: 'Soleri дає цінність з першого дня.',
+    heroTitle: 'Не обгортка. Рушій.',
     heroSubtitle:
-      'Планує <span class="sun-sep">☀</span> Виконує <span class="sun-sep">☀</span> Фіксує <span class="sun-sep">☀</span> Пам\u0027ятає',
+      'Більшість AI-інструментів просто передають твій промпт в API і сподіваються на краще. Soleri -- це решта 95%: шість систем, які роблять вивід моделі дійсно корисним.',
     sections: [
       {
-        title: 'Плануйте разом з агентом. Він вчиться.',
-        subtitle: 'Почніть з плану, фіксуйте важливе по дорозі.',
-        text: 'Перетворіть кожен план на знання для повторного використання. Зафіксуйте важливе за секунди і рухайтесь далі.',
-        code: `<span class="dim">// Ви питаєте, агент планує</span>
-<span class="hl">Ти:</span>      План: додати валідацію email до реєстрації.
-<span class="hl">Агент:</span>   Ось план:
-         1. Додати валідатор у <span class="val">lib/validators</span>
-         2. Підключити до хендлера реєстрації
-         3. Додати тести для граничних випадків
-         Починаємо?
+        title: 'Шість систем, один рушій.',
+        subtitle: 'Увімкни те, що потрібно агенту. Решту залиш вимкненим.',
+        text: 'Vault зберігає те, що агент вивчає. Brain визначає, що варто тримати. Curator прибирає безлад, коли знань стає більше. Planner дає роботі структуру. Memory переносить контекст між сесіями. Governance встановлює правила якості. Можеш запустити всі шість або лише один.',
+        code: `<span class="cmt"># Шість систем, один рушій</span>
 
-<span class="dim">// Після роботи, зафіксуйте що дізнались</span>
-<span class="hl">Ти:</span>      Зафіксуй: використовувати RFC 5322
-         для валідації email, не простий regex.
-<span class="hl">Агент:</span>   <span class="ok">\u2713 Збережено.</span>`,
+<span class="ok">Brain</span>        <span class="dim">— відстежує, що працює, рекомендує підходи</span>
+<span class="ok">Curator</span>      <span class="dim">— запобігає деградації знань, дедуплікація</span>
+<span class="ok">Governance</span>   <span class="dim">— контролює якість, впроваджує ревʼю-гейти</span>
+<span class="ok">Planner</span>     <span class="dim"> — структуровані плани з чекпоінтами затвердження</span>
+<span class="ok">Memory</span>      <span class="dim"> — зберігається між сесіями і проєктами</span>
+<span class="ok">Vault</span>       <span class="dim"> — пов'язаний граф знань, патерни з пошуком</span>
+
+<span class="cmt"># Що робить ті 5%</span>
+
+<span class="val">LLM-виклики</span>  <span class="dim">— класифікація контенту, генерація персони</span>
+<span class="dim">Все інше? Детерміноване. Пояснюване. Працює офлайн.</span>`,
       },
       {
-        title: 'Наступного разу він вже знає.',
-        subtitle: 'Перевірені патерни з\'являються автоматично при плануванні.',
-        text: 'Починайте швидше зі схожою роботою. Агент підказує патерни, що реально спрацювали, прямо під час планування.',
+        title: 'Запам\'ятовує, що спрацювало.',
+        subtitle: 'Наступного разу, коли з\'явиться схожа задача, корисне підтягнеться само.',
+        text: 'Полагодив щось минулого тижня? Коли з\'явиться схожа проблема, твій агент вже знає підхід, який спрацював. Не потрібно шукати чи пояснювати знову.',
         code: `<span class="dim">// Через тиждень, нова задача</span>
 <span class="hl">Ти:</span>      План: додати валідацію телефону до профілю.
 <span class="hl">Агент:</span>   На основі того, що спрацювало:
          - Той самий патерн валідатора
            з <span class="val">lib/validators</span>
-         - Ваше правило: RFC-рівень валідації,
+         - Твоє правило: RFC-рівень валідації,
            не простий regex
          - Додати тести граничних випадків
            як для email
-         План готовий. Затверджуєте?`,
+         План готовий. Затверджуєш?`,
       },
       {
-        title: 'Стає точнішим, не захаращенішим.',
-        subtitle: 'База знань курує себе сама під час використання.',
-        text: 'Найкращі патерни піднімаються вгору. Старе та дублі зникають автоматично.',
-        code: `<span class="cmt"># Найсильніші патерни вашого агента</span>
+        title: 'Тримає себе в чистоті.',
+        subtitle: 'Три системи не дають перетворитися на звалище.',
+        text: 'Brain відстежує, що дійсно використовується, тому корисне піднімається, а застаріле згасає. Curator ловить дублікати і протиріччя без твоїх зусиль. Governance дає контроль над тим, що ділиться з командою, а що залишається приватним.',
+        code: `<span class="cmt"># Найсильніші патерни твого агента</span>
 
 <span class="ok">email-validation</span>     сила: <span class="val">94</span>   використано 12 разів
 <span class="ok">error-format</span>         сила: <span class="val">87</span>   використано 8 разів
 <span class="ok">auth-cookies</span>         сила: <span class="val">82</span>   використано 6 разів
-<span class="dim">legacy-class-names</span>   сила: <span class="dim">23</span>   <span class="dim">згасає \u2014 не використано 30 днів</span>`,
+<span class="dim">legacy-class-names</span>   сила: <span class="dim">23</span>   <span class="dim">згасає, не використано 30 днів</span>`,
         barChart: [
           { label: 'email-validation', strength: 94, uses: 12, color: 'amber' as const },
           { label: 'error-format', strength: 87, uses: 8, color: 'teal' as const },
@@ -133,11 +134,11 @@ const content: Record<Locale, HowItWorksContent> = {
         ],
       },
       {
-        title: 'Все залишається на вашій машині.',
-        subtitle: 'Локально. Відкритий код. Нічого не залишає ваш комп\'ютер.',
-        text: 'Ваші знання залишаються приватними за замовчуванням. Без хмари, без телеметрії, без сюрпризів. Відкритий код під Apache 2.0.',
+        title: 'Нічого не залишає твою машину.',
+        subtitle: 'Локально. Відкритий код. Приватно за замовчуванням.',
+        text: 'Все залишається на твоєму комп\'ютері. Без хмари, без трекінгу, нічого не телефонує додому. Apache 2.0.',
         code: `<span class="key">~/.soleri/</span>
-\u251C\u2500\u2500 <span class="ok">vault.db</span>           <span class="cmt"># ваші знання (SQLite)</span>
+\u251C\u2500\u2500 <span class="ok">vault.db</span>           <span class="cmt"># твої знання (SQLite)</span>
 \u251C\u2500\u2500 <span class="ok">brain.json</span>         <span class="cmt"># оцінки сили</span>
 \u251C\u2500\u2500 <span class="key">plans/</span>             <span class="cmt"># історія планів</span>
 \u2514\u2500\u2500 <span class="key">sessions/</span>          <span class="cmt"># пам'ять сесій</span>
@@ -147,38 +148,39 @@ const content: Record<Locale, HowItWorksContent> = {
     ],
   },
   it: {
-    title: 'Come funziona - Soleri',
+    title: 'Come funziona -- Soleri',
     description:
-      'Soleri è il motore che alimenta il tuo agente. Il tuo agente impara il progetto, ricorda le decisioni e diventa più preciso nel tempo — tutto sulla tua macchina.',
+      'Soleri è il motore di conoscenza dietro al tuo agente. Sei sistemi che gestiscono storage, scoring, cleanup, pianificazione e governance. Tutto gira in locale sulla tua macchina.',
     eyebrow: 'Come funziona',
-    heroTitle: 'Soleri aggiunge valore dal primo giorno.',
+    heroTitle: 'Non un wrapper. Un motore.',
     heroSubtitle:
-      'Pianifica <span class="sun-sep">☀</span> Esegue <span class="sun-sep">☀</span> Cattura <span class="sun-sep">☀</span> Ricorda',
+      'La maggior parte degli strumenti AI passano il tuo prompt a un\'API e sperano per il meglio. Soleri è l\'altro 95%: i sei sistemi che rendono l\'output del modello davvero utile.',
     sections: [
       {
-        title: 'Pianifica con il tuo agente. Impara.',
-        subtitle: 'Inizia con un piano, cattura ciò che conta lungo la strada.',
-        text: 'Trasforma ogni piano in conoscenza riutilizzabile. Cattura ciò che conta in pochi secondi e vai avanti.',
-        code: `<span class="dim">// Chiedi, l'agente pianifica</span>
-<span class="hl">Tu:</span>      Piano: aggiungi validazione email alla registrazione.
-<span class="hl">Agente:</span>  Ecco il piano:
-         1. Aggiungi validatore in <span class="val">lib/validators</span>
-         2. Collega all'handler di registrazione
-         3. Aggiungi test per i casi limite
-         Iniziamo?
+        title: 'Sei sistemi, un motore.',
+        subtitle: 'Attiva quello che serve al tuo agente. Lascia spento il resto.',
+        text: 'Il Vault conserva quello che il tuo agente impara. Il Brain capisce cosa vale la pena tenere. Il Curator fa pulizia man mano che la conoscenza cresce. Il Planner dà struttura al lavoro. Memory porta il contesto tra le sessioni. Governance imposta le regole di qualità. Puoi usare tutti e sei o solo uno.',
+        code: `<span class="cmt"># Sei sistemi, un motore</span>
 
-<span class="dim">// Dopo il lavoro, cattura ciò che hai imparato</span>
-<span class="hl">Tu:</span>      Cattura: usare RFC 5322
-         per la validazione email, non regex semplice.
-<span class="hl">Agente:</span>  <span class="ok">\u2713 Salvato.</span>`,
+<span class="ok">Brain</span>        <span class="dim">— traccia cosa funziona, raccomanda approcci</span>
+<span class="ok">Curator</span>      <span class="dim">— previene il degrado della conoscenza, deduplica</span>
+<span class="ok">Governance</span>   <span class="dim">— controlla la qualità, impone review gate</span>
+<span class="ok">Planner</span>     <span class="dim"> — piani strutturati con checkpoint di approvazione</span>
+<span class="ok">Memory</span>      <span class="dim"> — persiste tra sessioni e progetti</span>
+<span class="ok">Vault</span>       <span class="dim"> — grafo di conoscenza collegato, pattern ricercabili</span>
+
+<span class="cmt"># Cosa fa il 5%</span>
+
+<span class="val">Chiamate LLM</span>  <span class="dim">— classificazione contenuti, generazione persona</span>
+<span class="dim">Tutto il resto? Deterministico. Spiegabile. Funziona offline.</span>`,
       },
       {
-        title: 'La prossima volta, già sa.',
-        subtitle: 'I pattern provati appaiono automaticamente durante la pianificazione.',
-        text: 'Parti più veloce su lavori simili. Il tuo agente propone i pattern che hanno funzionato, proprio quando pianifichi.',
+        title: 'Si ricorda cosa ha funzionato.',
+        subtitle: 'La prossima volta che salta fuori un lavoro simile, le cose buone compaiono da sole.',
+        text: 'Hai fixato qualcosa la settimana scorsa? Quando si presenta un problema simile, il tuo agente conosce già l\'approccio che ha funzionato. Non devi cercarlo o spiegarlo di nuovo.',
         code: `<span class="dim">// Una settimana dopo, nuovo task</span>
 <span class="hl">Tu:</span>      Piano: aggiungi validazione telefono al profilo.
-<span class="hl">Agente:</span>  In base a ciò che ha funzionato:
+<span class="hl">Agente:</span>  In base a cosa ha funzionato prima:
          - Usa lo stesso pattern validatore
            da <span class="val">lib/validators</span>
          - La tua regola: validazione RFC,
@@ -188,15 +190,15 @@ const content: Record<Locale, HowItWorksContent> = {
          Piano pronto. Approvi?`,
       },
       {
-        title: 'Diventa più preciso, non più caotico.',
-        subtitle: 'La base di conoscenza si cura da sola mentre la usi.',
-        text: 'I tuoi pattern migliori salgono in cima. Rumore vecchio e duplicati svaniscono automaticamente.',
+        title: 'Si tiene in ordine da solo.',
+        subtitle: 'Tre sistemi impediscono che diventi un cassetto della spazzatura.',
+        text: 'Il Brain traccia cosa viene davvero usato, quindi le cose utili salgono e quelle vecchie svaniscono. Il Curator intercetta duplicati e contraddizioni senza che tu faccia niente. Governance ti dà il controllo su cosa condividere col team e cosa tenere privato.',
         code: `<span class="cmt"># I pattern più forti del tuo agente</span>
 
 <span class="ok">email-validation</span>     forza: <span class="val">94</span>   usato 12 volte
 <span class="ok">error-format</span>         forza: <span class="val">87</span>   usato 8 volte
 <span class="ok">auth-cookies</span>         forza: <span class="val">82</span>   usato 6 volte
-<span class="dim">legacy-class-names</span>   forza: <span class="dim">23</span>   <span class="dim">svanendo \u2014 non usato da 30 giorni</span>`,
+<span class="dim">legacy-class-names</span>   forza: <span class="dim">23</span>   <span class="dim">sta svanendo \u2014 non usato da 30 giorni</span>`,
         barChart: [
           { label: 'email-validation', strength: 94, uses: 12, color: 'amber' as const },
           { label: 'error-format', strength: 87, uses: 8, color: 'teal' as const },
@@ -204,9 +206,9 @@ const content: Record<Locale, HowItWorksContent> = {
         ],
       },
       {
-        title: 'Tutto resta sulla tua macchina.',
-        subtitle: 'Local-first. Open source. Niente lascia il tuo computer.',
-        text: 'La tua conoscenza resta privata per default. Nessun cloud, nessuna telemetria, nessuna sorpresa. Open source sotto Apache 2.0.',
+        title: 'Niente lascia la tua macchina.',
+        subtitle: 'Locale. Open source. Privato per default.',
+        text: 'Tutto resta sul tuo computer. Nessun cloud, nessun tracking, niente telefona a casa. Apache 2.0.',
         code: `<span class="key">~/.soleri/</span>
 \u251C\u2500\u2500 <span class="ok">vault.db</span>           <span class="cmt"># la tua conoscenza (SQLite)</span>
 \u251C\u2500\u2500 <span class="ok">brain.json</span>         <span class="cmt"># punteggi di forza</span>

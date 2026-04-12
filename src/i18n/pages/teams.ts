@@ -22,21 +22,21 @@ interface TeamsContent {
 const content: Record<Locale, TeamsContent> = {
   en: {
     meta: {
-      title: 'Teams - Soleri',
+      title: 'Teams -- Soleri',
       description:
-        'Give each teammate a personal agent while sharing project and team knowledge through linked vaults, packs, and governance.',
+        'Every teammate gets their own agent. Project knowledge stays shared through Git, linked vaults, and knowledge packs.',
     },
     hero: {
       eyebrow: 'Teams',
-      title: 'Every teammate gets an agent. Knowledge stays in sync.',
+      title: 'Everyone gets an agent. The knowledge stays shared.',
       subtitle:
-        'Personal by default. Shared when it helps. No central server — just Git and plain files.',
+        'Each person\'s agent is theirs. Team knowledge travels through Git and plain files. No server to run.',
     },
     sections: [
       {
-        title: 'Every teammate, their own agent.',
-        subtitle: 'Your agent starts personal, and stays yours.',
-        text: 'Your agent fits how you work. Personal notes and fixes stay private unless you share them.',
+        title: 'Your agent is yours.',
+        subtitle: 'Personal by default. You decide what to share.',
+        text: 'It fits the way you work. Personal notes, shortcuts, preferences, all private. You share what you want, when you want.',
         code: `<span class="dim">// Each person has their own agent</span>
 <span class="hl">You:</span>     What are my code review preferences?
 <span class="hl">Agent:</span>   From your personal vault:
@@ -46,9 +46,9 @@ const content: Record<Locale, TeamsContent> = {
          <span class="dim">(only you see these)</span>`,
       },
       {
-        title: 'Share what helps. Keep the rest.',
-        subtitle: 'Opt-in team patterns, without the cloud.',
-        text: 'Share only the patterns your team agrees on. Everyone keeps their own workflow intact.',
+        title: 'Share what\'s useful.',
+        subtitle: 'Team conventions, opt-in. No cloud.',
+        text: 'When the team agrees on conventions, connect a shared vault. Everyone still works the way they want to. Nobody has to change their setup.',
         code: `<span class="cmt"># Connect the team vault (one time)</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli vault connect</span> <span class="arg">../team-standards</span>
 
@@ -59,9 +59,9 @@ const content: Record<Locale, TeamsContent> = {
 <span class="cmt"># Teammates do the same — no server needed</span>`,
       },
       {
-        title: 'Ship patterns like dependencies.',
-        subtitle: 'Package team knowledge the way you ship code.',
-        text: 'Roll out standards the same way you ship code. Version them, install them, keep everyone aligned.',
+        title: 'Distribute knowledge like code.',
+        subtitle: 'Version it, install it, keep everyone on the same page.',
+        text: 'Package your team\'s standards the same way you\'d ship a library. Version them, publish them, install with one command.',
         code: `<span class="cmt"># Install a team knowledge pack</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli pack install</span> <span class="arg">../team-standards</span>
 
@@ -73,9 +73,9 @@ const content: Record<Locale, TeamsContent> = {
 <span class="ok">\u2713</span> Installed api-conventions@1.0.0`,
       },
       {
-        title: 'New teammate? Up to speed in minutes.',
-        subtitle: 'Current knowledge, ranked and ready.',
-        text: 'They get current standards on day one. The most important patterns show up first.',
+        title: 'New person? Ready in minutes.',
+        subtitle: 'They get the current standards on day one.',
+        text: 'New teammate connects the team vault and immediately sees every convention, ranked by importance. Beats a week of reading onboarding docs nobody maintains.',
         code: `<span class="dim">// Day 1 — new developer joins</span>
 <span class="hl">New dev:</span>  What are the critical patterns
           for this project?
@@ -90,8 +90,8 @@ const content: Record<Locale, TeamsContent> = {
       },
       {
         title: 'Control what gets in.',
-        subtitle: 'Governance that feels like PR review.',
-        text: 'Keep shared knowledge clean. Add changes with review, not chaos.',
+        subtitle: 'Works like PR review, but for knowledge.',
+        text: 'Shared stuff goes through review before it\'s live. You set the rules: auto-approve the small things, require sign-off on the rest.',
         code: `<span class="cmt"># Set governance for the team vault</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli governance</span> <span class="arg">--preset moderate</span>
 
@@ -110,44 +110,44 @@ const content: Record<Locale, TeamsContent> = {
     meta: {
       title: 'Команди - Soleri',
       description:
-        'Кожен учасник отримує персонального агента, а командні знання синхронізуються через Git та пакети знань.',
+        'У кожного свій агент. Знання проєкту залишаються спільними через Git, підключені vault та пакети знань.',
     },
     hero: {
       eyebrow: 'Команди',
-      title: 'Кожен учасник отримує агента. Знання залишаються синхронізованими.',
+      title: 'У кожного свій агент. Знання залишаються спільними.',
       subtitle:
-        'Персональний за замовчуванням. Спільний, коли це допомагає. Без центрального сервера — лише Git та прості файли.',
+        'Агент кожної людини -- її власний. Командні знання подорожують через Git і прості файли. Без сервера.',
     },
     sections: [
       {
-        title: 'Кожному — свій агент.',
-        subtitle: 'Ваш агент починає персональним і залишається вашим.',
-        text: 'Ваш агент підлаштований під вас. Особисті нотатки та виправлення залишаються приватними, поки ви не поділитесь.',
-        code: `<span class="dim">// Кожен має свого агента</span>
-<span class="hl">Ти:</span>      Які мої вподобання для код-рев\u0027ю?
-<span class="hl">Агент:</span>   З твого персонального сховища:
+        title: 'Твій агент -- твій.',
+        subtitle: 'Персональний за замовчуванням. Ти вирішуєш, чим ділитися.',
+        text: 'Він підлаштований під те, як ти працюєш. Особисті нотатки, шорткати, вподобання -- все приватне. Ділишся тим, чим хочеш, коли хочеш.',
+        code: `<span class="dim">// У кожного свій агент</span>
+<span class="hl">Ти:</span>      Які мої вподобання для код-ревʼю?
+<span class="hl">Агент:</span>   З твого персонального vault:
          - Завжди перевіряй обробку помилок першою
          - Позначай функції довші за 50 рядків
          - Пропускай дрібниці в чернеткових PR
-         <span class="dim">(бачите лише ви)</span>`,
+         <span class="dim">(бачиш лише ти)</span>`,
       },
       {
-        title: 'Діліться корисним. Решту залиште собі.',
-        subtitle: 'Командні патерни за бажанням, без хмари.',
-        text: 'Діліться лише патернами, з якими команда згодна. Кожен зберігає свій робочий процес.',
-        code: `<span class="cmt"># Підключити командне сховище (один раз)</span>
+        title: 'Діліся корисним.',
+        subtitle: 'Командні конвенції, за бажанням. Без хмари.',
+        text: 'Коли команда домовилася про конвенції, підключи спільний vault. Кожен все ще працює так, як йому зручно. Нікому не треба міняти свій сетап.',
+        code: `<span class="cmt"># Підключити командний vault (один раз)</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli vault connect</span> <span class="arg">../team-standards</span>
 
 <span class="ok">\u2713</span> Підключено: <span class="val">team-standards</span>
 <span class="ok">\u2713</span> 42 командні патерни доступні в пошуку
-<span class="ok">\u2713</span> Ваше персональне сховище все ще першим
+<span class="ok">\u2713</span> Твій персональний vault все ще першим
 
-<span class="cmt"># Колеги роблять те саме — сервер не потрібен</span>`,
+<span class="cmt"># Колеги роблять те саме, сервер не потрібен</span>`,
       },
       {
-        title: 'Поширюйте патерни як залежності.',
-        subtitle: 'Пакуйте командні знання як код.',
-        text: 'Впроваджуйте стандарти так само, як шипите код. Версіонуйте, встановлюйте, тримайте всіх на одній хвилі.',
+        title: 'Поширюй знання як код.',
+        subtitle: 'Версіонуй, встановлюй, тримай всіх на одній хвилі.',
+        text: 'Запакуй стандарти команди так само, як шипиш бібліотеку. Версіонуй, публікуй, встановлюй однією командою.',
         code: `<span class="cmt"># Встановити пакет командних знань</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli pack install</span> <span class="arg">../team-standards</span>
 
@@ -159,55 +159,55 @@ const content: Record<Locale, TeamsContent> = {
 <span class="ok">\u2713</span> Встановлено api-conventions@1.0.0`,
       },
       {
-        title: 'Новий колега? Готовий за хвилини.',
-        subtitle: 'Актуальні знання, ранжовані та готові.',
-        text: 'Нові учасники отримують актуальні стандарти з першого дня. Найважливіші патерни з\'являються першими.',
+        title: 'Нова людина? Готова за хвилини.',
+        subtitle: 'Отримує актуальні стандарти з першого дня.',
+        text: 'Новий колега підключає командний vault і одразу бачить кожну конвенцію, ранжовану за важливістю. Краще, ніж тиждень читання доків для онбордингу, які ніхто не підтримує.',
         code: `<span class="dim">// День 1 — новий розробник приєднується</span>
 <span class="hl">Новий:</span>   Які критичні патерни для цього проєкту?
-<span class="hl">Агент:</span>   Топ патерни з командного сховища:
+<span class="hl">Агент:</span>   Топ патерни з командного vault:
          1. API помилки: { error, code, details }
          2. Auth: httpOnly cookies, ніколи localStorage
          3. БД: завжди встановлюй rollback міграції
          4. Тести: файли *.test.ts, не *.spec.ts
 
-         <span class="ok">Хочеш пройти плейбук</span>
-         <span class="ok">код-рев\u0027ю?</span>`,
+         <span class="ok">Хочеш, проведу тебе</span>
+         <span class="ok">по плейбуку код-ревʼю?</span>`,
       },
       {
-        title: 'Контролюйте, що потрапляє.',
-        subtitle: 'Governance як рев\u0027ю pull request\u0027ів.',
-        text: 'Тримайте спільні знання чистими. Додавайте зміни через рев\u0027ю, а не хаос.',
-        code: `<span class="cmt"># Налаштувати governance для командного сховища</span>
+        title: 'Контролюй, що потрапляє.',
+        subtitle: 'Працює як ревʼю PR, але для знань.',
+        text: 'Спільне проходить ревʼю перед тим, як стати активним. Ти задаєш правила: авто-затвердження дрібниць, підпис на решту.',
+        code: `<span class="cmt"># Налаштувати governance для командного vault</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli governance</span> <span class="arg">--preset moderate</span>
 
 <span class="ok">Політика:</span>
   Пропозиції      <span class="ok">авто-затвердження</span>
-  Попередження     <span class="val">на рев\u0027ю</span>
-  Критичні         <span class="val">на рев\u0027ю</span>
+  Попередження     <span class="val">на ревʼю</span>
+  Критичні         <span class="val">на ревʼю</span>
   Квота            50 записів на домен
   Перевірка дублів <span class="ok">увімкнено</span>
 
-<span class="cmt"># Як рев\u0027ю PR, але для командних знань</span>`,
+<span class="cmt"># Як ревʼю PR, але для командних знань</span>`,
       },
     ],
   },
   it: {
     meta: {
-      title: 'Team - Soleri',
+      title: 'Team -- Soleri',
       description:
-        'Ogni membro del team ottiene un agente personale, mentre la conoscenza condivisa si sincronizza tramite Git e pacchetti.',
+        'Ogni membro del team ha il proprio agente. La conoscenza di progetto resta condivisa attraverso Git, vault collegati e knowledge pack.',
     },
     hero: {
       eyebrow: 'Team',
-      title: 'Ogni membro del team ha un agente. La conoscenza resta sincronizzata.',
+      title: 'Ognuno ha un agente. La conoscenza resta condivisa.',
       subtitle:
-        'Personale per default. Condiviso quando serve. Nessun server centrale — solo Git e file semplici.',
+        'L\'agente di ogni persona è suo. La conoscenza del team viaggia attraverso Git e file semplici. Nessun server da gestire.',
     },
     sections: [
       {
-        title: 'A ciascuno il proprio agente.',
-        subtitle: 'Il tuo agente nasce personale e resta tuo.',
-        text: 'Il tuo agente si adatta a come lavori. Note personali e fix restano privati a meno che tu non li condivida.',
+        title: 'Il tuo agente è tuo.',
+        subtitle: 'Personale per default. Tu decidi cosa condividere.',
+        text: 'Si adatta al tuo modo di lavorare. Note personali, scorciatoie, preferenze, tutto privato. Condividi quello che vuoi, quando vuoi.',
         code: `<span class="dim">// Ognuno ha il proprio agente</span>
 <span class="hl">Tu:</span>      Quali sono le mie preferenze per la code review?
 <span class="hl">Agente:</span>  Dal tuo vault personale:
@@ -217,9 +217,9 @@ const content: Record<Locale, TeamsContent> = {
          <span class="dim">(solo tu le vedi)</span>`,
       },
       {
-        title: 'Condividi ciò che aiuta. Tieni il resto.',
-        subtitle: 'Pattern di team opt-in, senza cloud.',
-        text: 'Condividi solo i pattern su cui il team concorda. Ognuno mantiene il proprio workflow.',
+        title: 'Condividi quello che è utile.',
+        subtitle: 'Convenzioni di team, opt-in. Nessun cloud.',
+        text: 'Quando il team si accorda sulle convenzioni, colleghi un vault condiviso. Ognuno continua a lavorare come preferisce. Nessuno deve cambiare il proprio setup.',
         code: `<span class="cmt"># Connetti il vault del team (una volta)</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli vault connect</span> <span class="arg">../team-standards</span>
 
@@ -230,9 +230,9 @@ const content: Record<Locale, TeamsContent> = {
 <span class="cmt"># I colleghi fanno lo stesso — nessun server</span>`,
       },
       {
-        title: 'Distribuisci pattern come dipendenze.',
-        subtitle: 'Impacchetta la conoscenza del team come codice.',
-        text: 'Distribuisci standard come distribuisci codice. Versiona, installa, tieni tutti allineati.',
+        title: 'Distribuisci conoscenza come codice.',
+        subtitle: 'Versionala, installala, tieni tutti sulla stessa pagina.',
+        text: 'Impacchetta gli standard del tuo team come faresti con una libreria. Versionali, pubblicali, installa con un comando.',
         code: `<span class="cmt"># Installa un pack di conoscenza del team</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli pack install</span> <span class="arg">../team-standards</span>
 
@@ -245,8 +245,8 @@ const content: Record<Locale, TeamsContent> = {
       },
       {
         title: 'Nuovo collega? Pronto in pochi minuti.',
-        subtitle: 'Conoscenza attuale, ordinata e pronta.',
-        text: 'I nuovi arrivati ricevono gli standard attuali dal primo giorno. I pattern più importanti appaiono per primi.',
+        subtitle: 'Riceve gli standard attuali dal primo giorno.',
+        text: 'Il nuovo collega collega il vault del team e vede subito ogni convenzione, ordinata per importanza. Meglio di una settimana a leggere doc di onboarding che nessuno mantiene.',
         code: `<span class="dim">// Giorno 1 — nuovo sviluppatore</span>
 <span class="hl">Nuovo:</span>   Quali sono i pattern critici
          per questo progetto?
@@ -261,8 +261,8 @@ const content: Record<Locale, TeamsContent> = {
       },
       {
         title: 'Controlla cosa entra.',
-        subtitle: 'Governance come review delle PR.',
-        text: 'Mantieni pulita la conoscenza condivisa. Aggiungi modifiche con review, non con il caos.',
+        subtitle: 'Funziona come la review delle PR, ma per la conoscenza.',
+        text: 'Le cose condivise passano dalla review prima di andare live. Tu imposti le regole: auto-approvazione per le cose piccole, firma richiesta per il resto.',
         code: `<span class="cmt"># Imposta governance per il vault del team</span>
 <span class="prompt">$</span> <span class="cmd">npx @soleri/cli governance</span> <span class="arg">--preset moderate</span>
 

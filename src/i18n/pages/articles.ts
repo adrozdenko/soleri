@@ -4,12 +4,12 @@ export const articlesContent = (locale: Locale) => content[locale];
 
 const content: Record<Locale, ArticlesContent> = {
   en: {
-    title: 'Articles - Soleri',
+    title: 'Articles -- Soleri',
     description:
-      'Articles about building AI agents that learn, remember, and grow. Knowledge compounding, vault architecture, and the philosophy behind Soleri.',
+      'We write about building AI agents that actually learn. Architecture decisions, design tradeoffs, and what we\'re learning as we go.',
     eyebrow: 'From the team behind Soleri',
     heading: 'Articles',
-    subtitle: 'On agent architecture, knowledge engines, and building AI that ships.',
+    subtitle: 'How we think about agent architecture, what we\'re building, and what we\'ve gotten wrong.',
     subscribeText: 'Get new articles delivered to your inbox.',
     subscribeLink: 'Subscribe on Substack',
     loading: 'Loading articles...',
@@ -21,10 +21,10 @@ const content: Record<Locale, ArticlesContent> = {
   uk: {
     title: 'Статті - Soleri',
     description:
-      "Статті про створення AI-агентів, які навчаються, запам'ятовують і зростають. Накопичення знань, архітектура сховища та філософія Soleri.",
+      'Ми пишемо про створення AI-агентів, які дійсно навчаються. Архітектурні рішення, дизайн-компроміси і те, що ми дізнаємося по дорозі.',
     eyebrow: 'Від команди Soleri',
     heading: 'Статті',
-    subtitle: 'Про накопичення знань, архітектуру агентів і AI, що вчиться.',
+    subtitle: 'Як ми думаємо про архітектуру агентів, що будуємо і де помилялися.',
     subscribeText: 'Отримуй нові статті на пошту.',
     subscribeLink: 'Підписатися на Substack',
     loading: 'Завантажуємо статті...',
@@ -34,12 +34,12 @@ const content: Record<Locale, ArticlesContent> = {
     errorLoading: 'Не вдалося завантажити статті.',
   },
   it: {
-    title: 'Articoli - Soleri',
+    title: 'Articoli -- Soleri',
     description:
-      'Articoli sulla creazione di agenti AI che apprendono, ricordano e crescono. Accumulo di conoscenze, architettura del vault e filosofia di Soleri.',
-    eyebrow: 'Dal team di Soleri',
+      'Scriviamo di agenti AI che imparano davvero. Decisioni architetturali, compromessi di design e quello che stiamo imparando strada facendo.',
+    eyebrow: 'Dal team dietro Soleri',
     heading: 'Articoli',
-    subtitle: "Sull'accumulo di conoscenza, l'architettura degli agenti e l'AI che impara.",
+    subtitle: 'Come ragioniamo sull\'architettura degli agenti, cosa stiamo costruendo, e dove abbiamo sbagliato.',
     subscribeText: 'Ricevi i nuovi articoli nella tua casella di posta.',
     subscribeLink: 'Iscriviti su Substack',
     loading: 'Caricamento degli articoli...',

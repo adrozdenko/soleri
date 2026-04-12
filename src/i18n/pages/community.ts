@@ -4,37 +4,37 @@ export const communityContent = (locale: Locale) => content[locale];
 
 const content: Record<Locale, CommunityContent> = {
   en: {
-    title: 'Community - Soleri',
+    title: 'Community -- Soleri',
     description:
-      'Join the Soleri community. Discuss knowledge architecture, share agents, contribute knowledge packs, and shape the future of agentic memory.',
+      'Where people building with Soleri hang out. Share what you\'ve built, ask questions, help shape what comes next.',
     eyebrow: 'Open source',
     heading: 'Community',
-    subtitle: 'Build with us. Share what you learn. Shape what comes next.',
+    subtitle: 'Build something. Share what you learn. Help us figure out what\'s next.',
     channels: [
       {
         name: 'GitHub Discussions',
-        desc: 'Ask questions, share ideas, propose knowledge packs, and discuss architecture decisions. The primary place for async conversations.',
+        desc: 'Questions, ideas, architecture debates, knowledge pack proposals. This is where most of the conversation happens.',
         action: 'Join the discussion \u2192',
         href: 'https://github.com/adrozdenko/soleri/discussions',
         icon: 'github',
       },
       {
         name: 'Discord',
-        desc: 'Real-time chat for quick questions, pair debugging, and community hangouts. Coming soon.',
+        desc: 'For quick stuff. Questions, pair debugging, just hanging out. Coming soon.',
         action: 'Coming soon',
         href: '#',
         icon: 'discord',
       },
       {
         name: 'Substack',
-        desc: 'Long-form articles on knowledge compounding, agent architecture, and the philosophy behind Soleri. Subscribe to get them in your inbox.',
+        desc: 'Longer pieces on how we think about agent architecture and what we\'re building. Subscribe if you want them in your inbox.',
         action: 'Subscribe \u2192',
         href: 'https://drozdnco.substack.com',
         icon: 'email',
       },
       {
         name: 'Email',
-        desc: 'Questions, feedback, partnerships — reach us directly.',
+        desc: 'For everything else. Questions, feedback, partnerships.',
         action: 'Write to us \u2192',
         href: 'mailto:hello@soleri.ai',
         icon: 'email',
@@ -42,27 +42,27 @@ const content: Record<Locale, CommunityContent> = {
     ],
     contributeTitle: 'Ways to contribute',
     contributeSubtitle:
-      'Soleri is Apache 2.0 open source. Every contribution \u2014 code, knowledge, or conversation \u2014 makes the system smarter.',
+      'Soleri is open source under Apache 2.0. Code, knowledge packs, or just showing up and talking. It all helps.',
     contributeCards: [
       {
         title: 'Share a knowledge pack',
-        desc: 'Package domain expertise into reusable vault entries. Share patterns, anti-patterns, and workflows that help other teams skip the learning curve.',
+        desc: 'You know a domain well? Package it so other teams can skip the learning curve. Patterns, anti-patterns, workflows.',
       },
       {
         title: 'Report bugs and ideas',
-        desc: 'Open an issue on GitHub. Bug reports with reproduction steps, feature ideas with use cases \u2014 everything helps us prioritize.',
+        desc: 'Open a GitHub issue. Reproduction steps for bugs, use cases for feature ideas. Helps us figure out what to work on.',
       },
       {
-        title: 'Improve the docs',
-        desc: 'Found something unclear? Fix it. The best documentation comes from people who just figured something out.',
+        title: 'Fix the docs',
+        desc: 'Found something that doesn\'t make sense? Fix it. The best docs come from people who just had to figure something out.',
       },
       {
         title: 'Build an agent',
-        desc: 'Build your own agent with its own persona, vault, and workflows. Share what works so others can learn from your approach.',
+        desc: 'Make your own, give it a personality, share what you learn.',
       },
       {
         title: 'Build a domain pack',
-        desc: 'Package vertical expertise into a domain pack. React, Rails, accessibility, security — if you know a domain well, turn it into a pack that any agent can use.',
+        desc: 'Deep in React, Rails, security, accessibility? Turn that knowledge into a pack any agent can use.',
       },
     ],
     announcementsTitle: 'Announcements',
@@ -75,35 +75,35 @@ const content: Record<Locale, CommunityContent> = {
   uk: {
     title: 'Спільнота - Soleri',
     description:
-      'Приєднуйся до спільноти Soleri. Обговорюй архітектуру знань, діліся агентами, створюй пакети знань та формуй майбутнє агентної пам\u2019яті.',
+      'Тут збираються люди, що будують із Soleri. Діліться тим, що створили, ставте запитання, допомагайте визначати, що далі.',
     eyebrow: 'Відкритий код',
     heading: 'Спільнота',
-    subtitle: 'Будуй разом з нами. Діліся досвідом. Формуй те, що буде далі.',
+    subtitle: 'Будуй щось. Діліся тим, що дізнався. Допоможи нам зрозуміти, що далі.',
     channels: [
       {
         name: 'GitHub Discussions',
-        desc: 'Став запитання, діліся ідеями, пропонуй пакети знань та обговорюй архітектурні рішення. Основне місце для асинхронних розмов.',
+        desc: 'Запитання, ідеї, архітектурні дебати, пропозиції пакетів знань. Тут відбувається більшість розмов.',
         action: 'Приєднатися до обговорення \u2192',
         href: 'https://github.com/adrozdenko/soleri/discussions',
         icon: 'github',
       },
       {
         name: 'Discord',
-        desc: 'Чат у реальному часі для швидких запитань, парного дебагу та спілкування. Скоро.',
+        desc: 'Для швидкого. Запитання, парний дебаг, просто потусити. Скоро.',
         action: 'Скоро',
         href: '#',
         icon: 'discord',
       },
       {
         name: 'Substack',
-        desc: 'Розгорнуті статті про накопичення знань, архітектуру агентів та філософію Soleri. Підпишись, щоб отримувати на пошту.',
+        desc: 'Довші тексти про те, як ми думаємо про архітектуру агентів і що будуємо. Підпишись, якщо хочеш отримувати на пошту.',
         action: 'Підписатись \u2192',
         href: 'https://drozdnco.substack.com',
         icon: 'email',
       },
       {
         name: 'Електронна пошта',
-        desc: 'Запитання, зворотний зв\u2019язок, партнерство — пишіть нам напряму.',
+        desc: 'Для всього іншого. Запитання, фідбек, партнерство.',
         action: 'Написати нам \u2192',
         href: 'mailto:hello@soleri.ai',
         icon: 'email',
@@ -111,23 +111,27 @@ const content: Record<Locale, CommunityContent> = {
     ],
     contributeTitle: 'Як долучитися',
     contributeSubtitle:
-      'Soleri \u2014 open source проєкт під ліцензією Apache 2.0. Кожен внесок \u2014 код, знання чи розмова \u2014 робить систему розумнішою.',
+      'Soleri -- open source під Apache 2.0. Код, пакети знань або просто прийти і поговорити. Все допомагає.',
     contributeCards: [
       {
         title: 'Поділись пакетом знань',
-        desc: 'Упакуй доменну експертизу в записи сховища для повторного використання. Діліся патернами, анти-патернами та робочими процесами, що допомагають іншим командам скоротити криву навчання.',
+        desc: 'Добре знаєш якийсь домен? Запакуй, щоб інші команди пропустили криву навчання. Патерни, анти-патерни, робочі процеси.',
       },
       {
         title: 'Повідом про баги та ідеї',
-        desc: 'Відкрий issue на GitHub. Звіти про баги з кроками відтворення, ідеї функцій з прикладами використання \u2014 усе допомагає нам розставити пріоритети.',
+        desc: 'Відкрий issue на GitHub. Кроки відтворення для багів, юзкейси для ідей. Допомагає нам зрозуміти, над чим працювати.',
       },
       {
         title: 'Покращ документацію',
-        desc: 'Знайшов щось незрозуміле? Виправ. Найкраща документація приходить від людей, які щойно з цим розібралися.',
+        desc: 'Знайшов щось незрозуміле? Виправ. Найкраща документація приходить від людей, яким щойно довелося з чимось розібратися.',
       },
       {
         title: 'Створи агента',
-        desc: 'Створи власного агента зі своїми налаштуваннями та робочими процесами. Поділись тим, що працює, щоб інші могли вчитися з твого підходу.',
+        desc: 'Зроби свого, дай йому персональність, поділися тим, що дізнався.',
+      },
+      {
+        title: 'Створи доменний пакет',
+        desc: 'Глибоко в React, Rails, безпеці, доступності? Перетвори ці знання на пакет, який зможе використати будь-який агент.',
       },
     ],
     announcementsTitle: 'Оголошення',
@@ -138,37 +142,37 @@ const content: Record<Locale, CommunityContent> = {
     announcementsAll: 'Усі обговорення \u2192',
   },
   it: {
-    title: 'Community - Soleri',
+    title: 'Community -- Soleri',
     description:
-      'Unisciti alla community di Soleri. Discuti di architettura della conoscenza, condividi agenti, contribuisci con pacchetti di conoscenza e plasma il futuro della memoria agentica.',
+      'Dove si ritrovano quelli che costruiscono con Soleri. Condividi quello che hai costruito, fai domande, aiuta a decidere cosa viene dopo.',
     eyebrow: 'Open source',
     heading: 'Community',
-    subtitle: 'Costruisci con noi. Condividi quello che impari. Dai forma a quello che verrà.',
+    subtitle: 'Costruisci qualcosa. Condividi quello che impari. Aiutaci a capire cosa viene dopo.',
     channels: [
       {
         name: 'GitHub Discussions',
-        desc: 'Fai domande, condividi idee, proponi pacchetti di conoscenza e discuti decisioni architetturali. Il posto principale per le conversazioni asincrone.',
+        desc: 'Domande, idee, dibattiti sull\'architettura, proposte di knowledge pack. Qui succede la maggior parte delle conversazioni.',
         action: 'Unisciti alla discussione \u2192',
         href: 'https://github.com/adrozdenko/soleri/discussions',
         icon: 'github',
       },
       {
         name: 'Discord',
-        desc: 'Chat in tempo reale per domande veloci, debug in coppia e ritrovi della community. In arrivo.',
+        desc: 'Per le cose veloci. Domande, debug in coppia, stare in compagnia. In arrivo.',
         action: 'In arrivo',
         href: '#',
         icon: 'discord',
       },
       {
         name: 'Substack',
-        desc: "Articoli approfonditi sull'accumulo di conoscenza, l'architettura degli agenti e la filosofia di Soleri. Iscriviti per riceverli nella tua casella di posta.",
+        desc: 'Pezzi più lunghi su come ragioniamo sull\'architettura degli agenti e cosa stiamo costruendo. Iscriviti se vuoi riceverli nella casella di posta.',
         action: 'Iscriviti \u2192',
         href: 'https://drozdnco.substack.com',
         icon: 'email',
       },
       {
         name: 'Email',
-        desc: 'Domande, feedback, partnership — contattaci direttamente.',
+        desc: 'Per tutto il resto. Domande, feedback, partnership.',
         action: 'Scrivici \u2192',
         href: 'mailto:hello@soleri.ai',
         icon: 'email',
@@ -176,23 +180,27 @@ const content: Record<Locale, CommunityContent> = {
     ],
     contributeTitle: 'Come contribuire',
     contributeSubtitle:
-      'Soleri \u00e8 open source, con licenza Apache 2.0. Ogni contributo \u2014 codice, conoscenza o conversazione \u2014 rende il sistema pi\u00f9 intelligente.',
+      'Soleri è open source sotto Apache 2.0. Codice, knowledge pack, o semplicemente farti vivo e parlare. Tutto aiuta.',
     contributeCards: [
       {
-        title: 'Condividi un pacchetto di conoscenza',
-        desc: "Impacchetta l'expertise di dominio in voci del vault riutilizzabili. Condividi pattern, anti-pattern e workflow che aiutano altri team ad accorciare la curva di apprendimento.",
+        title: 'Condividi un knowledge pack',
+        desc: 'Conosci bene un dominio? Impacchettalo perché altri team possano saltare la curva di apprendimento. Pattern, anti-pattern, workflow.',
       },
       {
         title: 'Segnala bug e idee',
-        desc: "Apri una issue su GitHub. Segnalazioni di bug con passi per riprodurli, idee per funzionalit\u00e0 con casi d'uso \u2014 tutto ci aiuta a stabilire le priorit\u00e0.",
+        desc: 'Apri una issue su GitHub. Passi per riprodurre i bug, use case per le idee. Ci aiuta a capire su cosa lavorare.',
       },
       {
         title: 'Migliora la documentazione',
-        desc: 'Hai trovato qualcosa di poco chiaro? Sistemalo. La migliore documentazione viene da chi ha appena capito qualcosa.',
+        desc: 'Hai trovato qualcosa che non ha senso? Sistemalo. La migliore documentazione viene da chi ha appena dovuto capire qualcosa.',
       },
       {
         title: 'Costruisci un agente',
-        desc: 'Costruisci il tuo agente con le tue impostazioni e i tuoi workflow. Condividi quello che funziona, cos\u00ec che altri possano imparare dal tuo approccio.',
+        desc: 'Fatti il tuo, dagli una personalità, condividi quello che impari.',
+      },
+      {
+        title: 'Costruisci un domain pack',
+        desc: 'Sei dentro fino al collo in React, Rails, sicurezza, accessibilità? Trasforma quella conoscenza in un pack che qualsiasi agente può usare.',
       },
     ],
     announcementsTitle: 'Annunci',
