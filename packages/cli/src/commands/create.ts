@@ -158,7 +158,7 @@ export function registerCreate(program: Command): void {
           if (useFileTree) {
             // Convert to AgentYaml format
             // Cast to Record to access fields that may exist on the parsed config
-            // but aren't in the strict AgentConfig type (model, cognee, vaults, domainPacks)
+            // but aren't in the strict AgentConfig type (model, vaults, domainPacks)
             const raw = config as Record<string, unknown>;
             const agentYamlInput = {
               id: config.id,

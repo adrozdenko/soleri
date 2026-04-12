@@ -75,7 +75,7 @@ One optional feature does make network calls when configured:
 
 If you enable LLM-powered features (curator enrichment, knowledge extraction), the agent calls the configured LLM provider (Anthropic, OpenAI, etc.) with the specific text being processed. API keys are stored locally in your agent's configuration.
 
-Both are opt-in. Neither is required for core functionality. The vault, brain, planning, and all 160+ operations work without any external service.
+Both are opt-in. Neither is required for core functionality. The vault, brain, planning, and all 350+ operations work without any external service.
 
 ## Summary
 

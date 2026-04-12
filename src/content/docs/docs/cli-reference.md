@@ -197,7 +197,7 @@ npx @soleri/cli install ./my-agent --target opencode
 
 ### uninstall
 
-Remove your agent's MCP server registration.
+Remove your agent's MCP server registration (or all artifacts with `--full`).
 
 ```bash
 npx @soleri/cli uninstall [dir]
@@ -213,7 +213,19 @@ npx @soleri/cli uninstall [dir]
 
 | Flag                | Description                                                           |
 | ------------------- | --------------------------------------------------------------------- |
-| `--target <target>` | Registration target: `claude`, `opencode`, `codex`, `both`, `all` (default: `opencode`) |
+| `--target <target>` | Registration target: `claude`, `opencode`, `codex`, `both`, `all` (default: `all`) |
+| `--full`            | Remove all agent artifacts (project, data, configs, permissions, launcher) |
+| `--dry-run`         | Show what would be removed without making changes                     |
+| `--force`           | Skip confirmation prompt                                              |
+
+**Example:**
+
+```bash
+npx @soleri/cli uninstall
+npx @soleri/cli uninstall --target claude
+npx @soleri/cli uninstall --full --dry-run
+npx @soleri/cli uninstall ./my-agent --full --force
+```
 
 ---
 
@@ -628,6 +640,224 @@ npx @soleri/cli upgrade [options]
 | Flag      | Description                          |
 | --------- | ------------------------------------ |
 | `--check` | Check for updates without installing |
+
+---
+
+### brain
+
+Brain session management. Cleans up orphaned sessions that were started but never completed.
+
+```bash
+npx @soleri/cli brain <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand      | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `close-orphans` | Close orphaned brain sessions that were never completed |
+
+**`brain close-orphans` options:**
+
+| Flag                  | Description                                          |
+| --------------------- | ---------------------------------------------------- |
+| `--max-age <duration>`| Close sessions older than this age (default: `1h`). Format: `1h`, `30m`, `90s` |
+
+**Example:**
+
+```bash
+npx @soleri/cli brain close-orphans
+npx @soleri/cli brain close-orphans --max-age 2h
+```
+
+---
+
+### dream
+
+Vault memory consolidation. Runs deduplication, stale entry archival, and contradiction detection across the vault.
+
+```bash
+npx @soleri/cli dream [subcommand]
+```
+
+Running `soleri dream` with no subcommand triggers an immediate dream pass.
+
+**Subcommands:**
+
+| Subcommand   | Description                                  |
+| ------------ | -------------------------------------------- |
+| `run`        | Run a dream pass immediately (default)       |
+| `schedule`   | Schedule a daily dream cron job              |
+| `unschedule` | Remove the dream cron entry                  |
+| `status`     | Show dream status and cron info              |
+
+**`dream schedule` options:**
+
+| Flag              | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| `--time <HH:MM>`  | Time to run in 24h format (default: `22:00`)   |
+
+**Example:**
+
+```bash
+npx @soleri/cli dream
+npx @soleri/cli dream schedule --time 03:00
+npx @soleri/cli dream unschedule
+npx @soleri/cli dream status
+```
+
+---
+
+### chat
+
+Start an interactive terminal chat session with your agent. Spawns the agent's MCP server, connects via stdio, and runs a REPL powered by the Claude API.
+
+```bash
+npx @soleri/cli chat [options]
+```
+
+Requires `ANTHROPIC_API_KEY` environment variable or a key stored in `~/.soleri/<agentId>/keys.json`.
+
+**Options:**
+
+| Flag              | Description                                          |
+| ----------------- | ---------------------------------------------------- |
+| `--model <model>` | Claude model to use (default: `claude-sonnet-4-20250514`) |
+| `--no-tools`      | Disable MCP tools (plain conversation)               |
+
+**Example:**
+
+```bash
+npx @soleri/cli chat
+npx @soleri/cli chat --model claude-sonnet-4-20250514
+npx @soleri/cli chat --no-tools
+```
+
+---
+
+### schedule
+
+Manage autonomous scheduled agent tasks. Tasks run on a cron schedule, executing a prompt via `claude -p` when they fire.
+
+```bash
+npx @soleri/cli schedule <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand | Description                                 |
+| ---------- | ------------------------------------------- |
+| `create`   | Create a new scheduled task                 |
+| `list`     | List all scheduled tasks                    |
+| `delete`   | Delete a scheduled task                     |
+| `pause`    | Pause a scheduled task without deleting it  |
+| `resume`   | Resume a paused scheduled task              |
+
+**`schedule create` options:**
+
+| Flag                    | Description                                                     | Required |
+| ----------------------- | --------------------------------------------------------------- | -------- |
+| `--name <name>`         | Task name (unique per agent)                                    | Yes      |
+| `--cron <expr>`         | Cron expression (5-field, minimum 1-hour interval)              | Yes      |
+| `--prompt <text>`       | Prompt passed to `claude -p` when task fires                    | Yes      |
+| `--project-dir <path>`  | Agent project directory (default: current directory)            | No       |
+
+**`schedule delete` / `pause` / `resume` options:**
+
+| Flag         | Description      | Required |
+| ------------ | ---------------- | -------- |
+| `--id <id>`  | Task ID          | Yes      |
+
+**Example:**
+
+```bash
+npx @soleri/cli schedule create --name nightly-dream --cron "0 2 * * *" --prompt "run dream"
+npx @soleri/cli schedule list
+npx @soleri/cli schedule pause --id abc123
+npx @soleri/cli schedule resume --id abc123
+npx @soleri/cli schedule delete --id abc123
+```
+
+---
+
+### knowledge
+
+Export vault entries as portable knowledge bundle JSON files.
+
+```bash
+npx @soleri/cli knowledge <subcommand>
+```
+
+**Subcommands:**
+
+| Subcommand | Description                                               |
+| ---------- | --------------------------------------------------------- |
+| `export`   | Export vault entries to knowledge bundle JSON files        |
+
+**`knowledge export` options:**
+
+| Flag                  | Description                                                |
+| --------------------- | ---------------------------------------------------------- |
+| `--domain <name>`     | Export a specific domain                                   |
+| `--all`               | Export all domains                                         |
+| `--min-score <number>`| Minimum quality score threshold, 0-1 (default: `0`)       |
+| `--output <dir>`      | Output directory (default: `./knowledge/`)                 |
+
+Either `--domain` or `--all` is required.
+
+**Example:**
+
+```bash
+npx @soleri/cli knowledge export --domain architecture
+npx @soleri/cli knowledge export --all
+npx @soleri/cli knowledge export --all --min-score 0.5 --output ~/bundles
+```
+
+---
+
+### validate-skills
+
+Validate user-installed `SKILL.md` op-call examples against the engine's actual Zod schemas. Scans skill files, extracts inline op-call examples, and checks each example's params against the corresponding facade schema. Exits with code 1 if any mismatches are found.
+
+```bash
+npx @soleri/cli validate-skills [options]
+```
+
+**Options:**
+
+| Flag                    | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `--skills-dir <path>`   | Path to skills directory (default: `~/.claude/skills`) |
+
+**Example:**
+
+```bash
+npx @soleri/cli validate-skills
+npx @soleri/cli validate-skills --skills-dir ./my-skills
+```
+
+---
+
+### add-pack
+
+:::caution[Deprecated]
+The `add-pack` command is deprecated. Use these commands instead:
+
+- `soleri pack install <pack>` for knowledge and domain packs
+- `soleri hooks add-pack <pack>` for hook packs
+:::
+
+---
+
+### update
+
+Update the Soleri CLI to the latest version from npm. Checks the registry for the latest version and installs it globally.
+
+```bash
+npx @soleri/cli update
+```
+
+Compares the currently installed version against the latest published version and runs `npm install -g @soleri/cli@latest` if an update is available.
 
 ---
 

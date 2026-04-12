@@ -28,7 +28,7 @@ Your agent's long-term knowledge store. SQLite database with full-text search, b
 "Show me vault stats"
 ```
 
-**Advanced features:** vault branching (experiment without affecting main vault), Obsidian sync, knowledge pack import/export, team review workflows, multi-tier vault connections. _[66 ops →](/docs/capabilities/#vault)_
+**Advanced features:** vault branching (experiment without affecting main vault), Obsidian sync, knowledge pack import/export, team review workflows, multi-tier vault connections. _[26 ops →](/docs/capabilities/#vault)_
 
 ## The Brain
 
@@ -148,11 +148,11 @@ Entity extraction, knowledge retrieval, and context analysis. Analyzes prompts t
 
 Four ways to connect: **stdio** (your AI editor), **HTTP/SSE** (web), **WebSocket** (real-time), **LSP** (editors). _[Guide →](/docs/guides/transports/)_
 
-## All 13 Facades
+## All 22 Facades
 
 | Facade                                         | Ops | Primary purpose                               |
 | ---------------------------------------------- | --- | --------------------------------------------- |
-| [Vault](/docs/capabilities/#vault)             | 66  | Knowledge storage, search, branching, sharing |
+| [Vault](/docs/capabilities/#vault)             | 26  | Knowledge storage, search, branching, sharing |
 | [Admin](/docs/capabilities/#admin)             | 56  | Health, telemetry, plugins, packs, accounts   |
 | [Chat](/docs/capabilities/#chat)               | 41  | Chat transport integration                    |
 | [Plan](/docs/capabilities/#plan)               | 32  | Planning, grading, verification               |
@@ -172,6 +172,8 @@ Four ways to connect: **stdio** (your AI editor), **HTTP/SSE** (web), **WebSocke
 | [Branching](/docs/capabilities/#branching)     | 5   | Vault branching, merge                         |
 | [Review](/docs/capabilities/#review)           | 5   | Knowledge review workflow                      |
 | [Context](/docs/capabilities/#context)         | 3   | Entity extraction, analysis                   |
+| [Embedding](/docs/capabilities/#embedding)     | 3   | Embedding status, batch rebuild                |
+| [Dream](/docs/capabilities/#dream)             | 3   | Memory consolidation, vault cleanup            |
 
 **Total: 350+ operations** plus 5 per domain.
 

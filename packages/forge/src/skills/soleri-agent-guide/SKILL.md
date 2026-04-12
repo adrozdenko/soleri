@@ -40,7 +40,7 @@ YOUR_AGENT_core op:brain_stats
 YOUR_AGENT_core op:memory_stats
 ```
 
-Shows what subsystems are active: vault (how many entries), brain (vocabulary size), LLM availability, cognee status. This tells the user what the agent currently has to work with.
+Shows what subsystems are active: vault (how many entries), brain (vocabulary size), LLM availability. This tells the user what the agent currently has to work with.
 
 ### Step 3: Available Tools
 

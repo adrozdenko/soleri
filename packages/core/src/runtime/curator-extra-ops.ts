@@ -82,8 +82,7 @@ export function createCuratorExtraOps(runtime: AgentRuntime): OpDefinition[] {
     // ─── Hybrid Contradiction Detection (#36) ────────────────────────
     {
       name: 'curator_hybrid_contradictions',
-      description:
-        'Detect contradictions using hybrid TF-IDF + Cognee vector similarity. Falls back to TF-IDF only when Cognee is unavailable.',
+      description: 'Detect contradictions using TF-IDF similarity.',
       auth: 'read',
       schema: z.object({
         threshold: z.number().optional().describe('Similarity threshold (default 0.4)'),

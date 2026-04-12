@@ -31,6 +31,8 @@ For parameter details on common operations, see the [API Reference](/docs/api-re
 | [Branching](#branching)           | 5            | Vault branching — create, list, merge, delete            |
 | [Review](#review)                 | 5            | Knowledge review workflow — submit, approve, reject      |
 | [Context](#context)               | 3            | Entity extraction, knowledge retrieval, analysis         |
+| [Embedding](#embedding)           | 3            | Embedding status, batch rebuild, single-entry embedding  |
+| [Dream](#dream)                   | 3            | Memory consolidation, vault cleanup, maintenance         |
 | [Domain Facades](#domain-facades) | 5 per domain | Domain-scoped CRUD + search                              |
 
 ## Vault
@@ -731,6 +733,26 @@ Multi-vault tiers — connect external knowledge bases, search across all source
 | `vault_connect_source`    | admin | Connect a named vault source with configurable priority. |
 | `vault_disconnect_source` | admin | Disconnect a named vault source.                         |
 | `vault_list_sources`      | read  | List all connected sources with their priorities.        |
+
+## Embedding
+
+Embedding management — check status, rebuild embeddings in batch, or embed individual entries. Powers the vault's vector search layer.
+
+| Op                   | Auth  | Description                                                    |
+| -------------------- | ----- | -------------------------------------------------------------- |
+| `embedding_status`   | read  | Embedding index status — total entries, embedded count, gaps.  |
+| `embedding_rebuild`  | write | Batch rebuild embeddings for all entries or only those missing one.        |
+| `embedding_embed`    | write | Generate embedding for a single vault entry.                   |
+
+## Dream
+
+Automatic memory consolidation, vault cleanup, and maintenance. Runs background processes that deduplicate, archive stale entries, and resolve contradictions.
+
+| Op              | Auth  | Description                                                  |
+| --------------- | ----- | ------------------------------------------------------------ |
+| `dream_run`     | write | Run a dream cycle — consolidation, dedup, archive, cleanup.  |
+| `dream_status`  | read  | Dream status — last run, next scheduled, entries processed.  |
+| `dream_history` | read  | History of past dream cycles with outcomes.                  |
 
 ## Domain Facades
 

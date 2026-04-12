@@ -77,8 +77,10 @@ This generates a folder — no TypeScript, no build step:
 ```
 my-agent/
 ├── agent.yaml              # Identity + engine config
+├── agent-config.yaml       # Capabilities, probes, workflow mappings
 ├── .mcp.json               # Connects to Knowledge Engine (Claude Code)
 ├── opencode.json           # Connects to Knowledge Engine (OpenCode)
+├── settings.local.json     # Claude Code hooks + pre-approved permissions
 ├── .gitignore              # Excludes auto-generated files
 ├── CLAUDE.md               # Auto-generated (never edit)
 ├── instructions/           # Behavioral rules
@@ -89,6 +91,7 @@ my-agent/
 │   ├── bug-fix/
 │   ├── code-review/
 │   └── context-handoff/
+├── flows/                  # Flow YAML definitions
 ├── knowledge/              # Domain intelligence bundles
 ├── skills/                 # SKILL.md files
 ├── hooks/                  # Your AI editor hooks

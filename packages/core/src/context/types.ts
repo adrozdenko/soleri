@@ -27,7 +27,7 @@ export interface KnowledgeItem {
   id: string;
   title: string;
   score: number;
-  source: 'vault' | 'cognee' | 'brain';
+  source: 'vault' | 'brain';
   domain?: string;
   tags?: string[];
 }
@@ -35,7 +35,6 @@ export interface KnowledgeItem {
 export interface KnowledgeRetrievalResult {
   items: KnowledgeItem[];
   vaultHits: number;
-  cogneeHits: number;
   brainHits: number;
 }
 
@@ -65,8 +64,6 @@ export interface ContextAnalysis {
 export interface ContextEngineConfig {
   /** Max vault search results to retrieve. Default: 10. */
   vaultSearchLimit?: number;
-  /** Max Cognee search results to retrieve. Default: 10. */
-  cogneeSearchLimit?: number;
   /** Max brain recommendations to include. Default: 5. */
   brainRecommendLimit?: number;
   /** Minimum score threshold for knowledge items. Default: 0.1. */

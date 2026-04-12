@@ -223,7 +223,6 @@ describe('SEMANTIC_FACADE_NAMES', () => {
       'loop',
       'orchestrate',
       'control',
-      'cognee',
       'governance',
     ];
     for (const name of expected) {

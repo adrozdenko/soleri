@@ -31,10 +31,6 @@ describe('FeatureFlags', () => {
       expect(new FeatureFlags().isEnabled('hot-reload')).toBe(true);
     });
 
-    it('has cognee-sync on by default', () => {
-      expect(new FeatureFlags().isEnabled('cognee-sync')).toBe(true);
-    });
-
     it('has agency-mode off by default', () => {
       expect(new FeatureFlags().isEnabled('agency-mode')).toBe(false);
     });
@@ -116,7 +112,7 @@ describe('FeatureFlags', () => {
       expect(Object.keys(all)).toContain('auth-enforcement');
       expect(Object.keys(all)).toContain('hot-reload');
       expect(Object.keys(all)).toContain('telemetry');
-      expect(Object.keys(all)).toContain('cognee-sync');
+      expect(Object.keys(all)).toContain('embedding-enabled');
     });
 
     it('reports source as env when env var set', () => {

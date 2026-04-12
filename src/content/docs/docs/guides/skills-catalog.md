@@ -5,7 +5,7 @@ description: 'All available skills — essential and optional — with descripti
 
 Skills are workflow scripts that teach your agent how to handle specific situations. When you say "debug this" or "create a plan", the agent matches your intent to a skill and follows its structured workflow.
 
-Your agent ships with 7 essential skills by default. Another 26 optional skills are available to install on demand.
+Your agent ships with 7 essential skills by default. Another 27 optional skills are available to install on demand.
 
 ## Essential skills (included by default)
 
@@ -44,6 +44,7 @@ Install any of these to extend your agent's capabilities:
 | **mcp-doctor**                    | Diagnoses and repairs MCP server connectivity issues                                       |
 | **onboard-me**                    | Instant project orientation for newcomers — patterns, conventions, architecture overview    |
 | **parallel-execute**              | Executes independent plan tasks concurrently using subagents                               |
+| **release**                       | Bumps all monorepo package versions, commits, tags, and pushes to trigger CI/CD release    |
 | **retrospective**                 | Time-bound reflection — sprint retros, weekly summaries, actionable improvements           |
 | **second-opinion**                | Decision support from all sources — vault, brain, cross-project experience, web research   |
 | **subagent-driven-development**   | Decomposes tasks into independent units for parallel isolated execution                    |
@@ -81,7 +82,7 @@ When scaffolding an agent, you can control which skills are included:
 | Filter        | What it includes                   |
 | ------------- | ---------------------------------- |
 | `essential`   | 7 core skills (default)            |
-| `all`         | All 33 skills                      |
+| `all`         | All 34 skills                      |
 | Custom array  | Only the skills you list           |
 
 Set this in your [`agent.yaml`](/docs/your-agent/):

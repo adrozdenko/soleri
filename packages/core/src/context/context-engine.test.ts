@@ -246,7 +246,6 @@ describe('ContextEngine', () => {
       expect(result.items).toEqual([]);
       expect(result.vaultHits).toBe(0);
       expect(result.brainHits).toBe(0);
-      expect(result.cogneeHits).toBe(0);
     });
 
     it('passes domain filter to vault search', async () => {

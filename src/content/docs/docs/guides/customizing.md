@@ -136,7 +136,8 @@ RTK intercepts Bash commands via a PreToolUse hook and compresses verbose output
 ```bash
 npx @soleri/cli hooks add claude-code    # Claude Code hooks
 npx @soleri/cli hooks add cursor         # Cursor
-npx @soleri/cli hooks add vscode         # VS Code
+npx @soleri/cli hooks add windsurf       # Windsurf
+npx @soleri/cli hooks add copilot        # GitHub Copilot
 ```
 
 Hooks run as pre-tool-use checks in your editor. When the agent is about to write code that violates a hook, the hook blocks it and explains why.
@@ -238,11 +239,11 @@ npx @soleri/cli governance --preset permissive  # Auto-approve everything
 
 ### Preset defaults
 
-| Preset         | Suggestions        | Warnings           | Critical           | Quota     |
-| -------------- | ------------------ | ------------------ | ------------------ | --------- |
-| **permissive** | Auto-approve       | Auto-approve       | Auto-approve       | No limit  |
-| **moderate**   | Auto-approve       | Propose for review | Propose for review | 50/domain |
-| **strict**     | Propose for review | Propose for review | Propose for review | 30/domain |
+| Preset         | Review required | Max entries (total) | Max entries (per category) | Max entries (per type) |
+| -------------- | --------------- | ------------------- | -------------------------- | ---------------------- |
+| **permissive** | No              | 2000                | 500                        | 1000                   |
+| **moderate**   | No              | 500                 | 150                        | 250                    |
+| **strict**     | Yes             | 200                 | 50                         | 100                    |
 
 ### What governance controls
 

@@ -116,7 +116,6 @@ export class ContextEngine {
     this.brainIntelligence = brainIntelligence;
     this.config = {
       vaultSearchLimit: config?.vaultSearchLimit ?? 10,
-      cogneeSearchLimit: config?.cogneeSearchLimit ?? 10,
       brainRecommendLimit: config?.brainRecommendLimit ?? 5,
       minScoreThreshold: config?.minScoreThreshold ?? 0.1,
     };
@@ -227,7 +226,7 @@ export class ContextEngine {
     items.sort((a, b) => b.score - a.score);
     const filtered = items.filter((i) => i.score >= this.config.minScoreThreshold);
 
-    return { items: filtered, vaultHits, cogneeHits: 0, brainHits };
+    return { items: filtered, vaultHits, brainHits };
   }
 
   // ─── Context Analysis ───────────────────────────────────────────

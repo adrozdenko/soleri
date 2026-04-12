@@ -30,7 +30,6 @@ export const SEMANTIC_FACADE_NAMES: ReadonlyArray<string> = [
   'loop',
   'orchestrate',
   'control',
-  'cognee',
   'governance',
   'context',
   'agency',

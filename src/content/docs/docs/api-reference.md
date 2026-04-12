@@ -62,6 +62,8 @@ Each agent gets facades named `<agent_id>_<facade>`:
 | Branching   | `<id>_branching`   | 5      |
 | Review      | `<id>_review`      | 5      |
 | Context     | `<id>_context`     | 3      |
+| Embedding   | `<id>_embedding`   | 3      |
+| Dream       | `<id>_dream`       | 3      |
 | Domain      | `<id>_<domain>`    | 5 each |
 
 ---
@@ -128,31 +130,6 @@ Create a named vault branch for experimentation.
 | ------------ | ------ | -------- | -------------- |
 | `branchName` | string | yes      | Branch name    |
 | `createdBy`  | string | no       | Who created it |
-
-### intake_ingest_book
-
-Ingest a PDF book into vault knowledge.
-
-| Param             | Type     | Required | Description                       |
-| ----------------- | -------- | -------- | --------------------------------- |
-| `pdfPath`         | string   | yes      | Path to PDF file                  |
-| `title`           | string   | yes      | Book title                        |
-| `author`          | string   | yes      | Book author                       |
-| `targetScope`     | enum     | no       | `global` or `project`             |
-| `focusCategories` | string[] | no       | Categories to focus extraction on |
-| `chunkPageSize`   | number   | no       | Pages per chunk                   |
-| `dryRun`          | boolean  | no       | Preview without importing         |
-
-### obsidian_sync
-
-Bidirectional sync with Obsidian.
-
-| Param               | Type    | Required | Description                        |
-| ------------------- | ------- | -------- | ---------------------------------- |
-| `projectPath`       | string  | yes      | Project directory                  |
-| `obsidianVaultPath` | string  | yes      | Path to Obsidian vault             |
-| `direction`         | enum    | no       | `push`, `pull`, or `bidirectional` |
-| `dryRun`            | boolean | no       | Preview without changes            |
 
 ---
 
@@ -768,7 +745,7 @@ Auth: `admin`
 
 ---
 
-For the complete list of all 350+ operations across 20 facades, see [Capabilities](/docs/capabilities/). For CLI commands, see [CLI Reference](/docs/cli-reference/). For term definitions, see [Glossary](/docs/glossary/).
+For the complete list of all 350+ operations across 22 facades, see [Capabilities](/docs/capabilities/). For CLI commands, see [CLI Reference](/docs/cli-reference/). For term definitions, see [Glossary](/docs/glossary/).
 
 :::note[Coverage]
 This page documents the most commonly used operations. The remaining operations follow the same facade pattern — call with `op` and `params`. Use `admin_tool_list` to discover all available operations and their parameters in your running agent.

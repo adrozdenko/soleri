@@ -47,6 +47,10 @@ Automated maintenance system that keeps the vault clean — deduplication, contr
 
 The gradual reduction of an unused pattern's strength score over time. Ensures stale knowledge doesn't outrank actively useful patterns.
 
+### Dream
+
+Automatic memory consolidation, vault cleanup, and maintenance. The dream facade runs background processes that deduplicate entries, archive stale knowledge, and resolve contradictions. See [Capabilities — Dream](/docs/capabilities/#dream).
+
 ### Domain pack
 
 A standalone community npm package that adds specialized operations and knowledge for a specific domain (e.g., `@soleri/domain-design`, `@soleri/domain-code-review`). Each pack has its own repository and release cycle. Install with `soleri pack add <name>` and register in `agent.yaml`. See [Domain Packs](/docs/guides/domain-packs/) and [Customizing Your Agent](/docs/guides/customizing/#domain-packs).
@@ -63,13 +67,17 @@ An MCP tool entry point scoped to a single domain. Each domain facade exposes 5 
 
 The difference between what a plan intended and what actually happened during execution. Measured during reconciliation. Low drift means the plan was accurate; high drift means reality diverged. See [Planning](/docs/guides/planning/#step-4-reconciliation).
 
+### Embedding
+
+Embedding management for the vault's vector search layer. Provides status checks, batch rebuilds, and single-entry embedding operations. See [Capabilities — Embedding](/docs/capabilities/#embedding).
+
 ### Entry types
 
 The kind of knowledge stored in the vault: `pattern`, `anti-pattern`, `rule`, `playbook`, `workflow`, `principle`, `reference`.
 
 ### Facade
 
-A single MCP tool entry point that dispatches to multiple operations via the `op` parameter. Every agent has 13 semantic facades plus one per domain. See [API Reference](/docs/api-reference/#how-facades-work).
+A single MCP tool entry point that dispatches to multiple operations via the `op` parameter. Every agent has 22 semantic facades plus one per domain. See [API Reference](/docs/api-reference/#how-facades-work).
 
 ### FTS5
 

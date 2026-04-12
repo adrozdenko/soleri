@@ -87,7 +87,6 @@ describe('Salvador Agent Smoke Test', () => {
         !f.name.startsWith(`${AGENT_ID}_loop`) &&
         !f.name.startsWith(`${AGENT_ID}_orchestrate`) &&
         !f.name.startsWith(`${AGENT_ID}_control`) &&
-        !f.name.startsWith(`${AGENT_ID}_cognee`) &&
         !f.name.startsWith(`${AGENT_ID}_context`) &&
         !f.name.startsWith(`${AGENT_ID}_agency`) &&
         !f.name.startsWith(`${AGENT_ID}_chat`) &&

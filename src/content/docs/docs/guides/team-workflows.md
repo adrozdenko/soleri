@@ -85,9 +85,9 @@ npx @soleri/cli governance --preset moderate
 
 The moderate preset:
 
-- **Auto-approves** suggestions — low-risk additions go straight to the vault
-- **Proposes** warnings and critical entries — someone reviews before they become active
-- **Enforces quotas** — prevents any one person from flooding the vault
+- **No review required** — all captures go straight to the vault without approval
+- **Enforces quotas** — 500 total entries, 150 per category, 250 per type
+- **Auto-expires proposals** — pending proposals expire after 14 days
 
 For stricter teams:
 

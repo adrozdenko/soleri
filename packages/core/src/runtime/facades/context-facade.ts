@@ -32,7 +32,7 @@ export function createContextFacadeOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'context_retrieve_knowledge',
       description:
-        'Retrieve relevant knowledge from vault (FTS), Cognee (vector), and brain (recommendations). Returns scored and ranked items.',
+        'Retrieve relevant knowledge from vault (FTS) and brain (recommendations). Returns scored and ranked items.',
       auth: 'read',
       schema: z.object({
         prompt: z.string().describe('Query to search for.'),

@@ -3,7 +3,7 @@ title: 'Search Architecture'
 description: 'Deep dive into vault search — FTS5, hybrid scoring, vector recall, federated tiers, and adaptive weights.'
 ---
 
-Vault search is a multi-layer pipeline that combines full-text search, sparse TF-IDF scoring, optional dense vector embeddings, and six weighted relevance signals. This page explains every layer.
+Vault search is a multi-layer pipeline that combines full-text search, sparse TF-IDF scoring, optional dense vector embeddings, and seven weighted relevance signals. This page explains every layer.
 
 For a quick overview, see [Under the Hood](/docs/guides/under-the-hood/#how-search-works).
 
@@ -55,13 +55,15 @@ CREATE VIRTUAL TABLE entries_fts USING fts5(
 
 Your natural-language query gets transformed before hitting FTS5:
 
-1. Split into individual terms
+1. Split on whitespace and punctuation (hyphens, underscores, dots, slashes)
 2. Lowercased
-3. Stop words removed (`the`, `is`, `a`, etc.)
+3. Non-alphanumeric characters stripped from each term
 4. Terms shorter than 2 characters dropped
 5. Joined with `OR` for broad matching
 
-A query like "how does JWT validation work" becomes `jwt OR validation OR work`.
+Note: stop words are **not** removed at the FTS5 query level. Stop word removal only happens in the TF-IDF tokenizer used by the brain's semantic scoring layer (see [Semantic scoring](#semantic-scoring-tf-idf) below).
+
+A query like "how does JWT validation work" becomes `how OR does OR jwt OR validation OR work`.
 
 ### BM25 ranking
 
@@ -81,12 +83,11 @@ If BM25 is unavailable (older SQLite builds), search falls back to the default F
 
 The vault manager searches across multiple **tiers** — separate SQLite databases with different scopes:
 
-| Tier | Scope | Default priority |
-| ---- | ----- | ---------------- |
-| agent | Knowledge specific to this agent | Highest |
-| project | Shared across agents in a project | Medium |
-| team | Shared across team members | Lower |
-| dynamic | External connected vaults | Configurable |
+| Tier | Scope | Priority weight |
+| ---- | ----- | --------------- |
+| `agent` | Knowledge specific to this agent | 1.0 (highest) |
+| `project` | Shared across agents in a project | 0.8 |
+| `team` | Shared across team members | 0.6 |
 
 Each tier is searched independently. Results are then:
 
@@ -104,18 +105,19 @@ FTS5 gives us broad recall. The brain turns it into precise relevance ranking.
 
 The brain requests 3x the desired limit (or 30 results, whichever is larger) from FTS5. This provides headroom — many entries that rank well in FTS5 may score poorly on other signals. Over-fetching ensures the final top-N are truly the best matches across all factors.
 
-### Six scoring signals
+### Seven scoring signals
 
-Every result is scored across six factors:
+Every result is scored across seven factors:
 
 | Signal | Weight (FTS only) | Weight (hybrid) | How it works |
 | ------ | ----------------- | --------------- | ------------ |
-| **Semantic** | 0.40 | 0.25 | TF-IDF cosine similarity between query and entry |
+| **Semantic** | 0.35 | 0.20 | TF-IDF cosine similarity between query and entry |
 | **Vector** | 0.00 | 0.15 | Dense embedding cosine similarity |
-| **Severity** | 0.15 | 0.15 | critical = 1.0, warning = 0.7, suggestion = 0.4 |
-| **Temporal decay** | 0.15 | 0.15 | Exponential decay with 365-day half-life |
-| **Tag overlap** | 0.15 | 0.15 | Jaccard similarity between query tags and entry tags |
-| **Domain match** | 0.15 | 0.15 | Binary — 1.0 if the query domain matches the entry domain |
+| **Severity** | 0.10 | 0.10 | critical = 1.0, warning = 0.7, suggestion = 0.4 |
+| **Temporal decay** | 0.10 | 0.10 | Exponential decay with 365-day half-life |
+| **Tag overlap** | 0.10 | 0.10 | Jaccard similarity between query tags and entry tags |
+| **Domain match** | 0.10 | 0.10 | Binary — 1.0 if the query domain matches the entry domain |
+| **Graph proximity** | 0.15 | 0.15 | Link-graph distance between query-relevant entries and this entry |
 
 The total score is the weighted sum of all factors.
 
@@ -145,17 +147,22 @@ Half-life is 365 days. An entry scores 1.0 when new, 0.5 after one year, 0.25 af
 **With a validity window** (entries that have `valid_from`/`valid_until` dates):
 
 ```
-if remaining > 75% of window: decay = 1.0 (fully valid)
-else: decay = remaining / decayZone (linear ramp-down in last 25%)
+decayZone = totalWindow * 0.25
+if remaining > decayZone: decay = 1.0  (first 75% of the window)
+else: decay = remaining / decayZone    (linear ramp-down in last 25%)
 ```
+
+In other words, an entry stays at full strength for the first 75% of its validity window, then linearly drops to zero over the final 25%.
 
 ### Adaptive weights
 
-After 30+ feedback entries (accepted/dismissed results), the brain adjusts its scoring weights:
+After 30+ feedback entries (excluding `failed` actions, which are system errors), the brain adjusts its scoring weights:
 
-- High accept rate (>50%) — increase semantic weight (up to +0.15)
-- Low accept rate (<50%) — decrease semantic weight (down to -0.15)
-- Other weights scale proportionally to maintain a sum of 1.0
+- `accepted` counts as 1.0 positive, `modified` counts as 0.5 positive (user adjusted but didn't dismiss), `dismissed` counts as 0.0
+- Accept rate = `(accepted + modified * 0.5) / totalFeedback`
+- High accept rate (>50%) -- increase semantic weight (up to +0.15)
+- Low accept rate (<50%) -- decrease semantic weight (down to -0.15)
+- Other weights (severity, temporalDecay, tagOverlap, domainMatch, graphProximity) scale proportionally to maintain a sum of 1.0
 
 This means the search system learns from your usage. If you consistently prefer tag-matched results over text-matched ones, the weights shift accordingly.
 
@@ -172,11 +179,11 @@ When an embedding provider is configured, search adds a dense vector recall phas
 1. **Query embedding** — the query is embedded into a dense vector (e.g., 1536 dimensions for OpenAI models)
 2. **Cosine search** — brute-force similarity computation against all stored entry vectors
 3. **Candidate merging** — entries found by vector search but missed by FTS5 are added to the candidate pool
-4. **Score integration** — vector similarity becomes the sixth scoring signal (0.15 weight)
+4. **Score integration** — vector similarity becomes a scoring signal (0.15 weight in hybrid mode)
 
 ### Vector storage
 
-Dense vectors are stored as binary float32 blobs in an `entry_vectors` table. Each entry can have one vector per embedding model, allowing multi-model support.
+Dense vectors are stored as binary float32 blobs in an `entry_vectors` table with `entry_id TEXT PRIMARY KEY`. Each entry stores exactly one vector. If you switch embedding models, the old vector is overwritten via upsert.
 
 ### Performance
 
@@ -200,7 +207,9 @@ New entries are automatically embedded in batches of 100. Only the title, descri
     severity: number,
     temporalDecay: number,
     tagOverlap: number,
-    domainMatch: number
+    domainMatch: number,
+    graphProximity: number,
+    total: number
   }
 }
 ```
@@ -214,6 +223,7 @@ New entries are automatically embedded in batches of 100. Only the title, descri
   score: number,
   type: string,
   domain: string,
+  severity: string,         // 'critical' | 'warning' | 'suggestion'
   tags: string[],
   snippet: string,          // First 120 chars of description
   tokenEstimate: number     // Rough token count (chars / 4)

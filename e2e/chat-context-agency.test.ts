@@ -471,15 +471,11 @@ describe('E2E: chat-context-agency', () => {
       const data = res.data as {
         items: Array<{ id: string; title: string; score: number; source: string }>;
         vaultHits: number;
-        cogneeHits: number;
         brainHits: number;
       };
       expect(Array.isArray(data.items)).toBe(true);
       expect(typeof data.vaultHits).toBe('number');
-      expect(typeof data.cogneeHits).toBe('number');
       expect(typeof data.brainHits).toBe('number');
-      // Cognee is not connected in E2E, so no cognee hits
-      expect(data.cogneeHits).toBe(0);
       // Vault FTS may or may not find results depending on tokenization
       expect(data.vaultHits).toBeGreaterThanOrEqual(0);
       if (data.items.length > 0) {
@@ -503,7 +499,6 @@ describe('E2E: chat-context-agency', () => {
         knowledge: {
           items: unknown[];
           vaultHits: number;
-          cogneeHits: number;
           brainHits: number;
         };
         confidence: number;

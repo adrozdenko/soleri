@@ -82,7 +82,6 @@ Controls the knowledge engine runtime.
 ```yaml
 engine:
   learning: true       # enable brain learning loop (default: true)
-  agency: true         # enable proactive intelligence (default: false)
   profile: full        # module profile: minimal | standard | full (default: full)
 ```
 
@@ -164,11 +163,11 @@ Scoped context areas within the agent. Auto-seeded from domains if omitted.
 
 ```yaml
 workspaces:
-  - name: planning
-    path: ./planning
+  - id: planning
+    name: Planning
     description: Architecture decisions and technical specs
-  - name: src
-    path: ./src
+  - id: src
+    name: Source Code
     description: Source code
 ```
 
@@ -176,8 +175,8 @@ Each workspace entry has:
 
 | Field | Required | Description |
 | ----- | -------- | ----------- |
+| `id` | yes | Unique workspace identifier (kebab-case) |
 | `name` | yes | Human-readable name |
-| `path` | yes | Relative directory path |
 | `description` | yes | What this workspace is for |
 | `contextFile` | no | Context file name (default: `CONTEXT.md`) |
 
@@ -277,21 +276,20 @@ greeting: Forge online. Show me the code.
 
 engine:
   learning: true
-  agency: true
 
 setup:
   target: claude
   model: claude-code-sonnet-4
 
 workspaces:
-  - name: planning
-    path: ./planning
+  - id: planning
+    name: Planning
     description: Architecture decisions, RFCs, and technical specs
-  - name: src
-    path: ./src
+  - id: src
+    name: Source Code
     description: Source code
-  - name: docs
-    path: ./docs
+  - id: docs
+    name: Documentation
     description: Technical documentation and runbooks
 
 packs:

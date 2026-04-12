@@ -19,10 +19,6 @@ const BUILT_IN_FLAGS: Record<string, FlagDefinition> = {
   },
   telemetry: { description: 'Collect op-level telemetry metrics', defaultValue: true },
   'agency-mode': { description: 'Enable proactive agent behavior', defaultValue: false },
-  'cognee-sync': {
-    description: 'Sync vault entries to Cognee knowledge graph',
-    defaultValue: true,
-  },
   'embedding-enabled': {
     description: 'Enable vector embedding provider for hybrid search',
     defaultValue: false,

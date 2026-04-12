@@ -125,7 +125,7 @@ The engine discovers domain pack ops automatically when the pack is installed an
 Scaffold a new pack with:
 
 ```bash
-npm create soleri-pack my-pack
+npx @soleri/cli pack create my-pack
 ```
 
 This generates a complete repo with `DomainPack` interface, TypeScript config, tests, and CI workflow. See [Creating Packs](/docs/guides/pack-authoring/) for the full authoring guide.

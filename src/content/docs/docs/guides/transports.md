@@ -70,8 +70,8 @@ await server.start();
 | ------ | -------------- | ---- | ------------------------------------- |
 | GET    | `/health`      | No   | Health check — returns 200 if running |
 | POST   | `/mcp`         | Yes  | MCP JSON-RPC tool calls               |
-| GET    | `/mcp/sse`     | Yes  | Server-Sent Events stream             |
-| DELETE | `/mcp/session` | Yes  | Close a session                       |
+| GET    | `/mcp`         | Yes  | Server-Sent Events stream             |
+| DELETE | `/mcp`         | Yes  | Close a session                       |
 
 ### Authentication
 
