@@ -8,9 +8,12 @@
 import type { Vault } from '../vault/vault.js';
 import type { LLMClient } from '../llm/llm-client.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
-import type { ClassifiedItem } from './types.js';
+import type { ClassifiedItem, ContradictionFlag } from './types.js';
 import { classifyChunk } from './content-classifier.js';
 import { dedupItems } from './dedup-gate.js';
+import { enrichExistingEntries, type EnrichmentResult } from './enrichment-engine.js';
+import { checkContradictions } from './contradiction-check.js';
+import type { SourceRegistry } from './source-registry.js';
 import { normalizeTags as normalizeTagsCanonical } from '../vault/tag-normalizer.js';
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -39,6 +42,9 @@ export interface IngestResult {
   source: IngestSource;
   ingested: number;
   duplicates: number;
+  enriched: number;
+  enrichments: EnrichmentResult[];
+  contradictions: ContradictionFlag[];
   entries: Array<{ id: string; title: string; type: string }>;
 }
 
@@ -46,6 +52,11 @@ export interface IngestResult {
 
 const DEFAULT_CHUNK_SIZE = 4000;
 const FETCH_TIMEOUT_MS = 15000;
+const EMPTY_INGEST_EXTRAS = {
+  enriched: 0,
+  enrichments: [] as EnrichmentResult[],
+  contradictions: [] as ContradictionFlag[],
+};
 
 // ─── Class ───────────────────────────────────────────────────────────
 
@@ -59,10 +70,15 @@ export class TextIngester {
   private vault: Vault;
   private llm: LLMClient | null;
   private canonicalTagConfig: CanonicalTagConfig | null = null;
+  private sourceRegistry: SourceRegistry | null = null;
 
   constructor(vault: Vault, llm: LLMClient | null) {
     this.vault = vault;
     this.llm = llm;
+  }
+
+  setSourceRegistry(registry: SourceRegistry): void {
+    this.sourceRegistry = registry;
   }
 
   /**
@@ -78,7 +94,13 @@ export class TextIngester {
    */
   async ingestUrl(url: string, opts?: IngestOptions): Promise<IngestResult> {
     if (!this.llm) {
-      return { source: { type: 'article', title: url }, ingested: 0, duplicates: 0, entries: [] };
+      return {
+        source: { type: 'article', title: url },
+        ingested: 0,
+        duplicates: 0,
+        ...EMPTY_INGEST_EXTRAS,
+        entries: [],
+      };
     }
 
     let text: string;
@@ -89,17 +111,35 @@ export class TextIngester {
         headers: { 'User-Agent': 'Soleri/1.0 (knowledge ingestion)' },
       });
       if (!response.ok) {
-        return { source: { type: 'article', title }, ingested: 0, duplicates: 0, entries: [] };
+        return {
+          source: { type: 'article', title },
+          ingested: 0,
+          duplicates: 0,
+          ...EMPTY_INGEST_EXTRAS,
+          entries: [],
+        };
       }
       const html = await response.text();
       title = extractTitle(html) ?? url;
       text = stripHtml(html);
     } catch {
-      return { source: { type: 'article', title }, ingested: 0, duplicates: 0, entries: [] };
+      return {
+        source: { type: 'article', title },
+        ingested: 0,
+        duplicates: 0,
+        ...EMPTY_INGEST_EXTRAS,
+        entries: [],
+      };
     }
 
     if (text.length < 50) {
-      return { source: { type: 'article', title }, ingested: 0, duplicates: 0, entries: [] };
+      return {
+        source: { type: 'article', title },
+        ingested: 0,
+        duplicates: 0,
+        ...EMPTY_INGEST_EXTRAS,
+        entries: [],
+      };
     }
 
     const source: IngestSource = { type: 'article', title, url };
@@ -115,7 +155,7 @@ export class TextIngester {
     opts?: IngestOptions,
   ): Promise<IngestResult> {
     if (!this.llm) {
-      return { source, ingested: 0, duplicates: 0, entries: [] };
+      return { source, ingested: 0, duplicates: 0, ...EMPTY_INGEST_EXTRAS, entries: [] };
     }
 
     const chunkSize = opts?.chunkSize ?? DEFAULT_CHUNK_SIZE;
@@ -140,13 +180,19 @@ export class TextIngester {
     }
 
     if (allItems.length === 0) {
-      return { source, ingested: 0, duplicates: 0, entries: [] };
+      return { source, ingested: 0, duplicates: 0, ...EMPTY_INGEST_EXTRAS, entries: [] };
     }
 
     // Dedup against vault
     const dedupResults = dedupItems(allItems, this.vault);
     const unique = dedupResults.filter((r) => !r.isDuplicate).map((r) => r.item);
     const duplicateCount = dedupResults.filter((r) => r.isDuplicate).length;
+
+    // Enrich existing vault entries with new information from the enrichment zone
+    const enrichments = enrichExistingEntries(dedupResults, this.vault);
+
+    // Check for contradictions (informational only — does not block storage)
+    const contradictions = checkContradictions(allItems, this.vault);
 
     // Build source attribution for context field
     const attribution = buildAttribution(source);
@@ -185,12 +231,34 @@ export class TextIngester {
 
     if (entries.length > 0) {
       this.vault.seed(entries);
+
+      // Track provenance: create source record and link entries
+      if (this.sourceRegistry) {
+        try {
+          const sourceId = this.sourceRegistry.createSource({
+            title: source.title,
+            url: source.url,
+            sourceType: source.type,
+            author: source.author,
+            domain,
+          });
+          this.sourceRegistry.linkEntries(
+            sourceId,
+            entries.map((e) => e.id),
+          );
+        } catch {
+          // Source tracking is best-effort — never block ingestion
+        }
+      }
     }
 
     return {
       source,
       ingested: entries.length,
       duplicates: duplicateCount,
+      enriched: enrichments.length,
+      enrichments,
+      contradictions,
       entries: entries.map((e) => ({ id: e.id, title: e.title, type: e.type })),
     };
   }

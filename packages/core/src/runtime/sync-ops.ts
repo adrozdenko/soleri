@@ -19,6 +19,7 @@ import type {
 } from '../intelligence/types.js';
 import { LinkManager } from '../vault/linking.js';
 import { ObsidianSync } from '../vault/obsidian-sync.js';
+import { OperationLogger } from '../vault/operation-log.js';
 
 export function createSyncOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault } = runtime;
@@ -114,7 +115,7 @@ export function createSyncOps(runtime: AgentRuntime): OpDefinition[] {
         dryRun: z.boolean().optional().describe('Preview without writing files'),
       }),
       handler: async (params) => {
-        const sync = new ObsidianSync({ vault });
+        const sync = new ObsidianSync({ vault, linkManager: runtime.linkManager });
         return sync.export(params.obsidianDir as string, {
           types: params.types as string[] | undefined,
           domains: params.domains as string[] | undefined,
@@ -159,7 +160,7 @@ export function createSyncOps(runtime: AgentRuntime): OpDefinition[] {
         dryRun: z.boolean().optional().describe('Preview without making changes'),
       }),
       handler: async (params) => {
-        const sync = new ObsidianSync({ vault });
+        const sync = new ObsidianSync({ vault, linkManager: runtime.linkManager });
         return sync.sync(params.obsidianDir as string, {
           mode: params.mode as 'push' | 'pull' | 'bidirectional' | undefined,
           dryRun: params.dryRun as boolean | undefined,
@@ -318,6 +319,35 @@ export function createSyncOps(runtime: AgentRuntime): OpDefinition[] {
         }
 
         return { imported, duplicates, linksCreated, linksSkipped, total: imported + duplicates };
+      },
+    },
+
+    // ─── Operation Log ─────────────────────────────────────────────
+    {
+      name: 'vault_log',
+      description:
+        'Query the chronological operation log. Returns recent vault operations with optional filters by type or time range.',
+      auth: 'read' as const,
+      schema: z.object({
+        opType: z
+          .string()
+          .optional()
+          .describe(
+            'Filter by operation type (ingest, capture, consolidate, dream, self_heal, link, sync)',
+          ),
+        limit: z.number().optional().default(50).describe('Max entries to return (default 50)'),
+        since: z
+          .number()
+          .optional()
+          .describe('Unix timestamp — only return entries created at or after this time'),
+      }),
+      handler: async (params) => {
+        const logger = new OperationLogger(vault.getProvider());
+        return logger.query({
+          opType: params.opType as import('../vault/operation-log.js').OpLogType | undefined,
+          limit: params.limit as number | undefined,
+          since: params.since as number | undefined,
+        });
       },
     },
   ];

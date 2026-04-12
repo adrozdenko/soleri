@@ -120,6 +120,31 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           /* dream module not available — skip silently */
         }
 
+        // Auto self-heal: increment session counter and fire if gate met
+        let selfHealInfo: { status: unknown; gate: { eligible: boolean; reason: string } } | null =
+          null;
+        try {
+          const { SelfHealGate } = await import('../../vault/self-heal-gate.js');
+          const healGate = new SelfHealGate(
+            runtime.vault.getProvider(),
+            runtime.curator,
+            runtime.linkManager ?? null,
+          );
+          healGate.incrementSessionCount();
+          const gate = healGate.checkGate();
+          selfHealInfo = { status: healGate.getStatus(), gate };
+          if (gate.eligible) {
+            // Fire-and-forget: don't block session_start
+            Promise.resolve()
+              .then(() => healGate.run())
+              .catch(() => {
+                /* best-effort */
+              });
+          }
+        } catch {
+          /* self-heal gate not available — skip silently */
+        }
+
         // Auto-reap stale worktrees — best-effort, non-blocking
         try {
           const { worktreeReap } = await import('../../utils/worktree-reaper.js');
@@ -217,6 +242,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           stalePlansClosed,
           ...(stagingWarning ? { stagingWarning } : {}),
           ...(dreamInfo ? { dream: dreamInfo } : {}),
+          ...(selfHealInfo ? { selfHeal: selfHealInfo } : {}),
         };
       },
     },

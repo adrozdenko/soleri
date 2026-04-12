@@ -26,6 +26,7 @@ import type {
 } from './types.js';
 import { classifyChunk } from './content-classifier.js';
 import { dedupItems } from './dedup-gate.js';
+import { enrichExistingEntries } from './enrichment-engine.js';
 
 // =============================================================================
 // CONSTANTS
@@ -271,6 +272,9 @@ export class IntakePipeline {
         const dedupResults = dedupItems(classifiedItems, this.vault);
         const uniqueItems = dedupResults.filter((r) => !r.isDuplicate);
         const dupCount = dedupResults.filter((r) => r.isDuplicate).length;
+
+        // Stage 4b: Enrich existing entries with new information
+        enrichExistingEntries(dedupResults, this.vault);
 
         // Stage 5: Store unique items in vault
         let storedCount = 0;

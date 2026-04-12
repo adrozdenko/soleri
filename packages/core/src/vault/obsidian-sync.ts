@@ -13,11 +13,14 @@ import { mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join, extname, relative, dirname } from 'node:path';
 import type { Vault } from './vault.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import type { LinkManager } from './linking.js';
+import type { VaultLink } from './vault-types.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
 export interface ObsidianSyncConfig {
   vault: Vault;
+  linkManager?: LinkManager;
 }
 
 export interface ExportOptions {
@@ -70,10 +73,21 @@ export interface ConflictInfo {
 
 // ─── Format Helpers ──────────────────────────────────────────────────
 
+/** Resolved link info for wikilink generation. */
+export interface ResolvedLinks {
+  outgoing: VaultLink[];
+  incoming: VaultLink[];
+  titleMap: Map<string, string>;
+}
+
 /**
  * Convert a vault entry to Obsidian-compatible markdown with YAML frontmatter.
+ * When resolvedLinks is provided, appends a ## Related section with [[wikilinks]].
  */
-export function toObsidianMarkdown(entry: IntelligenceEntry): string {
+export function toObsidianMarkdown(
+  entry: IntelligenceEntry,
+  resolvedLinks?: ResolvedLinks,
+): string {
   const lines: string[] = ['---'];
 
   lines.push(`id: "${entry.id}"`);
@@ -89,6 +103,55 @@ export function toObsidianMarkdown(entry: IntelligenceEntry): string {
   lines.push(`# ${entry.title}`);
   lines.push('');
   lines.push(entry.description);
+
+  // Append wikilinks for related entries
+  if (resolvedLinks) {
+    const section = buildRelatedSection(resolvedLinks);
+    if (section) {
+      lines.push('');
+      lines.push(section);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Build a ## Related section grouping wikilinks by link type.
+ * Returns null if the entry has no links.
+ */
+function buildRelatedSection(links: ResolvedLinks): string | null {
+  // Group by link type. For outgoing links, the related entry is the target.
+  // For incoming links, the related entry is the source.
+  const grouped = new Map<string, string[]>();
+
+  for (const link of links.outgoing) {
+    const title = links.titleMap.get(link.targetId);
+    if (!title) continue;
+    const slug = titleToSlug(title);
+    if (!slug) continue;
+    const list = grouped.get(link.linkType) ?? [];
+    list.push(`[[${slug}]]`);
+    grouped.set(link.linkType, list);
+  }
+
+  for (const link of links.incoming) {
+    const title = links.titleMap.get(link.sourceId);
+    if (!title) continue;
+    const slug = titleToSlug(title);
+    if (!slug) continue;
+    const list = grouped.get(link.linkType) ?? [];
+    list.push(`[[${slug}]]`);
+    grouped.set(link.linkType, list);
+  }
+
+  if (grouped.size === 0) return null;
+
+  const lines: string[] = ['## Related', ''];
+  for (const [linkType, wikilinks] of grouped) {
+    const label = linkType.charAt(0).toUpperCase() + linkType.slice(1);
+    lines.push(`**${label}:** ${wikilinks.join(', ')}`);
+  }
 
   return lines.join('\n');
 }
@@ -187,9 +250,11 @@ export function titleToSlug(title: string): string {
 
 export class ObsidianSync {
   private vault: Vault;
+  private linkManager?: LinkManager;
 
   constructor(config: ObsidianSyncConfig) {
     this.vault = config.vault;
+    this.linkManager = config.linkManager;
   }
 
   /**
@@ -204,6 +269,12 @@ export class ObsidianSync {
     }
     if (opts.domains && opts.domains.length > 0) {
       entries = entries.filter((e) => opts.domains!.includes(e.domain || ''));
+    }
+
+    // Build a title lookup map for wikilink resolution
+    const titleMap = new Map<string, string>();
+    for (const e of entries) {
+      titleMap.set(e.id, e.title);
     }
 
     const files: string[] = [];
@@ -221,9 +292,19 @@ export class ObsidianSync {
       const filePath = join(dir, `${slug}.md`);
       const relPath = relative(obsidianDir, filePath);
 
+      // Resolve links for wikilink generation
+      let resolvedLinks: ResolvedLinks | undefined;
+      if (this.linkManager) {
+        const outgoing = this.linkManager.getLinks(entry.id);
+        const incoming = this.linkManager.getBacklinks(entry.id);
+        if (outgoing.length > 0 || incoming.length > 0) {
+          resolvedLinks = { outgoing, incoming, titleMap };
+        }
+      }
+
       if (!opts.dryRun) {
         mkdirSync(dir, { recursive: true });
-        writeFileSync(filePath, toObsidianMarkdown(entry), 'utf-8');
+        writeFileSync(filePath, toObsidianMarkdown(entry, resolvedLinks), 'utf-8');
       }
 
       files.push(relPath);

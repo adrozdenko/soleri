@@ -85,7 +85,7 @@ export function dedupItems(items: ClassifiedItem[], vault: Vault): DedupResult[]
     return {
       item,
       isDuplicate,
-      bestMatchId: isDuplicate ? bestMatchId : undefined,
+      bestMatchId,
       similarity: bestSimilarity,
     };
   });

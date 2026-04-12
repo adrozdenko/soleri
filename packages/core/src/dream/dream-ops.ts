@@ -8,11 +8,18 @@ import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from '../runtime/types.js';
 import { DreamEngine } from './dream-engine.js';
 import { ensureDreamSchema } from './schema.js';
+import { OperationLogger } from '../vault/operation-log.js';
 
 export function createDreamOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, curator } = runtime;
   ensureDreamSchema(vault.getProvider());
   const engine = new DreamEngine(vault, curator);
+  let opLogger: OperationLogger | null = null;
+  try {
+    opLogger = new OperationLogger(vault.getProvider());
+  } catch {
+    /* optional */
+  }
 
   return [
     {
@@ -31,7 +38,21 @@ export function createDreamOps(runtime: AgentRuntime): OpDefinition[] {
             return { skipped: true, reason: gate.reason, status: engine.getStatus() };
           }
         }
-        return engine.run();
+        const result = engine.run();
+        if (opLogger) {
+          try {
+            opLogger.log(
+              'dream',
+              'dream_run',
+              `Dream cycle: ${result.duplicatesFound} dupes, ${result.staleArchived} stale archived`,
+              result.duplicatesFound + result.staleArchived,
+              { durationMs: result.durationMs, contradictions: result.contradictionsFound },
+            );
+          } catch {
+            /* best-effort */
+          }
+        }
+        return result;
       },
     },
     {

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 import { createCuratorExtraOps } from '../curator-extra-ops.js';
+import { createSelfHealOps } from '../self-heal-ops.js';
 
 export function createCuratorFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { curator } = runtime;
@@ -202,5 +203,6 @@ export function createCuratorFacadeOps(runtime: AgentRuntime): OpDefinition[] {
 
     // ─── Satellite ops ───────────────────────────────────────────
     ...createCuratorExtraOps(runtime),
+    ...createSelfHealOps(runtime),
   ];
 }

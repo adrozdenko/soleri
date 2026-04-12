@@ -67,3 +67,19 @@ export interface IntakePreviewResult {
   chunkText: string;
   pageRange: { start: number; end: number };
 }
+
+export interface ContradictionFlag {
+  newItemTitle: string;
+  newItemType: string;
+  existingEntryId: string;
+  existingEntryTitle: string;
+  existingEntryType: string;
+  similarity: number;
+}
+
+export interface EnrichmentInfo {
+  entryId: string;
+  entryTitle: string;
+  similarity: number;
+  fieldsUpdated: string[];
+}

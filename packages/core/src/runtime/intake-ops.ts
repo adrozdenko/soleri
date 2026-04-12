@@ -9,6 +9,8 @@ import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { IntakePipeline } from '../intake/intake-pipeline.js';
 import type { TextIngester, IngestSource } from '../intake/text-ingester.js';
+import type { SourceRegistry } from '../intake/source-registry.js';
+import type { OperationLogger } from '../vault/operation-log.js';
 import { coerceArray } from './schema-helpers.js';
 
 /**
@@ -19,6 +21,8 @@ import { coerceArray } from './schema-helpers.js';
 export function createIntakeOps(
   pipeline: IntakePipeline | null,
   textIngester?: TextIngester | null,
+  sourceRegistry?: SourceRegistry | null,
+  opLogger?: OperationLogger | null,
 ): OpDefinition[] {
   return [
     // ─── Ingest Book ──────────────────────────────────────────────
@@ -143,10 +147,24 @@ export function createIntakeOps(
       }),
       handler: async (params) => {
         if (!textIngester) return { error: 'Text ingester not configured (LLM client required)' };
-        return textIngester.ingestUrl(params.url as string, {
+        const result = await textIngester.ingestUrl(params.url as string, {
           domain: params.domain as string | undefined,
           tags: params.tags as string[] | undefined,
         });
+        if (opLogger && result.ingested > 0) {
+          try {
+            opLogger.log(
+              'ingest',
+              'ingest_url',
+              `Ingested ${result.ingested} from ${params.url}`,
+              result.ingested,
+              { url: params.url, duplicates: result.duplicates, enriched: result.enriched },
+            );
+          } catch {
+            /* best-effort */
+          }
+        }
+        return result;
       },
     },
 
@@ -178,10 +196,24 @@ export function createIntakeOps(
           url: params.url as string | undefined,
           author: params.author as string | undefined,
         };
-        return textIngester.ingestText(params.text as string, source, {
+        const result = await textIngester.ingestText(params.text as string, source, {
           domain: params.domain as string | undefined,
           tags: params.tags as string[] | undefined,
         });
+        if (opLogger && result.ingested > 0) {
+          try {
+            opLogger.log(
+              'ingest',
+              'ingest_text',
+              `Ingested ${result.ingested} from "${source.title}"`,
+              result.ingested,
+              { sourceType: source.type, duplicates: result.duplicates, enriched: result.enriched },
+            );
+          } catch {
+            /* best-effort */
+          }
+        }
+        return result;
       },
     },
 
@@ -222,6 +254,54 @@ export function createIntakeOps(
           },
         }));
         return textIngester.ingestBatch(items);
+      },
+    },
+
+    // ─── Source Registry (#LLM-Wiki) ──────────────────────────────
+    {
+      name: 'list_sources',
+      description:
+        'List ingested sources with provenance tracking. Shows what was ingested and when.',
+      auth: 'read',
+      schema: z.object({
+        domain: z.string().optional().describe('Filter by domain'),
+        limit: z.number().optional().default(50).describe('Max results'),
+      }),
+      handler: async (params) => {
+        if (!sourceRegistry) return { error: 'Source registry not configured' };
+        return {
+          sources: sourceRegistry.listSources({
+            domain: params.domain as string | undefined,
+            limit: params.limit as number,
+          }),
+        };
+      },
+    },
+    {
+      name: 'get_source',
+      description: 'Get details for a specific ingested source.',
+      auth: 'read',
+      schema: z.object({
+        sourceId: z.string().describe('Source ID to look up'),
+      }),
+      handler: async (params) => {
+        if (!sourceRegistry) return { error: 'Source registry not configured' };
+        const source = sourceRegistry.getSource(params.sourceId as string);
+        if (!source) return { error: `Source not found: ${params.sourceId}` };
+        return source;
+      },
+    },
+    {
+      name: 'source_entries',
+      description: 'Get all vault entry IDs spawned from a specific source.',
+      auth: 'read',
+      schema: z.object({
+        sourceId: z.string().describe('Source ID to look up'),
+      }),
+      handler: async (params) => {
+        if (!sourceRegistry) return { error: 'Source registry not configured' };
+        const entryIds = sourceRegistry.getSourceEntries(params.sourceId as string);
+        return { sourceId: params.sourceId, entryIds, count: entryIds.length };
       },
     },
   ];

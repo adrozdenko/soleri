@@ -15,6 +15,7 @@ import { syncEntryToMarkdown } from '../vault/vault-markdown-sync.js';
 import { autoLinkWithReport } from '../vault/vault-entries.js';
 import { agentKnowledgeDir, projectKnowledgeDir, findProjectRoot } from '../paths.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
+import { OperationLogger } from '../vault/operation-log.js';
 
 /**
  * Create the 4 intelligent capture operations for an agent runtime.
@@ -23,6 +24,12 @@ import type { IntelligenceEntry } from '../intelligence/types.js';
  */
 export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault, brain, governance, linkManager, config } = runtime;
+  let opLogger: OperationLogger | null = null;
+  try {
+    opLogger = new OperationLogger(vault.getProvider());
+  } catch {
+    /* optional */
+  }
 
   return [
     // ─── Capture ──────────────────────────────────────────────────
@@ -484,6 +491,88 @@ export function createCaptureOps(runtime: AgentRuntime): OpDefinition[] {
               reason: err instanceof Error ? err.message : String(err),
             },
           };
+        }
+      },
+    },
+
+    // ─── File Synthesis (#LLM-Wiki) ─────────────────────────────────
+    {
+      name: 'file_synthesis',
+      description:
+        'Save a query synthesis as a new vault entry, linked to the entries it drew from. ' +
+        'Captures valuable search results so explorations compound in the knowledge base.',
+      auth: 'write',
+      schema: z.object({
+        query: z.string().describe('The original query that produced this synthesis.'),
+        synthesis: z.string().describe('The synthesized answer text to save.'),
+        citedEntryIds: z
+          .array(z.string())
+          .describe('IDs of vault entries that informed the answer.'),
+        domain: z.string().optional().default('general').describe('Knowledge domain.'),
+        tags: z.array(z.string()).optional().default([]).describe('Additional tags.'),
+      }),
+      handler: async (params) => {
+        const query = params.query as string;
+        const synthesis = params.synthesis as string;
+        const citedEntryIds = params.citedEntryIds as string[];
+        const domain = (params.domain as string) ?? 'general';
+        const tags = (params.tags as string[]) ?? [];
+
+        const title = query.length > 80 ? `${query.slice(0, 77)}...` : query;
+        const entry: IntelligenceEntry = {
+          id: `synthesis-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          type: 'rule',
+          domain,
+          title,
+          severity: 'suggestion',
+          description: synthesis,
+          context: `Synthesized from ${citedEntryIds.length} vault entries on ${new Date().toISOString().split('T')[0]}`,
+          tags: [...tags, 'synthesis', 'source:synthesis'],
+          origin: 'user',
+        };
+
+        try {
+          if (brain) {
+            const result = brain.enrichAndCapture(entry);
+            if (result.blocked) {
+              return { captured: false, reason: 'duplicate', existingId: result.duplicate?.id };
+            }
+          } else {
+            vault.add(entry);
+          }
+
+          // Auto-link to cited entries
+          if (linkManager) {
+            for (const citedId of citedEntryIds) {
+              try {
+                linkManager.addLink(entry.id, citedId, 'extends', 'synthesis source');
+              } catch {
+                // best-effort linking
+              }
+            }
+          }
+
+          if (opLogger) {
+            try {
+              opLogger.log(
+                'capture',
+                'file_synthesis',
+                `Synthesis: "${title}" linked to ${citedEntryIds.length} entries`,
+                1,
+                { domain, citedCount: citedEntryIds.length },
+              );
+            } catch {
+              /* best-effort */
+            }
+          }
+          return {
+            captured: true,
+            id: entry.id,
+            title: entry.title,
+            linkedTo: citedEntryIds.length,
+          };
+        } catch (err) {
+          return { captured: false, error: err instanceof Error ? err.message : String(err) };
         }
       },
     },
