@@ -434,14 +434,22 @@ Soleri supports dense vector embeddings for semantic search. When enabled, vault
 ### Setup
 
 1. Sign up at [voyageai.com](https://voyageai.com) for an API key (200M free tokens included)
-2. Set the environment variable:
+2. Create a `.env` file in your agent directory (this file is gitignored by default):
    ```bash
-   export VOYAGE_API_KEY=your-key-here
+   VOYAGE_API_KEY=your-key-here
    ```
-3. Enable embeddings via feature flag:
-   ```bash
-   export SOLERI_FLAG_EMBEDDING_ENABLED=true
+3. Add embedding config to your `agent.yaml`:
+   ```yaml
+   embedding:
+     provider: voyage
+     model: voyage-3.5
    ```
+4. Enable the feature flag (one-time, persisted):
+   ```
+   {agent}_admin op:admin_set_flag params:{ flag: "embedding-enabled", enabled: true }
+   ```
+
+> **Never put API keys in `agent.yaml`** -- it's tracked in git. Use `.env` instead. The engine loads `.env` from the agent directory at startup.
 
 ### How it works
 
