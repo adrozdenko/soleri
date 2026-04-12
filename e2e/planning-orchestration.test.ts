@@ -247,12 +247,13 @@ describe('E2E: planning-orchestration', () => {
       expect(data.driftCount).toBe(0);
     });
 
-    it('complete_plan should transition from reconciling to completed', async () => {
-      const res = await callOp(planFacade, 'complete_plan', { planId });
+    it('plan should be auto-completed after reconcile', async () => {
+      // plan_reconcile with autoComplete=true (default) chains through
+      // complete_plan + lifecycle automatically
+      const res = await callOp(planFacade, 'get_plan', { planId });
       expect(res.success).toBe(true);
-      const data = res.data as { completed: boolean; plan: { status: string } };
-      expect(data.completed).toBe(true);
-      expect(data.plan.status).toBe('completed');
+      const data = res.data as { status: string };
+      expect(data.status).toBe('completed');
     });
 
     it('plan_complete_lifecycle should capture knowledge', async () => {
@@ -429,14 +430,8 @@ describe('E2E: planning-orchestration', () => {
     });
 
     it('orchestrate_complete should run epilogue', async () => {
-      // orchestrate_complete calls planner.complete() which requires reconciling status.
-      // The plan is currently in 'executing' status after orchestrate_execute.
-      // We need to reconcile first (which auto-transitions to completed).
-      // Since orchestrate_complete expects to call planner.complete(), and
-      // reconcile auto-completes, we skip the reconcile here and let
-      // orchestrate_complete handle it directly from executing state.
-      // orchestrate_complete calls planner.complete() which needs reconciling.
-      // Let's transition to reconciling first.
+      // plan_reconcile with autoComplete=true (default) chains through
+      // complete_plan + lifecycle automatically
       const reconcileRes = await callOp(planFacade, 'plan_reconcile', {
         planId: orchPlanId,
         actualOutcome: 'Notification service built successfully',
@@ -444,17 +439,12 @@ describe('E2E: planning-orchestration', () => {
       });
       expect(reconcileRes.success).toBe(true);
 
-      // After reconcile, plan is in 'reconciling' (FSM no longer auto-completes).
-      // Verify the plan is in reconciling status with reconciliation data.
+      // After reconcile with autoComplete, plan is completed
       const getRes = await callOp(planFacade, 'get_plan', { planId: orchPlanId });
       expect(getRes.success).toBe(true);
       const planData = getRes.data as { status: string; reconciliation: { accuracy: number } };
-      expect(planData.status).toBe('reconciling');
+      expect(planData.status).toBe('completed');
       expect(planData.reconciliation.accuracy).toBe(100);
-
-      // Complete the plan so it reaches 'completed' status
-      const completeRes = await callOp(planFacade, 'complete_plan', { planId: orchPlanId });
-      expect(completeRes.success).toBe(true);
     });
 
     it('orchestrate_complete on a separate plan should capture knowledge', async () => {

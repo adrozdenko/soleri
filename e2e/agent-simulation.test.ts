@@ -387,10 +387,10 @@ describe('Agent Simulation: First Week', () => {
       expect(res.driftCount).toBe(0);
     });
 
-    it('14b. Complete plan — transition from reconciling to completed', async () => {
-      const res = await op('plan', 'complete_plan', { planId: state.planId });
-      expect(res.completed).toBe(true);
-      expect((res.plan as Record<string, unknown>).status).toBe('completed');
+    it('14b. Plan auto-completed after reconcile', async () => {
+      // plan_reconcile with autoComplete=true (default) already completed the plan
+      const res = await op('plan', 'get_plan', { planId: state.planId });
+      expect(res.status).toBe('completed');
     });
 
     it('15. Complete lifecycle — should capture knowledge', async () => {
