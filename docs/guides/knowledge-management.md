@@ -426,3 +426,55 @@ Set a preset:
 | After dedup    | `curator_consolidate` (dry-run) | Plan cleanup            |
 | After review   | `curator_consolidate` (real)    | Execute cleanup         |
 | After cleanup  | `radar_candidates`              | Review pending captures |
+
+## Vector Embeddings
+
+Soleri supports dense vector embeddings for semantic search. When enabled, vault search combines keyword matching (FTS5) with vector similarity for more accurate results.
+
+### Setup
+
+1. Sign up at [voyageai.com](https://voyageai.com) for an API key (200M free tokens included)
+2. Set the environment variable:
+   ```bash
+   export VOYAGE_API_KEY=your-key-here
+   ```
+3. Enable embeddings via feature flag:
+   ```bash
+   export SOLERI_FLAG_EMBEDDING_ENABLED=true
+   ```
+
+### How it works
+
+Soleri uses Voyage AI's `voyage-3.5` model (1024 dimensions) for dense vector embeddings.
+
+- New vault entries are automatically embedded on ingest (best-effort, non-blocking)
+- Search uses hybrid FTS5 + vector scoring -- both keywords and semantic similarity
+- The brain auto-adapts: when embeddings are available, vector weight activates at 0.15
+
+You don't need to change how you search. The vault detects whether embeddings exist and blends them into results automatically.
+
+### Backfill existing entries
+
+Entries created before embeddings were enabled won't have vectors. Use `embed_rebuild` to backfill:
+
+```
+{agent}_embedding op:embed_rebuild
+```
+
+This embeds all vault entries that don't have vectors yet. It's idempotent -- safe to run multiple times.
+
+Check progress:
+
+```
+{agent}_embedding op:embed_status
+```
+
+### Cost
+
+Voyage AI gives 200M free tokens per account. The math works out well:
+
+- Average vault entry is ~200 tokens
+- A vault with 1,000 entries costs ~200K tokens to fully embed
+- That's 0.1% of the free tier
+
+For most users, the free tier is more than enough. You'd need roughly 1M vault entries to exhaust it.

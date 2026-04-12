@@ -5,6 +5,7 @@
 import type { PersistenceProvider } from '../persistence/types.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { StoredVector } from '../embeddings/types.js';
+import type { EmbeddingPipeline } from '../embeddings/pipeline.js';
 import type { LinkManager } from './linking.js';
 import { computeContentHash } from './content-hash.js';
 import type { SearchResult, VaultStats } from './vault-types.js';
@@ -13,6 +14,11 @@ export interface AutoLinkConfig {
   linkManager: LinkManager | null;
   enabled: boolean;
   maxLinks: number;
+}
+
+export interface AutoEmbedConfig {
+  pipeline: EmbeddingPipeline | null;
+  enabled: boolean;
 }
 
 /** Updatable fields on an entry. */
@@ -55,6 +61,33 @@ export function autoLink(entryId: string, config: AutoLinkConfig): void {
   } catch {
     /* best-effort */
   }
+}
+
+/**
+ * Fire-and-forget embedding for newly seeded entries.
+ * Best-effort: never blocks vault writes, never throws.
+ * Skips when pipeline is null, disabled, or batch >100 entries.
+ */
+export function autoEmbed(
+  entryList: Array<Pick<IntelligenceEntry, 'id' | 'title' | 'description' | 'context'>>,
+  config: AutoEmbedConfig,
+): void {
+  if (!config.pipeline || !config.enabled) return;
+  if (entryList.length > 100) return; // use batchEmbed for bulk imports
+
+  const pipeline = config.pipeline;
+  Promise.resolve()
+    .then(async () => {
+      for (const entry of entryList) {
+        const text = [entry.title, entry.description, entry.context].filter(Boolean).join('\n');
+        if (text) {
+          await pipeline.embedEntry(entry.id, text);
+        }
+      }
+    })
+    .catch(() => {
+      /* best-effort — swallow all errors */
+    });
 }
 
 /** Result of a single link suggestion with auto-link status. */
@@ -114,6 +147,7 @@ export function seed(
   provider: PersistenceProvider,
   entries: IntelligenceEntry[],
   alc: AutoLinkConfig,
+  aec?: AutoEmbedConfig,
 ): number {
   const sql = `
     INSERT INTO entries (id,type,domain,title,severity,description,context,example,counter_example,why,tags,applies_to,valid_from,valid_until,content_hash,tier,origin)
@@ -123,8 +157,8 @@ export function seed(
       why=excluded.why,tags=excluded.tags,applies_to=excluded.applies_to,valid_from=excluded.valid_from,valid_until=excluded.valid_until,
       content_hash=excluded.content_hash,tier=excluded.tier,origin=excluded.origin,updated_at=unixepoch()
   `;
-  return provider.transaction(() => {
-    let count = 0;
+  const count = provider.transaction(() => {
+    let c = 0;
     for (const entry of entries) {
       provider.run(sql, {
         id: entry.id,
@@ -145,20 +179,28 @@ export function seed(
         tier: entry.tier ?? 'agent',
         origin: entry.origin ?? 'agent',
       });
-      count++;
+      c++;
     }
     // Auto-link after insert; skip large batches (>100) — use relink_vault for bulk imports.
     if (entries.length <= 100) {
       for (const entry of entries) autoLink(entry.id, alc);
     }
-    return count;
+    return c;
   });
+
+  // Auto-embed after transaction completes — fire-and-forget, never blocks writes.
+  if (aec) {
+    autoEmbed(entries, aec);
+  }
+
+  return count;
 }
 
 export function seedDedup(
   provider: PersistenceProvider,
   entries: IntelligenceEntry[],
   alc: AutoLinkConfig,
+  aec?: AutoEmbedConfig,
 ): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
   return provider.transaction(() => {
     const results: Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> =
@@ -169,7 +211,7 @@ export function seedDedup(
       if (existing && existing !== entry.id) {
         results.push({ id: entry.id, action: 'duplicate', existingId: existing });
       } else {
-        seed(provider, [entry], alc);
+        seed(provider, [entry], alc, aec);
         results.push({ id: entry.id, action: 'inserted' });
       }
     }
@@ -181,11 +223,12 @@ export function installPack(
   provider: PersistenceProvider,
   entries: IntelligenceEntry[],
   alc: AutoLinkConfig,
+  aec?: AutoEmbedConfig,
 ): { installed: number; skipped: number } {
   let installed = 0,
     skipped = 0;
   const tagged = entries.map((e) => ({ ...e, origin: 'pack' as const }));
-  for (const r of seedDedup(provider, tagged, alc)) {
+  for (const r of seedDedup(provider, tagged, alc, aec)) {
     if (r.action === 'inserted') installed++;
     else skipped++;
   }
@@ -315,8 +358,9 @@ export function add(
   provider: PersistenceProvider,
   entry: IntelligenceEntry,
   alc: AutoLinkConfig,
+  aec?: AutoEmbedConfig,
 ): void {
-  seed(provider, [entry], alc);
+  seed(provider, [entry], alc, aec);
 }
 
 export function remove(provider: PersistenceProvider, id: string): boolean {
@@ -328,10 +372,11 @@ export function update(
   id: string,
   fields: EntryUpdateFields,
   alc: AutoLinkConfig,
+  aec?: AutoEmbedConfig,
 ): IntelligenceEntry | null {
   const existing = get(provider, id);
   if (!existing) return null;
-  seed(provider, [{ ...existing, ...fields }], alc);
+  seed(provider, [{ ...existing, ...fields }], alc, aec);
   return get(provider, id);
 }
 

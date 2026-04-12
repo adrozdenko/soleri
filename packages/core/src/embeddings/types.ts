@@ -34,6 +34,8 @@ export interface EmbeddingConfig {
   baseUrl?: string;
   /** Max texts per batch API call (provider-specific default if omitted). */
   batchSize?: number;
+  /** Input type hint for providers that support it (e.g. Voyage AI). */
+  inputType?: 'document' | 'query';
 }
 
 /** A persisted embedding vector tied to a vault entry. */

@@ -58,6 +58,7 @@ import { classifyEntry } from '../curator/classifier.js';
 import type { AgentRuntimeConfig, AgentRuntime } from './types.js';
 import type { EmbeddingProvider } from '../embeddings/types.js';
 import { OpenAIEmbeddingProvider } from '../embeddings/openai-provider.js';
+import { VoyageEmbeddingProvider } from '../embeddings/voyage-provider.js';
 import { EmbeddingPipeline } from '../embeddings/pipeline.js';
 import { loadPersona } from '../persona/loader.js';
 import { generatePersonaInstructions } from '../persona/prompt-generator.js';
@@ -126,11 +127,18 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
       if (embeddingConfig.provider === 'openai') {
         const openaiPool = new KeyPool(loadKeyPoolConfig(agentId).openai);
         embeddingProvider = new OpenAIEmbeddingProvider(embeddingConfig, openaiPool);
+      } else if (embeddingConfig.provider === 'voyage') {
+        const voyageConfig = { ...embeddingConfig };
+        if (!voyageConfig.apiKey && process.env.VOYAGE_API_KEY) {
+          voyageConfig.apiKey = process.env.VOYAGE_API_KEY;
+        }
+        embeddingProvider = new VoyageEmbeddingProvider(voyageConfig);
       }
       // Future providers (ollama, etc.) would be added here
 
       if (embeddingProvider) {
         embeddingPipeline = new EmbeddingPipeline(embeddingProvider, vault.getProvider());
+        vault.setEmbeddingPipeline(embeddingPipeline);
         logger.info(
           `[Embedding] Initialized: ${embeddingProvider.providerName}/${embeddingProvider.model} (${embeddingProvider.dimensions}d)`,
         );

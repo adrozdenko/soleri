@@ -3,6 +3,7 @@
  *
  * Covers:
  * 1. OpenAIEmbeddingProvider (mocked fetch)
+ * 1b. VoyageEmbeddingProvider (mocked fetch)
  * 2. Vector storage CRUD (real in-memory SQLite)
  * 3. EmbeddingPipeline (batch + incremental)
  * 4. Brain hybrid search backward compatibility
@@ -20,6 +21,7 @@ import {
 } from '../vault/vault-entries.js';
 import { EmbeddingPipeline } from '../embeddings/pipeline.js';
 import { OpenAIEmbeddingProvider } from '../embeddings/openai-provider.js';
+import { VoyageEmbeddingProvider } from '../embeddings/voyage-provider.js';
 import type { EmbeddingProvider, EmbeddingResult } from '../embeddings/types.js';
 import type { PersistenceProvider } from '../persistence/types.js';
 import { Vault } from '../vault/vault.js';
@@ -68,6 +70,16 @@ function errorResponse(status: number, message: string): Response {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+/** Build a mock Voyage AI-compatible fetch response. */
+function voyageOkResponse(vectors: number[][], tokens: number): Response {
+  const body = JSON.stringify({
+    data: vectors.map((embedding, index) => ({ embedding, index })),
+    usage: { total_tokens: tokens },
+    model: 'voyage-3.5',
+  });
+  return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
 
 // =============================================================================
@@ -213,6 +225,218 @@ describe('OpenAIEmbeddingProvider', () => {
     await expect(provider.embed(['fail'])).rejects.toThrow(/503/);
     // 3 attempts total (default maxAttempts)
     expect(fetchSpy).toHaveBeenCalledTimes(3);
+  });
+});
+
+// =============================================================================
+// 1b. VoyageEmbeddingProvider
+// =============================================================================
+
+describe('VoyageEmbeddingProvider', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, 'fetch');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('throws when no API key or key pool is provided', () => {
+    expect(() => new VoyageEmbeddingProvider({ provider: 'voyage', model: 'voyage-3.5' })).toThrow(
+      /API key/,
+    );
+  });
+
+  it('returns empty result for empty input', async () => {
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+    });
+
+    const result = await provider.embed([]);
+    expect(result.vectors).toHaveLength(0);
+    expect(result.tokensUsed).toBe(0);
+    expect(result.model).toBe('voyage-3.5');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('sends correct request body with input_type: document (default)', async () => {
+    const vec = [0.1, 0.2, 0.3];
+    fetchSpy.mockResolvedValueOnce(voyageOkResponse([vec], 5));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+    });
+
+    await provider.embed(['hello']);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://api.voyageai.com/v1/embeddings');
+
+    const body = JSON.parse(options.body as string);
+    expect(body).toEqual({
+      model: 'voyage-3.5',
+      input: ['hello'],
+      input_type: 'document',
+    });
+  });
+
+  it('sends input_type: query when configured', async () => {
+    const vec = [0.1, 0.2, 0.3];
+    fetchSpy.mockResolvedValueOnce(voyageOkResponse([vec], 5));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+      inputType: 'query',
+    });
+
+    await provider.embed(['search query']);
+
+    const [, options] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(options.body as string);
+    expect(body.input_type).toBe('query');
+  });
+
+  it('parses response correctly and returns vectors + tokensUsed', async () => {
+    const vec1 = [0.1, 0.2, 0.3];
+    const vec2 = [0.4, 0.5, 0.6];
+    fetchSpy.mockResolvedValueOnce(voyageOkResponse([vec1, vec2], 12));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+    });
+
+    const result = await provider.embed(['hello', 'world']);
+
+    expect(result.vectors).toHaveLength(2);
+    expect(result.vectors[0]).toEqual(vec1);
+    expect(result.vectors[1]).toEqual(vec2);
+    expect(result.tokensUsed).toBe(12);
+    expect(result.model).toBe('voyage-3.5');
+  });
+
+  it('chunks requests that exceed batchSize', async () => {
+    const vec1 = [0.1, 0.2];
+    const vec2 = [0.3, 0.4];
+    const vec3 = [0.5, 0.6];
+
+    fetchSpy
+      .mockResolvedValueOnce(voyageOkResponse([vec1, vec2], 8))
+      .mockResolvedValueOnce(voyageOkResponse([vec3], 4));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+      batchSize: 2,
+    });
+
+    const result = await provider.embed(['a', 'b', 'c']);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(result.vectors).toHaveLength(3);
+    expect(result.vectors[0]).toEqual(vec1);
+    expect(result.vectors[1]).toEqual(vec2);
+    expect(result.vectors[2]).toEqual(vec3);
+    expect(result.tokensUsed).toBe(12);
+  });
+
+  it('retries on 429 rate limit and succeeds', async () => {
+    const vec = [0.1, 0.2, 0.3];
+    fetchSpy
+      .mockResolvedValueOnce(errorResponse(429, 'Rate limited'))
+      .mockResolvedValueOnce(voyageOkResponse([vec], 5));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+    });
+
+    const result = await provider.embed(['hello']);
+    expect(result.vectors[0]).toEqual(vec);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws immediately on 401 (not retryable)', async () => {
+    fetchSpy.mockResolvedValue(errorResponse(401, 'Unauthorized'));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-bad-key',
+    });
+
+    await expect(provider.embed(['test'])).rejects.toThrow(LLMError);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries on 500 server error', async () => {
+    const vec = [0.9, 0.8];
+    fetchSpy
+      .mockResolvedValueOnce(errorResponse(500, 'Internal Server Error'))
+      .mockResolvedValueOnce(voyageOkResponse([vec], 3));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+    });
+
+    const result = await provider.embed(['retry me']);
+    expect(result.vectors[0]).toEqual(vec);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('exhausts retries on persistent 5xx', async () => {
+    fetchSpy.mockImplementation(async () => errorResponse(503, 'Service Unavailable'));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+    });
+
+    await expect(provider.embed(['fail'])).rejects.toThrow(/503/);
+    // 3 attempts total (default maxAttempts)
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it('uses default model voyage-3.5 when not specified', () => {
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: '',
+      apiKey: 'va-test-key',
+    });
+
+    expect(provider.model).toBe('voyage-3.5');
+  });
+
+  it('respects custom baseUrl', async () => {
+    const vec = [0.1, 0.2];
+    fetchSpy.mockResolvedValueOnce(voyageOkResponse([vec], 3));
+
+    const provider = new VoyageEmbeddingProvider({
+      provider: 'voyage',
+      model: 'voyage-3.5',
+      apiKey: 'va-test-key',
+      baseUrl: 'https://custom-proxy.example.com/',
+    });
+
+    await provider.embed(['test']);
+
+    const [url] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://custom-proxy.example.com/v1/embeddings');
   });
 });
 

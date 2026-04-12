@@ -551,7 +551,7 @@ const CHAIN_TO_CAPABILITY: Record<string, string> = {
 
   // Architecture
   'architecture-search': 'architecture.search',
-  'cognee-design-search': 'cognee.search',
+  'embedding-design-search': 'embedding.search',
 
   // Planning
   'plan-create': 'plan.create',
@@ -770,8 +770,8 @@ Every agent gets this. Non-removable. These capabilities map to the existing 13+
       "requires": ["prompt"],
     },
 
-    // Cognee (hybrid search)
-    { "id": "cognee.search", "provides": ["graph-results"], "requires": ["query"] },
+    // Embedding (hybrid search)
+    { "id": "embedding.search", "provides": ["graph-results"], "requires": ["query"] },
 
     // Admin
     { "id": "admin.health", "provides": ["status"], "requires": [] },
@@ -811,7 +811,7 @@ soleri agent capabilities
 #     plan.create, plan.approve, plan.execute, plan.reconcile,
 #     orchestrate.plan, orchestrate.execute, orchestrate.complete,
 #     identity.activate, identity.route,
-#     cognee.search, admin.health, admin.tools, debug.patterns
+#     embedding.search, admin.health, admin.tools, debug.patterns
 #   design-system (6):
 #     color.validate, color.parse, color.suggest,
 #     token.check, token.migrate, component.scaffold

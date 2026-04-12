@@ -47,6 +47,7 @@
     "scaffolder",
     "secretlint",
     "soleri",
+    "voyageai",
     "sqlite",
     "tfidf",
     "toolchain",

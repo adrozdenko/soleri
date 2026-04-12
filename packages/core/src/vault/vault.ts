@@ -8,7 +8,8 @@ import * as entries from './vault-entries.js';
 import * as memories from './vault-memories.js';
 import * as maintenance from './vault-maintenance.js';
 import { DomainSummaryManager } from './domain-summaries.js';
-import type { AutoLinkConfig, EntryUpdateFields } from './vault-entries.js';
+import type { AutoLinkConfig, AutoEmbedConfig, EntryUpdateFields } from './vault-entries.js';
+import type { EmbeddingPipeline } from '../embeddings/pipeline.js';
 import type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault-types.js';
 
 export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault-types.js';
@@ -27,6 +28,8 @@ export class Vault {
   private linkManager: LinkManager | null = null;
   private autoLinkEnabled = true;
   private autoLinkMaxLinks = 3;
+  private embeddingPipeline: EmbeddingPipeline | null = null;
+  private autoEmbedEnabled = true;
   private _domainSummaries: DomainSummaryManager | null = null;
 
   constructor(providerOrPath: PersistenceProvider | string = ':memory:') {
@@ -54,6 +57,13 @@ export class Vault {
     };
   }
 
+  private getAutoEmbedConfig(): AutoEmbedConfig {
+    return {
+      pipeline: this.embeddingPipeline,
+      enabled: this.autoEmbedEnabled,
+    };
+  }
+
   setLinkManager(mgr: LinkManager, opts?: { enabled?: boolean; maxLinks?: number }): void {
     this.linkManager = mgr;
     if (opts?.enabled !== undefined) this.autoLinkEnabled = opts.enabled;
@@ -62,6 +72,15 @@ export class Vault {
 
   isAutoLinkEnabled(): boolean {
     return this.autoLinkEnabled && this.linkManager !== null;
+  }
+
+  setEmbeddingPipeline(pipeline: EmbeddingPipeline, opts?: { enabled?: boolean }): void {
+    this.embeddingPipeline = pipeline;
+    if (opts?.enabled !== undefined) this.autoEmbedEnabled = opts.enabled;
+  }
+
+  isAutoEmbedEnabled(): boolean {
+    return this.autoEmbedEnabled && this.embeddingPipeline !== null;
   }
 
   get domainSummaries(): DomainSummaryManager {
@@ -78,19 +97,34 @@ export class Vault {
   // ── Entry operations (vault-entries.ts) ───────────────────────────────
 
   seed(entryList: IntelligenceEntry[]): number {
-    const result = entries.seed(this.provider, entryList, this.getAutoLinkConfig());
+    const result = entries.seed(
+      this.provider,
+      entryList,
+      this.getAutoLinkConfig(),
+      this.getAutoEmbedConfig(),
+    );
     this.invalidateDomains(entryList);
     return result;
   }
   installPack(entryList: IntelligenceEntry[]): { installed: number; skipped: number } {
-    const result = entries.installPack(this.provider, entryList, this.getAutoLinkConfig());
+    const result = entries.installPack(
+      this.provider,
+      entryList,
+      this.getAutoLinkConfig(),
+      this.getAutoEmbedConfig(),
+    );
     this.invalidateDomains(entryList);
     return result;
   }
   seedDedup(
     entryList: IntelligenceEntry[],
   ): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
-    const result = entries.seedDedup(this.provider, entryList, this.getAutoLinkConfig());
+    const result = entries.seedDedup(
+      this.provider,
+      entryList,
+      this.getAutoLinkConfig(),
+      this.getAutoEmbedConfig(),
+    );
     this.invalidateDomains(entryList);
     return result;
   }
@@ -129,7 +163,7 @@ export class Vault {
     return entries.stats(this.provider);
   }
   add(entry: IntelligenceEntry): void {
-    entries.add(this.provider, entry, this.getAutoLinkConfig());
+    entries.add(this.provider, entry, this.getAutoLinkConfig(), this.getAutoEmbedConfig());
     this.domainSummaries.markStale(entry.domain);
   }
   remove(id: string): boolean {
@@ -144,7 +178,13 @@ export class Vault {
   update(id: string, fields: EntryUpdateFields): IntelligenceEntry | null {
     // Invalidate both old and new domain if domain is changing
     const existing = entries.get(this.provider, id);
-    const result = entries.update(this.provider, id, fields, this.getAutoLinkConfig());
+    const result = entries.update(
+      this.provider,
+      id,
+      fields,
+      this.getAutoLinkConfig(),
+      this.getAutoEmbedConfig(),
+    );
     if (result) {
       this.domainSummaries.markStale(result.domain);
       if (existing && existing.domain !== result.domain) {

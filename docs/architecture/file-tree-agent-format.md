@@ -74,7 +74,7 @@ greeting: > # optional — auto-generated if omitted
 engine:
   vault: ~/.my-agent/vault.db # vault SQLite path (default: ~/.{id}/vault.db)
   learning: true # enable brain/learning loop (default: true)
-  cognee: false # enable vector search (default: false)
+  embedding: false # enable vector search via Voyage AI (default: false, requires VOYAGE_API_KEY)
 
 # ─── Vault Connections ─────────────────────
 vaults: # optional — link to external vaults
@@ -114,7 +114,7 @@ The engine reads `agent.yaml` at startup to:
 
 - Connect to the specified vault
 - Load domain packs
-- Configure learning/cognee
+- Configure learning/embeddings
 - Register domain-specific tools
 
 ### .gitignore
@@ -369,5 +369,5 @@ The engine reads `agent.yaml` on startup to configure itself:
 
 - Which vault to connect
 - Which domain packs to load
-- Whether to enable cognee/learning
+- Whether to enable embeddings/learning
 - Agent ID for tool naming prefix
