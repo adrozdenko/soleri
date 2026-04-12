@@ -100,6 +100,7 @@ function createMockRuntime(): AgentRuntime {
       verifyDeliverables: vi.fn(() => ({ verified: true, stale: 0 })),
       list: vi.fn(() => [plan]),
       remove: vi.fn(),
+      complete: vi.fn(() => ({ ...plan, status: 'completed' })),
     },
     vault: {
       add: vi.fn(),
@@ -114,6 +115,7 @@ function createMockRuntime(): AgentRuntime {
       getSessionByPlanId: vi.fn(() => null),
       extractKnowledge: vi.fn(() => ({ proposals: [] })),
     },
+    playbookExecutor: null,
   } as unknown as AgentRuntime;
 }
 
@@ -225,7 +227,18 @@ describe('createPlanningExtraOps', () => {
   });
 
   describe('plan_reconcile', () => {
-    it('reconciles with accuracy and drift count', async () => {
+    it('reconciles and autoCompletes by default', async () => {
+      // planner.get needs to return a completed plan after complete() is called
+      vi.mocked(runtime.planner.get).mockReturnValue(
+        makePlan({
+          status: 'completed',
+          decisions: [],
+          reconciliation: {
+            accuracy: 85,
+            driftItems: [{ type: 'added', description: 'Extra test' }],
+          },
+        }) as unknown,
+      );
       const result = (await findOp(ops, 'plan_reconcile').handler({
         planId: 'plan-1',
         actualOutcome: 'All tasks completed',
@@ -233,6 +246,86 @@ describe('createPlanningExtraOps', () => {
       expect(result.reconciled).toBe(true);
       expect(result.accuracy).toBe(85);
       expect(result.driftCount).toBe(1);
+      expect(result.autoCompleted).toBe(true);
+      expect(runtime.planner.complete).toHaveBeenCalledWith('plan-1');
+    });
+
+    it('skips autoComplete when autoComplete=false', async () => {
+      const result = (await findOp(ops, 'plan_reconcile').handler({
+        planId: 'plan-1',
+        actualOutcome: 'All tasks completed',
+        autoComplete: false,
+      })) as Record<string, unknown>;
+      expect(result.reconciled).toBe(true);
+      expect(result.accuracy).toBe(85);
+      expect(result.autoCompleted).toBeUndefined();
+      expect(runtime.planner.complete).not.toHaveBeenCalled();
+    });
+
+    it('returns warning when planner.complete() throws', async () => {
+      vi.mocked(runtime.planner.complete).mockImplementation(() => {
+        throw new Error('Unresolved tasks');
+      });
+      const result = (await findOp(ops, 'plan_reconcile').handler({
+        planId: 'plan-1',
+        actualOutcome: 'All tasks completed',
+      })) as Record<string, unknown>;
+      expect(result.reconciled).toBe(true);
+      expect(result.autoCompleted).toBe(false);
+      expect(result.autoCompleteWarning).toBe('Unresolved tasks');
+    });
+
+    it('returns warning when playbook gates block completion', async () => {
+      vi.mocked(runtime.planner.get).mockReturnValue(
+        makePlan({
+          status: 'reconciling',
+          playbookSessionId: 'pb-session-1',
+          reconciliation: { accuracy: 85, driftItems: [] },
+        }) as unknown,
+      );
+      (runtime as unknown as Record<string, unknown>).playbookExecutor = {
+        complete: vi.fn(() => ({
+          gatesPassed: false,
+          unsatisfiedGates: ['tests_pass: All tests must pass'],
+        })),
+      };
+      const result = (await findOp(ops, 'plan_reconcile').handler({
+        planId: 'plan-1',
+        actualOutcome: 'All tasks completed',
+      })) as Record<string, unknown>;
+      expect(result.reconciled).toBe(true);
+      expect(result.autoCompleted).toBe(false);
+      expect(result.autoCompleteWarning).toContain('Playbook gates unsatisfied');
+    });
+
+    it('runs brain session end and GH issue close during autoComplete', async () => {
+      vi.mocked(runtime.planner.get).mockReturnValue(
+        makePlan({
+          status: 'completed',
+          decisions: [],
+          reconciliation: { accuracy: 90, driftItems: [] },
+          githubIssue: { owner: 'org', repo: 'repo', number: 99 },
+        }) as unknown,
+      );
+      vi.mocked(runtime.brainIntelligence.getSessionByPlanId).mockReturnValue({
+        id: 'brain-session-1',
+        endedAt: null,
+      } as unknown);
+      // Reset playbookExecutor to null for this test
+      (runtime as unknown as Record<string, unknown>).playbookExecutor = null;
+      const { closeIssueWithComment } = await import('./github-integration.js');
+      const result = (await findOp(ops, 'plan_reconcile').handler({
+        planId: 'plan-1',
+        actualOutcome: 'All tasks completed',
+      })) as Record<string, unknown>;
+      expect(result.autoCompleted).toBe(true);
+      const lifecycle = result.lifecycle as Record<string, unknown>;
+      expect(lifecycle.githubIssueClosed).toBe(99);
+      expect(lifecycle.brainSession).toBe('session-1');
+      expect(closeIssueWithComment).toHaveBeenCalled();
+      expect(runtime.brainIntelligence.lifecycle).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'end', sessionId: 'brain-session-1' }),
+      );
     });
   });
 

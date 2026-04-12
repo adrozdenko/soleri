@@ -23,6 +23,117 @@ import { entryToPlaybookDefinition } from '../playbooks/index.js';
 import { closeIssueWithComment } from './github-integration.js';
 import { recordPlanFeedback } from './plan-feedback-helper.js';
 
+// ─── Lifecycle Epilogue Helper ──────────────────────────────────────
+// Shared by plan_reconcile (autoComplete) and plan_complete_lifecycle.
+// Captures vault knowledge, ends brain session, records feedback, closes GH issue.
+
+interface LifecycleEpilogueDeps {
+  vault: AgentRuntime['vault'];
+  brain: AgentRuntime['brain'];
+  brainIntelligence: AgentRuntime['brainIntelligence'];
+}
+
+interface LifecycleEpilogueResult {
+  knowledgeCaptured: number;
+  feedbackRecorded: number;
+  patternsAdded: number;
+  antiPatternsAdded: number;
+  reconciliation: unknown;
+  brainSession: string | null;
+  brainExtraction: { proposals: number } | null;
+  githubIssueClosed: number | null;
+}
+
+async function runLifecycleEpilogue(
+  plan: {
+    id: string;
+    objective: string;
+    decisions: (string | { decision: string })[];
+    reconciliation?: { accuracy?: number } | null;
+    githubIssue?: { owner: string; repo: string; number: number } | null;
+  },
+  deps: LifecycleEpilogueDeps,
+  patterns: string[] = [],
+  antiPatterns: string[] = [],
+): Promise<LifecycleEpilogueResult> {
+  const { vault, brain, brainIntelligence } = deps;
+  let captured = 0;
+
+  // Capture patterns into vault
+  for (const p of patterns) {
+    vault.add({
+      id: `plan-pattern-${plan.id}-${captured}`,
+      type: 'pattern',
+      domain: 'planning',
+      title: p,
+      severity: 'suggestion',
+      description: `Discovered during plan: ${plan.objective}`,
+      tags: ['plan-knowledge', plan.id],
+    });
+    captured++;
+  }
+
+  // Capture anti-patterns into vault
+  for (const ap of antiPatterns) {
+    vault.add({
+      id: `plan-antipattern-${plan.id}-${captured}`,
+      type: 'anti-pattern',
+      domain: 'planning',
+      title: ap,
+      severity: 'warning',
+      description: `Discovered during plan: ${plan.objective}`,
+      tags: ['plan-knowledge', plan.id],
+    });
+    captured++;
+  }
+
+  // End brain session so the learning pipeline can extract patterns
+  let session = null;
+  let extraction = null;
+  const brainSession = brainIntelligence.getSessionByPlanId(plan.id);
+  if (brainSession && !brainSession.endedAt) {
+    session = brainIntelligence.lifecycle({
+      action: 'end',
+      sessionId: brainSession.id,
+      planId: plan.id,
+      planOutcome: 'completed',
+    });
+    try {
+      extraction = brainIntelligence.extractKnowledge(brainSession.id);
+    } catch {
+      // Not enough signal — extraction is best-effort
+    }
+  }
+
+  // Auto-record positive feedback for vault entries used as recommendations
+  const feedbackRecorded = recordPlanFeedback(plan, brain, brainIntelligence);
+
+  // Auto-close linked GitHub issue if plan has one
+  let issueClosed = false;
+  if (plan.githubIssue) {
+    const { owner, repo, number: issueNum } = plan.githubIssue;
+    const accuracy = plan.reconciliation?.accuracy ?? 'N/A';
+    const comment =
+      `Plan \`${plan.id}\` completed.\n\n` +
+      `**Objective:** ${plan.objective}\n` +
+      `**Accuracy:** ${accuracy}/100\n` +
+      `**Knowledge captured:** ${captured} entries`;
+    await closeIssueWithComment(owner, repo, issueNum, comment);
+    issueClosed = true;
+  }
+
+  return {
+    knowledgeCaptured: captured,
+    feedbackRecorded,
+    patternsAdded: patterns.length,
+    antiPatternsAdded: antiPatterns.length,
+    reconciliation: plan.reconciliation ?? null,
+    brainSession: session?.id ?? brainSession?.id ?? null,
+    brainExtraction: extraction ? { proposals: extraction.proposals.length } : null,
+    githubIssueClosed: issueClosed ? (plan.githubIssue?.number ?? null) : null,
+  };
+}
+
 /**
  * Create 22 extended planning operations for an agent runtime.
  *
@@ -174,7 +285,7 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'plan_reconcile',
       description:
-        'Capture what actually happened vs what was planned. Produces a drift analysis with accuracy score. Works on executing or completed plans.',
+        'Capture what actually happened vs what was planned. Produces a drift analysis with accuracy score. By default, automatically completes the plan and runs lifecycle cleanup (brain session end, feedback, GH issue close). Set autoComplete=false to reconcile only.',
       auth: 'write',
       schema: z.object({
         planId: z.string().describe('Plan ID to reconcile'),
@@ -195,6 +306,13 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           )
           .optional()
           .describe('Specific drift items — differences between plan and reality'),
+        autoComplete: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe(
+            'When true (default), automatically complete the plan and run lifecycle cleanup after reconciliation. Set to false to reconcile only.',
+          ),
       }),
       handler: async (params) => {
         const plan = planner.reconcile(params.planId as string, {
@@ -268,7 +386,7 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           // Manifest reading is best-effort
         }
 
-        return {
+        const reconcileResult = {
           reconciled: true,
           accuracy: plan.reconciliation!.accuracy,
           driftCount: plan.reconciliation!.driftItems.length,
@@ -276,6 +394,56 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
           rerunReport,
           plan,
         };
+
+        // ─── Auto-Complete Chain ──────────────────────────────────
+        const autoComplete = (params.autoComplete as boolean | undefined) ?? true;
+        if (!autoComplete) return reconcileResult;
+
+        try {
+          // Check playbook gates before completing
+          const currentPlan = planner.get(params.planId as string);
+          if (currentPlan?.playbookSessionId && runtime.playbookExecutor) {
+            const completeResult = runtime.playbookExecutor.complete(
+              currentPlan.playbookSessionId,
+              {},
+            );
+            if (
+              !('error' in completeResult) &&
+              !completeResult.gatesPassed &&
+              completeResult.unsatisfiedGates.length > 0
+            ) {
+              return {
+                ...reconcileResult,
+                autoCompleted: false,
+                autoCompleteWarning: `Playbook gates unsatisfied: ${completeResult.unsatisfiedGates.join(', ')}`,
+              };
+            }
+          }
+
+          // Complete the plan (reconciling → completed)
+          planner.complete(params.planId as string);
+
+          // Run lifecycle epilogue (brain, vault, feedback, GH issue)
+          const completedPlan = planner.get(params.planId as string);
+          const lifecycle = await runLifecycleEpilogue(completedPlan!, {
+            vault,
+            brain,
+            brainIntelligence,
+          });
+
+          return {
+            ...reconcileResult,
+            plan: completedPlan,
+            autoCompleted: true,
+            lifecycle,
+          };
+        } catch (err) {
+          return {
+            ...reconcileResult,
+            autoCompleted: false,
+            autoCompleteWarning: (err as Error).message,
+          };
+        }
       },
     },
 
@@ -302,82 +470,15 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
 
           const patterns = (params.patterns as string[] | undefined) ?? [];
           const antiPatterns = (params.antiPatterns as string[] | undefined) ?? [];
-          let captured = 0;
 
-          // Capture patterns into vault
-          for (const p of patterns) {
-            vault.add({
-              id: `plan-pattern-${plan.id}-${captured}`,
-              type: 'pattern',
-              domain: 'planning',
-              title: p,
-              severity: 'suggestion',
-              description: `Discovered during plan: ${plan.objective}`,
-              tags: ['plan-knowledge', plan.id],
-            });
-            captured++;
-          }
+          const result = await runLifecycleEpilogue(
+            plan,
+            { vault, brain, brainIntelligence },
+            patterns,
+            antiPatterns,
+          );
 
-          // Capture anti-patterns into vault
-          for (const ap of antiPatterns) {
-            vault.add({
-              id: `plan-antipattern-${plan.id}-${captured}`,
-              type: 'anti-pattern',
-              domain: 'planning',
-              title: ap,
-              severity: 'warning',
-              description: `Discovered during plan: ${plan.objective}`,
-              tags: ['plan-knowledge', plan.id],
-            });
-            captured++;
-          }
-
-          // End brain session so the learning pipeline can extract patterns
-          let session = null;
-          let extraction = null;
-          const brainSession = brainIntelligence.getSessionByPlanId(plan.id);
-          if (brainSession && !brainSession.endedAt) {
-            session = brainIntelligence.lifecycle({
-              action: 'end',
-              sessionId: brainSession.id,
-              planId: plan.id,
-              planOutcome: 'completed',
-            });
-            try {
-              extraction = brainIntelligence.extractKnowledge(brainSession.id);
-            } catch {
-              // Not enough signal — extraction is best-effort
-            }
-          }
-
-          // Auto-record positive feedback for vault entries used as recommendations
-          const feedbackRecorded = recordPlanFeedback(plan, brain, brainIntelligence);
-
-          // Auto-close linked GitHub issue if plan has one
-          let issueClosed = false;
-          if (plan.githubIssue) {
-            const { owner, repo, number: issueNum } = plan.githubIssue;
-            const accuracy = plan.reconciliation?.accuracy ?? 'N/A';
-            const comment =
-              `Plan \`${plan.id}\` completed.\n\n` +
-              `**Objective:** ${plan.objective}\n` +
-              `**Accuracy:** ${accuracy}/100\n` +
-              `**Knowledge captured:** ${captured} entries`;
-            await closeIssueWithComment(owner, repo, issueNum, comment);
-            issueClosed = true;
-          }
-
-          return {
-            completed: true,
-            knowledgeCaptured: captured,
-            feedbackRecorded,
-            patternsAdded: patterns.length,
-            antiPatternsAdded: antiPatterns.length,
-            reconciliation: plan.reconciliation ?? null,
-            brainSession: session?.id ?? brainSession?.id ?? null,
-            brainExtraction: extraction ? { proposals: extraction.proposals.length } : null,
-            githubIssueClosed: issueClosed ? plan.githubIssue?.number : null,
-          };
+          return { completed: true, ...result };
         } catch (err) {
           return { error: (err as Error).message };
         }
