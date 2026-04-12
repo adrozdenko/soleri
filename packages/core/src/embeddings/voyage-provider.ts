@@ -77,14 +77,19 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
    * Embed one or more texts, returning one vector per input text.
    * Automatically chunks requests that exceed {@link batchSize}.
    */
-  async embed(texts: string[]): Promise<EmbeddingResult> {
+  async embed(
+    texts: string[],
+    opts?: { inputType?: 'document' | 'query' },
+  ): Promise<EmbeddingResult> {
     if (texts.length === 0) {
       return { vectors: [], tokensUsed: 0, model: this.model };
     }
 
+    const resolvedInputType = opts?.inputType ?? this.inputType;
+
     // Single batch — no chunking needed
     if (texts.length <= this.batchSize) {
-      return this.callApi(texts);
+      return this.callApi(texts, resolvedInputType);
     }
 
     // Chunk into batches and concatenate results
@@ -94,7 +99,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
     for (let offset = 0; offset < texts.length; offset += this.batchSize) {
       const chunk = texts.slice(offset, offset + this.batchSize);
       // oxlint-disable-next-line eslint(no-await-in-loop)
-      const result = await this.callApi(chunk);
+      const result = await this.callApi(chunk, resolvedInputType);
       allVectors.push(...result.vectors);
       totalTokens += result.tokensUsed;
     }
@@ -116,7 +121,10 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
     throw new LLMError('No API key available for Voyage embeddings', { retryable: false });
   }
 
-  private async callApi(texts: string[]): Promise<EmbeddingResult> {
+  private async callApi(
+    texts: string[],
+    inputType: 'document' | 'query',
+  ): Promise<EmbeddingResult> {
     const doRequest = async (): Promise<EmbeddingResult> => {
       const apiKey = this.resolveApiKey();
 
@@ -129,7 +137,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
         body: JSON.stringify({
           model: this.model,
           input: texts,
-          input_type: this.inputType,
+          input_type: inputType,
         }),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });

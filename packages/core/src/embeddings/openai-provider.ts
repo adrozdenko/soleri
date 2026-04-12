@@ -71,7 +71,10 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
    * Embed one or more texts, returning one vector per input text.
    * Automatically chunks requests that exceed {@link batchSize}.
    */
-  async embed(texts: string[]): Promise<EmbeddingResult> {
+  async embed(
+    texts: string[],
+    _opts?: { inputType?: 'document' | 'query' },
+  ): Promise<EmbeddingResult> {
     if (texts.length === 0) {
       return { vectors: [], tokensUsed: 0, model: this.model };
     }

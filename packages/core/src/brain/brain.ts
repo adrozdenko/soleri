@@ -181,7 +181,7 @@ export class Brain {
 
     if (this.embeddingProvider) {
       try {
-        const embResult = await this.embeddingProvider.embed([query]);
+        const embResult = await this.embeddingProvider.embed([query], { inputType: 'query' });
         if (embResult.vectors.length > 0 && embResult.vectors[0].length > 0) {
           queryEmbedding = embResult.vectors[0];
           const vectorHits = this.vault.cosineSearch(queryEmbedding, fetchLimit);

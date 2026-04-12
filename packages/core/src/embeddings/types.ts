@@ -19,7 +19,7 @@ export interface EmbeddingProvider {
   /** Vector dimensions produced by this model. */
   readonly dimensions: number;
   /** Embed one or more texts, returning one vector per text. */
-  embed(texts: string[]): Promise<EmbeddingResult>;
+  embed(texts: string[], opts?: { inputType?: 'document' | 'query' }): Promise<EmbeddingResult>;
 }
 
 /** Configuration for initializing an embedding provider. */

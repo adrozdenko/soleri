@@ -85,8 +85,11 @@ export function autoEmbed(
         }
       }
     })
-    .catch(() => {
-      /* best-effort — swallow all errors */
+    .catch((err) => {
+      console.error(
+        '[autoEmbed] embedding failed:',
+        err instanceof Error ? err.message : String(err),
+      );
     });
 }
 
