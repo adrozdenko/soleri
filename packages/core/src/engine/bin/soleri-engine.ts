@@ -84,13 +84,17 @@ async function main(): Promise<void> {
   const enabledModules = resolveModules(engineProfile, engineModules);
   console.error(`${tag} Profile: ${engineProfile ?? 'full'} (${enabledModules.size} modules)`);
 
-  // 3. Create runtime (with persona from agent.yaml if present)
+  // 3. Create runtime (with persona and embedding config from agent.yaml)
   const personaConfig = config.persona as Record<string, unknown> | undefined;
+  const embeddingConfig = config.embedding as
+    | import('../../embeddings/types.js').EmbeddingConfig
+    | undefined;
   const runtime = createAgentRuntime({
     agentId,
     vaultPath,
     agentDir,
     persona: personaConfig as import('../../persona/types.js').PersonaConfig | undefined,
+    embedding: embeddingConfig,
   });
 
   console.error(`${tag} Vault: ${vaultPath}`);
