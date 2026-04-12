@@ -52,6 +52,27 @@ describe('shared-rules', () => {
     expect(content).toContain('user-gated');
   });
 
+  describe('Auto-Dream Gate on Session Start', () => {
+    it('includes dream gate check in Session Start Protocol', () => {
+      expect(content).toContain('op:dream_status');
+      expect(content).toContain('gateEligible');
+    });
+
+    it('includes dream_run instruction when gate is eligible', () => {
+      expect(content).toContain('op:dream_run');
+    });
+
+    it('includes dream report table format', () => {
+      expect(content).toContain('duplicatesFound');
+      expect(content).toContain('staleArchived');
+      expect(content).toContain('contradictionsFound');
+    });
+
+    it('specifies force:false for auto-triggered dreams', () => {
+      expect(content).toContain('force: false');
+    });
+  });
+
   describe('getModularEngineRules', () => {
     it('returns full content when no features specified', () => {
       const modular = getModularEngineRules();
