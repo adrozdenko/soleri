@@ -400,6 +400,44 @@ describe('plan-facade', () => {
     expect((result.data as Record<string, unknown>).error).toContain('not found');
   });
 
+  // ─── create_plan quota warning ─────────────────────────────────
+
+  it('create_plan includes quota warning when 3+ plans are executing', async () => {
+    const runtime = makeRuntime(vault);
+    const quotaOps = captureOps(createPlanFacadeOps(runtime));
+
+    // Create and advance 3 plans to executing state
+    for (let i = 0; i < 3; i++) {
+      const plan = runtime.planner.create({
+        objective: `Executing plan ${i}`,
+        scope: `scope-${i}`,
+        forceCreate: true,
+      });
+      runtime.planner.approve(plan.id);
+      runtime.planner.startExecution(plan.id);
+    }
+
+    // Create a 4th plan — should include quota warning
+    const result = await executeOp(quotaOps, 'create_plan', {
+      objective: 'New plan while 3 are executing',
+      scope: 'test',
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+    expect(data.quotaWarning).toBeDefined();
+    expect(data.quotaWarning).toContain('3 plans already in executing state');
+  });
+
+  it('create_plan does not include quota warning when fewer than 3 plans executing', async () => {
+    const result = await executeOp(ops, 'create_plan', {
+      objective: 'Plan with no quota warning',
+      scope: 'test',
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+    expect(data.quotaWarning).toBeUndefined();
+  });
+
   // ─── create_plan vault enrichment ─────────────────────────────
 
   it('create_plan enriches decisions with vault patterns when matches exist', async () => {

@@ -128,6 +128,7 @@ function mockRuntime(): AgentRuntime {
         scope: 'test scope',
       }),
       getActive: vi.fn().mockReturnValue([]),
+      getExecuting: vi.fn().mockReturnValue([]),
       startExecution: vi.fn().mockReturnValue({ id: 'plan-1', status: 'executing' }),
       complete: vi.fn().mockReturnValue({ id: 'plan-1', status: 'completed' }),
       setGitHubProjection: vi.fn(),

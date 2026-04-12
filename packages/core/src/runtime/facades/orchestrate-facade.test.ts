@@ -99,6 +99,27 @@ describe('orchestrate-facade', () => {
     expect(data.message).toContain('Session #2');
   });
 
+  it('session_start auto-closes stale plans and reports count', async () => {
+    // Create a runtime with a planner we can manipulate
+    const rt = makeRuntime(vault);
+    const rtOps = captureOps(createOrchestrateFacadeOps(rt));
+
+    // Create a draft plan in the past so it's stale (>30 min TTL)
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    vi.spyOn(Date, 'now').mockReturnValue(oneHourAgo);
+    const plan = rt.planner.create({ objective: 'Stale draft plan', scope: 'test' });
+    vi.restoreAllMocks();
+
+    const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/stale' });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+    expect(data.stalePlansClosed).toBe(1);
+
+    // The plan should now be completed
+    const closed = rt.planner.get(plan.id);
+    expect(closed?.status).toBe('completed');
+  });
+
   // ─── project_get ───────────────────────────────────────────────
 
   it('project_get returns not found for unregistered project', async () => {

@@ -94,6 +94,58 @@ describe('Planner', () => {
       expect(ids).toContain(planB.id);
       expect(ids).toHaveLength(2);
     });
+
+    it('should return existing plan when objective is similar (dedup)', () => {
+      const original = planner.create({
+        objective: 'Fix login timeout issue in auth module',
+        scope: 'auth',
+      });
+      const duplicate = planner.create({
+        objective: 'Fix login timeout issue in auth module',
+        scope: 'auth-v2',
+      });
+      expect(duplicate.id).toBe(original.id);
+      expect((duplicate as { _deduplicated?: boolean })._deduplicated).toBe(true);
+      expect(planner.list()).toHaveLength(1);
+    });
+
+    it('should create new plan when forceCreate is true despite similar objective', () => {
+      const original = planner.create({
+        objective: 'Fix login timeout issue in auth module',
+        scope: 'auth',
+      });
+      const forced = planner.create({
+        objective: 'Fix login timeout issue in auth module',
+        scope: 'auth-v2',
+        forceCreate: true,
+      });
+      expect(forced.id).not.toBe(original.id);
+      expect(planner.list()).toHaveLength(2);
+    });
+
+    it('should not dedup against completed plans', () => {
+      const original = planner.create({ objective: 'Fix login timeout', scope: 'auth' });
+      planner.approve(original.id);
+      planner.startExecution(original.id);
+      // Skip tasks so auto-reconcile works
+      for (const task of original.tasks) {
+        planner.updateTask(original.id, task.id, 'completed');
+      }
+      planner.complete(original.id);
+
+      const newPlan = planner.create({ objective: 'Fix login timeout', scope: 'auth' });
+      expect(newPlan.id).not.toBe(original.id);
+    });
+
+    it('should create new plan when objectives are sufficiently different', () => {
+      planner.create({ objective: 'Fix login timeout issue', scope: 'auth' });
+      const different = planner.create({
+        objective: 'Add i18n support for multi-language rendering',
+        scope: 'i18n',
+      });
+      expect(planner.list()).toHaveLength(2);
+      expect((different as { _deduplicated?: boolean })._deduplicated).toBeUndefined();
+    });
   });
 
   describe('get', () => {
@@ -1080,6 +1132,49 @@ describe('Planner', () => {
 
       const task = planner.get(plan.id)!.tasks[0];
       expect(task.fixIterations).toBe(2);
+    });
+  });
+
+  describe('closeStale with configurable TTL', () => {
+    it('should use custom executingTtlMs — short TTL closes executing plan', () => {
+      // Use forceClose to verify the planner instance TTL config is wired
+      const customPlanner = new Planner(join(tempDir, 'ttl-plans.json'), {
+        executingTtlMs: 0, // zero = close immediately
+      });
+      const plan = customPlanner.create({
+        objective: 'Executing plan with zero TTL',
+        scope: 'test',
+      });
+      customPlanner.approve(plan.id);
+      customPlanner.startExecution(plan.id);
+
+      // closeStale() without args should use instance executingTtlMs (0)
+      const result = customPlanner.closeStale();
+      expect(result.closedIds).toContain(plan.id);
+      expect(customPlanner.get(plan.id)?.status).toBe('completed');
+    });
+
+    it('should use custom draftTtlMs — short TTL closes draft plan', () => {
+      const customPlanner = new Planner(join(tempDir, 'ttl-drafts.json'), {
+        draftTtlMs: 0, // zero = close immediately
+      });
+      customPlanner.create({ objective: 'Draft with zero TTL', scope: 'test' });
+
+      const result = customPlanner.closeStale();
+      expect(result.closedIds.length).toBe(1);
+    });
+
+    it('should not close executing plans when TTL is very long', () => {
+      const customPlanner = new Planner(join(tempDir, 'ttl-long.json'), {
+        executingTtlMs: 365 * 24 * 60 * 60 * 1000, // 1 year
+      });
+      const plan = customPlanner.create({ objective: 'Long-running plan', scope: 'test' });
+      customPlanner.approve(plan.id);
+      customPlanner.startExecution(plan.id);
+
+      const result = customPlanner.closeStale();
+      expect(result.closedIds).toHaveLength(0);
+      expect(customPlanner.get(plan.id)?.status).toBe('executing');
     });
   });
 });

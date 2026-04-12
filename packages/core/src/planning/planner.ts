@@ -10,6 +10,7 @@ export * from './plan-lifecycle.js';
 export * from './reconciliation-engine.js';
 export * from './task-verifier.js';
 export * from './planner-types.js';
+export * from './objective-similarity.js';
 import type {
   TaskStatus,
   PlanTask,
@@ -36,6 +37,7 @@ import {
   buildAutoReconcileInput,
   computeExecutionSummary,
 } from './reconciliation-engine.js';
+import { findSimilarPlan } from './objective-similarity.js';
 import type { ReconcileInput } from './reconciliation-engine.js';
 import {
   createEvidence,
@@ -52,15 +54,28 @@ export class Planner {
   private store: PlanStore;
   private gapOptions?: GapAnalysisOptions;
   private minGradeForApproval: PlanGrade;
+  private executingTtlMs: number;
+  private draftTtlMs: number;
 
   constructor(filePath: string, options?: GapAnalysisOptions | PlannerOptions) {
     this.filePath = filePath;
-    if (options && 'minGradeForApproval' in options) {
-      this.gapOptions = options.gapOptions;
-      this.minGradeForApproval = options.minGradeForApproval ?? 'A';
+    if (
+      options &&
+      ('minGradeForApproval' in options ||
+        'executingTtlMs' in options ||
+        'draftTtlMs' in options ||
+        'gapOptions' in options)
+    ) {
+      const opts = options as PlannerOptions;
+      this.gapOptions = opts.gapOptions;
+      this.minGradeForApproval = opts.minGradeForApproval ?? 'A';
+      this.executingTtlMs = opts.executingTtlMs ?? 24 * 60 * 60 * 1000;
+      this.draftTtlMs = opts.draftTtlMs ?? 30 * 60 * 1000;
     } else {
       this.gapOptions = options as GapAnalysisOptions | undefined;
       this.minGradeForApproval = 'A';
+      this.executingTtlMs = 24 * 60 * 60 * 1000;
+      this.draftTtlMs = 30 * 60 * 1000;
     }
     this.store = this.load();
   }
@@ -174,8 +189,19 @@ export class Planner {
     return task;
   }
 
-  create(params: Parameters<typeof createPlanObject>[0]): Plan {
+  create(
+    params: Parameters<typeof createPlanObject>[0] & { forceCreate?: boolean },
+  ): Plan & { _deduplicated?: boolean } {
     this.refresh();
+
+    // Dedup: check for active plans with a similar objective
+    if (!params.forceCreate) {
+      const match = findSimilarPlan(this.store.plans, params.objective);
+      if (match) {
+        return Object.assign(match.plan, { _deduplicated: true });
+      }
+    }
+
     const plan = createPlanObject(params);
     this.store.plans.push(plan);
     this.save();
@@ -566,8 +592,8 @@ export class Planner {
     this.refresh();
     const now = Date.now();
     const forceAll = olderThanMs === 0;
-    const defaultTtl = forceAll ? 0 : 30 * 60 * 1000; // 30 minutes for draft/approved
-    const executingTtl = forceAll ? 0 : (olderThanMs ?? 24 * 60 * 60 * 1000); // 24h default for executing/reconciling
+    const defaultTtl = forceAll ? 0 : (olderThanMs ?? this.draftTtlMs);
+    const executingTtl = forceAll ? 0 : (olderThanMs ?? this.executingTtlMs);
     const closed: Array<{ id: string; previousStatus: string; reason: string }> = [];
 
     for (const plan of this.store.plans) {

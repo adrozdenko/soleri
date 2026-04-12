@@ -40,9 +40,15 @@ export const LIFECYCLE_TRANSITIONS: Record<PlanStatus, PlanStatus[]> = {
   archived: [],
 };
 
+/** Default TTL for draft/approved plans: 30 minutes. */
+export const DEFAULT_DRAFT_TTL_MS = 30 * 60 * 1000;
+
+/** Default TTL for executing/validating/reconciling plans: 24 hours. */
+export const DEFAULT_EXECUTING_TTL_MS = 24 * 60 * 60 * 1000;
+
 /**
- * Statuses where the 30-minute TTL should NOT apply.
- * Plans in these states may span multiple sessions.
+ * Statuses where the short (draft) TTL should NOT apply.
+ * Plans in these states use the longer executing TTL instead.
  */
 export const NON_EXPIRING_STATUSES: PlanStatus[] = [
   'brainstorming',

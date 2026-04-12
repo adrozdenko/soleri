@@ -149,6 +149,15 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           ops: m.keyOps.map((op) => ({ name: op, description: m.description })),
         }));
 
+        // Auto-close stale plans before reporting executing plans
+        let stalePlansClosed = 0;
+        try {
+          const staleResult = runtime.planner.closeStale();
+          stalePlansClosed = staleResult.closedIds.length;
+        } catch {
+          // Non-critical — don't fail session start over stale cleanup
+        }
+
         const executingPlans = runtime.planner.getExecuting().map((p) => ({
           id: p.id,
           objective: p.objective,
@@ -205,6 +214,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           },
           preflight,
           orphansClosed,
+          stalePlansClosed,
           ...(stagingWarning ? { stagingWarning } : {}),
           ...(dreamInfo ? { dream: dreamInfo } : {}),
         };

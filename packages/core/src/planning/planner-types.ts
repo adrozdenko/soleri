@@ -224,4 +224,8 @@ export interface PlannerOptions {
   gapOptions?: GapAnalysisOptions;
   /** Minimum grade required for plan approval. Default: 'A'. Set to undefined to disable. */
   minGradeForApproval?: PlanGrade;
+  /** TTL in ms for executing/validating/reconciling plans in closeStale(). Default: 24h (86400000). */
+  executingTtlMs?: number;
+  /** TTL in ms for draft/approved plans in closeStale(). Default: 30 min (1800000). */
+  draftTtlMs?: number;
 }

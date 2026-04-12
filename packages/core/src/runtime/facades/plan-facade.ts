@@ -104,6 +104,13 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
 
         const allTasks = [...beforeTasks, ...userTasks, ...afterTasks];
 
+        // Quota warning: check executing plan count before creating
+        const executingCount = planner.getExecuting().length;
+        const quotaWarning =
+          executingCount >= 3
+            ? `Warning: ${executingCount} plans already in executing state. Consider reconciling or closing stale plans before creating new ones.`
+            : undefined;
+
         const plan = planner.create({
           objective,
           scope: params.scope as string,
@@ -124,6 +131,8 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           created: true,
           plan,
           vaultEntryIds,
+          ...(quotaWarning ? { quotaWarning } : {}),
+          ...(plan._deduplicated ? { deduplicated: true } : {}),
           playbook: playbook
             ? {
                 label: playbook.label,

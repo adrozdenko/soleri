@@ -209,6 +209,13 @@ export function createOrchestratePlanOp(ctx: OrchestratePlanningContext): OpDefi
       const planObjective =
         ((params as Record<string, unknown>)._enrichedObjective as string | undefined) ?? prompt;
 
+      // Quota warning: check executing plan count before creating
+      const executingCount = planner.getExecuting().length;
+      const quotaWarning =
+        executingCount >= 3
+          ? `Warning: ${executingCount} plans already in executing state. Consider reconciling or closing stale plans before creating new ones.`
+          : undefined;
+
       let legacyPlan;
       try {
         legacyPlan = planner.create({
@@ -231,6 +238,8 @@ export function createOrchestratePlanOp(ctx: OrchestratePlanningContext): OpDefi
           decisions,
         },
         recommendations,
+        ...(quotaWarning ? { quotaWarning } : {}),
+        ...(legacyPlan?._deduplicated ? { deduplicated: true } : {}),
         flow: {
           planId: plan.planId,
           intent: plan.intent,
