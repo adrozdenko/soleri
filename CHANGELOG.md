@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [9.21.0] — 2026-04-13
+
+### Added
+
+- **Voyage AI embedding provider** — New `VoyageEmbeddingProvider` using `voyage-3.5` model (1024 dimensions). Supports `input_type` optimization (`document` for storage, `query` for search), key pool rotation, batch chunking, and retry with graceful degradation. Zero new npm dependencies.
+- **Hybrid FTS5 + vector search** — `search_intelligent` now blends keyword matching (FTS5/BM25) with dense vector cosine similarity. Brain auto-activates vector weight (0.15) when embeddings are available.
+- **Auto-embed on ingest** — New vault entries are automatically embedded via fire-and-forget hook after `seed()`. Best-effort, non-blocking, skips batches >100.
+- **Engine `.env` loader** — The engine now reads `.env` from the agent directory at startup for API keys. Supports `export` prefix and quoted values. Existing env vars take precedence.
+- **Embedding ops** — `embed_status`, `embed_rebuild`, `embed_entry` ops via the embedding facade for monitoring, backfilling, and single-entry embedding.
+- **Embedding setup docs** — Updated `docs/guides/knowledge-management.md` with Voyage AI setup guide, backfill instructions, and API key safety warnings.
+
+### Changed
+
+- **`embed()` interface accepts `inputType` override** — `EmbeddingProvider.embed()` now takes optional `{ inputType: 'document' | 'query' }` so the same provider instance handles both storage and search embeddings optimally.
+- **Scaffolder `.gitignore` includes `.env`** — File-tree agent scaffolder now gitignores `.env` by default to prevent accidental secret commits.
+
+### Fixed
+
+- **autoEmbed error logging** — Was silently swallowing all errors (`.catch(() => {})`), now logs to stderr.
+- **`.env` parser handles `export` prefix** — Lines like `export VOYAGE_API_KEY=xxx` now parse correctly.
+- **Cognee references removed from architecture docs** — Replaced remaining Cognee references in `capability-packs.md` and `file-tree-agent-format.md` with embedding terminology.
+
 ## [9.20.1] — 2026-04-09
 
 ### Fixed

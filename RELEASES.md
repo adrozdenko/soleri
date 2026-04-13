@@ -5,7 +5,7 @@ Active release plan as of 2026-04-09. Source of truth for release sequencing, de
 ## Release Sequence
 
 ```
-v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v9.5 → v9.6 → v9.7 → v9.8 → v9.9 → v9.10 → v9.11 → v9.12 → v9.13 → v9.14 → v9.15 → v9.16 → v9.19 → v9.20 → v10.0
+v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v9.5 → v9.6 → v9.7 → v9.8 → v9.9 → v9.10 → v9.11 → v9.12 → v9.13 → v9.14 → v9.15 → v9.16 → v9.19 → v9.20 → v9.21 → v1.0.0
 ```
 
 | Release    | Milestone                           | Issues | Status                 | Depends On                  | Release Checklist |
@@ -18,6 +18,7 @@ v9.1.1 → v9.1 → v9.2 → v9.3 → v9.4 → v9.5 → v9.6 → v9.7 → v9.8 �
 | **v9.5**   | Performance, Windows & Forge Polish | 16     | **Shipped 2026-03-27** | v9.4                        | #401              |
 | **v9.6**   | Adapter & Subagent Foundations      | 12     | **Shipped 2026-03-27** | v9.5                        | —                 |
 | **v9.7.2** | Hook Pack Settings Fix              | 1      | **Shipped 2026-03-29**  | v9.7.1                      | —                 |
+| **v9.21.0** | Voyage AI embeddings, hybrid FTS5+vector search, auto-embed on ingest, .env loader | — | **Shipped 2026-04-13** | v9.20.4 | — |
 | **v9.20.1** | Fresh-machine drift, uninstall all targets, stale task normalization | — | **Shipped 2026-04-09** | v9.20.0 | — |
 | **v9.20.0** | Transcript memory lane, Zod v4 compatibility | — | **Shipped 2026-04-08** | v9.19.1 | — |
 | **v9.19.1** | Bug fixes and stability improvements | — | **Shipped 2026-04-07** | v9.16.3 | — |
