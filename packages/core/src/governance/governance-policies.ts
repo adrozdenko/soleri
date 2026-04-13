@@ -1,3 +1,4 @@
+import { resolve as resolvePath } from 'node:path';
 import type { PersistenceProvider } from '../persistence/types.js';
 import type {
   PolicyType,
@@ -70,12 +71,24 @@ export const DEFAULT_PRESET: PolicyPreset = 'moderate';
 export class GovernancePolicies {
   constructor(private provider: PersistenceProvider) {}
 
+  /**
+   * Normalize a project path before DB I/O. Every public method on this class
+   * must funnel projectPath through here so callers that pass '.' vs the
+   * resolved absolute path read and write the same row. Mirrors the
+   * normalizeTs() pattern used for vault timestamps — single chokepoint,
+   * caller-agnostic correctness.
+   */
+  private normalizePath(projectPath: string): string {
+    return resolvePath(projectPath);
+  }
+
   getPolicy(projectPath: string): VaultPolicy {
+    const normalized = this.normalizePath(projectPath);
     const defaults = POLICY_PRESETS[DEFAULT_PRESET];
 
     const rows = this.provider.all<{ policy_type: string; config: string }>(
       'SELECT policy_type, config FROM vault_policies WHERE project_path = ? AND enabled = 1',
-      [projectPath],
+      [normalized],
     );
 
     let quotas = defaults.quotas;
@@ -89,7 +102,7 @@ export class GovernancePolicies {
       else if (row.policy_type === 'auto-capture') autoCapture = parsed;
     }
 
-    return { projectPath, quotas, retention, autoCapture };
+    return { projectPath: normalized, quotas, retention, autoCapture };
   }
 
   setPolicy(
@@ -98,9 +111,10 @@ export class GovernancePolicies {
     config: Record<string, unknown>,
     changedBy?: string,
   ): void {
+    const normalized = this.normalizePath(projectPath);
     const existing = this.provider.get<{ config: string }>(
       'SELECT config FROM vault_policies WHERE project_path = ? AND policy_type = ?',
-      [projectPath, policyType],
+      [normalized, policyType],
     );
     const oldConfig = existing ? existing.config : null;
 
@@ -109,33 +123,34 @@ export class GovernancePolicies {
        VALUES (?, ?, ?, unixepoch())
        ON CONFLICT(project_path, policy_type)
        DO UPDATE SET config = excluded.config, updated_at = excluded.updated_at`,
-      [projectPath, policyType, JSON.stringify(config)],
+      [normalized, policyType, JSON.stringify(config)],
     );
 
     this.provider.run(
       'INSERT INTO vault_policy_changes (project_path, policy_type, old_config, new_config, changed_by) VALUES (?, ?, ?, ?, ?)',
-      [projectPath, policyType, oldConfig, JSON.stringify(config), changedBy ?? null],
+      [normalized, policyType, oldConfig, JSON.stringify(config), changedBy ?? null],
     );
   }
 
   applyPreset(projectPath: string, preset: PolicyPreset, changedBy?: string): void {
+    const normalized = this.normalizePath(projectPath);
     const config = POLICY_PRESETS[preset];
     if (!config) throw new Error(`Unknown preset: ${preset}`);
 
     this.setPolicy(
-      projectPath,
+      normalized,
       'quota',
       config.quotas as unknown as Record<string, unknown>,
       changedBy,
     );
     this.setPolicy(
-      projectPath,
+      normalized,
       'retention',
       config.retention as unknown as Record<string, unknown>,
       changedBy,
     );
     this.setPolicy(
-      projectPath,
+      normalized,
       'auto-capture',
       config.autoCapture as unknown as Record<string, unknown>,
       changedBy,
@@ -143,7 +158,8 @@ export class GovernancePolicies {
   }
 
   getQuotaStatus(projectPath: string): QuotaStatus {
-    const policy = this.getPolicy(projectPath);
+    const normalized = this.normalizePath(projectPath);
+    const policy = this.getPolicy(normalized);
 
     const totalRow = this.provider.get<{ count: number }>('SELECT COUNT(*) as count FROM entries');
     const total = totalRow?.count ?? 0;
@@ -178,6 +194,7 @@ export class GovernancePolicies {
   }
 
   getAuditTrail(projectPath: string, limit?: number): PolicyAuditEntry[] {
+    const normalized = this.normalizePath(projectPath);
     const rows = this.provider.all<{
       id: number;
       project_path: string;
@@ -188,7 +205,7 @@ export class GovernancePolicies {
       changed_at: number;
     }>(
       'SELECT id, project_path, policy_type, old_config, new_config, changed_by, changed_at FROM vault_policy_changes WHERE project_path = ? ORDER BY changed_at DESC LIMIT ?',
-      [projectPath, limit ?? 50],
+      [normalized, limit ?? 50],
     );
 
     return rows.map((row) => ({
@@ -207,8 +224,9 @@ export class GovernancePolicies {
     entry: { type: string; category: string; title?: string },
     countPending: (projectPath: string) => number,
   ): PolicyDecision {
-    const policy = this.getPolicy(projectPath);
-    const quotaStatus = this.getQuotaStatus(projectPath);
+    const normalized = this.normalizePath(projectPath);
+    const policy = this.getPolicy(normalized);
+    const quotaStatus = this.getQuotaStatus(normalized);
     let decision: PolicyDecision;
 
     if (!policy.autoCapture.enabled) {
@@ -219,7 +237,7 @@ export class GovernancePolicies {
         quotaStatus,
       };
     } else if (policy.autoCapture.requireReview) {
-      const pendingCount = countPending(projectPath);
+      const pendingCount = countPending(normalized);
       if (pendingCount >= policy.autoCapture.maxPendingProposals) {
         decision = {
           allowed: false,
@@ -257,7 +275,7 @@ export class GovernancePolicies {
       decision = { allowed: true, action: 'capture', quotaStatus };
     }
 
-    this.logEvaluation(projectPath, entry, decision);
+    this.logEvaluation(normalized, entry, decision);
 
     return decision;
   }

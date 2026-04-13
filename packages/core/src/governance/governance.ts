@@ -15,6 +15,7 @@ import type {
 import { GovernancePolicies } from './governance-policies.js';
 import { GovernanceProposals } from './governance-proposals.js';
 import { GovernanceDashboardModule } from './governance-dashboard.js';
+import { runNormalizeProjectPathsMigration } from './migrations/normalize-project-paths.js';
 
 // ─── Governance Facade ──────────────────────────────────────────────
 
@@ -27,6 +28,17 @@ export class Governance {
   constructor(vault: Vault) {
     this.provider = vault.getProvider();
     this.initializeTables();
+
+    // One-time data migration: rewrite relative project_path rows to the
+    // absolute form. Runs once (idempotency marker in soleri_data_migrations)
+    // and is wrapped in a transaction so a failure leaves the DB untouched.
+    // Swallows errors so a migration bug can't take down engine startup —
+    // callers that read policies will still get the DEFAULT_PRESET fallback.
+    try {
+      runNormalizeProjectPathsMigration(this.provider);
+    } catch {
+      // Non-critical — governance still functions with un-migrated rows.
+    }
 
     this.policies = new GovernancePolicies(this.provider);
     this.proposals = new GovernanceProposals(this.provider, vault);
