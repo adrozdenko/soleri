@@ -27,7 +27,7 @@ function runFiletreeChecks(agentPath: string, _agentId: string): number {
       passed++;
     } else {
       const issues = result.error.issues
-        .map((i) => `  ${i.path.join('.')}: ${i.message}`)
+        .map((i: { path: PropertyKey[]; message: string }) => `  ${i.path.join('.')}: ${i.message}`)
         .join('\n');
       p.log.error(`agent.yaml — validation failed\n${issues}`);
       failures.push('agent.yaml validation');

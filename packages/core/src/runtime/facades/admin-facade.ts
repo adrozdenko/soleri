@@ -77,7 +77,7 @@ export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       auth: 'read' as const,
       schema: z.object({
         template: z.string().describe('Template name (without .prompt extension)'),
-        variables: z.record(z.string()).optional().default({}),
+        variables: z.record(z.string(), z.string()).optional().default({}),
         strict: z.boolean().optional().default(true),
       }),
       handler: async (params) => {

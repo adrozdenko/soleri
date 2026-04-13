@@ -213,13 +213,13 @@ export const AgentYamlSchema = z.object({
   /** Communication tone */
   tone: z.enum(TONES).optional().default('pragmatic'),
   /** Composable persona — defines character, voice, cultural texture */
-  persona: z.record(z.unknown()).optional(),
+  persona: z.record(z.string(), z.unknown()).optional(),
   /** Greeting message (auto-generated if omitted) */
   greeting: z.string().min(10).max(300).optional(),
 
   // ─── Engine ─────────────────────────────────────
   /** Knowledge engine configuration */
-  engine: EngineConfigSchema.optional().default({}),
+  engine: EngineConfigSchema.optional().default({ learning: true }),
 
   // ─── Vault Connections ──────────────────────────
   /** Link to external vaults for shared knowledge */
@@ -227,7 +227,7 @@ export const AgentYamlSchema = z.object({
 
   // ─── Client Setup ──────────────────────────────
   /** LLM client integration settings */
-  setup: SetupConfigSchema.optional().default({}),
+  setup: SetupConfigSchema.optional().default({ target: 'claude', model: 'claude-code-sonnet-4' }),
 
   // ─── Skills ─────────────────────────────────────
   /**

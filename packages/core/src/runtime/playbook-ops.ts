@@ -257,7 +257,7 @@ export function createPlaybookOps(runtime: AgentRuntime): OpDefinition[] {
           .optional()
           .describe('Abort instead of completing. Skips remaining steps.'),
         gateResults: z
-          .record(z.boolean())
+          .record(z.string(), z.boolean())
           .optional()
           .describe(
             'Gate check results: { "gate-check-type": true/false }. Unmapped gates are treated as failed.',

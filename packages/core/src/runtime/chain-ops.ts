@@ -38,7 +38,7 @@ export function createChainOps(runtime: AgentRuntime): OpDefinition[] {
       schema: z.object({
         chain: chainDefSchema.describe('Chain definition with steps'),
         input: z
-          .record(z.unknown())
+          .record(z.string(), z.unknown())
           .optional()
           .default({})
           .describe('Initial input params (accessible as $input.*)'),

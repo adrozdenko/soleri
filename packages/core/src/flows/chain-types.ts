@@ -10,7 +10,7 @@ export const chainStepSchema = z.object({
   id: z.string(),
   op: z.string().describe('Facade op to call'),
   params: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe('Params — use $input.x or $stepId.field for data flow'),
   output: z.string().optional().describe('Key to store step result under'),

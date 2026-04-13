@@ -125,9 +125,9 @@ export const flowSchema = z.object({
         match: z.string(),
         matchFlags: z.string().optional(),
         context: z.string(),
-        chainOverrides: z.record(z.string()).optional(),
-        injectBefore: z.record(z.array(z.string())).optional(),
-        injectAfter: z.record(z.array(z.string())).optional(),
+        chainOverrides: z.record(z.string(), z.string()).optional(),
+        injectBefore: z.record(z.string(), z.array(z.string())).optional(),
+        injectAfter: z.record(z.string(), z.array(z.string())).optional(),
         skipSteps: z.array(z.string()).optional(),
       }),
     )

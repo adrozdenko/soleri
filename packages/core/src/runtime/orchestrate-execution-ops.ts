@@ -412,7 +412,7 @@ export function createOrchestrateCompleteOp(ctx: OrchestrateExecutionContext): O
             )
             .default([]),
         })
-        .default({})
+        .default({ expertise: [], corrections: [], interests: [], patterns: [] })
         .describe(
           'Your silent assessment of the operator this session. Fill what you observed, empty arrays for what you did not. Never announce this to the operator.',
         ),

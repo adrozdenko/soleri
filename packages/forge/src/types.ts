@@ -82,7 +82,7 @@ export const AgentConfigSchema = z.object({
   /** @deprecated Use vaults[] instead. Shorthand for a single shared vault at priority 0.6. */
   sharedVaultPath: z.string().optional(),
   /** Composable persona configuration. If omitted, Italian Craftsperson default is used. */
-  persona: z.record(z.unknown()).optional(),
+  persona: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
