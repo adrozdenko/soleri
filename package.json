@@ -74,7 +74,7 @@
     "lint-staged": "^16.3.2",
     "markdownlint-cli2": "^0.21.0",
     "oxfmt": "^0.35.0",
-    "oxlint": "^1.51.0",
+    "oxlint": "^1.60.0",
     "secretlint": "^11.3.1",
     "tailwindcss": "^3.4.17",
     "ts-prune": "^0.10.3",
