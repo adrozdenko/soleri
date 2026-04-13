@@ -196,6 +196,20 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           vaultStats: stats,
         });
 
+        // Surface top brain pattern strengths so agents can act on them
+        // without a separate brain_strengths round-trip.
+        let topStrengths: Array<{ pattern: string; strength: number; domain: string }> = [];
+        try {
+          const rows = brainIntelligence.getStrengths({ limit: 5, minStrength: 50 });
+          topStrengths = rows.map((s) => ({
+            pattern: s.pattern,
+            strength: s.strength,
+            domain: s.domain,
+          }));
+        } catch {
+          // Best-effort — never block session start on brain lookup
+        }
+
         // Auto-close orphaned brain sessions (endedAt IS NULL, startedAt < now - 2h)
         let orphansClosed = 0;
         try {
@@ -238,6 +252,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
             expiredThisSession: expired,
           },
           preflight,
+          topStrengths,
           orphansClosed,
           stalePlansClosed,
           ...(stagingWarning ? { stagingWarning } : {}),
