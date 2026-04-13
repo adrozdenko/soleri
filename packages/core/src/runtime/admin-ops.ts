@@ -15,6 +15,33 @@ import { ENGINE_MODULE_MANIFEST } from '../engine/module-manifest.js';
 import { discoverSkills } from '../skills/sync-skills.js';
 
 /**
+ * Emit a one-time deprecation warning when legacy `_allOps` injection is used.
+ * Resets per-process — intended to surface during development/CI, not spam logs.
+ */
+let _allOpsDeprecationWarned = false;
+function warnAllOpsDeprecation(): void {
+  if (_allOpsDeprecationWarned) return;
+  _allOpsDeprecationWarned = true;
+  try {
+    console.warn(
+      '[soleri-deprecation] admin_tool_list `_allOps` injection is deprecated. ' +
+        "Use scope:'all' instead — it reads from the live runtime registry and requires no injection.",
+    );
+  } catch {
+    /* non-fatal */
+  }
+}
+
+/**
+ * Test-only hook to reset the one-shot deprecation warning flag.
+ * Exported solely for unit tests — do not call from production code.
+ * @internal
+ */
+export function __resetAllOpsDeprecationWarning(): void {
+  _allOpsDeprecationWarned = false;
+}
+
+/**
  * Canonical list of admin ops. Kept as a module-level constant so both the
  * admin-only fallback and the scope:'all' enumeration reference the same source.
  */
@@ -129,18 +156,19 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
     {
       name: 'admin_tool_list',
       description:
-        "List available ops. Defaults to admin-scoped. Pass scope:'all' for the full facade catalogue from ENGINE_MODULE_MANIFEST.",
+        "List available ops. Defaults to admin-scoped. Pass scope:'all' for the live runtime registry (ground truth), scope:'manifest' for the ENGINE_MODULE_MANIFEST summary (key ops only).",
       auth: 'read',
       handler: async (params) => {
         const verbose = params.verbose === true;
         const scope = typeof params.scope === 'string' ? params.scope : undefined;
 
-        // Internal injection path — the facade builder may pass a fully-registered
-        // ops list via `_allOps`. Callers should NOT set this by hand. Accept only
-        // a strict array (defensive: any non-array value falls through to scope
-        // dispatch below instead of crashing on `.map()` / `for..of`).
+        // Internal injection path (DEPRECATED) — the facade builder historically
+        // passed a fully-registered ops list via `_allOps`. The live
+        // runtime.opsRegistry now makes this redundant. We still honor the
+        // param for back-compat with existing callers, but warn once.
         const rawAllOps = params._allOps;
         if (Array.isArray(rawAllOps)) {
+          warnAllOpsDeprecation();
           const allOps = rawAllOps as Array<{
             name: string;
             description: string;
@@ -150,7 +178,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
             return {
               count: allOps.length,
               scope: 'all-registered',
-              source: '_allOps injection (facade builder)',
+              source: "_allOps injection (DEPRECATED — use scope:'all')",
               ops: allOps.map((op) => ({
                 name: op.name,
                 description: op.description,
@@ -168,27 +196,66 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           return {
             count: allOps.length,
             scope: 'all-registered',
-            source: '_allOps injection (facade builder)',
+            source: "_allOps injection (DEPRECATED — use scope:'all')",
             ops: grouped,
             routing: buildRoutingHints(),
           };
         }
 
-        // User-facing full enumeration from the engine manifest.
-        // Static, authoritative, doesn't require facade-builder injection.
+        // Live runtime registry — ground truth. Populated during registerEngine().
         if (scope === 'all') {
+          const registry = runtime.opsRegistry;
+          if (!registry) {
+            return {
+              count: 0,
+              scope: 'all',
+              source: 'registry not initialized (runtime bypassed registerEngine)',
+              hint: "Runtimes created without registerEngine() have no ops registry. Fall back to scope:'manifest' for the static summary.",
+              ops: {},
+              routing: buildRoutingHints(),
+            };
+          }
+          if (verbose) {
+            const allOps = registry.list();
+            return {
+              count: allOps.length,
+              scope: 'all',
+              source: 'runtime.opsRegistry (live — every op registered via registerEngine)',
+              facadeCount: registry.facadeCount(),
+              ops: allOps.map((op) => ({
+                name: op.name,
+                description: op.description,
+                auth: op.auth,
+                facade: op.facade,
+              })),
+            };
+          }
+          const grouped = registry.byFacade();
+          return {
+            count: registry.count(),
+            scope: 'all',
+            source: 'runtime.opsRegistry (live — every op registered via registerEngine)',
+            facadeCount: registry.facadeCount(),
+            ops: grouped,
+            routing: buildRoutingHints(),
+          };
+        }
+
+        // Manifest summary — key ops per facade from ENGINE_MODULE_MANIFEST.
+        // Faster (no runtime dependency), but abbreviated (max 4 ops per facade).
+        // Use for forge templates, docs, or when you want a curated surface.
+        if (scope === 'manifest') {
           const grouped: Record<string, string[]> = {};
           for (const mod of ENGINE_MODULE_MANIFEST) {
             grouped[mod.suffix] = [...mod.keyOps];
           }
-          // Include admin ops explicitly — they're not a top-level facade row
-          // in the manifest's keyOps but they exist at runtime.
           grouped.admin = [...ADMIN_OPS];
           const count = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
           return {
             count,
-            scope: 'all',
-            source: 'ENGINE_MODULE_MANIFEST (key ops per facade — not every registered op)',
+            scope: 'manifest',
+            source:
+              'ENGINE_MODULE_MANIFEST (curated key ops per facade — summary view, not every registered op)',
             facadeCount: Object.keys(grouped).length,
             ops: grouped,
             routing: buildRoutingHints(),
@@ -199,7 +266,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
         return {
           count: ADMIN_OPS.length,
           scope: 'admin-only',
-          hint: "Pass scope:'all' to enumerate all facade key-ops across the engine.",
+          hint: "Pass scope:'all' for live runtime ops, or scope:'manifest' for the curated summary.",
           ops: { admin: [...ADMIN_OPS] },
           routing: buildRoutingHints(),
         };

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createAdminOps } from './admin-ops.js';
+import { createAdminOps, __resetAllOpsDeprecationWarning } from './admin-ops.js';
+import { OpsRegistry } from './ops-registry.js';
 import type { AgentRuntime } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -220,32 +221,99 @@ describe('createAdminOps', () => {
       expect(result.count).toBe(8);
     });
 
-    it("returns full facade catalogue when scope:'all' is passed", async () => {
+    it("returns full facade catalogue when scope:'manifest' is passed (curated summary)", async () => {
       const op = findOp(ops, 'admin_tool_list');
-      const result = (await op.handler({ scope: 'all' })) as Record<string, unknown>;
-      expect(result.scope).toBe('all');
-      // Every facade in ENGINE_MODULE_MANIFEST + admin = should be >8 facades
+      const result = (await op.handler({ scope: 'manifest' })) as Record<string, unknown>;
+      expect(result.scope).toBe('manifest');
       const grouped = result.ops as Record<string, string[]>;
       expect(Object.keys(grouped).length).toBeGreaterThan(8);
-      // Vault, plan, brain, memory, admin are all expected to be present
       expect(grouped.vault).toBeDefined();
       expect(grouped.plan).toBeDefined();
       expect(grouped.brain).toBeDefined();
       expect(grouped.memory).toBeDefined();
       expect(grouped.admin).toContain('admin_health');
-      // Count must exceed the admin-only fallback
       expect(result.count as number).toBeGreaterThan(8);
-      // facadeCount helper present
       expect(result.facadeCount as number).toBeGreaterThan(8);
+      expect(result.source as string).toContain('ENGINE_MODULE_MANIFEST');
     });
 
     it('admin-only fallback response no longer contains the misleading _allOps note', async () => {
       const op = findOp(ops, 'admin_tool_list');
       const result = (await op.handler({})) as Record<string, unknown>;
       expect(result.note).toBeUndefined();
-      // Replaced with a user-friendly hint
       expect(typeof result.hint).toBe('string');
       expect(result.hint as string).toContain("scope:'all'");
+    });
+
+    describe("scope:'all' reads from runtime.opsRegistry (live ground truth)", () => {
+      it('returns live registry contents when opsRegistry is populated', async () => {
+        const runtimeWithRegistry = mockRuntime();
+        const registry = new OpsRegistry();
+        registry.add('test-agent_admin', 'admin', {
+          name: 'admin_health',
+          description: 'Health',
+          auth: 'read',
+        });
+        registry.add('test-agent_vault', 'vault', {
+          name: 'vault_search_intelligent',
+          description: 'Search',
+          auth: 'read',
+        });
+        registry.add('test-agent_brain', 'brain', {
+          name: 'brain_strengths',
+          description: 'Strengths',
+          auth: 'read',
+        });
+        runtimeWithRegistry.opsRegistry = registry;
+        const liveOps = createAdminOps(runtimeWithRegistry);
+        const op = findOp(liveOps, 'admin_tool_list');
+        const result = (await op.handler({ scope: 'all' })) as Record<string, unknown>;
+        expect(result.scope).toBe('all');
+        expect(result.count).toBe(3);
+        expect(result.facadeCount).toBe(3);
+        expect(result.source as string).toContain('runtime.opsRegistry');
+        const grouped = result.ops as Record<string, string[]>;
+        expect(grouped.admin).toContain('admin_health');
+        expect(grouped.vault).toContain('vault_search_intelligent');
+        expect(grouped.brain).toContain('brain_strengths');
+      });
+
+      it('falls back gracefully when opsRegistry is absent (custom runtime)', async () => {
+        const runtimeNoRegistry = mockRuntime();
+        runtimeNoRegistry.opsRegistry = undefined;
+        const liveOps = createAdminOps(runtimeNoRegistry);
+        const op = findOp(liveOps, 'admin_tool_list');
+        const result = (await op.handler({ scope: 'all' })) as Record<string, unknown>;
+        expect(result.scope).toBe('all');
+        expect(result.count).toBe(0);
+        expect(result.source as string).toContain('registry not initialized');
+        expect(result.hint as string).toContain("scope:'manifest'");
+      });
+    });
+
+    describe('_allOps deprecation warning', () => {
+      beforeEach(() => {
+        __resetAllOpsDeprecationWarning();
+      });
+
+      it('emits a one-time console.warn when _allOps is still used', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const op = findOp(ops, 'admin_tool_list');
+        const allOps = [{ name: 'admin_health', description: 'Health', auth: 'read' }];
+        await op.handler({ _allOps: allOps });
+        await op.handler({ _allOps: allOps });
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        expect(warnSpy.mock.calls[0][0]).toContain('[soleri-deprecation]');
+        expect(warnSpy.mock.calls[0][0]).toContain("scope:'all'");
+        warnSpy.mockRestore();
+      });
+
+      it('tags _allOps injection response as DEPRECATED in source', async () => {
+        const op = findOp(ops, 'admin_tool_list');
+        const allOps = [{ name: 'admin_health', description: 'Health', auth: 'read' }];
+        const result = (await op.handler({ _allOps: allOps })) as Record<string, unknown>;
+        expect(result.source as string).toContain('DEPRECATED');
+      });
     });
   });
 

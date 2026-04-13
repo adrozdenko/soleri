@@ -41,6 +41,7 @@ import type { RuntimeAdapterRegistry } from '../adapters/registry.js';
 import type { SubagentDispatcher } from '../subagent/dispatcher.js';
 import type { EmbeddingConfig, EmbeddingProvider } from '../embeddings/types.js';
 import type { EmbeddingPipeline } from '../embeddings/pipeline.js';
+import type { OpsRegistry } from './ops-registry.js';
 
 /** Pre-flight manifest returned by session_start for agent self-awareness. */
 export interface PreflightManifest {
@@ -191,6 +192,13 @@ export interface AgentRuntime {
   contextHealth: ContextHealthMonitor;
   /** Shutdown registry — centralized cleanup for timers, watchers, child processes. */
   shutdownRegistry: ShutdownRegistry;
+  /**
+   * Live registry of all ops registered via registerEngine().
+   * Populated at boot — read by admin_tool_list scope:'all' to return ground truth.
+   * Optional because custom runtimes that bypass registerEngine() may not populate it;
+   * in that case, admin_tool_list scope:'all' falls back to the manifest with a clear source tag.
+   */
+  opsRegistry?: OpsRegistry;
   /** Timestamp (ms since epoch) when this runtime was created. */
   createdAt: number;
   /** Close all runtime resources (vault, timers, watchers). Call on shutdown. */

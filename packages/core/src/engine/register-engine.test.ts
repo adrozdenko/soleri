@@ -218,6 +218,60 @@ describe('registerEngine — return value', () => {
   });
 });
 
+describe('registerEngine — runtime.opsRegistry (bulletproof live registry)', () => {
+  it('attaches opsRegistry to runtime with >=100 ops after registration', () => {
+    const server = makeServer();
+    registerEngine(server, runtime, { agentId: 'reg' });
+    expect(runtime.opsRegistry).toBeDefined();
+    // Bulletproof count guardrail. Current engine registers ~400 ops including
+    // internal — user-visible count should still be safely above 100.
+    // If this ever drops below 100, something has been silently removed.
+    const count = runtime.opsRegistry!.count({ includeInternal: true });
+    expect(count).toBeGreaterThanOrEqual(100);
+  });
+
+  it('registry contains canonical ops from each core facade', () => {
+    const server = makeServer();
+    registerEngine(server, runtime, { agentId: 'canon' });
+    const registry = runtime.opsRegistry!;
+    // Spot-check one canonical op from each of the major facades.
+    expect(registry.has('admin_health')).toBe(true);
+    expect(registry.has('search_intelligent')).toBe(true);
+    expect(registry.has('create_plan')).toBe(true);
+    expect(registry.has('capture_knowledge')).toBe(true);
+  });
+
+  it('registry facadeList covers every ENGINE_MODULES suffix', () => {
+    const server = makeServer();
+    registerEngine(server, runtime, { agentId: 'fl' });
+    const registered = new Set(runtime.opsRegistry!.facadeList());
+    for (const mod of ENGINE_MODULES) {
+      expect(registered.has(mod.suffix)).toBe(true);
+    }
+  });
+
+  it('registry reflects core facade when coreOps are provided', () => {
+    const server = makeServer();
+    const coreOps: OpDefinition[] = [
+      { name: 'agent_activate', description: 'Activate', auth: 'read', handler: async () => null },
+    ];
+    registerEngine(server, runtime, { agentId: 'coreagent', coreOps });
+    expect(runtime.opsRegistry!.has('agent_activate')).toBe(true);
+    expect(runtime.opsRegistry!.get('agent_activate')?.facade).toBe('core');
+  });
+
+  it('registry zero internal ops equals total minus user count', () => {
+    const server = makeServer();
+    registerEngine(server, runtime, { agentId: 'inv' });
+    const registry = runtime.opsRegistry!;
+    const total = registry.count({ includeInternal: true });
+    const userOnly = registry.count({ includeInternal: false });
+    expect(total).toBeGreaterThanOrEqual(userOnly);
+    // Engine should have at least a handful of internal ops (token mgmt, bulk, etc.)
+    expect(total - userOnly).toBeGreaterThan(0);
+  });
+});
+
 describe('ENGINE_MODULES descriptions match manifest', () => {
   it('each module description aligns with manifest', () => {
     for (let i = 0; i < ENGINE_MODULES.length; i++) {

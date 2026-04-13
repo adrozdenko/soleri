@@ -46,6 +46,8 @@ import { createTierFacadeOps } from '../runtime/facades/tier-facade.js';
 import { createEmbeddingFacadeOps } from '../runtime/facades/embedding-facade.js';
 import { createDreamOps } from '../dream/dream-ops.js';
 import { createDomainFacade } from '../runtime/domain-ops.js';
+import { OpsRegistry } from '../runtime/ops-registry.js';
+import { ENGINE_MODULE_MANIFEST } from './module-manifest.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -224,6 +226,22 @@ export function registerEngine(
   const registeredTools: string[] = [];
   let totalOps = 0;
 
+  // Live ops registry — single source of truth for introspection.
+  // Populated below as each facade's ops are registered; consumed by
+  // admin_tool_list scope:'all'. Attach to runtime so op handlers can read it.
+  const opsRegistry = new OpsRegistry();
+  runtime.opsRegistry = opsRegistry;
+
+  // Helper: register one op in the registry, applying visibility filter
+  const registerOpInRegistry = (toolName: string, facade: string, op: OpDefinition): void => {
+    opsRegistry.add(toolName, facade, {
+      name: op.name,
+      description: op.description,
+      auth: op.auth,
+      visibility: resolveVisibility(op),
+    });
+  };
+
   // 1. Register semantic module tools
   for (const mod of ENGINE_MODULES) {
     if (mod.condition && !mod.condition(runtime)) continue;
@@ -236,6 +254,7 @@ export function registerEngine(
     registerModuleTool(server, toolName, mod.description, ops, authPolicy);
     registeredTools.push(toolName);
     totalOps += ops.length;
+    for (const op of ops) registerOpInRegistry(toolName, mod.suffix, op);
 
     // Hot ops: also register as standalone tools
     for (const op of ops) {
@@ -258,6 +277,7 @@ export function registerEngine(
     );
     registeredTools.push(coreName);
     totalOps += coreOps.length;
+    for (const op of coreOps) registerOpInRegistry(coreName, 'core', op);
   }
 
   // 3. Register domain facades
@@ -273,6 +293,9 @@ export function registerEngine(
       );
       registeredTools.push(domainConfig.name);
       totalOps += domainConfig.ops.length;
+      for (const op of domainConfig.ops) {
+        registerOpInRegistry(domainConfig.name, domain, op);
+      }
     }
   }
 
@@ -291,15 +314,40 @@ export function registerEngine(
           );
           registeredTools.push(packToolName);
           totalOps += facade.ops.length;
+          for (const op of facade.ops) {
+            registerOpInRegistry(packToolName, facade.name, op);
+          }
         }
       }
     }
   }
 
+  // Observability: log registered surface
+  const userCount = opsRegistry.count({ includeInternal: false });
+  const totalWithInternal = opsRegistry.count({ includeInternal: true });
+  const internalCount = totalWithInternal - userCount;
+  try {
+    runtime.logger?.info?.(
+      `[soleri] Registered ${totalWithInternal} ops across ${opsRegistry.facadeCount()} facades (${internalCount} internal)`,
+    );
+  } catch {
+    // Logger may not expose info() — non-fatal
+  }
+
+  // Drift check — warn if the manifest falls out of sync with the actual
+  // registered facades. Catches the "someone added a facade but forgot to
+  // update ENGINE_MODULE_MANIFEST" class of bug.
+  detectManifestDrift(runtime, opsRegistry);
+
   const registerTool = (toolName: string, description: string, ops: OpDefinition[]) => {
     registerModuleTool(server, toolName, description, ops, authPolicy);
     registeredTools.push(toolName);
     totalOps += ops.length;
+    // Extract facade suffix from toolName (e.g. 'ernesto_vault' → 'vault')
+    const facadeSuffix = toolName.startsWith(`${agentId}_`)
+      ? toolName.slice(agentId.length + 1)
+      : toolName;
+    for (const op of ops) registerOpInRegistry(toolName, facadeSuffix, op);
     // Notify connected clients that tool list changed
     try {
       (server as unknown as { sendToolListChanged?: () => void }).sendToolListChanged?.();
@@ -309,6 +357,57 @@ export function registerEngine(
   };
 
   return { tools: registeredTools, totalOps, registerTool };
+}
+
+/**
+ * Warn if the runtime's registered facades diverge from ENGINE_MODULE_MANIFEST.
+ * The manifest drives forge template generation and intent routing — if a new
+ * facade exists at runtime but isn't in the manifest, scaffolded agents won't
+ * know about it, and intent signals won't fire.
+ *
+ * This is a non-fatal drift warning. Tests assert zero drift.
+ */
+function detectManifestDrift(runtime: AgentRuntime, registry: OpsRegistry): void {
+  const manifestFacades = new Set(ENGINE_MODULE_MANIFEST.map((m) => m.suffix));
+  const registered = new Set(registry.facadeList());
+  // 'core' and domain facades aren't in the manifest by design — skip them
+  const EXPECTED_EXTRAS = new Set(['core']);
+
+  const registeredNotInManifest: string[] = [];
+  for (const suffix of registered) {
+    if (!manifestFacades.has(suffix) && !EXPECTED_EXTRAS.has(suffix)) {
+      registeredNotInManifest.push(suffix);
+    }
+  }
+
+  const manifestNotRegistered: string[] = [];
+  for (const suffix of manifestFacades) {
+    if (!registered.has(suffix)) {
+      manifestNotRegistered.push(suffix);
+    }
+  }
+
+  if (registeredNotInManifest.length > 0) {
+    try {
+      runtime.logger?.warn?.(
+        `[soleri-drift] Facades registered but missing from ENGINE_MODULE_MANIFEST: ${registeredNotInManifest.join(', ')}. ` +
+          `Add them to module-manifest.ts for forge templates and intent routing.`,
+      );
+    } catch {
+      /* non-fatal */
+    }
+  }
+
+  if (manifestNotRegistered.length > 0) {
+    try {
+      runtime.logger?.warn?.(
+        `[soleri-drift] Manifest declares facades not registered at runtime: ${manifestNotRegistered.join(', ')}. ` +
+          `Manifest entry may be obsolete or facade registration was skipped.`,
+      );
+    } catch {
+      /* non-fatal */
+    }
+  }
 }
 
 // ─── Op Visibility ───────────────────────────────────────────────────
