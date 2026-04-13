@@ -64,7 +64,7 @@
     "@soleri/domain-component": "^1.0.0",
     "@soleri/domain-design": "^1.0.0",
     "@soleri/domain-design-qa": "^1.0.0",
-    "@types/node": "^22.13.4",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "astro": "^5.18.0",
