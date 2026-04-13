@@ -12,11 +12,11 @@
 
 ---
 
-Every AI session starts from zero. You explain your conventions, your architecture, your preferences — and then the session ends and it's all gone.
+**Soleri is an open-source knowledge engine for AI agents.** Persistent memory, a learning brain, vector embeddings, a knowledge vault with Zettelkasten linking, and a planning system that orchestrates it all. Works with Claude Code, Codex, OpenCode, and any MCP-compatible editor.
 
-**Your expertise should compound — not evaporate.**
+Every AI session starts from zero. You explain your conventions, your architecture, your preferences -- and then the session ends and it's all gone. **Your expertise should compound, not evaporate.**
 
-Soleri is an open-source engine for building AI agents that learn. It gives your agent persistent memory, structured knowledge, and intelligence that grows with every session. Build a personal dev assistant or ship agents to your users — same engine.
+Soleri fixes that. It gives your agent memory that persists, knowledge that compounds, and intelligence that grows with every session. Build a personal dev assistant or ship agents to your users -- same engine.
 
 ## How It Works
 
