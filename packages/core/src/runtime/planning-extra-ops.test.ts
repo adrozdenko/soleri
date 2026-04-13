@@ -224,6 +224,42 @@ describe('createPlanningExtraOps', () => {
       expect(result.split).toBe(true);
       expect(result.brainSessionId).toBeNull();
     });
+
+    it('does not pollute brain session domain with plan.scope (regression)', async () => {
+      // plan.scope is free-text description, NOT a domain tag.
+      // Historical bug: planning-extra-ops.ts passed plan.scope straight into
+      // session.domain, polluting the column with strings up to 1065 chars.
+      const longScope =
+        'INCLUDED: (1) Fix something, (2) Refactor something else. ' +
+        'EXCLUDED: Do not touch module X, do not rename field Y. ' +
+        'TASK DEPENDENCIES: T1 has no deps, T2 depends on T1.';
+      expect(longScope.length).toBeGreaterThan(64);
+
+      const pollutedPlan = makePlan({ scope: longScope });
+      vi.mocked(runtime.planner.splitTasks).mockReturnValue({
+        ...pollutedPlan,
+        tasks: [pollutedPlan.tasks[0], { id: 'task-2', title: 'Task 2' }],
+      } as unknown as ReturnType<typeof runtime.planner.splitTasks>);
+
+      await findOp(ops, 'plan_split').handler({
+        planId: 'plan-1',
+        tasks: [{ title: 'A', description: 'Do A' }],
+      });
+
+      // Capture the lifecycle call args.
+      const lifecycleMock = vi.mocked(runtime.brainIntelligence.lifecycle);
+      expect(lifecycleMock).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'start', planId: 'plan-1' }),
+      );
+      const callArgs = lifecycleMock.mock.calls[0]![0] as { domain?: unknown };
+
+      // Core regression assertion: the long scope must NOT land in domain.
+      expect(callArgs.domain).not.toBe(longScope);
+      // Stronger guarantee: domain is either absent or a short tag.
+      if (callArgs.domain !== undefined && callArgs.domain !== null) {
+        expect(String(callArgs.domain).length).toBeLessThanOrEqual(64);
+      }
+    });
   });
 
   describe('plan_reconcile', () => {

@@ -260,12 +260,14 @@ export function createPlanningExtraOps(runtime: AgentRuntime): OpDefinition[] {
             }>,
           );
 
-          // Auto-start brain session linked to the plan for learning pipeline
+          // Auto-start brain session linked to the plan for learning pipeline.
+          // NOTE: plan.scope is free-text (INCLUDED/EXCLUDED descriptions) and
+          // must not be stuffed into session.domain (short tag column). See
+          // the regression test in planning-extra-ops.test.ts.
           let brainSessionId: string | null = null;
           try {
             const session = brainIntelligence.lifecycle({
               action: 'start',
-              domain: plan.scope ?? undefined,
               context: plan.objective,
               planId: plan.id,
             });
