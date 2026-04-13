@@ -293,17 +293,43 @@ function agentSectionEnd(agentId: string): string {
 }
 
 /**
- * Build the minimal routing section for one agent in the global CLAUDE.md.
+ * Build the compact routing + capabilities section for one agent in the
+ * global CLAUDE.md.
+ *
+ * Goal: minimum content, maximum effectiveness. Claude needs enough context
+ * to know how to activate the agent, which facades exist, and where to find
+ * the full tool list and routing reference — without embedding the entire
+ * command surface inline.
+ *
+ * The block points to three deeper sources:
+ *   1. `{agentId}_admin op:admin_tool_list` — full op catalogue
+ *   2. The `{agentId}-agent-mode` skill — full routing + command reference
+ *   3. The project-level `CLAUDE.md` — project-specific conventions
  */
 function buildAgentSection(agentId: string, displayName: string): string {
   return [
     agentSectionStart(agentId),
     `## ${displayName}`,
     '',
-    `Skills for **${displayName}** are installed globally. Agent-specific instructions`,
-    `are in each project's \`CLAUDE.md\`.`,
+    `**Activate:** "Hello, ${displayName}!" → \`${agentId}_core op:activate params:{ projectPath: "." }\``,
+    `**Deactivate:** "Goodbye, ${displayName}!" → \`${agentId}_core op:activate params:{ deactivate: true }\``,
     '',
-    `**Routing:** When you see \`${agentId}_*\` MCP tools, follow the project's \`CLAUDE.md\`.`,
+    `**Session start:** \`${agentId}_orchestrate op:session_start params:{ projectPath: "." }\``,
+    '',
+    '### Facades (essential ops)',
+    '',
+    '| Facade | Key Ops |',
+    '|--------|---------|',
+    `| \`${agentId}_vault\` | \`search_intelligent\`, \`capture_knowledge\` |`,
+    `| \`${agentId}_plan\` | \`create_plan\`, \`plan_split\`, \`plan_reconcile\`, \`plan_complete_lifecycle\` |`,
+    `| \`${agentId}_brain\` | \`strengths\`, \`recommend\` |`,
+    `| \`${agentId}_orchestrate\` | \`orchestrate_plan\`, \`orchestrate_execute\`, \`orchestrate_complete\` |`,
+    `| \`${agentId}_admin\` | \`admin_health\`, \`admin_tool_list\`, \`admin_check_persistence\` |`,
+    `| \`${agentId}_memory\` | \`memory_search\`, \`session_capture\` |`,
+    '',
+    `> **Full tool list:** \`${agentId}_admin op:admin_tool_list\``,
+    `> **Routing reference:** invoke the \`${agentId}-agent-mode\` skill`,
+    `> **Project conventions:** see project-level \`CLAUDE.md\``,
     agentSectionEnd(agentId),
   ].join('\n');
 }
@@ -340,29 +366,23 @@ export function scaffoldGlobalClaudeMd(agentId: string, displayName: string): vo
     existing = readFileSync(claudeMdPath, 'utf-8');
   }
 
-  let startIdx = existing.indexOf(start);
-  let endIdx = existing.indexOf(end);
-
-  // Migrate legacy sentinel format: <!-- agent:{id}:mode --> / <!-- /agent:{id}:mode -->
-  if (startIdx === -1) {
-    const legacyStart = `<!-- agent:${agentId}:mode -->`;
-    const legacyEnd = `<!-- /agent:${agentId}:mode -->`;
-    const ls = existing.indexOf(legacyStart);
-    const le = existing.indexOf(legacyEnd);
-    if (ls !== -1 && le !== -1) {
-      startIdx = ls;
-      endIdx = le;
-      // Point past the legacy end sentinel so we replace the whole block
-      existing =
-        existing.slice(0, ls) +
-        start +
-        existing.slice(ls + legacyStart.length, le) +
-        end +
-        existing.slice(le + legacyEnd.length);
-      startIdx = existing.indexOf(start);
-      endIdx = existing.indexOf(end);
-    }
+  // Always strip legacy sentinel format first: <!-- agent:{id}:mode --> / <!-- /agent:{id}:mode -->
+  // Runs unconditionally so dangling legacy blocks get cleaned up even when
+  // the new marker is already present elsewhere in the file (previously this
+  // only ran when the new marker was absent, which left Salvador's legacy
+  // fat block coexisting with the new thin stub and bloating the file).
+  const legacyStart = `<!-- agent:${agentId}:mode -->`;
+  const legacyEnd = `<!-- /agent:${agentId}:mode -->`;
+  const legacyStartIdx = existing.indexOf(legacyStart);
+  const legacyEndIdx = existing.indexOf(legacyEnd);
+  if (legacyStartIdx !== -1 && legacyEndIdx !== -1 && legacyEndIdx > legacyStartIdx) {
+    const before = existing.slice(0, legacyStartIdx).trimEnd();
+    const after = existing.slice(legacyEndIdx + legacyEnd.length).trimStart();
+    existing = before + (before && after ? '\n\n' : before || after ? '' : '') + after;
   }
+
+  const startIdx = existing.indexOf(start);
+  const endIdx = existing.indexOf(end);
 
   let updated: string;
   if (startIdx !== -1 && endIdx !== -1) {
