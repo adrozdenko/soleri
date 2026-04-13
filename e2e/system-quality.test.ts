@@ -1002,16 +1002,16 @@ describe('System Quality Tests', () => {
     it('5.3 3 concurrent plan creations — each gets unique ID', async () => {
       const plans = await Promise.all([
         op('plan', 'create_plan', {
-          objective: 'Concurrent plan A: add authentication',
-          scope: 'Auth module',
+          objective: 'Migrate PostgreSQL database to read replicas for horizontal scaling',
+          scope: 'Database infrastructure',
         }),
         op('plan', 'create_plan', {
-          objective: 'Concurrent plan B: add authorization',
-          scope: 'RBAC module',
+          objective: 'Build React component library with Storybook documentation',
+          scope: 'Frontend design system',
         }),
         op('plan', 'create_plan', {
-          objective: 'Concurrent plan C: add audit logging',
-          scope: 'Audit module',
+          objective: 'Implement WebSocket real-time notification pipeline',
+          scope: 'Backend messaging layer',
         }),
       ]);
 
