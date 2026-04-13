@@ -1,10 +1,7 @@
 ---
 name: soleri-fix-and-learn
 tier: default
-description: >
-  Use when the user says "fix it", "apply the fix", "patch this and remember",
-  or "fix and capture". Executes a fix AFTER root cause is identified and
-  captures the learning in the vault. Use systematic-debugging first.
+description: 'Triggers: "fix it", "apply the fix", "patch this and remember", "fix and capture". Executes fix after root cause identified, captures learning to vault. Use systematic-debugging first.'
 ---
 
 # Fix & Learn — Debug, Repair, Capture

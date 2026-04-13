@@ -1,11 +1,7 @@
 ---
 name: soleri-deep-review
 tier: default
-description: >
-  Use when the user says "deep review", "code smells", "architecture review",
-  "is this well architected", or "optimization review". Multi-pass code review
-  analyzing structural health, smells, and solution quality. For reviewing
-  against the project's own vault patterns and conventions, use code-patrol instead.
+description: 'Triggers: "deep review", "code smells", "architecture review", "is this well architected", "optimization review". Multi-pass structural health/smells/quality review. Use code-patrol for vault pattern compliance.'
 ---
 
 # Deep Review — Architecture, Smells & Solution Quality

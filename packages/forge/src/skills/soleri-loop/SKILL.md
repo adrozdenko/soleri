@@ -1,10 +1,7 @@
 ---
 name: soleri-loop
 tier: default
-description: >
-  Use when the user says "start a loop", "run until done", "iterate until X",
-  "loop status", or "cancel loop". Manages iterative execution loops that
-  repeat a task until a condition is met or a grade threshold is reached.
+description: 'Triggers: "start a loop", "run until done", "iterate until X", "loop status", "cancel loop". Iterative execution until condition met or grade threshold reached.'
 ---
 
 # Loop — Iterative Execution

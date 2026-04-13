@@ -1,10 +1,7 @@
 ---
 name: soleri-agent-guide
 tier: default
-description: >
-  Use when the user says "what can you do", "how do I use this",
-  "what features", "what tools available", "who are you", or "show capabilities".
-  Helps users discover agent capabilities and available tools.
+description: 'Triggers: "what can you do", "how do I use this", "what features", "what tools available", "who are you", "show capabilities". Agent capability discovery and tool reference.'
 ---
 
 # Agent Guide — Capability Discovery

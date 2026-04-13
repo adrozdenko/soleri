@@ -1,10 +1,7 @@
 ---
 name: soleri-env-setup
 tier: default
-description: >
-  Use when the user says "setup environment", "post-clone setup", "broken build",
-  "missing dependencies", or "MODULE_NOT_FOUND". Detects what a project needs,
-  diagnoses what's missing, and produces an actionable setup checklist.
+description: 'Triggers: "setup environment", "post-clone setup", "broken build", "missing dependencies", "MODULE_NOT_FOUND". Detects project needs, diagnoses gaps, produces setup checklist.'
 ---
 
 # Environment Setup

@@ -1,10 +1,7 @@
 ---
 name: soleri-test-driven-development
 tier: default
-description: >
-  Use when the user says "TDD", "write tests first", "red green refactor",
-  or "test driven". Write failing tests before implementation code for any
-  feature or bugfix.
+description: 'Triggers: "TDD", "write tests first", "red green refactor", "test driven". Write failing tests before implementation code.'
 ---
 
 # Test-Driven Development (TDD)

@@ -1,11 +1,7 @@
 ---
 name: soleri-orchestrate
 tier: default
-description: >
-  Use when the user gives a work task: "implement X", "build Y", "fix Z",
-  "add feature", or any request that requires planning and execution.
-  Runs the full orchestration loop: plan → execute → complete with vault
-  context and brain recommendations built in.
+description: 'Triggers: "implement X", "build Y", "fix Z", "add feature", or any work task needing planning + execution. Full orchestration loop: plan, execute, complete with vault context and brain recs.'
 ---
 
 # Orchestrate — Full Work Loop

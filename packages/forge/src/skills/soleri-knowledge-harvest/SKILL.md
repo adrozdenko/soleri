@@ -1,11 +1,7 @@
 ---
 name: soleri-knowledge-harvest
 tier: default
-description: >
-  Use when the user says "learn from this", "harvest knowledge", "ingest this",
-  or "extract patterns from". Extracts multiple patterns from a source like
-  code, docs, PRs, or articles into the vault. For saving a single known
-  pattern, use vault-capture instead.
+description: 'Triggers: "learn from this", "harvest knowledge", "ingest this", "extract patterns from". Bulk-extracts patterns from code/docs/PRs/articles into vault. Use vault-capture for single patterns.'
 ---
 
 # Knowledge Harvest — Extract Patterns From Anything

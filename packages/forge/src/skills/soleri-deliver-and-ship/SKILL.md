@@ -1,11 +1,7 @@
 ---
 name: soleri-deliver-and-ship
 tier: default
-description: >
-  Use when the user says "ship it", "pre-PR check", "delivery checklist", "is this ready",
-  "final review", or "ready to deploy". Runs pre-delivery quality gates
-  to ensure nothing ships without passing stability and code quality checks.
-  For mid-workflow verification (not shipping), use verification-before-completion instead.
+description: 'Triggers: "ship it", "pre-PR check", "delivery checklist", "is this ready", "final review", "ready to deploy". Pre-delivery quality gates. Use verification-before-completion for mid-workflow checks.'
 ---
 
 # Deliver & Ship — Quality Gate Runner

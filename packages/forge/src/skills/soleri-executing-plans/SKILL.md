@@ -1,10 +1,7 @@
 ---
 name: soleri-executing-plans
 tier: default
-description: >
-  Use when the user says "execute my plan", "run the plan", "start executing",
-  or "implement the plan". Executes tasks sequentially with review checkpoints.
-  For parallel execution, use parallel-execute instead.
+description: 'Triggers: "execute my plan", "run the plan", "start executing", "implement the plan". Sequential task execution with review checkpoints. Use parallel-execute for concurrent.'
 ---
 
 # Executing Plans

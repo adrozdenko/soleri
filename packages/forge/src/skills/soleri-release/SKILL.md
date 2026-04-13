@@ -1,11 +1,7 @@
 ---
 name: soleri-release
 tier: default
-description: >
-  Use when the user says "release", "bump version", "publish packages",
-  "cut a release", "version bump", or "npm publish". Bumps all monorepo
-  package versions, commits, tags, and pushes to trigger the Release
-  GitHub Actions workflow. For pre-release quality gates, use deliver-and-ship instead.
+description: 'Triggers: "release", "bump version", "publish packages", "cut a release", "version bump", "npm publish". Bumps monorepo versions, commits, tags, pushes to trigger CI release. Use deliver-and-ship for quality gates.'
 ---
 
 # Release — Version Bump & Publish

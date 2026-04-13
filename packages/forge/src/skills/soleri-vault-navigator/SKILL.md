@@ -1,10 +1,7 @@
 ---
 name: soleri-vault-navigator
 tier: default
-description: >
-  Use when the user says "search the vault", "find patterns for",
-  "have we seen this before", "vault search", or "best practice for".
-  Queries the knowledge base for existing solutions and prior art.
+description: 'Triggers: "search the vault", "find patterns for", "have we seen this before", "vault search", "best practice for". Queries knowledge base for existing solutions and prior art.'
 ---
 
 # Vault Navigator — Knowledge Oracle

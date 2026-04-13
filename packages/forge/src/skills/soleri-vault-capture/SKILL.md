@@ -1,12 +1,7 @@
 ---
 name: soleri-vault-capture
 tier: default
-description: >
-  Use when the user says "save this to vault", "capture this", "remember this pattern",
-  "add to vault", "vault capture", or when persisting learnings from a work session.
-  Priority over memory_capture for durable knowledge (patterns, decisions, anti-patterns).
-  For quick session notes say "save this as a memory" to use memory_capture instead.
-  For bulk extraction from documents, code, or PRs, use knowledge-harvest.
+description: 'Triggers: "save this to vault", "capture this", "remember this pattern", "add to vault", "vault capture". Durable patterns/decisions/anti-patterns. Use memory_capture for session notes, knowledge-harvest for bulk extraction.'
 ---
 
 # Vault Capture — Validated Knowledge Persistence

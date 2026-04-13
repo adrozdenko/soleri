@@ -1,12 +1,7 @@
 ---
 name: soleri-writing-plans
 tier: default
-description: >
-  Use when the user says "create a plan", "write up a plan", "break this down",
-  or "plan the implementation". Produces a human-readable markdown plan file.
-  Takes priority over orchestrate_plan MCP op for explicit plan-writing requests.
-  For exploration or ideation, use brainstorming. For automated task orchestration,
-  the engine uses orchestrate_plan directly without this skill.
+description: 'Triggers: "create a plan", "write up a plan", "break this down", "plan the implementation". Produces markdown plan file. Priority over orchestrate_plan for explicit requests. Use brainstorming for ideation.'
 ---
 
 # Writing Plans

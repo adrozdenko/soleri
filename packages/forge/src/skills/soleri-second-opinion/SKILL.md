@@ -1,10 +1,7 @@
 ---
 name: soleri-second-opinion
 tier: default
-description: >
-  Use when the user says "second opinion", "technical decision",
-  "comparing approaches", or "which approach". Provides informed recommendations
-  backed by vault knowledge, brain patterns, and web research.
+description: 'Triggers: "second opinion", "technical decision", "comparing approaches", "which approach". Informed recommendations backed by vault, brain, and web research.'
 ---
 
 # Second Opinion — Decision Support From All Sources

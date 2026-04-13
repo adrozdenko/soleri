@@ -1,10 +1,7 @@
 ---
 name: soleri-parallel-execute
 tier: default
-description: >
-  Use when the user says "run in parallel", "fan out", "concurrent execution",
-  "batch execute", or "dispatch subagents". Executes independent plan tasks
-  concurrently via subagents. For sequential execution, use executing-plans.
+description: 'Triggers: "run in parallel", "fan out", "concurrent execution", "batch execute", "dispatch subagents". Concurrent task execution via subagents. Use executing-plans for sequential.'
 ---
 
 # Parallel Execute — Subagent-Driven Plan Execution

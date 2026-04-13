@@ -1,10 +1,7 @@
 ---
 name: soleri-vault-curate
 tier: default
-description: >
-  Use when the user says "clean vault", "deduplicate vault", "groom knowledge",
-  "merge patterns", or "vault maintenance". Maintains vault quality through
-  deduplication, grooming, and contradiction detection.
+description: 'Triggers: "clean vault", "deduplicate vault", "groom knowledge", "merge patterns", "vault maintenance". Vault quality via dedup, grooming, contradiction detection.'
 ---
 
 # Vault Curate — Knowledge Maintenance

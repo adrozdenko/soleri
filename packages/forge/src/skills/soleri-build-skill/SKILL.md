@@ -1,10 +1,7 @@
 ---
 name: soleri-build-skill
 tier: default
-description: >
-  Use when creating a new skill, updating an existing skill, or scaffolding a skill
-  template for a Soleri agent. Triggers on "create a skill", "new skill", "build skill",
-  "add a skill", "write a skill", "skill template", "scaffold skill".
+description: 'Triggers: "create a skill", "new skill", "build skill", "add a skill", "write a skill", "skill template", "scaffold skill". Creates/updates/scaffolds Soleri agent skills.'
 ---
 
 # Build Skill — Create Skills for Soleri Agents

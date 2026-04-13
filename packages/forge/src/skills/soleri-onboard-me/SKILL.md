@@ -1,10 +1,7 @@
 ---
 name: soleri-onboard-me
 tier: default
-description: >
-  Use when the user says "onboard me", "I'm new here", "project overview",
-  or "what should I know about this codebase". Provides a structured tour
-  of everything the vault knows about this project.
+description: "Triggers: \"onboard me\", \"I'm new here\", \"project overview\", \"what should I know about this codebase\". Structured tour of vault knowledge about this project."
 ---
 
 # Onboard Me — Instant Project Intelligence

@@ -1,12 +1,7 @@
 ---
 name: soleri-agent-mode
 tier: default
-description: >
-  Use when the user addresses the agent directly ("AgentName, ...", "Hey AgentName"),
-  asks about available commands ("what commands do I have", "what can you do with MCP"),
-  uses vague agent-mode language ("save this", "remember this", "search for patterns",
-  "orchestrate this"), or when intent is ambiguous and needs routing to the right
-  facade + op. Also triggers on "how does this agent know", "command reference".
+description: 'Triggers: "AgentName, ...", "Hey AgentName", "what commands do I have", "what can you do with MCP", "command reference". Routes ambiguous intent to correct facade + op. Also handles vague phrases like "save this", "remember this", "search for patterns".'
 ---
 
 # Agent Mode — Intent Routing & Command Reference

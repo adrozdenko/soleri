@@ -1,10 +1,7 @@
 ---
 name: soleri-agent-issues
 tier: default
-description: >
-  Use when the user says "create issue", "file bug", "gh issue",
-  "create task", "report bug", or "create tickets". Creates structured
-  GitHub issues optimized for AI agent execution.
+description: 'Triggers: "create issue", "file bug", "gh issue", "create task", "report bug", "create tickets". Creates structured GitHub issues optimized for agent execution.'
 ---
 
 # Agent-Optimized Issue Creation

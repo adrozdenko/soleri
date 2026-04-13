@@ -1,10 +1,7 @@
 ---
 name: soleri-discovery-phase
 tier: default
-description: >
-  Use when the user says "I don't know where to start", "investigate",
-  "research this", "explore the problem", or "discovery". Structured exploration
-  before committing to a plan, producing options with tradeoffs.
+description: "Triggers: \"I don't know where to start\", \"investigate\", \"research this\", \"explore the problem\", \"discovery\". Structured exploration before committing to a plan, produces options with tradeoffs."
 ---
 
 # Discovery Phase

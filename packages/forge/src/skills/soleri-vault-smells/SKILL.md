@@ -1,11 +1,7 @@
 ---
 name: soleri-vault-smells
 tier: default
-description: >
-  Use when the user says "vault quality", "vault analysis", "knowledge quality",
-  "knowledge debt", "stale patterns", or "find contradictions". Deep knowledge
-  quality analysis beyond operational health checks. For basic operational
-  health scoring and diagnostics, use health-check instead.
+description: 'Triggers: "vault quality", "vault analysis", "knowledge quality", "knowledge debt", "stale patterns", "find contradictions". Deep knowledge quality analysis. Use health-check for basic operational diagnostics.'
 ---
 
 # Vault Smells — Knowledge Quality Deep Analysis

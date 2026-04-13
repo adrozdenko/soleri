@@ -1,10 +1,7 @@
 ---
 name: soleri-verification-before-completion
 tier: default
-description: >
-  Use when the user says "verify this works", "check output", "quality gate",
-  or "run tests before done". Internal quality gate before claiming any task
-  is done. For shipping, use deliver-and-ship instead.
+description: 'Triggers: "verify this works", "check output", "quality gate", "run tests before done". Internal quality gate before task completion. Use deliver-and-ship for shipping.'
 ---
 
 # Verification Before Completion

@@ -1,10 +1,7 @@
 ---
 name: soleri-yolo-mode
 tier: default
-description: >
-  Use when the user says "yolo", "autonomous", "skip approvals",
-  "full auto", or "hands off". Activates autonomous execution mode
-  that skips approval gates but preserves safety invariants.
+description: 'Triggers: "yolo", "autonomous", "skip approvals", "full auto", "hands off". Autonomous execution skipping approval gates, safety invariants preserved.'
 ---
 
 # YOLO Mode

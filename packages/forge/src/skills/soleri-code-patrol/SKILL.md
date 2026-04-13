@@ -1,11 +1,7 @@
 ---
 name: soleri-code-patrol
 tier: default
-description: >
-  Use when the user says "check against patterns", "pattern compliance",
-  "convention check", "review against vault", or "institutional review".
-  Reviews code against the project's own captured patterns and conventions.
-  For general code quality review (smells, architecture), use deep-review instead.
+description: 'Triggers: "check against patterns", "pattern compliance", "convention check", "review against vault", "institutional review". Reviews code against vault patterns/conventions. Use deep-review for general quality/architecture.'
 ---
 
 # Code Patrol — Review Code Against Your Own Knowledge

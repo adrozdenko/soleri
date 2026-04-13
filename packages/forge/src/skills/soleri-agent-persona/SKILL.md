@@ -1,10 +1,7 @@
 ---
 name: soleri-agent-persona
 tier: default
-description: >
-  Use when the user says "activate persona", "be yourself",
-  "stay in character", or "hello [agent name]". Reinforces character
-  persistence through the session and survives context compaction.
+description: 'Triggers: "activate persona", "be yourself", "stay in character", "hello [agent name]". Reinforces character persistence across session and context compaction.'
 ---
 
 # Agent Persona — Stay in Character

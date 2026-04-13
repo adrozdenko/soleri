@@ -1,11 +1,7 @@
 ---
 name: soleri-retrospective
 tier: default
-description: >
-  Use when the user says "sprint retro", "weekly summary", "what went well",
-  "end of sprint", or "monthly report". Time-bound reflection on recent work
-  that reviews sessions and extracts actionable improvements. For brain
-  pattern intelligence and strength scores, use brain-debrief instead.
+description: 'Triggers: "sprint retro", "weekly summary", "what went well", "end of sprint", "monthly report". Time-bound work reflection with actionable improvements. Use brain-debrief for pattern intelligence.'
 ---
 
 # Retrospective — Learning Report From Real Data

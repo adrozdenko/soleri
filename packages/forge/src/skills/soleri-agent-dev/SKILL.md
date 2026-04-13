@@ -1,10 +1,7 @@
 ---
 name: soleri-agent-dev
 tier: default
-description: >
-  Use when the user says "add a facade", "new tool", "extend vault",
-  "add brain feature", "new skill", or "extend agent". For extending
-  the agent's own internals with vault-first knowledge gathering.
+description: 'Triggers: "add a facade", "new tool", "extend vault", "add brain feature", "new skill", "extend agent". Extends agent internals with vault-first knowledge gathering.'
 ---
 
 # Agent Dev — Vault-First Internal Development

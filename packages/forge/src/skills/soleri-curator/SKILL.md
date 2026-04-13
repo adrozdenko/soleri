@@ -1,11 +1,7 @@
 ---
 name: soleri-curator
 tier: default
-description: >
-  Use when the user says "curator status", "vault health", "how is the vault",
-  "curator health", "check vault quality", or "what needs grooming".
-  Quick vault health check with targeted grooming recommendations.
-  For full maintenance (dedup, archive, consolidate), use vault-curate.
+description: 'Triggers: "curator status", "vault health", "how is the vault", "curator health", "check vault quality", "what needs grooming". Quick vault health + grooming recs. Use vault-curate for full maintenance.'
 ---
 
 # Curator — Vault Health and Quick Grooming

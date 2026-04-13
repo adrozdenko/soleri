@@ -1,11 +1,7 @@
 ---
 name: soleri-systematic-debugging
 tier: default
-description: >
-  Use as the FIRST response when something is broken — "bug", "failing test",
-  "not working", "debug this", "error", "crash", or "weird issue". Diagnoses
-  root cause before proposing fixes. After root cause is found, hand off to
-  fix-and-learn for repair and knowledge capture.
+description: 'FIRST response for "bug", "failing test", "not working", "debug this", "error", "crash", "weird issue". Diagnoses root cause before fixes. Hand off to fix-and-learn for repair.'
 ---
 
 # Systematic Debugging

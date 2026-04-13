@@ -1,10 +1,7 @@
 ---
 name: soleri-dream
 tier: default
-description: >
-  Use when the user says "dream", "consolidate memory", "clean up memory",
-  "memory cleanup", or "dream status". Runs automatic memory consolidation
-  — dedup, archive stale entries, resolve contradictions.
+description: 'Triggers: "dream", "consolidate memory", "clean up memory", "memory cleanup", "dream status". Automatic memory consolidation: dedup, archive stale, resolve contradictions.'
 ---
 
 # /dream — Automatic Memory Consolidation

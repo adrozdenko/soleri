@@ -1,11 +1,7 @@
 ---
 name: soleri-health-check
 tier: default
-description: >
-  Use when the user says "system health", "agent health", "run diagnostics",
-  "system status", or "check health". Read-only health assessment of the
-  knowledge base — scoring, reporting, finding issues. For deep quality
-  analysis (contradictions, stale patterns, knowledge debt), use vault-smells instead.
+description: 'Triggers: "system health", "agent health", "run diagnostics", "system status", "check health". Read-only knowledge base health assessment. Use vault-smells for deep quality analysis.'
 ---
 
 # Health Check — Knowledge Base Maintenance

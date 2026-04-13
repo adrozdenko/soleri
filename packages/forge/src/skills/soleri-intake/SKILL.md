@@ -1,11 +1,7 @@
 ---
 name: soleri-intake
 tier: default
-description: >
-  Use when the user says "ingest this", "add this URL", "import this book",
-  "read and capture", "ingest batch", or when processing external content
-  into the vault. Handles URLs, text, books, and batch imports with
-  automatic knowledge extraction.
+description: 'Triggers: "ingest this", "add this URL", "import this book", "read and capture", "ingest batch". Imports external content (URLs, text, books, batches) into vault with knowledge extraction.'
 ---
 
 # Intake — Ingest External Content
