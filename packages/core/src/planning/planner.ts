@@ -2,6 +2,7 @@
  * Planner facade — delegates to extracted modules, owns persistence.
  * Re-exports all public types for backward compatibility.
  */
+import { randomBytes } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { runGapAnalysis } from './gap-analysis.js';
@@ -708,7 +709,7 @@ export class Planner {
     const iteration = plan.checks.length + 1;
     const score = calculateScore(gaps, iteration);
     const check: PlanCheck = {
-      checkId: `chk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      checkId: `chk-${Date.now()}-${randomBytes(4).toString('hex')}`,
       planId,
       grade: scoreToGrade(score),
       score,

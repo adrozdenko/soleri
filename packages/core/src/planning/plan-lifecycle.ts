@@ -3,6 +3,7 @@
  * Extracted from planner.ts to isolate pure lifecycle logic from persistence.
  */
 
+import { randomBytes } from 'node:crypto';
 import type { PlanGap } from './gap-types.js';
 import { SEVERITY_WEIGHTS, CATEGORY_PENALTY_CAPS, CATEGORY_BONUS_CAPS } from './gap-types.js';
 
@@ -390,7 +391,7 @@ export function createPlanObject(params: {
 }): Plan {
   const now = Date.now();
   return {
-    id: `plan-${now}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `plan-${now}-${randomBytes(4).toString('hex')}`,
     objective: params.objective,
     scope: params.scope,
     status: params.initialStatus ?? 'draft',
