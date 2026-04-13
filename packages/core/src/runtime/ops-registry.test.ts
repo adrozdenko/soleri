@@ -166,6 +166,70 @@ describe('OpsRegistry', () => {
     });
   });
 
+  describe('visibility-filter consistency (facadeCount / facadeList / byFacade reconcile)', () => {
+    beforeEach(() => {
+      // vault facade: one user op, one internal op — still visible under default filter
+      registry.add('x_vault', 'vault', {
+        name: 'vault_search',
+        description: '',
+        auth: 'read',
+      });
+      registry.add('x_vault', 'vault', {
+        name: 'vault_bulk_add',
+        description: '',
+        auth: 'admin',
+        visibility: 'internal',
+      });
+      // admin facade: one user op
+      registry.add('x_admin', 'admin', {
+        name: 'admin_health',
+        description: '',
+        auth: 'read',
+      });
+      // telemetry facade: ALL ops internal — should NOT appear in user-visible counts
+      registry.add('x_telemetry', 'telemetry', {
+        name: 'telemetry_reset',
+        description: '',
+        auth: 'admin',
+        visibility: 'internal',
+      });
+      registry.add('x_telemetry', 'telemetry', {
+        name: 'telemetry_errors',
+        description: '',
+        auth: 'admin',
+        visibility: 'internal',
+      });
+    });
+
+    it('facadeCount (default) matches byFacade key count and facadeList length', () => {
+      const groupedKeys = Object.keys(registry.byFacade()).length;
+      const listLen = registry.facadeList().length;
+      expect(registry.facadeCount()).toBe(groupedKeys);
+      expect(registry.facadeCount()).toBe(listLen);
+      // Default visibility filters out the telemetry-only facade → 2, not 3
+      expect(registry.facadeCount()).toBe(2);
+    });
+
+    it('facadeCount({ includeInternal: true }) reveals all facades including internal-only', () => {
+      const groupedKeys = Object.keys(registry.byFacade({ includeInternal: true })).length;
+      expect(registry.facadeCount({ includeInternal: true })).toBe(groupedKeys);
+      expect(registry.facadeCount({ includeInternal: true })).toBe(3);
+    });
+
+    it('facadeList (default) excludes facades whose ops are all internal', () => {
+      expect(registry.facadeList()).toEqual(['admin', 'vault']);
+      expect(registry.facadeList()).not.toContain('telemetry');
+    });
+
+    it('facadeList({ includeInternal: true }) includes facades with only internal ops', () => {
+      expect(registry.facadeList({ includeInternal: true })).toEqual([
+        'admin',
+        'telemetry',
+        'vault',
+      ]);
+    });
+  });
+
   describe('has + clear', () => {
     it('has() returns true for registered, false otherwise', () => {
       registry.add('x', 'x', { name: 'a', description: '', auth: 'read' });

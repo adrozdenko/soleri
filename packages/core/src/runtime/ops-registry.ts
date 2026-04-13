@@ -117,10 +117,15 @@ export class OpsRegistry {
   }
 
   /**
-   * List facade suffixes in sorted order.
+   * List facade suffixes in sorted order. Respects the visibility filter so
+   * callers see exactly the facades whose ops match — stays consistent with
+   * `byFacade()`. A facade whose only ops are internal will NOT appear in
+   * the default (user-visible) view, but will appear with `includeInternal: true`.
    */
-  facadeList(): string[] {
-    return Array.from(this.facades).sort();
+  facadeList(options: OpsRegistryListOptions = {}): string[] {
+    const seen = new Set<string>();
+    for (const op of this.list(options)) seen.add(op.facade);
+    return Array.from(seen).sort();
   }
 
   /**
@@ -131,10 +136,16 @@ export class OpsRegistry {
   }
 
   /**
-   * Count of distinct facades.
+   * Count of distinct facades. Respects the visibility filter so the number
+   * reconciles with `byFacade()` key count and `facadeList()` length.
+   *
+   * Without this filter, `facadeCount` would count facades whose only ops
+   * are internal — facades that do NOT appear in `byFacade()`'s grouped output.
+   * The resulting mismatch (facadeCount: 27 vs byFacade keys: 24) misleads
+   * consumers like admin_tool_list.
    */
-  facadeCount(): number {
-    return this.facades.size;
+  facadeCount(options: OpsRegistryListOptions = {}): number {
+    return this.facadeList(options).length;
   }
 
   /**
