@@ -1,6 +1,6 @@
 {
   "name": "soleri",
-  "version": "9.20.4",
+  "version": "9.21.0",
   "description": "CLI for building AI agents that learn, remember, and grow. Thin wrapper around @soleri/cli.",
   "keywords": [
     "agent",
