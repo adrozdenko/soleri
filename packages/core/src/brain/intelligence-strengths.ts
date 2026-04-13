@@ -30,8 +30,13 @@ export function computeStrengthsFromFeedback(
   const uniqueContexts = Math.min(uniqueDomainCount, 5);
 
   for (const row of feedbackRows) {
+    // Skip rows without a real title. Historical bug: falling back to
+    // entry_id leaked machine-generated IDs (plan-..., architecture-...,
+    // *-seed) into brain_strengths.pattern. Patterns are meant to be
+    // human-readable labels; nameless entries can't contribute to learning.
+    if (!row.entry_title) continue;
     const domain = row.entry_domain ?? 'unknown';
-    const pattern = row.entry_title ?? row.entry_id;
+    const pattern = row.entry_title;
 
     const usageScore = Math.min(25, (row.total / USAGE_MAX) * 25);
     const spreadScore = Math.min(25, (uniqueContexts / SPREAD_MAX) * 25);
