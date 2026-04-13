@@ -208,6 +208,45 @@ describe('createAdminOps', () => {
       expect(opsList[0].name).toBe('admin_health');
       expect(opsList[0].description).toBe('Health check');
     });
+
+    it('does NOT crash when _allOps is a non-array truthy value (the verification-prompt bug)', async () => {
+      const op = findOp(ops, 'admin_tool_list');
+      // Regression: users passed `_allOps: true` thinking it was a boolean
+      // toggle. Previous handler did `if (allOps)` then `.map()` which threw
+      // "allOps is not iterable". The type guard now drops back to the
+      // scope dispatch instead of crashing.
+      const result = (await op.handler({ _allOps: true })) as Record<string, unknown>;
+      expect(result.scope).toBe('admin-only');
+      expect(result.count).toBe(8);
+    });
+
+    it("returns full facade catalogue when scope:'all' is passed", async () => {
+      const op = findOp(ops, 'admin_tool_list');
+      const result = (await op.handler({ scope: 'all' })) as Record<string, unknown>;
+      expect(result.scope).toBe('all');
+      // Every facade in ENGINE_MODULE_MANIFEST + admin = should be >8 facades
+      const grouped = result.ops as Record<string, string[]>;
+      expect(Object.keys(grouped).length).toBeGreaterThan(8);
+      // Vault, plan, brain, memory, admin are all expected to be present
+      expect(grouped.vault).toBeDefined();
+      expect(grouped.plan).toBeDefined();
+      expect(grouped.brain).toBeDefined();
+      expect(grouped.memory).toBeDefined();
+      expect(grouped.admin).toContain('admin_health');
+      // Count must exceed the admin-only fallback
+      expect(result.count as number).toBeGreaterThan(8);
+      // facadeCount helper present
+      expect(result.facadeCount as number).toBeGreaterThan(8);
+    });
+
+    it('admin-only fallback response no longer contains the misleading _allOps note', async () => {
+      const op = findOp(ops, 'admin_tool_list');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      expect(result.note).toBeUndefined();
+      // Replaced with a user-friendly hint
+      expect(typeof result.hint).toBe('string');
+      expect(result.hint as string).toContain("scope:'all'");
+    });
   });
 
   // ─── admin_config ─────────────────────────────────────────────

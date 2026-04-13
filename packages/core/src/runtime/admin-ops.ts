@@ -15,6 +15,21 @@ import { ENGINE_MODULE_MANIFEST } from '../engine/module-manifest.js';
 import { discoverSkills } from '../skills/sync-skills.js';
 
 /**
+ * Canonical list of admin ops. Kept as a module-level constant so both the
+ * admin-only fallback and the scope:'all' enumeration reference the same source.
+ */
+const ADMIN_OPS: readonly string[] = [
+  'admin_health',
+  'admin_tool_list',
+  'admin_config',
+  'admin_vault_size',
+  'admin_uptime',
+  'admin_version',
+  'admin_reset_cache',
+  'admin_diagnostic',
+] as const;
+
+/**
  * Resolve the @soleri/core package.json version.
  * Walks up from this file's directory to find the closest package.json.
  */
@@ -113,19 +128,29 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
     // ─── Introspection ───────────────────────────────────────────────
     {
       name: 'admin_tool_list',
-      description: 'List all available ops with descriptions and auth levels.',
+      description:
+        "List available ops. Defaults to admin-scoped. Pass scope:'all' for the full facade catalogue from ENGINE_MODULE_MANIFEST.",
       auth: 'read',
       handler: async (params) => {
         const verbose = params.verbose === true;
-        // The caller can pass in the full ops list via `_allOps` (injected by
-        // the facade builder). If not provided, we return only admin ops.
-        const allOps = params._allOps as
-          | Array<{ name: string; description: string; auth: string }>
-          | undefined;
-        if (allOps) {
+        const scope = typeof params.scope === 'string' ? params.scope : undefined;
+
+        // Internal injection path — the facade builder may pass a fully-registered
+        // ops list via `_allOps`. Callers should NOT set this by hand. Accept only
+        // a strict array (defensive: any non-array value falls through to scope
+        // dispatch below instead of crashing on `.map()` / `for..of`).
+        const rawAllOps = params._allOps;
+        if (Array.isArray(rawAllOps)) {
+          const allOps = rawAllOps as Array<{
+            name: string;
+            description: string;
+            auth: string;
+          }>;
           if (verbose) {
             return {
               count: allOps.length,
+              scope: 'all-registered',
+              source: '_allOps injection (facade builder)',
               ops: allOps.map((op) => ({
                 name: op.name,
                 description: op.description,
@@ -133,7 +158,6 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
               })),
             };
           }
-          // Group by facade prefix, truncate descriptions to 120 chars
           const grouped: Record<string, string[]> = {};
           for (const op of allOps) {
             const parts = op.name.split('_');
@@ -143,26 +167,40 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           }
           return {
             count: allOps.length,
+            scope: 'all-registered',
+            source: '_allOps injection (facade builder)',
             ops: grouped,
             routing: buildRoutingHints(),
           };
         }
-        // Fallback — just describe admin ops
-        const adminOps = [
-          'admin_health',
-          'admin_tool_list',
-          'admin_config',
-          'admin_vault_size',
-          'admin_uptime',
-          'admin_version',
-          'admin_reset_cache',
-          'admin_diagnostic',
-        ];
+
+        // User-facing full enumeration from the engine manifest.
+        // Static, authoritative, doesn't require facade-builder injection.
+        if (scope === 'all') {
+          const grouped: Record<string, string[]> = {};
+          for (const mod of ENGINE_MODULE_MANIFEST) {
+            grouped[mod.suffix] = [...mod.keyOps];
+          }
+          // Include admin ops explicitly — they're not a top-level facade row
+          // in the manifest's keyOps but they exist at runtime.
+          grouped.admin = [...ADMIN_OPS];
+          const count = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
+          return {
+            count,
+            scope: 'all',
+            source: 'ENGINE_MODULE_MANIFEST (key ops per facade — not every registered op)',
+            facadeCount: Object.keys(grouped).length,
+            ops: grouped,
+            routing: buildRoutingHints(),
+          };
+        }
+
+        // Default — admin-only fallback. Clear hint, no misleading "_allOps" prompt.
         return {
-          count: adminOps.length,
+          count: ADMIN_OPS.length,
           scope: 'admin-only',
-          note: 'Pass _allOps for full system op count',
-          ops: { admin: adminOps },
+          hint: "Pass scope:'all' to enumerate all facade key-ops across the engine.",
+          ops: { admin: [...ADMIN_OPS] },
           routing: buildRoutingHints(),
         };
       },
