@@ -12,11 +12,11 @@
 
 ---
 
-**Soleri is an open-source knowledge engine for AI agents.** Persistent memory, a learning brain, vector embeddings, a knowledge vault with Zettelkasten linking, and a planning system that orchestrates it all. Works with Claude Code, Codex, OpenCode, and any MCP-compatible editor.
+**Soleri is an open-source knowledge engine for AI agents.** It gives your agent a persistent vault, a learning brain, vector embeddings, Zettelkasten-linked knowledge, and a planning system. Works with Claude Code, Codex, OpenCode, and any MCP-compatible editor.
 
-Every AI session starts from zero. You explain your conventions, your architecture, your preferences -- and then the session ends and it's all gone. **Your expertise should compound, not evaporate.**
+Every AI session starts from zero. You explain your conventions, your architecture, your preferences, and then the session ends and it's all gone.
 
-Soleri fixes that. It gives your agent memory that persists, knowledge that compounds, and intelligence that grows with every session. Build a personal dev assistant or ship agents to your users -- same engine.
+Soleri fixes that. Your agent remembers across sessions, learns what works, and gets better the more you use it. Build a personal dev assistant or ship agents to your users, same engine.
 
 ## How It Works
 
@@ -31,7 +31,7 @@ my-agent/
 └── .mcp.json           # connects to Soleri Knowledge Engine
 ```
 
-Your AI editor reads the folder natively. The **Soleri Engine** provides the infrastructure — a vault that remembers, a brain that learns what works, and a planner that orchestrates. Enable what you need. The more you use it, the smarter it gets.
+Your AI editor reads the folder natively. The **Soleri Engine** runs behind it: a vault for knowledge, a brain that tracks what works, and a planner for multi-step tasks. Enable what you need.
 
 ## What You Get
 
@@ -58,30 +58,32 @@ Every agent has a composable persona that defines HOW it communicates — voice,
 
 ### The Engine
 
-**Vault** — Domain-separated knowledge store. Patterns, anti-patterns, workflows, and architecture decisions organized by domain, graph-connected for cross-domain discovery. Self-maintaining: deduplication, decay detection, and confidence tracking happen automatically. Knowledge packs export and import with Zettelkasten links — new agents inherit the full knowledge graph, not just orphaned entries.
+**Vault** stores patterns, anti-patterns, workflows, and architecture decisions organized by domain, graph-connected for cross-domain discovery. Self-maintaining: deduplication, decay detection, and confidence tracking run automatically. Knowledge packs export and import with Zettelkasten links, so new agents inherit the full knowledge graph, not orphaned entries.
 
-**Brain** — Learning loop that captures intelligence from real sessions. Search combines SQLite FTS5 with TF-IDF scoring. Tracks pattern strength with confidence scores, surfaces high-confidence patterns first, and operates on a rolling window. No manual tagging — capture is automatic.
+**Brain** captures intelligence from real sessions. Search combines SQLite FTS5 with TF-IDF scoring. Tracks pattern strength with confidence scores, surfaces high-confidence patterns first, and operates on a rolling window. No manual tagging needed, capture is automatic.
 
-**Memory** — Cross-session, cross-project continuity. Switch conversations, switch projects — nothing is lost. Link projects as related, parent/child, or fork and search across all of them with weighted relevance.
+**Memory** provides cross-session, cross-project continuity. Switch conversations, switch projects, nothing is lost. Link projects as related, parent/child, or fork, then search across all of them with weighted relevance.
 
-**Playbooks** — Multi-step validated procedures stored in the vault. Token migrations, component setup, contrast audits — each step includes validation criteria so the agent can execute and verify autonomously.
+**Playbooks** are multi-step validated procedures stored in the vault. Token migrations, component setup, contrast audits: each step includes validation criteria so the agent can execute and verify autonomously.
 
 ### Intelligence
 
-The engine doesn't just store knowledge — it actively helps you use it:
+Beyond storage, the engine actively surfaces and applies knowledge:
 
-- **Two-pass search** — Scan titles first, load only what's relevant. Saves 60-80% context tokens.
-- **Session briefing** — Start every session with context: what you did last time, active plans, recent learnings, brain recommendations.
-- **Learning radar** — Automatically detects patterns from corrections, search misses, and workarounds. Captures silently or queues for review.
-- **Content synthesis** — Turn vault knowledge into briefs, outlines, talking points, or post drafts.
-- **Skill chains** — Multi-step workflows with data flow between steps and approval gates.
-- **External ingestion** — Ingest articles, transcripts, and notes from outside coding sessions.
-- **Evidence-based reconciliation** — Cross-references plan tasks against actual git changes.
-- **OAuth discovery** — Uses your Claude Code subscription for free Anthropic API access (macOS + Linux).
+| Feature | What it does |
+|---------|-------------|
+| Two-pass search | Scans titles first, loads only what's relevant. Saves 60-80% context tokens. |
+| Session briefing | Opens every session with context: last session's work, active plans, recent learnings, brain recommendations. |
+| Learning radar | Detects patterns from corrections, search misses, and workarounds. Captures silently or queues for review. |
+| Content synthesis | Turns vault knowledge into briefs, outlines, talking points, or post drafts. |
+| Skill chains | Multi-step workflows with data flow between steps and approval gates. |
+| External ingestion | Pulls in articles, transcripts, and notes from outside coding sessions. |
+| Evidence-based reconciliation | Cross-references plan tasks against actual git changes. |
+| OAuth discovery | Uses your Claude Code subscription for free Anthropic API access (macOS + Linux). |
 
 ### Architecture
 
-Two layers, cleanly separated:
+Two layers:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -95,19 +97,17 @@ Two layers, cleanly separated:
 └─────────────────────────────────────────────────────────┘
 ```
 
-- **Agent Folder** — Plain files (YAML, Markdown, JSON). your AI editor reads them natively. No code generation, no compilation.
-- **Knowledge Engine (`@soleri/core`)** — Persistent state for all agents. Vault (SQLite + FTS5), Brain (TF-IDF scoring), Planner (state machine), Curator (dedup, grooming), and cross-project memory.
-- **Extensions** — Two tiers: **Domain Packs** (npm packages like `@soleri/domain-design`) for published intelligence, and **Local Packs** (project directories with `soleri-pack.json`) for project-specific knowledge, skills, and hooks. All extensions receive a narrowed `PackRuntime` (vault + projects + session checks).
-- **Model-agnostic** — The engine runs on pure SQLite FTS5 and TF-IDF math. Works without API keys. Pure SQLite — no external services required.
+The **Agent Folder** is plain files (YAML, Markdown, JSON). Your AI editor reads them natively. No code generation, no compilation.
+
+The **Knowledge Engine** (`@soleri/core`) handles persistent state: Vault (SQLite + FTS5), Brain (TF-IDF scoring), Planner (state machine), Curator (dedup, grooming), and cross-project memory.
+
+**Extensions** come in two tiers: **Domain Packs** (npm packages like `@soleri/domain-design`) for published intelligence, and **Local Packs** (project directories with `soleri-pack.json`) for project-specific knowledge, skills, and hooks. All extensions receive a narrowed `PackRuntime` (vault + projects + session checks).
+
+The engine is **model-agnostic**, running on pure SQLite FTS5 and TF-IDF math. No API keys required, no external services.
 
 ### Persistence
 
-Soleri uses **SQLite** (via [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)) as its sole storage engine. This is a deliberate architectural choice:
-
-- **FTS5** for full-text search with BM25 ranking — no external search service needed
-- **WAL mode** for concurrent reads during writes
-- **Zero ops** — no database server to provision, no connection strings to manage
-- **Tested at scale** — 10K vault entries with sub-50ms FTS search (see `vault-scaling.test.ts`)
+Soleri uses **SQLite** (via [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)) as its sole storage engine. FTS5 handles full-text search with BM25 ranking, WAL mode enables concurrent reads during writes, and there's nothing to provision or connect to. Tested at 10K vault entries with sub-50ms FTS search (see `vault-scaling.test.ts`).
 
 The `PersistenceProvider` interface exists for future extensibility, but SQLite is the only implemented and tested backend.
 
@@ -164,9 +164,7 @@ npx --yes soleri hooks promote my-hook          # remind → warn → block
 
 ### Teams & Ops
 
-- **Connected vaults** — Link agent, project, and team vaults with automatic search priority.
-- **Cross-project knowledge** — Link projects and search across them with weighted relevance.
-- **Health checks** — `npx --yes soleri doctor` reports engine version, domain status, vault health, brain tracking, and team sync state.
+Link agent, project, and team vaults with automatic search priority. Connect projects and search across them with weighted relevance. `npx --yes soleri doctor` reports engine version, domain status, vault health, brain tracking, and team sync state.
 
 ## Testing
 
@@ -179,7 +177,7 @@ The E2E suite covers: file-tree agent full pipeline (scaffold → engine boot �
 
 ## Contributing
 
-From fixing typos to building domain modules — see [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Roadmap
 
