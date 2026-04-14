@@ -1,4 +1,4 @@
-// ─── @soleri/core — Public API ──────────────────────────────────────
+// ─── @soleri/core — Public API ───────────────────────────────────────
 //
 // This barrel exports symbols needed by pack authors and external consumers.
 // Internal module details are available via subpath imports:
@@ -329,6 +329,8 @@ export {
   classifySkills,
   checkSkillCompatibility,
   ApprovalRequiredError,
+  FORGE_SKILL_PREFIX,
+  isForgeManaged,
 } from './skills/sync-skills.js';
 export type { SkillEntry, SyncResult, SyncOptions } from './skills/sync-skills.js';
 

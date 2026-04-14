@@ -19,7 +19,6 @@ import { composeClaudeMd } from './compose-claude-md.js';
 import { generateSkills } from './templates/skills.js';
 import { generateFlowFiles } from './templates/flows.js';
 import { generateAgentConfig } from './templates/agent-config.js';
-import type { AgentConfig } from './types.js';
 
 // ─── Skills Registry ─────────────────────────────────────────────────
 
@@ -699,12 +698,14 @@ See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) f
     writeFile(agentDir, `workflows/${wf.name}/tools.yaml`, wf.tools, filesCreated);
   }
 
-  // ─── 8. Copy bundled skills (with placeholder substitution) ─
+  // ─── 8. Copy bundled skills (with placeholder substitution + custom preservation) ─
   const resolvedSkills = resolveSkillsFilter(config.skillsFilter);
+  const agentSkillsDirFt = join(agentDir, 'skills');
   const skills = generateSkills({
     id: config.id,
     skills: resolvedSkills ?? undefined,
-  } as AgentConfig);
+    targetDir: existsSync(agentSkillsDirFt) ? agentSkillsDirFt : undefined,
+  });
   for (const [relativePath, content] of skills) {
     mkdirSync(join(agentDir, dirname(relativePath)), { recursive: true });
     writeFile(agentDir, relativePath, content, filesCreated);

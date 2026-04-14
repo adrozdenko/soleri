@@ -29,6 +29,14 @@ import type { SkillMetadata, SourceType } from '../packs/types.js';
 import { classifyTrust } from './trust-classifier.js';
 import { checkVersionCompat } from '../packs/resolver.js';
 
+/** Prefix used by all forge-managed skills. Custom skills must NOT use this prefix. */
+export const FORGE_SKILL_PREFIX = 'soleri-';
+
+/** Check whether a skill name belongs to the forge-managed namespace. */
+export function isForgeManaged(name: string): boolean {
+  return name.startsWith(FORGE_SKILL_PREFIX);
+}
+
 export interface SkillEntry {
   name: string;
   sourcePath: string;
@@ -220,7 +228,8 @@ export function syncSkillsToClaudeCode(
     }
   }
 
-  // Orphan cleanup: remove skills that belong to this agent but are no longer in source
+  // Orphan cleanup: remove forge-managed skills that are no longer in source.
+  // Custom skills (names NOT starting with FORGE_SKILL_PREFIX) are never touched.
   if (agentName) {
     const prefix = `${agentName.toLowerCase().replace(/\s+/g, '-')}-`;
     const syncedNames = new Set<string>(
@@ -234,6 +243,13 @@ export function syncSkillsToClaudeCode(
       for (const entry of entries) {
         if (!entry.isDirectory() && !lstatSync(join(skillsDir, entry.name)).isSymbolicLink())
           continue;
+
+        // Only consider forge-managed skills for cleanup.
+        // Global: forge skills are "{agent}-soleri-*", custom are "{agent}-{anything-else}"
+        // Local: forge skills are "soleri-*", custom are anything else
+        const canonicalName = isGlobal ? entry.name.slice(prefix.length) : entry.name;
+        if (!isForgeManaged(canonicalName)) continue;
+
         const matchPrefix = isGlobal ? entry.name.startsWith(prefix) : true;
         if (!matchPrefix) continue;
         if (syncedNames.has(entry.name)) continue;

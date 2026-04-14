@@ -280,13 +280,29 @@ export function registerAgent(program: Command): void {
         const enginePath = join(ctx.agentPath, 'instructions', '_engine.md');
         const claudeMdPath = join(ctx.agentPath, 'CLAUDE.md');
 
-        const skillFiles = generateSkills({ id: ctx.agentId } as AgentConfig);
+        const agentSkillsDir = join(ctx.agentPath, 'skills');
+        const skillFiles = generateSkills({
+          id: ctx.agentId,
+          targetDir: existsSync(agentSkillsDir) ? agentSkillsDir : undefined,
+        });
 
-        // 1. Sync skills
+        // 1. Sync skills (only write forge skills — custom skills already on disk)
         if (skillFiles.length > 0) {
           let newCount = 0;
           let updatedCount = 0;
+          let customSkipped = 0;
           for (const [relPath, content] of skillFiles) {
+            // Extract skill name from path: "skills/{name}/SKILL.md" → "{name}"
+            const skillName = relPath.split('/')[1] ?? '';
+            // Custom skills (non-soleri-* prefix) are already on disk — skip writing
+            if (
+              skillName &&
+              !skillName.startsWith('soleri-') &&
+              existsSync(join(ctx.agentPath, relPath))
+            ) {
+              customSkipped++;
+              continue;
+            }
             const fullPath = join(ctx.agentPath, relPath);
             const dirPath = dirname(fullPath);
             const isNew = !existsSync(fullPath);
@@ -295,8 +311,9 @@ export function registerAgent(program: Command): void {
             if (isNew) newCount++;
             else updatedCount++;
           }
+          const customMsg = customSkipped > 0 ? `, ${customSkipped} custom preserved` : '';
           p.log.success(
-            `Synced ${skillFiles.length} skills (${newCount} new, ${updatedCount} updated)`,
+            `Synced ${skillFiles.length} skills (${newCount} new, ${updatedCount} updated${customMsg})`,
           );
         }
 
@@ -413,10 +430,14 @@ export function registerAgent(program: Command): void {
           return;
         }
 
-        // Generate skills from latest forge templates
+        // Generate skills from latest forge templates (preserve custom skills)
+        const ftSkillsDir = join(ctx.agentPath, 'skills');
         const skillFiles = opts.skipSkills
           ? []
-          : generateSkills({ id: ctx.agentId } as AgentConfig);
+          : generateSkills({
+              id: ctx.agentId,
+              targetDir: existsSync(ftSkillsDir) ? ftSkillsDir : undefined,
+            });
 
         if (opts.dryRun) {
           p.log.info(`Would regenerate: ${enginePath}`);
@@ -440,11 +461,22 @@ export function registerAgent(program: Command): void {
           return;
         }
 
-        // 1. Sync skills from forge templates
+        // 1. Sync skills from forge templates (skip writing custom skills already on disk)
         if (skillFiles.length > 0) {
           let newCount = 0;
           let updatedCount = 0;
+          let customSkipped = 0;
           for (const [relPath, content] of skillFiles) {
+            const skillName = relPath.split('/')[1] ?? '';
+            // Custom skills already on disk — don't overwrite
+            if (
+              skillName &&
+              !skillName.startsWith('soleri-') &&
+              existsSync(join(ctx.agentPath, relPath))
+            ) {
+              customSkipped++;
+              continue;
+            }
             const fullPath = join(ctx.agentPath, relPath);
             const dirPath = dirname(fullPath);
             const isNew = !existsSync(fullPath);
@@ -453,8 +485,9 @@ export function registerAgent(program: Command): void {
             if (isNew) newCount++;
             else updatedCount++;
           }
+          const customMsg = customSkipped > 0 ? `, ${customSkipped} custom preserved` : '';
           p.log.success(
-            `Synced ${skillFiles.length} skills (${newCount} new, ${updatedCount} updated)`,
+            `Synced ${skillFiles.length} skills (${newCount} new, ${updatedCount} updated${customMsg})`,
           );
         }
 
@@ -494,8 +527,14 @@ export function registerAgent(program: Command): void {
       const newContent = generateClaudeMdTemplate(config);
       const newInject = generateInjectClaudeMd(config);
 
-      // Generate skills from latest forge templates
-      const skillFiles = opts.skipSkills ? [] : generateSkills(config);
+      // Generate skills from latest forge templates (preserve custom skills)
+      const legacySkillsDir = join(ctx.agentPath, 'skills');
+      const skillFiles = opts.skipSkills
+        ? []
+        : generateSkills({
+            ...config,
+            targetDir: existsSync(legacySkillsDir) ? legacySkillsDir : undefined,
+          });
 
       if (opts.dryRun) {
         p.log.info(`Would regenerate: ${contentPath}`);

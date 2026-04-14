@@ -88,15 +88,28 @@ describe('syncSkillsToClaudeCode — global orphan cleanup', () => {
     teardown();
   });
 
-  it('removes orphan directories that match the agent prefix (global)', async () => {
-    createSourceSkill('my-skill');
-    createGlobalSkillDir('test-agent-old-skill');
+  it('removes orphan forge-managed directories that match the agent prefix (global)', async () => {
+    createSourceSkill('soleri-active');
+    // Stale forge skill — should be cleaned up
+    createGlobalSkillDir('test-agent-soleri-old-removed');
 
     const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
     const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent', { global: true });
 
-    expect(result.removed).toContain('test-agent-old-skill');
-    expect(globalDirExists('test-agent-old-skill')).toBe(false);
+    expect(result.removed).toContain('test-agent-soleri-old-removed');
+    expect(globalDirExists('test-agent-soleri-old-removed')).toBe(false);
+  });
+
+  it('preserves custom (non-forge) skills during global orphan cleanup', async () => {
+    createSourceSkill('soleri-active');
+    // Custom skill with agent prefix — should NOT be cleaned up
+    createGlobalSkillDir('test-agent-my-custom-skill');
+
+    const { syncSkillsToClaudeCode } = await import('../sync-skills.js');
+    const result = syncSkillsToClaudeCode([sourceDir], 'Test Agent', { global: true });
+
+    expect(result.removed).not.toContain('test-agent-my-custom-skill');
+    expect(globalDirExists('test-agent-my-custom-skill')).toBe(true);
   });
 
   it('does NOT remove directories that do not match the agent prefix (global)', async () => {

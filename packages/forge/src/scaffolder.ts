@@ -446,8 +446,12 @@ export function scaffold(config: AgentConfig): ScaffoldResult {
     filesCreated.push(path);
   }
 
-  // Generate skill files
-  const skillFiles = generateSkills(config);
+  // Generate skill files (including custom skills discovered in existing agent dir)
+  const agentSkillsDirForDiscovery = join(agentDir, 'skills');
+  const skillFiles = generateSkills({
+    ...config,
+    targetDir: existsSync(agentSkillsDirForDiscovery) ? agentSkillsDirForDiscovery : undefined,
+  });
   for (const [path, content] of skillFiles) {
     const skillDir = join(agentDir, dirname(path));
     mkdirSync(skillDir, { recursive: true });

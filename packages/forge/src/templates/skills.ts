@@ -1,13 +1,15 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AgentConfig } from '../types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = join(__dirname, '..', 'skills');
 
 /** Placeholder token in skill templates that gets replaced with agent-specific tool prefix. */
 const AGENT_PLACEHOLDER = 'YOUR_AGENT_';
+
+/** Prefix used by all forge-managed skills. Custom skills must NOT use this prefix. */
+const FORGE_SKILL_PREFIX = 'soleri-';
 
 // ---------------------------------------------------------------------------
 // Frontmatter step extraction
@@ -138,6 +140,20 @@ export function injectSkillFeedback(content: string, skillName: string): string 
 // Skill generation
 // ---------------------------------------------------------------------------
 
+export interface GenerateSkillsOptions {
+  /** Agent ID — used for placeholder replacement (YOUR_AGENT_ → {id}_) */
+  id: string;
+  /** Optional allowlist of skill names to include. undefined = all. */
+  skills?: string[];
+  /**
+   * Optional path to the agent's existing skills directory.
+   * When provided, custom skills (names NOT starting with 'soleri-') are
+   * discovered and included as pass-through entries without transformation.
+   * This preserves custom skills during re-scaffold and refresh.
+   */
+  targetDir?: string;
+}
+
 /**
  * Generate skill files for the scaffolded agent.
  * Returns [relativePath, content] tuples for each skill.
@@ -146,13 +162,15 @@ export function injectSkillFeedback(content: string, skillName: string): string 
  * - If config.skills is undefined/empty, all skills are included (backward compat).
  * - Superpowers-adapted skills (MIT): copied as-is
  * - Engine-adapted skills: YOUR_AGENT_core → {config.id}_core
+ * - Custom skills (non-soleri-* in targetDir): included verbatim without transformation.
  *
  * When a skill's frontmatter contains a `steps` array, the steps are appended
  * as a hidden metadata block (`<!-- soleri:steps ... -->`) so the runtime can
  * extract them for step-tracking.
  */
-export function generateSkills(config: AgentConfig): Array<[string, string]> {
+export function generateSkills(config: GenerateSkillsOptions): Array<[string, string]> {
   const files: Array<[string, string]> = [];
+  const emittedNames = new Set<string>();
   let entries: string[];
 
   try {
@@ -206,6 +224,36 @@ export function generateSkills(config: AgentConfig): Array<[string, string]> {
     }
 
     files.push([`skills/${skillName}/SKILL.md`, content]);
+    emittedNames.add(skillName);
+  }
+
+  // Discover custom (non-forge) skills in the target directory and pass them through.
+  // Custom skills are NOT transformed (no placeholder replacement, no feedback injection).
+  if (config.targetDir && existsSync(config.targetDir)) {
+    try {
+      const targetEntries = readdirSync(config.targetDir);
+      for (const entry of targetEntries) {
+        // Skip forge-managed skills — they're already generated from source above
+        if (entry.startsWith(FORGE_SKILL_PREFIX)) continue;
+        if (emittedNames.has(entry)) continue;
+
+        const entryPath = join(config.targetDir, entry);
+        try {
+          if (!statSync(entryPath).isDirectory()) continue;
+        } catch {
+          continue;
+        }
+
+        const skillMd = join(entryPath, 'SKILL.md');
+        if (!existsSync(skillMd)) continue;
+
+        const content = readFileSync(skillMd, 'utf-8');
+        files.push([`skills/${entry}/SKILL.md`, content]);
+        emittedNames.add(entry);
+      }
+    } catch {
+      // Target directory unreadable — skip custom skill discovery
+    }
   }
 
   return files;
