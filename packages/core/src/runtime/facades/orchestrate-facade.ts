@@ -174,6 +174,30 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           ops: m.keyOps.map((op) => ({ name: op, description: m.description })),
         }));
 
+        // Auto-reconcile plans whose tasks are all terminal (completed/skipped)
+        // but whose lifecycle was never closed. This captures knowledge to
+        // vault and brain instead of letting closeStale() garbage-collect
+        // with accuracy:0. Uses existing planner.autoReconcile() which
+        // checks eligibility via buildAutoReconcileInput() (no in-progress
+        // tasks, max 2 pending+failed stragglers).
+        let autoReconciledCount = 0;
+        try {
+          const candidates = runtime.planner.getExecuting();
+          for (const plan of candidates) {
+            try {
+              const reconciled = runtime.planner.autoReconcile(plan.id);
+              if (reconciled) {
+                runtime.planner.complete(plan.id);
+                autoReconciledCount++;
+              }
+            } catch {
+              // Individual plan failure — continue with the rest
+            }
+          }
+        } catch {
+          // Non-critical — don't fail session start over auto-reconcile
+        }
+
         // Auto-close stale plans before reporting executing plans
         let stalePlansClosed = 0;
         try {
@@ -254,6 +278,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           preflight,
           topStrengths,
           orphansClosed,
+          autoReconciledCount,
           stalePlansClosed,
           ...(stagingWarning ? { stagingWarning } : {}),
           ...(dreamInfo ? { dream: dreamInfo } : {}),

@@ -120,6 +120,80 @@ describe('orchestrate-facade', () => {
     expect(closed?.status).toBe('completed');
   });
 
+  it('session_start auto-reconciles executing plans where all tasks are terminal', async () => {
+    // Use a planner with relaxed grading so test plans pass approve()
+    const plansPath = join(tmpdir(), `orch-autorec-${Date.now()}.json`);
+    const rt = makeRuntime(vault);
+    const { Planner } = await import('../../planning/planner.js');
+    (rt as Record<string, unknown>).planner = new Planner(plansPath, {
+      minGradeForApproval: 'F' as never,
+    });
+    const rtOps = captureOps(createOrchestrateFacadeOps(rt));
+
+    // Create a plan and move it to executing with all tasks completed
+    const plan = rt.planner.create({
+      objective: 'Auto-reconcile target for session_start integration test',
+      scope: 'test auto-reconcile wiring',
+    });
+    rt.planner.grade(plan.id);
+    rt.planner.approve(plan.id);
+    rt.planner.splitTasks(plan.id, [
+      { title: 'Task A', description: 'Do A' },
+      { title: 'Task B', description: 'Do B' },
+    ]);
+    rt.planner.startExecution(plan.id);
+    rt.planner.updateTask(plan.id, 'task-1', 'completed');
+    rt.planner.updateTask(plan.id, 'task-2', 'completed');
+
+    const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/auto-rec' });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+    expect(data.autoReconciledCount).toBe(1);
+
+    // The plan should be completed with a real reconciliation (not stale-closed)
+    const completed = rt.planner.get(plan.id);
+    expect(completed?.status).toBe('completed');
+    expect(completed?.reconciliation).toBeDefined();
+    expect(completed?.reconciliation?.accuracy).toBe(100);
+    expect(completed?.reconciliation?.summary).toContain('All tasks completed');
+  });
+
+  it('session_start does NOT auto-reconcile plans with pending tasks', async () => {
+    const plansPath = join(tmpdir(), `orch-norec-${Date.now()}.json`);
+    const rt = makeRuntime(vault);
+    const { Planner } = await import('../../planning/planner.js');
+    (rt as Record<string, unknown>).planner = new Planner(plansPath, {
+      minGradeForApproval: 'F' as never,
+    });
+    const rtOps = captureOps(createOrchestrateFacadeOps(rt));
+
+    // Create a plan with one completed and three pending tasks
+    const plan = rt.planner.create({
+      objective: 'Should not auto-reconcile with many pending tasks',
+      scope: 'test auto-reconcile precondition gating',
+    });
+    rt.planner.grade(plan.id);
+    rt.planner.approve(plan.id);
+    rt.planner.splitTasks(plan.id, [
+      { title: 'Task A', description: 'Do A' },
+      { title: 'Task B', description: 'Do B' },
+      { title: 'Task C', description: 'Do C' },
+      { title: 'Task D', description: 'Do D' },
+    ]);
+    rt.planner.startExecution(plan.id);
+    rt.planner.updateTask(plan.id, 'task-1', 'completed');
+    // task-2, task-3, task-4 remain pending (3 pending > 2 threshold)
+
+    const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/no-rec' });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+    expect(data.autoReconciledCount).toBe(0);
+
+    // Plan should still be executing
+    const stillExecuting = rt.planner.get(plan.id);
+    expect(stillExecuting?.status).toBe('executing');
+  });
+
   // ─── project_get ───────────────────────────────────────────────
 
   it('project_get returns not found for unregistered project', async () => {
