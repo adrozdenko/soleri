@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createAgentRuntime } from '../runtime/runtime.js';
 import type { AgentRuntime } from '../runtime/types.js';
@@ -29,7 +29,7 @@ describe('Governance (colocated)', () => {
   describe('getPolicy', () => {
     it('returns moderate defaults for unknown project', () => {
       const policy = runtime.governance.getPolicy('/unknown');
-      expect(policy.projectPath).toBe('/unknown');
+      expect(policy.projectPath).toBe(resolve('/unknown').replace(/\\/g, '/'));
       expect(policy.quotas.maxEntriesTotal).toBe(500);
       expect(policy.quotas.maxEntriesPerCategory).toBe(150);
       expect(policy.quotas.maxEntriesPerType).toBe(250);

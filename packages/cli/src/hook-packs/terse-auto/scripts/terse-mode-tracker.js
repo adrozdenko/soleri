@@ -31,9 +31,9 @@ process.stdin.on('end', () => {
 
     // Detect deactivation
     if (/\b(stop terse|normal mode|verbose)\b/i.test(prompt)) {
-      try { fs.unlinkSync(flagPath); } catch (e) {}
+      try { fs.unlinkSync(flagPath); } catch (_e) {}
     }
-  } catch (e) {
+  } catch (_e) {
     // Silent fail
   }
 });

@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import type { Vault } from '../vault/vault.js';
 import type { PersistenceProvider } from '../persistence/types.js';
 import type {
@@ -113,6 +114,11 @@ export class Governance {
     `);
   }
 
+  /** Consistent cross-platform path key for DB lookups. */
+  private normalizePath(p: string): string {
+    return resolve(p).replace(/\\/g, '/');
+  }
+
   // ─── Policy Delegates ───────────────────────────────────────────
 
   getPolicy(projectPath: string): VaultPolicy {
@@ -173,7 +179,7 @@ export class Governance {
     },
     source?: string,
   ): number {
-    return this.proposals.propose(projectPath, entryData, source);
+    return this.proposals.propose(this.normalizePath(projectPath), entryData, source);
   }
 
   approveProposal(proposalId: number, decidedBy?: string): Proposal | null {
@@ -193,11 +199,16 @@ export class Governance {
   }
 
   listPendingProposals(projectPath?: string, limit?: number): Proposal[] {
-    return this.proposals.listPendingProposals(projectPath, limit);
+    return this.proposals.listPendingProposals(
+      projectPath ? this.normalizePath(projectPath) : projectPath,
+      limit,
+    );
   }
 
   getProposalStats(projectPath?: string): ProposalStats {
-    return this.proposals.getProposalStats(projectPath);
+    return this.proposals.getProposalStats(
+      projectPath ? this.normalizePath(projectPath) : projectPath,
+    );
   }
 
   expireStaleProposals(maxAgeDays?: number): number {
@@ -207,6 +218,6 @@ export class Governance {
   // ─── Dashboard Delegate ─────────────────────────────────────────
 
   getDashboard(projectPath: string): GovernanceDashboard {
-    return this.dashboardModule.getDashboard(projectPath);
+    return this.dashboardModule.getDashboard(this.normalizePath(projectPath));
   }
 }

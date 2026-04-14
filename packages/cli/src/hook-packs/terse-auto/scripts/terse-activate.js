@@ -22,7 +22,7 @@ const level = VALID_LEVELS.includes(process.env.SOLERI_TERSE_LEVEL)
 try {
   fs.mkdirSync(soleriDir, { recursive: true });
   fs.writeFileSync(flagPath, level);
-} catch (e) {
+} catch (_e) {
   // Silent fail — flag is best-effort
 }
 

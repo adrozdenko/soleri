@@ -1,4 +1,4 @@
-import { resolve as resolvePath } from 'node:path';
+import { resolve } from 'node:path';
 import type { PersistenceProvider } from '../persistence/types.js';
 import type {
   PolicyType,
@@ -79,7 +79,9 @@ export class GovernancePolicies {
    * caller-agnostic correctness.
    */
   private normalizePath(projectPath: string): string {
-    return resolvePath(projectPath);
+    // resolve() handles relative paths (. and ..), forward slashes give
+    // consistent DB keys on Windows where resolve uses backslashes.
+    return resolve(projectPath).replace(/\\/g, '/');
   }
 
   getPolicy(projectPath: string): VaultPolicy {
