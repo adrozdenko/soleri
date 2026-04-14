@@ -145,13 +145,13 @@ Runs [oxlint](https://oxc.rs/docs/guide/usage/linter) on the affected file after
 
 ### Terse mode
 
-Reduce token usage by compressing agent output. Drops filler words, uses fragments, keeps all technical substance:
+Reduce output tokens by ~66% via word budgets. Code blocks stay normal; only prose gets compressed:
 
 ```bash
 npx @soleri/cli hooks add-pack terse-auto
 ```
 
-Auto-activates terse mode on every session start. The agent's persona and technical accuracy stay intact; only filler gets cut. Toggle levels with `/terse lite|full|ultra` or disable with "stop terse".
+Auto-activates terse mode on every session start. Enforces word budgets (60 words default) while keeping persona and technical accuracy intact. Toggle levels with `/terse lite|full|ultra` or disable with "stop terse".
 
 ### Worktree cleanup
 

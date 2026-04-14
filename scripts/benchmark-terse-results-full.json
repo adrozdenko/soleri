@@ -1,0 +1,81 @@
+{
+  "runner": "claude -p",
+  "terseLevel": "full",
+  "timestamp": "2026-04-14T18:58:24.100Z",
+  "results": [
+    {
+      "label": "Explain: React re-renders",
+      "category": "explain",
+      "normalTokens": 762,
+      "terseTokens": 606,
+      "reduction": 156,
+      "reductionPct": "20.5"
+    },
+    {
+      "label": "Explain: DB connection pooling",
+      "category": "explain",
+      "normalTokens": 1460,
+      "terseTokens": 1583,
+      "reduction": -123,
+      "reductionPct": "-8.4"
+    },
+    {
+      "label": "Debug: Node memory leak",
+      "category": "debug",
+      "normalTokens": 1567,
+      "terseTokens": 1022,
+      "reduction": 545,
+      "reductionPct": "34.8"
+    },
+    {
+      "label": "Debug: CORS error",
+      "category": "debug",
+      "normalTokens": 402,
+      "terseTokens": 301,
+      "reduction": 101,
+      "reductionPct": "25.1"
+    },
+    {
+      "label": "Review: auth middleware",
+      "category": "review",
+      "normalTokens": 812,
+      "terseTokens": 591,
+      "reduction": 221,
+      "reductionPct": "27.2"
+    },
+    {
+      "label": "Plan: add caching layer",
+      "category": "plan",
+      "normalTokens": 1991,
+      "terseTokens": 1285,
+      "reduction": 706,
+      "reductionPct": "35.5"
+    },
+    {
+      "label": "Howto: Git rebase vs merge",
+      "category": "howto",
+      "normalTokens": 514,
+      "terseTokens": 555,
+      "reduction": -41,
+      "reductionPct": "-8.0"
+    },
+    {
+      "label": "Howto: TypeScript generics",
+      "category": "howto",
+      "normalTokens": 1247,
+      "terseTokens": 1186,
+      "reduction": 61,
+      "reductionPct": "4.9"
+    }
+  ],
+  "summary": {
+    "totalNormal": 8755,
+    "totalTerse": 7129,
+    "totalReduction": 1626,
+    "reductionPct": 18.6,
+    "avgNormalPerPrompt": 1094,
+    "avgTersePerPrompt": 891,
+    "totalCostUsd": 1.9999,
+    "verdict": "CLAIM NOT SUPPORTED"
+  }
+}

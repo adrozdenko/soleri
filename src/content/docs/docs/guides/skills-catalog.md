@@ -53,7 +53,7 @@ Install any of these to extend your agent's capabilities:
 | **vault-curate**                  | Knowledge maintenance — deduplicate, merge, resolve contradictions, groom                  |
 | **vault-smells**                  | Deep knowledge quality analysis — contradictions, stale patterns, orphans, decay           |
 | **verification-before-completion**| Internal quality gate before claiming a task is done — run tests, check output             |
-| **terse**                         | Token-efficient responses — compress output while keeping technical accuracy               |
+| **terse**                         | Word-budget compression — ~66% output token reduction at 7.1/10 quality (benchmarked)      |
 | **compress**                      | Compresses natural language files (CLAUDE.md, memory) to reduce input tokens               |
 | **yolo-mode**                     | Autonomous execution — skip approval gates while preserving safety invariants              |
 

@@ -1,0 +1,798 @@
+{
+  "version": 3,
+  "runner": "claude -p",
+  "terseLevel": "full",
+  "variantsRun": [
+    "normal",
+    "v2",
+    "v3"
+  ],
+  "qualityEnabled": true,
+  "timestamp": "2026-04-14T20:26:35.261Z",
+  "prompts": [
+    {
+      "label": "Explain: React re-renders",
+      "category": "explain",
+      "message": "Why does this React component re-render on every state update even though the props haven't changed? Explain the common causes and fixes."
+    },
+    {
+      "label": "Explain: DB connection pooling",
+      "category": "explain",
+      "message": "Explain database connection pooling. When should I use it, what are the tradeoffs, and how do I configure it in PostgreSQL?"
+    },
+    {
+      "label": "Debug: Node memory leak",
+      "category": "debug",
+      "message": "My Node.js Express server's memory usage keeps growing over time until it crashes with OOM. What are the most common causes and how do I diagnose which one it is?"
+    },
+    {
+      "label": "Debug: CORS error",
+      "category": "debug",
+      "message": "I'm getting 'Access-Control-Allow-Origin' errors when my React frontend at localhost:3000 calls my Express API at localhost:4000. How do I fix this?"
+    },
+    {
+      "label": "Review: auth middleware",
+      "category": "review",
+      "message": "Review this Express middleware for security issues:\n\n```typescript\nconst authMiddleware = (req, res, next) => {\n  const token = req.headers.authorization?.split(' ')[1];\n  if (!token) return res.status(401).json({ error: 'No token' });\n  try {\n    const decoded = jwt.verify(token, process.env.JWT_SECRET);\n    req.user = decoded;\n    next();\n  } catch (err) {\n    res.status(401).json({ error: 'Invalid token' });\n  }\n};\n```"
+    },
+    {
+      "label": "Plan: add caching layer",
+      "category": "plan",
+      "message": "I need to add a Redis caching layer to my Express API. The API serves product data from PostgreSQL. Walk me through the implementation approach."
+    },
+    {
+      "label": "Howto: Git rebase vs merge",
+      "category": "howto",
+      "message": "When should I use git rebase vs git merge? What are the risks of each?"
+    },
+    {
+      "label": "Howto: TypeScript generics",
+      "category": "howto",
+      "message": "How do TypeScript generics work? Show me practical examples beyond the basic identity function."
+    }
+  ],
+  "variants": {
+    "normal": {
+      "totalTokens": 9112,
+      "perPrompt": [
+        {
+          "label": "Explain: React re-renders",
+          "tokens": 827,
+          "response": "## Why React Components Re-render With Unchanged Props\n\nThree main causes:\n\n### 1. Parent re-renders → child re-renders\n\nReact's default behavior: when parent renders, all children render too, regardless of props.\n\n**Fix:** Wrap child in `React.memo()`:\n\n```jsx\nconst Child = React.memo(({ name }) => {\n  return <div>{name}</div>;\n});\n```\n\n`memo` does shallow comparison of props. If they're the same, render is skipped.\n\n---\n\n### 2. New object/array/function references every render\n\nThis is the sneaky one. Even with `memo`, this defeats it:\n\n```jsx\nfunction Parent() {\n  const [count, setCount] = useState(0);\n\n  // New object every render — memo sees different reference\n  const style = { color: 'red' };\n\n  // New function every render — same problem\n  const handleClick = () => console.log('clicked');\n\n  return <Child style={style} onClick={handleClick} />;\n}\n```\n\nEvery render creates a fresh `style` object and `handleClick` function. Shallow comparison fails because `{} !== {}`.\n\n**Fix:** `useMemo` for objects/arrays, `useCallback` for functions:\n\n```jsx\nfunction Parent() {\n  const [count, setCount] = useState(0);\n\n  const style = useMemo(() => ({ color: 'red' }), []);\n  const handleClick = useCallback(() => console.log('clicked'), []);\n\n  return <Child style={style} onClick={handleClick} />;\n}\n```\n\n---\n\n### 3. Context changes\n\nIf your component consumes a context via `useContext`, it re-renders whenever that context value changes — even if the component only uses a small piece of it.\n\n```jsx\n// This re-renders on ANY change to AppContext\nfunction Sidebar() {\n  const { theme } = useContext(AppContext);\n  return <nav className={theme}>...</nav>;\n}\n```\n\n**Fix options:**\n- Split context into smaller, focused contexts (ThemeContext, AuthContext, etc.)\n- Use a selector pattern with a library like `use-context-selector`\n- Memoize the context value in the provider:\n\n```jsx\nfunction AppProvider({ children }) {\n  const [theme, setTheme] = useState('dark');\n\n  // Without this, every provider render creates a new object\n  const value = useMemo(() => ({ theme, setTheme }), [theme]);\n\n  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;\n}\n```\n\n---\n\n### Quick diagnostic\n\nDrop this into a component to confirm it's re-rendering:\n\n```jsx\nuseEffect(() => {\n  console.log('Component rendered', { props });\n});\n```\n\nOr use React DevTools → Profiler → \"Highlight updates when components render\" to see it visually.\n\n### TL;DR\n\n| Cause | Fix |\n|-------|-----|\n| Parent re-renders | `React.memo` |\n| New object/function refs in props | `useMemo` / `useCallback` |\n| Context changes | Split contexts or memoize provider value |\n\nMost of the time it's cause #2 — you wrap something in `memo` but pass an inline object or arrow function as a prop, and wonder why it still re-renders.\n\nConfidence: 9/10"
+        },
+        {
+          "label": "Explain: DB connection pooling",
+          "tokens": 1902,
+          "response": "# Database Connection Pooling\n\n## What It Is\n\nEvery time your app talks to PostgreSQL, it opens a TCP connection, does the TLS handshake, authenticates, and allocates server-side memory. That's expensive — roughly 5-10ms per connection on a good day. Connection pooling keeps a set of pre-established connections around and hands them out to your app on demand instead of creating new ones each time.\n\n## When You Need It\n\n- **Web apps with many short-lived queries** — HTTP request comes in, runs 1-3 queries, leaves. Without pooling, you're paying connection overhead per request.\n- **Serverless / Lambda** — each invocation might spin up a new connection. 500 concurrent invocations = 500 connections. PostgreSQL defaults to max 100. You'll hit `too many connections` fast.\n- **Microservices** — 10 services × 10 instances × 10 connections each = 1000 connections. PostgreSQL doesn't love that.\n- **High concurrency** — anything above ~50 concurrent database users benefits from pooling.\n\n**You probably don't need it** for single-user scripts, batch jobs, or apps with a handful of long-lived connections that stay open anyway.\n\n## How PostgreSQL Handles Connections Natively\n\nPostgreSQL forks a **new OS process per connection**. Each backend process consumes ~5-10MB of RAM. 500 connections = 2.5-5GB just in backend overhead, before your actual queries. Beyond ~300 connections, performance degrades due to context switching, lock contention, and snapshot management.\n\nThis is why pooling matters — you can serve 10,000 app-level \"connections\" through 50 actual PostgreSQL connections.\n\n## The Tradeoffs\n\n| Benefit | Cost |\n|---------|------|\n| Fewer actual PG connections | Another component to operate and monitor |\n| Lower latency (skip handshake) | Session-level state (`SET`, `PREPARE`, temp tables) can leak between clients |\n| Protects PG from connection storms | Transaction-mode pooling breaks `LISTEN/NOTIFY`, prepared statements, advisory locks |\n| Better throughput under concurrency | Adds a failure point — pooler goes down, everything goes down |\n\n## Pooling Modes\n\n| Mode | How It Works | Session State Safe? | Performance |\n|------|-------------|-------------------|-------------|\n| **Session** | 1:1 mapping until client disconnects | Yes | Lowest benefit |\n| **Transaction** | Connection returned after each transaction | No | Best for most apps |\n| **Statement** | Connection returned after each statement | No | Only for simple autocommit workloads |\n\nTransaction mode is what you want 90% of the time.\n\n## Configuration: PgBouncer (most common)\n\nPgBouncer is the standard external pooler. Lightweight, battle-tested, single-threaded (handles thousands of connections fine).\n\n### Install\n\n```bash\n# Ubuntu/Debian\nsudo apt install pgbouncer\n\n# macOS\nbrew install pgbouncer\n```\n\n### Config (`/etc/pgbouncer/pgbouncer.ini`)\n\n```ini\n[databases]\nmyapp = host=127.0.0.1 port=5432 dbname=myapp\n\n[pgbouncer]\nlisten_addr = 0.0.0.0\nlisten_port = 6432\nauth_type = md5\nauth_file = /etc/pgbouncer/userlist.txt\n\n# Pool sizing — this is the important part\npool_mode = transaction\ndefault_pool_size = 20        # connections per user/db pair\nmin_pool_size = 5             # keep this many warm\nmax_client_conn = 1000        # max app-side connections\nmax_db_connections = 50       # hard cap on actual PG connections\n\n# Timeouts\nserver_idle_timeout = 300     # close idle PG connections after 5min\nclient_idle_timeout = 0       # 0 = no limit on idle clients\nquery_timeout = 30            # kill queries running longer than 30s\n```\n\n### Auth file (`/etc/pgbouncer/userlist.txt`)\n\n```\n\"myapp_user\" \"md5<hash>\"\n```\n\nGenerate the hash:\n```sql\nSELECT 'md5' || md5('password' || 'myapp_user');\n```\n\n### Start it\n\n```bash\npgbouncer -d /etc/pgbouncer/pgbouncer.ini\n```\n\nYour app connects to port `6432` instead of `5432`. That's it.\n\n## Configuration: Built-in App-Level Pooling\n\nIf you don't want to run PgBouncer as a separate process, most drivers have built-in pooling:\n\n**Node.js (pg)**\n```js\nconst { Pool } = require('pg');\nconst pool = new Pool({\n  host: 'localhost',\n  database: 'myapp',\n  max: 20,                // pool size\n  idleTimeoutMillis: 30000,\n  connectionTimeoutMillis: 2000,\n});\n\nconst result = await pool.query('SELECT * FROM users WHERE id = $1', [42]);\n```\n\n**Python (psycopg3)**\n```python\nfrom psycopg_pool import ConnectionPool\n\npool = ConnectionPool(\n    conninfo=\"host=localhost dbname=myapp\",\n    min_size=5,\n    max_size=20,\n    max_idle=300,\n)\n\nwith pool.connection() as conn:\n    conn.execute(\"SELECT * FROM users WHERE id = %s\", [42])\n```\n\n**Go (pgxpool)**\n```go\nconfig, _ := pgxpool.ParseConfig(\"postgres://localhost/myapp\")\nconfig.MaxConns = 20\nconfig.MinConns = 5\n\npool, _ := pgxpool.NewWithConfig(context.Background(), config)\ndefer pool.Close()\n\nrow := pool.QueryRow(ctx, \"SELECT name FROM users WHERE id=$1\", 42)\n```\n\n## Sizing the Pool\n\nCommon mistake: making it too big. More connections ≠ more throughput. PostgreSQL performance peaks at a surprisingly low number.\n\nRule of thumb from the PostgreSQL wiki:\n\n```\npool_size = (core_count * 2) + effective_spindle_count\n```\n\nFor a 4-core machine with SSDs: `(4 * 2) + 1 = 9` connections handles more throughput than 100 connections. Sounds counterintuitive, but past the optimal point, connections spend more time waiting on locks and context switches than doing work.\n\nStart with **10-20** and benchmark. Increase only if you see connection wait time in your metrics, not preemptively.\n\n## PgBouncer vs Pgpool-II vs Supavisor\n\n| | PgBouncer | Pgpool-II | Supavisor |\n|---|-----------|-----------|-----------|\n| Focus | Pooling only | Pooling + replication + query routing | Pooling (multi-tenant) |\n| Resource usage | ~2MB RAM | Heavy | Medium |\n| Complexity | Low | High | Medium |\n| When to use | Almost always | Need built-in failover | Supabase / multi-tenant |\n\nPgBouncer is the right default choice. Pgpool-II does too many things and none of them as well as dedicated tools.\n\n## Quick Diagnostic Queries\n\nCheck current connections:\n```sql\nSELECT count(*), state FROM pg_stat_activity GROUP BY state;\n```\n\nCheck if you're hitting limits:\n```sql\nSHOW max_connections;\nSELECT count(*) FROM pg_stat_activity;\n```\n\nPgBouncer stats (connect to PgBouncer admin):\n```sql\nSHOW pools;\nSHOW stats;\n```\n\nConfidence: 9/10 — this is well-established PostgreSQL ops knowledge. Pool sizing formula and PgBouncer config are from official docs and widely validated in production."
+        },
+        {
+          "label": "Debug: Node memory leak",
+          "tokens": 1534,
+          "response": "# Node.js Express Memory Leaks: Causes & Diagnosis\n\n## Most Common Causes\n\n### 1. Event Listener Accumulation\n```js\n// BAD — new listener every request\napp.get('/stream', (req, res) => {\n  process.on('SIGTERM', () => res.end()); // never removed\n});\n\n// FIX — remove on close\napp.get('/stream', (req, res) => {\n  const handler = () => res.end();\n  process.on('SIGTERM', handler);\n  res.on('close', () => process.removeListener('SIGTERM', handler));\n});\n```\n\n### 2. Closures Holding References\n```js\n// BAD — bigData stays in memory as long as the closure lives\nlet cache = {};\napp.get('/data', (req, res) => {\n  const bigData = loadHugeDataset();\n  cache[req.query.key] = () => bigData; // closure pins bigData\n});\n```\n\n### 3. Unbounded Caches / Maps\n```js\n// BAD — grows forever\nconst sessionCache = {};\napp.use((req, res, next) => {\n  sessionCache[req.sessionID] = { ...req.session };\n  next();\n});\n\n// FIX — use an LRU cache with max size\nimport { LRUCache } from 'lru-cache';\nconst sessionCache = new LRUCache({ max: 1000 });\n```\n\n### 4. Unfinished HTTP Responses / Streams\nRequests that never call `res.end()` or `res.json()` on some code path keep the entire req/res pair alive.\n\n### 5. Global Arrays / Logs Growing\n```js\n// BAD — grows every request\nconst requestLog = [];\napp.use((req, res, next) => {\n  requestLog.push({ url: req.url, time: Date.now() });\n  next();\n});\n```\n\n### 6. Database Connection Pool Leaks\nConnections acquired but never released (missing `.release()` or error handler that skips cleanup).\n\n### 7. Third-Party Middleware Bugs\nBody parsers without size limits, session stores without TTL, etc.\n\n---\n\n## Diagnosis Toolkit\n\n### Step 1: Confirm it's a leak (not just high usage)\n\n```js\n// Add this endpoint to your server\napp.get('/health/memory', (req, res) => {\n  const mem = process.memoryUsage();\n  res.json({\n    rss: `${(mem.rss / 1024 / 1024).toFixed(1)} MB`,\n    heapUsed: `${(mem.heapUsed / 1024 / 1024).toFixed(1)} MB`,\n    heapTotal: `${(mem.heapTotal / 1024 / 1024).toFixed(1)} MB`,\n    external: `${(mem.external / 1024 / 1024).toFixed(1)} MB`,\n  });\n});\n```\n\nPoll this every 30s. If `heapUsed` monotonically increases under steady load, you have a leak.\n\n### Step 2: Heap Snapshots (the definitive tool)\n\n```js\n// Add to your server — trigger via endpoint\nconst v8 = require('v8');\nconst fs = require('fs');\n\napp.get('/debug/heapsnapshot', (req, res) => {\n  const snapshotStream = v8.writeHeapSnapshot();\n  res.json({ file: snapshotStream });\n});\n```\n\nTake snapshots at T=0, T+5min, T+20min. Open in Chrome DevTools → Memory tab → Comparison view. Sort by **\"# Delta\"** — objects that keep growing are your leak.\n\n### Step 3: Check Event Listener Counts\n\n```js\n// Warning flag — Node emits this when a single emitter gets >10 listeners\nprocess.on('warning', (warning) => {\n  console.warn(warning.name, warning.message);\n});\n\n// Or check specific emitters\nconsole.log(process.listenerCount('SIGTERM'));\n```\n\n### Step 4: `--inspect` + Chrome DevTools\n\n```bash\nnode --inspect server.js\n```\n\nOpen `chrome://inspect` → take Allocation Timeline recording while sending traffic. Shows you exactly which functions are allocating memory that isn't being freed.\n\n### Step 5: Quick Triage Flags\n\n```bash\n# Run with explicit heap limit to crash faster + get a report\nnode --max-old-space-size=256 --heapsnapshot-signal=SIGUSR2 server.js\n\n# Then send SIGUSR2 anytime to get a snapshot\nkill -USR2 <pid>\n```\n\n---\n\n## Diagnosis Decision Tree\n\n```\nheapUsed growing?\n├── Yes → external/rss growing too?\n│   ├── Yes → native addon or Buffer leak (streams, file handles)\n│   └── No  → JS object leak → heap snapshot comparison\n│       ├── Strings dominating? → unbounded cache/log\n│       ├── Closures dominating? → event listeners or callbacks\n│       └── Objects with DB refs? → connection pool leak\n└── No, rss growing but heap stable\n    → Native memory leak (C++ addon, child processes, file descriptors)\n```\n\n## Quick Wins to Check First\n\n1. **`grep -r \"on('data\\|on('error\\|on('message\\|addEventListener\"` in your codebase** — verify each has a corresponding removal\n2. **Check for any `Map`, `Set`, `{}`, `[]` at module scope** that gets `.set()` / `.push()` without eviction\n3. **Search for request handlers missing error-path `res.end()`** — any conditional branch that forgets to respond\n4. **Verify body-parser has `limit` set**: `app.use(express.json({ limit: '1mb' }))`\n\nConfidence: 9/10. These cover ~90% of Express memory leaks I've seen. If none of these match, the leak is likely in a native addon or C++ binding, which needs `valgrind` or platform-specific tooling."
+        },
+        {
+          "label": "Debug: CORS error",
+          "tokens": 413,
+          "response": "Install and configure the `cors` middleware in your Express app:\n\n```bash\nnpm install cors\n```\n\nThen in your Express entry file:\n\n```js\nconst cors = require('cors');\n\napp.use(cors({\n  origin: 'http://localhost:3000'\n}));\n```\n\nPlace this **before** your route definitions.\n\n**Why it happens:** browsers block cross-origin requests by default. Your frontend (port 3000) and API (port 4000) are different origins. The `cors` middleware adds the `Access-Control-Allow-Origin` header that tells the browser \"this origin is allowed.\"\n\n**If you need credentials** (cookies, auth headers):\n\n```js\napp.use(cors({\n  origin: 'http://localhost:3000',\n  credentials: true\n}));\n```\n\nAnd on the frontend fetch/axios call, set `credentials: 'include'` or `withCredentials: true`.\n\n**For multiple origins** (e.g., dev + staging):\n\n```js\nconst allowedOrigins = ['http://localhost:3000', 'https://staging.example.com'];\n\napp.use(cors({\n  origin: (origin, callback) => {\n    if (!origin || allowedOrigins.includes(origin)) {\n      callback(null, true);\n    } else {\n      callback(new Error('Not allowed by CORS'));\n    }\n  }\n}));\n```\n\n**Common gotcha:** if you have `app.use(cors())` with no options, it allows all origins — fine for dev, bad for production. Always lock down the origin in prod.\n\nConfidence: 10/10"
+        },
+        {
+          "label": "Review: auth middleware",
+          "tokens": 765,
+          "response": "## Security Issues\n\n### 1. Missing `JWT_SECRET` — silent catastrophe\nIf `process.env.JWT_SECRET` is `undefined`, some JWT libs treat it as empty string. Attacker signs tokens with `\"\"` and walks in.\n\n**Fix:** Fail loud at startup:\n```typescript\nconst JWT_SECRET = process.env.JWT_SECRET;\nif (!JWT_SECRET) throw new Error('JWT_SECRET not configured');\n```\n\n### 2. No algorithm restriction\n`jwt.verify` without explicit `algorithms` accepts whatever the token header claims — including `none`. Classic JWT bypass.\n\n**Fix:**\n```typescript\nconst decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });\n```\n\n### 3. `decoded` payload goes straight to `req.user`\nJWT payload is attacker-controlled data. Downstream code trusting `req.user.role` or `req.user.isAdmin` blindly is privilege escalation waiting to happen.\n\n**Fix:** Validate shape after decode:\n```typescript\nconst decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });\nif (!decoded.sub || !decoded.exp) {\n  return res.status(401).json({ error: 'Malformed token' });\n}\nreq.user = { id: decoded.sub, role: decoded.role }; // pick explicit fields\n```\n\n### 4. No expiration enforcement\nIf tokens are minted without `exp`, they live forever. `jwt.verify` only checks `exp` if it exists.\n\n**Fix:** Require it:\n```typescript\njwt.verify(token, JWT_SECRET, { algorithms: ['HS256'], maxAge: '1h' });\n```\n\n### 5. Error message leaks\nMinor, but `\"Invalid token\"` vs `\"No token\"` lets attackers distinguish missing from malformed. Consider returning same 401 body for both.\n\n### 6. No token revocation\nSigned JWTs are valid until they expire. No way to invalidate a compromised token. Not a code bug per se, but worth a blocklist or short-lived tokens + refresh pattern.\n\n---\n\n## Hardened version\n\n```typescript\nconst JWT_SECRET = process.env.JWT_SECRET;\nif (!JWT_SECRET) throw new Error('JWT_SECRET must be set');\n\nconst authMiddleware = (req, res, next) => {\n  const token = req.headers.authorization?.split(' ')[1];\n  if (!token) return res.status(401).json({ error: 'Unauthorized' });\n\n  try {\n    const decoded = jwt.verify(token, JWT_SECRET, {\n      algorithms: ['HS256'],\n      maxAge: '1h',\n    });\n\n    // Explicit shape — don't pass raw payload\n    req.user = { id: decoded.sub, role: decoded.role };\n    next();\n  } catch {\n    res.status(401).json({ error: 'Unauthorized' });\n  }\n};\n```\n\nBiggest risks: #1 (undefined secret) and #2 (algorithm confusion). Those two are exploitable today with zero sophistication.\n\nConfidence: 9/10"
+        },
+        {
+          "label": "Plan: add caching layer",
+          "tokens": 1641,
+          "response": "## Redis Caching Layer for Express + PostgreSQL\n\n### Architecture\n\n```\nClient → Express → Redis (check cache) → hit? return cached\n                                        → miss? PostgreSQL → cache result → return\n```\n\n### 1. Setup\n\n```bash\nnpm install ioredis\n```\n\n```ts\n// src/cache.ts\nimport Redis from \"ioredis\";\n\nconst redis = new Redis({\n  host: process.env.REDIS_HOST || \"localhost\",\n  port: Number(process.env.REDIS_PORT) || 6379,\n  maxRetriesPerRequest: 3,\n});\n\nredis.on(\"error\", (err) => console.error(\"Redis connection error:\", err));\n\nexport default redis;\n```\n\n### 2. Cache Middleware (generic, reusable)\n\n```ts\n// src/middleware/cache.ts\nimport { Request, Response, NextFunction } from \"express\";\nimport redis from \"../cache\";\n\nexport function cacheMiddleware(ttlSeconds = 300) {\n  return async (req: Request, res: Response, next: NextFunction) => {\n    if (req.method !== \"GET\") return next();\n\n    const key = `cache:${req.originalUrl}`;\n\n    try {\n      const cached = await redis.get(key);\n      if (cached) {\n        return res.json(JSON.parse(cached));\n      }\n    } catch (err) {\n      console.error(\"Cache read failed, falling through to DB:\", err);\n      return next(); // degrade gracefully - serve from DB\n    }\n\n    // Intercept res.json to cache the response\n    const originalJson = res.json.bind(res);\n    res.json = (body: any) => {\n      redis.setex(key, ttlSeconds, JSON.stringify(body)).catch(() => {});\n      return originalJson(body);\n    };\n\n    next();\n  };\n}\n```\n\n### 3. Apply to Product Routes\n\n```ts\n// src/routes/products.ts\nimport { Router } from \"express\";\nimport { cacheMiddleware } from \"../middleware/cache\";\nimport { pool } from \"../db\"; // your pg Pool\n\nconst router = Router();\n\n// List products - cached 5 min\nrouter.get(\"/products\", cacheMiddleware(300), async (req, res) => {\n  const { rows } = await pool.query(\"SELECT * FROM products ORDER BY id\");\n  res.json(rows);\n});\n\n// Single product - cached 10 min\nrouter.get(\"/products/:id\", cacheMiddleware(600), async (req, res) => {\n  const { rows } = await pool.query(\"SELECT * FROM products WHERE id = $1\", [req.params.id]);\n  if (!rows.length) return res.status(404).json({ error: \"Not found\" });\n  res.json(rows[0]);\n});\n\nexport default router;\n```\n\n### 4. Cache Invalidation\n\nThis is where most people get burned. Three strategies, pick based on your write frequency:\n\n```ts\n// src/cache-invalidation.ts\nimport redis from \"./cache\";\n\n// Strategy A: Surgical delete on write\nexport async function invalidateProduct(productId: number) {\n  await redis.del(`cache:/products/${productId}`);\n  await redis.del(\"cache:/products\"); // list cache too\n}\n\n// Strategy B: Pattern-based wipe (when you can't track all affected keys)\nexport async function invalidateAllProducts() {\n  const keys = await redis.keys(\"cache:/products*\");\n  if (keys.length) await redis.del(...keys);\n}\n\n// Strategy C: Version-based (best for high-write scenarios)\n// Prefix keys with a version counter - bump counter to invalidate all at once\nexport async function bumpProductVersion() {\n  await redis.incr(\"product:version\");\n}\n```\n\nUse in your write endpoints:\n\n```ts\nrouter.put(\"/products/:id\", async (req, res) => {\n  const { rows } = await pool.query(\n    \"UPDATE products SET name = $1, price = $2 WHERE id = $3 RETURNING *\",\n    [req.body.name, req.body.price, req.params.id]\n  );\n  await invalidateProduct(Number(req.params.id));\n  res.json(rows[0]);\n});\n```\n\n### 5. Graceful Degradation\n\nKey principle: Redis going down should never take your API down.\n\n```ts\n// Wrap in your cache.ts\nimport Redis from \"ioredis\";\n\nconst redis = new Redis({\n  host: process.env.REDIS_HOST || \"localhost\",\n  port: Number(process.env.REDIS_PORT) || 6379,\n  maxRetriesPerRequest: 3,\n  retryStrategy(times) {\n    if (times > 10) return null; // stop retrying after 10 attempts\n    return Math.min(times * 200, 2000);\n  },\n});\n\nlet redisHealthy = true;\n\nredis.on(\"error\", () => { redisHealthy = false; });\nredis.on(\"connect\", () => { redisHealthy = true; });\n\nexport { redis as default, redisHealthy };\n```\n\nThen check `redisHealthy` in middleware to skip cache entirely when Redis is down, instead of hanging on timeouts.\n\n### Things to Watch\n\n| Concern | Approach |\n|---------|----------|\n| **Cache stampede** | Use `redis.set` with `NX` flag + short TTL lock so only one request rebuilds cache |\n| **Memory limits** | Set `maxmemory` + `allkeys-lru` eviction policy in redis.conf |\n| **Serialization cost** | For large payloads, consider MessagePack over JSON.stringify |\n| **Query params** | `req.originalUrl` already includes query strings, so `/products?page=2` caches separately |\n| **Auth-specific data** | Don't cache user-specific responses with this middleware, or include user ID in cache key |\n\n### Recommended TTLs\n\n| Endpoint | TTL | Reasoning |\n|----------|-----|-----------|\n| Product list | 2-5 min | Changes infrequently, high traffic |\n| Single product | 5-10 min | Even less volatile |\n| Search results | 1-2 min | More dynamic |\n| Inventory/stock | 15-30 sec | Changes often, stale data = bad UX |\n\nWant me to dig into any specific part -- stampede prevention, cache warming, or testing strategy?"
+        },
+        {
+          "label": "Howto: Git rebase vs merge",
+          "tokens": 728,
+          "response": "## Rebase vs Merge\n\n**Merge** — creates a merge commit joining two branches. History stays intact.\n\n**Rebase** — replays your commits on top of the target branch. History looks linear.\n\n### When to use each\n\n| Situation | Use |\n|-----------|-----|\n| Feature branch → main (team repo) | **Merge** (or squash merge) |\n| Updating feature branch with latest main | **Rebase** (`git rebase main`) |\n| Long-lived branch with many collaborators | **Merge** |\n| Solo branch, clean history matters | **Rebase** |\n| Already pushed + others pulled your branch | **Merge** |\n\n### Risks\n\n**Rebase risks:**\n- **Rewrites history** — every rebased commit gets a new SHA. If anyone else based work on the old SHAs, their branches diverge and they'll have conflicts or duplicated commits.\n- **Force push required** after rebasing a pushed branch (`git push --force-with-lease`). Regular `--force` can overwrite teammates' work — always use `--force-with-lease`.\n- **Conflict resolution is per-commit** — you resolve conflicts for each replayed commit individually, which can be tedious on long branches.\n- **Silent data loss** if you mess up conflict resolution mid-rebase and continue without noticing.\n\n**Merge risks:**\n- **Noisy history** — lots of merge commits make `git log` harder to read.\n- **Merge conflicts still happen**, but you resolve them once (not per-commit).\n- **\"Evil merges\"** — manual changes snuck into a merge commit are hard to spot in review since tools often skip merge commit diffs.\n\n### Practical rules\n\n1. **Never rebase commits that exist on a shared branch** others are working from. This is the golden rule.\n2. **Rebase local/private branches freely** — keeps history clean before merging to main.\n3. **Use `--force-with-lease`** instead of `--force` when pushing rebased branches — it fails if someone else pushed to that branch since your last fetch.\n4. **Interactive rebase** (`git rebase -i`) is great for squashing/reordering commits before a PR, but don't do it after others have reviewed specific commits.\n\n### Common workflow\n\n```bash\n# Update feature branch with latest main (rebase)\ngit checkout feature-branch\ngit fetch origin\ngit rebase origin/main\n\n# If conflicts, resolve then:\ngit add .\ngit rebase --continue\n\n# Push (force-with-lease since history changed)\ngit push --force-with-lease\n\n# When ready to merge to main (merge or squash merge)\ngit checkout main\ngit merge --no-ff feature-branch\n```\n\n**TL;DR:** Rebase for cleaning up your own work before sharing. Merge for integrating shared work. Never rebase what you've already shared unless you coordinate with everyone involved.\n\nConfidence: 10/10"
+        },
+        {
+          "label": "Howto: TypeScript generics",
+          "tokens": 1302,
+          "response": "## TypeScript Generics — Practical Patterns\n\n### 1. Constrained generics\n\nForce a type to have certain properties:\n\n```typescript\nfunction getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\n\nconst user = { name: \"Alex\", age: 30 };\ngetProperty(user, \"name\");  // string\ngetProperty(user, \"email\"); // ❌ compile error\n```\n\n`K extends keyof T` means K can only be a key that actually exists on T.\n\n### 2. Generic interfaces for API responses\n\n```typescript\ninterface ApiResponse<T> {\n  data: T;\n  status: number;\n  error?: string;\n}\n\ninterface User { id: number; name: string; }\ninterface Product { sku: string; price: number; }\n\nasync function fetchUser(id: number): Promise<ApiResponse<User>> { /* ... */ }\nasync function fetchProduct(sku: string): Promise<ApiResponse<Product>> { /* ... */ }\n```\n\nOne response shape, many data types. No duplication.\n\n### 3. Generic classes (typed collections)\n\n```typescript\nclass TypedMap<K, V> {\n  private entries = new Map<K, V>();\n\n  set(key: K, value: V): void {\n    this.entries.set(key, value);\n  }\n\n  get(key: K): V | undefined {\n    return this.entries.get(key);\n  }\n\n  getOrDefault(key: K, fallback: V): V {\n    return this.entries.get(key) ?? fallback;\n  }\n}\n\nconst scores = new TypedMap<string, number>();\nscores.set(\"alice\", 95);\nscores.get(\"alice\"); // number | undefined\n```\n\n### 4. Mapped types (transform object shapes)\n\n```typescript\ntype Readonly<T> = { readonly [K in keyof T]: T[K] };\ntype Optional<T> = { [K in keyof T]?: T[K] };\ntype Nullable<T> = { [K in keyof T]: T[K] | null };\n\ninterface Config {\n  host: string;\n  port: number;\n}\n\ntype ReadonlyConfig = Readonly<Config>;\n// { readonly host: string; readonly port: number }\n```\n\n### 5. Conditional types\n\n```typescript\ntype ExtractArrayItem<T> = T extends Array<infer U> ? U : T;\n\ntype A = ExtractArrayItem<string[]>;   // string\ntype B = ExtractArrayItem<number>;     // number\n\n// Practical: unwrap Promise types\ntype Awaited<T> = T extends Promise<infer U> ? Awaited<U> : T;\n\ntype C = Awaited<Promise<Promise<string>>>; // string\n```\n\n`infer U` tells TypeScript \"figure out what U is from context.\"\n\n### 6. Generic factory functions\n\n```typescript\nfunction createState<T>(initial: T) {\n  let value = initial;\n  return {\n    get: (): T => value,\n    set: (next: T): void => { value = next; },\n    update: (fn: (prev: T) => T): void => { value = fn(value); },\n  };\n}\n\nconst counter = createState(0);\ncounter.update(n => n + 1); // typed as number\ncounter.set(\"oops\");        // ❌ compile error\n```\n\nNo explicit type annotation needed — TS infers `T = number` from the argument.\n\n### 7. Discriminated unions with generics\n\n```typescript\ntype Result<T, E = Error> =\n  | { ok: true; value: T }\n  | { ok: false; error: E };\n\nfunction divide(a: number, b: number): Result<number, string> {\n  if (b === 0) return { ok: false, error: \"Division by zero\" };\n  return { ok: true, value: a / b };\n}\n\nconst result = divide(10, 3);\nif (result.ok) {\n  console.log(result.value); // number — TS narrows automatically\n} else {\n  console.log(result.error); // string\n}\n```\n\n### 8. Generic constraints with multiple bounds\n\n```typescript\ninterface HasId { id: string }\ninterface HasTimestamp { createdAt: Date }\n\nfunction mergeAndTrack<T extends HasId & HasTimestamp>(items: T[]): Map<string, T> {\n  const map = new Map<string, T>();\n  for (const item of items) {\n    map.set(item.id, item); // safe — T guaranteed to have .id\n  }\n  return map;\n}\n```\n\n### Mental model\n\nThink of generics as **\"type arguments\"** — same way a function takes value arguments, a generic type/function takes type arguments. The caller decides what type flows through, and the compiler enforces consistency everywhere that type variable appears.\n\nThe power comes from *constraints* (`extends`), *inference* (TS figures out the type from usage), and *composition* (generics inside generics). Start with \"what relationship between types do I want to enforce?\" and the generic signature writes itself.\n\nConfidence: 9/10"
+        }
+      ],
+      "cost": 0.9174389999999999
+    },
+    "v2": {
+      "totalTokens": 2944,
+      "perPrompt": [
+        {
+          "label": "Explain: React re-renders",
+          "tokens": 252,
+          "response": "Parent re-renders cause children to re-render regardless of prop changes — React's default behavior.\n\n**Causes:** (1) Parent state change triggers full subtree re-render. (2) Inline objects/functions as props create new references each render. (3) Context value changes re-render all consumers.\n\n**Fixes:**\n\n`React.memo` wraps child to skip re-render when props are shallow-equal:\n```jsx\nconst Child = React.memo(({ data }) => <div>{data}</div>);\n```\n\nStabilize references with `useMemo`/`useCallback`:\n```jsx\nconst handler = useCallback(() => doThing(id), [id]);\nconst config = useMemo(() => ({ theme: 'dark' }), []);\n```\n\nFor context, split frequently-changing values into separate providers so unrelated consumers don't re-render.\n\nConfidence: 9/10."
+        },
+        {
+          "label": "Explain: DB connection pooling",
+          "tokens": 606,
+          "response": "**What it is:** Pool of pre-established DB connections shared across requests instead of opening/closing per query. Opening a Postgres connection costs ~1.3ms + memory for forking a backend process, so reusing them matters at scale.\n\n**When to use:** Any app with >10 concurrent users or short-lived queries. Especially serverless/Lambda where each invocation would otherwise spawn its own connection.\n\n**Tradeoffs:**\n\nUpside — lower latency, bounded resource usage, prevents `max_connections` exhaustion. Downside — stale connections can leak state (temp tables, session vars, `SET` commands), idle pools waste server memory, adds config complexity. Connection that hit an error may be returned to pool in bad state if pooler doesn't validate.\n\n**Postgres configuration:**\n\n`postgresql.conf` — set `max_connections` (default 100, raise carefully since each conn costs ~5-10MB RAM).\n\nMost people use **PgBouncer** (external pooler) rather than relying on app-level pooling alone:\n\n```ini\n# pgbouncer.ini\n[databases]\nmydb = host=127.0.0.1 port=5432 dbname=mydb\n\n[pgbouncer]\nlisten_port = 6432\npool_mode = transaction    # safest default\nmax_client_conn = 1000\ndefault_pool_size = 20\nmin_pool_size = 5\nreserve_pool_size = 5\nserver_idle_timeout = 300\n```\n\n**Pool modes** — `session` (conn held until client disconnects, safest but least efficient), `transaction` (conn returned after each tx, best balance), `statement` (conn returned after each statement, breaks multi-statement txs).\n\n**App-level example** (Node.js `pg` pool):\n\n```js\nconst pool = new Pool({\n  max: 20,\n  idleTimeoutMillis: 30000,\n  connectionTimeoutMillis: 2000,\n});\n```\n\n**Rules of thumb:** `default_pool_size` = 2-3x CPU cores on DB server. Total connections across all poolers should stay under Postgres `max_connections - 10` (reserve some for superuser/monitoring). Use `transaction` mode unless you need prepared statements or `LISTEN/NOTIFY`, which require `session` mode.\n\nConfidence: 9/10."
+        },
+        {
+          "label": "Debug: Node memory leak",
+          "tokens": 365,
+          "response": "**Common causes:** unclosed event listeners, growing caches without eviction, global arrays/maps that accumulate per-request, uncleared `setInterval`/`setTimeout` references, closures capturing large scopes in middleware, and leaked database connections or streams not being `.destroy()`ed.\n\n**Diagnose:**\n\n1. Take heap snapshots with `--inspect` and Chrome DevTools — compare two snapshots 10 min apart, sort by \"Objects allocated between snapshots\" to find what's growing.\n\n2. Quick CLI approach:\n\n```js\n// Add this route temporarily\napp.get('/debug/memory', (req, res) => {\n  global.gc?.(); // run with --expose-gc\n  res.json(process.memoryUsage());\n});\n```\n\n3. For listener leaks specifically:\n\n```js\nprocess.on('warning', (w) => console.warn(w.stack));\n// Node emits MaxListenersExceededWarning automatically\n```\n\n4. `clinic doctor` and `clinic heap` from the `clinic` npm package automate profiling and produce flame charts showing retention paths.\n\n**Fastest path to root cause:** two heap snapshots, diff them, follow the biggest retainer chain back to your code. That chain tells you exactly which object is holding references it shouldn't be.\n\nConfidence: 9/10."
+        },
+        {
+          "label": "Debug: CORS error",
+          "tokens": 56,
+          "response": "Install `cors` package, add middleware before routes:\n\n```js\nconst cors = require('cors');\napp.use(cors({ origin: 'http://localhost:3000' }));\n```\n\n```bash\nnpm install cors\n```"
+        },
+        {
+          "label": "Review: auth middleware",
+          "tokens": 229,
+          "response": "**JWT_SECRET from env** — if undefined, `jwt.verify` gets `undefined` as secret, which some libraries treat permissively. Validate `process.env.JWT_SECRET` at startup, crash if missing.\n\n**No algorithm restriction** — attacker can forge tokens with `alg: \"none\"`. Fix:\n\n```typescript\nconst decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });\n```\n\n**Decoded payload blindly trusted** — no validation of claims (`exp`, `iss`, `sub`). Expired or foreign tokens pass silently if library defaults are loose.\n\n**Error leakage** — distinguish between expired vs malformed tokens only in logs, not in response bodies (helps attackers probe).\n\n**No rate limiting** — brute-force token guessing unthrottled at this layer.\n\nConfidence: 9/10."
+        },
+        {
+          "label": "Plan: add caching layer",
+          "tokens": 632,
+          "response": "Use `ioredis` client. Wrap your product queries with a cache-aside pattern: check Redis first, on miss query Postgres and populate cache with TTL.\n\n```ts\n// redis.ts\nimport Redis from \"ioredis\";\nexport const redis = new Redis(process.env.REDIS_URL);\n\n// middleware/cache.ts\nimport { redis } from \"../redis\";\n\nexport function cacheMiddleware(ttl = 300) {\n  return async (req, res, next) => {\n    const key = `cache:${req.originalUrl}`;\n    const cached = await redis.get(key);\n    if (cached) return res.json(JSON.parse(cached));\n\n    const originalJson = res.json.bind(res);\n    res.json = (body) => {\n      redis.setex(key, ttl, JSON.stringify(body));\n      return originalJson(body);\n    };\n    next();\n  };\n}\n\n// routes/products.ts\nimport { cacheMiddleware } from \"../middleware/cache\";\n\nrouter.get(\"/products\", cacheMiddleware(600), async (req, res) => {\n  const products = await db.query(\"SELECT * FROM products\");\n  res.json(products.rows);\n});\n\nrouter.get(\"/products/:id\", cacheMiddleware(300), async (req, res) => {\n  const { rows } = await db.query(\"SELECT * FROM products WHERE id = $1\", [req.params.id]);\n  res.json(rows[0]);\n});\n```\n\n**Invalidation** — bust cache on writes:\n\n```ts\nrouter.put(\"/products/:id\", async (req, res) => {\n  await db.query(\"UPDATE products SET ... WHERE id = $1\", [req.params.id]);\n  await redis.del(`cache:/products/${req.params.id}`);\n  await redis.del(\"cache:/products\"); // list cache\n  res.json({ updated: true });\n});\n```\n\nKey decisions: TTL of 300–600s balances freshness vs load. Cache at route level (not DB level) so response serialization is also cached. Use `setex` not `set` — always enforce expiry to prevent stale data surviving indefinitely. For high-traffic endpoints, add `stale-while-revalidate` logic later.\n\nInstall: `npm i ioredis`\n\nConfidence: 9/10."
+        },
+        {
+          "label": "Howto: Git rebase vs merge",
+          "tokens": 170,
+          "response": "**Rebase** rewrites history into a linear chain. Use on local/feature branches before merging to keep history clean. Risk: rewriting shared commits forces collaborators to deal with diverged history. Never rebase anything already pushed to a shared branch.\n\n**Merge** preserves full branch topology with a merge commit. Use when integrating shared branches or when history accuracy matters. Risk: noisy history with many merge commits, harder to bisect.\n\nRule of thumb: rebase your local work onto latest main, then merge (or PR) into main. If anyone else has pulled your branch, merge instead of rebase.\n\nConfidence: 9/10"
+        },
+        {
+          "label": "Howto: TypeScript generics",
+          "tokens": 634,
+          "response": "Generics let you parameterize types so code stays reusable without losing type safety.\n\n**Constrained generics** — restrict what T can be:\n\n```typescript\nfunction getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\nconst user = { name: \"Ana\", age: 30 };\ngetProperty(user, \"name\"); // string\ngetProperty(user, \"foo\");  // compile error\n```\n\n**Mapped types** — transform every property:\n\n```typescript\ntype Readonly<T> = { readonly [K in keyof T]: T[K] };\ntype Optional<T> = { [K in keyof T]?: T[K] };\n```\n\n**Generic classes** — typed collections:\n\n```typescript\nclass TypedMap<K, V> {\n  private store = new Map<K, V>();\n  set(key: K, value: V) { this.store.set(key, value); }\n  get(key: K): V | undefined { return this.store.get(key); }\n}\nconst scores = new TypedMap<string, number>();\nscores.set(\"alice\", 95);\n```\n\n**Conditional types** — type-level branching:\n\n```typescript\ntype Unwrap<T> = T extends Promise<infer U> ? U : T;\ntype A = Unwrap<Promise<string>>; // string\ntype B = Unwrap<number>;          // number\n```\n\n**Factory pattern** — construct instances generically:\n\n```typescript\nfunction create<T>(ctor: new (...args: any[]) => T, ...args: any[]): T {\n  return new ctor(...args);\n}\n```\n\n**Generic utility for API responses:**\n\n```typescript\ntype ApiResponse<T> = \n  | { status: \"ok\"; data: T }\n  | { status: \"error\"; message: string };\n\nasync function fetchJson<T>(url: string): Promise<ApiResponse<T>> {\n  const res = await fetch(url);\n  if (!res.ok) return { status: \"error\", message: res.statusText };\n  return { status: \"ok\", data: await res.json() as T };\n}\n\nconst resp = await fetchJson<{ id: number; name: string }>(\"/api/user/1\");\nif (resp.status === \"ok\") resp.data.name; // narrowed, fully typed\n```\n\nKey mental model: generics are **type variables**. Same idea as function parameters but at type level — caller supplies concrete types, compiler enforces constraints throughout."
+        }
+      ],
+      "cost": 0.8488517499999999
+    },
+    "v3": {
+      "totalTokens": 4118,
+      "perPrompt": [
+        {
+          "label": "Explain: React re-renders",
+          "tokens": 425,
+          "response": "Parent re-renders cause children to re-render regardless of props — React's default behavior. Common causes:\n\n**1. Parent state change** — any `setState` in parent re-renders all children. Fix: wrap child in `React.memo()`.\n\n**2. New object/array/function refs every render** — even with `memo`, inline props like `style={{color:'red'}}` or `onClick={() => ...}` create new references each render, defeating shallow comparison. Fix: `useMemo` for objects, `useCallback` for functions.\n\n**3. Context consumption** — if component reads from a context, ANY change to that context triggers re-render, even if the specific value you read didn't change. Fix: split contexts by update frequency, or use `useMemo` on the provider value.\n\n**4. Key changes** — if a parent passes a different `key`, React unmounts and remounts entirely (not just re-render).\n\n**5. State colocated too high** — state that only one child needs lives in a shared ancestor, forcing siblings to re-render. Fix: push state down to where it's actually used.\n\nQuick diagnostic: drop this into the component body to confirm it's actually re-rendering (not just re-executing render logic harmlessly):\n\n```jsx\nimport { useRef } from 'react';\n\nconst renderCount = useRef(0);\nconsole.log(`Rendered ${++renderCount.current} times`);\n```\n\nGotcha: don't `memo` everything blindly — memo has its own cost (shallow comparison on every render). Profile first with React DevTools Profiler → \"Highlight updates\" to see what's actually re-rendering, then `memo` surgically.\n\nConfidence: 9/10"
+        },
+        {
+          "label": "Explain: DB connection pooling",
+          "tokens": 650,
+          "response": "Connection pooling reuses a fixed set of database connections instead of opening/closing per request. Without it, each request pays ~5-20ms for TCP + TLS + auth handshake, and PostgreSQL forks a new process per connection (~10MB RAM each).\n\n**When to use:** Almost always in web apps. Skip only for single-client scripts or long-lived batch jobs with one connection.\n\n**Tradeoffs:**\n\nPool too small → requests queue waiting for connections. Pool too large → PostgreSQL process overhead eats RAM, context switching kills throughput. Stale connections can silently break if a firewall/LB drops idle TCP. Transaction-scoped pooling breaks `SET` statements and prepared statements (PgBouncer gotcha).\n\n**PostgreSQL-side config** (`postgresql.conf`):\n\n```ini\nmax_connections = 100          # hard ceiling, each costs ~10MB\n```\n\n**Application-side** (most frameworks have built-in pools):\n\n```python\n# psycopg3 (Python)\nfrom psycopg_pool import ConnectionPool\n\npool = ConnectionPool(\n    conninfo=\"host=localhost dbname=mydb user=app\",\n    min_size=5,\n    max_size=20,\n    max_idle=300,        # seconds before idle conn is closed\n)\n\nwith pool.connection() as conn:\n    conn.execute(\"SELECT ...\")\n```\n\n**External pooler** (PgBouncer — most common):\n\n```ini\n# pgbouncer.ini\n[databases]\nmydb = host=127.0.0.1 port=5432 dbname=mydb\n\n[pgbouncer]\nlisten_port = 6432\npool_mode = transaction      # best for web apps\ndefault_pool_size = 20\nmax_client_conn = 200\nserver_idle_timeout = 300\n```\n\nPoint your app at port 6432 instead of 5432. `transaction` mode multiplexes aggressively — connections return to pool at transaction end, not session end. Use `session` mode if you need prepared statements or `SET` commands.\n\n**Sizing rule of thumb:** `pool_size = (core_count * 2) + effective_spindle_count`. For most web apps on a 4-core server, 10-20 is the sweet spot. Going above `max_connections` just moves the queue from your app to PostgreSQL, where it's worse.\n\n**Gotcha:** PgBouncer in `transaction` mode silently discards session state (`SET search_path`, prepared statements, advisory locks). If things work in dev (direct connection) but break in prod (pooled), this is almost always why.\n\nConfidence: 9/10."
+        },
+        {
+          "label": "Debug: Node memory leak",
+          "tokens": 549,
+          "response": "**Common causes, ranked by frequency:**\n\n1. **Event listener leaks** — repeated `.on()` without `.off()`, especially in middleware that runs per-request. Node warns at 11 listeners per emitter.\n2. **Unbounded caches** — in-memory objects (session stores, memoization maps, require-level `Map`/`Object`) that grow per-user or per-route and never evict.\n3. **Closures holding references** — request/response objects captured in callbacks or promises that never resolve (hanging DB queries, unresolved `setTimeout`).\n4. **Global arrays/logs** — pushing to module-level arrays for debugging and forgetting to remove it.\n5. **Stream backpressure** — piping without handling `drain`, buffers pile up.\n\n**Diagnosis steps:**\n\n```bash\n# 1. Expose V8 heap snapshots — add to your entry point:\nnode --inspect server.js\n# Then open chrome://inspect, take heap snapshots 5 min apart, compare\n\n# 2. Quick CLI check for growth trend:\nnode --expose-gc -e \"\nconst http = require('http');\nsetInterval(() => {\n  global.gc();\n  console.log(process.memoryUsage().heapUsed / 1024 / 1024, 'MB');\n}, 5000);\n\"\n\n# 3. Find leaking event listeners:\nprocess.on('warning', (w) => {\n  if (w.name === 'MaxListenersExceededWarning') console.trace(w);\n});\n```\n\n**Fastest path to root cause:** take two heap snapshots in Chrome DevTools (Objects allocated between Snapshot 1 and Snapshot 2 view), sort by retained size, look for `(string)`, `(array)`, or your own class names growing. The \"Comparison\" view directly shows what's accumulating.\n\n**Gotcha:** `express-session` with default `MemoryStore` leaks by design — it's explicitly not for production. Switch to `connect-redis` or `connect-pg-simple`.\n\nConfidence: 9/10"
+        },
+        {
+          "label": "Debug: CORS error",
+          "tokens": 97,
+          "response": "\n\nInstall `cors`. In your Express app:\n\n```js\nconst cors = require('cors');\napp.use(cors({ origin: 'http://localhost:3000' }));\n```\n\nPlace before all route definitions. Gotcha: if using cookies/auth headers, add `credentials: true` to cors config and set `withCredentials: true` on client fetch/axios — otherwise credentialed requests silently fail."
+        },
+        {
+          "label": "Review: auth middleware",
+          "tokens": 419,
+          "response": "**JWT_SECRET from env** — if undefined, `jwt.verify` receives `undefined` as secret. Some libs treat that as \"no verification\" and pass any token through. Fix: fail fast if secret missing.\n\n**No algorithm restriction** — attacker can forge token with `alg: \"none\"` or switch RS256→HS256. Pin algorithm explicitly.\n\n**Decoded payload goes straight to `req.user`** — no validation of shape/claims. Expired-but-valid-signature tokens pass if `verify` doesn't check `exp` (depends on lib config).\n\n**No token type check** — accepts refresh tokens where access tokens expected.\n\nFixed:\n\n```typescript\nconst JWT_SECRET = process.env.JWT_SECRET;\nif (!JWT_SECRET) throw new Error('JWT_SECRET must be set');\n\nconst authMiddleware = (req, res, next) => {\n  const token = req.headers.authorization?.split(' ')[1];\n  if (!token) return res.status(401).json({ error: 'No token' });\n  try {\n    const decoded = jwt.verify(token, JWT_SECRET, {\n      algorithms: ['HS256'],\n      complete: false,\n    });\n    if (decoded.type !== 'access') {\n      return res.status(401).json({ error: 'Invalid token type' });\n    }\n    req.user = decoded;\n    next();\n  } catch {\n    res.status(401).json({ error: 'Invalid token' });\n  }\n};\n```\n\nBiggest gotcha: `alg: \"none\"` bypass. Without `algorithms` whitelist, attacker skips signature verification entirely.\n\nConfidence: 9/10."
+        },
+        {
+          "label": "Plan: add caching layer",
+          "tokens": 949,
+          "response": "Two patterns work well here: **cache-aside** (lazy population) for reads, **cache invalidation** on writes.\n\n```ts\n// redis-client.ts\nimport { createClient } from \"redis\";\n\nconst redis = createClient({ url: process.env.REDIS_URL });\nredis.on(\"error\", (err) => console.error(\"Redis:\", err));\nawait redis.connect();\n\nexport { redis };\n```\n\n```ts\n// middleware/cache.ts\nimport { redis } from \"../redis-client\";\nimport type { Request, Response, NextFunction } from \"express\";\n\nexport function cache(ttlSeconds = 300) {\n  return async (req: Request, res: Response, next: NextFunction) => {\n    const key = `cache:${req.originalUrl}`;\n    const cached = await redis.get(key);\n    if (cached) {\n      return res.json(JSON.parse(cached));\n    }\n    // Patch res.json to write-through on miss\n    const originalJson = res.json.bind(res);\n    res.json = (body: any) => {\n      redis.setEx(key, ttlSeconds, JSON.stringify(body)).catch(() => {});\n      return originalJson(body);\n    };\n    next();\n  };\n}\n```\n\n```ts\n// routes/products.ts\nimport { Router } from \"express\";\nimport { cache } from \"../middleware/cache\";\nimport { redis } from \"../redis-client\";\nimport { db } from \"../db\";\n\nconst router = Router();\n\n// Reads — cache-aside via middleware\nrouter.get(\"/products\", cache(300), async (req, res) => {\n  const products = await db.query(\"SELECT * FROM products\");\n  res.json(products.rows);\n});\n\nrouter.get(\"/products/:id\", cache(600), async (req, res) => {\n  const { rows } = await db.query(\"SELECT * FROM products WHERE id = $1\", [req.params.id]);\n  if (!rows.length) return res.status(404).json({ error: \"Not found\" });\n  res.json(rows[0]);\n});\n\n// Writes — invalidate on mutation\nrouter.put(\"/products/:id\", async (req, res) => {\n  const { rows } = await db.query(\n    \"UPDATE products SET name=$1, price=$2 WHERE id=$3 RETURNING *\",\n    [req.body.name, req.body.price, req.params.id]\n  );\n  // Bust both the specific product and the list\n  await Promise.all([\n    redis.del(`cache:/products/${req.params.id}`),\n    redis.del(\"cache:/products\"),\n  ]);\n  res.json(rows[0]);\n});\n\nexport default router;\n```\n\nKey decisions in this approach: TTL of 300s is a sane default for product data that changes infrequently — tune down for inventory/pricing. Middleware pattern keeps routes clean. Write-through on `res.json` means you never manually populate cache in route handlers.\n\n**Gotcha that'll bite you**: query params. `/products?page=2` and `/products?page=3` get different cache keys automatically (because `req.originalUrl` includes the query string), but `PUT /products/5` only busts the exact keys you specify. If you have filtered list endpoints like `/products?category=shoes`, you need wildcard invalidation — use `redis.keys(\"cache:/products*\")` then `redis.del(...)` on the results, or better, use a key prefix pattern with `SCAN` in production (keys blocks the event loop on large datasets).\n\nConfidence: 9/10 — standard pattern, well-trodden ground."
+        },
+        {
+          "label": "Howto: Git rebase vs merge",
+          "tokens": 289,
+          "response": "**Rebase** replays your commits on top of target branch, producing linear history. Use for feature branches before merging to main, or keeping a branch up-to-date during development. Risk: rewrites commit SHAs — never rebase commits already pushed to shared branches. Force-pushing rebased shared branches destroys teammates' history.\n\n**Merge** creates a merge commit preserving both branch histories. Use when integrating shared/long-lived branches or when you need to preserve exact commit timeline. Risk: cluttered history with many merge commits, especially on active repos. Merge conflicts still happen but are resolved in one commit rather than potentially at each replayed commit.\n\n**Rules of thumb:**\n- Local/private branch → rebase freely\n- Shared/pushed branch → merge (or rebase only if team agrees on force-push protocol)\n- `git pull --rebase` keeps local work clean without merge commits\n\n**Biggest gotcha:** rebasing after pushing means anyone who pulled your old commits now has divergent history. They'll get duplicate commits or conflicts on next pull. If you already pushed, either merge or coordinate force-push with your team.\n\nConfidence: 9/10"
+        },
+        {
+          "label": "Howto: TypeScript generics",
+          "tokens": 740,
+          "response": "Generics let you parameterize types so functions/classes/interfaces stay type-safe without hardcoding specific types. Beyond identity:\n\n**Constrained generics** — restrict what T can be:\n\n```typescript\nfunction getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\n\nconst user = { name: \"Alex\", age: 30 };\ngetProperty(user, \"name\"); // string\ngetProperty(user, \"foo\");  // compile error\n```\n\n**Generic interfaces for API responses:**\n\n```typescript\ninterface ApiResponse<T> {\n  data: T;\n  status: number;\n  error?: string;\n}\n\nasync function fetchJson<T>(url: string): Promise<ApiResponse<T>> {\n  const res = await fetch(url);\n  const data: T = await res.json();\n  return { data, status: res.status };\n}\n\nconst users = await fetchJson<User[]>(\"/api/users\");\n// users.data is User[], not any\n```\n\n**Mapped types with generics:**\n\n```typescript\ntype Readonly<T> = { readonly [K in keyof T]: T[K] };\ntype Partial<T> = { [K in keyof T]?: T[K] };\ntype Nullable<T> = { [K in keyof T]: T[K] | null };\n```\n\n**Generic class — typed event emitter:**\n\n```typescript\nclass TypedEmitter<Events extends Record<string, unknown[]>> {\n  private handlers = new Map<string, Function[]>();\n\n  on<E extends keyof Events>(event: E, fn: (...args: Events[E]) => void) {\n    const list = this.handlers.get(event as string) ?? [];\n    list.push(fn);\n    this.handlers.set(event as string, list);\n  }\n\n  emit<E extends keyof Events>(event: E, ...args: Events[E]) {\n    this.handlers.get(event as string)?.forEach(fn => fn(...args));\n  }\n}\n\nconst bus = new TypedEmitter<{\n  login: [userId: string];\n  purchase: [item: string, amount: number];\n}>();\n\nbus.on(\"purchase\", (item, amount) => {\n  // item: string, amount: number — fully inferred\n});\n\nbus.emit(\"login\", 42); // compile error — expects string\n```\n\n**Conditional types:**\n\n```typescript\ntype UnpackPromise<T> = T extends Promise<infer U> ? U : T;\n\ntype A = UnpackPromise<Promise<string>>; // string\ntype B = UnpackPromise<number>;          // number\n```\n\nGotcha: `T extends X` in conditional types distributes over unions — `UnpackPromise<Promise<string> | number>` gives `string | number`. Wrap in `[T] extends [X]` to prevent distribution if that's not what you want.\n\nConfidence: 9/10."
+        }
+      ],
+      "cost": 0.8804674999999998
+    }
+  },
+  "quality": {
+    "v2": [
+      {
+        "label": "Explain: React re-renders",
+        "correctness": 10,
+        "completeness": 7,
+        "actionability": 7,
+        "overall": 7,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "No example showing how inline objects/functions defeat React.memo (the 'sneaky' cause #2 illustration)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing context fix detail: memoizing provider value with useMemo example"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing use-context-selector library mention as alternative context fix"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing diagnostic tip (useEffect console.log or React DevTools Profiler)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing TL;DR summary table"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing note that cause #2 is the most common gotcha in practice"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.10999975000000002
+      },
+      {
+        "label": "Explain: DB connection pooling",
+        "correctness": 9,
+        "completeness": 7,
+        "actionability": 8,
+        "overall": 8,
+        "losses": [
+          {
+            "severity": "cosmetic",
+            "detail": "Connection cost cited as ~1.3ms vs reference's 5-10ms — minor discrepancy, real-world varies"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing Python (psycopg3) and Go (pgxpool) app-level pooling examples"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing PgBouncer auth_file setup and hash generation"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing diagnostic queries (pg_stat_activity, SHOW pools/stats)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing PgBouncer vs Pgpool-II vs Supavisor comparison"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Pool sizing formula from PG wiki (cores*2 + spindles) not included, replaced with simpler 2-3x CPU cores heuristic"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing explanation of why PG performance degrades at high connection counts (context switching, lock contention, snapshot management)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing 'when you don't need it' section (single-user scripts, batch jobs)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing install commands for PgBouncer"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.12241225
+      },
+      {
+        "label": "Debug: Node memory leak",
+        "correctness": 9,
+        "completeness": 7,
+        "actionability": 7,
+        "overall": 7,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "Missing code examples for each common cause (event listener accumulation pattern, unbounded cache fix with LRU, closure pinning bigData) — reference showed BAD/FIX pairs that make causes immediately recognizable"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing the diagnosis decision tree (heapUsed vs rss vs external) that helps distinguish JS object leaks from native/buffer leaks from file descriptor leaks"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing --heapsnapshot-signal=SIGUSR2 and --max-old-space-size flags for quick triage without code changes"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing v8.writeHeapSnapshot() endpoint approach for taking snapshots programmatically in production"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing 'quick wins to check first' grep commands and specific checks (body-parser limit, module-scope containers, missing error-path res.end())"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing unfinished HTTP responses (no res.end() on some code path) as an explicit cause category"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Candidate adds clinic.js recommendation not in reference — correct and useful addition"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.11814975
+      },
+      {
+        "label": "Debug: CORS error",
+        "correctness": 10,
+        "completeness": 5,
+        "actionability": 7,
+        "overall": 7,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "Missing explanation of WHY CORS errors happen (different origins on different ports)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing credentials configuration (credentials: true + withCredentials on frontend) for cookie/auth scenarios"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing multiple origins pattern with callback function"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing production gotcha: cors() with no options allows all origins"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing explicit note to place middleware before route definitions (though code ordering implies it)"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.10562474999999999
+      },
+      {
+        "label": "Review: auth middleware",
+        "correctness": 9,
+        "completeness": 6,
+        "actionability": 5,
+        "overall": 6,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "No startup validation code shown for JWT_SECRET — just described, not demonstrated"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing maxAge enforcement fix (candidate mentions exp loosely but doesn't provide jwt.verify maxAge option)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing explicit field picking for req.user — the actual fix for payload trust issue (pick sub/role, don't spread raw decoded)"
+          },
+          {
+            "severity": "useful",
+            "detail": "No hardened version combining all fixes — reference provides complete copy-paste-ready middleware"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing token revocation discussion (blocklist or short-lived + refresh pattern)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing unified error message fix — candidate says 'only in logs' but doesn't show the single 'Unauthorized' response body pattern"
+          }
+        ],
+        "verdict": "caution",
+        "judgeCost": 0.12309975
+      },
+      {
+        "label": "Plan: add caching layer",
+        "correctness": 9,
+        "completeness": 6,
+        "actionability": 7,
+        "overall": 7,
+        "losses": [
+          {
+            "severity": "critical",
+            "detail": "No error handling/graceful degradation — if Redis goes down, the middleware will throw unhandled promise rejections and crash the API. Reference wraps cache reads in try/catch and includes redisHealthy flag pattern."
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing GET-only guard — middleware caches POST/PUT/DELETE responses too since there's no `if (req.method !== 'GET') return next()` check."
+          },
+          {
+            "severity": "useful",
+            "detail": "No mention of cache stampede prevention (NX flag + lock pattern), memory limits (maxmemory + eviction policy), or auth-specific data warnings."
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing Redis connection config (retryStrategy, maxRetriesPerRequest, error/connect event handlers) — just passes a URL with no resilience."
+          },
+          {
+            "severity": "useful",
+            "detail": "No pattern-based or version-based invalidation strategies — only surgical delete shown."
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "No TTL guidance table by endpoint type (list vs single vs search vs inventory)."
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "No mention of serialization alternatives (MessagePack) for large payloads."
+          }
+        ],
+        "verdict": "caution",
+        "judgeCost": 0.11994350000000001
+      },
+      {
+        "label": "Howto: Git rebase vs merge",
+        "correctness": 9,
+        "completeness": 5,
+        "actionability": 5,
+        "overall": 6,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "--force-with-lease vs --force distinction not mentioned — candidate doesn't warn about safe push practices after rebase"
+          },
+          {
+            "severity": "useful",
+            "detail": "Per-commit conflict resolution during rebase not mentioned — practical pain point for long branches"
+          },
+          {
+            "severity": "useful",
+            "detail": "No situation/use table — candidate lacks guidance for specific scenarios (long-lived branch, solo branch, already-pushed branch)"
+          },
+          {
+            "severity": "useful",
+            "detail": "No practical workflow commands (git rebase origin/main, --continue, push flow)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Evil merges concept not mentioned"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Interactive rebase for squashing/reordering before PR not mentioned"
+          },
+          {
+            "severity": "useful",
+            "detail": "Silent data loss risk during conflict resolution mid-rebase not mentioned"
+          }
+        ],
+        "verdict": "caution",
+        "judgeCost": 0.1099435
+      },
+      {
+        "label": "Howto: TypeScript generics",
+        "correctness": 10,
+        "completeness": 8,
+        "actionability": 9,
+        "overall": 9,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "Missing discriminated union with generics (Result<T, E> pattern with ok/error narrowing)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing generic constraints with multiple bounds (T extends A & B)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing createState factory example showing inference without explicit type annotation"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing ExtractArrayItem conditional type example (only Promise unwrap shown)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Factory pattern example differs — reference shows state closure, candidate shows constructor-based factory (both valid, different use cases)"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.1147685
+      }
+    ],
+    "v3": [
+      {
+        "label": "Explain: React re-renders",
+        "correctness": 10,
+        "completeness": 9,
+        "actionability": 9,
+        "overall": 9,
+        "losses": [
+          {
+            "severity": "cosmetic",
+            "detail": "Missing explicit code examples for useMemo/useCallback fixes in parent component"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing context provider memoization code example"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing use-context-selector library mention as alternative context fix"
+          },
+          {
+            "severity": "useful",
+            "detail": "Candidate uses useRef-based render counter instead of simpler useEffect diagnostic — both work but reference's is more minimal"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing summary TL;DR table mapping cause to fix"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.11035599999999998
+      },
+      {
+        "label": "Explain: DB connection pooling",
+        "correctness": 9,
+        "completeness": 7,
+        "actionability": 8,
+        "overall": 8,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "Missing Node.js (pg) and Go (pgxpool) code examples — only Python shown"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing PgBouncer auth_file setup and md5 hash generation"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing diagnostic queries (pg_stat_activity, SHOW pools/stats)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing PgBouncer vs Pgpool-II vs Supavisor comparison table"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing pooling modes table (session/transaction/statement) with clear breakdown"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing serverless/Lambda and microservices scenarios as explicit when-to-use cases"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing install commands for PgBouncer (apt/brew)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing PgBouncer start command"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.12109975
+      },
+      {
+        "label": "Debug: Node memory leak",
+        "correctness": 9,
+        "completeness": 7,
+        "actionability": 7,
+        "overall": 7,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "Missing code examples for the fix patterns (event listener removal, LRU cache replacement) — reference showed before/after code for each cause"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing the /health/memory endpoint pattern for confirming leak exists before diving into heap snapshots"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing the diagnosis decision tree (heapUsed vs rss vs external) that helps distinguish JS leaks from native/buffer leaks"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing --heapsnapshot-signal=SIGUSR2 and --max-old-space-size flags for production triage"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing quick grep commands to audit codebase for common leak patterns (event listeners without removal, module-scope collections, missing res.end())"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing body-parser limit check (express.json({ limit: '1mb' }))"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing unfinished HTTP responses as a cause — requests that never call res.end() on some code path"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing database connection pool leak as an explicit cause category"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Stream backpressure mentioned in candidate but not in reference — not wrong, but a different emphasis"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.12012475
+      },
+      {
+        "label": "Debug: CORS error",
+        "correctness": 10,
+        "completeness": 7,
+        "actionability": 9,
+        "overall": 8,
+        "losses": [
+          {
+            "severity": "cosmetic",
+            "detail": "Missing `npm install cors` as explicit shell command"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing explanation of WHY CORS errors happen (different origins on different ports)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing multiple origins pattern (dynamic origin callback)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing production gotcha about cors() with no options allowing all origins"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing credentials: 'include' as the fetch-side equivalent of withCredentials"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.10579975
+      },
+      {
+        "label": "Review: auth middleware",
+        "correctness": 7,
+        "completeness": 6,
+        "actionability": 7,
+        "overall": 6,
+        "losses": [
+          {
+            "severity": "critical",
+            "detail": "Hardened code still passes raw decoded payload to req.user (req.user = decoded) — reference explicitly picks fields to prevent privilege escalation. Candidate identifies the issue in prose but doesn't fix it in code."
+          },
+          {
+            "severity": "critical",
+            "detail": "No maxAge or expiration enforcement in fixed code. Reference adds maxAge: '1h' to prevent forever-valid tokens. Candidate mentions exp issue in prose but omits the fix."
+          },
+          {
+            "severity": "useful",
+            "detail": "Error messages still differ ('No token' vs 'Invalid token') — reference normalizes both to 'Unauthorized' to prevent enumeration. Candidate's fixed code keeps distinct messages."
+          },
+          {
+            "severity": "useful",
+            "detail": "No mention of token revocation/blocklist pattern — reference calls it out as architectural concern."
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Candidate adds token type check (decoded.type !== 'access') which is a valid concern but not in the reference — not wrong, but adds noise and assumes a specific token structure."
+          }
+        ],
+        "verdict": "unsafe",
+        "judgeCost": 0.11336225000000001
+      },
+      {
+        "label": "Plan: add caching layer",
+        "correctness": 9,
+        "completeness": 7,
+        "actionability": 8,
+        "overall": 8,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "No graceful degradation pattern — reference includes redisHealthy flag, retryStrategy, and try/catch in middleware so Redis failure doesn't take down the API"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing cache stampede prevention (NX flag + lock pattern)"
+          },
+          {
+            "severity": "useful",
+            "detail": "No maxmemory / eviction policy guidance (redis.conf settings)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Missing version-based invalidation strategy for high-write scenarios"
+          },
+          {
+            "severity": "useful",
+            "detail": "No recommended TTL table by endpoint type (inventory 15-30s vs product list 2-5min)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing auth-specific data warning (don't cache user-specific responses without user ID in key)"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "No mention of MessagePack as alternative serialization for large payloads"
+          },
+          {
+            "severity": "useful",
+            "detail": "Candidate middleware lacks try/catch around redis.get — if Redis throws, the request crashes instead of falling through to DB"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.12133724999999998
+      },
+      {
+        "label": "Howto: Git rebase vs merge",
+        "correctness": 10,
+        "completeness": 7,
+        "actionability": 7,
+        "overall": 7,
+        "losses": [
+          {
+            "severity": "useful",
+            "detail": "--force-with-lease vs --force distinction not mentioned — candidate just says 'force-push' without specifying the safer variant"
+          },
+          {
+            "severity": "useful",
+            "detail": "No practical workflow commands (the bash example showing fetch/rebase/push/merge sequence)"
+          },
+          {
+            "severity": "useful",
+            "detail": "Per-commit conflict resolution tedium during rebase not explicitly called out as a risk"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Evil merges concept missing — manual changes hidden in merge commit diffs"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Interactive rebase (squashing/reordering before PR) not mentioned"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Situation table (solo branch, long-lived branch, already pushed) collapsed into prose — less scannable"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.1102435
+      },
+      {
+        "label": "Howto: TypeScript generics",
+        "correctness": 10,
+        "completeness": 8,
+        "actionability": 9,
+        "overall": 9,
+        "losses": [
+          {
+            "severity": "cosmetic",
+            "detail": "Missing generic factory function (createState) example showing type inference from arguments"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing discriminated union Result<T, E> pattern with narrowing example"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing generic constraints with multiple bounds (HasId & HasTimestamp) example"
+          },
+          {
+            "severity": "cosmetic",
+            "detail": "Missing mental model summary explaining generics as 'type arguments'"
+          },
+          {
+            "severity": "useful",
+            "detail": "Candidate adds union distribution gotcha not in reference — net positive, not a loss"
+          }
+        ],
+        "verdict": "safe",
+        "judgeCost": 0.11521849999999999
+      }
+    ]
+  },
+  "summary": {
+    "normalTotal": 9112,
+    "v2Total": 2944,
+    "v2ReductionPct": 67.7,
+    "v3Total": 4118,
+    "v3ReductionPct": 54.8,
+    "v2AvgQuality": 7.1,
+    "v3AvgQuality": 7.8,
+    "totalCostUsd": 4.4882
+  }
+}

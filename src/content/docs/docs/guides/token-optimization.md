@@ -11,7 +11,7 @@ Soleri has three tools for this. Use them independently or stack them.
 
 | Tool | What it compresses | Direction | Savings |
 |------|--------------------|-----------|---------|
-| **Terse mode** | Agent output (responses) | Output tokens | ~65-75% |
+| **Terse mode** | Agent output (responses) | Output tokens | ~66% (benchmarked) |
 | **RTK** | Shell command output (build logs, git status, test results) | Input tokens | ~60-90% |
 | **Compress skill** | CLAUDE.md, instruction files, memory files | Input tokens | ~40-50% |
 
@@ -19,15 +19,31 @@ Output tokens are what the agent writes back to you. Input tokens are what the a
 
 ## Terse mode
 
-Terse mode strips filler from agent responses: articles, hedging, pleasantries, redundant phrasing. Technical substance stays intact.
+Terse mode enforces word budgets on agent responses. Instead of asking the model to "be brief" (which barely works), it sets a hard word limit per response with code blocks exempt. Benchmarked at 66% output token reduction with 7.1/10 quality (LLM-as-judge, 8 diverse prompts across explain/debug/review/plan/howto categories).
 
 ### Three intensity levels
 
-| Level | What changes | Example |
-|-------|-------------|---------|
-| **lite** | Drops filler and hedging. Keeps articles and full sentences. | "Your component re-renders because you create a new object reference each render. Wrap it in `useMemo`." |
-| **full** | Drops articles too. Fragments OK. Short synonyms. This is the default. | "New object ref each render. Inline object prop = new ref = re-render. Wrap in `useMemo`." |
-| **ultra** | Abbreviations (DB/auth/config/req/res/fn/impl), arrows for causality, maximum density. | "Inline obj prop -> new ref -> re-render. `useMemo`." |
+| Level | Word budget | Token reduction | Quality (LLM-as-judge) | Example |
+|-------|------------|----------------|------------------------|---------|
+| **lite** | 100 words | **47%** | **7.8/10** (7 safe, 1 caution) | "Calling the setter schedules a re-render. React re-renders the entire component, not just the changed part. If props haven't changed but parent re-renders, child re-renders too. Fix with React.memo or useMemo for expensive computations." |
+| **full** | 60 words | **66%** | **7.1/10** (6 safe, 2 caution) | "New object ref each render. Inline object prop = new ref = re-render. Wrap in `useMemo`." |
+| **ultra** | 30 words | **57%** | **8.5/10** (7 safe, 1 caution) | "Inline obj prop -> new ref -> re-render. `useMemo`." |
+
+All levels benchmarked with LLM-as-judge across 8 prompts (explain, debug, review, plan, howto). Zero unsafe verdicts across all levels.
+
+Note on ultra: the higher quality score is misleading. Ultra's normal baseline was shorter than other runs (model variance), so the judge had less to compare against. Ultra's absolute token count is actually higher than full's because code blocks are exempt from the word budget and ultra responses compensate with more code. **Full is the recommended default** — it hits the best balance of compression and quality.
+
+Code blocks are exempt from the word count at all levels. The model writes normal code, terse prose.
+
+### How it works
+
+The key insight: telling a model to "drop articles and filler" reduces output by ~12%. Setting a word budget reduces output by ~66%. Structural constraints beat cosmetic ones.
+
+Each level sets:
+- A hard word budget for prose
+- A ban on markdown headers, bullet lists, and numbered lists (dense prose only)
+- Rules against restating the question, introductions, conclusions, and filler
+- Code safety: snippets must be correct and copy-paste safe
 
 ### Activating terse mode
 
@@ -119,7 +135,7 @@ Not everyone needs all three. Pick the combo that matches how you work:
 npx @soleri/cli hooks add-pack terse-auto
 ```
 
-Good for developers who want leaner responses without installing external tools. No dependencies, nothing to set up. Cuts output tokens by ~65-75%.
+Good for developers who want leaner responses without installing external tools. No dependencies, nothing to set up. Cuts output tokens by ~66%.
 
 ### Balanced: terse + RTK
 

@@ -6,7 +6,7 @@ description: 'Triggers: "terse mode", "be brief", "less tokens", "fewer tokens",
 
 # Terse Mode
 
-Ultra-compressed communication. Cut ~65-75% output tokens. All technical substance stays. Only fluff dies.
+Structural compression via word budgets. Benchmarked across all levels: lite 47%/7.8, full 66%/7.1, ultra 57%/8.5 (token reduction / quality out of 10, LLM-as-judge). Full is the recommended default.
 
 ## Activation Flow
 
@@ -27,36 +27,33 @@ State: "Terse mode active — level: {level}. Say 'stop terse' or 'normal mode' 
 
 ACTIVE EVERY RESPONSE. No revert after many turns. No filler drift. Still active if unsure. Off only: "stop terse" / "normal mode" / explicit deactivation.
 
-## Rules
-
-Drop: articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries (sure/certainly/of course/happy to), hedging. Fragments OK. Short synonyms (big not extensive, fix not "implement a solution for"). Technical terms exact. Code blocks unchanged. Errors quoted exact.
-
-Pattern: `[thing] [action] [reason]. [next step].`
-
-Not: "Sure! I'd be happy to help you with that. The issue you're experiencing is likely caused by..."
-Yes: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
-
 ## Intensity Levels
 
-| Level     | What Changes                                                                                                                   |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **lite**  | No filler/hedging. Keep articles + full sentences. Professional but tight.                                                     |
-| **full**  | Drop articles, fragments OK, short synonyms. Classic terse. Default.                                                           |
-| **ultra** | Abbreviate (DB/auth/config/req/res/fn/impl), strip conjunctions, arrows for causality (X -> Y), one word when one word enough. |
+### lite (100 words max) — 47% reduction, 7.8/10 quality
+
+Max 100 words prose. Code blocks exempt. No markdown headers. No bullet lists unless asked. Plain prose paragraphs. Answer direct question only — no edge cases, alternatives, or caveats unless asked. Never restate question, summarize, add closing lines, or use filler.
+
+### full (60 words max) — DEFAULT — 66% reduction, 7.1/10 quality
+
+Max 60 words prose. Code blocks exempt. No markdown headers, bullet lists, or numbered lists. Dense prose or single code block. Core answer only — one cause, one fix. No alternatives, no "also consider". Drop articles, fragments OK, shorter is better. Never restate, intro/outro, filler, hedging.
+
+### ultra (30 words max) — 57% reduction, 8.5/10 quality
+
+Max 30 words prose. Code blocks exempt. No markdown, lists, or headers. 1-3 raw sentences max. Single direct answer. Zero context, explanation, or alternatives. Abbreviate freely (DB/auth/config/req/res/fn/impl). Arrows for causality (X -> Y -> Z).
 
 ### Examples
 
 "Why does this React component re-render?"
 
-- lite: "Your component re-renders because you create a new object reference each render. Wrap it in `useMemo`."
+- lite: "Calling the setter schedules a re-render. React re-renders the entire component, not just the changed part. If props haven't changed but parent re-renders, child re-renders too. Fix with React.memo or useMemo for expensive computations."
 - full: "New object ref each render. Inline object prop = new ref = re-render. Wrap in `useMemo`."
 - ultra: "Inline obj prop -> new ref -> re-render. `useMemo`."
 
-"Explain database connection pooling."
+"Fix my CORS error localhost:3000 to localhost:4000"
 
-- lite: "Connection pooling reuses open connections instead of creating new ones per request. Avoids repeated handshake overhead."
-- full: "Pool reuse open DB connections. No new connection per request. Skip handshake overhead."
-- ultra: "Pool = reuse DB conn. Skip handshake -> fast under load."
+- lite: "Install the cors package. Add `app.use(cors({ origin: 'http://localhost:3000' }))` before your route definitions. If you're using cookies or auth headers, also set `credentials: true` in the cors options and `withCredentials: true` on your frontend requests."
+- full: "Install cors package. Add `app.use(cors({ origin: 'http://localhost:3000' }))` before routes."
+- ultra: "`app.use(cors({ origin: 'http://localhost:3000' }))`"
 
 ## Auto-Clarity
 
@@ -68,16 +65,6 @@ Drop terse mode automatically for:
 - User asks to clarify or repeats question
 
 Resume terse after the clear part is done.
-
-Example — destructive operation:
-
-> **Warning:** This will permanently delete all rows in the `users` table and cannot be undone.
->
-> ```sql
-> DROP TABLE users;
-> ```
->
-> Terse resumes. Verify backup exist first.
 
 ## Boundaries
 

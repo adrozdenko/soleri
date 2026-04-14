@@ -1,0 +1,96 @@
+{
+  "runner": "claude -p",
+  "terseLevel": "ultra",
+  "variantsRun": [
+    "normal",
+    "v1",
+    "v2"
+  ],
+  "timestamp": "2026-04-14T19:24:57.171Z",
+  "prompts": [
+    {
+      "label": "Explain: React re-renders",
+      "category": "explain"
+    },
+    {
+      "label": "Explain: DB connection pooling",
+      "category": "explain"
+    },
+    {
+      "label": "Debug: Node memory leak",
+      "category": "debug"
+    },
+    {
+      "label": "Debug: CORS error",
+      "category": "debug"
+    },
+    {
+      "label": "Review: auth middleware",
+      "category": "review"
+    },
+    {
+      "label": "Plan: add caching layer",
+      "category": "plan"
+    },
+    {
+      "label": "Howto: Git rebase vs merge",
+      "category": "howto"
+    },
+    {
+      "label": "Howto: TypeScript generics",
+      "category": "howto"
+    }
+  ],
+  "variants": {
+    "normal": {
+      "totalTokens": 8720,
+      "perPrompt": [
+        797,
+        1415,
+        1464,
+        454,
+        919,
+        1487,
+        559,
+        1625
+      ],
+      "cost": 0.99219275
+    },
+    "v1": {
+      "totalTokens": 7141,
+      "perPrompt": [
+        715,
+        1006,
+        1067,
+        351,
+        685,
+        1436,
+        448,
+        1433
+      ],
+      "cost": 0.9493977499999998
+    },
+    "v2": {
+      "totalTokens": 3755,
+      "perPrompt": [
+        249,
+        740,
+        614,
+        50,
+        185,
+        844,
+        179,
+        894
+      ],
+      "cost": 0.8658494999999999
+    }
+  },
+  "summary": {
+    "normalTotal": 8720,
+    "v1Total": 7141,
+    "v1ReductionPct": 18.1,
+    "v2Total": 3755,
+    "v2ReductionPct": 56.9,
+    "totalCostUsd": 2.8074
+  }
+}
