@@ -68,7 +68,16 @@ function parseFrontmatter(content: string): { name: string; description: string 
     }
   }
 
-  return { name, description: descLines.join(' ').replace(/\s+/g, ' ').trim() };
+  let desc = descLines.join(' ').replace(/\s+/g, ' ').trim();
+
+  // Strip outer YAML quotes and unescape inner quotes
+  if (desc.startsWith('"') && desc.endsWith('"')) {
+    desc = desc.slice(1, -1).replace(/\\"/g, '"');
+  } else if (desc.startsWith("'") && desc.endsWith("'")) {
+    desc = desc.slice(1, -1).replace(/''/g, "'");
+  }
+
+  return { name, description: desc };
 }
 
 /** Extract quoted trigger phrases from a description */
@@ -221,6 +230,12 @@ const TRIGGER_MAP: Record<string, string> = {
   // Release
   'bump version and publish packages': 'release',
   'cut a release for the monorepo': 'release',
+
+  // Compress & terse
+  'compress this file to save tokens': 'compress',
+  'shrink this and reduce tokens': 'compress',
+  'terse mode be brief': 'terse',
+  'fewer tokens caveman mode': 'terse',
 };
 
 // These skills are agent-specific (not in the base Soleri scaffold).
