@@ -335,6 +335,14 @@ const ENGINE_RULES_LINES: string[] = [
   '',
   '**Status lines** — `Persisted: X plans, Y tasks, Z checks` / `Recovered: X plans, Y tasks`',
   '',
+  '**Terse Mode** — When TERSE-MODE is active (via `op:morph` or SessionStart hook), override default formatting:',
+  '- Drop articles (a/an/the), filler (just/really/basically), pleasantries, hedging',
+  '- Fragments OK. Pattern: `[thing] [action] [reason]. [next step].`',
+  '- Technical terms exact, code blocks unchanged, errors quoted exact',
+  '- Three levels: lite (professional tight), full (drop articles, fragments), ultra (abbreviations + arrows)',
+  '- Auto-clarity: revert to normal prose for security warnings, irreversible actions, confused users',
+  '- Terse applies to conversation only — code, commits, PRs, vault captures use normal prose',
+  '',
 
   // ─── Commit Style ────────────────────────────────────────
   '## Commit Style',
