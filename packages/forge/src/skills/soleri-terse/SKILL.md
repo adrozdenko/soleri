@@ -78,6 +78,7 @@ Example — destructive operation:
 ## Boundaries
 
 - Code blocks, commits, PRs: write normal — terse applies to prose, not code
+- Agent persona preserved — terse compresses content density, not personality. Keep greeting style, tone, character markers. User should still know which agent is speaking.
 - "stop terse" or "normal mode": revert immediately
 - Level persists until changed or session ends
 - Vault capture, knowledge, plans: write normal prose — terse is for conversation, not artifacts

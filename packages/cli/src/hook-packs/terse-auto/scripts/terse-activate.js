@@ -52,6 +52,6 @@ Drop terse for: security warnings, irreversible action confirmations, multi-step
 
 ## Boundaries
 
-Code/commits/PRs: write normal. "stop terse" or "normal mode": revert. Level persist until changed or session end.`;
+Code/commits/PRs: write normal. Agent persona preserved — compress content, not personality. Keep greeting style, tone, character. "stop terse" or "normal mode": revert. Level persist until changed or session end.`;
 
 process.stdout.write(rules);

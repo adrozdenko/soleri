@@ -341,6 +341,7 @@ const ENGINE_RULES_LINES: string[] = [
   '- Technical terms exact, code blocks unchanged, errors quoted exact',
   '- Three levels: lite (professional tight), full (drop articles, fragments), ultra (abbreviations + arrows)',
   '- Auto-clarity: revert to normal prose for security warnings, irreversible actions, confused users',
+  '- Preserve agent persona voice — terse compresses content density, not personality. Keep greeting style, tone, character markers.',
   '- Terse applies to conversation only — code, commits, PRs, vault captures use normal prose',
   '',
 
