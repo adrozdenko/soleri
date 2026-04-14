@@ -5,7 +5,7 @@ description: 'All available skills — essential and optional — with descripti
 
 Skills are workflow scripts that teach your agent how to handle specific situations. When you say "debug this" or "create a plan", the agent matches your intent to a skill and follows its structured workflow.
 
-Your agent ships with 7 essential skills by default. Another 27 optional skills are available to install on demand.
+Your agent ships with 7 essential skills by default. Another 29 optional skills are available to install on demand.
 
 ## Essential skills (included by default)
 
@@ -53,6 +53,8 @@ Install any of these to extend your agent's capabilities:
 | **vault-curate**                  | Knowledge maintenance — deduplicate, merge, resolve contradictions, groom                  |
 | **vault-smells**                  | Deep knowledge quality analysis — contradictions, stale patterns, orphans, decay           |
 | **verification-before-completion**| Internal quality gate before claiming a task is done — run tests, check output             |
+| **terse**                         | Token-efficient responses — compress output while keeping technical accuracy               |
+| **compress**                      | Compresses natural language files (CLAUDE.md, memory) to reduce input tokens               |
 | **yolo-mode**                     | Autonomous execution — skip approval gates while preserving safety invariants              |
 
 ## Installing optional skills
@@ -82,7 +84,7 @@ When scaffolding an agent, you can control which skills are included:
 | Filter        | What it includes                   |
 | ------------- | ---------------------------------- |
 | `essential`   | 7 core skills (default)            |
-| `all`         | All 34 skills                      |
+| `all`         | All 36 skills                      |
 | Custom array  | Only the skills you list           |
 
 Set this in your [`agent.yaml`](/docs/your-agent/):

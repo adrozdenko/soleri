@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- **`worktree-cleanup` hook pack** — Auto-cleans stale worktree directories on SessionStart and orphaned `worktree-agent-*` branches after subagent completion. Enabled by default on new scaffolds (`scaffoldDefault: true`).
+- **`oxlint` hook pack** — Runs oxlint on edited TS/JS files after every Edit/Write. Silent on success, surfaces findings inline.
+- **`terse-auto` hook pack** — Auto-activates terse mode on session start for token-efficient responses with statusline badge.
+- **`terse` skill** — Token-efficient response mode with three levels (lite/full/ultra). Compresses output while preserving technical accuracy and agent persona.
+- **`compress` skill** — Compresses natural language files (CLAUDE.md, memory files) to reduce input token usage.
+- **Skill sync overwrite protection** — Content-based diff guard with 2-second mtime threshold. User-modified skills are preserved during `soleri agent refresh`, `soleri agent update`, and `soleri agent create`. CLI reports "N user-modified preserved" when skipping.
+- **Hook pack script protection** — Hook pack installer skips script files that already exist on disk, preventing overwrite of user-customized hook scripts.
+- **`SyncResult.userModified`** — New field in the sync result tracks which skills were skipped due to user modifications.
+
 ## [9.21.0] — 2026-04-13
 
 ### Added

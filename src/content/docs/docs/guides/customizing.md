@@ -131,6 +131,42 @@ RTK intercepts Bash commands via a PreToolUse hook and compresses verbose output
 
 **Prerequisites:** [RTK](https://github.com/rtk-ai/rtk) >= 0.23.0 (`brew install rtk-ai/tap/rtk`) and `jq`.
 
+### Inline linting with oxlint
+
+Catch lint issues on every file edit without waiting for a full build:
+
+```bash
+npx @soleri/cli hooks add-pack oxlint
+```
+
+Runs [oxlint](https://oxc.rs/docs/guide/usage/linter) on the affected file after every Edit or Write. Silent when clean, surfaces findings inline when there are issues.
+
+**Prerequisites:** oxlint (`npm install -g oxlint`).
+
+### Terse mode
+
+Reduce token usage by compressing agent output — drop filler words, use fragments, keep all technical substance:
+
+```bash
+npx @soleri/cli hooks add-pack terse-auto
+```
+
+Auto-activates terse mode on every session start. The agent's persona and technical accuracy stay intact, only fluff gets cut. Toggle levels with `/terse lite|full|ultra` or disable with "stop terse".
+
+### Worktree cleanup
+
+Automatically clean up stale git worktrees and orphaned branches left behind by subagent work:
+
+```bash
+npx @soleri/cli hooks add-pack worktree-cleanup
+```
+
+Two hooks working together:
+- **SessionStart** — removes worktree directories that are no longer valid
+- **PostToolUse:Agent** — prunes orphaned `worktree-agent-*` branches after subagent completion
+
+Included by default on new scaffolds (`scaffoldDefault: true`).
+
 ### Editor integration
 
 ```bash
