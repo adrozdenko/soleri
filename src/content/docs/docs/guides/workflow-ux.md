@@ -3,7 +3,7 @@ title: 'UX Workflow'
 description: 'Search → Plan → Work → Capture → Complete for design decisions, user experience, and interaction patterns.'
 ---
 
-This is the [development workflow](/docs/guides/workflow/) applied to UX work — design decisions, interaction patterns, and usability standards.
+The [development workflow](/docs/guides/workflow/) applied to UX work: design decisions, interaction patterns, and usability standards.
 
 ## Search: what design decisions exist?
 
@@ -27,7 +27,7 @@ Before making a UX decision, check what's been established:
 > 2. Keep mobile navigation to 5 items max — Hick's Law (critical)
 > 3. Always show the current location visually — active state on nav items (pattern)
 
-These are your team's design decisions — not generic UX advice, but choices made for your specific product.
+These are your team's design decisions, not generic UX advice, but choices made for your specific product.
 
 ## Plan: structure the design work
 
@@ -58,7 +58,7 @@ During the redesign, check your choices:
 >
 > **Agent:** _No direct pattern found. This is a good candidate for capture after you decide._
 
-When the vault has nothing, that's a signal — this is a new decision worth documenting once you make it.
+When the vault has nothing, that's a signal: a new decision worth documenting once you make it.
 
 ## Capture: save design decisions with rationale
 
@@ -70,7 +70,7 @@ UX captures are especially valuable because design decisions are easy to forget 
 >
 > **You:** "Capture this anti-pattern: don't use toggle switches for settings that require a save action. Toggles imply instant effect. Use checkboxes with a save button instead, or make the toggle actually save immediately."
 
-Notice the last one includes the **why** — "toggles imply instant effect." This is what makes UX captures valuable. The pattern alone is useful, but the rationale prevents future designers from questioning it without understanding the context.
+Notice the last one includes the reasoning: "toggles imply instant effect." The pattern alone is useful, but the rationale prevents future designers from questioning it without understanding the context.
 
 ## Complete: close the loop
 
@@ -78,19 +78,19 @@ Notice the last one includes the **why** — "toggles imply instant effect." Thi
 >
 > **Agent:** _Plan complete. Accuracy: 85%. Drift: testing step was replaced with stakeholder review. 3 patterns extracted._
 
-The settings page redesign knowledge is now captured. Next time someone adds a new settings category or redesigns another complex page, the search step surfaces all of this — the two-level hierarchy, the toggle vs checkbox rule, the mobile navigation constraint.
+The settings page redesign knowledge is now captured. Next time someone adds a new settings category or redesigns another complex page, the search step surfaces all of this: the two-level hierarchy, the toggle vs checkbox rule, the mobile navigation constraint.
 
 ## UX patterns worth capturing early
 
-| Area              | What to capture                                                |
-| ----------------- | -------------------------------------------------------------- |
-| **Layout**        | Grid system, spacing scale, responsive breakpoints             |
-| **Navigation**    | Menu structure, breadcrumb rules, mobile patterns              |
-| **Forms**         | Validation display, field ordering, error handling             |
-| **Feedback**      | Loading states, success/error messages, empty states           |
-| **Interaction**   | Touch targets, hover vs click, gesture conventions             |
-| **Accessibility** | Color contrast rules, focus management, screen reader patterns |
-| **Content**       | Tone of voice, error message style, label conventions          |
+| Area          | What to capture                                                |
+| ------------- | -------------------------------------------------------------- |
+| Layout        | Grid system, spacing scale, responsive breakpoints             |
+| Navigation    | Menu structure, breadcrumb rules, mobile patterns              |
+| Forms         | Validation display, field ordering, error handling             |
+| Feedback      | Loading states, success/error messages, empty states           |
+| Interaction   | Touch targets, hover vs click, gesture conventions             |
+| Accessibility | Color contrast rules, focus management, screen reader patterns |
+| Content       | Tone of voice, error message style, label conventions          |
 
 ---
 

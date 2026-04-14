@@ -3,7 +3,7 @@ title: 'Team Workflows'
 description: 'How teams of 2-10 people share, grow, and benefit from a collective knowledge base.'
 ---
 
-A Soleri agent gets smarter the more you use it. With a team, it gets smarter faster — everyone's discoveries benefit everyone else. This guide covers how to set up and maintain a shared knowledge base across a team.
+A Soleri agent gets smarter the more you use it. With a team, it gets smarter faster because everyone's discoveries benefit everyone else.
 
 ## The shared vault model
 
@@ -26,25 +26,25 @@ When someone captures a pattern, it enters their local vault immediately. When t
 
 ### Merge considerations
 
-The vault is a SQLite database — binary files don't merge well with Git. Practical approaches:
+The vault is a SQLite database, and binary files don't merge well with Git. Practical approaches:
 
-- **Single knowledge contributor**: One person (or a rotating role) handles captures. No merge conflicts.
-- **Feature branches**: Each person captures on their branch. Merge conflicts are rare because new entries get unique IDs — conflicts only happen if two people edit the same entry.
-- **Export/import**: Export vaults as JSON, merge in Git, reimport. JSON merges cleanly.
+- Single knowledge contributor: one person (or a rotating role) handles captures. No merge conflicts.
+- Feature branches: each person captures on their branch. Merge conflicts are rare because new entries get unique IDs. Conflicts only happen if two people edit the same entry.
+- Export/import: export vaults as JSON, merge in Git, reimport. JSON merges cleanly. Always back up your vault before reimporting to guard against data loss.
 
 ### Resolving vault merge conflicts
 
 When two branches both modify `vault.db`, Git can't auto-merge the binary file. Here's the step-by-step resolution:
 
-**Step 1** — Before merging, export both vaults to JSON. On your branch, ask the agent to "Export the vault as JSON." Then check out main and export that vault too.
+Step 1: Before merging, export both vaults to JSON. On your branch, ask the agent to "Export the vault as JSON." Then check out main and export that vault too.
 
-**Step 2** — Merge the JSON files. Git handles JSON diffs well. Resolve any conflicting entries (same ID, different content) by choosing the newer version or combining descriptions.
+Step 2: Merge the JSON files. Git handles JSON diffs well. Resolve any conflicting entries (same ID, different content) by choosing the newer version or combining descriptions.
 
-**Step 3** — Pick one `vault.db` as the base (usually main's), then import the other branch's entries by asking the agent to "Import knowledge from vault-backup-branch.json."
+Step 3: Pick one `vault.db` as the base (usually main's), then import the other branch's entries by asking the agent to "Import knowledge from vault-backup-branch.json."
 
-**Step 4** — Run deduplication to catch any overlaps by asking the agent to "Find duplicate entries in the vault."
+Step 4: Run deduplication to catch any overlaps by asking the agent to "Find duplicate entries in the vault."
 
-This is manual, but it happens rarely — only when two people edit the same entry on different branches. New entries (the common case) get unique IDs and don't conflict.
+This is manual, but it happens rarely. It only comes up when two people edit the same entry on different branches. New entries (the common case) get unique IDs and don't conflict.
 
 ## Who captures what
 
@@ -52,12 +52,12 @@ Not everyone needs to capture everything. Define roles based on your team:
 
 | Role                 | What they capture                                         | Why                                                            |
 | -------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
-| **Tech lead**        | Architecture decisions, anti-patterns from past incidents | These are high-severity patterns that shape the whole codebase |
-| **Senior devs**      | Patterns from code reviews, solutions to recurring bugs   | They see the same mistakes across PRs                          |
-| **All developers**   | Patterns they discover during work                        | Fresh eyes catch things seniors miss                           |
-| **New team members** | Questions that were hard to answer, onboarding gaps       | These become onboarding knowledge for the next hire            |
+| Tech lead        | Architecture decisions, anti-patterns from past incidents | High-severity patterns that shape the whole codebase |
+| Senior devs      | Patterns from code reviews, solutions to recurring bugs   | They see the same mistakes across PRs                          |
+| All developers   | Patterns they discover during work                        | Fresh eyes catch things seniors miss                           |
+| New team members | Questions that were hard to answer, onboarding gaps       | Becomes onboarding knowledge for the next hire            |
 
-The goal isn't to capture everything — it's to capture what matters. A vault with 50 well-chosen patterns is more valuable than 500 mediocre ones.
+The goal isn't to capture everything. It's to capture what matters. A vault with 50 well-chosen patterns beats 500 mediocre ones.
 
 ## Onboarding with the agent
 
@@ -73,7 +73,7 @@ New team members benefit immediately from a mature knowledge base:
 > 4. Use optimistic updates for form submissions
 >    ...
 
-Instead of reading outdated wiki pages or asking busy colleagues, the new developer gets ranked, relevant knowledge immediately. The critical patterns surface first — the ones they absolutely need to know.
+Instead of reading outdated wiki pages or asking busy colleagues, the new developer gets ranked, relevant knowledge immediately. The critical patterns surface first, the ones they absolutely need to know.
 
 ## Governance for teams
 
@@ -85,9 +85,9 @@ npx @soleri/cli governance --preset moderate
 
 The moderate preset:
 
-- **No review required** — all captures go straight to the vault without approval
-- **Enforces quotas** — 500 total entries, 150 per category, 250 per type
-- **Auto-expires proposals** — pending proposals expire after 14 days
+- No review required: all captures go straight to the vault without approval
+- Enforces quotas: 500 total entries, 150 per category, 250 per type
+- Auto-expires proposals: pending proposals expire after 14 days
 
 For stricter teams:
 
@@ -124,7 +124,7 @@ As the vault grows, the curator maintains quality:
 > _7 entries unused in 60+ days_
 > _2 tags need normalization_
 
-Regular audits prevent knowledge decay. Schedule them monthly — or let the brain's lifecycle run them automatically.
+Regular audits prevent knowledge decay. Schedule them monthly or let the brain's lifecycle run them automatically.
 
 ## Measuring knowledge value
 
@@ -146,9 +146,9 @@ You don't need to set all this up on day one. A practical rollout:
 4. **Month 2**: Run first vault health audit. Promote proven patterns to global
 5. **Ongoing**: Capture becomes habit. The agent gets smarter. Plans get better recommendations.
 
-The compound effect is real — but it takes a few weeks of consistent capture before searches become truly powerful.
+The compound effect is real, but it takes a few weeks of consistent capture before searches start returning useful results consistently.
 
-See the [Success Story](/docs/guides/dashboard/) for a real example of a team using cross-project knowledge — a new developer onboards in 30 seconds using patterns from a linked project.
+See the [Success Story](/docs/guides/dashboard/) for a real example of a team using cross-project knowledge, where a new developer onboards in 30 seconds using patterns from a linked project.
 
 ---
 

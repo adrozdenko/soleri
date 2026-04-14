@@ -3,7 +3,7 @@ title: 'Backend Workflow'
 description: 'Search → Plan → Work → Capture → Complete for APIs, databases, services, and infrastructure.'
 ---
 
-This is the [development workflow](/docs/guides/workflow/) applied to backend work — APIs, database operations, service architecture, and infrastructure.
+The [development workflow](/docs/guides/workflow/) applied to backend work: APIs, database operations, service architecture, and infrastructure.
 
 ## Search: what conventions exist?
 
@@ -25,7 +25,7 @@ Before writing an endpoint or modifying a service, check what the team has estab
 > 1. Never store JWTs in localStorage — use httpOnly cookies (critical)
 > 2. Don't roll your own password hashing — use bcrypt or argon2 (critical)
 
-These are the rules your team agreed on. Searching takes seconds and prevents you from shipping something that'll fail code review.
+These are the rules your team agreed on. A quick search prevents you from shipping something that'll fail code review.
 
 ## Plan: structure the backend task
 
@@ -43,7 +43,7 @@ These are the rules your team agreed on. Searching takes seconds and prevents yo
 > _Brain recommendation: "All API errors must return { error, code, details } format" (strength: 0.95)_
 > _Brain recommendation: "Wrap database operations in transactions for multi-step mutations" (strength: 0.88)_
 
-The brain surfaced the transaction pattern because this task involves creating a team AND assigning a role — a multi-step mutation that needs atomicity.
+The brain surfaced the transaction pattern because this task involves creating a team and assigning a role, a multi-step mutation that needs atomicity.
 
 ## Work: build with guardrails
 
@@ -80,14 +80,14 @@ Next time someone builds an endpoint with email sending, the search step will su
 
 ## Backend patterns worth capturing early
 
-| Area                | What to capture                                            |
-| ------------------- | ---------------------------------------------------------- |
-| **API conventions** | Error format, status codes, pagination, versioning         |
-| **Database**        | Transaction rules, migration strategy, indexing guidelines |
-| **Authentication**  | Token strategy, session handling, permission model         |
-| **Error handling**  | Retry policies, circuit breaker rules, fallback behavior   |
-| **Performance**     | Query limits, caching strategy, N+1 prevention             |
-| **Security**        | Input validation, rate limiting, secret management         |
+| Area             | What to capture                                            |
+| ---------------- | ---------------------------------------------------------- |
+| API conventions  | Error format, status codes, pagination, versioning         |
+| Database         | Transaction rules, migration strategy, indexing guidelines |
+| Authentication   | Token strategy, session handling, permission model         |
+| Error handling   | Retry policies, circuit breaker rules, fallback behavior   |
+| Performance      | Query limits, caching strategy, N+1 prevention             |
+| Security         | Input validation, rate limiting, secret management         |
 
 ---
 

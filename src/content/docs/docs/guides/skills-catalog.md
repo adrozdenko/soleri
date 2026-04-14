@@ -1,11 +1,11 @@
 ---
 title: 'Skills Catalog'
-description: 'All available skills — essential and optional — with descriptions and installation instructions.'
+description: 'All available skills (essential and optional) with descriptions and installation instructions.'
 ---
 
-Skills are workflow scripts that teach your agent how to handle specific situations. When you say "debug this" or "create a plan", the agent matches your intent to a skill and follows its structured workflow.
+Skills are workflow scripts that teach your agent how to handle specific situations. When you say "debug this" or "create a plan", the agent matches your intent to a skill and follows its steps.
 
-Your agent ships with 7 essential skills by default. Another 29 optional skills are available to install on demand.
+Every scaffolded agent ships with 7 essential skills. Another 29 optional skills are available to install on demand (36 total).
 
 ## Essential skills (included by default)
 
@@ -96,14 +96,14 @@ engine:
 
 ## How skills work
 
-Skills are markdown files stored in your agent's `skills/` directory (see [Your Agent](/docs/your-agent/) for the full file-tree layout). Each skill has:
+Skills are markdown files installed to `~/.claude/skills/<name>/SKILL.md` (see [Your Agent](/docs/your-agent/) for the full file-tree layout). Each skill has:
 
-- **Trigger conditions** — phrases and intents that activate it
-- **Steps** — a structured workflow the agent follows
-- **Tool references** — which agent tools to use at each step
+- Trigger conditions: phrases and intents that activate it
+- Steps: a structured workflow the agent follows
+- Tool references: which agent tools to use at each step
 
-When the agent detects a matching intent, it loads the skill and follows its workflow. Skills compose with other agent capabilities — a skill can search the vault, create plans, capture knowledge, and use any tool available to the agent.
+When the agent detects a matching intent, it loads the skill and follows the workflow. Skills compose with other agent capabilities. A skill can search the vault, create plans, capture knowledge, and use any tool available to the agent.
 
 ---
 
-_Next: [Domain Packs](/docs/guides/domain-packs/) — specialized intelligence modules for design, components, and code review. See also [Creating Packs](/docs/guides/pack-authoring/) to build your own, [Your Agent](/docs/your-agent/) for the agent anatomy overview, [Extending Your Agent](/docs/extending/) for custom ops, and the [CLI Reference](/docs/cli-reference/) for `soleri skills` and `soleri pack` commands._
+_Next: [Domain Packs](/docs/guides/domain-packs/). See also [Creating Packs](/docs/guides/pack-authoring/) to build your own, [Your Agent](/docs/your-agent/) for the agent anatomy overview, [Extending Your Agent](/docs/extending/) for custom ops, and the [CLI Reference](/docs/cli-reference/) for `soleri skills` and `soleri pack` commands._

@@ -3,11 +3,11 @@ title: Capabilities
 description: Everything a Soleri agent can do — 350+ operations across 22 facades covering vault, brain, planning, orchestration, and more.
 ---
 
-Every Soleri agent ships with **350+ operations** across **22 engine modules** out of the box. This page shows what your agent can do, grouped by facade.
+Every Soleri agent ships with 350+ operations across 22 engine modules. This page lists them all, grouped by facade.
 
 For parameter details on common operations, see the [API Reference](/docs/api-reference/). For CLI commands, see the [CLI Reference](/docs/cli-reference/). For term definitions, see the [Glossary](/docs/glossary/).
 
-## Facade Summary
+## Facade summary
 
 | Facade                            | Ops          | What it does                                             |
 | --------------------------------- | ------------ | -------------------------------------------------------- |
@@ -39,7 +39,7 @@ For parameter details on common operations, see the [API Reference](/docs/api-re
 
 Core knowledge storage, retrieval, capture, and sharing scope. Archival, sync, review, linking, branching, tier, and intake ops have moved to dedicated facades — see [Archive](#archive), [Sync](#sync), [Review](#review), [Links](#links), [Branching](#branching), [Tier](#tier), and [Intake](#intake). Backward-compatible stubs remain on the vault facade for existing agents.
 
-### Search & CRUD
+### Search and CRUD
 
 | Op                  | Auth  | Description                                                                     |
 | ------------------- | ----- | ------------------------------------------------------------------------------- |
@@ -57,7 +57,7 @@ Core knowledge storage, retrieval, capture, and sharing scope. Archival, sync, r
 | `vault_recent`      | read  | Recently added or modified entries.                                             |
 | `export`            | read  | Export vault entries as JSON intelligence bundles.                               |
 
-### Knowledge Capture
+### Knowledge capture
 
 | Op                   | Auth  | Description                                                 |
 | -------------------- | ----- | ----------------------------------------------------------- |
@@ -67,7 +67,7 @@ Core knowledge storage, retrieval, capture, and sharing scope. Archival, sync, r
 | `search_intelligent` | read  | Semantic search with 6-dimension scoring.                   |
 | `search_feedback`    | write | Rate a search result to improve future relevance.           |
 
-### Import & Dedup
+### Import and dedup
 
 | Op                     | Auth  | Description                                 |
 | ---------------------- | ----- | ------------------------------------------- |
@@ -77,7 +77,7 @@ Core knowledge storage, retrieval, capture, and sharing scope. Archival, sync, r
 | `vault_content_hash`   | read  | Content hash for an entry (dedup key).      |
 | `vault_dedup_status`   | read  | Deduplication status across vault.          |
 
-### Sharing & Scoping
+### Sharing and scoping
 
 | Op                    | Auth  | Description                                                |
 | --------------------- | ----- | ---------------------------------------------------------- |
@@ -89,7 +89,7 @@ Core knowledge storage, retrieval, capture, and sharing scope. Archival, sync, r
 
 System health, telemetry, plugins, packs, accounts, and diagnostics.
 
-### Core Admin
+### Core admin
 
 | Op                            | Auth  | Description                                 |
 | ----------------------------- | ----- | ------------------------------------------- |
@@ -126,7 +126,7 @@ System health, telemetry, plugins, packs, accounts, and diagnostics.
 | `telemetry_errors`       | read  | Error telemetry data.                 |
 | `telemetry_slow_ops`     | read  | Slow operation telemetry.             |
 
-### LLM Management
+### LLM management
 
 | Op                      | Auth  | Description                                         |
 | ----------------------- | ----- | --------------------------------------------------- |
@@ -149,7 +149,7 @@ System health, telemetry, plugins, packs, accounts, and diagnostics.
 | `admin_list_plugins`  | read  | List plugins with metadata.           |
 | `admin_plugin_status` | read  | Plugin health and configuration.      |
 
-### Knowledge Packs
+### Knowledge packs
 
 | Op               | Auth  | Description                                  |
 | ---------------- | ----- | -------------------------------------------- |
@@ -158,7 +158,7 @@ System health, telemetry, plugins, packs, accounts, and diagnostics.
 | `pack_uninstall` | write | Uninstall a knowledge pack.                  |
 | `pack_validate`  | read  | Validate a knowledge pack before installing. |
 
-### Accounts & Tokens
+### Accounts and tokens
 
 | Op                     | Auth  | Description                                        |
 | ---------------------- | ----- | -------------------------------------------------- |

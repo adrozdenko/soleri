@@ -9,7 +9,7 @@ This page will be auto-generated from Zod schemas in a future release. For now, 
 
 ## How Facades Work
 
-Every Soleri agent exposes operations through **facades** — single MCP tool entry points that dispatch to operations via the `op` parameter.
+Every Soleri agent exposes operations through **facades**: single MCP tool entry points that dispatch to operations via the `op` parameter.
 
 ```json
 {
@@ -115,7 +115,7 @@ Full knowledge capture with all metadata.
 
 ### search_intelligent
 
-Semantic search with 6-dimension scoring.
+Semantic search with 6-dimension scoring (recency, relevance, severity, usage, etc.).
 
 | Param     | Type   | Required | Description                                    |
 | --------- | ------ | -------- | ---------------------------------------------- |
@@ -124,7 +124,7 @@ Semantic search with 6-dimension scoring.
 
 ### vault_branch
 
-Create a named vault branch for experimentation.
+Create a named vault branch to experiment without affecting the main vault.
 
 | Param        | Type   | Required | Description    |
 | ------------ | ------ | -------- | -------------- |
@@ -147,7 +147,7 @@ Create a multi-step execution plan.
 
 ### plan_brainstorm
 
-Design-before-code brainstorming with domain awareness.
+Design-before-code brainstorming, domain-aware.
 
 | Param       | Type   | Required | Description                                            |
 | ----------- | ------ | -------- | ------------------------------------------------------ |
@@ -198,7 +198,7 @@ Record feedback to the learning system.
 
 ### brain_extract_knowledge
 
-Extract patterns from a session using 6 heuristic rules.
+Extract patterns from a session using 6 heuristic extraction rules.
 
 | Param       | Type   | Required | Description                 |
 | ----------- | ------ | -------- | --------------------------- |
@@ -206,7 +206,7 @@ Extract patterns from a session using 6 heuristic rules.
 
 ### radar_analyze
 
-Analyze a learning signal — auto-captures, queues, or logs based on confidence.
+Analyze a learning signal. Auto-captures, queues, or logs it depending on confidence level.
 
 | Param           | Type   | Required | Description                                                                       |
 | --------------- | ------ | -------- | --------------------------------------------------------------------------------- |
@@ -383,7 +383,7 @@ Restore an archived entry back to the active table.
 
 ### knowledge_merge
 
-Merge two similar entries — keeps best metadata from both.
+Merge two similar entries, keeping the best metadata from both.
 
 | Param      | Type   | Required | Description               |
 | ---------- | ------ | -------- | ------------------------- |
@@ -392,7 +392,7 @@ Merge two similar entries — keeps best metadata from both.
 
 ### knowledge_reorganize
 
-Re-categorize entries — rename domains/tags. Dry-run by default.
+Re-categorize entries by renaming domains/tags. Dry-run by default.
 
 | Param         | Type    | Required | Description                                      |
 | ------------- | ------- | -------- | ------------------------------------------------ |
@@ -414,7 +414,7 @@ Get the full operator profile or a specific section.
 
 ### signal_accumulate
 
-Accumulate operator signals for later synthesis.
+Accumulate operator signals that get synthesized into the profile later.
 
 | Param     | Type  | Required | Description                                                    |
 | --------- | ----- | -------- | -------------------------------------------------------------- |
@@ -457,7 +457,7 @@ Pull entries from a git directory into the vault.
 
 ### vault_export_pack
 
-Export vault entries as a shareable intelligence pack.
+Export vault entries as a shareable pack.
 
 | Param        | Type     | Required | Description                              |
 | ------------ | -------- | -------- | ---------------------------------------- |
@@ -516,7 +516,7 @@ Reject a pending vault entry.
 
 ### ingest_url
 
-Fetch a URL, extract text, classify via LLM, and store.
+Fetch a URL, extract its text, classify it via LLM, and store the result.
 
 | Param    | Type     | Required | Description                   |
 | -------- | -------- | -------- | ----------------------------- |
@@ -526,7 +526,7 @@ Fetch a URL, extract text, classify via LLM, and store.
 
 ### ingest_text
 
-Ingest raw text — classify via LLM and store.
+Ingest raw text, classify it via LLM, and store.
 
 | Param        | Type     | Required | Description                                       |
 | ------------ | -------- | -------- | ------------------------------------------------- |
@@ -589,7 +589,7 @@ Find entries with zero links.
 
 ### relink_vault
 
-Smart re-linking using LLM evaluation.
+Re-link vault entries using LLM evaluation to find connections.
 
 | Param       | Type    | Required | Description                             |
 | ----------- | ------- | -------- | --------------------------------------- |
@@ -691,7 +691,7 @@ Retrieve relevant knowledge from vault and brain.
 
 ### context_analyze
 
-Full context analysis — combines entity extraction and knowledge retrieval.
+Full context analysis: combines entity extraction and knowledge retrieval in one call.
 
 | Param    | Type   | Required | Description          |
 | -------- | ------ | -------- | -------------------- |
@@ -745,8 +745,8 @@ Auth: `admin`
 
 ---
 
-For the complete list of all 350+ operations across 22 facades, see [Capabilities](/docs/capabilities/). For CLI commands, see [CLI Reference](/docs/cli-reference/). For term definitions, see [Glossary](/docs/glossary/).
+The complete list of all 350+ operations across 22 facades is at [Capabilities](/docs/capabilities/). CLI commands are at [CLI Reference](/docs/cli-reference/), and term definitions at [Glossary](/docs/glossary/).
 
 :::note[Coverage]
-This page documents the most commonly used operations. The remaining operations follow the same facade pattern — call with `op` and `params`. Use `admin_tool_list` to discover all available operations and their parameters in your running agent.
+This page covers the most commonly used operations. Everything else follows the same pattern: call with `op` and `params`. Use `admin_tool_list` to discover all available operations and their parameters in a running agent.
 :::

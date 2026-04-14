@@ -3,17 +3,17 @@ title: 'Vault Branching'
 description: 'Experiment with knowledge changes in isolation before merging them into your main vault.'
 ---
 
-Sometimes you want to try something without committing to it. Vault branching lets you create an isolated copy of your knowledge where you can add, modify, or remove entries — then merge when you're satisfied, or delete the branch if the experiment didn't work out.
+Sometimes you want to try something without committing to it. Vault branching lets you create an isolated copy of your knowledge where you can add, modify, or remove entries. Merge when you're satisfied, or delete the branch if the experiment didn't work out.
 
 ## Creating a branch
 
-When you want to experiment — reorganize entries, test a new tagging scheme, or stage changes before a team review:
+When you want to experiment (reorganize entries, test a new tagging scheme, or stage changes before a team review):
 
 > **You:** "Create a vault branch called 'security-reorg'"
 >
 > **Agent:** _Created branch: security-reorg_
 
-The branch starts empty. It doesn't copy your entire vault — it only tracks the changes you make on it.
+The branch starts empty. It doesn't copy your entire vault, it only tracks the changes you make on it.
 
 ## Adding changes to a branch
 
@@ -60,7 +60,7 @@ When you're happy with the changes, merge them into the main vault:
 >
 > **Agent:** _Merged security-reorg into main vault. 1 entry added, 1 modified, 1 removed._
 
-On conflict — when a branch modifies an entry that was also changed in the main vault — the branch version wins. This keeps the merge predictable: what you staged is what you get.
+On conflict (when a branch modifies an entry that was also changed in the main vault), the branch version wins. This keeps the merge predictable: what you staged is what you get.
 
 Merging requires admin-level access. If your agent has access controls configured, only admins can merge.
 
@@ -76,12 +76,12 @@ Deleting a branch removes all staged operations. It does not affect the main vau
 
 ## When to use branching
 
-- **Knowledge reorganization** — restructure domains or tags without risking your live vault
-- **Team collaboration** — one person stages changes, another reviews before merge
-- **Bulk imports** — stage a large batch of entries on a branch, review them, then merge
-- **Rollback safety** — if something goes wrong during a complex edit, the main vault is untouched
+- Knowledge reorganization: restructure domains or tags without risking your live vault
+- Team collaboration: one person stages changes, another reviews before merge
+- Bulk imports: stage a large batch of entries on a branch, review them, then merge
+- Rollback safety: if something goes wrong during a complex edit, the main vault is untouched
 
-Branching is lightweight. Create branches freely — they cost almost nothing until merged.
+Branching is lightweight. Create branches freely, they cost almost nothing until merged.
 
 ## Related guides
 

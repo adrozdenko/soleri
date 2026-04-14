@@ -3,7 +3,7 @@ title: CLI Reference
 description: Every Soleri CLI command with usage, options, and examples.
 ---
 
-The Soleri CLI (`@soleri/cli`) manages agent creation, development, and maintenance.
+The Soleri CLI (`@soleri/cli`) is how you create, develop, and maintain agents.
 
 ## Install
 
@@ -32,11 +32,11 @@ npx @soleri/cli create [name]
 | `--setup-target <target>`  | Editor target: `claude`, `opencode`, `codex`, `both`, `all`  |
 | `-y, --yes`                | Skip confirmation prompts (use with `--config` for fully non-interactive) |
 | `--dir <path>`             | Parent directory for the agent (default: current directory)   |
-| `--filetree`               | Create a file-tree agent (v7 — no TypeScript, no build step, default) |
-| `--legacy`                 | Create a legacy TypeScript agent (v6 — requires npm install + build)  |
+| `--filetree`               | Create a file-tree agent (v7, no TypeScript, no build step, default)  |
+| `--legacy`                 | Create a legacy TypeScript agent (v6, requires npm install + build)   |
 | `--no-git`                 | Skip git repository initialization                            |
 
-**Interactive wizard prompts for:** agent name, role, domains, persona voice, hook packs, git remote setup.
+If you skip the flags, the interactive wizard walks you through agent name, role, domains, persona voice, hook packs, and git remote setup.
 
 **Example:**
 
@@ -65,19 +65,19 @@ Show agents in a directory.
 npx @soleri/cli list [dir]
 ```
 
-Scans for agent projects and displays ID, domains, and build status.
+Scans for agent projects and shows their ID, domains, and build status.
 
 ---
 
 ### dev
 
-Run agent locally in development mode with auto-rebuild.
+Run the agent locally in dev mode with auto-rebuild.
 
 ```bash
 npx @soleri/cli dev
 ```
 
-Starts the MCP server via stdio transport. Watches for file changes and restarts automatically.
+Starts the MCP server via stdio transport, watches for file changes, and restarts when you save.
 
 ---
 
@@ -96,7 +96,7 @@ npx @soleri/cli test [options]
 | `--watch`    | Re-run tests on file changes |
 | `--coverage` | Generate coverage report     |
 
-Runs vitest under the hood. For the monorepo-level E2E test suite, use `npm run test:e2e` from the project root. See [Testing](/docs/guides/testing/) for full details.
+Uses vitest under the hood. For monorepo-level E2E tests, run `npm run test:e2e` from the project root. See [Testing](/docs/guides/testing/) for more.
 
 ---
 
@@ -108,7 +108,7 @@ Add a knowledge domain to your agent.
 npx @soleri/cli add-domain <domain>
 ```
 
-Creates a new domain facade with 5 ops (get_patterns, search, get_entry, capture, remove) and regenerates the agent's facade registry.
+Creates a domain facade with 5 ops (`get_patterns`, `search`, `get_entry`, `capture`, `remove`) and regenerates the facade registry.
 
 **Example:**
 
@@ -127,7 +127,7 @@ Import a knowledge bundle into the agent's vault.
 npx @soleri/cli install-knowledge <pack>
 ```
 
-Accepts a local path, directory, or npm package name. Resolves npm packages as `@soleri/knowledge-{name}`.
+Takes a local path, directory, or npm package name. npm packages resolve as `@soleri/knowledge-{name}`.
 
 **Options:**
 
@@ -152,14 +152,7 @@ System health check.
 npx @soleri/cli doctor
 ```
 
-Reports:
-
-- Node.js version compatibility
-- npm status
-- Agent context (detected project)
-- Vault health
-- CLAUDE.md status
-- Recommendations for fixes
+Checks Node.js version, npm status, agent context, vault health, and CLAUDE.md status. Gives you fix recommendations if anything looks off.
 
 ---
 
@@ -182,8 +175,9 @@ npx @soleri/cli install [dir]
 | Flag                | Description                                                     |
 | ------------------- | --------------------------------------------------------------- |
 | `--target <target>` | Registration target: `claude`, `opencode`, `codex`, `both`, `all` (default: `claude`) |
+| `--verify`          | Verify the install chain (config, engine, agent.yaml)           |
 
-Also creates a global launcher script so the agent can be invoked by name from any directory.
+Also creates a global launcher script so you can invoke the agent by name from any directory.
 
 **Example:**
 
@@ -197,7 +191,7 @@ npx @soleri/cli install ./my-agent --target opencode
 
 ### uninstall
 
-Remove your agent's MCP server registration (or all artifacts with `--full`).
+Remove the agent's MCP server registration, or nuke everything with `--full`.
 
 ```bash
 npx @soleri/cli uninstall [dir]
@@ -283,7 +277,7 @@ npx @soleri/cli agent migrate <agentId>
 
 ### pack
 
-Unified pack manager for hooks, skills, knowledge, and domains. See [Creating Packs](/docs/guides/pack-authoring/) for authoring guide and [Domain Packs](/docs/guides/domain-packs/) for available community packs.
+One command to manage hooks, skills, knowledge, and domain packs. See [Creating Packs](/docs/guides/pack-authoring/) for how to build your own and [Domain Packs](/docs/guides/domain-packs/) for community packs.
 
 ```bash
 npx @soleri/cli pack <subcommand> [options]
@@ -354,7 +348,7 @@ npx @soleri/cli pack remove react-patterns
 
 ### skills
 
-Manage skill packs (convenience wrapper for `pack --type skills`). See [Skills Catalog](/docs/guides/skills-catalog/) for all available skills.
+Convenience wrapper for `pack --type skills`. See [Skills Catalog](/docs/guides/skills-catalog/) for what's available.
 
 ```bash
 npx @soleri/cli skills <subcommand>
@@ -394,7 +388,7 @@ npx @soleri/cli skills remove my-skills
 
 ### hooks
 
-Manage editor hooks, hook packs, and skill-to-hook conversion.
+Manage editor hooks, hook packs, and convert skills into hooks.
 
 ```bash
 # Editor hooks
@@ -421,14 +415,14 @@ npx @soleri/cli hooks demote <pack>
 
 | Pack                 | Description                                                          |
 | -------------------- | -------------------------------------------------------------------- |
-| `safety`             | Anti-deletion staging — backs up files before rm, blocks force push/reset |
-| `flock-guard`        | Parallel agent lock — prevents lockfile corruption in worktrees      |
+| `safety`             | Anti-deletion staging: backs up files before rm, blocks force push/reset |
+| `flock-guard`        | Parallel agent lock, prevents lockfile corruption in worktrees       |
 | `clean-commits`      | No AI attribution in git commits                                     |
 | `typescript-safety`  | Block `any` types and console.log                                    |
 | `css-discipline`     | No `!important`, no inline styles                                    |
 | `a11y`               | Accessibility: semantic HTML, focus rings, touch targets             |
-| `rtk`                | RTK token compression — rewrites shell commands through [RTK](https://github.com/rtk-ai/rtk) to reduce LLM token usage by 60-90% |
-| `yolo-safety`        | Safety guardrails for YOLO mode (composes from `safety`)             |
+| `rtk`                | RTK token compression: rewrites shell commands through [RTK](https://github.com/rtk-ai/rtk) to cut LLM token usage by 60-90% |
+| `yolo-safety`        | Safety guardrails for YOLO mode, composes from `safety`              |
 | `oxlint`             | Runs oxlint on edited TS/JS files after every Edit/Write             |
 | `terse-auto`         | Auto-activates terse mode on session start for token-efficient output |
 | `worktree-cleanup`   | Cleans stale worktree dirs on session start, orphaned branches after subagent completion |
@@ -446,7 +440,7 @@ npx @soleri/cli hooks demote <pack>
 | `--action <level>` | Action level: remind (default), warn, block                         | No       |
 | `--project`        | Output to project dir instead of built-in                           | No       |
 
-**Graduation:** Hooks start at `remind`, graduate to `warn` then `block` after validation proves zero false positives.
+Hooks start at `remind` and graduate to `warn`, then `block` once you've confirmed zero false positives.
 
 ---
 
@@ -465,19 +459,19 @@ npx @soleri/cli governance [options]
 | `--preset <name>` | Apply a preset: `strict`, `moderate`, `permissive` |
 | `--show`          | Display current governance settings                |
 
-Shows quotas (max entries total, per category, per type), retention settings (archive/delete thresholds), auto-capture policy, and current quota usage.
+Shows quotas (max entries total, per category, per type), retention settings, auto-capture policy, and current quota usage.
 
 ---
 
 ### yolo
 
-Launch Claude Code in YOLO mode with safety guardrails. See [YOLO Mode](/docs/guides/yolo-mode/) for full guide.
+Launch Claude Code in YOLO mode with safety guardrails. See [YOLO Mode](/docs/guides/yolo-mode/) for the full guide.
 
 ```bash
 npx @soleri/cli yolo [options]
 ```
 
-Automatically installs the `yolo-safety` hook pack (if not already installed), then launches Claude Code with `--dangerously-skip-permissions`. Safety hooks intercept destructive commands (rm, git push --force, git reset --hard, drop table, docker rm).
+Installs the `yolo-safety` hook pack if needed, then launches Claude Code with `--dangerously-skip-permissions`. The safety hooks intercept destructive commands like `rm`, `git push --force`, `git reset --hard`, `drop table`, and `docker rm`.
 
 **Options:**
 
@@ -513,11 +507,11 @@ npx @soleri/cli telegram <subcommand>
 | `setup`    | Interactive configuration wizard (bot token, API key, model) |
 | `status`   | Check Telegram configuration status               |
 
-**Workflow:**
+Typical workflow:
 
-1. `soleri telegram enable` — generates 4 source files, adds grammy dependency, adds npm scripts
-2. `soleri telegram setup` — interactive wizard for bot token, LLM provider/key, passphrase, model
-3. `npm run telegram:start` or `npm run telegram:dev` — run the bot
+1. `soleri telegram enable` generates source files, adds the grammy dependency, and wires up npm scripts
+2. `soleri telegram setup` walks you through bot token, LLM provider/key, passphrase, and model
+3. `npm run telegram:start` or `npm run telegram:dev` to run the bot
 
 **Example:**
 
@@ -532,7 +526,7 @@ npx @soleri/cli telegram disable
 
 ### vault
 
-Vault knowledge management.
+Vault management from the command line.
 
 ```bash
 npx @soleri/cli vault <subcommand>
@@ -563,7 +557,7 @@ npx @soleri/cli vault export --domain architecture
 
 ### staging
 
-Manage the anti-deletion staging folder. The `safety` hook pack backs up files here before destructive operations.
+Manage the anti-deletion staging folder where the `safety` hook pack backs up files before destructive operations.
 
 ```bash
 npx @soleri/cli staging <subcommand>
@@ -616,16 +610,11 @@ npx @soleri/cli staging cleanup --yes
 ### extend
 
 :::caution[File-tree agents only need files]
-The `extend` subcommands (`init`, `add-op`, `add-facade`, `add-middleware`) applied to the legacy TypeScript agent format and are **no longer supported**.
+The `extend` subcommands (`init`, `add-op`, `add-facade`, `add-middleware`) were for the legacy TypeScript agent format and are **no longer supported**.
 
-File-tree agents extend through plain files:
-- **Instructions** → add `.md` files to `instructions/`
-- **Workflows** → add folders to `workflows/`
-- **Knowledge** → drop JSON bundles in `knowledge/`
-- **Skills** → add `SKILL.md` files to `skills/`
-- **Domains** → use `npx @soleri/cli add-domain <name>`
+File-tree agents extend through plain files: `.md` files in `instructions/`, folders in `workflows/`, JSON bundles in `knowledge/`, `SKILL.md` files in `skills/`, or `npx @soleri/cli add-domain <name>` for new domains.
 
-See [Extending Your Agent](/docs/extending/) for full documentation.
+See [Extending Your Agent](/docs/extending/) for details.
 :::
 
 ---
@@ -648,7 +637,7 @@ npx @soleri/cli upgrade [options]
 
 ### brain
 
-Brain session management. Cleans up orphaned sessions that were started but never completed.
+Clean up orphaned brain sessions that were started but never completed.
 
 ```bash
 npx @soleri/cli brain <subcommand>
@@ -677,13 +666,13 @@ npx @soleri/cli brain close-orphans --max-age 2h
 
 ### dream
 
-Vault memory consolidation. Runs deduplication, stale entry archival, and contradiction detection across the vault.
+Vault memory consolidation: deduplication, stale entry archival, and contradiction detection.
 
 ```bash
 npx @soleri/cli dream [subcommand]
 ```
 
-Running `soleri dream` with no subcommand triggers an immediate dream pass.
+Running `soleri dream` with no subcommand triggers an immediate pass.
 
 **Subcommands:**
 
@@ -713,7 +702,7 @@ npx @soleri/cli dream status
 
 ### chat
 
-Start an interactive terminal chat session with your agent. Spawns the agent's MCP server, connects via stdio, and runs a REPL powered by the Claude API.
+Start an interactive terminal chat with your agent. Spawns the MCP server, connects via stdio, and runs a REPL using the Claude API.
 
 ```bash
 npx @soleri/cli chat [options]
@@ -740,7 +729,7 @@ npx @soleri/cli chat --no-tools
 
 ### schedule
 
-Manage autonomous scheduled agent tasks. Tasks run on a cron schedule, executing a prompt via `claude -p` when they fire.
+Manage scheduled agent tasks. Each task runs on a cron schedule and executes a prompt via `claude -p` when it fires.
 
 ```bash
 npx @soleri/cli schedule <subcommand>
@@ -785,7 +774,7 @@ npx @soleri/cli schedule delete --id abc123
 
 ### knowledge
 
-Export vault entries as portable knowledge bundle JSON files.
+Export vault entries as portable knowledge bundle JSON.
 
 ```bash
 npx @soleri/cli knowledge <subcommand>
@@ -820,7 +809,7 @@ npx @soleri/cli knowledge export --all --min-score 0.5 --output ~/bundles
 
 ### validate-skills
 
-Validate user-installed `SKILL.md` op-call examples against the engine's actual Zod schemas. Scans skill files, extracts inline op-call examples, and checks each example's params against the corresponding facade schema. Exits with code 1 if any mismatches are found.
+Validate `SKILL.md` op-call examples against the engine's Zod schemas. Scans skill files, extracts inline op-call examples, and checks params against facade schemas. Exits with code 1 on mismatches.
 
 ```bash
 npx @soleri/cli validate-skills [options]
@@ -854,14 +843,14 @@ The `add-pack` command is deprecated. Use these commands instead:
 
 ### update
 
-Update the Soleri CLI to the latest version from npm. Checks the registry for the latest version and installs it globally.
+Update the Soleri CLI to the latest version from npm.
 
 ```bash
 npx @soleri/cli update
 ```
 
-Compares the currently installed version against the latest published version and runs `npm install -g @soleri/cli@latest` if an update is available.
+Compares your installed version against the latest on npm and runs `npm install -g @soleri/cli@latest` if an update is available.
 
 ---
 
-_See [Customizing Your Agent](/docs/guides/customizing/) for detailed configuration guides. For API operations, see [API Reference](/docs/api-reference/) and [Capabilities](/docs/capabilities/). If something isn't working, check [Troubleshooting](/docs/troubleshooting/)._
+See also: [Customizing Your Agent](/docs/guides/customizing/), [API Reference](/docs/api-reference/), [Capabilities](/docs/capabilities/), [Troubleshooting](/docs/troubleshooting/).

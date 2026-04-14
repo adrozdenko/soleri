@@ -1,18 +1,16 @@
 ---
 title: 'YOLO Mode'
-description: 'Skip approval gates while keeping safety guardrails — for rapid prototyping and solo work.'
+description: 'Skip approval gates while keeping safety guardrails, for rapid prototyping and solo work.'
 ---
 
-YOLO mode lets your agent execute commands without asking for permission at each step. It skips Claude Code's built-in approval prompts while installing safety hooks that intercept genuinely destructive operations.
+YOLO mode lets your agent execute commands without asking for permission at each step. It skips Claude Code's approval prompts while installing safety hooks that catch destructive operations before they run.
 
 ## What YOLO mode does
 
 When you launch YOLO mode, two things happen:
 
-1. **Approval gates are skipped** — Claude Code runs with `--dangerously-skip-permissions`, so the agent executes shell commands, file writes, and tool calls without pausing for confirmation.
-2. **Safety hooks are installed** — The `yolo-safety` hook pack intercepts destructive commands before they execute.
-
-The result: fast, autonomous execution with a safety net.
+1. Approval gates are skipped. Claude Code runs with `--dangerously-skip-permissions`, so the agent executes shell commands, file writes, and tool calls without pausing for confirmation.
+2. Safety hooks are installed. The `yolo-safety` hook pack intercepts destructive commands before they execute.
 
 ## Launching YOLO mode
 
@@ -35,7 +33,7 @@ This installs the `yolo-safety` hook pack (if not already installed) and launche
 npx @soleri/cli yolo --dry-run
 ```
 
-This verifies the safety pack is available, installs hooks if needed, and prints the command that would run — without actually launching Claude.
+This verifies the safety pack is available, installs hooks if needed, and prints the command that would run without actually launching Claude.
 
 ## Safety guardrails
 
@@ -54,14 +52,14 @@ When a destructive command is detected, the hook blocks execution and warns the 
 
 ## When to use YOLO mode
 
-**Good fit:**
+Good fit:
 
 - Rapid prototyping where you're iterating fast
 - Solo work on a personal branch
 - Batch operations like migrations or refactors where you trust the agent's judgment
 - Environments with version control as a safety net (you can always `git checkout`)
 
-**Not recommended:**
+Not recommended:
 
 - Production environments
 - Shared branches where mistakes affect others
@@ -70,7 +68,7 @@ When a destructive command is detected, the hook blocks execution and warns the 
 
 ## How it interacts with agent planning
 
-YOLO mode only affects Claude Code's permission system — it does not change the agent's [planning behavior](/docs/guides/planning/). The agent still creates plans, searches the vault, and captures knowledge. The difference is that shell commands and file operations execute without the "allow/deny" prompt.
+YOLO mode only affects Claude Code's permission system. It does not change the agent's [planning behavior](/docs/guides/planning/). The agent still creates plans, searches the vault, and captures knowledge. The difference is that shell commands and file operations execute without the "allow/deny" prompt.
 
 If you also want the agent to skip plan approval gates (the two-gate `approve_plan` / `plan_split` cycle), use the YOLO mode skill in conversation:
 
@@ -82,4 +80,4 @@ The skill activates autonomous execution at the agent level, while `soleri yolo`
 
 ---
 
-_Next: [Validation Loops](/docs/guides/loops/) — let the agent iterate toward quality targets automatically. See also [Customizing Your Agent](/docs/guides/customizing/) for hooks and governance, and the [CLI Reference](/docs/cli-reference/) for the full `soleri yolo` command details._
+_Next: [Validation Loops](/docs/guides/loops/), where the agent iterates toward quality targets automatically. See also [Customizing Your Agent](/docs/guides/customizing/) for hooks and governance, and the [CLI Reference](/docs/cli-reference/) for the full `soleri yolo` command details._

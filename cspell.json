@@ -109,7 +109,9 @@
     "flexbox",
     "newbot",
     "signoffs",
-    "solarpunk"
+    "solarpunk",
+    "esac",
+    "toplevel"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [

@@ -3,12 +3,12 @@ title: 'Windows Setup'
 description: 'Run Soleri agents natively on Windows using Git for Windows as the bash runtime.'
 ---
 
-Soleri runs natively on Windows. Hook scripts execute via Git Bash, which ships with Git for Windows — already required by Claude Code.
+Soleri runs natively on Windows. Hook scripts execute via Git Bash, which ships with Git for Windows (already required by Claude Code).
 
 ## Prerequisites
 
-- **Node.js 18+** — [nodejs.org](https://nodejs.org)
-- **Git for Windows** — [git-scm.com](https://git-scm.com/download/win) (provides Git Bash)
+- Node.js 18+ ([nodejs.org](https://nodejs.org))
+- Git for Windows ([git-scm.com](https://git-scm.com/download/win)), which provides Git Bash
 
 :::note[Build tools are optional for initial setup]
 `better-sqlite3` is an optional dependency. Agent scaffolding works without build tools. You'll only need a C++ toolchain when running the knowledge engine. See below if you hit compilation errors.
@@ -18,13 +18,13 @@ Soleri runs natively on Windows. Hook scripts execute via Git Bash, which ships 
 
 If the knowledge engine reports that `better-sqlite3` is missing, install a C++ toolchain:
 
-**Option A — Visual Studio Build Tools (recommended):**
+Option A, Visual Studio Build Tools (recommended):
 
 1. Download [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 2. In the installer, select **"Desktop development with C++"**
 3. Install and restart your terminal
 
-**Option B — via npm:**
+Option B, via npm:
 
 ```bash
 npm config set msvs_version 2022
@@ -45,7 +45,7 @@ These commands work identically on Windows, macOS, and Linux.
 
 ## Hook Packs
 
-Soleri hook packs use bash scripts (`.sh` files). On Windows, Claude Code runs hooks through Git Bash by default — no extra configuration needed.
+Soleri hook packs use bash scripts (`.sh` files). On Windows, Claude Code runs hooks through Git Bash by default. No extra configuration needed.
 
 ```bash
 npx @soleri/cli hooks add-pack flock-guard
@@ -55,9 +55,9 @@ Lock files and temp directories use `${TMPDIR:-${TEMP:-/tmp}}`, which resolves c
 
 ## Known Limitations
 
-- **PowerShell hooks** — Soleri hook scripts are bash-only. Claude Code supports `"shell": "powershell"` per-hook, but Soleri packs don't ship PowerShell variants yet.
-- **Launcher scripts** — `soleri install` creates launcher scripts in `/usr/local/bin` on Unix. On Windows this step is skipped. Use `npx @soleri/cli dev` to start your agent instead.
-- **File permissions** — `chmod` calls are skipped on Windows. Scripts are executable by default.
+- PowerShell hooks: Soleri hook scripts are bash-only. Claude Code supports `"shell": "powershell"` per-hook, but Soleri packs don't ship PowerShell variants yet.
+- Launcher scripts: `soleri install` creates launcher scripts in `/usr/local/bin` on Unix. On Windows this step is skipped. Use `npx @soleri/cli dev` to start your agent instead.
+- File permissions: `chmod` calls are skipped on Windows. Scripts are executable by default.
 
 ## Troubleshooting
 
@@ -89,4 +89,4 @@ If hooks fail with "bash not found", ensure Git for Windows is installed and its
 
 ### Path separator issues
 
-Soleri uses `path.join()` internally, so paths are cross-platform. If you see path errors in custom scripts, use forward slashes (`/`) or the `path` module — avoid hardcoded backslashes.
+Soleri uses `path.join()` internally, so paths are cross-platform. If you see path errors in custom scripts, use forward slashes (`/`) or the `path` module. Avoid hardcoded backslashes.

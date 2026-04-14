@@ -4,7 +4,7 @@ export const ui: Record<Locale, Record<string, string>> = {
   en: {
     'site.title': 'Soleri -- The open-source engine for agents that learn',
     'site.description':
-      'Soleri is an open-source knowledge engine for AI agents. It handles what the model can\'t: storing what works, scoring what\'s useful, planning work, and getting better over time. Build a personal agent or ship one to your users.',
+      'Soleri is an open-source knowledge engine for AI agents. It handles what the model can\'t: remembering what worked, figuring out what\'s useful, and getting better over time. Build a personal agent or ship one to your users.',
     'brand.meta': 'Your agent forgets everything. Soleri fixes that.',
     'nav.how': 'How it works',
     'nav.agent': 'The Engine',

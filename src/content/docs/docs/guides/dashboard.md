@@ -1,9 +1,9 @@
 ---
 title: 'Success Story: The Platform Rebuild'
-description: 'Follow a team as their Soleri agent goes from blank slate to indispensable teammate in 20 days.'
+description: 'How a Soleri agent accumulates useful knowledge over 20 days of real work on a payment service.'
 ---
 
-Sam is a senior developer starting a payment processing service for a financial platform. He's done this before — and every time, architecture decisions get buried in Slack threads and PR comments. By month three, nobody remembers _why_ the team picked that particular retry strategy.
+Sam is a senior developer starting a payment processing service for a financial platform. He's done this before, and every time, architecture decisions get buried in Slack threads and PR comments. By month three, nobody remembers _why_ the team picked that particular retry strategy.
 
 This time he's using a Soleri agent.
 
@@ -11,7 +11,7 @@ This time he's using a Soleri agent.
 npm create soleri platform-brain
 ```
 
-He names it **platform-brain**, picks `backend` and `security` as domains, and connects it to your AI editor. Two minutes.
+He names it `platform-brain`, picks `backend` and `security` as domains, and connects it to his editor. Two minutes.
 
 ## Day 1 — First Decisions
 
@@ -24,7 +24,7 @@ Sam hasn't settled on the service architecture yet. He asks:
 > **Circuit breaker** — wrap external payment provider calls. Fall back gracefully when the provider is down.
 > **Event sourcing** — store every state transition. Enables audit trail and replay for debugging.
 
-The agent already knows reliability patterns from its starter knowledge — Sam didn't teach it anything.
+The agent already knows reliability patterns from its starter knowledge. Sam didn't teach it anything.
 
 He picks idempotency keys and circuit breaker, and captures the decisions:
 
@@ -32,7 +32,7 @@ He picks idempotency keys and circuit breaker, and captures the decisions:
 >
 > **Agent:** _Captured: "Idempotency Key Requirement" — critical severity, backend domain._
 
-He does the same for the circuit breaker strategy and error retry policy. Three foundational decisions, all captured in his agent's vault — not in a doc he'll forget about.
+He does the same for the circuit breaker strategy and error retry policy. Three foundational decisions, captured in his agent's vault instead of a doc he'll forget about.
 
 **Agent vault: 3 patterns.**
 
@@ -44,7 +44,7 @@ Sam writes a payment endpoint that catches database errors and returns a generic
 >
 > **Agent:** _Found: "API Error Response Standard" (critical)._ Your convention requires `{ error, code, details }` format with specific error codes per failure type. Payment failures should distinguish between validation errors (400), provider errors (502), and internal errors (500).
 
-He didn't ask for a review. The agent flagged it because the error format rule is marked `critical` — it always surfaces.
+He didn't ask for a review. The agent flagged it because the error format rule is marked `critical`, so it always surfaces.
 
 Later, he writes a retry loop without checking the idempotency key. The agent catches that too:
 
@@ -60,9 +60,9 @@ Sam captures both fixes as rules. Then he formalizes his workflow:
 
 **Agent vault: 8 patterns + 1 playbook.**
 
-## Day 20 — The Compound Effect
+## Day 20 — It Adds Up
 
-Three weeks in. Sam's agent has 47 entries — every one earned through real work. He starts building a refund endpoint. Before he asks a question:
+Three weeks in. Sam's agent has 47 entries, every one earned through real work. He starts building a refund endpoint. Before he even asks a question:
 
 > **Agent:** _Relevant patterns for payment operations:_
 > Always require idempotency keys. Error responses must use `{ error, code, details }` format. Wrap provider calls in circuit breaker.
@@ -71,14 +71,14 @@ Three weeks in. Sam's agent has 47 entries — every one earned through real wor
 
 The agent warns him about mistakes he already made and fixed. He'll never make them twice.
 
-Then Emma, a new backend developer, joins the team. Instead of a half-day onboarding walkthrough, she scaffolds her own agent and links it to Sam's project:
+Then Emma, a new backend developer, joins the team. Instead of a half-day onboarding session, she scaffolds her own agent and links it to Sam's project:
 
 > **Emma:** "I need to build a subscription billing endpoint. What are the conventions?"
 >
 > **Agent:** _Cross-project search — 47 entries from linked payment service._
 > Idempotency keys required on all mutation endpoints. Error format: `{ error, code, details }`. Circuit breaker on external calls. Never log sensitive payment data. Queue async operations over threshold amounts.
 
-Emma got a personalized onboarding in 30 seconds — not a generic wiki page, but Sam's actual decisions, rules, and hard-won anti-patterns.
+Emma got a personalized onboarding in 30 seconds. Not a generic wiki page, but Sam's actual decisions, rules, and hard-won anti-patterns.
 
 **Agent vault: 50+ patterns across 2 linked projects.**
 
@@ -90,12 +90,10 @@ Emma got a personalized onboarding in 30 seconds — not a generic wiki page, bu
 | **Day 3**  | 8        | Agent catches missing idempotency and wrong error format before they ship |
 | **Day 20** | 50+      | New team member onboards in seconds. Knowledge flows both ways.           |
 
-Each session makes the agent smarter. Each captured pattern prevents a future mistake. Each team member who links adds to the collective knowledge.
+Every session makes the agent more useful. Captured patterns prevent future mistakes. New team members who link in add to the collective knowledge.
 
-Sam's agent isn't a generic AI assistant anymore. It's his team's engineering brain — built from every decision, every fix, every "never do this again" moment.
-
-The knowledge compounds.
+Sam's agent isn't a generic AI assistant anymore. It's his team's engineering brain, built from real decisions, real fixes, and real "never do this again" moments.
 
 ---
 
-_Ready to start? [Getting Started](/docs/getting-started/) — scaffold your agent in under 5 minutes._
+_Ready to start? [Getting Started](/docs/getting-started/)._

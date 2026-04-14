@@ -1,9 +1,9 @@
 ---
 title: 'Content Ingestion'
-description: 'Feed articles, documents, transcripts, and books into your vault — the agent extracts and classifies knowledge automatically.'
+description: 'Feed articles, documents, transcripts, and books into your vault. The agent extracts and classifies knowledge automatically.'
 ---
 
-Your vault doesn't have to grow one pattern at a time. Content ingestion lets you feed entire documents into the agent — articles, meeting transcripts, PDF books, documentation pages — and the agent extracts knowledge items, classifies them, deduplicates against your existing vault, and stores what's new.
+Your vault doesn't have to grow one pattern at a time. Content ingestion lets you feed entire documents into the agent (articles, meeting transcripts, PDF books, documentation pages) and the agent extracts knowledge items, classifies them, deduplicates against your existing vault, and stores what's new.
 
 ## Ingesting a URL
 
@@ -28,7 +28,7 @@ You can specify a domain and tags to organize the results:
 
 ## Ingesting text
 
-For content that isn't at a URL — meeting notes, copied text, transcripts:
+For content that isn't at a URL, like meeting notes, copied text, or transcripts:
 
 > **You:** "Ingest this transcript from our architecture review meeting..."
 >
@@ -36,14 +36,14 @@ For content that isn't at a URL — meeting notes, copied text, transcripts:
 
 Source types help the LLM classify content more accurately:
 
-| Source type       | Use for                                     |
-| ----------------- | ------------------------------------------- |
-| **article**       | Blog posts, published articles              |
-| **transcript**    | Meeting recordings, podcast transcripts     |
-| **notes**         | Personal notes, quick captures              |
-| **documentation** | Technical docs, API references, READMEs     |
+| Source type    | Use for                                     |
+| -------------- | ------------------------------------------- |
+| article        | Blog posts, published articles              |
+| transcript     | Meeting recordings, podcast transcripts     |
+| notes          | Personal notes, quick captures              |
+| documentation  | Technical docs, API references, READMEs     |
 
-The agent uses source type as context for extraction — a transcript might yield decisions and action items, while documentation yields patterns and conventions.
+The agent uses source type as context for extraction. A transcript might yield decisions and action items, while documentation yields patterns and conventions.
 
 ## Batch ingestion
 
@@ -56,7 +56,7 @@ When you have multiple items to ingest at once:
 >
 > **Agent:** _Batch complete: 3 sources processed, 11 entries extracted, 2 duplicates skipped._
 
-Each item in a batch has its own title, source type, domain, and tags. Items are processed sequentially so deduplication works across the batch — if item 2 would create a duplicate of something item 1 just added, it's caught.
+Each item in a batch has its own title, source type, domain, and tags. Items are processed sequentially so deduplication works across the batch. If item 2 would create a duplicate of something item 1 just added, it's caught.
 
 ## Ingesting books (PDF)
 
@@ -68,11 +68,11 @@ For longer documents like PDF books, the agent uses a chunked pipeline:
 >
 > **Agent:** _Job created: job-abc123. 24 chunks ready (10 pages each). Process chunks to extract knowledge._
 
-The PDF is parsed, hashed (so re-ingesting the same file is detected), and split into page-window chunks. Nothing is extracted yet — this step just prepares the pipeline.
+The PDF is parsed, hashed (so re-ingesting the same file is detected), and split into page-window chunks. Nothing is extracted yet. This step just prepares the pipeline.
 
 ### Step 2: Process chunks
 
-Process chunks in batches — this is where the LLM extracts and classifies knowledge:
+Process chunks in batches. This is where the LLM extracts and classifies knowledge:
 
 > **You:** "Process 5 chunks of job-abc123"
 >
@@ -99,29 +99,29 @@ If you want to see what the pipeline would extract from a specific page range wi
 
 Every ingestion path follows the same core pipeline:
 
-1. **Extract text** — from URL, raw text, or PDF pages
-2. **Classify via LLM** — identify patterns, anti-patterns, decisions, conventions
-3. **Deduplicate** — content-hash comparison against existing vault entries
-4. **Store** — new entries go into the vault with domain, tags, and source metadata
+1. Extract text from URL, raw text, or PDF pages
+2. Classify via LLM, identifying patterns, anti-patterns, decisions, conventions
+3. Deduplicate with content-hash comparison against existing vault entries
+4. Store new entries in the vault with domain, tags, and source metadata
 
-The LLM does the heavy lifting of turning unstructured text into structured knowledge items. You don't need to manually tag or categorize — the agent infers type, severity, and domain from context.
+The LLM does the heavy lifting of turning unstructured text into structured knowledge items. You don't need to manually tag or categorize. The agent infers type, severity, and domain from context.
 
 ## Tips for good ingestion
 
-- **Set a domain** — it gives the LLM classification context and keeps your vault organized
-- **Use accurate source types** — a transcript is processed differently than documentation
-- **Add tags** — tags applied at ingestion time propagate to all extracted entries
-- **Preview first for books** — check a small page range before processing the whole thing
-- **Don't worry about duplicates** — the dedup pipeline handles them automatically
+- Set a domain. It gives the LLM classification context and keeps your vault organized.
+- Use accurate source types. A transcript is processed differently than documentation.
+- Add tags. Tags applied at ingestion time propagate to all extracted entries.
+- Preview first for books. Check a small page range before processing the whole thing.
+- Don't worry about duplicates. The dedup pipeline handles them automatically.
 
 ## Related guides
 
-- [Building a Knowledge Base](/docs/guides/knowledge-base/) — understand patterns and anti-patterns before bulk ingestion
-- [Entry Linking & Knowledge Graph](/docs/guides/entry-linking/) — link ingested entries to existing knowledge for better discovery
-- [Knowledge Review Workflow](/docs/guides/knowledge-review/) — submit ingested entries for team review before they go live
-- [Capabilities](/docs/capabilities/) — full list of ingestion operations
-- [API Reference](/docs/api-reference/) — parameter details for `ingest_url`, `ingest_text`, `ingest_batch`, `intake_ingest_book`
+- [Building a Knowledge Base](/docs/guides/knowledge-base/) - understand patterns and anti-patterns before bulk ingestion
+- [Entry Linking & Knowledge Graph](/docs/guides/entry-linking/) - link ingested entries to existing knowledge for better discovery
+- [Knowledge Review Workflow](/docs/guides/knowledge-review/) - submit ingested entries for team review before they go live
+- [Capabilities](/docs/capabilities/) - full list of ingestion operations
+- [API Reference](/docs/api-reference/) - parameter details for `ingest_url`, `ingest_text`, `ingest_batch`, `intake_ingest_book`
 
 ---
 
-_Previous: [Entry Linking & Knowledge Graph](/docs/guides/entry-linking/) — connect entries with typed links. Next: [Knowledge Review Workflow](/docs/guides/knowledge-review/) — team quality control for vault entries._
+_Previous: [Entry Linking & Knowledge Graph](/docs/guides/entry-linking/) - connect entries with typed links. Next: [Knowledge Review Workflow](/docs/guides/knowledge-review/) - team quality control for vault entries._

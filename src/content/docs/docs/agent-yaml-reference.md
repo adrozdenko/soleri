@@ -3,7 +3,7 @@ title: agent.yaml Reference
 description: Complete field-by-field reference for the agent.yaml configuration file.
 ---
 
-The `agent.yaml` file defines your agent's identity, personality, engine settings, and workspace layout. It's the single source of truth for what your agent is and how it behaves.
+The `agent.yaml` file is the single source of truth for your agent: identity, personality, engine settings, and workspace layout all live here.
 
 ## Identity (required)
 
@@ -20,7 +20,7 @@ description: >                     # longer description (10-500 chars)
 
 ### `domains`
 
-Knowledge domains the agent specializes in. Used to seed workspaces and routing.
+Knowledge domains the agent specializes in. These seed workspaces and routing.
 
 ```yaml
 domains:
@@ -30,11 +30,11 @@ domains:
 ```
 
 - **Type:** array of strings (1-20 items)
-- **Default:** empty — discovered from usage over time
+- **Default:** empty (discovered from usage over time)
 
 ### `principles`
 
-Core principles that guide agent behavior. Embedded in CLAUDE.md.
+Core principles that guide agent behavior. These get embedded in CLAUDE.md.
 
 ```yaml
 principles:
@@ -44,7 +44,7 @@ principles:
 ```
 
 - **Type:** array of strings (1-10 items)
-- **Default:** empty — discovered from usage over time
+- **Default:** empty (discovered from usage over time)
 
 ## Personality
 
@@ -65,7 +65,7 @@ greeting: Forge online. Show me the code.
 
 ### `persona`
 
-Composable persona configuration. Accepts arbitrary key-value pairs for character customization.
+Composable persona configuration. Arbitrary key-value pairs for character customization.
 
 ```yaml
 persona:
@@ -73,11 +73,11 @@ persona:
   humor-style: dry
 ```
 
-- **Default:** Italian Craftsperson persona (ships with scaffold)
+- **Default:** Italian Craftsperson persona (the one that ships with scaffold)
 
 ## Engine
 
-Controls the knowledge engine runtime.
+Controls what the knowledge engine loads and how it behaves.
 
 ```yaml
 engine:
@@ -95,7 +95,7 @@ engine:
 
 ### `engine.modules`
 
-Override the profile with an explicit module list. When set, `profile` is ignored.
+Override the profile with an explicit module list. When this is set, `profile` is ignored.
 
 ```yaml
 engine:
@@ -118,7 +118,7 @@ engine:
 
 ### `engine.features`
 
-Engine rule modules included in CLAUDE.md. Core rules always included. Omit to include all.
+Engine rule modules included in CLAUDE.md. Core rules are always included. Omit this to include everything.
 
 - **Values:** `vault` | `planning` | `brain` | `advanced`
 
@@ -147,19 +147,19 @@ setup:
 
 ## Skills
 
-Controls which skills are scaffolded with the agent.
+Controls which skills get scaffolded with the agent.
 
 ```yaml
 skillsFilter: essential    # essential | all | [array of skill names]
 ```
 
-- **`essential`** (default) — 7 core skills: agent-guide, agent-persona, vault-navigator, vault-capture, systematic-debugging, writing-plans, context-resume
-- **`all`** — all available skills
-- **array** — only the named skills
+- **`essential`** (default): 7 core skills (agent-guide, agent-persona, vault-navigator, vault-capture, systematic-debugging, writing-plans, context-resume)
+- **`all`**: every available skill
+- **array**: only the skills you name
 
 ## Workspaces
 
-Scoped context areas within the agent. Auto-seeded from domains if omitted.
+Scoped context areas within the agent. Auto-seeded from your domains if omitted.
 
 ```yaml
 workspaces:
@@ -182,7 +182,7 @@ Each workspace entry has:
 
 ## Routing
 
-Task pattern to workspace routing. Auto-seeded from domains if omitted.
+Maps task patterns to workspaces. Auto-seeded from domains if omitted.
 
 ```yaml
 routing:
@@ -205,7 +205,7 @@ routing:
 
 ## Domain Packs
 
-Install npm domain packs for specialized capabilities.
+Install domain packs from npm for specialized capabilities.
 
 ```yaml
 packs:
@@ -224,7 +224,7 @@ packs:
 
 ## Vault Connections
 
-Link external vaults for shared knowledge.
+Connect external vaults to share knowledge across agents.
 
 ```yaml
 vaults:
@@ -237,11 +237,11 @@ vaults:
 | ----- | -------- | ------- | ----------- |
 | `name` | yes | — | Display name |
 | `path` | yes | — | Path to vault database |
-| `priority` | no | 0.5 | Search ranking weight (0-1) |
+| `priority` | no | 0.5 | Search ranking weight, 0 to 1 |
 
 ## Git
 
-Optional git initialization for the agent directory.
+Git initialization for the agent directory (optional).
 
 ```yaml
 git:

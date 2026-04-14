@@ -1,18 +1,18 @@
 ---
 title: 'Creating Packs'
-description: 'Build your own extension packs — knowledge, skills, hooks, or bundles — and share them with others.'
+description: 'Build your own extension packs (knowledge, skills, hooks, or bundles) and share them with others.'
 ---
 
-Packs are the extension system for Soleri agents. A pack bundles knowledge entries, skill workflows, editor hooks, or all three into a single installable unit. You can create packs for your team, publish them to npm for the community, or keep them local. For background on the agent file tree and how packs fit into it, see [Your Agent](/docs/your-agent/).
+Packs are the extension system for Soleri agents. A pack bundles knowledge entries, skill workflows, editor hooks, or all three into a single installable unit. Create packs for your team, publish them to npm for the community, or keep them local. For background on the agent file tree and how packs fit into it, see [Your Agent](/docs/your-agent/).
 
 ## Pack types
 
 | Type          | What it contains                                    | Use case                                        |
 | ------------- | --------------------------------------------------- | ----------------------------------------------- |
-| **knowledge** | Vault entries — patterns, anti-patterns, principles | Domain expertise (React patterns, API standards) |
-| **skills**    | SKILL.md workflow files                             | Reusable workflows (review, deploy, debug)      |
-| **hooks**     | Editor hook scripts                                 | Quality gates (no-console-log, semantic-html)   |
-| **bundle**    | Multiple content types combined                     | Complete capability packages                    |
+| knowledge | Vault entries: patterns, anti-patterns, principles | Domain expertise (React patterns, API standards) |
+| skills    | SKILL.md workflow files                             | Reusable workflows (review, deploy, debug)      |
+| hooks     | Editor hook scripts                                 | Quality gates (no-console-log, semantic-html)   |
+| bundle    | Multiple content types combined                     | Complete capability packages                    |
 
 ## Scaffolding a new pack
 
@@ -22,11 +22,11 @@ npx @soleri/cli pack create
 
 The wizard asks for:
 
-1. **Pack name** — e.g., `my-react-patterns`
-2. **Pack type** — knowledge, skills, hooks, or bundle
-3. **Description** — what the pack provides
-4. **Tier** — community (free, published to npm) or premium (Soleri platform, coming soon)
-5. **Author** — your name or handle
+1. Pack name, e.g. `my-react-patterns`
+2. Pack type: knowledge, skills, hooks, or bundle
+3. Description of what the pack provides
+4. Tier: community (free, published to npm) or premium (Soleri platform, coming soon)
+5. Author: your name or handle
 
 This creates a directory with the pack structure:
 
@@ -157,14 +157,14 @@ Resolution order: local path, then built-in packs, then npm registry.
 
 | Command                          | What it does                               |
 | -------------------------------- | ------------------------------------------ |
-| `soleri pack list`               | List installed packs                       |
-| `soleri pack list --type skills` | Filter by type                             |
-| `soleri pack info <id>`          | Show detailed pack info                    |
-| `soleri pack remove <id>`        | Remove a pack (vault entries are preserved) |
-| `soleri pack outdated`           | Check for npm updates                      |
-| `soleri pack update`             | Update all packs to latest                 |
-| `soleri pack search <query>`     | Search npm for packs                       |
-| `soleri pack available`          | List available knowledge packs             |
+| `npx @soleri/cli pack list`               | List installed packs                       |
+| `npx @soleri/cli pack list --type skills` | Filter by type                             |
+| `npx @soleri/cli pack info <id>`          | Show detailed pack info                    |
+| `npx @soleri/cli pack remove <id>`        | Remove a pack (vault entries are preserved) |
+| `npx @soleri/cli pack outdated`           | Check for npm updates                      |
+| `npx @soleri/cli pack update`             | Update all packs to latest                 |
+| `npx @soleri/cli pack search <query>`     | Search npm for packs                       |
+| `npx @soleri/cli pack available`          | List available knowledge packs             |
 
 ## Lockfile
 
@@ -178,4 +178,4 @@ npx @soleri/cli pack install my-react-patterns --frozen
 
 ---
 
-_Next: [Skills Catalog](/docs/guides/skills-catalog/) — browse all available skills. See also [Domain Packs](/docs/guides/domain-packs/) for specialized intelligence modules, [Extending Your Agent](/docs/extending/) for custom ops and facades, and the [CLI Reference](/docs/cli-reference/) for all `soleri pack` subcommands._
+_Next: [Skills Catalog](/docs/guides/skills-catalog/) for all available skills. See also [Domain Packs](/docs/guides/domain-packs/) for specialized intelligence modules, [Extending Your Agent](/docs/extending/) for custom ops and facades, and the [CLI Reference](/docs/cli-reference/) for all `npx @soleri/cli pack` subcommands._

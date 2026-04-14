@@ -3,17 +3,17 @@ title: 'Domain Packs'
 description: 'Specialized intelligence modules that add domain-specific operations to your agent.'
 ---
 
-Domain packs are npm packages that register specialized operations with the Soleri engine. Unlike knowledge packs (which add static vault entries), domain packs add algorithmic capabilities — operations that compute results, validate data, and enforce rules.
+Domain packs are npm packages that register specialized operations with the Soleri engine. Unlike knowledge packs (which add static vault entries), domain packs add algorithmic capabilities: operations that compute results, validate data, and enforce rules.
 
-Domain packs are **standalone community packages** — they live in their own repositories, have their own release cycles, and are installed via npm. The Soleri engine provides the infrastructure (loader, types, runtime) but ships with zero domain-specific code.
+Domain packs are standalone community packages. They live in their own repositories, have their own release cycles, and are installed via npm. The Soleri engine provides the infrastructure (loader, types, runtime) but ships with zero domain-specific code.
 
 ## Available packs
 
-Discover available packs with `soleri pack registry` or install directly with `soleri pack add <name>`.
+Discover available packs with `npx @soleri/cli pack registry` or install directly with `npx @soleri/cli pack add <name>`.
 
 ## @soleri/domain-design
 
-Design system intelligence — 45 operations across three facades.
+Design system intelligence with 45 operations across three facades.
 
 ### Design facade (20 ops)
 
@@ -50,7 +50,7 @@ Container pattern recommendations, radius guidance, depth layering, component wo
 
 ## @soleri/domain-component
 
-Component registry lifecycle — 7 operations.
+Component registry lifecycle with 7 operations.
 
 | Operation               | Type          | What it does                                                  |
 | ----------------------- | ------------- | ------------------------------------------------------------- |
@@ -64,7 +64,7 @@ Component registry lifecycle — 7 operations.
 
 ## @soleri/domain-code-review
 
-Code review intelligence — 8 operations split between GitHub PR review and Playwright validation.
+Code review intelligence with 8 operations split between GitHub PR review and Playwright validation.
 
 ### GitHub-sourced ops (4)
 
@@ -80,13 +80,13 @@ Code review intelligence — 8 operations split between GitHub PR review and Pla
 | Operation                  | What it does                                                        |
 | -------------------------- | ------------------------------------------------------------------- |
 | `validate_page_styles`     | Validate computed styles against design system scales               |
-| `accessibility_audit`      | Audit accessibility data — missing labels, bad contrast, roles      |
+| `accessibility_audit`      | Audit accessibility data: missing labels, bad contrast, roles       |
 | `classify_visual_changes`  | Classify style changes as cosmetic, structural, or behavioral       |
 | `validate_component_states`| Verify all required interaction states are implemented              |
 
 ## @soleri/domain-design-qa
 
-Design QA — 5 operations for handoff quality assurance.
+Design QA with 5 operations for handoff quality assurance.
 
 | Operation               | What it does                                                         |
 | ----------------------- | -------------------------------------------------------------------- |
@@ -96,7 +96,7 @@ Design QA — 5 operations for handoff quality assurance.
 | `accessibility_precheck`| WCAG contrast check on an array of color pairs                       |
 | `handoff_audit`         | Audit component metadata completeness with composite scoring         |
 
-All ops process pre-extracted data — no external API calls required. The `handoff_audit` produces a composite score weighted 40% token drift, 30% component sync, 30% accessibility when full data is provided.
+All ops process pre-extracted data, no external API calls required. The `handoff_audit` produces a composite score weighted 40% token drift, 30% component sync, 30% accessibility when full data is provided.
 
 ## Installing domain packs
 
@@ -104,7 +104,7 @@ Domain packs are npm packages. Install them with the CLI or directly via npm:
 
 ```bash
 # Via Soleri CLI
-soleri pack add domain-design
+npx @soleri/cli pack add domain-design
 
 # Or directly via npm
 npm install @soleri/domain-design
@@ -144,4 +144,4 @@ Domain packs can include bundled knowledge (the `knowledge` field in their manif
 
 ---
 
-_Next: [Creating Packs](/docs/guides/pack-authoring/) — build your own packs to share expertise. See also [Skills Catalog](/docs/guides/skills-catalog/) for workflow skills, [Capabilities](/docs/capabilities/) for the full feature list, [Extending Your Agent](/docs/extending/) for custom ops and facades, and the [CLI Reference](/docs/cli-reference/) for `soleri pack` and domain management commands._
+_Next: [Creating Packs](/docs/guides/pack-authoring/) for building your own packs. See also [Skills Catalog](/docs/guides/skills-catalog/) for workflow skills, [Capabilities](/docs/capabilities/) for the full feature list, [Extending Your Agent](/docs/extending/) for custom ops and facades, and the [CLI Reference](/docs/cli-reference/) for `npx @soleri/cli pack` and domain management commands._

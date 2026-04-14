@@ -1,6 +1,6 @@
 ---
 title: Soleri Docs
-description: Build AI assistants that learn, remember, and grow.
+description: Documentation for building AI agents that learn from your work.
 head:
   - tag: meta
     attrs:
@@ -8,4 +8,4 @@ head:
       content: '0;url=/docs/getting-started/'
 ---
 
-Redirecting to [Getting Started](/docs/getting-started/)…
+Redirecting to [Getting Started](/docs/getting-started/)...

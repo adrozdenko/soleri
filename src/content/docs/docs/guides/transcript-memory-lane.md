@@ -17,12 +17,12 @@ Transcript Memory Lane captures your Claude Code JSONL transcripts, indexes them
 
 Transcripts are captured automatically via two Claude Code hooks:
 
-- **PreCompact** — fires before context compaction, saving the conversation before compression
-- **Stop** — fires when the session ends, capturing the final transcript
+- PreCompact: fires before context compaction, saving the conversation before compression
+- Stop: fires when the session ends, capturing the final transcript
 
-Both hooks are installed automatically when you run `soleri install`. They parse the Claude Code payload (transcript path, session ID, working directory) and store messages in the vault database.
+Both hooks are installed automatically when you run `npx @soleri/cli install`. They parse the Claude Code payload (transcript path, session ID, working directory) and store messages in the vault database.
 
-The hooks are idempotent and always exit 0 — they never block Claude Code, even if capture fails.
+The hooks are idempotent and always exit 0. They never block Claude Code, even if capture fails.
 
 ### Manual capture
 
@@ -98,7 +98,7 @@ transcript_session_get({
 })
 ```
 
-Returns 11 messages centered around message 50 — word-for-word, as they happened.
+Returns 11 messages centered around message 50, word-for-word, as they happened.
 
 ## Promoting to vault or memory
 
@@ -134,8 +134,8 @@ Excerpts are centered on the highest query term density, not just the first matc
 
 Messages are grouped into searchable segments using one of two modes:
 
-- **Exchange** (default) — groups by user turn: each segment is a user message plus all following responses. Splits at ~4000 tokens.
-- **Window** — sliding character-based window with overlap. Better for continuous documents or imported text.
+- Exchange (default): groups by user turn. Each segment is a user message plus all following responses. Splits at ~4000 tokens.
+- Window: sliding character-based window with overlap. Better for continuous documents or imported text.
 
 Set the mode per capture:
 
@@ -158,6 +158,6 @@ transcript_capture({
 
 ## Requirements
 
-- **Node.js 18+** (for capture hook script)
-- **jq** on PATH (for JSON parsing in the shell hook)
-- Hooks are installed automatically by `soleri install`
+- Node.js 18+ (for the capture hook script)
+- jq on PATH (for JSON parsing in the shell hook)
+- Hooks are installed automatically by `npx @soleri/cli install`

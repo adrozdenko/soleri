@@ -3,9 +3,9 @@ title: Getting Started
 description: Install Soleri, create your first agent, and connect it to your AI editor in under 5 minutes.
 ---
 
-## Step 1: Install the Prerequisites
+## Step 1: Install the prerequisites
 
-Soleri needs two things on your machine, plus one optional setup for native builds. If you already have the required items, skip to [Step 2](#step-2-create-your-agent).
+Soleri needs two things on your machine, plus one optional setup for native builds. If you already have these, skip to [Step 2](#step-2-create-your-agent).
 
 ### 1. Node.js 18+
 
@@ -45,7 +45,7 @@ Soleri's Knowledge Engine uses `better-sqlite3`, which requires native compilati
 | **Linux** | `sudo apt-get install -y build-essential python3` |
 | **Windows** | Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) or use WSL |
 
-### Verify everything
+### Verify your setup
 
 ```bash
 node -v          # should print v18.x or higher
@@ -53,7 +53,7 @@ npm -v           # should print 8.x or higher
 claude --version # if using Claude Code
 ```
 
-## Step 2: Create Your Agent
+## Step 2: Create your agent
 
 One command to scaffold a file-tree agent in your current directory:
 
@@ -65,12 +65,12 @@ This creates `./my-agent/` in whatever directory you run it from.
 
 The interactive wizard asks for:
 
-| Prompt         | What it means                                                  |
-| -------------- | -------------------------------------------------------------- |
-| **Agent name** | Your agent's identity (e.g., "sentinel", "architect")          |
-| **Role**       | One-line description of what it does                           |
-| **Domains**    | Knowledge areas — `frontend`, `backend`, `security`, or custom |
-| **Tone**       | How the agent communicates — precise, mentor, pragmatic        |
+| Prompt     | What it means                                                  |
+| ---------- | -------------------------------------------------------------- |
+| Agent name | Your agent's identity (e.g., "sentinel", "architect")          |
+| Role       | One-line description of what it does                           |
+| Domains    | Knowledge areas: `frontend`, `backend`, `security`, or custom  |
+| Tone       | How the agent communicates: precise, mentor, pragmatic         |
 
 This generates a folder — no TypeScript, no build step:
 
@@ -101,7 +101,7 @@ my-agent/
 
 Your agent is ready to use immediately. No `npm install`, no `npm run build`.
 
-## Step 3: Register and Start
+## Step 3: Register and start
 
 From inside the agent folder, register the MCP server and start:
 
@@ -129,7 +129,7 @@ Other useful flags:
 - `--dir <path>` — custom parent directory for the agent folder
 :::
 
-## Step 4: Connect to Your AI Editor
+## Step 4: Connect to your AI editor
 
 After running `soleri install`, restart your AI editor. Your agent is available as a tool. The `.mcp.json` in your agent folder looks like:
 
@@ -144,7 +144,7 @@ After running `soleri install`, restart your AI editor. Your agent is available 
 }
 ```
 
-## Step 5: First Conversation
+## Step 5: First conversation
 
 Once connected, try these in your AI editor:
 
@@ -164,14 +164,14 @@ Once connected, try these in your AI editor:
 
 Your agent starts with starter knowledge and learns from every session.
 
-## Updating Soleri
+## Updating soleri
 
 ```bash
 # Check for updates
 soleri agent status
 
 # Update engine to latest version
-npx @soleri/cli@latest upgrade
+npx @soleri/cli agent update
 
 # Regenerate CLAUDE.md with latest engine rules
 soleri agent refresh
@@ -184,18 +184,18 @@ rm -rf ~/.npm/_npx              # clear stale npx cache
 npm create soleri@latest my-agent
 ```
 
-## Customize Your Agent
+## Customize your agent
 
-Edit files directly — no rebuild needed:
+Edit files directly, no rebuild needed:
 
-- **Add rules:** Create a new `.md` file in `instructions/`
-- **Add workflows:** Create a new folder in `workflows/` with `prompt.md` + `gates.yaml`
-- **Add knowledge:** Drop a JSON bundle in `knowledge/`
-- **Change identity:** Edit `agent.yaml`
+- Add rules by creating a new `.md` file in `instructions/`
+- Add workflows by creating a new folder in `workflows/` with `prompt.md` + `gates.yaml`
+- Add knowledge by dropping a JSON bundle in `knowledge/`
+- Change identity by editing `agent.yaml`
 
 Run `soleri dev` and CLAUDE.md regenerates automatically on save.
 
-## Health Check
+## Health check
 
 If something isn't working:
 
@@ -205,12 +205,12 @@ npx @soleri/cli doctor
 
 Reports Node version, npm status, agent context, vault health, and engine connectivity.
 
-## What's Next
+## What's next
 
-- **[Your First 10 Minutes](/docs/guides/first-10-minutes/)** — a hands-on tutorial to see your agent in action
-- **[The Development Workflow](/docs/guides/workflow/)** — learn the five-step rhythm: Search, Plan, Work, Capture, Complete
-- **[CLI Reference](/docs/cli-reference/)** — every CLI command with options and examples
-- **[Extending Your Agent](/docs/extending/)** — add instructions, workflows, knowledge, and packs
+- [Your first 10 minutes](/docs/guides/first-10-minutes/) -- a hands-on tutorial to see your agent in action
+- [The development workflow](/docs/guides/workflow/) -- the five-step rhythm: Search, Plan, Work, Capture, Complete
+- [CLI reference](/docs/cli-reference/) -- every CLI command with options and examples
+- [Extending your agent](/docs/extending/) -- add instructions, workflows, knowledge, and packs
 
 ## Need help?
 

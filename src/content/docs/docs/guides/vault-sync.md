@@ -3,7 +3,7 @@ title: 'Sync & Export'
 description: 'Back up your vault to git, sync with Obsidian, and share knowledge as portable packs.'
 ---
 
-Your vault lives in a SQLite database — fast and reliable, but not something you can browse in a file manager or push to GitHub as-is. The sync layer bridges this gap: it exports vault entries to git-friendly JSON files, syncs bidirectionally with Obsidian markdown, and packages knowledge into shareable packs.
+Your vault lives in a SQLite database. That's fast and reliable, but not something you can browse in a file manager or push to GitHub as-is. The sync layer exports vault entries to git-friendly JSON files, syncs bidirectionally with Obsidian markdown, and packages knowledge into shareable packs.
 
 ## Git sync
 
@@ -43,8 +43,8 @@ When an entry exists in both the vault and the git directory, you control which 
 
 | Conflict mode | Behavior                                |
 | ------------- | --------------------------------------- |
-| **git**       | Git version overwrites vault (default)  |
-| **vault**     | Vault version is kept, git is ignored   |
+| **git**       | Git version overwrites vault (default). Best when pulling from a shared trunk or team repo. |
+| **vault**     | Vault version is kept, git is ignored. Best when your local vault is the source of truth. |
 
 > **You:** "Pull from ~/vault-backup, keep vault versions on conflict"
 >
@@ -52,7 +52,7 @@ When an entry exists in both the vault and the git directory, you control which 
 
 ### Bidirectional sync
 
-For a full two-way sync — push vault entries to git and pull git-only entries into the vault in one step:
+For a full two-way sync (push vault entries to git and pull git-only entries into the vault in one step):
 
 > **You:** "Sync vault with ~/vault-backup"
 >
@@ -60,7 +60,7 @@ For a full two-way sync — push vault entries to git and pull git-only entries 
 
 ## Obsidian sync
 
-If you use [Obsidian](https://obsidian.md/) for note-taking, you can sync your vault with an Obsidian directory. Entries become markdown files with YAML frontmatter — fully compatible with Obsidian's linking and search.
+If you use [Obsidian](https://obsidian.md/) for note-taking, you can sync your vault with an Obsidian directory. Entries become markdown files with YAML frontmatter, fully compatible with Obsidian's linking and search.
 
 ### Exporting to Obsidian
 
@@ -68,7 +68,7 @@ If you use [Obsidian](https://obsidian.md/) for note-taking, you can sync your v
 >
 > **Agent:** _Exported 156 entries as markdown. Domain subdirectories created._
 
-Each file gets YAML frontmatter with title, type, domain, severity, and tags — metadata that Obsidian can use for search and Dataview queries.
+Each file gets YAML frontmatter with title, type, domain, severity, and tags. Obsidian can use this metadata for search and Dataview queries.
 
 You can filter what gets exported:
 
@@ -108,7 +108,7 @@ Three sync modes are available:
 
 ## Knowledge packs
 
-Packs are portable bundles of knowledge — entries and their links, packaged for sharing.
+Packs are portable bundles of knowledge: entries and their links, packaged for sharing.
 
 ### Exporting a pack
 
@@ -124,7 +124,7 @@ Filter by domain, tags, or scope tier:
 >
 > **Agent:** _Exported: 45 entries across 3 domains, 52 links._
 
-Packs include Zettelkasten links between exported entries — the knowledge graph structure travels with the content.
+Packs include Zettelkasten links between exported entries, so the knowledge graph structure travels with the content.
 
 ### Importing a pack
 
@@ -148,7 +148,7 @@ You can force all imported entries to a specific scope tier:
 | Bring personal notes into the vault     | Obsidian import   |
 | Share knowledge between agents/projects | Pack export/import|
 
-All sync methods are safe to run repeatedly — deduplication and conflict resolution prevent data loss.
+All sync methods are safe to run repeatedly. Deduplication and conflict resolution prevent data loss.
 
 ## Related guides
 

@@ -11,14 +11,14 @@ const content: Record<Locale, PersonasContent> = {
     heroTitle:
       'Six systems. Use what fits.',
     heroSubtitle:
-      'Turn them all on for a full knowledge agent, or just use the Vault if you want to start simple. The engine scales with you.',
+      'Turn them all on for a full knowledge agent, or just use the Vault if you want to start simple. Add more as you need them.',
 
     sections: [
       // Section 0: Vault
       {
         title: 'Vault',
         subtitle: 'Where knowledge lives.',
-        text: 'SQLite, local, fully searchable. Stores decisions, patterns, and context across sessions. You can isolate it per user when you need to. Think of it as your agent\'s long-term memory, but structured and queryable.',
+        text: 'SQLite, local, fully searchable. Stores decisions, patterns, and context across sessions. You can isolate it per user when you need to. It\'s your agent\'s long-term memory, but structured and queryable.',
         code: `<span class="cmt"># Search the vault</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">search "error handling"</span>
 <span class="ok">\u2713</span> 12 patterns found
@@ -39,7 +39,7 @@ const content: Record<Locale, PersonasContent> = {
       {
         title: 'Brain',
         subtitle: 'Knows what works.',
-        text: 'It watches which approaches actually get used. The more something proves useful, the stronger it ranks. Stuff that nobody touches anymore quietly drops off. Your agent gets sharper the more you use it.',
+        text: 'It watches which approaches actually get used. The more something proves useful, the stronger it ranks. Stuff that nobody touches anymore quietly drops off.',
         code: `<span class="cmt"># Brain pattern strength rankings</span>
 <span class="prompt">$</span> <span class="cmd">soleri brain</span> <span class="arg">stats</span>
 
@@ -102,14 +102,14 @@ const content: Record<Locale, PersonasContent> = {
     heroTitle:
       'Шість систем. Використовуй те, що підходить.',
     heroSubtitle:
-      'Увімкни всі для повноцінного агента зі знаннями або почни з Vault, якщо хочеш простіше. Рушій масштабується разом з тобою.',
+      'Увімкни всі для повноцінного агента зі знаннями або почни з Vault, якщо хочеш простіше. Додавай більше по мірі потреби.',
 
     sections: [
       // Section 0: Vault
       {
         title: 'Vault',
         subtitle: 'Де живуть знання.',
-        text: 'SQLite, локально, з повним пошуком. Зберігає рішення, патерни та контекст між сесіями. Можеш ізолювати на користувача, коли потрібно. Уяви це як довгострокову пам\'ять агента, але структуровану і з можливістю запитів.',
+        text: 'SQLite, локально, з повним пошуком. Зберігає рішення, патерни та контекст між сесіями. Можеш ізолювати на користувача, коли потрібно. Це довгострокова пам\'ять агента, але структурована і з можливістю запитів.',
         code: `<span class="cmt"># Пошук у vault</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">search "error handling"</span>
 <span class="ok">\u2713</span> 12 патернів знайдено
@@ -130,7 +130,7 @@ const content: Record<Locale, PersonasContent> = {
       {
         title: 'Brain',
         subtitle: 'Знає, що працює.',
-        text: 'Спостерігає, які підходи дійсно використовуються. Чим частіше щось виявляється корисним, тим вище воно ранжується. Те, до чого ніхто не торкається, тихо зникає. Твій агент стає гострішим, чим більше ти з ним працюєш.',
+        text: 'Спостерігає, які підходи дійсно використовуються. Чим частіше щось виявляється корисним, тим вище воно ранжується. Те, до чого ніхто не торкається, тихо зникає.',
         code: `<span class="cmt"># Рейтинг сили патернів Brain</span>
 <span class="prompt">$</span> <span class="cmd">soleri brain</span> <span class="arg">stats</span>
 
@@ -193,14 +193,14 @@ const content: Record<Locale, PersonasContent> = {
     heroTitle:
       'Sei sistemi. Usa quello che ti serve.',
     heroSubtitle:
-      'Attivali tutti per un agente con conoscenza completa, oppure parti solo con il Vault se vuoi iniziare semplice. Il motore scala con te.',
+      'Attivali tutti per un agente con conoscenza completa, oppure parti solo con il Vault se vuoi iniziare semplice. Aggiungine altri quando servono.',
 
     sections: [
       // Section 0: Vault
       {
         title: 'Vault',
         subtitle: 'Dove vive la conoscenza.',
-        text: 'SQLite, locale, completamente ricercabile. Conserva decisioni, pattern e contesto tra le sessioni. Puoi isolarlo per utente quando serve. Pensalo come la memoria a lungo termine del tuo agente, ma strutturata e interrogabile.',
+        text: 'SQLite, locale, completamente ricercabile. Conserva decisioni, pattern e contesto tra le sessioni. Puoi isolarlo per utente quando serve. La memoria a lungo termine del tuo agente, strutturata e interrogabile.',
         code: `<span class="cmt"># Cerca nel vault</span>
 <span class="prompt">$</span> <span class="cmd">soleri vault</span> <span class="arg">search "error handling"</span>
 <span class="ok">\u2713</span> 12 pattern trovati
@@ -221,7 +221,7 @@ const content: Record<Locale, PersonasContent> = {
       {
         title: 'Brain',
         subtitle: 'Sa cosa funziona.',
-        text: 'Osserva quali approcci vengono davvero usati. Più qualcosa si dimostra utile, più sale in classifica. Le cose che nessuno tocca più scompaiono in silenzio. Il tuo agente diventa più affilato più lo usi.',
+        text: 'Osserva quali approcci vengono davvero usati. Più qualcosa si dimostra utile, più sale in classifica. Le cose che nessuno tocca più scompaiono in silenzio.',
         code: `<span class="cmt"># Classifica forza dei pattern nel Brain</span>
 <span class="prompt">$</span> <span class="cmd">soleri brain</span> <span class="arg">stats</span>
 

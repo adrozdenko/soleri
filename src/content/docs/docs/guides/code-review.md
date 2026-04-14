@@ -1,9 +1,9 @@
 ---
 title: 'Code Review with Your Agent'
-description: 'Turn your knowledge base into an active safety net that catches mistakes before they ship.'
+description: 'Use your knowledge base to catch mistakes before they ship.'
 ---
 
-You've been capturing patterns and anti-patterns. Now put them to work. In this tutorial, your agent reviews code using your own rules — not generic linting, but the specific standards your team agreed on.
+You've been capturing patterns and anti-patterns. Now put them to work. In this tutorial, your agent reviews code using your own rules, not generic linting, but the specific standards your team agreed on.
 
 ## Step 1: Set up some rules
 
@@ -31,7 +31,7 @@ You just wrote a new endpoint. Ask your agent to look at it:
 > 1. **Error format mismatch** — response uses `{ message }` but your rule requires `{ error, code, details }`.
 > 2. **Silent exception** — the catch block doesn't log the error. Your rule: never catch exceptions without logging them.
 
-The agent didn't use generic rules — it used yours. The ones you captured because they matter to your project.
+The agent didn't use generic rules. It used yours, the ones you captured because they matter to your project.
 
 ## Step 3: Fix and learn
 
@@ -41,11 +41,11 @@ Fix the issues and capture what you learned:
 >
 > **Agent:** _Captured: "Database Error Handling in API Routes"_
 
-Next time someone on your team writes an endpoint with database operations, the agent has the answer — with specific guidance on error categorization.
+Next time someone on your team writes an endpoint with database operations, the agent already has specific guidance on error categorization.
 
 ## Step 4: Create a playbook
 
-You keep checking the same things for every endpoint. Turn that into a playbook — a repeatable checklist your agent can run:
+You keep checking the same things for every endpoint. Turn that into a playbook, a repeatable checklist your agent can run:
 
 > **You:** "Create a playbook called API Endpoint Review with these steps:
 >
@@ -56,7 +56,7 @@ You keep checking the same things for every endpoint. Turn that into a playbook 
 >
 > **Agent:** _Created playbook: "API Endpoint Review" — 4 steps with validation criteria._
 
-A playbook is different from individual patterns — it's a step-by-step procedure with specific things to check at each step.
+A playbook is different from individual patterns. It's a step-by-step procedure with specific things to check at each step.
 
 ## Step 5: Run the playbook
 
@@ -72,18 +72,18 @@ Next time you build an endpoint, run it:
 > Step 4: Status codes — 404 and 200 used correctly. **Pass.**
 > Result: 2 passed, 2 failed.
 
-Your agent just ran a code review using your team's exact standards. Not generic rules from the internet — your rules, built from your experience.
+Your agent just ran a code review using your team's exact standards. Not generic rules from the internet, but your rules, built from your experience.
 
 ## How reviews use your knowledge
 
 When you ask the agent to review code, here's what actually happens:
 
-1. **your AI editor calls the agent's search tool** with your code context as the query
-2. **The agent searches your vault** — patterns, anti-patterns, and rules that match the code you're reviewing
-3. **Results come back ranked** — critical issues first, then warnings, then suggestions
-4. **your AI editor applies those results** to your specific code, pointing out violations
+1. Your AI editor calls the agent's search tool with your code context as the query
+2. The agent searches your vault for patterns, anti-patterns, and rules that match the code you're reviewing
+3. Results come back ranked: critical issues first, then warnings, then suggestions
+4. Your AI editor applies those results to your specific code, pointing out violations
 
-The agent doesn't have opinions of its own. It checks your code against your rules — the ones you captured because they matter to your project. This is why building a good knowledge base makes reviews better over time. More patterns in the vault means more things the agent can catch.
+The agent doesn't have opinions of its own. It checks your code against your rules, the ones you captured because they matter to your project. This is why building a good knowledge base makes reviews better over time. More patterns in the vault means more things the agent can catch.
 
 Playbooks take this further. When you run a playbook, each step triggers its own search against the vault. Step 1 might pull up error handling patterns, step 2 pulls up logging patterns, and so on. The playbook is the structure; the vault provides the intelligence.
 
@@ -91,12 +91,12 @@ Playbooks take this further. When you run a playbook, each step triggers its own
 
 You now have:
 
-- **Rules** — your team's standards, captured as patterns and anti-patterns
-- **Reviews** — your agent checks code against those rules, automatically
-- **Playbooks** — repeatable checklists for consistent quality
+- Rules: your team's standards, captured as patterns and anti-patterns
+- Reviews: your agent checks code against those rules automatically
+- Playbooks: repeatable checklists for consistent quality
 
-Every pattern you capture makes reviews smarter. Every playbook you create saves time on the next review. The agent gets better because you're teaching it what matters to your project.
+Every pattern you capture makes reviews smarter. Every playbook you create saves time on the next review.
 
 ---
 
-_Next: [Planning with Your Agent](/docs/guides/planning/) — learn how your agent creates structured plans, tracks execution, and learns from outcomes._
+_Next: [Planning with Your Agent](/docs/guides/planning/) covers structured plans, execution tracking, and learning from outcomes._

@@ -1,13 +1,13 @@
 ---
 title: 'Tutorial: Your First Subagent Dispatch'
-description: 'A hands-on walkthrough of dispatching parallel subagents — from decomposition to merge to cleanup.'
+description: 'A hands-on walkthrough of dispatching parallel subagents, from decomposition to merge to cleanup.'
 ---
 
-This tutorial walks you through a real subagent dispatch. You'll see how the orchestrator decomposes work, routes tasks, dispatches workers, and merges results — all while keeping state clean.
+This tutorial walks through a real subagent dispatch: how the orchestrator decomposes work, routes tasks, dispatches workers, and merges results while keeping state clean.
 
 ## The scenario
 
-You want to add a `CONTRIBUTING.md` file to three packages in your monorepo: `core`, `forge`, and `cli`. Each file is independent — different directories, no overlap, no dependencies. Perfect for parallel dispatch.
+You want to add a `CONTRIBUTING.md` file to three packages in your monorepo: `core`, `forge`, and `cli`. Each file is independent, in different directories with no overlap and no dependencies. That makes it a good fit for parallel dispatch.
 
 ## Step 1: Ask for the work
 
@@ -23,7 +23,7 @@ Before dispatching anything, the agent reads your existing code, checks the vaul
 - Which conventions to reference (from your project config)
 - File locations
 
-You don't see this — it's the orchestrator doing its homework.
+You don't see this. It's the orchestrator doing its homework.
 
 ## Step 3: The agent shows the dispatch table
 
@@ -37,7 +37,7 @@ You don't see this — it's the orchestrator doing its homework.
 > | 2 | CONTRIBUTING.md for forge | Worker | Single file, clear spec |
 > | 3 | CONTRIBUTING.md for cli | Worker | Single file, clear spec |
 
-All three are **Claude Code workers** because they're single-file tasks with fully decided specs. No design decisions needed.
+All three are Claude Code workers because they're single-file tasks with fully decided specs. No design decisions needed.
 
 ## Step 4: Workers execute in parallel
 
@@ -50,7 +50,7 @@ All three workers launch simultaneously, each in its own git worktree. They crea
 
 ## Step 5: The orchestrator reviews
 
-The orchestrator reads the actual file changes from each worktree — not just the worker's self-report. It checks:
+The orchestrator reads the actual file changes from each worktree, not just the worker's self-report. It checks:
 
 - Did the file get created?
 - Does the content match the spec?
@@ -73,21 +73,21 @@ The worktrees are automatically removed. Three layers of cleanup ensure nothing 
 2. A batch cleanup runs after all workers finish
 3. The session-start hook catches anything that slipped through
 
-You can verify with `git worktree list` — only your main working directory remains.
+You can verify with `git worktree list`. Only your main working directory should remain.
 
 ## What if something goes wrong?
 
-**A worker encounters ambiguity:** It returns to the orchestrator with a question. The orchestrator either resolves it or asks you. Then re-dispatches.
+A worker encounters ambiguity: it returns to the orchestrator with a question. The orchestrator either resolves it or asks you, then re-dispatches.
 
-**A worker modifies the wrong file:** The orchestrator catches this during review and re-dispatches a fix subagent (max 2 retries).
+A worker modifies the wrong file: the orchestrator catches this during review and re-dispatches a fix subagent (max 2 retries).
 
-**A merge conflict:** The orchestrator resolves it manually, re-runs tests, and captures the conflict as an anti-pattern for future planning.
+A merge conflict: the orchestrator resolves it manually, re-runs tests, and captures the conflict as an anti-pattern for future planning.
 
-**A worker fails entirely:** The orchestrator reports the failure and either retries or asks you how to proceed.
+A worker fails entirely: the orchestrator reports the failure and either retries or asks you how to proceed.
 
 ## When to use a Soleri agent instance instead
 
-If one of those packages needed a complex CONTRIBUTING.md that required checking your vault for team conventions, making architectural decisions about the contribution workflow, or touching multiple related files — the orchestrator would route that task to a **Soleri agent instance** instead of a worker.
+If one of those packages needed a complex CONTRIBUTING.md that required checking your vault for team conventions, making architectural decisions about the contribution workflow, or touching multiple related files, the orchestrator would route that task to a Soleri agent instance instead of a worker.
 
 The instance would:
 1. Activate with vault and brain access
@@ -95,7 +95,7 @@ The instance would:
 3. Execute the task with full context
 4. Run `orchestrate_complete` to capture knowledge
 
-You don't need to specify this — the orchestrator routes automatically.
+You don't need to specify this. The orchestrator routes automatically.
 
 ## Summary
 

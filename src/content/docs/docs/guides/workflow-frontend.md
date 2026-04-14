@@ -3,7 +3,7 @@ title: 'Frontend Workflow'
 description: 'Search → Plan → Work → Capture → Complete for component development, styling, and UI work.'
 ---
 
-This is the [development workflow](/docs/guides/workflow/) applied to frontend work — components, state management, accessibility, and UI patterns.
+The [development workflow](/docs/guides/workflow/) applied to frontend work: components, state management, accessibility, and UI patterns.
 
 ## Search: what do we already know?
 
@@ -24,7 +24,7 @@ Before building a component or touching UI logic, search for existing patterns:
 > 1. Never disable the submit button without explanation (anti-pattern)
 > 2. Don't clear form on validation error — users lose their input (anti-pattern, critical)
 
-These 10-second searches prevent you from rebuilding what the team already solved and repeating mistakes someone already documented.
+These quick searches prevent you from rebuilding what the team already solved and repeating documented mistakes.
 
 ## Plan: break down the UI work
 
@@ -44,7 +44,7 @@ For anything beyond a quick fix, plan it:
 > _Brain recommendation: "Always provide keyboard navigation for dismissible elements" (strength: 0.85)_
 > _Brain recommendation: "Use aria-live regions for dynamic content updates" (strength: 0.78)_
 
-The brain pulls in relevant patterns automatically. You didn't have to remember the keyboard navigation rule — it surfaced because it's been useful in past component work.
+The brain pulls in relevant patterns automatically. You didn't have to remember the keyboard navigation rule; it surfaced because it's been useful in past component work.
 
 ## Work: build with the agent checking your decisions
 
@@ -80,20 +80,20 @@ During the build, you figured out something worth keeping:
 >
 > **Agent:** _Plan complete. Accuracy: 90%. 2 patterns extracted._
 
-The banner knowledge is now in the vault. Next time anyone on the team builds a notification component, the search step will surface everything you learned — keyboard handling, auto-dismiss UX, animation approach, accessibility attributes.
+The banner knowledge is now in the vault. Next time anyone on the team builds a notification component, the search step will surface everything you learned: keyboard handling, auto-dismiss UX, animation approach, accessibility attributes.
 
 ## Frontend patterns worth capturing early
 
-Start your vault with these high-value capture areas:
+Good areas to start capturing early:
 
-| Area                          | What to capture                                                 |
-| ----------------------------- | --------------------------------------------------------------- |
-| **Component API conventions** | Prop naming, variant patterns, composition approach             |
-| **Accessibility**             | Focus management, ARIA usage, keyboard navigation               |
-| **State management**          | When to use local vs global state, caching strategies           |
-| **Responsive**                | Breakpoint conventions, mobile-first rules, layout patterns     |
-| **Animation**                 | Timing conventions, reduced-motion handling, performance limits |
-| **Error states**              | Loading, empty, error UI patterns for each component type       |
+| Area                     | What to capture                                                 |
+| ------------------------ | --------------------------------------------------------------- |
+| Component API conventions | Prop naming, variant patterns, composition approach             |
+| Accessibility            | Focus management, ARIA usage, keyboard navigation               |
+| State management         | When to use local vs global state, caching strategies           |
+| Responsive               | Breakpoint conventions, mobile-first rules, layout patterns     |
+| Animation                | Timing conventions, reduced-motion handling, performance limits |
+| Error states             | Loading, empty, error UI patterns for each component type       |
 
 ---
 

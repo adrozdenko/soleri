@@ -1,9 +1,9 @@
 ---
 title: 'Search Architecture'
-description: 'Deep dive into vault search — FTS5, hybrid scoring, vector recall, federated tiers, and adaptive weights.'
+description: 'How vault search works: FTS5, hybrid scoring, vector recall, federated tiers, and adaptive weights.'
 ---
 
-Vault search is a multi-layer pipeline that combines full-text search, sparse TF-IDF scoring, optional dense vector embeddings, and seven weighted relevance signals. This page explains every layer.
+Vault search is a multi-layer pipeline that combines full-text search, sparse TF-IDF scoring, optional dense vector embeddings, and seven weighted relevance signals.
 
 For a quick overview, see [Under the Hood](/docs/guides/under-the-hood/#how-search-works).
 
@@ -30,7 +30,7 @@ Search supports two modes to keep context lean:
 | `scan` | Lightweight results: title, score, snippet, token estimate | Browsing, triage |
 | `full` | Complete entries with score breakdowns | Deep reads, planning |
 
-The recommended workflow: scan first, pick the top 2-4 results by score, then load only those entries. This avoids flooding context with entries you don't need.
+The recommended workflow is to scan first, pick the top 2-4 results by score, then load only those entries. This avoids flooding context with entries you don't need.
 
 ```
 "Search for authentication patterns"     → scan (10 lightweight results)
@@ -49,7 +49,7 @@ CREATE VIRTUAL TABLE entries_fts USING fts5(
 );
 ```
 
-**Porter stemming** reduces words to their root form (`authentication` and `authenticating` both match). **Unicode normalization** handles accented characters and non-Latin scripts.
+Porter stemming reduces words to their root form (`authentication` and `authenticating` both match). Unicode normalization handles accented characters and non-Latin scripts.
 
 ### Query transformation
 
@@ -81,7 +81,7 @@ If BM25 is unavailable (older SQLite builds), search falls back to the default F
 
 ## Layer 2: VaultManager (federation)
 
-The vault manager searches across multiple **tiers** — separate SQLite databases with different scopes:
+The vault manager searches across multiple tiers, which are separate SQLite databases with different scopes:
 
 | Tier | Scope | Priority weight |
 | ---- | ----- | --------------- |
@@ -91,9 +91,9 @@ The vault manager searches across multiple **tiers** — separate SQLite databas
 
 Each tier is searched independently. Results are then:
 
-1. **Weighted** by tier priority
-2. **Deduplicated** — if the same entry exists in multiple tiers, the highest-priority version wins
-3. **Merged** into a single result set, sorted by weighted score
+1. Weighted by tier priority
+2. Deduplicated. If the same entry exists in multiple tiers, the highest-priority version wins
+3. Merged into a single result set, sorted by weighted score
 
 This means an agent-level pattern always outranks the same pattern at team level.
 
@@ -103,7 +103,7 @@ FTS5 gives us broad recall. The brain turns it into precise relevance ranking.
 
 ### Over-fetching
 
-The brain requests 3x the desired limit (or 30 results, whichever is larger) from FTS5. This provides headroom — many entries that rank well in FTS5 may score poorly on other signals. Over-fetching ensures the final top-N are truly the best matches across all factors.
+The brain requests 3x the desired limit (or 30 results, whichever is larger) from FTS5. This provides headroom. Many entries that rank well in FTS5 may score poorly on other signals. Over-fetching ensures the final top-N are the best matches across all factors.
 
 ### Seven scoring signals
 
@@ -111,13 +111,13 @@ Every result is scored across seven factors:
 
 | Signal | Weight (FTS only) | Weight (hybrid) | How it works |
 | ------ | ----------------- | --------------- | ------------ |
-| **Semantic** | 0.35 | 0.20 | TF-IDF cosine similarity between query and entry |
-| **Vector** | 0.00 | 0.15 | Dense embedding cosine similarity |
-| **Severity** | 0.10 | 0.10 | critical = 1.0, warning = 0.7, suggestion = 0.4 |
-| **Temporal decay** | 0.10 | 0.10 | Exponential decay with 365-day half-life |
-| **Tag overlap** | 0.10 | 0.10 | Jaccard similarity between query tags and entry tags |
-| **Domain match** | 0.10 | 0.10 | Binary — 1.0 if the query domain matches the entry domain |
-| **Graph proximity** | 0.15 | 0.15 | Link-graph distance between query-relevant entries and this entry |
+| Semantic | 0.35 | 0.20 | TF-IDF cosine similarity between query and entry |
+| Vector | 0.00 | 0.15 | Dense embedding cosine similarity |
+| Severity | 0.10 | 0.10 | critical = 1.0, warning = 0.7, suggestion = 0.4 |
+| Temporal decay | 0.10 | 0.10 | Exponential decay with 365-day half-life |
+| Tag overlap | 0.10 | 0.10 | Jaccard similarity between query tags and entry tags |
+| Domain match | 0.10 | 0.10 | 1.0 if the query domain matches the entry domain, 0.0 otherwise |
+| Graph proximity | 0.15 | 0.15 | Link-graph distance between query-relevant entries and this entry |
 
 The total score is the weighted sum of all factors.
 
@@ -125,10 +125,10 @@ The total score is the weighted sum of all factors.
 
 The brain maintains a TF-IDF vocabulary across all vault entries:
 
-1. **Vocabulary building** — tokenizes every entry (title + description + context + tags), computes IDF for each term: `IDF = log((docCount + 1) / (df + 1)) + 1`
-2. **Query vector** — tokenizes the query using the same rules, computes a TF-IDF vector
-3. **Entry vectors** — each entry gets a TF-IDF vector using the same vocabulary
-4. **Cosine similarity** — the dot product of query and entry vectors, normalized by their magnitudes
+1. Vocabulary building: tokenizes every entry (title + description + context + tags), computes IDF for each term: `IDF = log((docCount + 1) / (df + 1)) + 1`
+2. Query vector: tokenizes the query using the same rules, computes a TF-IDF vector
+3. Entry vectors: each entry gets a TF-IDF vector using the same vocabulary
+4. Cosine similarity: the dot product of query and entry vectors, normalized by their magnitudes
 
 This is why rare terms are more valuable than common ones. "JWT" carries more weight than "the" because it appears in fewer entries.
 
@@ -136,7 +136,7 @@ This is why rare terms are more valuable than common ones. "JWT" carries more we
 
 Entries lose relevance over time:
 
-**Without a validity window:**
+Without a validity window:
 
 ```
 decay = exp(-ln(2) * age / halfLife)
@@ -144,7 +144,7 @@ decay = exp(-ln(2) * age / halfLife)
 
 Half-life is 365 days. An entry scores 1.0 when new, 0.5 after one year, 0.25 after two years.
 
-**With a validity window** (entries that have `valid_from`/`valid_until` dates):
+With a validity window (entries that have `valid_from`/`valid_until` dates):
 
 ```
 decayZone = totalWindow * 0.25
@@ -160,8 +160,8 @@ After 30+ feedback entries (excluding `failed` actions, which are system errors)
 
 - `accepted` counts as 1.0 positive, `modified` counts as 0.5 positive (user adjusted but didn't dismiss), `dismissed` counts as 0.0
 - Accept rate = `(accepted + modified * 0.5) / totalFeedback`
-- High accept rate (>50%) -- increase semantic weight (up to +0.15)
-- Low accept rate (<50%) -- decrease semantic weight (down to -0.15)
+- High accept rate (>50%): increase semantic weight (up to +0.15)
+- Low accept rate (<50%): decrease semantic weight (down to -0.15)
 - Other weights (severity, temporalDecay, tagOverlap, domainMatch, graphProximity) scale proportionally to maintain a sum of 1.0
 
 This means the search system learns from your usage. If you consistently prefer tag-matched results over text-matched ones, the weights shift accordingly.
@@ -176,10 +176,10 @@ When an embedding provider is configured, search adds a dense vector recall phas
 
 ### How it works
 
-1. **Query embedding** — the query is embedded into a dense vector (e.g., 1536 dimensions for OpenAI models)
-2. **Cosine search** — brute-force similarity computation against all stored entry vectors
-3. **Candidate merging** — entries found by vector search but missed by FTS5 are added to the candidate pool
-4. **Score integration** — vector similarity becomes a scoring signal (0.15 weight in hybrid mode)
+1. Query embedding: the query is embedded into a dense vector (e.g., 1536 dimensions for OpenAI models)
+2. Cosine search: brute-force similarity computation against all stored entry vectors
+3. Candidate merging: entries found by vector search but missed by FTS5 are added to the candidate pool
+4. Score integration: vector similarity becomes a scoring signal (0.15 weight in hybrid mode)
 
 ### Vector storage
 
@@ -248,4 +248,4 @@ Memory entries (session history, captured context) are searched separately using
 
 ---
 
-_Next: [Security & Privacy](/docs/guides/security/) — understand where your data lives and who can access it._
+_Next: [Security & Privacy](/docs/guides/security/) - understand where your data lives and who can access it._

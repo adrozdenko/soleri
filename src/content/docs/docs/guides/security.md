@@ -7,7 +7,7 @@ Your agent runs on your machine. Your knowledge stays on your machine. This page
 
 ## Everything runs locally
 
-Your Soleri agent is a Node.js process that runs on your computer. It doesn't connect to any cloud service, doesn't send telemetry, and doesn't phone home. The only network calls happen if you explicitly configure optional integrations like LLM providers.
+Your Soleri agent is a Node.js process that runs on your computer. It doesn't connect to any cloud service, doesn't send telemetry, and doesn't phone home. The only network calls happen if you explicitly configure optional integrations (like LLM providers).
 
 Out of the box: **zero network calls.**
 
@@ -22,11 +22,11 @@ All agent data is stored in local files within your agent's directory:
 | Plans             | JSON file         | Plan history, reconciliation reports    |
 | Configuration     | TypeScript + JSON | Agent identity, domains, settings       |
 
-These are regular files on your filesystem. You can back them up, version-control them, inspect them, or delete them. There's no hidden state, no external database, no cloud sync.
+These are regular files on your filesystem. You can back them up, version-control them, inspect them, or delete them. No hidden state, no external database, no cloud sync.
 
 ## The agent can only respond to tool calls
 
-Your agent doesn't have autonomous access to your system. It's an MCP tool server — it sits and waits for your AI editor to call its tools. It cannot:
+Your agent doesn't have autonomous access to your system. It's an MCP tool server that sits and waits for your AI editor to call its tools. It cannot:
 
 - Read files on your machine (unless your AI editor passes file content to a tool)
 - Execute commands or scripts
@@ -52,18 +52,18 @@ These levels are enforced at the tool registration layer. A read-only tool canno
 
 The governance system protects your vault from growing without bounds:
 
-- **Capture quotas** — limits on how many entries can be added per time period
-- **Proposal gates** — new entries can be held for review before becoming active
-- **Duplicate detection** — prevents the same knowledge from being captured twice
-- **Decay scanning** — identifies and flags unused entries
+- Capture quotas: limits on how many entries can be added per time period
+- Proposal gates: new entries can be held for review before becoming active
+- Duplicate detection: prevents the same knowledge from being captured twice
+- Decay scanning: identifies and flags unused entries
 
-This means a long your AI editor session that captures 50 patterns won't silently fill your vault with noise. The governance layer evaluates each capture and may reject, defer, or merge entries that don't meet quality thresholds.
+This means a long session that captures 50 patterns won't silently fill your vault with noise. The governance layer evaluates each capture and may reject, defer, or merge entries that don't meet quality thresholds.
 
 ## What happens when you share the agent
 
-Your agent's vault file is portable. If you share the SQLite database and brain state with a colleague, they get a copy of all your captured knowledge. This is by design — teams can share knowledge bases.
+Your agent's vault file is portable. If you share the SQLite database and brain state with a colleague, they get a copy of all your captured knowledge. This is by design. Teams can share knowledge bases.
 
-But sharing is explicit. There's no automatic sync, no shared server, no cloud repository. You decide what to share and how.
+Sharing is always explicit. No automatic sync, no shared server, no cloud repository. You decide what to share and how.
 
 If you version-control your agent (including its data files), the knowledge base becomes part of your project history. Team members who clone the repo get the same agent with the same knowledge.
 
@@ -75,20 +75,20 @@ One optional feature does make network calls when configured:
 
 If you enable LLM-powered features (curator enrichment, knowledge extraction), the agent calls the configured LLM provider (Anthropic, OpenAI, etc.) with the specific text being processed. API keys are stored locally in your agent's configuration.
 
-Both are opt-in. Neither is required for core functionality. The vault, brain, planning, and all 350+ operations work without any external service.
+This is opt-in and not required for core functionality. The vault, brain, planning, and all 350+ operations work without any external service.
 
 ## Summary
 
 | Question                     | Answer                                             |
 | ---------------------------- | -------------------------------------------------- |
 | Where is my data stored?     | Local files in your agent directory                |
-| Does the agent phone home?   | No — zero network calls by default                 |
-| Can the agent read my files? | No — it only receives data through tool parameters |
-| Can the agent run commands?  | No — it only responds to MCP tool calls            |
+| Does the agent phone home?   | No. Zero network calls by default.                 |
+| Can the agent read my files? | No. It only receives data through tool parameters. |
+| Can the agent run commands?  | No. It only responds to MCP tool calls.            |
 | Is there telemetry?          | No                                                 |
-| Can I inspect the data?      | Yes — SQLite and JSON files, standard formats      |
-| Can I delete everything?     | Yes — delete the agent directory and it's gone     |
-| Is sharing automatic?        | No — you explicitly choose what to share           |
+| Can I inspect the data?      | Yes. SQLite and JSON files, standard formats.      |
+| Can I delete everything?     | Yes. Delete the agent directory and it's gone.     |
+| Is sharing automatic?        | No. You explicitly choose what to share.           |
 
 ## Reporting security issues
 

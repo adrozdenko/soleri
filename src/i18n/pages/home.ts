@@ -10,7 +10,7 @@ const content: Record<Locale, HomeContent> = {
       'Soleri handles what the model can\'t: remembering what worked, planning what\'s next, and getting better over time. Build a personal agent or ship one to your users.',
     principleTitle: 'What if your agent actually remembered?',
     principleSubtitle: 'That\'s the problem we built Soleri to solve.',
-    principleText: 'You walk it through the architecture. The naming conventions. That bug you fixed last Tuesday. Next session, all of it is gone. Soleri gives your agent the systems to hold onto what works, learn from it, and bring it back without you repeating yourself.',
+    principleText: 'You walk it through the architecture. The naming conventions. That bug you fixed last Tuesday. Next session, all of it is gone. Soleri gives your agent the systems to hold onto what works and bring it back when it matters, without you repeating yourself.',
     compareBeforeLabel: '',
     compareAfterLabel: '',
     compareBefore: '',
@@ -107,7 +107,7 @@ const content: Record<Locale, HomeContent> = {
 <span class="comment">  ✓ MCP config registered</span>
 <span class="comment">  ✓ CLAUDE.md regenerates on change</span>`,
     archTitle: 'The model does 5% of the work. The engine does the rest.',
-    archSubtitle: 'Most AI tools are thin wrappers around an API call. The model generates text. But who stores what worked? Who scores it? Who cleans up the mess when knowledge piles up? Who plans the work and tracks what drifted? That\'s the engine. That\'s Soleri.',
+    archSubtitle: 'Most AI tools are thin wrappers around an API call. The model generates text, but nobody stores what worked, scores it, cleans up the mess, or tracks when things go off track. That\'s what the engine does. That\'s Soleri.',
     layers: [
       {
         label: 'Vault',
@@ -134,7 +134,7 @@ const content: Record<Locale, HomeContent> = {
       'Soleri робить те, що модель не може: запам\'ятовує, що спрацювало, планує наступні кроки і стає кращим з часом. Створи персонального агента або вбудуй його у свій продукт.',
     principleTitle: 'А якби твій агент дійсно запам\'ятовував?',
     principleSubtitle: 'Саме для цього ми створили Soleri.',
-    principleText: 'Ти пояснюєш йому архітектуру. Конвенції іменування. Той баг, який полагодив у вівторок. Наступна сесія, і все зникло. Soleri дає твоєму агенту системи, щоб тримати те, що працює, вчитися з цього і повертати це без твоїх повторень.',
+    principleText: 'Ти пояснюєш йому архітектуру. Конвенції іменування. Той баг, який полагодив у вівторок. Наступна сесія, і все зникло. Soleri дає твоєму агенту системи, щоб тримати те, що працює, і повертати це коли треба, без твоїх повторень.',
     compareBeforeLabel: '',
     compareAfterLabel: '',
     compareBefore: '',
@@ -231,7 +231,7 @@ const content: Record<Locale, HomeContent> = {
 <span class="comment">  ✓ MCP конфіг зареєстровано</span>
 <span class="comment">  ✓ CLAUDE.md перегенеровується при змінах</span>`,
     archTitle: 'Модель робить 5% роботи. Рушій робить решту.',
-    archSubtitle: 'Більшість AI-інструментів -- це тонкі обгортки навколо API-виклику. Модель генерує текст. Але хто зберігає, що спрацювало? Хто це оцінює? Хто прибирає, коли знань стає забагато? Хто планує роботу і відстежує, що пішло не за планом? Це рушій. Це Soleri.',
+    archSubtitle: 'Більшість AI-інструментів -- це тонкі обгортки навколо API-виклику. Модель генерує текст, але ніхто не зберігає, що спрацювало, не оцінює це, не прибирає безлад і не відстежує, коли щось пішло не за планом. Ось що робить рушій. Це Soleri.',
     layers: [
       {
         label: 'Vault',
@@ -258,7 +258,7 @@ const content: Record<Locale, HomeContent> = {
       'Soleri gestisce quello che il modello non può: ricordare cosa ha funzionato, pianificare il prossimo passo e migliorare nel tempo. Costruisci un agente personale o distribuiscine uno ai tuoi utenti.',
     principleTitle: 'E se il tuo agente si ricordasse davvero?',
     principleSubtitle: 'Questo è il problema per cui abbiamo costruito Soleri.',
-    principleText: 'Gli spieghi l\'architettura. Le convenzioni di naming. Quel bug che hai fixato martedì scorso. Sessione dopo, tutto sparito. Soleri dà al tuo agente i sistemi per tenersi quello che funziona, imparare da quello, e riportarlo fuori senza che tu debba ripeterti.',
+    principleText: 'Gli spieghi l\'architettura. Le convenzioni di naming. Quel bug che hai fixato martedì scorso. Sessione dopo, tutto sparito. Soleri dà al tuo agente i sistemi per tenersi quello che funziona e riportarlo fuori quando serve, senza che tu debba ripeterti.',
     compareBeforeLabel: '',
     compareAfterLabel: '',
     compareBefore: '',
@@ -355,7 +355,7 @@ const content: Record<Locale, HomeContent> = {
 <span class="comment">  ✓ MCP config registrata</span>
 <span class="comment">  ✓ CLAUDE.md si rigenera ad ogni modifica</span>`,
     archTitle: 'Il modello fa il 5% del lavoro. Il motore fa il resto.',
-    archSubtitle: 'La maggior parte degli strumenti AI sono wrapper sottili attorno a una chiamata API. Il modello genera testo. Ma chi salva cosa ha funzionato? Chi gli dà un punteggio? Chi fa pulizia quando la conoscenza si accumula? Chi pianifica il lavoro e traccia le deviazioni? Quello è il motore. Quello è Soleri.',
+    archSubtitle: 'La maggior parte degli strumenti AI sono wrapper sottili attorno a una chiamata API. Il modello genera testo, ma nessuno salva cosa ha funzionato, lo valuta, fa pulizia o traccia quando le cose vanno fuori rotta. Questo è quello che fa il motore. Questo è Soleri.',
     layers: [
       {
         label: 'Vault',

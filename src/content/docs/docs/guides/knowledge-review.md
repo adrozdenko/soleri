@@ -14,7 +14,7 @@ draft → pending_review → approved
                        → rejected
 ```
 
-By default, entries captured directly go straight into the vault without review. The review workflow is for entries that need a second pair of eyes — team conventions, architectural decisions, security patterns.
+By default, entries captured directly go straight into the vault without review. The review workflow is for entries that need a second pair of eyes: team conventions, architectural decisions, security patterns.
 
 ## Submitting an entry for review
 
@@ -64,7 +64,7 @@ If an entry isn't ready or doesn't meet the team's standards:
 >
 > **Agent:** _Rejected: "API Versioning Convention" — reason: Needs to address breaking change policy before we adopt this._
 
-Rejected entries stay in the vault — they're not deleted. The submitter can revise the entry and resubmit.
+Rejected entries stay in the vault. They're not deleted. The submitter can revise the entry and resubmit.
 
 ## Checking review stats
 
@@ -81,12 +81,12 @@ See the overall state of your review pipeline:
 
 Review is most valuable for:
 
-- **Team conventions** — coding standards, naming rules, commit formats that everyone must follow
-- **Architectural decisions** — choices that affect the whole system and are hard to reverse
-- **Security patterns** — anything marked critical that could cause real damage if wrong
-- **Anti-patterns** — patterns you want the whole team to avoid
+- Team conventions: coding standards, naming rules, commit formats that everyone must follow
+- Architectural decisions: choices that affect the whole system and are hard to reverse
+- Security patterns: anything marked critical that could cause real damage if wrong
+- Anti-patterns: patterns you want the whole team to avoid
 
-For personal patterns, quick captures, and exploratory knowledge, skip the review — capture directly and refine later.
+For personal patterns, quick captures, and exploratory knowledge, skip the review. Capture directly and refine later.
 
 ## Access control
 
@@ -94,13 +94,13 @@ Submitting an entry for review requires write access. Approving or rejecting req
 
 ## Related guides
 
-- [Content Ingestion](/docs/guides/content-ingestion/) — bulk-ingested entries are good candidates for review
-- [Entry Linking & Knowledge Graph](/docs/guides/entry-linking/) — link approved entries into the knowledge graph
-- [Team Workflows](/docs/guides/team-workflows/) — how review fits into team knowledge sharing
-- [Vault Branching](/docs/guides/vault-branching/) — stage reviewed changes on a branch before merging
-- [Capabilities](/docs/capabilities/) — full list of review operations
-- [API Reference](/docs/api-reference/) — parameter details for `vault_submit_review`, `vault_approve`, `vault_reject`
+- [Content Ingestion](/docs/guides/content-ingestion/) - bulk-ingested entries are good candidates for review
+- [Entry Linking & Knowledge Graph](/docs/guides/entry-linking/) - link approved entries into the knowledge graph
+- [Team Workflows](/docs/guides/team-workflows/) - how review fits into team knowledge sharing
+- [Vault Branching](/docs/guides/vault-branching/) - stage reviewed changes on a branch before merging
+- [Capabilities](/docs/capabilities/) - full list of review operations
+- [API Reference](/docs/api-reference/) - parameter details for `vault_submit_review`, `vault_approve`, `vault_reject`
 
 ---
 
-_Previous: [Content Ingestion](/docs/guides/content-ingestion/) — feed documents into your vault. Next: [Sync & Export](/docs/guides/vault-sync/) — back up your vault to git or use it in Obsidian._
+_Previous: [Content Ingestion](/docs/guides/content-ingestion/) - feed documents into your vault. Next: [Sync & Export](/docs/guides/vault-sync/) - back up your vault to git or use it in Obsidian._

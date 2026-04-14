@@ -3,16 +3,16 @@ title: Extending Your Agent
 description: Add instructions, workflows, knowledge, and domain packs to your Soleri file-tree agent.
 ---
 
-Soleri agents follow a two-layer model:
+Soleri agents have two layers:
 
-1. **Agent folder** — `agent.yaml`, `instructions/`, `workflows/`, `knowledge/`, `skills/`. Plain files you edit directly.
-2. **Knowledge Engine** (`@soleri/core`) — vault, brain, planner, curator, loops, governance. Updated via engine upgrades.
+1. **Agent folder** (`agent.yaml`, `instructions/`, `workflows/`, `knowledge/`, `skills/`). Plain files you edit directly.
+2. **Knowledge Engine** (`@soleri/core`). Vault, brain, planner, curator, loops, governance. Updated via engine upgrades.
 
-Extensions are additive. Edit your agent folder freely — the engine handles persistence and learning.
+Extensions are additive. You edit your agent folder, the engine handles persistence and learning.
 
 ## Adding instructions
 
-Create a new `.md` file in `instructions/`. It's automatically included in CLAUDE.md on the next regeneration.
+Drop a new `.md` file in `instructions/`. It gets picked up in CLAUDE.md on the next regeneration.
 
 ```
 instructions/
@@ -32,11 +32,11 @@ Example `instructions/api-conventions.md`:
 - Rate limit headers on every response
 ```
 
-Run `soleri dev` — CLAUDE.md regenerates automatically when you save.
+Run `soleri dev` and CLAUDE.md regenerates automatically when you save.
 
 ## Adding workflows
 
-Create a new folder in `workflows/` with up to 3 files:
+Create a folder in `workflows/` with up to 3 files:
 
 ```
 workflows/
@@ -80,7 +80,7 @@ When creating or modifying database schemas.
 
 ## Adding knowledge
 
-Drop JSON bundles in `knowledge/`. They're seeded into the vault on engine startup.
+Drop JSON bundles in `knowledge/`. The engine seeds them into the vault on startup.
 
 ```json
 {
@@ -101,7 +101,7 @@ Drop JSON bundles in `knowledge/`. They're seeded into the vault on engine start
 
 ## Adding domain packs
 
-Domain packs are standalone community packages that add specialized ops and knowledge. Install via CLI or npm:
+Domain packs are community packages that add specialized ops and knowledge. Install via CLI or npm:
 
 ```bash
 soleri pack add domain-design
@@ -118,7 +118,7 @@ packs:
     package: '@my-org/domain-security'
 ```
 
-The engine loads them at startup and registers their tools automatically. Browse available packs with `soleri pack registry`. Create your own with `npm create soleri-pack <name>`.
+The engine loads these at startup and registers their tools. Browse what's available with `soleri pack registry`, or create your own with `npm create soleri-pack <name>`.
 
 ## Adding skills
 
@@ -130,7 +130,7 @@ skills/
     SKILL.md
 ```
 
-Skills follow the standard SKILL.md format with YAML frontmatter.
+Skills use the standard `SKILL.md` format with YAML frontmatter.
 
 ## What NOT to edit
 
@@ -140,18 +140,18 @@ Skills follow the standard SKILL.md format with YAML frontmatter.
 | `instructions/_engine.md` | Auto-generated engine rules         |
 | `AGENTS.md`               | Auto-generated for OpenCode/Codex   |
 
-Keep all customization in `agent.yaml`, `instructions/`, `workflows/`, `knowledge/`, and `skills/`.
+All your customization goes in `agent.yaml`, `instructions/`, `workflows/`, `knowledge/`, and `skills/`.
 
 ## Upgrading the engine
 
-The engine is a separate MCP server. Upgrade it independently:
+The engine is a separate MCP server, so you upgrade it independently:
 
 ```bash
 npm update @soleri/core -g   # Update engine globally
 soleri dev                    # Restart with new engine
 ```
 
-Your agent folder is untouched by engine upgrades.
+Engine upgrades don't touch your agent folder.
 
 ## Extension commands
 
@@ -163,10 +163,10 @@ Your agent folder is untouched by engine upgrades.
 | `soleri pack install <pack>` | Install a domain or knowledge pack     |
 | `soleri add-domain <name>`   | Add a knowledge domain                 |
 
-For full command documentation, see [CLI Reference](/docs/cli-reference/). For configuration details, see [Customizing Your Agent](/docs/guides/customizing/).
+Full command docs at [CLI Reference](/docs/cli-reference/). Configuration details at [Customizing Your Agent](/docs/guides/customizing/).
 
 ## Related
 
-- [Creating Packs](/docs/guides/pack-authoring/) — build and publish your own extension packs
-- [Skills Catalog](/docs/guides/skills-catalog/) — browse all available skills
-- [Domain Packs](/docs/guides/domain-packs/) — specialized intelligence modules
+- [Creating Packs](/docs/guides/pack-authoring/) for building and publishing your own packs
+- [Skills Catalog](/docs/guides/skills-catalog/) for browsing available skills
+- [Domain Packs](/docs/guides/domain-packs/) for specialized intelligence modules

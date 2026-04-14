@@ -6,7 +6,7 @@ const content: Record<Locale, HowItWorksContent> = {
   en: {
     title: 'How It Works -- Soleri',
     description:
-      'Soleri is the knowledge engine behind your agent. Six systems that handle storage, scoring, cleanup, planning, and governance. Everything runs locally on your machine.',
+      'Soleri is the knowledge engine behind your agent. Six systems that handle storage, scoring, cleanup, planning, and governance. Everything runs locally.',
     eyebrow: 'How it works',
     heroTitle: 'Not a wrapper. An engine.',
     heroSubtitle:
@@ -15,7 +15,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Six systems, one engine.',
         subtitle: 'Turn on what your agent needs. Leave the rest off.',
-        text: 'The Vault stores what your agent learns. The Brain figures out what\'s worth keeping. The Curator cleans up the mess as knowledge grows. The Planner gives work structure. Memory carries context between sessions. Governance sets the quality rules. You can run all six or just one.',
+        text: 'The Vault stores what your agent learns. The Brain figures out what\'s worth keeping. The Curator cleans up the mess as knowledge grows. The Planner gives work structure. Memory carries context between sessions, and Governance sets the quality rules. Run all six or just the ones you need.',
         code: `<span class="cmt"># Six systems, one engine</span>
 
 <span class="ok">Brain</span>        <span class="dim">— tracks what works, recommends approaches</span>
@@ -48,7 +48,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'It stays clean on its own.',
         subtitle: 'Three systems keep things from turning into a junk drawer.',
-        text: 'The Brain tracks what actually gets used, so the useful stuff rises and the stale stuff fades. The Curator catches duplicates and contradictions without you doing anything. Governance gives you control over what gets shared with the team and what stays private.',
+        text: 'The Brain tracks what actually gets used, so useful stuff rises and stale stuff fades. The Curator catches duplicates and contradictions on its own. And Governance lets you control what gets shared with the team versus what stays private.',
         code: `<span class="cmt"># Your agent's strongest patterns</span>
 
 <span class="ok">email-validation</span>     strength: <span class="val">94</span>   used 12 times
@@ -78,7 +78,7 @@ const content: Record<Locale, HowItWorksContent> = {
   uk: {
     title: 'Як це працює - Soleri',
     description:
-      'Soleri -- це рушій знань за твоїм агентом. Шість систем, які обробляють зберігання, скоринг, очистку, планування та governance. Все працює локально на твоїй машині.',
+      'Soleri -- це рушій знань за твоїм агентом. Шість систем, які обробляють зберігання, скоринг, очистку, планування та governance. Все працює локально.',
     eyebrow: 'Як це працює',
     heroTitle: 'Не обгортка. Рушій.',
     heroSubtitle:
@@ -87,7 +87,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Шість систем, один рушій.',
         subtitle: 'Увімкни те, що потрібно агенту. Решту залиш вимкненим.',
-        text: 'Vault зберігає те, що агент вивчає. Brain визначає, що варто тримати. Curator прибирає безлад, коли знань стає більше. Planner дає роботі структуру. Memory переносить контекст між сесіями. Governance встановлює правила якості. Можеш запустити всі шість або лише один.',
+        text: 'Vault зберігає те, що агент вивчає. Brain визначає, що варто тримати. Curator прибирає безлад, коли знань стає більше. Planner дає роботі структуру. Memory переносить контекст між сесіями, а Governance встановлює правила якості. Запускай всі шість або лише ті, що потрібні.',
         code: `<span class="cmt"># Шість систем, один рушій</span>
 
 <span class="ok">Brain</span>        <span class="dim">— відстежує, що працює, рекомендує підходи</span>
@@ -120,7 +120,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Тримає себе в чистоті.',
         subtitle: 'Три системи не дають перетворитися на звалище.',
-        text: 'Brain відстежує, що дійсно використовується, тому корисне піднімається, а застаріле згасає. Curator ловить дублікати і протиріччя без твоїх зусиль. Governance дає контроль над тим, що ділиться з командою, а що залишається приватним.',
+        text: 'Brain відстежує, що дійсно використовується, тому корисне піднімається, а застаріле згасає. Curator ловить дублікати і протиріччя сам. А Governance дозволяє контролювати, що ділиться з командою, а що залишається приватним.',
         code: `<span class="cmt"># Найсильніші патерни твого агента</span>
 
 <span class="ok">email-validation</span>     сила: <span class="val">94</span>   використано 12 разів
@@ -150,7 +150,7 @@ const content: Record<Locale, HowItWorksContent> = {
   it: {
     title: 'Come funziona -- Soleri',
     description:
-      'Soleri è il motore di conoscenza dietro al tuo agente. Sei sistemi che gestiscono storage, scoring, cleanup, pianificazione e governance. Tutto gira in locale sulla tua macchina.',
+      'Soleri è il motore di conoscenza dietro al tuo agente. Sei sistemi che gestiscono storage, scoring, cleanup, pianificazione e governance. Tutto gira in locale.',
     eyebrow: 'Come funziona',
     heroTitle: 'Non un wrapper. Un motore.',
     heroSubtitle:
@@ -159,7 +159,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Sei sistemi, un motore.',
         subtitle: 'Attiva quello che serve al tuo agente. Lascia spento il resto.',
-        text: 'Il Vault conserva quello che il tuo agente impara. Il Brain capisce cosa vale la pena tenere. Il Curator fa pulizia man mano che la conoscenza cresce. Il Planner dà struttura al lavoro. Memory porta il contesto tra le sessioni. Governance imposta le regole di qualità. Puoi usare tutti e sei o solo uno.',
+        text: 'Il Vault conserva quello che il tuo agente impara. Il Brain capisce cosa vale la pena tenere. Il Curator fa pulizia man mano che la conoscenza cresce. Il Planner dà struttura al lavoro. Memory porta il contesto tra le sessioni, e Governance imposta le regole di qualità. Usa tutti e sei o solo quelli che ti servono.',
         code: `<span class="cmt"># Sei sistemi, un motore</span>
 
 <span class="ok">Brain</span>        <span class="dim">— traccia cosa funziona, raccomanda approcci</span>
@@ -192,7 +192,7 @@ const content: Record<Locale, HowItWorksContent> = {
       {
         title: 'Si tiene in ordine da solo.',
         subtitle: 'Tre sistemi impediscono che diventi un cassetto della spazzatura.',
-        text: 'Il Brain traccia cosa viene davvero usato, quindi le cose utili salgono e quelle vecchie svaniscono. Il Curator intercetta duplicati e contraddizioni senza che tu faccia niente. Governance ti dà il controllo su cosa condividere col team e cosa tenere privato.',
+        text: 'Il Brain traccia cosa viene davvero usato, quindi le cose utili salgono e quelle vecchie svaniscono. Il Curator intercetta duplicati e contraddizioni da solo. E Governance ti permette di controllare cosa condividere col team e cosa tenere privato.',
         code: `<span class="cmt"># I pattern più forti del tuo agente</span>
 
 <span class="ok">email-validation</span>     forza: <span class="val">94</span>   usato 12 volte

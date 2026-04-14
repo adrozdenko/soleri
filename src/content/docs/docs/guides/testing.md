@@ -1,9 +1,9 @@
 ---
 title: Testing
-description: How to run and write tests for Soleri — unit tests, E2E integration tests, and smoke tests.
+description: How to run and write tests for Soleri. Unit tests, E2E integration tests, and smoke tests.
 ---
 
-Soleri uses three layers of testing to ensure every engine feature works correctly — from individual modules to full cross-package integration.
+Soleri uses three layers of testing: unit tests, E2E integration tests, and manual smoke tests.
 
 ## Quick Reference
 
@@ -42,7 +42,7 @@ npm run test --workspace=@soleri/forge      # Forge templates only
 npm run test --workspace=@soleri/cli        # CLI commands only
 ```
 
-Unit tests verify individual modules in isolation — vault operations, brain scoring, plan state machine, scaffold output, CLI argument parsing.
+Unit tests verify individual modules in isolation: vault operations, brain scoring, plan state machine, scaffold output, CLI argument parsing.
 
 ## E2E Tests
 
@@ -91,7 +91,7 @@ npm run test:e2e
 
 E2E tests use two patterns depending on what they're testing:
 
-**In-process facade testing** — Creates a real `AgentRuntime` with an in-memory vault, captures facade handlers via a mock MCP server, and calls ops directly. Fast (~30ms for 25 tests) and exercises the full engine stack without subprocess overhead.
+**In-process facade testing.** Creates a real `AgentRuntime` with an in-memory vault, captures facade handlers via a mock MCP server, and calls ops directly. Fast (~30ms for 25 tests) and exercises the full engine stack without subprocess overhead.
 
 ```ts
 const runtime = createAgentRuntime({
@@ -101,7 +101,7 @@ const runtime = createAgentRuntime({
 const facades = createSemanticFacades(runtime, 'test');
 ```
 
-**Over-the-wire MCP testing** — Scaffolds a real agent, builds it, spawns it as a child process, and communicates via MCP stdio transport. Verifies the complete pipeline from scaffold through production runtime.
+**Over-the-wire MCP testing.** Scaffolds a real agent, builds it, spawns it as a child process, and communicates via MCP stdio transport. Verifies the complete pipeline from scaffold through production runtime.
 
 ### Writing new E2E tests
 
@@ -110,16 +110,16 @@ E2E tests live in the `e2e/` directory and use [Vitest](https://vitest.dev/). Th
 **Adding a test file:**
 
 1. Create `e2e/your-feature.test.ts`
-2. Import from `@soleri/core` or `@soleri/forge/lib` — path aliases are configured
+2. Import from `@soleri/core` or `@soleri/forge/lib` (path aliases are configured)
 3. Use `createAgentRuntime({ vaultPath: ':memory:' })` for in-process tests
 4. Clean up temp directories in `afterAll`
 
 **Tips:**
 
-- Use `:memory:` vaultPath for fast in-process tests
-- Use `tmpdir()` for file-backed tests that verify persistence
-- Set generous timeouts for scaffold tests (60s+ for `beforeAll`)
-- Random port allocation for transport tests to avoid conflicts
+- Use `:memory:` vaultPath for fast in-process tests.
+- Use `tmpdir()` for file-backed tests that verify persistence.
+- Set generous timeouts for scaffold tests (60s+ for `beforeAll`).
+- Use random port allocation for transport tests to avoid conflicts.
 
 ## Smoke Tests
 
@@ -133,7 +133,7 @@ npm run build
 npm test
 ```
 
-This catches issues that E2E tests might miss — like template syntax errors that only surface during a full build, or generated test failures.
+This catches issues that E2E tests might miss, like template syntax errors that only surface during a full build, or generated test failures.
 
 ## CI
 

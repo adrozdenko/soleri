@@ -1,22 +1,22 @@
 ---
 title: 'Subagent Dispatch'
-description: 'How your agent fans out work to parallel subagents — the hybrid routing model, behavioral contract, and cleanup guarantees.'
+description: 'How your agent fans out work to parallel subagents: the hybrid routing model, behavioral contract, and cleanup guarantees.'
 ---
 
-When a task decomposes into independent pieces, your agent can dispatch subagents to work in parallel. This guide explains the model, the rules, and what you should expect.
+When a task decomposes into independent pieces, your agent can dispatch subagents to work in parallel.
 
 ## The model
 
-Your agent operates as the **orchestrator**. It researches, plans, makes decisions, then dispatches **subagents** to execute specific tasks. Subagents don't make decisions — they follow specs.
+Your agent operates as the orchestrator. It researches, plans, makes decisions, then dispatches subagents to execute specific tasks. Subagents don't make decisions. They follow specs.
 
 Two types of subagents are available:
 
 | Type | What it does | When it's used |
 |------|-------------|---------------|
-| **Claude Code worker** | Fast, stateless file editing. No vault, no planning, no knowledge capture. | Single-file changes, clear specs, mechanical tasks. |
-| **Soleri agent instance** | Full agent with vault access, brain, and knowledge capture. | Complex tasks with design decisions, multi-file changes, new architecture. |
+| Claude Code worker | Fast, stateless file editing. No vault, no planning, no knowledge capture. | Single-file changes, clear specs, mechanical tasks. |
+| Soleri agent instance | Full agent with vault access, brain, and knowledge capture. | Complex tasks with design decisions, multi-file changes, new architecture. |
 
-Your agent picks the right type automatically based on complexity. You don't need to specify — but you can override.
+Your agent picks the right type automatically based on complexity. You don't need to specify, but you can override.
 
 ## How routing works
 
@@ -34,18 +34,18 @@ The orchestrator evaluates each task:
 
 These rules apply to every subagent dispatch:
 
-1. **The orchestrator owns all decisions.** Subagents execute specs. If they encounter ambiguity, they return to the orchestrator — they don't guess.
+1. The orchestrator owns all decisions. Subagents execute specs. If they encounter ambiguity, they return to the orchestrator. They don't guess.
 
-2. **Subagents don't create plans.** Only the orchestrator creates plans. Subagents receive task prompts with scope, file boundaries, and acceptance criteria.
+2. Subagents don't create plans. Only the orchestrator creates plans. Subagents receive task prompts with scope, file boundaries, and acceptance criteria.
 
-3. **Worktree cleanup is guaranteed.** Every subagent works in an isolated git worktree. Three layers of cleanup ensure nothing accumulates:
+3. Worktree cleanup is guaranteed. Every subagent works in an isolated git worktree. Three layers of cleanup ensure nothing accumulates:
    - The dispatcher removes each worktree after the task completes
    - A batch cleanup runs after all subagents finish
    - A session-start hook prunes any orphaned worktrees
 
-4. **The orchestrator reviews before merging.** Self-reports from subagents are verified by reading actual file changes.
+4. The orchestrator reviews before merging. Self-reports from subagents are verified by reading actual file changes.
 
-5. **No scope creep.** Subagents stay within their assigned file boundaries. No "while I'm here" improvements.
+5. No scope creep. Subagents stay within their assigned file boundaries. No "while I'm here" improvements.
 
 ## What you see
 
@@ -72,9 +72,9 @@ If you want more detail, ask:
 
 You can control the routing:
 
-- **"Use full agent for everything"** — all subagents run as Soleri agent instances with full lifecycle
-- **"Just use workers"** — all subagents run as Claude Code workers with no overhead
-- **Default** — hybrid routing based on complexity
+- "Use full agent for everything" runs all subagents as Soleri agent instances with full lifecycle
+- "Just use workers" runs all subagents as Claude Code workers with no overhead
+- Default is hybrid routing based on complexity
 
 ## When dispatch happens
 
@@ -94,8 +94,8 @@ Your agent does **not** dispatch when:
 
 Knowledge is captured regardless of agent type:
 
-- **Soleri agent instances** capture their own patterns during execution
-- **Claude Code workers** don't capture — the orchestrator reviews their work and captures anything worth keeping
+- Soleri agent instances capture their own patterns during execution
+- Claude Code workers don't capture. The orchestrator reviews their work and captures anything worth keeping
 - The orchestrator always runs `orchestrate_complete` at the end, which feeds the vault and brain
 
 Nothing is lost. The code goes into git, the knowledge goes into the vault.

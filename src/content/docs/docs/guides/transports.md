@@ -1,18 +1,18 @@
 ---
 title: Transports
-description: How to connect your agent to different clients — stdio, HTTP/SSE, WebSocket, and LSP.
+description: How to connect your agent to different clients via stdio, HTTP/SSE, WebSocket, and LSP.
 ---
 
-Soleri agents communicate through **transports** — the layer between your agent's facades and the outside world. The engine logic stays the same; the transport determines how clients connect.
+Soleri agents communicate through transports, the layer between your agent's facades and the outside world. The engine logic stays the same; the transport determines how clients connect.
 
 ## Available Transports
 
-| Transport     | Protocol                  | Use case                      | Client            |
-| ------------- | ------------------------- | ----------------------------- | ----------------- |
-| **stdio**     | MCP over stdin/stdout     | your AI editor, Cursor        | AI editors        |
-| **HTTP/SSE**  | REST + Server-Sent Events | Web dashboards, REST APIs     | Any HTTP client   |
-| **WebSocket** | Bidirectional streaming   | Real-time apps, Telegram bots | WebSocket clients |
-| **LSP**       | Language Server Protocol  | VS Code, Neovim               | Editor extensions |
+| Transport   | Protocol                  | Use case                      | Client            |
+| ----------- | ------------------------- | ----------------------------- | ----------------- |
+| stdio       | MCP over stdin/stdout     | Claude Code, Cursor           | AI editors        |
+| HTTP/SSE    | REST + Server-Sent Events | Web dashboards, REST APIs     | Any HTTP client   |
+| WebSocket   | Bidirectional streaming   | Real-time apps, Telegram bots | WebSocket clients |
+| LSP         | Language Server Protocol  | VS Code, Neovim               | Editor extensions |
 
 ## stdio (Default)
 
@@ -29,7 +29,7 @@ The default transport. Your agent runs as a child process; the editor communicat
 }
 ```
 
-No configuration needed — this is what `npm run build` and `soleri dev` produce.
+No configuration needed. This is what `npm run build` and `npx @soleri/cli dev` produce.
 
 ## HTTP/SSE
 
@@ -68,7 +68,7 @@ await server.start();
 
 | Method | Path           | Auth | Description                           |
 | ------ | -------------- | ---- | ------------------------------------- |
-| GET    | `/health`      | No   | Health check — returns 200 if running |
+| GET    | `/health`      | No   | Health check, returns 200 if running  |
 | POST   | `/mcp`         | Yes  | MCP JSON-RPC tool calls               |
 | GET    | `/mcp`         | Yes  | Server-Sent Events stream             |
 | DELETE | `/mcp`         | Yes  | Close a session                       |
@@ -98,7 +98,7 @@ await server.stop(); // Closes all connections and stops listening
 
 ## WebSocket
 
-For bidirectional streaming — real-time applications, chat interfaces, Telegram bots.
+For bidirectional streaming: real-time applications, chat interfaces, Telegram bots.
 
 ```typescript
 import { WsMcpServer } from '@soleri/core';
@@ -173,9 +173,9 @@ sessions.remove(id); // Remove one
 sessions.close(); // Remove all + stop reaper
 ```
 
-**Automatic reaping:** Expired sessions are cleaned up automatically based on the TTL. The reaper runs periodically and removes sessions that haven't been accessed within the TTL window.
+Expired sessions are cleaned up automatically based on the TTL. The reaper runs periodically and removes sessions that haven't been accessed within the TTL window.
 
-**Unique IDs:** `generateId()` produces cryptographically random session identifiers.
+`generateId()` produces cryptographically random session identifiers.
 
 ## Rate Limiting
 
@@ -202,21 +202,21 @@ limiter.reset(clientId); // Reset a specific client
 limiter.clear(); // Reset all clients
 ```
 
-**Per-client tracking:** Each client ID (IP address, session ID, or API key) gets its own counter. Hitting the limit for one client doesn't affect others.
+Each client ID (IP address, session ID, or API key) gets its own counter. Hitting the limit for one client doesn't affect others.
 
 ## Choosing a Transport
 
 | Scenario                | Transport         | Why                                   |
 | ----------------------- | ----------------- | ------------------------------------- |
-| your AI editor / Cursor | stdio             | Native MCP support, zero config       |
+| Claude Code / Cursor    | stdio             | Native MCP support, zero config       |
 | Web dashboard           | HTTP/SSE          | Standard REST, SSE for live updates   |
 | Telegram bot            | WebSocket         | Bidirectional, persistent connections |
 | VS Code extension       | LSP               | Editor-native integration             |
 | Multiple clients        | HTTP or WebSocket | Session management + rate limiting    |
 | Internal microservice   | HTTP              | Standard API patterns                 |
 
-You can run multiple transports simultaneously — the same agent instance can serve stdio for your AI editor and HTTP for a web dashboard.
+You can run multiple transports simultaneously. The same agent instance can serve stdio for your editor and HTTP for a web dashboard.
 
 ---
 
-_Next: [Under the Hood](/docs/guides/under-the-hood/) — how the vault, brain, and memory actually work._
+_Next: [Under the Hood](/docs/guides/under-the-hood/)._

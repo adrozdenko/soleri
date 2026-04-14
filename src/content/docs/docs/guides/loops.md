@@ -1,13 +1,13 @@
 ---
 title: 'Validation Loops'
-description: 'How your agent iterates toward a quality target — checking, fixing, and converging automatically.'
+description: 'How your agent iterates toward a quality target, checking, fixing, and converging automatically.'
 ---
 
-Some tasks aren't done when the code is written — they're done when the code passes validation. Loops let your agent iterate automatically: try something, check the result, fix what's wrong, check again, until it converges on a target.
+Some tasks aren't done when the code is written. They're done when the code passes validation. Loops let your agent iterate automatically: try something, check the result, fix what's wrong, check again, until it converges on a target.
 
 ## What a loop does
 
-A loop repeats a cycle: **do → validate → fix → validate** until either:
+A loop repeats a cycle (do, validate, fix, validate) until either:
 
 - The validation score reaches a target (convergence)
 - The maximum number of iterations is reached (safety limit)
@@ -19,13 +19,13 @@ Each iteration records whether it passed, what the score was, and what changed. 
 
 Your agent ships with specialized modes for common tasks:
 
-| Mode                | Target score | Max iterations | Use case                                          |
-| ------------------- | ------------ | -------------- | ------------------------------------------------- |
-| **token-migration** | 95           | 20             | Migrate hardcoded colors to semantic tokens       |
-| **contrast-fix**    | all pass     | 15             | Fix color contrast to meet WCAG thresholds        |
-| **component-build** | 90           | 20             | Build something that passes all quality checks    |
-| **plan-iteration**  | grade A      | 10             | Iterate on a plan until it reaches a target grade |
-| **custom**          | —            | 20             | Any task with a validation step you define        |
+| Mode             | Target score | Max iterations | Use case                                          |
+| ---------------- | ------------ | -------------- | ------------------------------------------------- |
+| token-migration  | 95           | 20             | Migrate hardcoded colors to semantic tokens       |
+| contrast-fix     | all pass     | 15             | Fix color contrast to meet WCAG thresholds        |
+| component-build  | 90           | 20             | Build something that passes all quality checks    |
+| plan-iteration   | grade A      | 10             | Iterate on a plan until it reaches a target grade |
+| custom           | ---          | 20             | Any task with a validation step you define        |
 
 ## Starting a loop
 
@@ -45,29 +45,29 @@ You didn't have to intervene between iterations. The agent validated its own wor
 
 ## Gate-based iteration
 
-For tighter integration, loops can use gate-based iteration — the agent uses specific signals to decide whether to continue or stop:
+For tighter integration, loops can use gate-based iteration. The agent uses specific signals to decide whether to continue or stop:
 
 ### Score thresholds
 
-Built-in modes (`component-build`, `plan-iteration`) use numeric scores. The agent runs a validation check each iteration and compares the score to the target. If the score meets or exceeds the target, the loop completes.
+Built-in modes like `component-build` and `plan-iteration` use numeric scores. The agent runs a validation check each iteration and compares the score to the target. If the score meets or exceeds the target, the loop completes.
 
 ### Promise tags
 
-Custom loops use promise tags — a text marker in the agent's output that signals convergence. When the agent determines its work meets the criteria you defined, it emits a completion marker. The loop system detects this and stops iterating.
+Custom loops use promise tags, a text marker in the agent's output that signals convergence. When the agent determines its work meets the criteria you defined, it emits a completion marker. The loop system detects this and stops iterating.
 
 For example, in a custom loop to refactor a module, the agent validates its own output each iteration. When all checks pass, it signals completion. If the signal isn't present, the loop continues to the next iteration.
 
 ### Heuristic detection
 
-The agent also recognizes patterns in its own output that indicate completion — like "all tests passing" or "no remaining issues found." This acts as a fallback when explicit signals aren't present.
+The agent also recognizes patterns in its own output that indicate completion, like "all tests passing" or "no remaining issues found." This acts as a fallback when explicit signals aren't present.
 
 ### Integration with hooks
 
-Hooks can participate in loop iteration. A Stop hook checks the current loop status and can force another iteration if the output doesn't meet quality standards. This is how hooks and loops work together — hooks define what "good enough" means, and the loop keeps iterating until the hook allows it to stop. See [Customizing Your Agent](/docs/guides/customizing/#hooks) for hook configuration.
+Hooks can participate in loop iteration. A Stop hook checks the current loop status and can force another iteration if the output doesn't meet quality standards. Hooks define what "good enough" means, and the loop keeps iterating until the hook allows it to stop. See [Customizing Your Agent](/docs/guides/customizing/#hooks) for hook configuration.
 
 ## Loop history
 
-Every loop is recorded — you can review what happened:
+Every loop is recorded, so you can review what happened:
 
 > **You:** "Show me loop history"
 >
@@ -81,17 +81,9 @@ Loop history feeds into the brain. The brain learns which types of tasks typical
 
 ## When to use loops vs. manual iteration
 
-**Use a loop when:**
+Use a loop when the task has a clear validation step (does this pass? what's the score?), when you want the agent to fix its own mistakes without your input, or when the task is repetitive like migrations, audits, and batch fixes.
 
-- The task has a clear validation step (does this pass? what's the score?)
-- You want the agent to fix its own mistakes without your input
-- The task is repetitive — migrations, audits, batch fixes
-
-**Do it manually when:**
-
-- The validation is subjective (does this look good?)
-- You want to review each change before the next iteration
-- The task is exploratory with no clear "done" criteria
+Do it manually when the validation is subjective (does this look good?), when you want to review each change before the next iteration, or when the task is exploratory with no clear "done" criteria.
 
 ## Custom loops
 
@@ -101,8 +93,8 @@ For tasks that don't fit the built-in modes, use custom loops with your own vali
 >
 > **Agent:** _Loop started. Mode: custom. Max iterations: 20._
 
-Custom loops work the same way — iterate, validate, fix — but you define what "valid" means.
+Custom loops work the same way (iterate, validate, fix) but you define what "valid" means.
 
 ---
 
-_Next: [Customizing Your Agent](/docs/guides/customizing/) — shape your agent's personality, domains, and behavior. For term definitions, see the [Glossary](/docs/glossary/)._
+_Next: [Customizing Your Agent](/docs/guides/customizing/). For term definitions, see the [Glossary](/docs/glossary/)._

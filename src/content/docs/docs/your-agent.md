@@ -1,26 +1,24 @@
 ---
-title: Your Agent — Quick Reference
-description: A concise reference for vault, brain, memory, playbooks, orchestration, and the Knowledge Engine — with links to detailed guides.
+title: Your agent -- quick reference
+description: A concise reference for vault, brain, memory, playbooks, orchestration, and the Knowledge Engine, with links to detailed guides.
 ---
 
-Your agent is a **folder** (`agent.yaml` + `instructions/` + `workflows/` + `knowledge/`). The **Knowledge Engine** (`@soleri/core`) provides all the persistent infrastructure below. Edit your agent's files — the engine handles the rest.
+Your agent is a folder (`agent.yaml` + `instructions/` + `workflows/` + `knowledge/`). The Knowledge Engine (`@soleri/core`) provides all the persistent infrastructure below. Edit your agent's files and the engine handles the rest.
 
-This page is your cheat sheet. For detailed explanations, see the linked deep dives.
+## The vault
 
-## The Vault
+Your agent's long-term knowledge store. SQLite database with full-text search, branching, sharing, and multi-tier connections. _[Details](/docs/guides/under-the-hood/#the-vault)_
 
-Your agent's long-term knowledge store. SQLite database with full-text search, branching, sharing, and multi-tier connections. _[Details →](/docs/guides/under-the-hood/#the-vault)_
+Entry structure:
 
-**Entry structure:**
+| Field    | Values                                                                              |
+| -------- | ----------------------------------------------------------------------------------- |
+| Type     | `pattern`, `anti-pattern`, `rule`, `playbook`, `workflow`, `principle`, `reference` |
+| Domain   | `frontend`, `backend`, `security`, or your custom domains                           |
+| Severity | `critical` (must follow), `warning` (should follow), `suggestion` (nice to have)    |
+| Tags     | Free-form labels for discovery                                                      |
 
-| Field        | Values                                                                              |
-| ------------ | ----------------------------------------------------------------------------------- |
-| **Type**     | `pattern`, `anti-pattern`, `rule`, `playbook`, `workflow`, `principle`, `reference` |
-| **Domain**   | `frontend`, `backend`, `security`, or your custom domains                           |
-| **Severity** | `critical` (must follow), `warning` (should follow), `suggestion` (nice to have)    |
-| **Tags**     | Free-form labels for discovery                                                      |
-
-**Common operations:**
+Common operations:
 
 ```
 "Search for authentication patterns"
@@ -28,20 +26,20 @@ Your agent's long-term knowledge store. SQLite database with full-text search, b
 "Show me vault stats"
 ```
 
-**Advanced features:** vault branching (experiment without affecting main vault), Obsidian sync, knowledge pack import/export, team review workflows, multi-tier vault connections. _[26 ops →](/docs/capabilities/#vault)_
+Also supports vault branching (experiment without affecting main vault), Obsidian sync, knowledge pack import/export, team review workflows, and multi-tier vault connections. _[26 ops](/docs/capabilities/#vault)_
 
-## The Brain
+## The brain
 
-Tracks which patterns actually work. Learns from usage, strengthens useful patterns, decays unused ones. _[Details →](/docs/guides/under-the-hood/#the-brain)_
+Tracks which patterns actually work. Learns from usage, strengthens useful patterns, decays unused ones. _[Details](/docs/guides/under-the-hood/#the-brain)_
 
-**What it does:**
+What it does:
 
 - Ranks search results by proven usefulness, not just keyword match
 - Surfaces recommendations when you create plans
 - Extracts patterns automatically from completed work sessions
-- Runs a full lifecycle: extract → promote → archive
+- Runs a full lifecycle: extract, promote, archive
 
-**Common operations:**
+Common operations:
 
 ```
 "What does the brain recommend for this task?"
@@ -49,11 +47,11 @@ Tracks which patterns actually work. Learns from usage, strengthens useful patte
 "Rebuild brain intelligence"
 ```
 
-## Memory & Cross-Project
+## Memory and cross-project
 
-Knowledge persists across sessions in local files. Link projects to share knowledge across codebases. _[Details →](/docs/guides/cross-project-knowledge/)_
+Knowledge persists across sessions in local files. Link projects to share knowledge across codebases. _[Details](/docs/guides/cross-project-knowledge/)_
 
-**Common operations:**
+Common operations:
 
 ```
 "Link this project to ../api-server as related"
@@ -63,11 +61,11 @@ Knowledge persists across sessions in local files. Link projects to share knowle
 
 ## Planning
 
-Multi-step task planning with grading, verification, evidence, and drift detection. _[Details →](/docs/guides/planning/)_
+Multi-step task planning with grading, verification, evidence, and drift detection. _[Details](/docs/guides/planning/)_
 
-**The lifecycle:** create → grade → approve → split → execute → reconcile → complete
+The lifecycle: create, grade, approve, split, execute, reconcile, complete.
 
-**Common operations:**
+Common operations:
 
 ```
 "Create a plan for migrating the auth system"
@@ -76,13 +74,13 @@ Multi-step task planning with grading, verification, evidence, and drift detecti
 "Reconcile the plan against what happened"
 ```
 
-_[32 ops →](/docs/capabilities/#plan)_
+_[32 ops](/docs/capabilities/#plan)_
 
 ## Playbooks
 
-Multi-step procedures with validation criteria at each step. _[Details →](/docs/guides/code-review/#step-4-create-a-playbook)_
+Multi-step procedures with validation criteria at each step. _[Details](/docs/guides/code-review/#step-4-create-a-playbook)_
 
-**Common operations:**
+Common operations:
 
 ```
 "List available playbooks"
@@ -91,13 +89,13 @@ Multi-step procedures with validation criteria at each step. _[Details →](/doc
 "Find a playbook that matches this context"
 ```
 
-_[8 ops →](/docs/capabilities/#playbooks)_
+_[8 ops](/docs/capabilities/#playbooks)_
 
 ## Orchestration
 
-Plan → Execute → Complete lifecycle for complex tasks. Brain recommendations feed into plans, completed plans extract knowledge back to the vault. _[Details →](/docs/guides/planning/)_
+Plan, execute, complete lifecycle for complex tasks. Brain recommendations feed into plans, completed plans extract knowledge back to the vault. _[Details](/docs/guides/planning/)_
 
-**The compound loop:**
+The compound loop:
 
 ```
 vault knowledge → brain recommendations → plans → work → knowledge extraction → vault
@@ -105,15 +103,15 @@ vault knowledge → brain recommendations → plans → work → knowledge extra
 
 ## Governance
 
-Controls how knowledge enters the vault — quotas, proposal gates, duplicate detection. _[Details →](/docs/guides/customizing/#governance-policies)_
+Controls how knowledge enters the vault: quotas, proposal gates, duplicate detection. _[Details](/docs/guides/customizing/#governance-policies)_
 
-**Presets:** `strict` (all require approval), `moderate` (auto-approve suggestions), `permissive` (auto-approve all)
+Presets: `strict` (all require approval), `moderate` (auto-approve suggestions), `permissive` (auto-approve all)
 
 ## Curator
 
-Automated vault quality management — deduplication, contradiction detection, health audits, tag normalization, LLM enrichment. _[Details →](/docs/guides/under-the-hood/#the-curator)_
+Automated vault quality management: deduplication, contradiction detection, health audits, tag normalization, LLM enrichment. _[Details](/docs/guides/under-the-hood/#the-curator)_
 
-**Common operations:**
+Common operations:
 
 ```
 "Run a health audit"
@@ -122,17 +120,17 @@ Automated vault quality management — deduplication, contradiction detection, h
 "Groom all vault entries"
 ```
 
-_[13 ops →](/docs/capabilities/#curator)_
+_[13 ops](/docs/capabilities/#curator)_
 
 ## Chat
 
-Session management, authentication, voice, browser isolation, and message queue for chat transports (Telegram, web). _[41 ops →](/docs/capabilities/#chat)_
+Session management, authentication, voice, browser isolation, and message queue for chat transports (Telegram, web). _[41 ops](/docs/capabilities/#chat)_
 
-**Subsystems:** sessions, auth, MCP bridge, task cancellation, self-update, file handling, notifications, voice (Whisper + TTS), message queue, per-chat browser isolation.
+Subsystems: sessions, auth, MCP bridge, task cancellation, self-update, file handling, notifications, voice (Whisper + TTS), message queue, per-chat browser isolation.
 
 ## Agency
 
-Proactive mode — your agent watches file changes and surfaces relevant vault patterns without being asked. _[8 ops →](/docs/capabilities/#agency)_
+Proactive mode where your agent watches file changes and surfaces relevant vault patterns without being asked. _[15 ops](/docs/capabilities/#agency)_
 
 ```
 "Enable agency mode"
@@ -142,13 +140,13 @@ Proactive mode — your agent watches file changes and surfaces relevant vault p
 
 ## Context
 
-Entity extraction, knowledge retrieval, and context analysis. Analyzes prompts to extract files, functions, domains, and technologies. _[3 ops →](/docs/capabilities/#context)_
+Entity extraction, knowledge retrieval, and context analysis. Analyzes prompts to extract files, functions, domains, and technologies. _[3 ops](/docs/capabilities/#context)_
 
 ## Transports
 
-Four ways to connect: **stdio** (your AI editor), **HTTP/SSE** (web), **WebSocket** (real-time), **LSP** (editors). _[Guide →](/docs/guides/transports/)_
+Four ways to connect: stdio (your AI editor), HTTP/SSE (web), WebSocket (real-time), LSP (editors). _[Guide](/docs/guides/transports/)_
 
-## All 22 Facades
+## All 22 facades
 
 | Facade                                         | Ops | Primary purpose                               |
 | ---------------------------------------------- | --- | --------------------------------------------- |
@@ -177,12 +175,12 @@ Four ways to connect: **stdio** (your AI editor), **HTTP/SSE** (web), **WebSocke
 
 **Total: 350+ operations** plus 5 per domain.
 
-## Day-to-Day Tips
+## Day-to-day tips
 
-1. **Follow the workflow** — [Search → Plan → Work → Capture → Complete](/docs/guides/workflow/)
-2. **Capture as you go** — the moment you learn something, capture it
-3. **Search before building** — 5 seconds of search can save hours of rework
-4. **Use domains** — keep knowledge organized so searches stay relevant
-5. **Review brain recommendations** — they reflect what actually works in your project
+1. Follow the workflow: [Search, Plan, Work, Capture, Complete](/docs/guides/workflow/)
+2. Capture as you go. The moment you learn something, capture it.
+3. Search before building. 5 seconds of search can save hours of rework.
+4. Use domains to keep knowledge organized so searches stay relevant.
+5. Review brain recommendations. They reflect what actually works in your project.
 
 Your data stays on your machine — [Security & Privacy](/docs/guides/security/). For term definitions, see the [Glossary](/docs/glossary/). If something isn't working, check [Troubleshooting](/docs/troubleshooting/).
