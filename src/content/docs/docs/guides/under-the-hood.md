@@ -89,6 +89,40 @@ This is the automatic part of the compound loop. You don't have to manually capt
 >
 > **Agent:** _2 patterns proposed: "GraphQL resolvers should validate input before calling service layer" (auto-approved, suggestion), "Always add deprecation headers before removing REST endpoints" (pending review, warning)._
 
+## Compaction policies
+
+Long-running sessions accumulate context: tool calls, token usage, elapsed time. At some point the session needs to rotate so your AI editor can start fresh without losing track of what was happening. Compaction policies control when that rotation happens.
+
+A compaction policy has three thresholds. If _any_ threshold is exceeded, the session rotates:
+
+| Threshold | Default | What it measures |
+| --------- | ------- | ---------------- |
+| `maxRuns` | 200 | Number of tool calls / interactions in the session |
+| `maxInputTokens` | 2,000,000 | Cumulative input tokens consumed |
+| `maxAge` | `72h` | Wall-clock time since the session started |
+
+The evaluator checks thresholds in that order and triggers on the first one that fires. When it does, the agent generates a handoff note (what was in progress, key decisions, files modified) so the next session can pick up where the previous one left off.
+
+You configure compaction in your `agent.yaml` under the engine block. All fields are optional, so you only override what you need:
+
+```yaml
+engine:
+  compactionPolicy:
+    maxRuns: 100         # rotate after 100 tool calls
+    maxInputTokens: 1000000  # rotate after 1M input tokens
+    maxAge: '24h'        # rotate after 24 hours
+```
+
+Duration strings support `ms`, `s`, `m`, `h`, and `d` suffixes. So `30m`, `7d`, and `500ms` all work.
+
+The final policy is resolved by merging three levels, with higher levels winning on a per-field basis:
+
+1. Your `agent.yaml` config (highest priority)
+2. Adapter defaults (the runtime adapter can supply its own defaults)
+3. Engine defaults (the hardcoded fallback shown in the table above)
+
+This means you can override just `maxAge` in your agent.yaml and the other two thresholds will still use their defaults. There's no all-or-nothing replacement.
+
 ## Memory and persistence
 
 Everything your agent knows persists in files:

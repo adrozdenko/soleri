@@ -94,6 +94,43 @@ engine:
   skillsFilter: essential    # or 'all', or ['vault-navigator', 'deep-review', ...]
 ```
 
+## Skill trust levels
+
+Every skill gets a trust level based on what files it contains. The trust classifier walks the skill directory, looks at each file's extension, and picks the highest-risk category it finds.
+
+| Trust level | What it means | Triggered by |
+| ----------- | ------------- | ------------ |
+| `markdown_only` | Pure documentation, no executable code | Only `.md` / `.mdx` files |
+| `assets` | Contains non-markdown files but no scripts | Images, JSON, configs (no code) |
+| `scripts` | Contains executable code | `.sh`, `.ts`, `.js`, `.mjs`, `.cjs`, `.py`, `.rb`, `.bash` files |
+
+The classifier escalates: if a skill directory has even one `.ts` file that isn't a declaration file (`.d.ts`), the whole skill is classified as `scripts`. Declaration files are treated as references, not executable code.
+
+Each file in the skill also gets a per-file kind:
+
+| Kind | Examples |
+| ---- | ------- |
+| `skill` | `SKILL.md` (the primary skill definition) |
+| `reference` | `.md` files, `.d.ts` declaration files |
+| `script` | `.ts`, `.js`, `.sh`, `.py`, etc. |
+| `asset` | Everything else (images, JSON, configs) |
+
+To see the trust level for your installed skill packs, use the `--trust` flag:
+
+```bash
+npx @soleri/cli skills list --trust
+```
+
+This shows the trust classification, source, and engine compatibility for each pack. The output looks something like:
+
+```
+  my-skills@1.0.0
+    skills: deep-review, code-patrol
+    trust: markdown_only  source: npm  compat: compatible
+```
+
+Trust levels help you understand what a skill pack can do before you install it. A `markdown_only` skill is just workflow instructions for your AI editor. A `scripts` skill can run code on your machine. That distinction matters when you're installing packs from third-party sources.
+
 ## How skills work
 
 Skills are markdown files installed to `~/.claude/skills/<name>/SKILL.md` (see [Your Agent](/docs/your-agent/) for the full file-tree layout). Each skill has:

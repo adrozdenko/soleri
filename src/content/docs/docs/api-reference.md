@@ -43,15 +43,15 @@ Each agent gets facades named `<agent_id>_<facade>`:
 | Facade      | Tool name          | Ops    |
 | ----------- | ------------------ | ------ |
 | Vault       | `<id>_vault`       | 26     |
-| Admin       | `<id>_admin`       | 56     |
+| Admin       | `<id>_admin`       | 57     |
 | Chat        | `<id>_chat`        | 41     |
-| Plan        | `<id>_plan`        | 32     |
+| Plan        | `<id>_plan`        | 37     |
 | Brain       | `<id>_brain`       | 30     |
-| Orchestrate | `<id>_orchestrate` | 26     |
+| Orchestrate | `<id>_orchestrate` | 29     |
 | Memory      | `<id>_memory`      | 15     |
 | Agency      | `<id>_agency`      | 15     |
-| Curator     | `<id>_curator`     | 13     |
-| Control     | `<id>_control`     | 13     |
+| Curator     | `<id>_curator`     | 14     |
+| Control     | `<id>_control`     | 15     |
 | Archive     | `<id>_archive`     | 12     |
 | Operator    | `<id>_operator`    | 10     |
 | Loop        | `<id>_loop`        | 9      |
@@ -172,6 +172,24 @@ Submit evidence for task acceptance criteria.
 | `taskCheckId` | string | yes      | Task check ID                                    |
 | `evidence`    | array  | yes      | `[{ criterion, evidence, command?, satisfied }]` |
 
+### chain_execute
+
+Start a composable chain workflow. See [Chain Operations](/docs/guides/chain-operations/) for the full guide.
+
+| Param        | Type   | Required | Description                                |
+| ------------ | ------ | -------- | ------------------------------------------ |
+| `definition` | object | yes      | Chain definition with steps and gates      |
+| `input`      | object | no       | Initial input variables for the first step |
+
+### chain_step_approve
+
+Approve a step waiting at a user-approval gate.
+
+| Param     | Type   | Required | Description        |
+| --------- | ------ | -------- | ------------------ |
+| `chainId` | string | yes      | Chain instance ID  |
+| `stepId`  | string | yes      | Step ID to approve |
+
 ---
 
 ## Brain Facade
@@ -257,6 +275,26 @@ Find playbooks that match a context.
 | Param     | Type   | Required | Description              |
 | --------- | ------ | -------- | ------------------------ |
 | `context` | string | yes      | Context to match against |
+
+### skill_step_start
+
+Create a skill step tracker for structured execution.
+
+| Param       | Type   | Required | Description                                                        |
+| ----------- | ------ | -------- | ------------------------------------------------------------------ |
+| `skillName` | string | yes      | Name of the skill being tracked                                    |
+| `steps`     | array  | yes      | `[{ id: string, description: string, evidence: "tool_called" \| "file_exists" }]` |
+
+### skill_step_advance
+
+Record evidence for current step and advance to the next one.
+
+| Param      | Type    | Required | Description                         |
+| ---------- | ------- | -------- | ----------------------------------- |
+| `runId`    | string  | yes      | Run ID from skill_step_start        |
+| `stepId`   | string  | yes      | Step ID to record evidence for      |
+| `evidence` | string  | yes      | Evidence value (tool name or path)  |
+| `verified` | boolean | no       | Whether evidence is verified (default: true) |
 
 ---
 
@@ -745,7 +783,7 @@ Auth: `admin`
 
 ---
 
-The complete list of all 350+ operations across 22 facades is at [Capabilities](/docs/capabilities/). CLI commands are at [CLI Reference](/docs/cli-reference/), and term definitions at [Glossary](/docs/glossary/).
+The complete list of all 360+ operations across 22 facades is at [Capabilities](/docs/capabilities/). CLI commands are at [CLI Reference](/docs/cli-reference/), and term definitions at [Glossary](/docs/glossary/).
 
 :::note[Coverage]
 This page covers the most commonly used operations. Everything else follows the same pattern: call with `op` and `params`. Use `admin_tool_list` to discover all available operations and their parameters in a running agent.

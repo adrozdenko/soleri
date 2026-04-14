@@ -111,7 +111,10 @@
     "signoffs",
     "solarpunk",
     "esac",
-    "toplevel"
+    "toplevel",
+    "misroutes",
+    "bioluminescent",
+    "uppercased"
   ],
   "dictionaries": ["typescript", "node", "npm", "softwareTerms"],
   "files": [

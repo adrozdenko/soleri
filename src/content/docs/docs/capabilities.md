@@ -1,9 +1,9 @@
 ---
 title: Capabilities
-description: Everything a Soleri agent can do — 350+ operations across 22 facades covering vault, brain, planning, orchestration, and more.
+description: Everything a Soleri agent can do, 360+ operations across 22 facades covering vault, brain, planning, orchestration, and more.
 ---
 
-Every Soleri agent ships with 350+ operations across 22 engine modules. This page lists them all, grouped by facade.
+Every Soleri agent ships with 360+ operations across 22 engine modules. This page lists them all, grouped by facade.
 
 For parameter details on common operations, see the [API Reference](/docs/api-reference/). For CLI commands, see the [CLI Reference](/docs/cli-reference/). For term definitions, see the [Glossary](/docs/glossary/).
 
@@ -12,15 +12,15 @@ For parameter details on common operations, see the [API Reference](/docs/api-re
 | Facade                            | Ops          | What it does                                             |
 | --------------------------------- | ------------ | -------------------------------------------------------- |
 | [Vault](#vault)                   | 26           | Store, search, capture, and manage knowledge             |
-| [Admin](#admin)                   | 56           | Health checks, telemetry, plugins, packs, accounts       |
+| [Admin](#admin)                   | 57           | Health checks, telemetry, plugins, packs, accounts, session briefing |
 | [Chat](#chat)                     | 41           | Session management, auth, voice, browser, notifications  |
-| [Plan](#plan)                     | 32           | Plans, grading, verification, evidence, reconciliation   |
+| [Plan](#plan)                     | 37           | Plans, grading, verification, evidence, reconciliation, chains |
 | [Brain](#brain)                   | 30           | Learning loop, pattern strength, recommendations, radar  |
-| [Orchestrate](#orchestrate)       | 26           | Lifecycle, projects, playbooks                           |
+| [Orchestrate](#orchestrate)       | 29           | Lifecycle, projects, playbooks, skill step tracking      |
 | [Memory](#memory)                 | 15           | Cross-session, cross-project, export/import              |
 | [Agency](#agency)                 | 15           | Proactive intelligence, file watching, pattern surfacing |
-| [Curator](#curator)               | 13           | Deduplication, health audits, enrichment, contradictions |
-| [Control](#control)               | 13           | Persona, intent routing, modes, governance               |
+| [Curator](#curator)               | 14           | Deduplication, health audits, enrichment, contradictions, self-heal |
+| [Control](#control)               | 15           | Persona, intent routing, modes, governance, routing feedback |
 | [Archive](#archive)               | 12           | Archival, lifecycle, temporal, knowledge maintenance      |
 | [Operator](#operator)             | 10           | Operator profile learning, signals, adaptation           |
 | [Loop](#loop)                     | 9            | Iterative validation with convergence detection          |
@@ -113,6 +113,12 @@ System health, telemetry, plugins, packs, accounts, and diagnostics.
 | `admin_hot_reload`            | admin | Hot-reload agent configuration.             |
 | `admin_subsystem_health`      | read  | Per-subsystem health status.                |
 | `admin_health_snapshot`       | read  | Point-in-time health snapshot.              |
+
+### Session Briefing
+
+| Op                  | Auth | Description                                                                                              |
+| ------------------- | ---- | -------------------------------------------------------------------------------------------------------- |
+| `session_briefing`  | read | Proactive session context: last session, active plans, recent captures, brain recommendations, stale warnings. |
 
 ### Telemetry
 
@@ -345,6 +351,18 @@ Multi-step task planning with grading, verification, evidence, and drift detecti
 | `plan_stats`               | read  | Planning statistics: total, by status, rate. |
 | `plan_archive`             | write | Archive a completed plan.                    |
 
+### Chain Operations
+
+Composable multi-step workflows with variable passing between steps and approval gates. See [Chain Operations](/docs/guides/chain-operations/) for usage.
+
+| Op                   | Auth  | Description                                                           |
+| -------------------- | ----- | --------------------------------------------------------------------- |
+| `chain_execute`      | write | Start a chain from a definition. Returns chain ID and initial state.  |
+| `chain_status`       | read  | Get current chain state, completed steps, pending gates.              |
+| `chain_resume`       | write | Resume a paused chain after a gate has been satisfied.                |
+| `chain_list`         | read  | List all chains with status and progress.                             |
+| `chain_step_approve` | write | Approve a step waiting at a user-approval gate.                      |
+
 ## Orchestrate
 
 High-level plan-execute-complete lifecycle, project management, and playbooks.
@@ -359,6 +377,16 @@ High-level plan-execute-complete lifecycle, project management, and playbooks.
 | `orchestrate_complete`      | write | Complete with epilogue — evidence report, fix-trail quality signals, knowledge capture, session record. |
 | `orchestrate_status`        | read  | Current orchestration state.                                |
 | `orchestrate_quick_capture` | write | Quick-capture knowledge during orchestration.               |
+
+### Skill Step Tracking
+
+Structured execution tracking for multi-step skills. Create a tracker, record evidence at each step, then validate completion.
+
+| Op                   | Auth  | Description                                                                         |
+| -------------------- | ----- | ----------------------------------------------------------------------------------- |
+| `skill_step_start`   | write | Create a skill step tracker. Returns run ID, persists initial state to disk.        |
+| `skill_step_advance` | write | Record evidence for current step, advance to next step, return checkpoint summary.  |
+| `skill_step_complete`| write | Validate skill completion. Returns result with any skipped steps.                   |
 
 ### Project Registry
 
@@ -495,6 +523,12 @@ Automated knowledge quality management.
 | `curator_record_snapshot`       | write | Record a point-in-time vault snapshot.                    |
 | `curator_queue_stats`           | read  | Pending enrichment and deduplication queue sizes.         |
 
+### Self-Heal
+
+| Op                | Auth  | Description                                                                                                  |
+| ----------------- | ----- | ------------------------------------------------------------------------------------------------------------ |
+| `vault_self_heal` | write | Unified vault maintenance: health audit, grooming, dedup, contradiction detection, link backfill. Dry-run by default. |
+
 ## Control
 
 Agent persona, intent routing, operational modes, and governance.
@@ -511,6 +545,13 @@ Agent persona, intent routing, operational modes, and governance.
 | `route_intent`       | read  | Classify user intent (build, fix, review, plan, etc.). |
 | `morph`              | write | Switch operational mode (build-mode, fix-mode, etc.).  |
 | `get_behavior_rules` | read  | Current behavior rules and constraints.                |
+
+### Routing Feedback
+
+| Op                  | Auth  | Description                                                                          |
+| ------------------- | ----- | ------------------------------------------------------------------------------------ |
+| `routing_feedback`  | write | Record whether intent routing was correct. Tracks corrections and confidence scores. |
+| `routing_accuracy`  | read  | Accuracy report: overall accuracy, common misroutes, confidence calibration.         |
 
 ### Governance
 

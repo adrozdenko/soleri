@@ -193,6 +193,62 @@ For vaults under 100K entries, brute-force cosine search completes in approximat
 
 New entries are automatically embedded in batches of 100. Only the title, description, and context fields are embedded (not full entry content). Entries that already have vectors for the active model are skipped.
 
+## Configuring embedding providers
+
+Vector search is optional and off by default. To enable it, you need two things: an `embedding` block in your `agent.yaml`, and the `embedding-enabled` feature flag turned on.
+
+### Supported providers
+
+| Provider | Default model | Dimensions | Default batch size | API key source |
+| -------- | ------------- | ---------- | ------------------ | -------------- |
+| `openai` | `text-embedding-3-small` | 1536 | 2048 | OpenAI key pool (same keys your LLM uses) |
+| `voyage` | `voyage-3.5` | 1024 | 128 | `VOYAGE_API_KEY` env var or explicit `apiKey` |
+
+More providers (like Ollama for local embeddings) can be added, but these two ship today.
+
+### agent.yaml configuration
+
+Add an `embedding` block at the top level of your `agent.yaml`:
+
+```yaml
+embedding:
+  provider: openai
+  model: text-embedding-3-small
+```
+
+Or for Voyage AI:
+
+```yaml
+embedding:
+  provider: voyage
+  model: voyage-3.5
+```
+
+The full set of options:
+
+| Field | Required | Description |
+| ----- | -------- | ----------- |
+| `provider` | Yes | `openai` or `voyage` |
+| `model` | Yes | Model identifier for the provider |
+| `apiKey` | No | Explicit API key (otherwise uses key pool or env var) |
+| `baseUrl` | No | Override the API endpoint (useful for proxies or self-hosted instances) |
+| `batchSize` | No | Max texts per API call (defaults vary by provider) |
+| `inputType` | No | `document` or `query`, relevant for Voyage which optimizes differently for each |
+
+### Environment variables
+
+For OpenAI, the provider uses the same key pool as your LLM calls, so no extra env var is needed if you already have `OPENAI_API_KEY` configured.
+
+For Voyage, set `VOYAGE_API_KEY` in your environment. The provider checks this automatically when no explicit `apiKey` is set in the config.
+
+### How embedding works at runtime
+
+When both the config and feature flag are present, the engine initializes the embedding provider at startup. New vault entries get embedded automatically in batches of 100 (only title, description, and context fields). Entries that already have a vector for the active model are skipped.
+
+If you switch models, old vectors are overwritten via upsert the next time the pipeline runs. If the provider fails to initialize (bad key, network issues), the engine logs a warning and continues without embeddings. The brain's vector weight stays at 0.0, and search falls back to pure FTS5 + TF-IDF scoring.
+
+Both providers handle rate limiting with automatic retry (up to 3 attempts) and key rotation on 429 responses when multiple keys are available in the pool.
+
 ## Result format
 
 ### Full mode
