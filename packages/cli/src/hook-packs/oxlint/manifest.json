@@ -1,0 +1,24 @@
+{
+  "name": "oxlint",
+  "version": "1.0.0",
+  "description": "Run oxlint on edited TS/JS files after every Edit/Write — silent on success, surfaces findings inline",
+  "hooks": [],
+  "scripts": [
+    {
+      "name": "oxlint-on-edit",
+      "file": "oxlint-on-edit.sh",
+      "targetDir": "hooks"
+    }
+  ],
+  "lifecycleHooks": [
+    {
+      "event": "PreToolUse",
+      "matcher": "Edit|Write",
+      "type": "command",
+      "command": "sh ~/.claude/hooks/oxlint-on-edit.sh",
+      "timeout": 5000,
+      "statusMessage": "Linting..."
+    }
+  ],
+  "scaffoldDefault": false
+}
