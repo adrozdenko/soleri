@@ -9,7 +9,9 @@ const os = require('os');
 const flagPath = path.join(os.homedir(), '.soleri', '.terse-active');
 
 let input = '';
-process.stdin.on('data', chunk => { input += chunk; });
+process.stdin.on('data', (chunk) => {
+  input += chunk;
+});
 process.stdin.on('end', () => {
   try {
     const data = JSON.parse(input);
@@ -31,7 +33,9 @@ process.stdin.on('end', () => {
 
     // Detect deactivation
     if (/\b(stop terse|normal mode|verbose)\b/i.test(prompt)) {
-      try { fs.unlinkSync(flagPath); } catch (_e) {}
+      try {
+        fs.unlinkSync(flagPath);
+      } catch (_e) {}
     }
   } catch (_e) {
     // Silent fail

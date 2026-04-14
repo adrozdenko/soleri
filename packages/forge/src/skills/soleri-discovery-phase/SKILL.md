@@ -1,7 +1,7 @@
 ---
 name: soleri-discovery-phase
 tier: default
-description: "Triggers: \"I don't know where to start\", \"investigate\", \"research this\", \"explore the problem\", \"discovery\". Structured exploration before committing to a plan, produces options with tradeoffs."
+description: 'Triggers: "I don''t know where to start", "investigate", "research this", "explore the problem", "discovery". Structured exploration before committing to a plan, produces options with tradeoffs.'
 ---
 
 # Discovery Phase

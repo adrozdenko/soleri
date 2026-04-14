@@ -28,11 +28,11 @@ Compress natural language files (CLAUDE.md, instructions, vault notes) into ters
 
 Read the target file. Classify it:
 
-| Type | Action |
-|------|--------|
-| Natural language (.md, .txt) | Proceed to compress |
-| Code / config | Stop. Tell user: "Skipping — file is code/config, not prose." |
-| Mixed (prose + code blocks) | Compress ONLY prose sections. Code blocks pass through unchanged. |
+| Type                         | Action                                                            |
+| ---------------------------- | ----------------------------------------------------------------- |
+| Natural language (.md, .txt) | Proceed to compress                                               |
+| Code / config                | Stop. Tell user: "Skipping — file is code/config, not prose."     |
+| Mixed (prose + code blocks)  | Compress ONLY prose sections. Code blocks pass through unchanged. |
 
 ### Step 2: Backup
 
@@ -45,6 +45,7 @@ Before any modification, copy the original to `<filename>.original.md`.
 Apply these rules to natural language sections only:
 
 **Remove:**
+
 - Articles: a, an, the
 - Filler: just, really, basically, actually, simply, essentially, generally
 - Pleasantries: "sure", "certainly", "of course", "happy to", "I'd recommend"
@@ -53,6 +54,7 @@ Apply these rules to natural language sections only:
 - Connective fluff: "however", "furthermore", "additionally", "in addition"
 
 **Preserve EXACTLY (never modify):**
+
 - Code blocks (fenced ``` and indented)
 - Inline code (`backtick content`)
 - URLs and links
@@ -65,6 +67,7 @@ Apply these rules to natural language sections only:
 - YAML frontmatter
 
 **Preserve Structure:**
+
 - All markdown headings (keep exact heading text, compress body below)
 - Bullet point hierarchy (keep nesting level)
 - Numbered lists (keep numbering)
@@ -72,6 +75,7 @@ Apply these rules to natural language sections only:
 - HTML comments (markers like `<!-- soleri:xxx -->`)
 
 **Compress:**
+
 - Use short synonyms: "big" not "extensive", "fix" not "implement a solution for"
 - Fragments OK: "Run tests before commit" not "You should always run tests before committing"
 - Drop "you should", "make sure to", "remember to" — just state the action
@@ -82,18 +86,19 @@ Apply these rules to natural language sections only:
 
 After compression, verify:
 
-| Check | How |
-|-------|-----|
-| Heading count | Same number of headings, same text |
-| Code blocks | Byte-identical to original |
-| URLs | All URLs from original present in compressed |
-| File paths | All paths from original present in compressed |
-| Inline code | All backtick content preserved |
-| Bullet count | Within 15% of original (merging allowed) |
+| Check         | How                                           |
+| ------------- | --------------------------------------------- |
+| Heading count | Same number of headings, same text            |
+| Code blocks   | Byte-identical to original                    |
+| URLs          | All URLs from original present in compressed  |
+| File paths    | All paths from original present in compressed |
+| Inline code   | All backtick content preserved                |
+| Bullet count  | Within 15% of original (merging allowed)      |
 
 ### Step 5: Fix or Abort
 
 If validation fails:
+
 1. Identify the specific failure (missing URL, mangled code block, etc.)
 2. Apply a targeted fix — do NOT recompress the entire file
 3. Re-validate
@@ -102,6 +107,7 @@ If validation fails:
 ### Step 6: Report
 
 Tell user:
+
 - Original size vs compressed size (line count or rough percentage)
 - Backup location
 - Any validation warnings (e.g., "3 bullets merged")
@@ -109,21 +115,25 @@ Tell user:
 ## Example
 
 **Original:**
+
 > You should always make sure to run the test suite before pushing any changes to the main branch. This is important because it helps catch bugs early and prevents broken builds from being deployed to production.
 
 **Compressed:**
+
 > Run tests before push to main. Catch bugs early, prevent broken prod deploys.
 
 **Original:**
+
 > The application uses a microservices architecture with the following components. The API gateway handles all incoming requests and routes them to the appropriate service. The authentication service is responsible for managing user sessions and JWT tokens.
 
 **Compressed:**
+
 > Microservices architecture. API gateway route all requests to services. Auth service manage user sessions + JWT tokens.
 
 ## Quick Reference
 
-| Action | Command |
-|--------|---------|
-| Compress a file | `/compress path/to/file.md` |
-| Check backup | Look for `path/to/file.original.md` |
+| Action           | Command                                   |
+| ---------------- | ----------------------------------------- |
+| Compress a file  | `/compress path/to/file.md`               |
+| Check backup     | Look for `path/to/file.original.md`       |
 | Restore original | Copy `.original.md` back to original path |

@@ -1,7 +1,7 @@
 ---
 name: soleri-research-scout
 tier: default
-description: "Triggers: \"scout\", \"research scout\", \"find new info\", \"what's new\", \"scan the web\". Discovers new info that challenges or updates vault knowledge via web search."
+description: 'Triggers: "scout", "research scout", "find new info", "what''s new", "scan the web". Discovers new info that challenges or updates vault knowledge via web search.'
 ---
 
 # /research-scout — Knowledge Discovery via Vault Branching

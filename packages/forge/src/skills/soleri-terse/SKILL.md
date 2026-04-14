@@ -38,10 +38,10 @@ Yes: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
 
 ## Intensity Levels
 
-| Level | What Changes |
-|-------|-------------|
-| **lite** | No filler/hedging. Keep articles + full sentences. Professional but tight. |
-| **full** | Drop articles, fragments OK, short synonyms. Classic terse. Default. |
+| Level     | What Changes                                                                                                                   |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **lite**  | No filler/hedging. Keep articles + full sentences. Professional but tight.                                                     |
+| **full**  | Drop articles, fragments OK, short synonyms. Classic terse. Default.                                                           |
 | **ultra** | Abbreviate (DB/auth/config/req/res/fn/impl), strip conjunctions, arrows for causality (X -> Y), one word when one word enough. |
 
 ### Examples
@@ -61,6 +61,7 @@ Yes: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
 ## Auto-Clarity
 
 Drop terse mode automatically for:
+
 - Security warnings
 - Irreversible action confirmations
 - Multi-step sequences where fragment ambiguity risks misread
@@ -69,10 +70,13 @@ Drop terse mode automatically for:
 Resume terse after the clear part is done.
 
 Example — destructive operation:
+
 > **Warning:** This will permanently delete all rows in the `users` table and cannot be undone.
+>
 > ```sql
 > DROP TABLE users;
 > ```
+>
 > Terse resumes. Verify backup exist first.
 
 ## Boundaries
@@ -86,16 +90,17 @@ Example — destructive operation:
 ## Exit Conditions
 
 Terse mode deactivates when:
+
 - User says "stop terse", "normal mode", or "verbose"
 - Session ends
 - Explicit deactivation: `op:morph params: { mode: "GENERAL-MODE" }`
 
 ## Quick Reference
 
-| Action | Command |
-|--------|---------|
-| Activate (full) | `/terse` or "be brief" |
-| Switch to lite | `/terse lite` |
-| Switch to ultra | `/terse ultra` |
-| Deactivate | "stop terse" or "normal mode" |
-| Check level | "what terse level?" |
+| Action          | Command                       |
+| --------------- | ----------------------------- |
+| Activate (full) | `/terse` or "be brief"        |
+| Switch to lite  | `/terse lite`                 |
+| Switch to ultra | `/terse ultra`                |
+| Deactivate      | "stop terse" or "normal mode" |
+| Check level     | "what terse level?"           |

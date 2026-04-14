@@ -1,7 +1,7 @@
 ---
 name: soleri-brainstorming
 tier: default
-description: "Triggers: \"I want to build something\", \"let's think about\", \"what if we\", \"creative exploration\", \"ideate\". Open-ended creative exploration when requirements are not yet clear."
+description: 'Triggers: "I want to build something", "let''s think about", "what if we", "creative exploration", "ideate". Open-ended creative exploration when requirements are not yet clear.'
 ---
 
 # Brainstorming Ideas Into Designs
