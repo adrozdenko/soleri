@@ -66,7 +66,8 @@ export type IntentType =
   | 'plan'
   | 'review'
   | 'general'
-  | 'yolo';
+  | 'yolo'
+  | 'terse';
 
 export type OperationalMode =
   | 'BUILD-MODE'
@@ -79,7 +80,8 @@ export type OperationalMode =
   | 'PLAN-MODE'
   | 'REVIEW-MODE'
   | 'GENERAL-MODE'
-  | 'YOLO-MODE';
+  | 'YOLO-MODE'
+  | 'TERSE-MODE';
 
 export interface IntentClassification {
   intent: IntentType;

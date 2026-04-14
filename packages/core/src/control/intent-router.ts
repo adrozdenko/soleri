@@ -154,6 +154,31 @@ const DEFAULT_MODES: ModeConfig[] = [
       'full-auto',
     ],
   },
+  {
+    mode: 'TERSE-MODE',
+    intent: 'terse',
+    description:
+      'Token-efficient responses — drop filler, fragments OK, technical accuracy preserved',
+    behaviorRules: [
+      'Drop articles, filler, pleasantries, hedging in all prose responses',
+      'Fragments OK — pattern: [thing] [action] [reason]. [next step].',
+      'Technical terms exact, code blocks unchanged, errors quoted exact',
+      'Auto-clarity: drop terse for security warnings, irreversible actions, confused users',
+      'Code, commits, PRs, vault captures written in normal prose — terse is for conversation',
+      'Three levels: lite (professional tight), full (classic terse), ultra (abbreviations + arrows)',
+      'User exits with "stop terse", "normal mode", or session end',
+    ],
+    keywords: [
+      'terse',
+      'brief',
+      'caveman',
+      'less-tokens',
+      'fewer-tokens',
+      'compress-output',
+      'token-efficient',
+      'concise',
+    ],
+  },
 ];
 
 // ─── Class ──────────────────────────────────────────────────────────

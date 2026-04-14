@@ -1,0 +1,41 @@
+{
+  "name": "terse-auto",
+  "version": "1.0.0",
+  "description": "Auto-activate terse mode on every session start — token-efficient responses with statusline badge",
+  "hooks": [],
+  "scripts": [
+    {
+      "name": "terse-activate",
+      "file": "terse-activate.js",
+      "targetDir": "hooks"
+    },
+    {
+      "name": "terse-mode-tracker",
+      "file": "terse-mode-tracker.js",
+      "targetDir": "hooks"
+    },
+    {
+      "name": "terse-statusline",
+      "file": "terse-statusline.sh",
+      "targetDir": "hooks"
+    }
+  ],
+  "lifecycleHooks": [
+    {
+      "event": "SessionStart",
+      "matcher": "",
+      "type": "command",
+      "command": "node ~/.claude/hooks/terse-activate.js",
+      "timeout": 5,
+      "statusMessage": "Activating terse mode..."
+    },
+    {
+      "event": "UserPromptSubmit",
+      "matcher": "",
+      "type": "command",
+      "command": "node ~/.claude/hooks/terse-mode-tracker.js",
+      "timeout": 5,
+      "statusMessage": ""
+    }
+  ]
+}

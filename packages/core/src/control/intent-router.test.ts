@@ -33,9 +33,9 @@ describe('IntentRouter', () => {
   // ─── Construction ──────────────────────────────────────────────
 
   describe('construction', () => {
-    it('seeds 10 default modes on first creation', () => {
+    it('seeds 12 default modes on first creation', () => {
       const modes = router.getModes();
-      expect(modes.length).toBe(11);
+      expect(modes.length).toBe(12);
     });
 
     it('starts in GENERAL-MODE', () => {
@@ -44,7 +44,7 @@ describe('IntentRouter', () => {
 
     it('is idempotent — second instance does not duplicate modes', () => {
       const router2 = new IntentRouter(vault);
-      expect(router2.getModes().length).toBe(11);
+      expect(router2.getModes().length).toBe(12);
     });
   });
 
@@ -219,7 +219,7 @@ describe('IntentRouter', () => {
     it('adds a new mode to the database', () => {
       router.registerMode(customMode);
       const modes = router.getModes();
-      expect(modes.length).toBe(12);
+      expect(modes.length).toBe(13);
       const found = modes.find((m) => m.mode === 'CUSTOM-MODE');
       expect(found).toBeDefined();
       expect(found!.keywords).toEqual(['custom', 'special']);
