@@ -25,7 +25,7 @@ import { seedDefaultPlaybooks } from '../../playbooks/playbook-seeder.js';
 import { agentVaultPath } from '../../paths.js';
 import { checkForUpdate } from '../../update-check.js';
 import { syncSkillsToClaudeCode } from '../../skills/sync-skills.js';
-import { isAgentProjectDir } from './agent-project.js';
+import { isAgentProjectDir, sameAgentYaml } from './agent-project.js';
 import type { AgentIdentityConfig } from '../core-ops.js';
 
 // ─── Parse CLI args ───────────────────────────────────────────────────
@@ -197,13 +197,19 @@ async function main(): Promise<void> {
   );
 
   // 6b. Auto-sync skills to project-local .claude/skills/
-  // Only sync when cwd is an actual agent project (marker: agent.yaml at cwd).
-  // In user projects (e.g. unrelated repos), global skills at ~/.claude/skills/
-  // already provide discovery — project-local sync would pollute the cwd.
+  // Only sync when cwd is the same agent project this engine was launched for.
+  // Two gates:
+  //   1. cwd must contain agent.yaml (it's an agent project)
+  //   2. cwd's agent.yaml must resolve to the same path as --agent
+  // Otherwise the engine could write skills from agent A into agent B's checkout,
+  // or into an unrelated user project. Global skills at ~/.claude/skills/ cover
+  // discovery in all other cases.
   const skillsDir = join(agentDir, 'skills');
   const cwd = process.cwd();
+  const cwdAgentYamlPath = join(cwd, 'agent.yaml');
   const isAgentProject = isAgentProjectDir(cwd);
-  if (existsSync(skillsDir) && isAgentProject) {
+  const sameProject = isAgentProject && sameAgentYaml(agentYamlPath, cwdAgentYamlPath);
+  if (existsSync(skillsDir) && sameProject) {
     const syncResult = syncSkillsToClaudeCode([skillsDir], config.name as string, {
       projectRoot: cwd,
     });
@@ -219,6 +225,10 @@ async function main(): Promise<void> {
     if (syncResult.cleanedGlobal.length) {
       console.error(`${tag} Cleaned ${syncResult.cleanedGlobal.length} stale global skill(s)`);
     }
+  } else if (existsSync(skillsDir) && isAgentProject && !sameProject) {
+    console.error(
+      `${tag} Skills sync skipped: cwd agent.yaml (${cwdAgentYamlPath}) does not match --agent (${agentYamlPath}). Global skills at ~/.claude/skills/ remain active.`,
+    );
   } else if (existsSync(skillsDir) && !isAgentProject) {
     console.error(
       `${tag} Skills sync skipped: cwd is not an agent project (no agent.yaml at ${cwd}). Global skills at ~/.claude/skills/ remain active.`,

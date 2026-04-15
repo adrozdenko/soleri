@@ -3,11 +3,11 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { validateAgentConfig } from './validate-agent-config.js';
-import { isAgentProjectDir } from './agent-project.js';
+import { isAgentProjectDir, sameAgentYaml } from './agent-project.js';
 
 describe('validateAgentConfig', () => {
   const yamlPath = '/fake/agent.yaml';
@@ -85,5 +85,25 @@ describe('isAgentProjectDir', () => {
 
   it('returns false for non-existent paths', () => {
     expect(isAgentProjectDir(join(dir, 'does-not-exist'))).toBe(false);
+  });
+
+  it('returns false when agent.yaml is a directory, not a file', () => {
+    // existsSync() would return true for a directory — statSync().isFile() guards this.
+    mkdirSync(join(dir, 'agent.yaml'));
+    expect(isAgentProjectDir(dir)).toBe(false);
+  });
+});
+
+describe('sameAgentYaml', () => {
+  it('returns true for identical absolute paths', () => {
+    expect(sameAgentYaml('/a/b/agent.yaml', '/a/b/agent.yaml')).toBe(true);
+  });
+
+  it('returns true after normalizing relative segments', () => {
+    expect(sameAgentYaml('/a/b/../b/agent.yaml', '/a/b/agent.yaml')).toBe(true);
+  });
+
+  it('returns false for different files', () => {
+    expect(sameAgentYaml('/a/b/agent.yaml', '/x/y/agent.yaml')).toBe(false);
   });
 });
