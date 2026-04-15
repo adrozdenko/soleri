@@ -1,0 +1,37 @@
+{
+  "name": "worktree-cleanup",
+  "version": "1.0.0",
+  "description": "Auto-cleans stale worktree directories on session start and orphaned worktree-agent-* branches after subagent completion",
+  "hooks": [],
+  "scripts": [
+    {
+      "name": "clean-worktrees",
+      "file": "clean-worktrees.sh",
+      "targetDir": "hooks"
+    },
+    {
+      "name": "clean-worktree-branches",
+      "file": "clean-worktree-branches.sh",
+      "targetDir": "hooks"
+    }
+  ],
+  "lifecycleHooks": [
+    {
+      "event": "SessionStart",
+      "matcher": "",
+      "type": "command",
+      "command": "sh ~/.claude/hooks/clean-worktrees.sh",
+      "timeout": 10000,
+      "statusMessage": "Cleaning stale worktrees..."
+    },
+    {
+      "event": "PostToolUse",
+      "matcher": "Agent",
+      "type": "command",
+      "command": "sh ~/.claude/hooks/clean-worktree-branches.sh",
+      "timeout": 10000,
+      "statusMessage": "Cleaning orphaned worktree branches..."
+    }
+  ],
+  "scaffoldDefault": true
+}
