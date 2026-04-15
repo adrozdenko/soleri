@@ -7,7 +7,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { validateAgentConfig } from './validate-agent-config.js';
-import { isAgentProjectDir } from './soleri-engine.js';
+import { isAgentProjectDir } from './agent-project.js';
 
 describe('validateAgentConfig', () => {
   const yamlPath = '/fake/agent.yaml';
