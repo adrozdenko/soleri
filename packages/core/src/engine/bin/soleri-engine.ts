@@ -27,6 +27,14 @@ import { checkForUpdate } from '../../update-check.js';
 import { syncSkillsToClaudeCode } from '../../skills/sync-skills.js';
 import type { AgentIdentityConfig } from '../core-ops.js';
 
+/**
+ * Check whether a directory is an agent project (contains agent.yaml).
+ * Used to gate project-local skill sync so unrelated cwd's don't get polluted.
+ */
+export function isAgentProjectDir(dir: string): boolean {
+  return existsSync(join(dir, 'agent.yaml'));
+}
+
 // ─── Parse CLI args ───────────────────────────────────────────────────
 
 function parseArgs(): { agentYamlPath: string } {
@@ -196,10 +204,15 @@ async function main(): Promise<void> {
   );
 
   // 6b. Auto-sync skills to project-local .claude/skills/
+  // Only sync when cwd is an actual agent project (marker: agent.yaml at cwd).
+  // In user projects (e.g. unrelated repos), global skills at ~/.claude/skills/
+  // already provide discovery — project-local sync would pollute the cwd.
   const skillsDir = join(agentDir, 'skills');
-  if (existsSync(skillsDir)) {
+  const cwd = process.cwd();
+  const isAgentProject = isAgentProjectDir(cwd);
+  if (existsSync(skillsDir) && isAgentProject) {
     const syncResult = syncSkillsToClaudeCode([skillsDir], config.name as string, {
-      projectRoot: process.cwd(),
+      projectRoot: cwd,
     });
     const total = syncResult.installed.length + syncResult.updated.length;
     if (total > 0) {
@@ -213,6 +226,10 @@ async function main(): Promise<void> {
     if (syncResult.cleanedGlobal.length) {
       console.error(`${tag} Cleaned ${syncResult.cleanedGlobal.length} stale global skill(s)`);
     }
+  } else if (existsSync(skillsDir) && !isAgentProject) {
+    console.error(
+      `${tag} Skills sync skipped: cwd is not an agent project (no agent.yaml at ${cwd}). Global skills at ~/.claude/skills/ remain active.`,
+    );
   }
 
   // 7. Load domain packs
