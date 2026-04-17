@@ -692,9 +692,18 @@ export class Planner {
     };
   }
 
-  grade(planId: string): PlanCheck {
+  grade(planId: string, runtimeOptions?: GapAnalysisOptions): PlanCheck {
     const plan = this.requirePlan(planId);
-    const gaps = runGapAnalysis(plan, this.gapOptions);
+    // Merge constructor options with runtime overrides (e.g. vault constraints)
+    const mergedOptions: GapAnalysisOptions = {
+      ...this.gapOptions,
+      ...runtimeOptions,
+      customPasses: [
+        ...(this.gapOptions?.customPasses ?? []),
+        ...(runtimeOptions?.customPasses ?? []),
+      ],
+    };
+    const gaps = runGapAnalysis(plan, mergedOptions);
     if (hasCircularDependencies(plan.tasks)) {
       gaps.push({
         id: `gap_${Date.now()}_circ`,
