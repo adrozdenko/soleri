@@ -9,8 +9,8 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
-import type { ConstraintDefinition, CompositionRule } from '../planning/planner-types.js';
 import type { GapAnalysisOptions } from '../planning/gap-analysis.js';
+import { loadVaultConstraints } from '../planning/vault-constraints.js';
 
 const planGradeSchema = z.enum(['A+', 'A', 'B', 'C', 'D', 'F']);
 
@@ -35,54 +35,9 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
         // Fetch vault constraints for grading (graceful degradation)
         const runtimeOptions: GapAnalysisOptions = {};
         if (runtime.vault) {
-          try {
-            const results = runtime.vault.search('domain:constraint', { limit: 50 });
-            const constraints: ConstraintDefinition[] = [];
-            const compositionRules: CompositionRule[] = [];
-
-            for (const r of results) {
-              const entry = r.entry;
-              if (entry.tags?.includes('composition-rule') && entry.example) {
-                // Composition rules: expect example field to have trigger/requires JSON
-                try {
-                  const parsed = JSON.parse(entry.example);
-                  if (parsed.trigger && Array.isArray(parsed.requires)) {
-                    compositionRules.push({
-                      trigger: parsed.trigger,
-                      requires: parsed.requires,
-                      severity: (entry.severity === 'critical'
-                        ? 'critical'
-                        : entry.severity === 'warning'
-                          ? 'major'
-                          : 'minor') as 'critical' | 'major' | 'minor',
-                      description: entry.description,
-                    });
-                  }
-                } catch {
-                  // Skip malformed composition rules
-                }
-              } else if (entry.type === 'anti-pattern' || entry.type === 'rule') {
-                // Constraint definitions: use title as pattern
-                constraints.push({
-                  id: entry.id,
-                  name: entry.title ?? entry.id,
-                  severity: (entry.severity === 'critical'
-                    ? 'critical'
-                    : entry.severity === 'warning'
-                      ? 'major'
-                      : 'minor') as 'critical' | 'major' | 'minor',
-                  pattern: entry.title ?? '',
-                  description: entry.description ?? '',
-                  domain: entry.domain,
-                });
-              }
-            }
-
-            if (constraints.length > 0) runtimeOptions.constraints = constraints;
-            if (compositionRules.length > 0) runtimeOptions.compositionRules = compositionRules;
-          } catch {
-            // Vault unavailable — proceed without constraints
-          }
+          const { constraints, compositionRules } = loadVaultConstraints(runtime.vault);
+          if (constraints.length > 0) runtimeOptions.constraints = constraints;
+          if (compositionRules.length > 0) runtimeOptions.compositionRules = compositionRules;
         }
 
         return planner.grade(planId, runtimeOptions);

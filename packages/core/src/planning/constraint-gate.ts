@@ -11,6 +11,7 @@ import type {
   ConstraintResult,
   ConstraintAuditEntry,
 } from './planner-types.js';
+import { MAX_CONSTRAINT_PATTERN_LENGTH } from './planner-types.js';
 
 /**
  * Error thrown when a critical constraint blocks task execution.
@@ -44,31 +45,42 @@ export function evaluateTaskConstraints(
   if (!constraints || constraints.length === 0) return [];
 
   const results: ConstraintResult[] = [];
-  const taskText = `${task.title} ${task.description}`.toLowerCase();
+  const taskText = `${task.title} ${task.description}`;
 
   for (const constraint of constraints) {
+    // ReDoS guard: skip overly long patterns
+    if (constraint.pattern.length > MAX_CONSTRAINT_PATTERN_LENGTH) {
+      results.push({
+        constraintId: constraint.id,
+        passed: constraint.severity !== 'critical',
+        severity: constraint.severity,
+        message: `Skipped: pattern exceeds ${MAX_CONSTRAINT_PATTERN_LENGTH} chars`,
+      });
+      continue;
+    }
+
     let regex: RegExp;
     try {
       regex = new RegExp(constraint.pattern, 'i');
     } catch {
-      // Skip malformed patterns
+      // Malformed critical patterns fail loudly; others skip
       results.push({
         constraintId: constraint.id,
-        passed: true,
+        passed: constraint.severity !== 'critical',
         severity: constraint.severity,
         message: `Skipped: malformed pattern "${constraint.pattern}"`,
       });
       continue;
     }
 
-    const match = regex.test(taskText);
-    if (match) {
+    const m = regex.exec(taskText);
+    if (m) {
       const result: ConstraintResult = {
         constraintId: constraint.id,
         passed: false,
         severity: constraint.severity,
         message: `Constraint "${constraint.name}" violated: ${constraint.description}`,
-        evidence: taskText.substring(0, 200),
+        evidence: m[0].slice(0, 200),
       };
       results.push(result);
 
@@ -101,14 +113,13 @@ export function appendConstraintAudit(plan: Plan, entries: ConstraintAuditEntry[
   if (!entries || entries.length === 0) return;
   if (!plan.constraintAudit) plan.constraintAudit = [];
 
+  const seen = new Set(
+    plan.constraintAudit.map((e) => `${e.constraintId}|${e.taskId ?? ''}|${e.timestamp}`),
+  );
   for (const entry of entries) {
-    const isDuplicate = plan.constraintAudit.some(
-      (existing) =>
-        existing.constraintId === entry.constraintId &&
-        existing.taskId === entry.taskId &&
-        existing.timestamp === entry.timestamp,
-    );
-    if (!isDuplicate) {
+    const key = `${entry.constraintId}|${entry.taskId ?? ''}|${entry.timestamp}`;
+    if (!seen.has(key)) {
+      seen.add(key);
       plan.constraintAudit.push(entry);
     }
   }

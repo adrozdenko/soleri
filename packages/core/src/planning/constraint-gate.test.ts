@@ -250,12 +250,20 @@ describe('evaluateTaskConstraints', () => {
     expect(failed?.evidence).toBeDefined();
   });
 
-  it('skips malformed regex and marks as passed', () => {
-    const constraint = makeConstraint({ pattern: '[bad' });
-    const results = evaluateTaskConstraints(makeTask(), [constraint]);
-    expect(results).toHaveLength(1);
-    expect(results[0].passed).toBe(true);
-    expect(results[0].message).toContain('Skipped');
+  it('skips malformed regex — critical fails, non-critical passes', () => {
+    // Critical malformed pattern fails loudly
+    const critical = makeConstraint({ pattern: '[bad', severity: 'critical' });
+    const critResults = evaluateTaskConstraints(makeTask(), [critical]);
+    expect(critResults).toHaveLength(1);
+    expect(critResults[0].passed).toBe(false);
+    expect(critResults[0].message).toContain('Skipped');
+
+    // Minor malformed pattern passes silently
+    const minor = makeConstraint({ pattern: '[bad', severity: 'minor' });
+    const minorResults = evaluateTaskConstraints(makeTask(), [minor]);
+    expect(minorResults).toHaveLength(1);
+    expect(minorResults[0].passed).toBe(true);
+    expect(minorResults[0].message).toContain('Skipped');
   });
 });
 

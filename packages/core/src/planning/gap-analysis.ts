@@ -20,6 +20,7 @@
  */
 
 import type { Plan, ConstraintDefinition, CompositionRule } from './planner-types.js';
+import { MAX_CONSTRAINT_PATTERN_LENGTH } from './planner-types.js';
 import type { PlanGap, GapSeverity } from './gap-types.js';
 
 // ─── Pass imports ────────────────────────────────────────────────
@@ -300,6 +301,9 @@ export function createConstraintPass(constraints?: ConstraintDefinition[]): GapA
     }
 
     for (const constraint of constraints) {
+      // ReDoS guard: skip overly long patterns
+      if (constraint.pattern.length > MAX_CONSTRAINT_PATTERN_LENGTH) continue;
+
       let regex: RegExp;
       try {
         regex = new RegExp(constraint.pattern, 'i');
@@ -347,6 +351,8 @@ export function validateCompositionRules(
   const taskTexts = tasks.map((t) => `${t.title} ${t.description}`.toLowerCase());
 
   for (const rule of rules) {
+    if (rule.trigger.length > MAX_CONSTRAINT_PATTERN_LENGTH) continue;
+
     let triggerRegex: RegExp;
     try {
       triggerRegex = new RegExp(rule.trigger, 'i');
@@ -355,11 +361,18 @@ export function validateCompositionRules(
     }
 
     // Does any task match the trigger?
-    const triggerMatches = taskTexts.some((text) => triggerRegex.test(text));
-    if (!triggerMatches) continue;
+    const triggerMatchIndices = new Set<number>();
+    taskTexts.forEach((text, i) => {
+      if (triggerRegex.test(text)) triggerMatchIndices.add(i);
+    });
+    if (triggerMatchIndices.size === 0) continue;
 
-    // Check that all required companion tasks exist
+    // Check that all required companion tasks exist.
+    // A companion must be a *separate* task from the trigger — a single task
+    // satisfying both trigger and required does not count.
     for (const required of rule.requires) {
+      if (required.length > MAX_CONSTRAINT_PATTERN_LENGTH) continue;
+
       let requiredRegex: RegExp;
       try {
         requiredRegex = new RegExp(required, 'i');
@@ -367,7 +380,9 @@ export function validateCompositionRules(
         continue;
       }
 
-      const companionExists = taskTexts.some((text) => requiredRegex.test(text));
+      const companionExists = taskTexts.some(
+        (text, i) => requiredRegex.test(text) && !triggerMatchIndices.has(i),
+      );
       if (!companionExists) {
         gaps.push(
           gap(

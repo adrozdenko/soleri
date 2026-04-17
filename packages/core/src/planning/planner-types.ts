@@ -224,6 +224,12 @@ export interface PlanStore {
 
 // ─── Constraint-Aware Planning Types ────────────────────────────
 
+/** Shared severity for all constraint types. */
+export type ConstraintSeverity = 'critical' | 'major' | 'minor';
+
+/** Maximum regex pattern length accepted. Longer patterns are skipped to prevent ReDoS. */
+export const MAX_CONSTRAINT_PATTERN_LENGTH = 512;
+
 /**
  * A constraint definition sourced from vault entries with domain:constraint.
  * Evaluated during plan grading to block plans that match anti-patterns.
@@ -234,7 +240,7 @@ export interface ConstraintDefinition {
   /** Human-readable constraint name. */
   name: string;
   /** How severe a violation is — maps to existing gap severity weights. */
-  severity: 'critical' | 'major' | 'minor';
+  severity: ConstraintSeverity;
   /** Regex pattern to match against plan text fields. */
   pattern: string;
   /** What this constraint prevents. */
@@ -249,7 +255,7 @@ export interface ConstraintDefinition {
 export interface ConstraintResult {
   constraintId: string;
   passed: boolean;
-  severity: 'critical' | 'major' | 'minor';
+  severity: ConstraintSeverity;
   message: string;
   /** What text matched the constraint pattern. */
   evidence?: string;
@@ -263,7 +269,7 @@ export interface ConstraintAuditEntry {
   /** Which task was being evaluated, if task-level. Undefined for plan-level. */
   taskId?: string;
   result: 'pass' | 'fail' | 'skip';
-  severity: 'critical' | 'major' | 'minor';
+  severity: ConstraintSeverity;
   message: string;
   timestamp: number;
   /** Where the constraint came from. */
@@ -280,7 +286,7 @@ export interface CompositionRule {
   /** Task title patterns that must exist when trigger matches. */
   requires: string[];
   /** How severe a missing companion is. */
-  severity: 'critical' | 'major' | 'minor';
+  severity: ConstraintSeverity;
   /** Human-readable description of the rule. */
   description?: string;
 }

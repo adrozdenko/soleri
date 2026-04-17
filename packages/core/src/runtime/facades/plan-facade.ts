@@ -16,7 +16,8 @@ import {
   TaskConstraintError,
   appendConstraintAudit,
 } from '../../planning/constraint-gate.js';
-import type { ConstraintDefinition, ConstraintAuditEntry } from '../../planning/planner-types.js';
+import type { ConstraintAuditEntry } from '../../planning/planner-types.js';
+import { loadVaultConstraints } from '../../planning/vault-constraints.js';
 
 export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { planner, vault } = runtime;
@@ -226,73 +227,53 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
 
         // Pre-execution gate: check vault constraints before task starts
         if (targetStatus === 'in_progress' && vault) {
-          try {
+          const { constraints } = loadVaultConstraints(vault);
+
+          if (constraints.length > 0) {
             const currentPlan = planner.get(params.planId as string);
             const task = currentPlan?.tasks.find((t) => t.id === (params.taskId as string));
-            if (task) {
-              const results = vault.search('domain:constraint', { limit: 50 });
-              const constraints: ConstraintDefinition[] = results
-                .filter((r) => r.entry.type === 'anti-pattern' || r.entry.type === 'rule')
-                .map((r) => ({
-                  id: r.entry.id,
-                  name: r.entry.title ?? r.entry.id,
-                  severity: (r.entry.severity === 'critical'
-                    ? 'critical'
-                    : r.entry.severity === 'warning'
-                      ? 'major'
-                      : 'minor') as 'critical' | 'major' | 'minor',
-                  pattern: r.entry.title ?? '',
-                  description: r.entry.description ?? '',
-                  domain: r.entry.domain,
-                }));
 
-              if (constraints.length > 0) {
-                try {
-                  const constraintResults = evaluateTaskConstraints(task, constraints);
-                  // Record audit entries on plan via dedup helper
-                  const auditEntries: ConstraintAuditEntry[] = constraintResults.map((cr) => ({
-                    constraintId: cr.constraintId,
-                    taskId: task.id,
-                    result: cr.passed ? ('pass' as const) : ('fail' as const),
-                    severity: cr.severity,
-                    message: cr.message,
-                    timestamp: Date.now(),
-                    source: 'vault' as const,
-                  }));
-                  if (currentPlan) {
-                    appendConstraintAudit(currentPlan, auditEntries);
-                  }
-                } catch (err) {
-                  if (err instanceof TaskConstraintError) {
-                    // Record the blocking failure in audit
-                    if (currentPlan) {
-                      appendConstraintAudit(currentPlan, [
-                        {
-                          constraintId: err.constraintId,
-                          taskId: err.taskId,
-                          result: 'fail',
-                          severity: 'critical',
-                          message: err.message,
-                          timestamp: Date.now(),
-                          source: 'vault',
-                        },
-                      ]);
-                    }
-                    return {
-                      updated: false,
-                      blocked: true,
-                      reason: 'task constraint violation',
-                      error: err.message,
+            if (task && currentPlan) {
+              try {
+                const constraintResults = evaluateTaskConstraints(task, constraints);
+                const auditEntries: ConstraintAuditEntry[] = constraintResults.map((cr) => ({
+                  constraintId: cr.constraintId,
+                  taskId: task.id,
+                  result: cr.passed ? ('pass' as const) : ('fail' as const),
+                  severity: cr.severity,
+                  message: cr.message,
+                  timestamp: Date.now(),
+                  source: 'vault' as const,
+                }));
+                appendConstraintAudit(currentPlan, auditEntries);
+                planner.patchPlan(currentPlan.id, { constraintAudit: currentPlan.constraintAudit });
+              } catch (err) {
+                if (err instanceof TaskConstraintError) {
+                  appendConstraintAudit(currentPlan, [
+                    {
                       constraintId: err.constraintId,
-                    };
-                  }
-                  throw err;
+                      taskId: err.taskId,
+                      result: 'fail',
+                      severity: 'critical',
+                      message: err.message,
+                      timestamp: Date.now(),
+                      source: 'vault',
+                    },
+                  ]);
+                  planner.patchPlan(currentPlan.id, {
+                    constraintAudit: currentPlan.constraintAudit,
+                  });
+                  return {
+                    updated: false,
+                    blocked: true,
+                    reason: 'task constraint violation',
+                    error: err.message,
+                    constraintId: err.constraintId,
+                  };
                 }
+                throw err;
               }
             }
-          } catch (err) {
-            // Vault unavailable — skip constraint check, proceed normally
-            if (err instanceof TaskConstraintError) throw err;
           }
         }
 

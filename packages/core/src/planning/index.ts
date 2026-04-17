@@ -58,6 +58,9 @@ export {
   TaskConstraintError,
   appendConstraintAudit,
 } from './constraint-gate.js';
+export { loadVaultConstraints } from './vault-constraints.js';
+export type { ConstraintSeverity } from './planner-types.js';
+export { MAX_CONSTRAINT_PATTERN_LENGTH } from './planner-types.js';
 export { GoalAncestry, JsonGoalRepository, generateGoalId } from './goal-ancestry.js';
 export type { GoalLevel, GoalStatus, Goal, GoalStore, GoalRepository } from './goal-ancestry.js';
 export { assessTaskComplexity } from './task-complexity-assessor.js';

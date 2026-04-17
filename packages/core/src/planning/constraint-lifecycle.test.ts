@@ -214,8 +214,8 @@ describe('Constraint Lifecycle E2E', () => {
         source: 'vault' as const,
       })),
     );
-    // New timestamps mean new entries — but re-adding with SAME timestamp should dedup
-    // (tested in unit tests, just verifying integration here)
+    // Different timestamp = new entry. Same-(constraintId, taskId, timestamp) dedup
+    // is covered in constraint-gate.test.ts.
     expect(auditPlan.constraintAudit!.length).toBeGreaterThan(sizeBefore);
   });
 

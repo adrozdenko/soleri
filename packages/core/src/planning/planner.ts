@@ -694,7 +694,9 @@ export class Planner {
 
   grade(planId: string, runtimeOptions?: GapAnalysisOptions): PlanCheck {
     const plan = this.requirePlan(planId);
-    // Merge constructor options with runtime overrides (e.g. vault constraints)
+    // Merge constructor options with runtime overrides (e.g. vault constraints).
+    // customPasses concatenate (both sources apply). constraints/compositionRules
+    // use runtime values when present (vault wins over constructor defaults).
     const mergedOptions: GapAnalysisOptions = {
       ...this.gapOptions,
       ...runtimeOptions,
