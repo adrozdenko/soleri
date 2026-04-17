@@ -19,7 +19,8 @@
  *   - createAntiPatternPass      — detects content anti-patterns and vague criteria
  */
 
-import type { Plan } from './planner-types.js';
+import type { Plan, ConstraintDefinition, CompositionRule } from './planner-types.js';
+import { MAX_CONSTRAINT_PATTERN_LENGTH } from './planner-types.js';
 import type { PlanGap, GapSeverity } from './gap-types.js';
 
 // ─── Pass imports ────────────────────────────────────────────────
@@ -47,6 +48,10 @@ export type GapAnalysisPass = (plan: Plan) => PlanGap[];
 export interface GapAnalysisOptions {
   /** Custom gap analysis passes appended after the 8 built-in passes. */
   customPasses?: GapAnalysisPass[];
+  /** Vault-sourced constraint definitions evaluated during grading. */
+  constraints?: ConstraintDefinition[];
+  /** Vault-sourced composition rules requiring companion tasks. */
+  compositionRules?: CompositionRule[];
 }
 
 // ─── Opt-In Pass Factories ──────────────────────────────────────
@@ -267,6 +272,135 @@ export function createAntiPatternPass(
   };
 }
 
+// ─── Constraint Pass Factories ──────────────────────────────────
+
+/**
+ * Factory: constraint validation pass.
+ * Checks plan text fields against vault-sourced constraint patterns.
+ * Returns gaps with category 'constraint' matching the constraint's severity.
+ *
+ * @param constraints - Constraint definitions from vault (domain:constraint entries)
+ */
+export function createConstraintPass(constraints?: ConstraintDefinition[]): GapAnalysisPass {
+  return (plan: Plan) => {
+    const gaps: PlanGap[] = [];
+    if (!constraints || constraints.length === 0) return gaps;
+
+    // Collect plan text fields to check
+    const fields: Array<{ name: string; text: string }> = [
+      { name: 'objective', text: plan.objective || '' },
+      { name: 'scope', text: plan.scope || '' },
+      { name: 'approach', text: plan.approach || '' },
+    ];
+    for (let i = 0; i < plan.tasks.length; i++) {
+      const t = plan.tasks[i];
+      fields.push({
+        name: `tasks[${i}]`,
+        text: `${t.title} ${t.description}`,
+      });
+    }
+
+    for (const constraint of constraints) {
+      // ReDoS guard: skip overly long patterns
+      if (constraint.pattern.length > MAX_CONSTRAINT_PATTERN_LENGTH) continue;
+
+      let regex: RegExp;
+      try {
+        regex = new RegExp(constraint.pattern, 'i');
+      } catch {
+        // Skip malformed patterns
+        continue;
+      }
+
+      for (const field of fields) {
+        if (regex.test(field.text)) {
+          gaps.push(
+            gap(
+              constraint.severity,
+              'constraint',
+              `Constraint "${constraint.name}" violated in ${field.name}: ${constraint.description}`,
+              `Address the constraint or remove the violating content.`,
+              field.name,
+              `constraint:${constraint.id}`,
+            ),
+          );
+          // One gap per constraint — don't flag every field
+          break;
+        }
+      }
+    }
+
+    return gaps;
+  };
+}
+
+/**
+ * Validate composition rules against plan tasks.
+ * Returns gaps when a task matches a trigger but required companion tasks are missing.
+ *
+ * @param rules - Composition rules from vault (entries tagged 'composition-rule')
+ * @param tasks - Plan tasks to validate
+ */
+export function validateCompositionRules(
+  rules?: CompositionRule[],
+  tasks?: Plan['tasks'],
+): PlanGap[] {
+  const gaps: PlanGap[] = [];
+  if (!rules || rules.length === 0 || !tasks || tasks.length === 0) return gaps;
+
+  const taskTexts = tasks.map((t) => `${t.title} ${t.description}`.toLowerCase());
+
+  for (const rule of rules) {
+    if (rule.trigger.length > MAX_CONSTRAINT_PATTERN_LENGTH) continue;
+
+    let triggerRegex: RegExp;
+    try {
+      triggerRegex = new RegExp(rule.trigger, 'i');
+    } catch {
+      continue;
+    }
+
+    // Does any task match the trigger?
+    const triggerMatchIndices = new Set<number>();
+    taskTexts.forEach((text, i) => {
+      if (triggerRegex.test(text)) triggerMatchIndices.add(i);
+    });
+    if (triggerMatchIndices.size === 0) continue;
+
+    // Check that all required companion tasks exist.
+    // A companion must be a *separate* task from the trigger — a single task
+    // satisfying both trigger and required does not count.
+    for (const required of rule.requires) {
+      if (required.length > MAX_CONSTRAINT_PATTERN_LENGTH) continue;
+
+      let requiredRegex: RegExp;
+      try {
+        requiredRegex = new RegExp(required, 'i');
+      } catch {
+        continue;
+      }
+
+      const companionExists = taskTexts.some(
+        (text, i) => requiredRegex.test(text) && !triggerMatchIndices.has(i),
+      );
+      if (!companionExists) {
+        gaps.push(
+          gap(
+            rule.severity,
+            'constraint',
+            `Composition rule: tasks matching /${rule.trigger}/ require a companion task matching /${required}/. ${rule.description || ''}`.trim(),
+            `Add a task that satisfies the requirement: ${required}`,
+            'tasks',
+            `composition:${rule.trigger}->${required}`,
+          ),
+        );
+      }
+    }
+  }
+
+  return gaps;
+}
+
 // ─── Orchestrator ────────────────────────────────────────────────
 
 /**
@@ -287,6 +421,16 @@ export function runGapAnalysis(plan: Plan, options?: GapAnalysisOptions): PlanGa
     ...analyzeKnowledgeDepth(plan),
     ...analyzeAlternatives(plan),
   ];
+
+  // Run constraint pass (vault-sourced constraints)
+  if (options?.constraints && options.constraints.length > 0) {
+    gaps.push(...createConstraintPass(options.constraints)(plan));
+  }
+
+  // Run composition rule validation (vault-sourced rules)
+  if (options?.compositionRules && options.compositionRules.length > 0) {
+    gaps.push(...validateCompositionRules(options.compositionRules, plan.tasks));
+  }
 
   // Run custom passes (domain-specific checks like tool-feasibility, UI context, etc.)
   if (options?.customPasses) {

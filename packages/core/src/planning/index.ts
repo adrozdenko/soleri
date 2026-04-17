@@ -29,12 +29,19 @@ export type {
   PlanGrade,
   PlanCheck,
   PlannerOptions,
+  PlanAlternative,
+  ConstraintDefinition,
+  ConstraintResult,
+  ConstraintAuditEntry,
+  CompositionRule,
 } from './planner.js';
 export {
   runGapAnalysis,
   createToolFeasibilityPass,
   createFlowAlignmentPass,
   createAntiPatternPass,
+  createConstraintPass,
+  validateCompositionRules,
 } from './gap-analysis.js';
 export type { GapAnalysisOptions, GapAnalysisPass } from './gap-analysis.js';
 export {
@@ -46,6 +53,14 @@ export {
   generateGapId,
 } from './gap-types.js';
 export type { GapSeverity, GapCategory, PlanGap } from './gap-types.js';
+export {
+  evaluateTaskConstraints,
+  TaskConstraintError,
+  appendConstraintAudit,
+} from './constraint-gate.js';
+export { loadVaultConstraints } from './vault-constraints.js';
+export type { ConstraintSeverity } from './planner-types.js';
+export { MAX_CONSTRAINT_PATTERN_LENGTH } from './planner-types.js';
 export { GoalAncestry, JsonGoalRepository, generateGoalId } from './goal-ancestry.js';
 export type { GoalLevel, GoalStatus, Goal, GoalStore, GoalRepository } from './goal-ancestry.js';
 export { assessTaskComplexity } from './task-complexity-assessor.js';

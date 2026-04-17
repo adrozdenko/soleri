@@ -9,6 +9,8 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
+import type { GapAnalysisOptions } from '../planning/gap-analysis.js';
+import { loadVaultConstraints } from '../planning/vault-constraints.js';
 
 const planGradeSchema = z.enum(['A+', 'A', 'B', 'C', 'D', 'F']);
 
@@ -29,7 +31,16 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
       }),
       handler: async (params) => {
         const planId = params.planId as string;
-        return planner.grade(planId);
+
+        // Fetch vault constraints for grading (graceful degradation)
+        const runtimeOptions: GapAnalysisOptions = {};
+        if (runtime.vault) {
+          const { constraints, compositionRules } = loadVaultConstraints(runtime.vault);
+          if (constraints.length > 0) runtimeOptions.constraints = constraints;
+          if (compositionRules.length > 0) runtimeOptions.compositionRules = compositionRules;
+        }
+
+        return planner.grade(planId, runtimeOptions);
       },
     },
 
@@ -88,6 +99,7 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
       }),
       handler: async (params) => {
         const planId = params.planId as string;
+        // plan_auto_improve uses grade() without vault constraints for speed
         const check = planner.grade(planId);
 
         // Sort gaps by severity: critical > major > minor > info

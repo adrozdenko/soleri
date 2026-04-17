@@ -11,6 +11,13 @@ import { createGradingOps } from '../grading-ops.js';
 import { createChainOps } from '../chain-ops.js';
 import { PlanGradeRejectionError } from '../../planning/planner.js';
 import { matchPlaybooks } from '../../playbooks/playbook-registry.js';
+import {
+  evaluateTaskConstraints,
+  TaskConstraintError,
+  appendConstraintAudit,
+} from '../../planning/constraint-gate.js';
+import type { ConstraintAuditEntry } from '../../planning/planner-types.js';
+import { loadVaultConstraints } from '../../planning/vault-constraints.js';
 
 export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   const { planner, vault } = runtime;
@@ -217,6 +224,58 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           | 'completed'
           | 'skipped'
           | 'failed';
+
+        // Pre-execution gate: check vault constraints before task starts
+        if (targetStatus === 'in_progress' && vault) {
+          const { constraints } = loadVaultConstraints(vault);
+
+          if (constraints.length > 0) {
+            const currentPlan = planner.get(params.planId as string);
+            const task = currentPlan?.tasks.find((t) => t.id === (params.taskId as string));
+
+            if (task && currentPlan) {
+              try {
+                const constraintResults = evaluateTaskConstraints(task, constraints);
+                const auditEntries: ConstraintAuditEntry[] = constraintResults.map((cr) => ({
+                  constraintId: cr.constraintId,
+                  taskId: task.id,
+                  result: cr.passed ? ('pass' as const) : ('fail' as const),
+                  severity: cr.severity,
+                  message: cr.message,
+                  timestamp: Date.now(),
+                  source: 'vault' as const,
+                }));
+                appendConstraintAudit(currentPlan, auditEntries);
+                planner.patchPlan(currentPlan.id, { constraintAudit: currentPlan.constraintAudit });
+              } catch (err) {
+                if (err instanceof TaskConstraintError) {
+                  appendConstraintAudit(currentPlan, [
+                    {
+                      constraintId: err.constraintId,
+                      taskId: err.taskId,
+                      result: 'fail',
+                      severity: 'critical',
+                      message: err.message,
+                      timestamp: Date.now(),
+                      source: 'vault',
+                    },
+                  ]);
+                  planner.patchPlan(currentPlan.id, {
+                    constraintAudit: currentPlan.constraintAudit,
+                  });
+                  return {
+                    updated: false,
+                    blocked: true,
+                    reason: 'task constraint violation',
+                    error: err.message,
+                    constraintId: err.constraintId,
+                  };
+                }
+                throw err;
+              }
+            }
+          }
+        }
 
         // Gate check: enforce blocking post-task gates before allowing completion
         if (targetStatus === 'completed') {

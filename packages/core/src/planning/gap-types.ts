@@ -19,7 +19,8 @@ export type GapCategory =
   | 'tool-feasibility'
   | 'flow-alignment'
   | 'anti-pattern'
-  | 'rationalization';
+  | 'rationalization'
+  | 'constraint';
 
 export interface PlanGap {
   id: string;
@@ -51,6 +52,7 @@ export const SEVERITY_WEIGHTS: Record<GapSeverity, number> = {
 export const CATEGORY_PENALTY_CAPS: Record<string, number> = {
   clarity: 10,
   'alternative-analysis': 15,
+  constraint: 30,
 };
 
 /**

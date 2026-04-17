@@ -211,6 +211,8 @@ export interface Plan {
   executionSummary?: ExecutionSummary;
   /** Goal ID linking this plan to the goal hierarchy. */
   goalId?: string;
+  /** Audit trail of all constraint evaluations (grading + task execution). */
+  constraintAudit?: ConstraintAuditEntry[];
   createdAt: number;
   updatedAt: number;
 }
@@ -218,6 +220,75 @@ export interface Plan {
 export interface PlanStore {
   version: string;
   plans: Plan[];
+}
+
+// ─── Constraint-Aware Planning Types ────────────────────────────
+
+/** Shared severity for all constraint types. */
+export type ConstraintSeverity = 'critical' | 'major' | 'minor';
+
+/** Maximum regex pattern length accepted. Longer patterns are skipped to prevent ReDoS. */
+export const MAX_CONSTRAINT_PATTERN_LENGTH = 512;
+
+/**
+ * A constraint definition sourced from vault entries with domain:constraint.
+ * Evaluated during plan grading to block plans that match anti-patterns.
+ */
+export interface ConstraintDefinition {
+  /** Vault entry ID or inline identifier. */
+  id: string;
+  /** Human-readable constraint name. */
+  name: string;
+  /** How severe a violation is — maps to existing gap severity weights. */
+  severity: ConstraintSeverity;
+  /** Regex pattern to match against plan text fields. */
+  pattern: string;
+  /** What this constraint prevents. */
+  description: string;
+  /** Domain tag from vault (e.g. 'security', 'architecture'). */
+  domain?: string;
+}
+
+/**
+ * Result of evaluating a single constraint against a plan or task.
+ */
+export interface ConstraintResult {
+  constraintId: string;
+  passed: boolean;
+  severity: ConstraintSeverity;
+  message: string;
+  /** What text matched the constraint pattern. */
+  evidence?: string;
+}
+
+/**
+ * Audit entry recording a constraint evaluation (pass, fail, or skip).
+ */
+export interface ConstraintAuditEntry {
+  constraintId: string;
+  /** Which task was being evaluated, if task-level. Undefined for plan-level. */
+  taskId?: string;
+  result: 'pass' | 'fail' | 'skip';
+  severity: ConstraintSeverity;
+  message: string;
+  timestamp: number;
+  /** Where the constraint came from. */
+  source: 'vault' | 'inline' | 'skipped';
+}
+
+/**
+ * A composition rule requiring certain tasks to exist when a trigger matches.
+ * E.g., "migration tasks must have a companion rollback task."
+ */
+export interface CompositionRule {
+  /** Regex pattern to match against task titles and descriptions. */
+  trigger: string;
+  /** Task title patterns that must exist when trigger matches. */
+  requires: string[];
+  /** How severe a missing companion is. */
+  severity: ConstraintSeverity;
+  /** Human-readable description of the rule. */
+  description?: string;
 }
 
 export interface PlannerOptions {
