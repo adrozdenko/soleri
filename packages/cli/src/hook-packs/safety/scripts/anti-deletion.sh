@@ -137,8 +137,11 @@ fi
 # --- Block: git clean ---
 if [ "$IS_GIT_CLEAN" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: git clean would remove untracked files. Use git stash --include-untracked to save them first, or ask the user to run git clean manually."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: git clean would remove untracked files. Use git stash --include-untracked to save them first, or ask the user to run git clean manually."
+    }
   }'
   exit 0
 fi
@@ -146,8 +149,11 @@ fi
 # --- Block: git reset --hard ---
 if [ "$IS_RESET_HARD" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: git reset --hard would discard uncommitted changes. Use git stash to save them first, or ask the user to run this manually."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: git reset --hard would discard uncommitted changes. Use git stash to save them first, or ask the user to run this manually."
+    }
   }'
   exit 0
 fi
@@ -155,8 +161,11 @@ fi
 # --- Block: git checkout -- . ---
 if [ "$IS_GIT_CHECKOUT_DOT" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: git checkout -- . would discard all uncommitted changes. Use git stash to save them first, or ask the user to run this manually."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: git checkout -- . would discard all uncommitted changes. Use git stash to save them first, or ask the user to run this manually."
+    }
   }'
   exit 0
 fi
@@ -164,8 +173,11 @@ fi
 # --- Block: git restore . ---
 if [ "$IS_GIT_RESTORE_DOT" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: git restore . would discard all uncommitted changes. Use git stash to save them first, or ask the user to run this manually."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: git restore . would discard all uncommitted changes. Use git stash to save them first, or ask the user to run this manually."
+    }
   }'
   exit 0
 fi
@@ -173,8 +185,11 @@ fi
 # --- Block: git push --force ---
 if [ "$IS_GIT_PUSH_FORCE" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: git push --force can overwrite remote history and cause data loss for collaborators. Use --force-with-lease instead, or ask the user to run this manually."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: git push --force can overwrite remote history and cause data loss for collaborators. Use --force-with-lease instead, or ask the user to run this manually."
+    }
   }'
   exit 0
 fi
@@ -182,8 +197,11 @@ fi
 # --- Block: mv of project directories ---
 if [ "$IS_MV_PROJECT" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: mv of a project directory or git repo detected. Moving project directories can cause data loss if the operation fails midway. Ask the user to run this manually, or use cp + verify + rm instead."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: mv of a project directory or git repo detected. Moving project directories can cause data loss if the operation fails midway. Ask the user to run this manually, or use cp + verify + rm instead."
+    }
   }'
   exit 0
 fi
@@ -191,8 +209,11 @@ fi
 # --- Block: rmdir ---
 if [ "$IS_RMDIR" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: rmdir detected. Removing directories can break project structure. Ask the user to confirm this operation manually."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: rmdir detected. Removing directories can break project structure. Ask the user to confirm this operation manually."
+    }
   }'
   exit 0
 fi
@@ -200,8 +221,11 @@ fi
 # --- Block: drop table ---
 if [ "$IS_DROP_TABLE" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: DROP TABLE detected. This would permanently destroy database data. Ask the user to run this SQL statement manually after confirming intent."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: DROP TABLE detected. This would permanently destroy database data. Ask the user to run this SQL statement manually after confirming intent."
+    }
   }'
   exit 0
 fi
@@ -209,8 +233,11 @@ fi
 # --- Block: docker rm / rmi ---
 if [ "$IS_DOCKER_RM" = true ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: docker rm/rmi detected. Removing containers or images can cause data loss. Ask the user to run this manually."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: docker rm/rmi detected. Removing containers or images can cause data loss. Ask the user to run this manually."
+    }
   }'
   exit 0
 fi
@@ -227,8 +254,11 @@ FILES=$(printf '%s' "$CMD" | sed 's/^.*\brm //' | sed 's/-[rRfivd]* //g' | tr ' 
 
 if [ -z "$FILES" ]; then
   jq -n '{
-    continue: false,
-    stopReason: "BLOCKED: rm command detected but could not parse file targets. Please specify files explicitly."
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "BLOCKED: rm command detected but could not parse file targets. Please specify files explicitly."
+    }
   }'
   exit 0
 fi
@@ -275,6 +305,9 @@ fi
 jq -n \
   --arg dir "$STAGE_DIR" \
   '{
-    continue: false,
-    stopReason: ("BLOCKED & BACKED UP: Files copied to " + $dir + ". The originals are untouched. To proceed with deletion, ask the user to run the rm command manually.")
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: ("BLOCKED & BACKED UP: Files copied to " + $dir + ". The originals are untouched. To proceed with deletion, ask the user to run the rm command manually.")
+    }
   }'
