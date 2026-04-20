@@ -7,6 +7,7 @@ description: 'Triggers: "yolo", "autonomous", "skip approvals", "full auto", "ha
 ## Announce
 
 When this skill is invoked, immediately say:
+
 > "Using **Yolo Mode** skill (4 steps). Starting with: ### Step 1: Flip Harness Permissions"
 
 # YOLO Mode
@@ -69,9 +70,10 @@ The Claude Code harness has its own permission layer (`~/.claude/settings.json` 
 3. **If present — diagnose, don't clobber:**
    - Read the file. Note `activatedAt` and `safetyPackActivated`.
    - Read `~/.claude/settings.json`. Note current `permissions.defaultMode`.
-   - Classify by age of `activatedAt`: under 60 minutes = *"likely active in another session"*; over 60 minutes = *"likely orphan from a crashed or unexpectedly-ended session"*.
+   - Classify by age of `activatedAt`: under 60 minutes = _"likely active in another session"_; over 60 minutes = _"likely orphan from a crashed or unexpectedly-ended session"_.
    - Classify consistency: if `defaultMode` in settings.json is currently `"bypassPermissions"`, state is **consistent**; otherwise **inconsistent** (previous run never restored settings).
    - Report to user exactly, using this template:
+
      ```
      Found existing YOLO state:
      - activatedAt: <ISO> (<N> minutes ago — {likely active | likely orphan})
@@ -83,6 +85,7 @@ The Claude Code harness has its own permission layer (`~/.claude/settings.json` 
      1. Abort — leave everything as-is. Pick this if YOLO is running in another live session.
      2. Recover — treat as orphan: run Harness Restore to tear down the stale state file, hook wiring, and settings flip, then re-run Step 1 fresh.
      ```
+
    - **Stop and wait for the user's choice.** Do not auto-decide. Do not write the state file. Do not flip the harness.
 
 **Fresh activation (only after pre-flight passes):**
@@ -137,6 +140,7 @@ YOUR_AGENT_control op:morph
 ```
 
 **Important:**
+
 - `morph` lives on **`YOUR_AGENT_control`**, not `YOUR_AGENT_core`. Calling the wrong facade returns `Unknown operation "morph"`.
 - `hookPackInstalled: true` is **required** for YOLO-MODE activation. The intent router blocks the mode switch otherwise, even if Step 2 successfully wired the pack. Passing `true` here asserts to the router that the caller (this skill) has verified the pack is installed.
 - On success, the response's `currentMode` should be `"YOLO-MODE"`. If it's still `"GENERAL-MODE"` with `blocked: true`, something went wrong — do not proceed to Step 4; run Harness Restore.
@@ -149,7 +153,7 @@ State this verbatim — the user needs to understand scope, blast radius, persis
 >
 > - **Scope:** harness permissions bypassed; approval gates off. Claude now executes **Bash, Write, Edit, and MCP tool calls** without asking. **Protected paths** (`.git`, `.claude`, `.vscode`, `.idea`, `.husky`) still prompt for writes — that's Claude Code's built-in floor, not something we control.
 > - **Still blocked (Bash only):** `git push --force`, `git reset --hard`, `git clean`, `git checkout -- .`, `git restore .`, `mv ~/projects/*`, SQL `DROP TABLE`, `docker rm` / `rmi`, and bare `rm` (see below).
-> - **`rm` staging — Bash only:** any `rm` via **Bash** is intercepted. Files are *copied* to `~/.soleri/staging/<timestamp>/` **before** the command is blocked. Originals untouched; staged copy is your receipt. Recovery: `soleri staging list` → `soleri staging restore`. Staging auto-cleans after 7 days.
+> - **`rm` staging — Bash only:** any `rm` via **Bash** is intercepted. Files are _copied_ to `~/.soleri/staging/<timestamp>/` **before** the command is blocked. Originals untouched; staged copy is your receipt. Recovery: `soleri staging list` → `soleri staging restore`. Staging auto-cleans after 7 days.
 > - **Blind spot — read this twice:** direct `Write` / `Edit` tool calls that overwrite files are **not** staged. If Claude clobbers `package.json` via the Edit tool, there is no automatic backup. Use `git` frequently as your real safety net.
 > - **Persistence — critical:** YOLO is **user-global and persists across sessions**. Closing this terminal does NOT deactivate it. You MUST say **"exit YOLO"** before quitting, or the next Claude launch inherits YOLO without the active user knowing. The SessionStart orphan hook will warn on next launch, but don't rely on it — deactivate cleanly.
 > - **Hot-reload caveat:** if tool calls still prompt for permission or `rm` commands are executing without staging, open `/permissions` once (harness reload) and/or `/hooks` once (safety-hook reload). The first turn after activation is the most fragile.
@@ -207,19 +211,23 @@ If Harness Restore itself fails partway through (e.g., `remove-pack` errors, or 
 2. **Fix `~/.claude/settings.json`** — prefer the `jq` recipes below over hand-editing.
 
    **Restore defaultMode:**
+
    ```bash
    PREV=$(jq -r '.previousDefaultMode // "default"' ~/.claude/.yolo-harness-state.json)
    TMP=$(mktemp) && jq --arg p "$PREV" '.permissions.defaultMode = $p' ~/.claude/settings.json > "$TMP" && mv "$TMP" ~/.claude/settings.json
    ```
 
    **If `safetyPackActivated` was `true`, remove ONLY the yolo-safety PreToolUse Bash entry.** This is what it looks like in `settings.json`:
+
    ```json
    "PreToolUse": [
      { "matcher": "Bash|bash", "hooks": [{ "type": "command", "command": "lean-ctx hook rewrite" }] },
      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "sh ~/.claude/hooks/anti-deletion.sh", "timeout": 10 }] }
    ]
    ```
+
    After removal, only the non-yolo-safety entries remain:
+
    ```json
    "PreToolUse": [
      { "matcher": "Bash|bash", "hooks": [{ "type": "command", "command": "lean-ctx hook rewrite" }] }
@@ -227,6 +235,7 @@ If Harness Restore itself fails partway through (e.g., `remove-pack` errors, or 
    ```
 
    jq one-liner to do this cleanly (drops any PreToolUse entry whose hook command contains `anti-deletion.sh`; leaves every other entry alone):
+
    ```bash
    TMP=$(mktemp) && jq '
      .hooks.PreToolUse = [
@@ -274,4 +283,5 @@ Do not run new activations until this recovery completes: `defaultMode` restored
 ## Completion
 
 After all steps are done, close with a one-line summary:
+
 > "Yolo Mode complete: {brief outcome — e.g. '3 captured, 1 skipped'}"
