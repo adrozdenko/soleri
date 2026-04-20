@@ -57,7 +57,7 @@ describe('createGradingOps', () => {
       runtime = makeMockRuntime();
       ops = createGradingOps(runtime);
       const result = await findOp('plan_grade').handler({ planId: 'p1' });
-      expect(runtime.planner.grade).toHaveBeenCalledWith('p1');
+      expect(runtime.planner.grade).toHaveBeenCalledWith('p1', expect.any(Object));
       expect(result).toHaveProperty('grade', 'B');
     });
   });
