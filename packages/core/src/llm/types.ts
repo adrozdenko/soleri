@@ -42,9 +42,11 @@ export class LLMError extends Error {
   }
 }
 
+export type ProviderName = 'claude-cli' | 'anthropic' | 'openai';
+
 export interface LLMCallOptions {
   /** Provider override. If omitted, the model router selects based on caller/task. */
-  provider?: 'openai' | 'anthropic';
+  provider?: ProviderName;
   /** Model override. If omitted, the model router selects based on caller/task. */
   model?: string;
   systemPrompt: string;
@@ -58,10 +60,19 @@ export interface LLMCallOptions {
 export interface LLMCallResult {
   text: string;
   model: string;
-  provider: 'openai' | 'anthropic';
+  provider: ProviderName;
   inputTokens?: number;
   outputTokens?: number;
   durationMs: number;
+  /** When fallback was used, lists the providers attempted in order. */
+  attemptedProviders?: ProviderName[];
+}
+
+export interface ClaudeCLIProbe {
+  available: boolean;
+  version?: string;
+  path?: string;
+  error?: string;
 }
 
 export type CircuitState = 'closed' | 'open' | 'half-open';
@@ -93,7 +104,7 @@ export interface RouteEntry {
   caller: string;
   task?: string;
   model: string;
-  provider: 'openai' | 'anthropic';
+  provider: ProviderName;
 }
 
 export interface RoutingConfig {

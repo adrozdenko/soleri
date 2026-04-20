@@ -1,7 +1,20 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { LLMClient } from './llm-client.js';
 import { KeyPool } from './key-pool.js';
 import { LLMError } from './types.js';
+import { resetClaudeCLIProbeCache } from './probe.js';
+
+// These tests assert provider-specific behavior in isolation. The new claude-cli
+// fallback would otherwise satisfy the call when a real `claude` binary exists
+// on the test machine. Disable the claude-cli tier for this suite.
+beforeAll(() => {
+  process.env.SOLERI_DISABLE_CLAUDE_CLI = '1';
+  resetClaudeCLIProbeCache();
+});
+afterAll(() => {
+  delete process.env.SOLERI_DISABLE_CLAUDE_CLI;
+  resetClaudeCLIProbeCache();
+});
 
 // =============================================================================
 // HELPERS
@@ -59,7 +72,7 @@ describe('LLMClient — colocated', () => {
           userPrompt: 'test',
           caller: 'test',
         }),
-      ).rejects.toThrow('OpenAI API key not configured');
+      ).rejects.toThrow(/No LLM provider available/);
     });
 
     it('throws when OpenAI API returns non-OK response', async () => {
@@ -218,7 +231,7 @@ describe('LLMClient — colocated', () => {
           userPrompt: 'test',
           caller: 'test',
         }),
-      ).rejects.toThrow('Anthropic API key not configured');
+      ).rejects.toThrow(/No LLM provider available/);
     });
   });
 

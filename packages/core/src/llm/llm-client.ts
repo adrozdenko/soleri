@@ -11,8 +11,16 @@ import * as path from 'node:path';
 import { homedir } from 'node:os';
 import { LLMError } from './types.js';
 import { CircuitBreaker, retry, parseRateLimitHeaders } from './utils.js';
-import type { LLMCallOptions, LLMCallResult, RouteEntry, RoutingConfig } from './types.js';
+import type {
+  LLMCallOptions,
+  LLMCallResult,
+  ProviderName,
+  RouteEntry,
+  RoutingConfig,
+} from './types.js';
 import type { KeyPool } from './key-pool.js';
+import { probeClaudeCLI } from './probe.js';
+import { callClaudeCLI } from './claude-cli-provider.js';
 
 // =============================================================================
 // CONSTANTS
@@ -25,40 +33,36 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 // =============================================================================
 
 function loadRoutingConfig(agentId: string): RoutingConfig {
-  // Default task→model routing: cheap models for routine, powerful for reasoning.
-  // Anthropic routes use extended thinking for quality decisions when available.
+  // Default routing: claude-cli (Claude Code passthrough) for all curator + linking work.
+  // The fallback chain in LLMClient.complete() handles claude-cli → anthropic SDK → openai SDK
+  // automatically, so failures of the primary provider degrade gracefully.
   // Agents can override via ~/.{agentId}/model-routing.json.
   const defaultRoutes: RouteEntry[] = [
-    // OpenAI routes (default — works without Anthropic key)
-    { caller: 'quality-gate', task: 'evaluate', model: 'gpt-4o', provider: 'openai' },
-    { caller: 'classifier', task: 'classify', model: 'gpt-4o-mini', provider: 'openai' },
-    { caller: 'knowledge-synthesizer', task: 'synthesize', model: 'gpt-4o', provider: 'openai' },
-    { caller: 'content-classifier', model: 'gpt-4o-mini', provider: 'openai' },
-    { caller: 'vault-linking', task: 'evaluate-links', model: 'gpt-4o-mini', provider: 'openai' },
-    // Anthropic routes (higher quality when key available — extended thinking capable)
     {
-      caller: 'quality-gate-anthropic',
+      caller: 'quality-gate',
       task: 'evaluate',
-      model: 'claude-sonnet-4-20250514',
-      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      provider: 'claude-cli',
+    },
+    { caller: 'classifier', task: 'classify', model: 'claude-haiku-4-5', provider: 'claude-cli' },
+    {
+      caller: 'knowledge-synthesizer',
+      task: 'synthesize',
+      model: 'claude-sonnet-4-6',
+      provider: 'claude-cli',
+    },
+    { caller: 'content-classifier', model: 'claude-haiku-4-5', provider: 'claude-cli' },
+    {
+      caller: 'vault-linking',
+      task: 'evaluate-links',
+      model: 'claude-haiku-4-5',
+      provider: 'claude-cli',
     },
     {
       caller: 'contradiction-evaluator',
       task: 'evaluate',
-      model: 'claude-sonnet-4-20250514',
-      provider: 'anthropic',
-    },
-    {
-      caller: 'knowledge-synthesizer-anthropic',
-      task: 'synthesize',
-      model: 'claude-sonnet-4-20250514',
-      provider: 'anthropic',
-    },
-    {
-      caller: 'classifier-anthropic',
-      task: 'classify',
-      model: 'claude-haiku-4-5-20251001',
-      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      provider: 'claude-cli',
     },
   ];
 
@@ -90,11 +94,18 @@ function loadRoutingConfig(agentId: string): RoutingConfig {
   return defaultConfig;
 }
 
-function inferProvider(model: string): 'openai' | 'anthropic' {
+function inferProvider(model: string): ProviderName {
   if (model.startsWith('claude-') || model.startsWith('anthropic/')) {
     return 'anthropic';
   }
   return 'openai';
+}
+
+const FALLBACK_ORDER: ProviderName[] = ['claude-cli', 'anthropic', 'openai'];
+
+function buildAttemptList(primary: ProviderName): ProviderName[] {
+  const rest = FALLBACK_ORDER.filter((p) => p !== primary);
+  return [primary, ...rest];
 }
 
 class ModelRouter {
@@ -112,7 +123,7 @@ class ModelRouter {
     caller: string,
     task?: string,
     originalModel?: string,
-  ): { model: string; provider: 'openai' | 'anthropic' } {
+  ): { model: string; provider: ProviderName } {
     if (task) {
       const exactMatch = this.config.routes.find((r) => r.caller === caller && r.task === task);
       if (exactMatch) {
@@ -160,7 +171,19 @@ interface AnthropicClient {
   };
 }
 
-type ResolvedLLMOptions = LLMCallOptions & { model: string; provider: 'openai' | 'anthropic' };
+type ResolvedLLMOptions = LLMCallOptions & { model: string; provider: ProviderName };
+
+interface ModelDefaults {
+  'claude-cli': string;
+  anthropic: string;
+  openai: string;
+}
+
+const FALLBACK_MODELS: ModelDefaults = {
+  'claude-cli': 'claude-sonnet-4-6',
+  anthropic: 'claude-sonnet-4-20250514',
+  openai: 'gpt-4o-mini',
+};
 
 export class LLMClient {
   private openaiKeyPool: KeyPool;
@@ -183,15 +206,63 @@ export class LLMClient {
 
   async complete(options: LLMCallOptions): Promise<LLMCallResult> {
     const routed = this.router.resolve(options.caller, options.task, options.model);
-    const resolved: ResolvedLLMOptions = {
-      ...options,
-      model: options.model ?? routed.model,
-      provider: options.provider ?? routed.provider,
-    };
+    const primary = options.provider ?? routed.provider;
+    const order = buildAttemptList(primary);
 
-    return resolved.provider === 'anthropic'
-      ? this.callAnthropic(resolved)
-      : this.callOpenAI(resolved);
+    const attempted: ProviderName[] = [];
+    let lastErr: unknown;
+
+    for (const provider of order) {
+      const model =
+        provider === primary ? (options.model ?? routed.model) : FALLBACK_MODELS[provider];
+      const resolved: ResolvedLLMOptions = { ...options, model, provider };
+
+      const available = await this.providerAvailable(provider);
+      if (!available) continue;
+
+      attempted.push(provider);
+      try {
+        const result = await this.dispatch(resolved);
+        return attempted.length > 1 ? { ...result, attemptedProviders: attempted } : result;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+
+    if (lastErr instanceof Error) {
+      throw new LLMError(
+        `All LLM providers failed (tried ${attempted.join(', ') || 'none'}): ${lastErr.message}`,
+        { retryable: false },
+      );
+    }
+    throw new LLMError(`No LLM provider available (tried ${order.join(', ')})`, {
+      retryable: false,
+    });
+  }
+
+  private async providerAvailable(provider: ProviderName): Promise<boolean> {
+    if (provider === 'claude-cli') return (await probeClaudeCLI()).available;
+    if (provider === 'anthropic') return this.anthropicKeyPool.hasKeys;
+    return this.openaiKeyPool.hasKeys;
+  }
+
+  private dispatch(options: ResolvedLLMOptions): Promise<LLMCallResult> {
+    if (options.provider === 'claude-cli') return this.callClaudeCLI(options);
+    if (options.provider === 'anthropic') return this.callAnthropic(options);
+    return this.callOpenAI(options);
+  }
+
+  private async callClaudeCLI(options: ResolvedLLMOptions): Promise<LLMCallResult> {
+    const probe = await probeClaudeCLI();
+    if (!probe.available || !probe.path) {
+      throw new LLMError('claude CLI not available', { retryable: false });
+    }
+    return callClaudeCLI({
+      binary: probe.path,
+      model: options.model,
+      systemPrompt: options.systemPrompt,
+      userPrompt: options.userPrompt,
+    });
   }
 
   isAvailable(): { openai: boolean; anthropic: boolean } {
