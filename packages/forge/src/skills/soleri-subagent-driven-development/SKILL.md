@@ -37,6 +37,56 @@ Not all subagents are equal. Route by complexity:
 - "Just use workers" → all Claude Code workers
 - Default: hybrid routing
 
+## Model Selection
+
+Subagent-type (worker vs instance) picks *who* runs the task. Model selection picks *how much brain* they bring. Both decisions happen at dispatch, independently.
+
+### Tier rubric
+
+| Tier | Model | Subagent purpose — trigger patterns |
+|------|-------|-------------------------------------|
+| simple | `haiku` | Exploration, file/symbol lookup, pattern search, single-fact retrieval, dedup detection, quick classification, data extraction from known formats |
+| standard | `sonnet` | Code implementation, refactors, test writing, documentation, migrations, data transformation, routine reviews, general research |
+| complex | `opus` | Architecture review, deep-review, plan creation, grading/scoring, critical bug diagnosis, cross-cutting design decisions, ambiguity resolution, nuanced writing |
+
+### Fallback chain
+
+If the target model is unavailable (rate-limited, quota exceeded, provider down):
+
+- **Opus unavailable** → fall back to Sonnet with a warning, proceed
+- **Sonnet unavailable** → fall back to Haiku ONLY if the task is clearly simple; otherwise pause and report
+- **Haiku unavailable** → pause and report, don't escalate upward
+
+**Never silently fall back upward** (Haiku→Sonnet, Sonnet→Opus). Cost-aware fallback flows downward only; upward moves require the user to say so.
+
+### Override contract
+
+The user can pin a model for any dispatch:
+
+- "Dispatch task-3 on Opus" → honor it, even if rubric says Sonnet
+- "Run this on Haiku" → honor it, even if rubric says Opus
+- Default: rubric applies
+
+Explicit pin always wins over the rubric.
+
+### Dispatch decision log
+
+Before every Agent call, state one line aloud:
+
+> Dispatching <subagent description> on <model> (tier=<simple|standard|complex>, reason=<pattern match>).
+
+Examples:
+
+> Dispatching "Find all call sites of parseUrl" on haiku (tier=simple, reason=exploration).
+> Dispatching "Implement parser refactor" on sonnet (tier=standard, reason=code implementation).
+> Dispatching "Audit migration safety" on opus (tier=complex, reason=architecture review).
+
+Overrides stated explicitly:
+
+> Dispatching "Routine doc edit" on opus (tier=standard, overridden by user request).
+
+One line, before the Agent call. Auditable after the fact.
+
 ## When to Dispatch
 
 | Signal                                        | Dispatch?                                |

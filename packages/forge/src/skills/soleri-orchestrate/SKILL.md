@@ -14,6 +14,22 @@ Run the full work loop with vault intelligence: plan the task, execute it step b
 - Task spans multiple files or has cross-cutting concerns
 - You want vault patterns and brain recommendations surfaced automatically
 
+## Subagent Model Selection (when dispatching)
+
+If Step 2 fans out to subagents, pick the model per subagent — don't use one size for the whole loop:
+
+- **simple** (exploration, lookup, classification) → `haiku`
+- **standard** (code impl, refactors, test writing, routine review) → `sonnet`
+- **complex** (architecture, grading, critical debug, plan creation) → `opus`
+
+Fallback flows **downward only** (Opus→Sonnet with warning; Sonnet→Haiku only if task is clearly simple). Never silently escalate upward. Explicit user pin always overrides the rubric.
+
+Before every Agent call, state one line:
+
+> Dispatching <description> on <model> (tier=<simple|standard|complex>, reason=<pattern match>).
+
+Full rubric and examples live in the `soleri-subagent-driven-development` skill (canonical source) and `soleri-parallel-execute` skill.
+
 ## Orchestration
 
 ### Step 1: Plan

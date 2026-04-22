@@ -26,6 +26,52 @@ You MUST have an approved, split plan before using this skill. If no plan exists
 - Tasks modify the same files (high conflict risk)
 - Plan has fewer than 3 tasks (use executing-plans instead)
 
+## Model Selection
+
+Pick a model per subagent at dispatch. Mixed tiers across a fan-out wave are expected and correct — a wave is never "all Opus" or "all Haiku." Each task gets the model that fits its work.
+
+### Tier rubric
+
+| Tier | Model | Subagent purpose — trigger patterns |
+|------|-------|-------------------------------------|
+| simple | `haiku` | Exploration, file/symbol lookup, pattern search, single-fact retrieval, dedup detection, quick classification, data extraction from known formats |
+| standard | `sonnet` | Code implementation, refactors, test writing, documentation, migrations, data transformation, routine reviews, general research |
+| complex | `opus` | Architecture review, deep-review, plan creation, grading/scoring, critical bug diagnosis, cross-cutting design decisions, ambiguity resolution, nuanced writing |
+
+### Fallback chain
+
+- **Opus unavailable** → Sonnet with a warning, proceed
+- **Sonnet unavailable** → Haiku only if task is clearly simple; otherwise pause and report
+- **Haiku unavailable** → pause and report, don't escalate upward
+
+Never silently fall back upward. Downward only.
+
+### Override contract
+
+User pin always wins over rubric: "Run wave 2 on Opus" or "Use Haiku for task-5" — honor it.
+
+### Example fan-out
+
+A 3-way wave with mixed tiers:
+
+| Task | Purpose | Model | Tier |
+|------|---------|-------|------|
+| task-1 | Scan repo for unused exports | `haiku` | simple |
+| task-3 | Refactor parser into module | `sonnet` | standard |
+| task-5 | Review cross-module contract for safety | `opus` | complex |
+
+All three dispatched in the **same Agent tool call batch**, each with its own `model` arg.
+
+### Dispatch decision log
+
+Before each Agent call in a wave, state one line:
+
+> Dispatching <description> on <model> (tier=<simple|standard|complex>, reason=<pattern match>).
+
+Overrides stated explicitly:
+
+> Dispatching "..." on opus (tier=standard, overridden by user).
+
 ## The Process
 
 ### Step 1: Load Plan and Build Dependency Graph
