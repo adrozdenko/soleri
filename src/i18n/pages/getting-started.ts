@@ -14,7 +14,7 @@ const content: Record<Locale, GettingStartedContent> = {
     steps: [
       {
         title: 'Create your agent',
-        text: 'One command. It scaffolds a full agent with config, instructions, skills, and workflows. Registers itself with Claude Code automatically. You need Node.js and an MCP-compatible editor.',
+        text: 'One command. It scaffolds a full agent with config, instructions, skills, and workflows. Registers itself with Claude Code. You need Node.js and an MCP-compatible editor.',
         code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
 
 <span class="ok">✓</span> Agent created! <span class="cmt">(43 files, 7 skills, 4 workflows)</span>
@@ -67,7 +67,7 @@ const content: Record<Locale, GettingStartedContent> = {
     steps: [
       {
         title: 'Створи агента',
-        text: 'Одна команда. Генерує повного агента з конфігурацією, інструкціями, навичками та робочими процесами. Реєструється в Claude Code автоматично. Потрібні Node.js та MCP-сумісний редактор.',
+        text: 'Одна команда. Генерує повного агента з конфігурацією, інструкціями, навичками та робочими процесами. Реєструється в Claude Code. Потрібні Node.js та MCP-сумісний редактор.',
         code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
 
 <span class="ok">✓</span> Агента створено! <span class="cmt">(43 файли, 7 навичок, 4 робочі процеси)</span>
@@ -120,7 +120,7 @@ const content: Record<Locale, GettingStartedContent> = {
     steps: [
       {
         title: 'Crea il tuo agente',
-        text: 'Un comando. Genera un agente completo con config, istruzioni, skill e workflow. Si registra in Claude Code automaticamente. Ti servono Node.js e un editor compatibile MCP.',
+        text: 'Un comando. Genera un agente completo con config, istruzioni, skill e workflow. Si registra in Claude Code. Ti servono Node.js e un editor compatibile MCP.',
         code: `<span class="prompt">$</span> <span class="cmd">npm create soleri</span> <span class="arg">my-agent</span>
 
 <span class="ok">✓</span> Agente creato! <span class="cmt">(43 file, 7 skill, 4 workflow)</span>

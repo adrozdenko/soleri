@@ -75,7 +75,7 @@ const content: Record<Locale, TeamsContent> = {
       {
         title: 'New person? Ready in minutes.',
         subtitle: 'They get the current standards on day one.',
-        text: 'New teammate connects the team vault and immediately sees every convention, ranked by importance. Beats a week of reading onboarding docs nobody maintains.',
+        text: 'New teammate connects the team vault and sees every convention, ranked by importance. Beats a week of reading onboarding docs nobody maintains.',
         code: `<span class="dim">// Day 1 — new developer joins</span>
 <span class="hl">New dev:</span>  What are the critical patterns
           for this project?
@@ -161,7 +161,7 @@ const content: Record<Locale, TeamsContent> = {
       {
         title: 'Нова людина? Готова за хвилини.',
         subtitle: 'Отримує актуальні стандарти з першого дня.',
-        text: 'Новий колега підключає командний vault і одразу бачить кожну конвенцію, ранжовану за важливістю. Краще, ніж тиждень читання доків для онбордингу, які ніхто не підтримує.',
+        text: 'Новий колега підключає командний vault і бачить кожну конвенцію, ранжовану за важливістю. Краще, ніж тиждень читання доків для онбордингу, які ніхто не підтримує.',
         code: `<span class="dim">// День 1 — новий розробник приєднується</span>
 <span class="hl">Новий:</span>   Які критичні патерни для цього проєкту?
 <span class="hl">Агент:</span>   Топ патерни з командного vault:
@@ -246,7 +246,7 @@ const content: Record<Locale, TeamsContent> = {
       {
         title: 'Nuovo collega? Pronto in pochi minuti.',
         subtitle: 'Riceve gli standard attuali dal primo giorno.',
-        text: 'Il nuovo collega collega il vault del team e vede subito ogni convenzione, ordinata per importanza. Meglio di una settimana a leggere doc di onboarding che nessuno mantiene.',
+        text: 'Il nuovo collega collega il vault del team e vede ogni convenzione, ordinata per importanza. Meglio di una settimana a leggere doc di onboarding che nessuno mantiene.',
         code: `<span class="dim">// Giorno 1 — nuovo sviluppatore</span>
 <span class="hl">Nuovo:</span>   Quali sono i pattern critici
          per questo progetto?

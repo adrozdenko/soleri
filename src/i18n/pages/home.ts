@@ -8,7 +8,7 @@ const content: Record<Locale, HomeContent> = {
       'The open-source <span class="accent-amber">engine</span> for agents that <span class="accent-teal">learn</span>.',
     heroText:
       'Soleri handles what the model can\'t: remembering what worked, planning what\'s next, and getting better over time. Build a personal agent or ship one to your users.',
-    principleTitle: 'What if your agent actually remembered?',
+    principleTitle: 'What if your agent remembered?',
     principleSubtitle: 'That\'s the problem we built Soleri to solve.',
     principleText: 'You walk it through the architecture. The naming conventions. That bug you fixed last Tuesday. Next session, all of it is gone. Soleri gives your agent the systems to hold onto what works and bring it back when it matters, without you repeating yourself.',
     compareBeforeLabel: '',
@@ -37,7 +37,7 @@ const content: Record<Locale, HomeContent> = {
       {
         sectionTitle: 'Just a folder.',
         title: 'Your agent is a folder',
-        text: 'No build step. No TypeScript. It\'s a folder with a YAML config, markdown instructions, and skills that plug in. The engine takes care of persistence, search, learning, and orchestration.',
+        text: 'It\'s a folder with a YAML config, markdown instructions, and skills that plug in. No build step, no TypeScript. The engine handles persistence, search, learning, and orchestration.',
         code: `<span class="key">my-agent/</span>              <span class="cmt"># your agent is a folder</span>
 ├── <span class="ok">CLAUDE.md</span>           <span class="cmt"># auto-generated, routes tasks</span>
 ├── <span class="ok">agent.yaml</span>          <span class="cmt"># identity + engine config</span>
@@ -107,7 +107,7 @@ const content: Record<Locale, HomeContent> = {
 <span class="comment">  ✓ MCP config registered</span>
 <span class="comment">  ✓ CLAUDE.md regenerates on change</span>`,
     archTitle: 'The model does 5% of the work. The engine does the rest.',
-    archSubtitle: 'Most AI tools are thin wrappers around an API call. The model generates text, but nobody stores what worked, scores it, cleans up the mess, or tracks when things go off track. That\'s what the engine does. That\'s Soleri.',
+    archSubtitle: 'Most AI tools are thin wrappers around an API call. The model generates text, but nobody stores what worked, scores it, cleans up the mess, or tracks when things go off track. Soleri does.',
     layers: [
       {
         label: 'Vault',
@@ -115,7 +115,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         label: 'Brain',
-        text: 'Keeps score. Tracks which approaches actually get used. The useful stuff ranks higher. The stale stuff fades out over time.',
+        text: 'Keeps score. Tracks which approaches get used. The useful stuff ranks higher. The stale stuff fades.',
       },
       {
         label: 'Curator',
@@ -132,7 +132,7 @@ const content: Record<Locale, HomeContent> = {
       '<span class="accent-amber">Рушій</span> з відкритим кодом для агентів, що <span class="accent-teal">навчаються</span>.',
     heroText:
       'Soleri робить те, що модель не може: запам\'ятовує, що спрацювало, планує наступні кроки і стає кращим з часом. Створи персонального агента або вбудуй його у свій продукт.',
-    principleTitle: 'А якби твій агент дійсно запам\'ятовував?',
+    principleTitle: 'А якби твій агент запам\'ятовував?',
     principleSubtitle: 'Саме для цього ми створили Soleri.',
     principleText: 'Ти пояснюєш йому архітектуру. Конвенції іменування. Той баг, який полагодив у вівторок. Наступна сесія, і все зникло. Soleri дає твоєму агенту системи, щоб тримати те, що працює, і повертати це коли треба, без твоїх повторень.',
     compareBeforeLabel: '',
@@ -161,7 +161,7 @@ const content: Record<Locale, HomeContent> = {
       {
         sectionTitle: 'Просто тека.',
         title: 'Твій агент -- це тека',
-        text: 'Без збірки. Без TypeScript. Це тека з YAML-конфігом, markdown-інструкціями та навичками, що підключаються. Рушій забезпечує збереження, пошук, навчання та оркестрацію.',
+        text: 'Це тека з YAML-конфігом, markdown-інструкціями та навичками, що підключаються. Без збірки, без TypeScript. Рушій забезпечує збереження, пошук, навчання та оркестрацію.',
         code: `<span class="key">my-agent/</span>              <span class="cmt"># твій агент -- це тека</span>
 ├── <span class="ok">CLAUDE.md</span>           <span class="cmt"># авто-генерується, маршрутизує задачі</span>
 ├── <span class="ok">agent.yaml</span>          <span class="cmt"># ідентичність + конфіг рушія</span>
@@ -231,7 +231,7 @@ const content: Record<Locale, HomeContent> = {
 <span class="comment">  ✓ MCP конфіг зареєстровано</span>
 <span class="comment">  ✓ CLAUDE.md перегенеровується при змінах</span>`,
     archTitle: 'Модель робить 5% роботи. Рушій робить решту.',
-    archSubtitle: 'Більшість AI-інструментів -- це тонкі обгортки навколо API-виклику. Модель генерує текст, але ніхто не зберігає, що спрацювало, не оцінює це, не прибирає безлад і не відстежує, коли щось пішло не за планом. Ось що робить рушій. Це Soleri.',
+    archSubtitle: 'Більшість AI-інструментів -- це тонкі обгортки навколо API-виклику. Модель генерує текст, але ніхто не зберігає, що спрацювало, не оцінює це, не прибирає безлад і не відстежує, коли щось пішло не за планом. Це робить Soleri.',
     layers: [
       {
         label: 'Vault',
@@ -239,7 +239,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         label: 'Brain',
-        text: 'Веде рахунок. Відстежує, які підходи дійсно використовуються. Корисне піднімається вище. Застаріле згасає з часом.',
+        text: 'Веде рахунок. Відстежує, які підходи використовуються. Корисне піднімається вище. Застаріле згасає.',
       },
       {
         label: 'Curator',
@@ -256,7 +256,7 @@ const content: Record<Locale, HomeContent> = {
       'Il <span class="accent-amber">motore</span> open-source per agenti che <span class="accent-teal">imparano</span>.',
     heroText:
       'Soleri gestisce quello che il modello non può: ricordare cosa ha funzionato, pianificare il prossimo passo e migliorare nel tempo. Costruisci un agente personale o distribuiscine uno ai tuoi utenti.',
-    principleTitle: 'E se il tuo agente si ricordasse davvero?',
+    principleTitle: 'E se il tuo agente si ricordasse?',
     principleSubtitle: 'Questo è il problema per cui abbiamo costruito Soleri.',
     principleText: 'Gli spieghi l\'architettura. Le convenzioni di naming. Quel bug che hai fixato martedì scorso. Sessione dopo, tutto sparito. Soleri dà al tuo agente i sistemi per tenersi quello che funziona e riportarlo fuori quando serve, senza che tu debba ripeterti.',
     compareBeforeLabel: '',
@@ -285,7 +285,7 @@ const content: Record<Locale, HomeContent> = {
       {
         sectionTitle: 'Solo una cartella.',
         title: 'Il tuo agente è una cartella',
-        text: 'Nessun build step. Nessun TypeScript. È una cartella con un config YAML, istruzioni in markdown e skill che si collegano. Il motore si occupa di persistenza, ricerca, apprendimento e orchestrazione.',
+        text: 'È una cartella con un config YAML, istruzioni in markdown e skill che si collegano. Nessun build step, nessun TypeScript. Il motore gestisce persistenza, ricerca, apprendimento e orchestrazione.',
         code: `<span class="key">my-agent/</span>              <span class="cmt"># il tuo agente è una cartella</span>
 ├── <span class="ok">CLAUDE.md</span>           <span class="cmt"># auto-generato, indirizza i task</span>
 ├── <span class="ok">agent.yaml</span>          <span class="cmt"># identità + config motore</span>
@@ -355,7 +355,7 @@ const content: Record<Locale, HomeContent> = {
 <span class="comment">  ✓ MCP config registrata</span>
 <span class="comment">  ✓ CLAUDE.md si rigenera ad ogni modifica</span>`,
     archTitle: 'Il modello fa il 5% del lavoro. Il motore fa il resto.',
-    archSubtitle: 'La maggior parte degli strumenti AI sono wrapper sottili attorno a una chiamata API. Il modello genera testo, ma nessuno salva cosa ha funzionato, lo valuta, fa pulizia o traccia quando le cose vanno fuori rotta. Questo è quello che fa il motore. Questo è Soleri.',
+    archSubtitle: 'La maggior parte degli strumenti AI sono wrapper sottili attorno a una chiamata API. Il modello genera testo, ma nessuno salva cosa ha funzionato, lo valuta, fa pulizia o traccia quando le cose vanno fuori rotta. Soleri lo fa.',
     layers: [
       {
         label: 'Vault',
@@ -363,7 +363,7 @@ const content: Record<Locale, HomeContent> = {
       },
       {
         label: 'Brain',
-        text: 'Tiene il punteggio. Traccia quali approcci vengono davvero usati. Le cose utili salgono in classifica. Quelle vecchie svaniscono col tempo.',
+        text: 'Tiene il punteggio. Traccia quali approcci vengono usati. Le cose utili salgono in classifica. Quelle vecchie svaniscono.',
       },
       {
         label: 'Curator',
