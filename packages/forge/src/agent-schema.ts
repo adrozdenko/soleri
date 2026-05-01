@@ -60,6 +60,17 @@ const CompactionPolicySchema = z.object({
     .optional(),
 });
 
+/** Session-start maintenance ops. All default off; opt in under engine.autoOps. */
+const AutoOpsConfigSchema = z
+  .object({
+    dream: z.boolean().optional().default(false),
+    selfHeal: z.boolean().optional().default(false),
+    orphanReaper: z.boolean().optional().default(false),
+    staleClose: z.boolean().optional().default(false),
+  })
+  .optional()
+  .default({});
+
 /** Engine configuration */
 const EngineConfigSchema = z.object({
   /** Path to agent's vault SQLite database. Default: ~/.{id}/vault.db */
@@ -68,6 +79,8 @@ const EngineConfigSchema = z.object({
   learning: z.boolean().optional().default(true),
   /** Session compaction policy — thresholds for automatic session rotation */
   compactionPolicy: CompactionPolicySchema.optional(),
+  /** Opt in to session_start maintenance side effects. Defaults to all false. */
+  autoOps: AutoOpsConfigSchema,
   /**
    * Engine rule modules to include in CLAUDE.md.
    * Core rules are always included. Feature modules are additive.

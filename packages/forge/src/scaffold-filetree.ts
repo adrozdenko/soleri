@@ -889,6 +889,12 @@ function buildAgentYaml(config: AgentYaml): Record<string, unknown> {
   if (config.engine?.vault) engine.vault = config.engine.vault;
   if (config.engine?.modules && config.engine.modules.length > 0)
     engine.modules = config.engine.modules;
+  if (config.engine?.autoOps) {
+    const autoOps = Object.fromEntries(
+      Object.entries(config.engine.autoOps).filter(([, enabled]) => enabled === true),
+    );
+    if (Object.keys(autoOps).length > 0) engine.autoOps = autoOps;
+  }
   yaml.engine = engine;
 
   // Vaults
