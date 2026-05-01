@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { loadAgentConfig, DEFAULT_AGENT_CONFIG } from './agent-config.js';
+import { loadAgentConfig, DEFAULT_AGENT_CONFIG, resolveAutoOpsConfig } from './agent-config.js';
 
 describe('loadAgentConfig', () => {
   let tempDir: string;
@@ -46,6 +46,21 @@ workflows:
     expect(result.workflows).toEqual({ 'feature-dev': 'BUILD', 'bug-fix': 'FIX' });
   });
 
+  it('parses engine.autoOps flags', () => {
+    writeFileSync(
+      join(tempDir, 'agent.yaml'),
+      `id: ernesto
+engine:
+  autoOps:
+    dream: true
+    staleClose: true
+`,
+    );
+    const result = loadAgentConfig(tempDir);
+    expect(result.engine?.autoOps?.dream).toBe(true);
+    expect(result.engine?.autoOps?.staleClose).toBe(true);
+  });
+
   it('returns empty object for an empty agent.yaml', () => {
     writeFileSync(join(tempDir, 'agent.yaml'), '');
     const result = loadAgentConfig(tempDir);
@@ -65,6 +80,26 @@ workflows:
     expect(result.capabilities).toBeUndefined();
     expect(result.probes).toBeUndefined();
     expect(result.workflows).toBeUndefined();
+  });
+});
+
+describe('resolveAutoOpsConfig', () => {
+  it('defaults all auto-ops to false', () => {
+    expect(resolveAutoOpsConfig({})).toEqual({
+      dream: false,
+      selfHeal: false,
+      orphanReaper: false,
+      staleClose: false,
+    });
+  });
+
+  it('preserves explicit opt-ins', () => {
+    expect(resolveAutoOpsConfig({ engine: { autoOps: { selfHeal: true } } })).toEqual({
+      dream: false,
+      selfHeal: true,
+      orphanReaper: false,
+      staleClose: false,
+    });
   });
 });
 

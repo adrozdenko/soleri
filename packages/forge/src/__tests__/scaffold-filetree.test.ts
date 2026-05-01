@@ -297,6 +297,30 @@ describe('scaffoldFileTree', () => {
     // engine.learning and engine.profile are always explicit
     expect(content).toContain('learning: true');
     expect(content).toContain('profile: full');
+    // engine.autoOps defaults are opt-in and should not clutter scaffolded config
+    expect(content).not.toContain('autoOps:');
+  });
+
+  it('includes engine.autoOps opt-ins in agent.yaml', () => {
+    const result = scaffoldFileTree(
+      {
+        ...MINIMAL_CONFIG,
+        engine: {
+          learning: true,
+          autoOps: {
+            dream: true,
+            staleClose: true,
+          },
+        },
+      },
+      tempDir,
+    );
+    expect(result.success).toBe(true);
+
+    const content = readFileSync(join(result.agentDir, 'agent.yaml'), 'utf-8');
+    const parsed = parseYaml(content);
+
+    expect(parsed.engine.autoOps).toEqual({ dream: true, staleClose: true });
   });
 
   it('includes non-default values in agent.yaml', () => {

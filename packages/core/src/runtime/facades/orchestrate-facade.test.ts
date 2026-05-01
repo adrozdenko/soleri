@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { Vault } from '../../vault/vault.js';
 import { Planner } from '../../planning/planner.js';
 import { Brain } from '../../brain/brain.js';
@@ -12,10 +13,18 @@ import { createOrchestrateFacadeOps } from './orchestrate-facade.js';
 import { captureOps, executeOp } from '../../engine/test-helpers.js';
 import type { CapturedOp } from '../../engine/test-helpers.js';
 import type { AgentRuntime } from '../types.js';
+import { worktreeReap } from '../../utils/worktree-reaper.js';
+
+vi.mock('../../utils/worktree-reaper.js', () => ({
+  worktreeReap: vi.fn().mockReturnValue({ reaped: 0, found: [], errors: [], pruned: true }),
+}));
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-function makeRuntime(vault: Vault): AgentRuntime {
+function makeRuntime(
+  vault: Vault,
+  config: Partial<AgentRuntime['config']> = {},
+): AgentRuntime {
   const brain = new Brain(vault);
   const plansPath = join(tmpdir(), `orch-test-${Date.now()}.json`);
   const planner = new Planner(plansPath);
@@ -43,8 +52,25 @@ function makeRuntime(vault: Vault): AgentRuntime {
     projectRegistry,
     playbookExecutor,
     contextHealth,
-    config: { agentId: 'test-agent' },
+    config: { agentId: 'test-agent', ...config },
   } as unknown as AgentRuntime;
+}
+
+function writeAgentConfig(autoOps: Record<string, boolean>): string {
+  const agentDir = mkdtempSync(join(tmpdir(), 'soleri-orch-agent-'));
+  const autoOpsYaml = Object.entries(autoOps)
+    .map(([key, value]) => `    ${key}: ${value}`)
+    .join('\n');
+  writeFileSync(
+    join(agentDir, 'agent.yaml'),
+    `id: test-agent
+name: Test Agent
+engine:
+  autoOps:
+${autoOpsYaml}
+`,
+  );
+  return agentDir;
 }
 
 // ─── Tests ──────────────────────────────────────────────────────────
@@ -52,15 +78,27 @@ function makeRuntime(vault: Vault): AgentRuntime {
 describe('orchestrate-facade', () => {
   let vault: Vault;
   let ops: Map<string, CapturedOp>;
+  let tempDirs: string[];
 
   beforeEach(() => {
+    vi.clearAllMocks();
+    tempDirs = [];
     vault = new Vault(':memory:');
     ops = captureOps(createOrchestrateFacadeOps(makeRuntime(vault)));
   });
 
   afterEach(() => {
     vault.close();
+    for (const dir of tempDirs) {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
+
+  function agentDirWithAutoOps(autoOps: Record<string, boolean>): string {
+    const agentDir = writeAgentConfig(autoOps);
+    tempDirs.push(agentDir);
+    return agentDir;
+  }
 
   // ─── session_start ─────────────────────────────────────────────
 
@@ -99,9 +137,56 @@ describe('orchestrate-facade', () => {
     expect(data.message).toContain('Session #2');
   });
 
+  it('session_start leaves silent auto-ops disabled by default', async () => {
+    const rt = makeRuntime(vault);
+    const rtOps = captureOps(createOrchestrateFacadeOps(rt));
+    const closeStaleSpy = vi.spyOn(rt.planner, 'closeStale');
+
+    const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/proj' });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.dream).toBeUndefined();
+    expect(data.selfHeal).toBeUndefined();
+    expect(data.stalePlansClosed).toBe(0);
+    expect(closeStaleSpy).not.toHaveBeenCalled();
+    expect(worktreeReap).not.toHaveBeenCalled();
+  });
+
+  it('session_start runs dream when engine.autoOps.dream is true', async () => {
+    const rt = makeRuntime(vault, { agentDir: agentDirWithAutoOps({ dream: true }) });
+    const rtOps = captureOps(createOrchestrateFacadeOps(rt));
+
+    const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/dream' });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.dream).toBeDefined();
+  });
+
+  it('session_start runs self-heal when engine.autoOps.selfHeal is true', async () => {
+    const rt = makeRuntime(vault, { agentDir: agentDirWithAutoOps({ selfHeal: true }) });
+    const rtOps = captureOps(createOrchestrateFacadeOps(rt));
+
+    const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/self-heal' });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.selfHeal).toBeDefined();
+  });
+
+  it('session_start runs orphan reaper when engine.autoOps.orphanReaper is true', async () => {
+    const rt = makeRuntime(vault, { agentDir: agentDirWithAutoOps({ orphanReaper: true }) });
+    const rtOps = captureOps(createOrchestrateFacadeOps(rt));
+
+    const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/orphans' });
+    expect(result.success).toBe(true);
+    await vi.waitFor(() => expect(worktreeReap).toHaveBeenCalledWith('/test/orphans'));
+  });
+
   it('session_start auto-closes stale plans and reports count', async () => {
     // Create a runtime with a planner we can manipulate
-    const rt = makeRuntime(vault);
+    const rt = makeRuntime(vault, { agentDir: agentDirWithAutoOps({ staleClose: true }) });
     const rtOps = captureOps(createOrchestrateFacadeOps(rt));
 
     // Create a draft plan in the past so it's stale (>30 min TTL)
@@ -118,6 +203,25 @@ describe('orchestrate-facade', () => {
     // The plan should now be completed
     const closed = rt.planner.get(plan.id);
     expect(closed?.status).toBe('completed');
+  });
+
+  it('does NOT close stale plans when staleClose is false even if stale plans exist', async () => {
+    const rt = makeRuntime(vault, { agentDir: agentDirWithAutoOps({ staleClose: false }) });
+    const rtOps = captureOps(createOrchestrateFacadeOps(rt));
+    const closeStaleSpy = vi.spyOn(rt.planner, 'closeStale');
+
+    // Create a stale draft plan
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    vi.spyOn(Date, 'now').mockReturnValue(oneHourAgo);
+    rt.planner.create({ objective: 'Stale draft plan — should not be closed', scope: 'test' });
+    vi.restoreAllMocks();
+
+    const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/stale-blocked' });
+    expect(result.success).toBe(true);
+    const data = result.data as Record<string, unknown>;
+
+    expect(data.stalePlansClosed).toBe(0);
+    expect(closeStaleSpy).not.toHaveBeenCalled();
   });
 
   it('session_start auto-reconciles executing plans where all tasks are terminal', async () => {

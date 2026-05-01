@@ -12,6 +12,7 @@ import { createPlaybookOps } from '../playbook-ops.js';
 import { checkForUpdate } from '../../update-check.js';
 import { buildPreflightManifest } from '../preflight.js';
 import { ENGINE_MODULE_MANIFEST } from '../../engine/module-manifest.js';
+import { loadAgentConfig, resolveAutoOpsConfig } from '../agent-config.js';
 import {
   createTracker,
   advanceStep,
@@ -42,6 +43,8 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
         const { homedir } = await import('node:os');
         const { existsSync, readdirSync, statSync } = await import('node:fs');
         const projectPath = resolve((params.projectPath as string) ?? '.');
+        const agentConfig = loadAgentConfig(runtime.config.agentDir ?? '');
+        const autoOps = resolveAutoOpsConfig(agentConfig);
         const project = vault.registerProject(projectPath, params.name as string | undefined);
         // Also track in project registry for cross-project features
         projectRegistry.register(projectPath, params.name as string | undefined);
@@ -100,61 +103,67 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
         // Auto-dream: increment session counter and check gate
         let dreamInfo: { status: unknown; gate: { eligible: boolean; reason: string } } | null =
           null;
-        try {
-          const { ensureDreamSchema } = await import('../../dream/schema.js');
-          const { DreamEngine } = await import('../../dream/dream-engine.js');
-          ensureDreamSchema(runtime.vault.getProvider());
-          const dreamEngine = new DreamEngine(runtime.vault, runtime.curator);
-          dreamEngine.incrementSessionCount();
-          const gate = dreamEngine.checkGate();
-          dreamInfo = { status: dreamEngine.getStatus(), gate };
-          if (gate.eligible) {
-            // Fire-and-forget: don't block session_start
-            Promise.resolve()
-              .then(() => dreamEngine.run())
-              .catch(() => {
-                /* best-effort */
-              });
+        if (autoOps.dream) {
+          try {
+            const { ensureDreamSchema } = await import('../../dream/schema.js');
+            const { DreamEngine } = await import('../../dream/dream-engine.js');
+            ensureDreamSchema(runtime.vault.getProvider());
+            const dreamEngine = new DreamEngine(runtime.vault, runtime.curator);
+            dreamEngine.incrementSessionCount();
+            const gate = dreamEngine.checkGate();
+            dreamInfo = { status: dreamEngine.getStatus(), gate };
+            if (gate.eligible) {
+              // Fire-and-forget: don't block session_start
+              Promise.resolve()
+                .then(() => dreamEngine.run())
+                .catch(() => {
+                  /* best-effort */
+                });
+            }
+          } catch {
+            /* dream module not available — skip silently */
           }
-        } catch {
-          /* dream module not available — skip silently */
         }
 
         // Auto self-heal: increment session counter and fire if gate met
         let selfHealInfo: { status: unknown; gate: { eligible: boolean; reason: string } } | null =
           null;
-        try {
-          const { SelfHealGate } = await import('../../vault/self-heal-gate.js');
-          const healGate = new SelfHealGate(
-            runtime.vault.getProvider(),
-            runtime.curator,
-            runtime.linkManager ?? null,
-          );
-          healGate.incrementSessionCount();
-          const gate = healGate.checkGate();
-          selfHealInfo = { status: healGate.getStatus(), gate };
-          if (gate.eligible) {
-            // Fire-and-forget: don't block session_start
-            Promise.resolve()
-              .then(() => healGate.run())
-              .catch(() => {
-                /* best-effort */
-              });
+        if (autoOps.selfHeal) {
+          try {
+            const { SelfHealGate } = await import('../../vault/self-heal-gate.js');
+            const healGate = new SelfHealGate(
+              runtime.vault.getProvider(),
+              runtime.curator,
+              runtime.linkManager ?? null,
+            );
+            healGate.incrementSessionCount();
+            const gate = healGate.checkGate();
+            selfHealInfo = { status: healGate.getStatus(), gate };
+            if (gate.eligible) {
+              // Fire-and-forget: don't block session_start
+              Promise.resolve()
+                .then(() => healGate.run())
+                .catch(() => {
+                  /* best-effort */
+                });
+            }
+          } catch {
+            /* self-heal gate not available — skip silently */
           }
-        } catch {
-          /* self-heal gate not available — skip silently */
         }
 
         // Auto-reap stale worktrees — best-effort, non-blocking
-        try {
-          const { worktreeReap } = await import('../../utils/worktree-reaper.js');
-          Promise.resolve()
-            .then(() => worktreeReap(projectPath))
-            .catch(() => {
-              /* best-effort */
-            });
-        } catch {
-          /* worktree-reaper not available — skip silently */
+        if (autoOps.orphanReaper) {
+          try {
+            const { worktreeReap } = await import('../../utils/worktree-reaper.js');
+            Promise.resolve()
+              .then(() => worktreeReap(projectPath))
+              .catch(() => {
+                /* best-effort */
+              });
+          } catch {
+            /* worktree-reaper not available — skip silently */
+          }
         }
 
         // ─── Pre-flight manifest ───────────────────────────────
@@ -200,11 +209,13 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
 
         // Auto-close stale plans before reporting executing plans
         let stalePlansClosed = 0;
-        try {
-          const staleResult = runtime.planner.closeStale();
-          stalePlansClosed = staleResult.closedIds.length;
-        } catch {
-          // Non-critical — don't fail session start over stale cleanup
+        if (autoOps.staleClose) {
+          try {
+            const staleResult = runtime.planner.closeStale();
+            stalePlansClosed = staleResult.closedIds.length;
+          } catch {
+            // Non-critical — don't fail session start over stale cleanup
+          }
         }
 
         const executingPlans = runtime.planner.getExecuting().map((p) => ({

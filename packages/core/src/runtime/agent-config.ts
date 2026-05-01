@@ -7,14 +7,44 @@ import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 
 /** Typed representation of an agent.yaml configuration file. */
+export interface AgentAutoOpsConfig {
+  dream?: boolean;
+  selfHeal?: boolean;
+  orphanReaper?: boolean;
+  staleClose?: boolean;
+}
+
+export interface AgentEngineConfig {
+  /**
+   * Opt-in session_start maintenance side effects.
+   * Configure in agent.yaml as `engine.autoOps`; all flags default to false.
+   */
+  autoOps?: AgentAutoOpsConfig;
+}
+
 export interface AgentConfig {
   id?: string;
   capabilities?: string[];
   probes?: string[];
+  engine?: AgentEngineConfig;
   /** Maps workflow name to intent string (e.g. 'deliver' → 'DELIVER'). */
   workflows?: Record<string, string>;
   /** Maps capability IDs to their facade/op pairs. Agent-declared overrides extend/replace core defaults. */
   capabilityMap?: Record<string, { facade: string; op: string }>;
+}
+
+export const DEFAULT_AUTO_OPS_CONFIG: Required<AgentAutoOpsConfig> = {
+  dream: false,
+  selfHeal: false,
+  orphanReaper: false,
+  staleClose: false,
+};
+
+export function resolveAutoOpsConfig(config: AgentConfig): Required<AgentAutoOpsConfig> {
+  return {
+    ...DEFAULT_AUTO_OPS_CONFIG,
+    ...config.engine?.autoOps,
+  };
 }
 
 /**
