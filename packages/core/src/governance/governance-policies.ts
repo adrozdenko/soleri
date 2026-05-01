@@ -62,6 +62,22 @@ export const POLICY_PRESETS: Record<PolicyPreset, PresetConfig> = {
       autoExpireDays: 30,
     },
   },
+  // Personal/local vault mode. Not intended as the default production preset.
+  personal_unlimited: {
+    quotas: {
+      maxEntriesTotal: 1_000_000,
+      maxEntriesPerCategory: 1_000_000,
+      maxEntriesPerType: 1_000_000,
+      warnAtPercent: 99,
+    },
+    retention: { archiveAfterDays: 365, minHitsToKeep: 0, deleteArchivedAfterDays: 730 },
+    autoCapture: {
+      enabled: true,
+      requireReview: false,
+      maxPendingProposals: 100,
+      autoExpireDays: 30,
+    },
+  },
 };
 
 export const DEFAULT_PRESET: PolicyPreset = 'moderate';

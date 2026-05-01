@@ -5,13 +5,13 @@ import type { Command } from 'commander';
 import { detectAgent } from '../utils/agent-context.js';
 import * as log from '../utils/logger.js';
 
-const VALID_PRESETS = ['strict', 'moderate', 'permissive'] as const;
+const VALID_PRESETS = ['strict', 'moderate', 'permissive', 'personal_unlimited'] as const;
 
 export function registerGovernance(program: Command): void {
   program
     .command('governance')
     .description('Manage vault governance policy for an agent')
-    .option('--preset <name>', 'Apply preset (strict|moderate|permissive)')
+    .option('--preset <name>', 'Apply preset (strict|moderate|permissive|personal_unlimited)')
     .option('--show', 'Show current policy and quota status')
     .action(async (opts: { preset?: string; show?: boolean }) => {
       const agent = detectAgent();
@@ -42,7 +42,7 @@ export function registerGovernance(program: Command): void {
 
           governance.applyPreset(
             agent.agentId,
-            opts.preset as 'strict' | 'moderate' | 'permissive',
+            opts.preset as 'strict' | 'moderate' | 'permissive' | 'personal_unlimited',
             'soleri-cli',
           );
           log.heading('Governance — Preset Applied');

@@ -1,7 +1,7 @@
 // ─── Policy Types ───────────────────────────────────────────────────
 
 export type PolicyType = 'quota' | 'retention' | 'auto-capture';
-export type PolicyPreset = 'strict' | 'moderate' | 'permissive';
+export type PolicyPreset = 'strict' | 'moderate' | 'permissive' | 'personal_unlimited';
 export type PolicyAction = 'capture' | 'quarantine' | 'reject' | 'propose';
 
 export interface QuotaPolicy {

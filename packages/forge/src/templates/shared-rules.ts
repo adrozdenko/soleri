@@ -781,7 +781,7 @@ const ENGINE_RULES_LINES: string[] = [
   '| `soleri uninstall` | Remove agent MCP server entry |',
   '| `soleri create --no-git` | Scaffold agent without git initialization |',
   '| `soleri governance --show` | Show vault governance policy |',
-  '| `soleri governance --preset <name>` | Set policy preset (strict\\|moderate\\|permissive) |',
+  '| `soleri governance --preset <name>` | Set policy preset (strict\\|moderate\\|permissive\\|personal_unlimited) |',
   '| `soleri upgrade` | Upgrade @soleri/cli (`--check` to preview) |',
   '',
   '',

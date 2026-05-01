@@ -159,7 +159,7 @@ export function createControlFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         projectPath: z.string(),
         policyType: z.enum(['quota', 'retention', 'auto-capture']).optional(),
         config: z.record(z.string(), z.unknown()).optional(),
-        preset: z.enum(['strict', 'moderate', 'permissive']).optional(),
+        preset: z.enum(['strict', 'moderate', 'permissive', 'personal_unlimited']).optional(),
         changedBy: z.string().optional(),
       }),
       handler: async (params) => {
