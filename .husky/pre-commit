@@ -1,1 +1,26 @@
+#!/usr/bin/env sh
+# Scope guard — enforces explicit staging boundaries when STAGED_SCOPE is set.
+# Usage: STAGED_SCOPE="file1.ts,file2.ts" git commit -m "..."
+if [ -n "$STAGED_SCOPE" ]; then
+  ACTUAL=$(git diff --name-only --cached)
+  ALLOWED=$(echo "$STAGED_SCOPE" | tr ',' '\n' | tr -d ' ')
+  EXTRA=""
+  for f in $ACTUAL; do
+    if ! echo "$ALLOWED" | grep -qx "$f"; then
+      EXTRA="$EXTRA $f"
+    fi
+  done
+  if [ -n "$EXTRA" ]; then
+    echo ""
+    echo "Commit blocked: staged files exceed allowed scope."
+    echo "  Allowed: $(echo "$ALLOWED" | tr '\n' ' ')"
+    echo "  Actual:  $(echo "$ACTUAL" | tr '\n' ' ')"
+    echo "  Extra:  $EXTRA"
+    echo ""
+    echo "Remove extra files from staging or update STAGED_SCOPE explicitly."
+    echo ""
+    exit 1
+  fi
+fi
+
 npx lint-staged

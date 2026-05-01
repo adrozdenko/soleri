@@ -40,3 +40,10 @@ Use `soleri pack registry` to discover available packs, `soleri pack add <name>`
 
 Three layers — all must pass before merge: unit (`npm test`), e2e (`npm run test:e2e`), smoke (manual scaffold + run).
 Run e2e after any change to core facades, forge templates, or CLI commands.
+
+## Execution Discipline
+
+- If a task specifies explicit staging scope → ONLY those files may be modified and staged.
+- If any blocker requires modifying another file → STOP, report the blocker, propose the fix, wait for approval.
+- Pre-commit failures do NOT authorize scope expansion.
+- "Trivial fix" is NOT a valid reason to modify additional files without approval.
