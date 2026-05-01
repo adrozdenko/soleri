@@ -120,7 +120,9 @@ function mockRuntime(): AgentRuntime {
         objective: 'test',
         decisions: [],
         tasks: [],
+        status: 'draft',
       }),
+      approve: vi.fn().mockReturnValue({ id: 'plan-1', status: 'approved' }),
       get: vi.fn().mockReturnValue({
         id: 'plan-1',
         objective: 'test',
@@ -341,6 +343,74 @@ describe('createOrchestrateOps', () => {
       const op = findOp(ops, 'orchestrate_plan');
       await op.handler({ prompt: 'Build something' });
       expect(rt.planner.create).toHaveBeenCalled();
+    });
+
+    it('fast-paths trivial tasks into executing status', async () => {
+      const op = findOp(ops, 'orchestrate_plan');
+      const result = (await op.handler({
+        prompt: 'Tighten copy on the CLI help text',
+        tasks: [
+          { title: 'Update copy', description: 'Adjust the help text wording.' },
+          { title: 'Verify output', description: 'Confirm the updated text reads cleanly.' },
+        ],
+      })) as Record<string, unknown>;
+
+      expect(rt.planner.create).toHaveBeenCalled();
+      expect(rt.planner.approve).toHaveBeenCalledWith('plan-1');
+      expect(rt.planner.startExecution).toHaveBeenCalledWith('plan-1');
+      expect((result.plan as Record<string, unknown>).status).toBe('executing');
+    });
+
+    it('keeps the normal lifecycle for long prompts', async () => {
+      const op = findOp(ops, 'orchestrate_plan');
+      const longPrompt = 'a'.repeat(1000);
+
+      await op.handler({
+        prompt: longPrompt,
+        tasks: [{ title: 'Single task', description: 'Still too large because of objective size.' }],
+      });
+
+      expect(rt.planner.create).toHaveBeenCalled();
+      expect(rt.planner.approve).not.toHaveBeenCalled();
+      expect(rt.planner.startExecution).not.toHaveBeenCalled();
+    });
+
+    it('keeps the normal lifecycle when task count exceeds the fast-path limit', async () => {
+      const op = findOp(ops, 'orchestrate_plan');
+
+      await op.handler({
+        prompt: 'Make a small docs cleanup',
+        tasks: [
+          { title: 'Task 1', description: 'A' },
+          { title: 'Task 2', description: 'B' },
+          { title: 'Task 3', description: 'C' },
+          { title: 'Task 4', description: 'D' },
+        ],
+      });
+
+      expect(rt.planner.create).toHaveBeenCalled();
+      expect(rt.planner.approve).not.toHaveBeenCalled();
+      expect(rt.planner.startExecution).not.toHaveBeenCalled();
+    });
+
+    it('does not fast-path when plan is deduplicated even if size-eligible', async () => {
+      vi.mocked(rt.planner.create).mockReturnValue(
+        Object.assign({ id: 'plan-1', status: 'draft', objective: 'test', decisions: [], tasks: [] }, { _deduplicated: true }),
+      );
+      const op = findOp(ops, 'orchestrate_plan');
+
+      const result = (await op.handler({
+        prompt: 'Short eligible prompt',
+        tasks: [
+          { title: 'Task 1', description: 'A' },
+          { title: 'Task 2', description: 'B' },
+        ],
+      })) as Record<string, unknown>;
+
+      expect(rt.planner.create).toHaveBeenCalled();
+      expect(rt.planner.approve).not.toHaveBeenCalled();
+      expect(rt.planner.startExecution).not.toHaveBeenCalled();
+      expect((result as Record<string, unknown>).deduplicated).toBe(true);
     });
 
     it('builds plan with no recommendations when all three retrieval paths fail', async () => {

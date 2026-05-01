@@ -36,6 +36,19 @@ export interface OrchestratePlanningContext {
   agentId: string;
 }
 
+const TASK_SIZE_FAST_PATH_MAX_PROMPT_LENGTH = 1000;
+const TASK_SIZE_FAST_PATH_MAX_TASKS = 3;
+
+function isTaskSizeFastPathEligible(
+  prompt: string,
+  tasks: Array<{ title: string; description: string }>,
+): boolean {
+  return (
+    prompt.length < TASK_SIZE_FAST_PATH_MAX_PROMPT_LENGTH &&
+    tasks.length <= TASK_SIZE_FAST_PATH_MAX_TASKS
+  );
+}
+
 export function createOrchestratePlanOp(ctx: OrchestratePlanningContext): OpDefinition {
   const { runtime, planner, brain, brainIntelligence, agentId } = ctx;
 
@@ -187,6 +200,7 @@ export function createOrchestratePlanOp(ctx: OrchestratePlanningContext): OpDefi
         return r.entryId ? `${base} [entryId:${r.entryId}]` : base;
       });
       const tasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];
+      const fastPathEligible = isTaskSizeFastPathEligible(prompt, tasks);
 
       // 5b. Extract GitHub issue context if prompt references #NNN
       let githubIssue: { owner: string; repo: string; number: number } | undefined;
@@ -217,13 +231,20 @@ export function createOrchestratePlanOp(ctx: OrchestratePlanningContext): OpDefi
           : undefined;
 
       let legacyPlan;
+      let deduplicated = false;
       try {
-        legacyPlan = planner.create({
+        const createdPlan = planner.create({
           objective: planObjective,
           scope: (params.scope as string) ?? `${intent} workflow`,
           decisions,
           tasks,
-        });
+        }) as ReturnType<typeof planner.create> & { _deduplicated?: boolean };
+        deduplicated = createdPlan._deduplicated === true;
+        legacyPlan = createdPlan;
+        if (legacyPlan && fastPathEligible && !deduplicated) {
+          planner.approve(legacyPlan.id);
+          legacyPlan = planner.startExecution(legacyPlan.id);
+        }
         if (legacyPlan && githubIssue) {
           legacyPlan.githubIssue = githubIssue;
         }
@@ -239,7 +260,7 @@ export function createOrchestratePlanOp(ctx: OrchestratePlanningContext): OpDefi
         },
         recommendations,
         ...(quotaWarning ? { quotaWarning } : {}),
-        ...(legacyPlan?._deduplicated ? { deduplicated: true } : {}),
+        ...(deduplicated ? { deduplicated: true } : {}),
         flow: {
           planId: plan.planId,
           intent: plan.intent,
