@@ -38,3 +38,14 @@ Issues that are **not** security vulnerabilities:
 - Feature requests
 - Documentation gaps
 - Performance issues
+
+## Accepted Risks
+
+### Astro XSS in `define:vars` (GHSA-j687-52p2-xcff)
+
+- **Affects:** `astro < 6.1.6`
+- **Severity:** Moderate
+- **Context:** This repo's Astro usage is a static Starlight documentation site.
+- **Why not exploitable here:** The XSS requires user-controlled input to be passed into `define:vars` at build or render time. This site has no such input path — all content is static and author-controlled.
+- **Decision:** Risk accepted. Upgrade deferred to the planned Astro 5 → 6 framework migration.
+- **Reviewed:** 2026-05-01

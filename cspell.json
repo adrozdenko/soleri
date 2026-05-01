@@ -90,6 +90,8 @@
     "pipenv",
     "pipfile",
     "getenv",
+    "GHSA",
+    "xcff",
     "libvips",
     "venv",
     "lockfiles",
