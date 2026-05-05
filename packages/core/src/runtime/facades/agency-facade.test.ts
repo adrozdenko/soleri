@@ -19,8 +19,12 @@ function mockRuntime(): AgentRuntime {
       suppressWarning: vi.fn(),
       unsuppressWarning: vi.fn(),
       dismissPattern: vi.fn(),
+      getSurfacedPatterns: vi.fn().mockReturnValue([]),
       drainNotifications: vi.fn().mockReturnValue([]),
       getFullStatus: vi.fn().mockReturnValue({ enabled: false }),
+    },
+    brain: {
+      recordFeedback: vi.fn(),
     },
   } as unknown as AgentRuntime;
 }

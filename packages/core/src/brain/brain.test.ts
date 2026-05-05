@@ -556,6 +556,21 @@ describe('Brain', () => {
       expect(entry.id).toBeGreaterThan(0);
     });
 
+    it('round-trip: dismissed action persists and is readable', () => {
+      const entry = brain.recordFeedback({
+        query: 'agency-dismiss:pattern-a',
+        entryId: 'pattern-a',
+        action: 'dismissed',
+        source: 'explicit',
+        reason: 'User dismissed surfaced pattern via agency_dismiss_pattern',
+      });
+      expect(entry.action).toBe('dismissed');
+      const stats = brain.getFeedbackStats();
+      expect(stats.total).toBe(1);
+      expect(stats.byAction['dismissed']).toBe(1);
+      expect(stats.acceptanceRate).toBe(0);
+    });
+
     it('should accept modified and failed action types', () => {
       brain.recordFeedback({ query: 'q1', entryId: 'fb-1', action: 'modified' });
       brain.recordFeedback({ query: 'q2', entryId: 'fb-1', action: 'failed' });

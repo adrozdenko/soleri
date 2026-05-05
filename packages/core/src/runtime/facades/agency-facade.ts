@@ -7,7 +7,7 @@ import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 
 export function createAgencyFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { agencyManager } = runtime;
+  const { agencyManager, brain } = runtime;
 
   return [
     {
@@ -158,8 +158,19 @@ export function createAgencyFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         entryId: z.string(),
       }),
       handler: async (params) => {
-        agencyManager.dismissPattern(params.entryId as string);
-        return { dismissed: true, entryId: params.entryId, ttlHours: 24 };
+        const entryId = params.entryId as string;
+        const pattern = agencyManager.getSurfacedPatterns().find((p) => p.entryId === entryId);
+        agencyManager.dismissPattern(entryId);
+        if (pattern) {
+          brain.recordFeedback({
+            query: pattern.trigger,
+            entryId,
+            action: 'dismissed',
+            source: 'explicit',
+            reason: 'User dismissed surfaced pattern via agency_dismiss_pattern',
+          });
+        }
+        return { dismissed: true, entryId, ttlHours: 24 };
       },
     },
     {
