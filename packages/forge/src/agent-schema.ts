@@ -60,7 +60,13 @@ const CompactionPolicySchema = z.object({
     .optional(),
 });
 
-/** Session-start maintenance ops. All default off; opt in under engine.autoOps. */
+/**
+ * Session-start maintenance ops. All default off; opt in under engine.autoOps.
+ *
+ * Default value matches the full output type — Zod v4 rejects `.default({})`
+ * on object schemas whose inner fields have their own defaults
+ * (vault entry: typescript-1776088772668-p52eqp).
+ */
 const AutoOpsConfigSchema = z
   .object({
     dream: z.boolean().optional().default(false),
@@ -69,7 +75,7 @@ const AutoOpsConfigSchema = z
     staleClose: z.boolean().optional().default(false),
   })
   .optional()
-  .default({});
+  .default({ dream: false, selfHeal: false, orphanReaper: false, staleClose: false });
 
 /** Engine configuration */
 const EngineConfigSchema = z.object({
@@ -232,7 +238,10 @@ export const AgentYamlSchema = z.object({
 
   // ─── Engine ─────────────────────────────────────
   /** Knowledge engine configuration */
-  engine: EngineConfigSchema.optional().default({ learning: true }),
+  engine: EngineConfigSchema.optional().default({
+    learning: true,
+    autoOps: { dream: false, selfHeal: false, orphanReaper: false, staleClose: false },
+  }),
 
   // ─── Vault Connections ──────────────────────────
   /** Link to external vaults for shared knowledge */

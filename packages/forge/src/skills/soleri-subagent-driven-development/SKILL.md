@@ -39,15 +39,15 @@ Not all subagents are equal. Route by complexity:
 
 ## Model Selection
 
-Subagent-type (worker vs instance) picks *who* runs the task. Model selection picks *how much brain* they bring. Both decisions happen at dispatch, independently.
+Subagent-type (worker vs instance) picks _who_ runs the task. Model selection picks _how much brain_ they bring. Both decisions happen at dispatch, independently.
 
 ### Tier rubric
 
-| Tier | Model | Subagent purpose — trigger patterns |
-|------|-------|-------------------------------------|
-| simple | `haiku` | Exploration, file/symbol lookup, pattern search, single-fact retrieval, dedup detection, quick classification, data extraction from known formats |
-| standard | `sonnet` | Code implementation, refactors, test writing, documentation, migrations, data transformation, routine reviews, general research |
-| complex | `opus` | Architecture review, deep-review, plan creation, grading/scoring, critical bug diagnosis, cross-cutting design decisions, ambiguity resolution, nuanced writing |
+| Tier     | Model    | Subagent purpose — trigger patterns                                                                                                                             |
+| -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| simple   | `haiku`  | Exploration, file/symbol lookup, pattern search, single-fact retrieval, dedup detection, quick classification, data extraction from known formats               |
+| standard | `sonnet` | Code implementation, refactors, test writing, documentation, migrations, data transformation, routine reviews, general research                                 |
+| complex  | `opus`   | Architecture review, deep-review, plan creation, grading/scoring, critical bug diagnosis, cross-cutting design decisions, ambiguity resolution, nuanced writing |
 
 ### Fallback chain
 
