@@ -38,6 +38,10 @@ VAULT_PATH="${SOLERI_VAULT_PATH:-$HOME/.soleri/vault.db}"
 # Resolve project path: prefer cwd from hook payload, fall back to PWD
 PROJECT_PATH="${CWD:-$PWD}"
 
+# Optional: agent dir lets the capture script read engine.autoOps.captureSessions
+# from <agentDir>/agent.yaml. When unset, session-memory generation stays off.
+AGENT_DIR="${SOLERI_AGENT_DIR:-}"
+
 # Resolve the capture script path relative to this shell script
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 CAPTURE_SCRIPT="$SCRIPT_DIR/capture-hook.js"
@@ -54,11 +58,20 @@ if [ ! -f "$CAPTURE_SCRIPT" ]; then
 fi
 
 # Run the capture script — redirect stderr to stdout for hook logging
-node "$CAPTURE_SCRIPT" \
-  --session-id "$SESSION_ID" \
-  --transcript-path "$TRANSCRIPT_PATH" \
-  --project-path "$PROJECT_PATH" \
-  --vault-path "$VAULT_PATH" 2>&1 || true
+if [ -n "$AGENT_DIR" ]; then
+  node "$CAPTURE_SCRIPT" \
+    --session-id "$SESSION_ID" \
+    --transcript-path "$TRANSCRIPT_PATH" \
+    --project-path "$PROJECT_PATH" \
+    --vault-path "$VAULT_PATH" \
+    --agent-dir "$AGENT_DIR" 2>&1 || true
+else
+  node "$CAPTURE_SCRIPT" \
+    --session-id "$SESSION_ID" \
+    --transcript-path "$TRANSCRIPT_PATH" \
+    --project-path "$PROJECT_PATH" \
+    --vault-path "$VAULT_PATH" 2>&1 || true
+fi
 
 # Always exit 0 — never block the hook
 exit 0

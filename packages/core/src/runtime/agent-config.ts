@@ -12,6 +12,8 @@ export interface AgentAutoOpsConfig {
   selfHeal?: boolean;
   orphanReaper?: boolean;
   staleClose?: boolean;
+  /** When true, transcript capture hook + red-level health warnings auto-write `type=session` memories. Default false. */
+  captureSessions?: boolean;
 }
 
 export interface AgentEngineConfig {
@@ -38,6 +40,7 @@ export const DEFAULT_AUTO_OPS_CONFIG: Required<AgentAutoOpsConfig> = {
   selfHeal: false,
   orphanReaper: false,
   staleClose: false,
+  captureSessions: false,
 };
 
 export function resolveAutoOpsConfig(config: AgentConfig): Required<AgentAutoOpsConfig> {
