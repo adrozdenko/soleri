@@ -955,6 +955,8 @@ describe('Agent Simulation: First Week', () => {
 
   describe('Day 7: Orchestration & Validation', () => {
     it('42. Orchestrate plan — full pipeline', async () => {
+      // 4 tasks → above the trivial-task fast-path threshold (#795), so the
+      // plan stays in draft for the explicit approve_plan call in test 43.
       const res = await op('orchestrate', 'orchestrate_plan', {
         prompt: 'Add loading skeleton screens to all data-fetching pages',
         scope: 'Frontend UX improvement',
@@ -964,6 +966,8 @@ describe('Agent Simulation: First Week', () => {
             description: 'Reusable skeleton with pulse animation',
           },
           { title: 'Add to dashboard page', description: 'Replace spinner with skeleton' },
+          { title: 'Add to settings page', description: 'Replace spinner with skeleton' },
+          { title: 'Add to feed page', description: 'Replace spinner with skeleton' },
         ],
       });
 
