@@ -643,6 +643,8 @@ describe('E2E: curator-brain-governance', () => {
 
   it('orchestrate: plan → execute → complete lifecycle', async () => {
     // Plan
+    // 4 tasks → above the trivial-task fast-path threshold (#795), so the
+    // plan stays in draft for the explicit approve_plan call below.
     const planRes = await callOp(`${AGENT_ID}_orchestrate`, 'orchestrate_plan', {
       objective: 'Test the orchestration pipeline',
       scope: 'E2E testing scope',
@@ -650,6 +652,8 @@ describe('E2E: curator-brain-governance', () => {
       tasks: [
         { title: 'Step 1', description: 'First orchestrated step' },
         { title: 'Step 2', description: 'Second orchestrated step' },
+        { title: 'Step 3', description: 'Third orchestrated step' },
+        { title: 'Step 4', description: 'Fourth orchestrated step' },
       ],
     });
     expect(planRes.success).toBe(true);
