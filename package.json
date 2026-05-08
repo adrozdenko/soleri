@@ -47,6 +47,8 @@
     "deadcode:ts-prune": "ts-prune",
     "test:e2e": "vitest run --config e2e/vitest.config.ts --dir e2e && vitest run --config e2e/vitest.heavy.config.ts",
     "validate-skills": "tsx packages/core/src/skills/validate-skill-docs.ts",
+    "docs:check-drift": "tsx scripts/check-docs-drift.ts",
+    "docs:check-drift:test": "vitest run --root . scripts/check-docs-drift.test.ts",
     "prepare": "husky"
   },
   "dependencies": {
