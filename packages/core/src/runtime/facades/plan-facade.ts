@@ -11,6 +11,7 @@ import { createGradingOps } from '../grading-ops.js';
 import { createChainOps } from '../chain-ops.js';
 import { PlanGradeRejectionError } from '../../planning/planner.js';
 import { matchPlaybooks } from '../../playbooks/playbook-registry.js';
+import { logCreatePlanMetric, recordApprovalAttempt } from '../friction-metrics.js';
 import {
   evaluateTaskConstraints,
   TaskConstraintError,
@@ -67,6 +68,7 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
 
         // Vault enrichment: search for patterns matching the objective
         let vaultEntryIds: string[] = [];
+        const vaultSearchStart = Date.now();
         try {
           const results = vault.search(objective, { limit: 5 });
           if (results.length > 0) {
@@ -80,6 +82,7 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
         } catch {
           // Vault search failed — proceed without enrichment
         }
+        const vaultSearchMs = Date.now() - vaultSearchStart;
 
         // Playbook matching: metadata is always surfaced; task injection +
         // executor gates only fire when the caller passes injectTasks=true.
@@ -147,6 +150,18 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           plan.playbookSessionId = playbookSessionId;
         }
 
+        // Friction instrumentation — log-and-continue. Never break create_plan.
+        try {
+          logCreatePlanMetric(vault.getProvider(), {
+            planId: plan.id,
+            objectiveLen: objective.length,
+            taskCount: plan.tasks.length,
+            vaultSearchMs,
+          });
+        } catch {
+          // Metrics are best-effort
+        }
+
         return {
           created: true,
           plan,
@@ -192,14 +207,24 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           .describe('If true, immediately start execution after approval'),
       }),
       handler: async (params) => {
+        const planId = params.planId as string;
+        const recordMetric = (gradeScore: number | null): void => {
+          try {
+            recordApprovalAttempt(vault.getProvider(), { planId, gradeScore });
+          } catch {
+            // Metrics are best-effort
+          }
+        };
         try {
-          let plan = planner.approve(params.planId as string);
+          let plan = planner.approve(planId);
           if (params.startExecution) {
             plan = planner.startExecution(plan.id);
           }
+          recordMetric(plan.latestCheck?.score ?? null);
           return { approved: true, executing: plan.status === 'executing', plan };
         } catch (err) {
           if (err instanceof PlanGradeRejectionError) {
+            recordMetric(err.score);
             return {
               approved: false,
               error: 'grade_gate_rejection',
