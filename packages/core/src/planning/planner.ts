@@ -57,6 +57,7 @@ export class Planner {
   private minGradeForApproval: PlanGrade;
   private executingTtlMs: number;
   private draftTtlMs: number;
+  private gradeMinTaskCount: number;
 
   constructor(filePath: string, options?: GapAnalysisOptions | PlannerOptions) {
     this.filePath = filePath;
@@ -65,18 +66,21 @@ export class Planner {
       ('minGradeForApproval' in options ||
         'executingTtlMs' in options ||
         'draftTtlMs' in options ||
-        'gapOptions' in options)
+        'gapOptions' in options ||
+        'gradeMinTaskCount' in options)
     ) {
       const opts = options as PlannerOptions;
       this.gapOptions = opts.gapOptions;
       this.minGradeForApproval = opts.minGradeForApproval ?? 'A';
       this.executingTtlMs = opts.executingTtlMs ?? 24 * 60 * 60 * 1000;
       this.draftTtlMs = opts.draftTtlMs ?? 30 * 60 * 1000;
+      this.gradeMinTaskCount = opts.gradeMinTaskCount ?? 5;
     } else {
       this.gapOptions = options as GapAnalysisOptions | undefined;
       this.minGradeForApproval = 'A';
       this.executingTtlMs = 24 * 60 * 60 * 1000;
       this.draftTtlMs = 30 * 60 * 1000;
+      this.gradeMinTaskCount = 5;
     }
     this.store = this.load();
   }
@@ -238,7 +242,11 @@ export class Planner {
   approve(planId: string): Plan {
     const plan = this.requirePlan(planId);
     const check = plan.latestCheck;
-    if (check && check.score < gradeToMinScore(this.minGradeForApproval)) {
+    // Trivial plans skip the grade gate — 8-pass gap analysis is wrong-sized
+    // for work below `gradeMinTaskCount` tasks. The gate still fires for any
+    // plan at or above the threshold.
+    const meetsTaskThreshold = plan.tasks.length >= this.gradeMinTaskCount;
+    if (check && meetsTaskThreshold && check.score < gradeToMinScore(this.minGradeForApproval)) {
       throw new PlanGradeRejectionError(
         check.grade,
         check.score,
