@@ -538,6 +538,47 @@ describe('plan-facade', () => {
     expect(data.plans[0].reason).toContain('ttl-expired');
   });
 
+  // ─── friction-metrics instrumentation ─────────────────────────
+
+  it('create_plan writes a friction_metrics row with objective_len and task_count', async () => {
+    const objective = 'Implement caching layer with TTL';
+    const result = await executeOp(ops, 'create_plan', {
+      objective,
+      scope: 'test',
+      tasks: [
+        { title: 'A', description: 'a' },
+        { title: 'B', description: 'b' },
+      ],
+    });
+    expect(result.success).toBe(true);
+    const plan = (result.data as Record<string, unknown>).plan as { id: string };
+    const row = vault
+      .getProvider()
+      .get<{ objective_len: number; task_count: number }>(
+        'SELECT objective_len, task_count FROM friction_metrics WHERE plan_id = ?',
+        [plan.id],
+      );
+    expect(row).toBeDefined();
+    expect(row?.objective_len).toBe(objective.length);
+    expect(row?.task_count).toBeGreaterThanOrEqual(2);
+  });
+
+  it('approve_plan bumps regrade_count on the friction_metrics row', async () => {
+    const createResult = await executeOp(ops, 'create_plan', {
+      objective: 'Trivial work',
+      scope: 'test',
+    });
+    const planId = ((createResult.data as Record<string, unknown>).plan as { id: string }).id;
+    await executeOp(ops, 'approve_plan', { planId });
+    const row = vault
+      .getProvider()
+      .get<{ regrade_count: number }>(
+        'SELECT regrade_count FROM friction_metrics WHERE plan_id = ?',
+        [planId],
+      );
+    expect(row?.regrade_count).toBe(1);
+  });
+
   // ─── Planner.closeStale() ─────────────────────────────────────
 
   it('closeStale closes draft plans older than TTL', () => {
