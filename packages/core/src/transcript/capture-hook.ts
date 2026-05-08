@@ -26,6 +26,7 @@ import { initializeSchema } from '../vault/vault-schema.js';
 import { captureTranscriptSession } from '../vault/vault-transcripts.js';
 import { parseTranscriptJsonl } from './jsonl-parser.js';
 import { captureMemory } from '../vault/vault-memories.js';
+import { loadAgentConfig, resolveAutoOpsConfig } from '../runtime/agent-config.js';
 
 // ── Arg Parsing ──────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ interface CaptureArgs {
   transcriptPath: string;
   projectPath: string;
   vaultPath: string;
+  agentDir?: string;
 }
 
 function parseArgs(): CaptureArgs | null {
@@ -42,6 +44,7 @@ function parseArgs(): CaptureArgs | null {
   let transcriptPath: string | undefined;
   let projectPath: string | undefined;
   let vaultPath: string | undefined;
+  let agentDir: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -58,6 +61,9 @@ function parseArgs(): CaptureArgs | null {
     } else if (arg === '--vault-path' && next) {
       vaultPath = resolve(next);
       i++;
+    } else if (arg === '--agent-dir' && next) {
+      agentDir = resolve(next);
+      i++;
     }
   }
 
@@ -65,7 +71,17 @@ function parseArgs(): CaptureArgs | null {
     return null;
   }
 
-  return { sessionId, transcriptPath, projectPath, vaultPath };
+  return { sessionId, transcriptPath, projectPath, vaultPath, agentDir };
+}
+
+/**
+ * Read engine.autoOps.captureSessions from the agent's configuration.
+ * Defaults to false when no agent dir is supplied or the file is missing.
+ */
+export function isSessionCaptureEnabled(agentDir: string | undefined): boolean {
+  if (!agentDir) return false;
+  const config = loadAgentConfig(agentDir);
+  return resolveAutoOpsConfig(config).captureSessions;
 }
 
 // ── Git Context ─────────────────────────────────────────────────────
@@ -345,7 +361,7 @@ function main(): void {
     process.exit(1);
   }
 
-  const { sessionId, transcriptPath, projectPath, vaultPath } = parsed;
+  const { sessionId, transcriptPath, projectPath, vaultPath, agentDir } = parsed;
 
   // Validate transcript file exists
   if (!existsSync(transcriptPath)) {
@@ -374,15 +390,18 @@ function main(): void {
       `[soleri-capture] Captured session ${result.sessionId}: ${result.messagesStored} messages, ${result.segmentsStored} segments, ~${result.tokenEstimate} tokens`,
     );
 
-    // Auto-generate a session memory so every session is discoverable
-    // via memory_list, regardless of whether the agent called session_capture.
-    generateSessionMemory(
-      provider,
-      transcriptPath,
-      projectPath,
-      result.messagesStored,
-      result.tokenEstimate,
-    );
+    // Session-memory generation is opt-in (engine.autoOps.captureSessions).
+    // Default off — transcript capture above is the system of record; the
+    // memories table stays focused on lessons unless the operator opts in.
+    if (isSessionCaptureEnabled(agentDir)) {
+      generateSessionMemory(
+        provider,
+        transcriptPath,
+        projectPath,
+        result.messagesStored,
+        result.tokenEstimate,
+      );
+    }
   } catch (err) {
     console.error(`[soleri-capture] Error: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);

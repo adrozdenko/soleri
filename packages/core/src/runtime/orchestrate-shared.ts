@@ -250,11 +250,14 @@ interface HealthWarning {
 
 /**
  * Build a context health warning if level is yellow or red.
- * On red: auto-triggers a session capture to vault memory.
+ * On red, auto-captures a `type=session` memory only when `autoCapture` is true
+ * (gated by `engine.autoOps.captureSessions`); otherwise the warning is returned
+ * with `sessionCaptured: false` and no row is written.
  */
 export function buildHealthWarning(
   status: ContextHealthStatus,
   vault: AgentRuntime['vault'],
+  autoCapture: boolean,
 ): HealthWarning | null {
   if (status.level === 'green') return null;
 
@@ -263,7 +266,7 @@ export function buildHealthWarning(
     recommendation: status.recommendation,
   };
 
-  if (status.level === 'red') {
+  if (status.level === 'red' && autoCapture) {
     try {
       vault.captureMemory({
         projectPath: '.',
@@ -283,6 +286,8 @@ export function buildHealthWarning(
     } catch {
       warning.sessionCaptured = false;
     }
+  } else if (status.level === 'red') {
+    warning.sessionCaptured = false;
   }
 
   return warning;

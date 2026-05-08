@@ -2,8 +2,11 @@
  * Tests for capture-hook.ts — git context collection and enriched session memory.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { collectSessionGitContext } from './capture-hook.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { join } from 'node:path';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { collectSessionGitContext, isSessionCaptureEnabled } from './capture-hook.js';
 import type { GitSessionContext } from './capture-hook.js';
 
 // Mock child_process.execFileSync
@@ -151,5 +154,42 @@ describe('collectSessionGitContext', () => {
       expect(opts.timeout).toBe(3000);
       expect(opts).toHaveProperty('encoding', 'utf-8');
     }
+  });
+});
+
+describe('isSessionCaptureEnabled', () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'soleri-capture-hook-test-'));
+  });
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('returns false when no agent dir is supplied', () => {
+    expect(isSessionCaptureEnabled(undefined)).toBe(false);
+  });
+
+  it('returns false when agent.yaml is missing', () => {
+    expect(isSessionCaptureEnabled(tempDir)).toBe(false);
+  });
+
+  it('returns false by default when autoOps.captureSessions is unset', () => {
+    writeFileSync(join(tempDir, 'agent.yaml'), 'id: ernesto\n');
+    expect(isSessionCaptureEnabled(tempDir)).toBe(false);
+  });
+
+  it('returns true only when agent.yaml opts in', () => {
+    writeFileSync(
+      join(tempDir, 'agent.yaml'),
+      `id: ernesto
+engine:
+  autoOps:
+    captureSessions: true
+`,
+    );
+    expect(isSessionCaptureEnabled(tempDir)).toBe(true);
   });
 });
