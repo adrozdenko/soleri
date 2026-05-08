@@ -299,4 +299,10 @@ export interface PlannerOptions {
   executingTtlMs?: number;
   /** TTL in ms for draft/approved plans in closeStale(). Default: 30 min (1800000). */
   draftTtlMs?: number;
+  /**
+   * Plans with fewer tasks than this skip the grade gate on `approve()`. The
+   * 8-pass gap analysis is wrong-sized for trivial plans; this lets small work
+   * approve without round-tripping through grading. Default: 5.
+   */
+  gradeMinTaskCount?: number;
 }
