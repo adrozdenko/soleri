@@ -458,10 +458,17 @@ describe('E2E: full-pipeline', () => {
       });
       expect(result.classification).toBe('complex');
 
-      // Create plan via orchestrate
+      // Create plan via orchestrate — pass 4 tasks to bypass the trivial-task
+      // fast-path (#795) so the plan stays in draft for the explicit approve.
       const plan = await callOp(`${AGENT_ID}_orchestrate`, 'orchestrate_plan', {
         prompt: 'add authentication to all API endpoints',
         projectPath: plannerDir,
+        tasks: [
+          { title: 'Wire JWT middleware', description: 'Add JWT verification middleware' },
+          { title: 'Apply to user routes', description: 'Protect /users/* endpoints' },
+          { title: 'Apply to admin routes', description: 'Protect /admin/* endpoints' },
+          { title: 'Add unit tests', description: 'Cover middleware happy and error paths' },
+        ],
       });
       expect(plan.success).toBe(true);
       const planData = plan.data as { plan: { id: string }; flow: { intent: string } };

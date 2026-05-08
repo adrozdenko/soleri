@@ -367,7 +367,9 @@ describe('createOrchestrateOps', () => {
 
       await op.handler({
         prompt: longPrompt,
-        tasks: [{ title: 'Single task', description: 'Still too large because of objective size.' }],
+        tasks: [
+          { title: 'Single task', description: 'Still too large because of objective size.' },
+        ],
       });
 
       expect(rt.planner.create).toHaveBeenCalled();
@@ -395,7 +397,10 @@ describe('createOrchestrateOps', () => {
 
     it('does not fast-path when plan is deduplicated even if size-eligible', async () => {
       vi.mocked(rt.planner.create).mockReturnValue(
-        Object.assign({ id: 'plan-1', status: 'draft', objective: 'test', decisions: [], tasks: [] }, { _deduplicated: true }),
+        Object.assign(
+          { id: 'plan-1', status: 'draft', objective: 'test', decisions: [], tasks: [] },
+          { _deduplicated: true },
+        ),
       );
       const op = findOp(ops, 'orchestrate_plan');
 

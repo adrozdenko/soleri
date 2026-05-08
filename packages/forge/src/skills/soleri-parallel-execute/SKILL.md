@@ -32,11 +32,11 @@ Pick a model per subagent at dispatch. Mixed tiers across a fan-out wave are exp
 
 ### Tier rubric
 
-| Tier | Model | Subagent purpose — trigger patterns |
-|------|-------|-------------------------------------|
-| simple | `haiku` | Exploration, file/symbol lookup, pattern search, single-fact retrieval, dedup detection, quick classification, data extraction from known formats |
-| standard | `sonnet` | Code implementation, refactors, test writing, documentation, migrations, data transformation, routine reviews, general research |
-| complex | `opus` | Architecture review, deep-review, plan creation, grading/scoring, critical bug diagnosis, cross-cutting design decisions, ambiguity resolution, nuanced writing |
+| Tier     | Model    | Subagent purpose — trigger patterns                                                                                                                             |
+| -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| simple   | `haiku`  | Exploration, file/symbol lookup, pattern search, single-fact retrieval, dedup detection, quick classification, data extraction from known formats               |
+| standard | `sonnet` | Code implementation, refactors, test writing, documentation, migrations, data transformation, routine reviews, general research                                 |
+| complex  | `opus`   | Architecture review, deep-review, plan creation, grading/scoring, critical bug diagnosis, cross-cutting design decisions, ambiguity resolution, nuanced writing |
 
 ### Fallback chain
 
@@ -54,11 +54,11 @@ User pin always wins over rubric: "Run wave 2 on Opus" or "Use Haiku for task-5"
 
 A 3-way wave with mixed tiers:
 
-| Task | Purpose | Model | Tier |
-|------|---------|-------|------|
-| task-1 | Scan repo for unused exports | `haiku` | simple |
-| task-3 | Refactor parser into module | `sonnet` | standard |
-| task-5 | Review cross-module contract for safety | `opus` | complex |
+| Task   | Purpose                                 | Model    | Tier     |
+| ------ | --------------------------------------- | -------- | -------- |
+| task-1 | Scan repo for unused exports            | `haiku`  | simple   |
+| task-3 | Refactor parser into module             | `sonnet` | standard |
+| task-5 | Review cross-module contract for safety | `opus`   | complex  |
 
 All three dispatched in the **same Agent tool call batch**, each with its own `model` arg.
 
