@@ -200,7 +200,8 @@ describe('plan-facade', () => {
     } as unknown as AgentRuntime;
     const gatedOps = captureOps(createPlanFacadeOps(gatedRuntime));
 
-    // Create a plan — TDD playbook will be matched and session started
+    // Create a plan — TDD playbook will be matched and session started.
+    // injectTasks: true preserves prior auto-injection behavior under test.
     const createResult = await executeOp(gatedOps, 'create_plan', {
       objective: 'Implement feature X',
       scope: 'test',
@@ -210,6 +211,7 @@ describe('plan-facade', () => {
         { approach: 'A', pros: ['x'], cons: ['y'], rejected_reason: 'z' },
         { approach: 'B', pros: ['a'], cons: ['b'], rejected_reason: 'c' },
       ],
+      injectTasks: true,
     });
     const plan = (createResult.data as Record<string, unknown>).plan as Record<string, unknown>;
     const planId = plan.id as string;
@@ -436,6 +438,64 @@ describe('plan-facade', () => {
     expect(result.success).toBe(true);
     const data = result.data as Record<string, unknown>;
     expect(data.quotaWarning).toBeUndefined();
+  });
+
+  // ─── create_plan playbook injection opt-in ─────────────────────
+
+  it('create_plan does NOT inject playbook tasks by default', async () => {
+    const userTask = { title: 'User task', description: 'Only my task' };
+    const result = await executeOp(ops, 'create_plan', {
+      objective: 'Implement feature with TDD red-green-refactor cycle',
+      scope: 'packages/core',
+      tasks: [userTask],
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as {
+      plan: { tasks: Array<{ title: string }>; playbookMatch?: unknown };
+      playbook: { label: string; tasksInjected: number; sessionId: string | null } | null;
+    };
+    // Playbook may match (metadata still surfaced) but tasks are not injected
+    expect(data.plan.tasks.map((t) => t.title)).toEqual([userTask.title]);
+    if (data.playbook) {
+      expect(data.playbook.tasksInjected).toBe(0);
+      expect(data.playbook.sessionId).toBeNull();
+    }
+  });
+
+  it('create_plan injects playbook tasks when injectTasks=true', async () => {
+    const playbookExecutor = new PlaybookExecutor();
+    const plansPath = join(tmpdir(), `plan-inject-${Date.now()}.json`);
+    const planner = new Planner(plansPath);
+    const brain = new Brain(vault);
+    const injectRuntime = {
+      vault,
+      planner,
+      brain,
+      brainIntelligence: new BrainIntelligence(vault, brain),
+      curator: new Curator(vault, brain),
+      linkManager: null,
+      chainRunner: new ChainRunner(vault.getProvider()),
+      playbookExecutor,
+    } as unknown as AgentRuntime;
+    const injectOps = captureOps(createPlanFacadeOps(injectRuntime));
+
+    const userTask = { title: 'User task', description: 'Only my task' };
+    const result = await executeOp(injectOps, 'create_plan', {
+      objective: 'Implement feature with TDD red-green-refactor cycle',
+      scope: 'packages/core',
+      tasks: [userTask],
+      injectTasks: true,
+    });
+    expect(result.success).toBe(true);
+    const data = result.data as {
+      plan: { tasks: Array<{ title: string }> };
+      playbook: { label: string; tasksInjected: number; sessionId: string | null } | null;
+    };
+    // Playbook injection ran — at least one playbook-derived task plus the user task
+    expect(data.plan.tasks.length).toBeGreaterThan(1);
+    expect(data.playbook).not.toBeNull();
+    expect(data.playbook!.tasksInjected).toBeGreaterThan(0);
+    expect(data.playbook!.sessionId).not.toBeNull();
   });
 
   // ─── create_plan vault enrichment ─────────────────────────────

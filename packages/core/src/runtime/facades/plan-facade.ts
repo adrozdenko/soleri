@@ -51,6 +51,15 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           )
           .optional()
           .describe('Rejected alternative approaches — plans with 2+ alternatives score higher'),
+        injectTasks: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe(
+            'When true, matched playbook task templates are injected into the plan and a ' +
+              'playbook executor session starts. Default false — playbookMatch metadata is ' +
+              'still returned, but no tasks are injected and no gates are imposed unless asked.',
+          ),
       }),
       handler: async (params) => {
         const objective = params.objective as string;
@@ -72,8 +81,10 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
           // Vault search failed — proceed without enrichment
         }
 
-        // Playbook matching: inject task templates + start executor session
+        // Playbook matching: metadata is always surfaced; task injection +
+        // executor gates only fire when the caller passes injectTasks=true.
         const userTasks = (params.tasks as Array<{ title: string; description: string }>) ?? [];
+        const injectTasks = (params.injectTasks as boolean | undefined) ?? false;
         const matchResult = matchPlaybooks('BUILD', objective);
         const playbook = matchResult.playbook;
         const playbookTasks: Array<{ title: string; description: string }> = [];
@@ -87,16 +98,18 @@ export function createPlanFacadeOps(runtime: AgentRuntime): OpDefinition[] {
             domainId: playbook.domain?.id,
           };
 
-          // Inject task templates (before-implementation first, then user tasks)
-          for (const tmpl of playbook.mergedTasks) {
-            const title = tmpl.titleTemplate.replace('{objective}', objective);
-            playbookTasks.push({ title, description: tmpl.acceptanceCriteria.join('\n') });
-          }
+          if (injectTasks) {
+            // Inject task templates (before-implementation first, then user tasks)
+            for (const tmpl of playbook.mergedTasks) {
+              const title = tmpl.titleTemplate.replace('{objective}', objective);
+              playbookTasks.push({ title, description: tmpl.acceptanceCriteria.join('\n') });
+            }
 
-          // Start executor session to track gate enforcement
-          if (runtime.playbookExecutor) {
-            const startResult = runtime.playbookExecutor.start(playbook);
-            playbookSessionId = startResult.sessionId;
+            // Start executor session to track gate enforcement
+            if (runtime.playbookExecutor) {
+              const startResult = runtime.playbookExecutor.start(playbook);
+              playbookSessionId = startResult.sessionId;
+            }
           }
         }
 
