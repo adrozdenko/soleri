@@ -354,6 +354,8 @@ describe('E2E: planning-orchestration', () => {
     let sessionId: string;
 
     it('orchestrate_plan should return plan with intent and flow info', async () => {
+      // 4 tasks → above the trivial-task fast-path threshold (#795), so the
+      // plan stays in draft for the explicit approve_plan call below.
       const res = await callOp(orchestrateFacade, 'orchestrate_plan', {
         prompt: 'Build a notification service that sends emails and push notifications',
         projectPath: workDir,
@@ -366,6 +368,14 @@ describe('E2E: planning-orchestration', () => {
           {
             title: 'Implement email sender',
             description: 'SMTP integration for email notifications',
+          },
+          {
+            title: 'Implement push sender',
+            description: 'APNs/FCM integration for mobile push notifications',
+          },
+          {
+            title: 'Add delivery retry queue',
+            description: 'Persist failed deliveries and retry with exponential backoff',
           },
         ],
       });

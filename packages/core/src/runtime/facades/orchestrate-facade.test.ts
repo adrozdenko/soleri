@@ -21,10 +21,7 @@ vi.mock('../../utils/worktree-reaper.js', () => ({
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-function makeRuntime(
-  vault: Vault,
-  config: Partial<AgentRuntime['config']> = {},
-): AgentRuntime {
+function makeRuntime(vault: Vault, config: Partial<AgentRuntime['config']> = {}): AgentRuntime {
   const brain = new Brain(vault);
   const plansPath = join(tmpdir(), `orch-test-${Date.now()}.json`);
   const planner = new Planner(plansPath);
