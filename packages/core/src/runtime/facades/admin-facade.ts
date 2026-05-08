@@ -13,9 +13,10 @@ import { createSessionBriefingOps } from '../session-briefing.js';
 import { createPluginOps } from '../plugin-ops.js';
 import { createPackOps } from '../pack-ops.js';
 import { createTelemetryOps } from '../telemetry-ops.js';
+import { queryFrictionAggregate } from '../friction-metrics.js';
 
 export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { llmClient, keyPool } = runtime;
+  const { llmClient, keyPool, vault } = runtime;
 
   const ops: OpDefinition[] = [
     // ─── LLM (inline from core-ops.ts) ──────────────────────────
@@ -96,6 +97,26 @@ export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       handler: async () => ({
         templates: runtime.templateManager.listTemplates(),
       }),
+    },
+    {
+      name: 'pipeline_metrics',
+      description:
+        'Aggregate friction-pipeline metrics over the last N days: median objective length, ' +
+        'median task count, p50/p95 vault search latency, grade distribution, regrade rate.',
+      auth: 'read' as const,
+      schema: z.object({
+        days: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .default(7)
+          .describe('Lookback window in days. Default 7.'),
+      }),
+      handler: async (params) => {
+        const days = (params.days as number | undefined) ?? 7;
+        return queryFrictionAggregate(vault.getProvider(), days);
+      },
     },
 
     // ─── Satellite ops ───────────────────────────────────────────

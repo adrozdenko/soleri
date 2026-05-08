@@ -31,6 +31,22 @@ export function initializeSchema(provider: PersistenceProvider): void {
   migrateVectorStorage(provider);
   migrateTranscriptTables(provider);
   migrateDomainSummaries(provider);
+  migrateFrictionMetrics(provider);
+}
+
+function migrateFrictionMetrics(provider: PersistenceProvider): void {
+  provider.execSql(`
+    CREATE TABLE IF NOT EXISTS friction_metrics (
+      plan_id TEXT PRIMARY KEY,
+      objective_len INTEGER NOT NULL,
+      task_count INTEGER NOT NULL,
+      vault_search_ms INTEGER NOT NULL DEFAULT 0,
+      grade_score REAL,
+      regrade_count INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS friction_metrics_created_at ON friction_metrics(created_at);
+  `);
 }
 
 function createCoreTables(provider: PersistenceProvider): void {
