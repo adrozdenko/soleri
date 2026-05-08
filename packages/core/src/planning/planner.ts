@@ -359,6 +359,56 @@ export class Planner {
     return this.store.plans.filter((p) => p.status === 'executing' || p.status === 'validating');
   }
 
+  /**
+   * Return IDs of plans stuck in active states (executing, validating,
+   * reconciling, brainstorming) older than `thresholdMs` (default: the
+   * planner's `executingTtlMs`, normally 24h). Read-only — no mutations.
+   * Surfaces stranded plans for warning + reap workflows (#784).
+   */
+  findStale(thresholdMs?: number): string[] {
+    this.refresh();
+    const threshold = thresholdMs ?? this.executingTtlMs;
+    const now = Date.now();
+    return this.store.plans
+      .filter(
+        (p) =>
+          (p.status === 'executing' ||
+            p.status === 'validating' ||
+            p.status === 'reconciling' ||
+            p.status === 'brainstorming') &&
+          now - p.updatedAt >= threshold,
+      )
+      .map((p) => p.id);
+  }
+
+  /**
+   * Force-complete a single plan regardless of current state. Sets
+   * reconciliation summary to 'reaped' so the audit trail is distinguishable
+   * from natural completion or TTL-driven `closeStale` sweeps. Throws when
+   * the plan id is unknown or already terminal.
+   */
+  reap(planId: string): Plan {
+    const plan = this.requirePlan(planId);
+    if (plan.status === 'completed' || plan.status === 'archived') {
+      throw new Error(`Plan ${planId} is already ${plan.status} — cannot reap`);
+    }
+    const previousStatus = plan.status;
+    const now = Date.now();
+    plan.status = 'completed';
+    plan.updatedAt = now;
+    this.normalizeTerminalTaskStates(plan, now);
+    plan.reconciliation = {
+      planId,
+      accuracy: 0,
+      driftItems: [],
+      summary: `reaped (previous: ${previousStatus})`,
+      reconciledAt: now,
+    };
+    plan.executionSummary = computeExecutionSummary(plan.tasks);
+    this.save();
+    return plan;
+  }
+
   getActive(): Plan[] {
     this.refresh();
     return this.store.plans.filter(

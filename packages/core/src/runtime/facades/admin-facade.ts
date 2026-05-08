@@ -16,7 +16,7 @@ import { createTelemetryOps } from '../telemetry-ops.js';
 import { queryFrictionAggregate } from '../friction-metrics.js';
 
 export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
-  const { llmClient, keyPool, vault } = runtime;
+  const { llmClient, keyPool, vault, planner } = runtime;
 
   const ops: OpDefinition[] = [
     // ─── LLM (inline from core-ops.ts) ──────────────────────────
@@ -97,6 +97,25 @@ export function createAdminFacadeOps(runtime: AgentRuntime): OpDefinition[] {
       handler: async () => ({
         templates: runtime.templateManager.listTemplates(),
       }),
+    },
+    {
+      name: 'plan_reap',
+      description:
+        'Force-complete a plan stuck in executing/validating/reconciling/brainstorming. ' +
+        'Sets reconciliation summary to "reaped" so the audit trail is distinguishable from ' +
+        'natural completion or stale-close sweeps. Surfaced via session_start.stalePlans + admin_health.',
+      auth: 'write' as const,
+      schema: z.object({
+        planId: z.string().describe('ID of the stuck plan to force-complete.'),
+      }),
+      handler: async (params) => {
+        const planId = params.planId as string;
+        const plan = planner.reap(planId);
+        return {
+          reaped: true,
+          plan: { id: plan.id, status: plan.status, reconciliation: plan.reconciliation },
+        };
+      },
     },
     {
       name: 'pipeline_metrics',

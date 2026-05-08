@@ -86,7 +86,7 @@ function getCoreVersion(): string {
  * Groups: health (1–2), introspection (4), diagnostics (2), mutation (1).
  */
 export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
-  const { vault, brain, brainIntelligence, llmClient, curator, packInstaller } = runtime;
+  const { vault, brain, brainIntelligence, llmClient, curator, packInstaller, planner } = runtime;
 
   return [
     // ─── Health ──────────────────────────────────────────────────────
@@ -118,6 +118,16 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           if (t in tierCounts) tierCounts[t as keyof typeof tierCounts]++;
         }
 
+        // Stale plans surfaced for operator visibility (#784).
+        // Best-effort — never let a planner read failure block admin_health.
+        let stalePlans: { count: number; ids: string[] } = { count: 0, ids: [] };
+        try {
+          const ids = planner.findStale();
+          stalePlans = { count: ids.length, ids };
+        } catch {
+          // Defensive — admin_health is the place you go *because* something is wrong
+        }
+
         return {
           status: 'ok',
           vault: { entries: vaultStats.totalEntries, domains: Object.keys(vaultStats.byDomain) },
@@ -137,6 +147,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
             packs: packHooks,
           },
           packTiers: tierCounts,
+          stalePlans,
         };
       },
     },

@@ -224,6 +224,17 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           status: p.status,
         }));
 
+        // Detection-only: surface plans stuck in active states past their TTL.
+        // Reaping is explicit via op:plan_reap (admin facade) so the operator
+        // sees the warning and decides — no silent destruction (#784).
+        let stalePlans: { count: number; ids: string[] } = { count: 0, ids: [] };
+        try {
+          const ids = runtime.planner.findStale();
+          stalePlans = { count: ids.length, ids };
+        } catch {
+          // Best-effort — never block session_start on stale detection
+        }
+
         const preflight = buildPreflightManifest({
           facades,
           skills,
@@ -291,6 +302,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           orphansClosed,
           autoReconciledCount,
           stalePlansClosed,
+          stalePlans,
           ...(stagingWarning ? { stagingWarning } : {}),
           ...(dreamInfo ? { dream: dreamInfo } : {}),
           ...(selfHealInfo ? { selfHeal: selfHealInfo } : {}),
