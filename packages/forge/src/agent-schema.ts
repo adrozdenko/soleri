@@ -73,9 +73,16 @@ const AutoOpsConfigSchema = z
     selfHeal: z.boolean().optional().default(false),
     orphanReaper: z.boolean().optional().default(false),
     staleClose: z.boolean().optional().default(false),
+    captureSessions: z.boolean().optional().default(false),
   })
   .optional()
-  .default({ dream: false, selfHeal: false, orphanReaper: false, staleClose: false });
+  .default({
+    dream: false,
+    selfHeal: false,
+    orphanReaper: false,
+    staleClose: false,
+    captureSessions: false,
+  });
 
 /** Engine configuration */
 const EngineConfigSchema = z.object({
@@ -240,7 +247,13 @@ export const AgentYamlSchema = z.object({
   /** Knowledge engine configuration */
   engine: EngineConfigSchema.optional().default({
     learning: true,
-    autoOps: { dream: false, selfHeal: false, orphanReaper: false, staleClose: false },
+    autoOps: {
+      dream: false,
+      selfHeal: false,
+      orphanReaper: false,
+      staleClose: false,
+      captureSessions: false,
+    },
   }),
 
   // ─── Vault Connections ──────────────────────────

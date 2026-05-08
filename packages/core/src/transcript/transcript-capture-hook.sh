@@ -38,6 +38,12 @@ VAULT_PATH="${SOLERI_VAULT_PATH:-$HOME/.soleri/vault.db}"
 # Resolve project path: prefer cwd from hook payload, fall back to PWD
 PROJECT_PATH="${CWD:-$PWD}"
 
+# Agent dir lets the capture script read engine.autoOps.captureSessions
+# from <agentDir>/agent.yaml. Falls back to the vault's parent directory,
+# which matches Soleri's standard install layout (~/.soleri/vault.db).
+# Session-memory generation stays off when no agent.yaml is found there.
+AGENT_DIR="${SOLERI_AGENT_DIR:-$(dirname "$VAULT_PATH")}"
+
 # Resolve the capture script path relative to this shell script
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 CAPTURE_SCRIPT="$SCRIPT_DIR/capture-hook.js"
@@ -58,7 +64,8 @@ node "$CAPTURE_SCRIPT" \
   --session-id "$SESSION_ID" \
   --transcript-path "$TRANSCRIPT_PATH" \
   --project-path "$PROJECT_PATH" \
-  --vault-path "$VAULT_PATH" 2>&1 || true
+  --vault-path "$VAULT_PATH" \
+  --agent-dir "$AGENT_DIR" 2>&1 || true
 
 # Always exit 0 — never block the hook
 exit 0
