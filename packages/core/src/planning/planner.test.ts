@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Planner, PlanGradeRejectionError } from './planner.js';
 import type { PlanGap } from './gap-types.js';
 import type { PlanAlternative } from './planner.js';
@@ -359,6 +359,76 @@ describe('Planner', () => {
     it('should throw when executing non-approved plan', () => {
       const plan = planner.create({ objective: 'Not approved', scope: 'test' });
       expect(() => planner.startExecution(plan.id)).toThrow('Invalid transition');
+    });
+  });
+
+  describe('findStale + reap', () => {
+    function createExecutingPlanAt(id_objective: string, createdAt: number): string {
+      vi.spyOn(Date, 'now').mockReturnValue(createdAt);
+      const plan = planner.create({ objective: id_objective, scope: 'test' });
+      planner.approve(plan.id);
+      planner.startExecution(plan.id);
+      vi.restoreAllMocks();
+      return plan.id;
+    }
+
+    it('findStale returns IDs of executing plans older than the threshold', () => {
+      const freshId = createExecutingPlanAt('Fresh', Date.now());
+      const staleId = createExecutingPlanAt('Old', Date.now() - 25 * 60 * 60 * 1000);
+
+      const stale = planner.findStale();
+      expect(stale).toContain(staleId);
+      expect(stale).not.toContain(freshId);
+    });
+
+    it('findStale honors a custom threshold and excludes terminal plans', () => {
+      const recentId = createExecutingPlanAt('Just started', Date.now() - 5 * 60 * 1000);
+      expect(planner.findStale(1)).toContain(recentId);
+      expect(planner.findStale(60 * 60 * 1000)).not.toContain(recentId);
+
+      // A reaped plan in completed state must never be flagged as stale
+      const doneId = createExecutingPlanAt('Done already', Date.now() - 50 * 60 * 60 * 1000);
+      planner.reap(doneId);
+      expect(planner.findStale(1)).not.toContain(doneId);
+    });
+
+    it('reap force-completes a stuck plan with reason recorded in reconciliation', () => {
+      const stuck = planner.create({ objective: 'Stuck', scope: 'test' });
+      planner.approve(stuck.id);
+      planner.startExecution(stuck.id);
+      const reaped = planner.reap(stuck.id);
+      expect(reaped.status).toBe('completed');
+      expect(reaped.reconciliation?.summary).toContain('reaped');
+      expect(reaped.reconciliation?.summary).toContain('executing');
+    });
+
+    it('reap normalizes pending tasks to skipped', () => {
+      const stuck = planner.create({
+        objective: 'Plan with unfinished work',
+        scope: 'test',
+        tasks: [
+          { title: 'A', description: 'a' },
+          { title: 'B', description: 'b' },
+        ],
+      });
+      planner.approve(stuck.id);
+      planner.startExecution(stuck.id);
+      const reaped = planner.reap(stuck.id);
+      expect(reaped.tasks.every((t) => t.status === 'skipped' || t.status === 'completed')).toBe(
+        true,
+      );
+    });
+
+    it('reap throws on already-terminal plans', () => {
+      const stuck = planner.create({ objective: 'Already done', scope: 'test' });
+      planner.approve(stuck.id);
+      planner.startExecution(stuck.id);
+      planner.reap(stuck.id);
+      expect(() => planner.reap(stuck.id)).toThrow(/already completed/);
+    });
+
+    it('reap throws on unknown plan id', () => {
+      expect(() => planner.reap('plan-nonexistent')).toThrow(/not found/);
     });
   });
 
