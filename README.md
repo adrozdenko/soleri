@@ -50,6 +50,8 @@ npx --yes soleri doctor                # Check system health
 
 > **npx vs global install:** The commands above use `npx --yes` which downloads and runs the CLI without a global install. The `--yes` flag skips the confirmation prompt. If you prefer a persistent install, run `npm install -g soleri` and then use bare `soleri` commands (e.g. `soleri create my-agent`).
 
+> **Upgrading from v9.x?** See the [v9 → v10 migration guide](src/content/docs/docs/migration/v10.md) for breaking changes and migration steps (auto-ops opt-in, plan fast-path, Zod v4 adjustments, etc.).
+
 Your agent is ready the moment it's created. No build step needed.
 
 ### Persona System
