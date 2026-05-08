@@ -26,6 +26,7 @@ import {
   planStore,
   withWorkflowPreamble,
 } from './orchestrate-shared.js';
+import { loadAgentConfig, resolveAutoOpsConfig } from './agent-config.js';
 
 export interface OrchestrateExecutionContext {
   runtime: AgentRuntime;
@@ -84,6 +85,9 @@ export function createOrchestrateExecuteOp(ctx: OrchestrateExecutionContext): Op
       const useSubagent = params.subagent as boolean | undefined;
       const parallelMode = params.parallel as boolean | undefined;
       const maxConcurrentParam = params.maxConcurrent as number | undefined;
+      const autoCapture = resolveAutoOpsConfig(
+        loadAgentConfig(runtime.config.agentDir ?? ''),
+      ).captureSessions;
 
       // ── Subagent dispatch path ───────────────────────────────────
       // When subagent=true, dispatch plan tasks via SubagentDispatcher.
@@ -147,7 +151,7 @@ export function createOrchestrateExecuteOp(ctx: OrchestrateExecutionContext): Op
           payloadSize: JSON.stringify(aggregated).length,
         });
         const healthStatus = contextHealth.check();
-        const healthWarning = buildHealthWarning(healthStatus, vault);
+        const healthWarning = buildHealthWarning(healthStatus, vault, autoCapture);
 
         // Check for subagent review stage requirements from matched playbook
         const legacyPlanForReview = planner.get(planId);
@@ -228,7 +232,7 @@ export function createOrchestrateExecuteOp(ctx: OrchestrateExecutionContext): Op
           payloadSize: JSON.stringify(adapterResult).length,
         });
         const healthStatus = contextHealth.check();
-        const healthWarning = buildHealthWarning(healthStatus, vault);
+        const healthWarning = buildHealthWarning(healthStatus, vault, autoCapture);
 
         return {
           plan: { id: planId, status: 'executing' },
@@ -282,7 +286,7 @@ export function createOrchestrateExecuteOp(ctx: OrchestrateExecutionContext): Op
           payloadSize: JSON.stringify(executionResult).length,
         });
         const healthStatus = contextHealth.check();
-        const healthWarning = buildHealthWarning(healthStatus, vault);
+        const healthWarning = buildHealthWarning(healthStatus, vault, autoCapture);
 
         // Build workflow preamble for the calling agent's context
         const workflowPreamble = entry.plan.workflowPrompt
@@ -324,7 +328,7 @@ export function createOrchestrateExecuteOp(ctx: OrchestrateExecutionContext): Op
         payloadSize: JSON.stringify(plan).length,
       });
       const healthStatus = contextHealth.check();
-      const healthWarning = buildHealthWarning(healthStatus, vault);
+      const healthWarning = buildHealthWarning(healthStatus, vault, autoCapture);
 
       return {
         plan,

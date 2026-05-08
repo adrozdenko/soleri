@@ -90,6 +90,7 @@ describe('resolveAutoOpsConfig', () => {
       selfHeal: false,
       orphanReaper: false,
       staleClose: false,
+      captureSessions: false,
     });
   });
 
@@ -99,6 +100,17 @@ describe('resolveAutoOpsConfig', () => {
       selfHeal: true,
       orphanReaper: false,
       staleClose: false,
+      captureSessions: false,
+    });
+  });
+
+  it('honors captureSessions opt-in', () => {
+    expect(resolveAutoOpsConfig({ engine: { autoOps: { captureSessions: true } } })).toEqual({
+      dream: false,
+      selfHeal: false,
+      orphanReaper: false,
+      staleClose: false,
+      captureSessions: true,
     });
   });
 });
