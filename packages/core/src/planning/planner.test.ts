@@ -227,13 +227,18 @@ describe('Planner', () => {
     });
 
     it('should reject approval when grade is below A', () => {
-      const plan = planner.create({
+      // gradeMinTaskCount: 0 keeps the gate live for sub-threshold plans;
+      // this test asserts the grading mechanic, not size-gating (#802).
+      const strictPlanner = new Planner(join(tempDir, 'strict-plans.json'), {
+        gradeMinTaskCount: 0,
+      });
+      const plan = strictPlanner.create({
         objective: 'Bad plan',
         scope: 'test',
       });
-      const check = planner.grade(plan.id);
+      const check = strictPlanner.grade(plan.id);
       expect(check.score).toBeLessThan(90);
-      expect(() => planner.approve(plan.id)).toThrow(PlanGradeRejectionError);
+      expect(() => strictPlanner.approve(plan.id)).toThrow(PlanGradeRejectionError);
     });
 
     it('should approve a plan with no grade check (backward compatibility)', () => {
@@ -263,10 +268,13 @@ describe('Planner', () => {
     });
 
     it('should reject with PlanGradeRejectionError containing gap details', () => {
-      const plan = planner.create({ objective: '', scope: '' });
-      const check = planner.grade(plan.id);
+      const strictPlanner = new Planner(join(tempDir, 'strict-detail-plans.json'), {
+        gradeMinTaskCount: 0,
+      });
+      const plan = strictPlanner.create({ objective: '', scope: '' });
+      const check = strictPlanner.grade(plan.id);
       try {
-        planner.approve(plan.id);
+        strictPlanner.approve(plan.id);
         expect.unreachable('Should have thrown');
       } catch (err) {
         expect(err).toBeInstanceOf(PlanGradeRejectionError);
@@ -282,9 +290,11 @@ describe('Planner', () => {
     it('should respect grading performed by another planner instance', () => {
       const strictPlanner = new Planner(join(tempDir, 'shared-plans.json'), {
         minGradeForApproval: 'A',
+        gradeMinTaskCount: 0,
       });
       const gradingPlanner = new Planner(join(tempDir, 'shared-plans.json'), {
         minGradeForApproval: 'A',
+        gradeMinTaskCount: 0,
       });
       const plan = strictPlanner.create({ objective: '', scope: '' });
 
@@ -292,6 +302,49 @@ describe('Planner', () => {
 
       expect(check.grade).toBe('F');
       expect(() => strictPlanner.approve(plan.id)).toThrow(PlanGradeRejectionError);
+    });
+
+    it('should skip grade gate for plans below gradeMinTaskCount (default 5)', () => {
+      // Default threshold is 5 — empty plan with bad grade still approves.
+      const plan = planner.create({ objective: 'Trivial work', scope: 'test' });
+      const check = planner.grade(plan.id);
+      expect(check.score).toBeLessThan(90);
+      const approved = planner.approve(plan.id);
+      expect(approved.status).toBe('approved');
+    });
+
+    it('should still gate plans at or above gradeMinTaskCount with low grades', () => {
+      const plan = planner.create({
+        objective: 'Five-task work',
+        scope: 'test',
+        tasks: [
+          { title: 'T1', description: 'one' },
+          { title: 'T2', description: 'two' },
+          { title: 'T3', description: 'three' },
+          { title: 'T4', description: 'four' },
+          { title: 'T5', description: 'five' },
+        ],
+      });
+      const check = planner.grade(plan.id);
+      expect(check.score).toBeLessThan(90);
+      expect(() => planner.approve(plan.id)).toThrow(PlanGradeRejectionError);
+    });
+
+    it('should honor a custom gradeMinTaskCount threshold', () => {
+      const tightPlanner = new Planner(join(tempDir, 'tight-plans.json'), {
+        gradeMinTaskCount: 2,
+      });
+      const plan = tightPlanner.create({
+        objective: 'Two-task work',
+        scope: 'test',
+        tasks: [
+          { title: 'T1', description: 'one' },
+          { title: 'T2', description: 'two' },
+        ],
+      });
+      const check = tightPlanner.grade(plan.id);
+      expect(check.score).toBeLessThan(90);
+      expect(() => tightPlanner.approve(plan.id)).toThrow(PlanGradeRejectionError);
     });
   });
 
