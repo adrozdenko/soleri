@@ -153,8 +153,11 @@ describe('Agent Simulation: First Week', () => {
       const brain = res.brain as { vocabularySize: number; feedbackCount: number };
       expect(brain.vocabularySize).toBe(0);
       expect(brain.feedbackCount).toBe(0);
-      // LLM status is returned
-      expect(res.llm).toBeDefined();
+      // LLM status reports per-provider key availability (llmClient.isAvailable())
+      expect(res.llm).toEqual({
+        openai: expect.any(Boolean),
+        anthropic: expect.any(Boolean),
+      });
       // Curator is initialized
       expect((res.curator as { initialized: boolean }).initialized).toBe(true);
     });
@@ -175,8 +178,13 @@ describe('Agent Simulation: First Week', () => {
         'admin_reset_cache',
         'admin_diagnostic',
       ]);
-      // Routing hints are always present
-      expect(res.routing).toBeDefined();
+      // Routing hints map intent phrases to facade.op, built from
+      // ENGINE_MODULE_MANIFEST intentSignals (buildRoutingHints)
+      expect(res.routing).toMatchObject({
+        'search knowledge': 'vault.search_intelligent',
+        'plan this': 'plan.create_plan',
+        'recall past work': 'memory.memory_search',
+      });
     });
 
     it('3. Vault has exactly the seeded playbooks at start', async () => {
@@ -190,10 +198,16 @@ describe('Agent Simulation: First Week', () => {
       const res = await op('brain', 'brain_stats');
 
       expect(res.feedbackCount).toBe(0);
-      expect(res.intelligence).toBeDefined();
-      const intel = res.intelligence as { sessions: number; strengths: number };
-      expect(intel.sessions).toBe(0);
-      expect(intel.strengths).toBe(0);
+      // Fresh brain: every BrainIntelligenceStats counter starts at zero
+      expect(res.intelligence).toEqual({
+        strengths: 0,
+        sessions: 0,
+        activeSessions: 0,
+        proposals: 0,
+        promotedProposals: 0,
+        globalPatterns: 0,
+        domainProfiles: 0,
+      });
     });
 
     it('5. Route intent — "what can you do?" should classify as general (no matching keywords)', async () => {

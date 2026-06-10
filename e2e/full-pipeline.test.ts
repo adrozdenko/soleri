@@ -90,31 +90,8 @@ describe('E2E: full-pipeline', () => {
     return parseResponse(raw);
   }
 
-  // --- Facade Registration ---
-
-  it('should register all 24 facades (22 semantic + 2 domain)', () => {
-    expect(facades.length).toBe(24);
-    expect(handlers.size).toBe(24);
-  });
-
-  it('should have correct facade names', () => {
-    const names = facades.map((f) => f.name);
-    expect(names).toContain(`${AGENT_ID}_vault`);
-    expect(names).toContain(`${AGENT_ID}_plan`);
-    expect(names).toContain(`${AGENT_ID}_brain`);
-    expect(names).toContain(`${AGENT_ID}_memory`);
-    expect(names).toContain(`${AGENT_ID}_admin`);
-    expect(names).toContain(`${AGENT_ID}_curator`);
-    expect(names).toContain(`${AGENT_ID}_loop`);
-    expect(names).toContain(`${AGENT_ID}_orchestrate`);
-    expect(names).toContain(`${AGENT_ID}_control`);
-
-    expect(names).toContain(`${AGENT_ID}_context`);
-    expect(names).toContain(`${AGENT_ID}_agency`);
-    expect(names).toContain(`${AGENT_ID}_chat`);
-    expect(names).toContain(`${AGENT_ID}_frontend`);
-    expect(names).toContain(`${AGENT_ID}_backend`);
-  });
+  // Facade registration manifest checks live in debug-facades.test.ts —
+  // this suite exercises the facades behaviorally instead.
 
   // --- Vault Facade ---
 
