@@ -130,8 +130,8 @@ describe('E2E: planning-orchestration', () => {
         playbook?: { sessionId: string | null };
       };
       expect(data.created).toBe(true);
-      expect(data.plan.id).toBeDefined();
-      expect(data.plan.id).toMatch(/^plan-/);
+      // plan-lifecycle.ts generates ids as `plan-${Date.now()}-${randomBytes(4).toString('hex')}`
+      expect(data.plan.id).toMatch(/^plan-\d{13}-[0-9a-f]{8}$/);
       expect(data.plan.objective).toContain('authentication');
       expect(data.plan.status).toBe('draft');
       expect(data.plan.tasks.length).toBeGreaterThanOrEqual(3);
