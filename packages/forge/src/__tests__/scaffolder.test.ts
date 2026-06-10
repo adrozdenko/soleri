@@ -46,13 +46,17 @@ describe('Scaffolder', () => {
   let telegramDir: string;
   let telegramResult: ReturnType<typeof scaffold>;
 
-  beforeAll(() => {
-    baseDir = makeTempDir('base');
-    baseResult = scaffold({ ...baseConfig, outputDir: baseDir });
+  beforeAll(
+    () => {
+      baseDir = makeTempDir('base');
+      baseResult = scaffold({ ...baseConfig, outputDir: baseDir });
 
-    telegramDir = makeTempDir('telegram');
-    telegramResult = scaffold({ ...baseConfig, telegram: true, outputDir: telegramDir });
-  }, 60_000);
+      telegramDir = makeTempDir('telegram');
+      telegramResult = scaffold({ ...baseConfig, telegram: true, outputDir: telegramDir });
+      // Shared CI runners (macOS especially) run scaffold 3-4x slower than local.
+    },
+    process.env.CI ? 180_000 : 60_000,
+  );
 
   afterAll(() => {
     rmSync(baseDir, { recursive: true, force: true });
