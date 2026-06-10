@@ -44,8 +44,8 @@ YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<clear, searchable name>",
     description: "<what it is, when to apply, why it matters>",
-    type: "<pattern|anti-pattern|decision|principle|workflow>",
-    category: "<domain>",
+    type: "<pattern|anti-pattern|rule|principle|workflow>",
+    domain: "<domain>",
     tags: ["<tag1>", "<tag2>"],
     example: "<code snippet or quote>",
     why: "<reasoning>"

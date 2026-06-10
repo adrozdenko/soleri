@@ -24,9 +24,9 @@ YOUR_AGENT_core op:vault_domains
 YOUR_AGENT_core op:search_intelligent
   params: { query: "<what this code does>" }
 YOUR_AGENT_core op:search
-  params: { type: "anti-pattern" }
+  params: { query: "<what this code does>", type: "anti-pattern" }
 YOUR_AGENT_core op:search
-  params: { severity: "critical" }
+  params: { query: "<what this code does>", severity: "critical" }
 YOUR_AGENT_core op:project_list_rules
 YOUR_AGENT_core op:brain_strengths
 ```

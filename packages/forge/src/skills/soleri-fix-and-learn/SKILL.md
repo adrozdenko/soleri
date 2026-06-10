@@ -70,7 +70,7 @@ YOUR_AGENT_core op:capture_knowledge
     title: "<bug title>",
     description: "<root cause, solution, what made it hard to find>",
     type: "anti-pattern",
-    category: "<domain>",
+    domain: "<domain>",
     tags: ["<error-type>", "<component>"]
   }
 ```

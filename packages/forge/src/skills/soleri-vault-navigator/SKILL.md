@@ -37,7 +37,7 @@ YOUR_AGENT_core op:vault_age_report
 
 ```
 YOUR_AGENT_core op:memory_cross_project_search
-  params: { query: "<topic>", crossProject: true }
+  params: { query: "<topic>", projectPath: "." }
 YOUR_AGENT_core op:project_linked_projects
 ```
 

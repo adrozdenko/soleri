@@ -43,8 +43,8 @@ Incorporate vault insights and web findings. Reference specific entries.
 YOUR_AGENT_core op:create_plan
   params: {
     objective: "<one-sentence goal>",
-    scope: { included: [...], excluded: [...] },
-    steps: [{ title: "Step 1", description: "details" }, ...],
+    scope: "<which parts of the codebase are affected>",
+    tasks: [{ title: "Step 1", description: "details" }],
     alternatives: [
       {
         approach: "<rejected approach>",
@@ -72,10 +72,10 @@ Iterate with alternatives:
 YOUR_AGENT_core op:plan_iterate
   params: {
     planId: "<id>",
-    feedback: "<improvement>",
+    objective: "<refined objective>",
     alternatives: [
-      { approach: "...", pros: [...], cons: [...], rejected_reason: "..." },
-      { approach: "...", pros: [...], cons: [...], rejected_reason: "..." }
+      { approach: "<option A>", pros: ["<pro>"], cons: ["<con>"], rejected_reason: "<why>" },
+      { approach: "<option B>", pros: ["<pro>"], cons: ["<con>"], rejected_reason: "<why>" }
     ]
   }
 ```
