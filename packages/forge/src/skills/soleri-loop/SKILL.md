@@ -22,8 +22,8 @@ Run a task in a loop until a condition is met — grade threshold, promise fulfi
 YOUR_AGENT_loop op:loop_start
   params: {
     prompt: "<task description>",
-    mode: "<plan-iteration | custom>",
-    maxIterations: <number, default 10>
+    mode: "custom",
+    maxIterations: 10
   }
 ```
 
@@ -40,7 +40,6 @@ At each iteration, check status:
 
 ```
 YOUR_AGENT_loop op:loop_status
-  params: { loopId: "<loopId>" }
 ```
 
 Report progress to user:
@@ -58,7 +57,6 @@ If the user wants to stop early:
 
 ```
 YOUR_AGENT_loop op:loop_cancel
-  params: { loopId: "<loopId>", reason: "<why stopping>" }
 ```
 
 ## Exit Criteria

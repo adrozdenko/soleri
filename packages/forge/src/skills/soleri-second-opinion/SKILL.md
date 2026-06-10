@@ -38,7 +38,7 @@ YOUR_AGENT_core op:brain_recommend
 
 ```
 YOUR_AGENT_core op:memory_cross_project_search
-  params: { query: "<topic>", crossProject: true }
+  params: { query: "<topic>", projectPath: "." }
 ```
 
 **Web** — community consensus, benchmarks, comparison articles.
@@ -77,8 +77,8 @@ YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<decision title>",
     description: "<chosen option, rationale, rejected alternatives>",
-    type: "decision",
-    category: "<domain>",
+    type: "principle",
+    domain: "<domain>",
     tags: ["decision"]
   }
 ```

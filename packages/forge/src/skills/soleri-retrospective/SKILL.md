@@ -14,7 +14,6 @@ Generate a data-driven retrospective from session data, vault captures, plan out
 
 ```
 YOUR_AGENT_core op:brain_stats
-YOUR_AGENT_core op:brain_stats params: { since: "<start of period>" }
 YOUR_AGENT_core op:brain_strengths
 YOUR_AGENT_core op:vault_recent
 YOUR_AGENT_core op:memory_topics
@@ -68,7 +67,7 @@ YOUR_AGENT_core op:capture_knowledge
     title: "Retrospective — [period]",
     description: "<key findings and action items>",
     type: "workflow",
-    category: "meta",
+    domain: "meta",
     tags: ["retrospective"]
   }
 ```

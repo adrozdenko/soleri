@@ -178,7 +178,7 @@ Capture learnings to vault. Run `orchestrate_complete` for the parent plan.
 
 ```
 YOUR_AGENT_core op:capture_knowledge
-  params: { title: "<learned pattern>", description: "<merge strategy or decomposition insight>", type: "pattern", tags: ["subagent", "parallel-execution"] }
+  params: { title: "<learned pattern>", description: "<merge strategy or decomposition insight>", type: "pattern", domain: "orchestration", tags: ["subagent", "parallel-execution"] }
 ```
 
 ## Worktree & Branch Cleanup Guarantee
