@@ -7,7 +7,7 @@
 
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
-import { createArchiveOps } from '../archive-ops.js';
+import { createArchiveOps } from '../ops/shared/archive-ops.js';
 
 export function createArchiveFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   return createArchiveOps(runtime);

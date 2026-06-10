@@ -13,15 +13,15 @@ import { z } from 'zod';
 import type { OpDefinition } from '../../facades/types.js';
 import type { IntelligenceEntry } from '../../intelligence/types.js';
 import type { AgentRuntime } from '../types.js';
-import { createVaultExtraOps } from '../vault-extra-ops.js';
-import { createCaptureOps } from '../capture-ops.js';
-import { createVaultSharingOps } from '../vault-sharing-ops.js';
-import { createArchiveOps } from '../archive-ops.js';
-import { createSyncOps } from '../sync-ops.js';
-import { createReviewOps } from '../review-ops.js';
-import { createVaultLinkingOps } from '../vault-linking-ops.js';
-import { createBranchingOps } from '../branching-ops.js';
-import { createTierOps } from '../tier-ops.js';
+import { createVaultExtraOps } from '../ops/vault/vault-extra-ops.js';
+import { createCaptureOps } from '../ops/vault/capture-ops.js';
+import { createVaultSharingOps } from '../ops/vault/vault-sharing-ops.js';
+import { createArchiveOps } from '../ops/shared/archive-ops.js';
+import { createSyncOps } from '../ops/shared/sync-ops.js';
+import { createReviewOps } from '../ops/shared/review-ops.js';
+import { createVaultLinkingOps } from '../ops/shared/vault-linking-ops.js';
+import { createBranchingOps } from '../ops/shared/branching-ops.js';
+import { createTierOps } from '../ops/shared/tier-ops.js';
 import { deprecationWarning } from '../deprecation.js';
 
 export function createVaultFacadeOps(runtime: AgentRuntime): OpDefinition[] {

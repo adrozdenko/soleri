@@ -328,7 +328,7 @@ async function main(): Promise<void> {
   console.error(`${tag} Registered ${tools.length} tools (${totalOps} ops)`);
 
   // Enable hot reload for post-boot pack/plugin installation
-  const { setHotRegister } = await import('../../runtime/pack-ops.js');
+  const { setHotRegister } = await import('../../runtime/ops/admin/pack-ops.js');
   setHotRegister(registerTool);
 
   // 13. Connect stdio transport
