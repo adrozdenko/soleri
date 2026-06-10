@@ -6,7 +6,6 @@ import { ClaudeCodeAdapter } from './claude-code.js';
 import { OpenCodeAdapter } from './opencode.js';
 
 export { ClaudeCodeAdapter } from './claude-code.js';
-export { OpenCodeAdapter } from './opencode.js';
 
 export type DetectedHost = 'claude-code' | 'opencode' | 'unknown';
 

@@ -4,7 +4,7 @@
 
 import type { PersistenceProvider } from '../persistence/types.js';
 
-export const CURATOR_SCHEMA = `
+const CURATOR_SCHEMA = `
   CREATE TABLE IF NOT EXISTS curator_entry_state (
     entry_id TEXT PRIMARY KEY,
     status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'stale', 'archived')),

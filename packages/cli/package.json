@@ -43,7 +43,8 @@
     "@clack/prompts": "^1.0.0",
     "@soleri/core": "^9.0.0",
     "@soleri/forge": "^9.0.0",
-    "commander": "^13.0.0"
+    "commander": "^13.0.0",
+    "yaml": "^2.8.2"
   },
   "engines": {
     "node": ">=18.0.0"

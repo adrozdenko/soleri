@@ -37,7 +37,7 @@ export function usedLegacyFallback(agentId: string): boolean {
  * Legacy agent home: ~/.{agentId}/ (pre-v8 layout).
  * Exported for use by the migration command.
  */
-export function legacyAgentHome(agentId: string): string {
+function legacyAgentHome(agentId: string): string {
   return join(homedir(), `.${agentId}`);
 }
 

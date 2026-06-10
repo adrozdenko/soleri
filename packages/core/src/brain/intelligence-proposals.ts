@@ -17,7 +17,7 @@ import { AUTO_PROMOTE_THRESHOLD, AUTO_PROMOTE_PENDING_MIN } from './intelligence
 
 // ─── Proposal CRUD ────────────────────────────────────────────────
 
-export function createProposal(
+function createProposal(
   provider: PersistenceProvider,
   sessionId: string,
   rule: string,

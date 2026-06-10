@@ -20,9 +20,6 @@ export type {
   SyncManifest,
 } from './types.js';
 export { DEFAULT_SYNC_CONFIG } from './types.js';
-export { ClaudeCodeMemorySyncAdapter } from './claude-code-sync.js';
-export { OpenCodeMemorySyncAdapter } from './opencode-sync.js';
-export { selectEntriesForSync } from './sync-strategy.js';
 export type { VaultMemory, VaultEntry } from './sync-strategy.js';
 
 /**

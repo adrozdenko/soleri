@@ -49,7 +49,7 @@ Rules:
  * Build the classification system prompt, optionally injecting a canonical tag list.
  * When canonical tags are provided, the LLM is guided to prefer them.
  */
-export function buildClassificationPrompt(canonicalTags?: string[]): string {
+function buildClassificationPrompt(canonicalTags?: string[]): string {
   if (!canonicalTags || canonicalTags.length === 0) {
     return CLASSIFICATION_PROMPT;
   }

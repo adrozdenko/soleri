@@ -22,7 +22,7 @@ export const ENGINE_PROFILES = ['minimal', 'standard', 'full'] as const;
 export type EngineProfile = (typeof ENGINE_PROFILES)[number];
 
 /** Where to set up client integration */
-export const SETUP_TARGETS = ['claude', 'codex', 'opencode', 'both', 'all'] as const;
+const SETUP_TARGETS = ['claude', 'codex', 'opencode', 'both', 'all'] as const;
 export type SetupTarget = (typeof SETUP_TARGETS)[number];
 
 // ─── Sub-Schemas ──────────────────────────────────────────────────────
@@ -118,30 +118,24 @@ const SetupConfigSchema = z.object({
 // ─── Workflow Sub-Schemas ─────────────────────────────────────────────
 
 /** Gate phases in a workflow */
-export const GATE_PHASES = ['brainstorming', 'pre-execution', 'post-task', 'completion'] as const;
+const GATE_PHASES = ['brainstorming', 'pre-execution', 'post-task', 'completion'] as const;
 export type GatePhase = (typeof GATE_PHASES)[number];
 
 /** Workflow gate definition (maps to gates.yaml) */
-export const WorkflowGateSchema = z.object({
+const WorkflowGateSchema = z.object({
   phase: z.enum(GATE_PHASES),
   requirement: z.string().min(1),
   check: z.string().min(1),
 });
 
 /** Task template ordering */
-export const TASK_ORDERS = ['before-implementation', 'after-implementation', 'parallel'] as const;
+const TASK_ORDERS = ['before-implementation', 'after-implementation', 'parallel'] as const;
 
 /** Task template types */
-export const TASK_TYPES = [
-  'implementation',
-  'test',
-  'story',
-  'documentation',
-  'verification',
-] as const;
+const TASK_TYPES = ['implementation', 'test', 'story', 'documentation', 'verification'] as const;
 
 /** Workflow task template (injected during plan generation) */
-export const WorkflowTaskTemplateSchema = z.object({
+const WorkflowTaskTemplateSchema = z.object({
   taskType: z.enum(TASK_TYPES),
   titleTemplate: z.string().min(1),
   acceptanceCriteria: z.array(z.string()).optional().default([]),
@@ -150,11 +144,11 @@ export const WorkflowTaskTemplateSchema = z.object({
 });
 
 /** Workflow intent types */
-export const INTENTS = ['BUILD', 'FIX', 'REVIEW', 'PLAN', 'IMPROVE', 'DELIVER'] as const;
+const INTENTS = ['BUILD', 'FIX', 'REVIEW', 'PLAN', 'IMPROVE', 'DELIVER'] as const;
 export type Intent = (typeof INTENTS)[number];
 
 /** Workflow definition (maps to workflow folder contents) */
-export const WorkflowDefinitionSchema = z.object({
+const WorkflowDefinitionSchema = z.object({
   /** Unique workflow ID (derived from folder name if not specified) */
   id: z.string().optional(),
   /** generic or domain tier */
@@ -190,7 +184,7 @@ export const WorkflowDefinitionSchema = z.object({
 // ─── Workspace & Routing Schemas ─────────────────────────────────────
 
 /** Workspace definition — scoped context area within an agent */
-export const WorkspaceSchema = z.object({
+const WorkspaceSchema = z.object({
   /** Unique workspace identifier (kebab-case) */
   id: z.string().min(1),
   /** Human-readable workspace name */
@@ -202,7 +196,7 @@ export const WorkspaceSchema = z.object({
 });
 
 /** Routing entry — maps task patterns to workspaces */
-export const RoutingEntrySchema = z.object({
+const RoutingEntrySchema = z.object({
   /** Task pattern that triggers this route (e.g., "write script", "review code") */
   pattern: z.string().min(1),
   /** Target workspace id */

@@ -105,7 +105,7 @@ export function checkNodeModules(dir?: string, format?: AgentFormat): CheckResul
   return { status: 'pass', label: 'Dependencies', detail: 'node_modules/ exists' };
 }
 
-export function checkAgentYaml(agentPath: string): CheckResult {
+function checkAgentYaml(agentPath: string): CheckResult {
   const yamlPath = join(agentPath, 'agent.yaml');
   if (!existsSync(yamlPath)) {
     return { status: 'fail', label: 'agent.yaml', detail: 'not found' };
@@ -137,7 +137,7 @@ export function checkAgentYaml(agentPath: string): CheckResult {
   }
 }
 
-export function checkInstructionsDir(agentPath: string): CheckResult {
+function checkInstructionsDir(agentPath: string): CheckResult {
   const instrDir = join(agentPath, 'instructions');
   if (!existsSync(instrDir)) {
     return {
@@ -166,7 +166,7 @@ export function checkInstructionsDir(agentPath: string): CheckResult {
   }
 }
 
-export function checkEngineReachable(): CheckResult {
+function checkEngineReachable(): CheckResult {
   if (resolveCorePackageJsonPath() !== null) {
     return { status: 'pass', label: 'Engine', detail: '@soleri/core reachable' };
   }

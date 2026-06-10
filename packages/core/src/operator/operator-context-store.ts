@@ -527,7 +527,7 @@ export function normalizeCorrection(rule: string): NormalizedCorrection {
  * Two corrections are an undo pair when they share a topic (fuzzy substring
  * match) but have opposite directions.
  */
-export function isUndoCorrection(a: NormalizedCorrection, b: NormalizedCorrection): boolean {
+function isUndoCorrection(a: NormalizedCorrection, b: NormalizedCorrection): boolean {
   if (a.direction === b.direction) return false;
 
   // Exact match

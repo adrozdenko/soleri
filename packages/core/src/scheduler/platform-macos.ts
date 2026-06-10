@@ -146,11 +146,11 @@ export function macOSTaskExists(platformId: string): boolean {
   return existsSync(plistPath(platformId));
 }
 
-export function pauseMacOSTask(platformId: string): void {
+function pauseMacOSTask(platformId: string): void {
   execFileSync('launchctl', ['unload', plistPath(platformId)], { stdio: 'pipe' });
 }
 
-export function resumeMacOSTask(platformId: string): void {
+function resumeMacOSTask(platformId: string): void {
   execFileSync('launchctl', ['load', '-w', plistPath(platformId)], { stdio: 'pipe' });
 }
 

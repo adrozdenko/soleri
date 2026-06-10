@@ -10,7 +10,7 @@ import { gap, taskText, decisionText, decisionsText, containsAny } from './gap-p
 
 // ─── Pattern Constants (Passes 5-8) ─────────────────────────────
 
-export const AMBIGUOUS_WORDS = [
+const AMBIGUOUS_WORDS = [
   'maybe',
   'perhaps',
   'might',
@@ -28,13 +28,13 @@ export const AMBIGUOUS_WORDS = [
   'somehow',
 ];
 
-export const GENERIC_OBJECTIVE_PATTERNS = [
+const GENERIC_OBJECTIVE_PATTERNS = [
   /^(create|build|implement|add|make|do)\s+\w+$/i,
   /^fix\s+\w+$/i,
   /^update\s+\w+$/i,
 ];
 
-export const RATIONALE_INDICATORS = [
+const RATIONALE_INDICATORS = [
   'because',
   'since',
   'due to',
@@ -44,9 +44,9 @@ export const RATIONALE_INDICATORS = [
   'as a result',
 ];
 
-export const SHALLOW_INDICATORS = ['better', 'good', 'best', 'nice', 'great', 'improved'];
+const SHALLOW_INDICATORS = ['better', 'good', 'best', 'nice', 'great', 'improved'];
 
-export const KNOWLEDGE_INDICATORS = [
+const KNOWLEDGE_INDICATORS = [
   /vault\s*pattern/i,
   /vault\s*patterns/i,
   /anti-pattern/i,
@@ -58,7 +58,7 @@ export const KNOWLEDGE_INDICATORS = [
 ];
 
 /** Checks if task descriptions reference specific named patterns (e.g. "zod-form-validation"). */
-export const NAMED_PATTERN_REGEX = /[a-z]+-[a-z]+-[a-z]+/;
+const NAMED_PATTERN_REGEX = /[a-z]+-[a-z]+-[a-z]+/;
 
 // ─── Pass 5: Clarity ─────────────────────────────────────────────
 

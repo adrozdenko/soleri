@@ -8,6 +8,9 @@ const config: KnipConfig = {
       ignoreDependencies: [
         '@secretlint/secretlint-rule-preset-recommend', // secretlint plugin loaded by config
       ],
+      // wrangler is fetched on demand via `npx wrangler` in deploy-docs.yml (CI-only);
+      // it is intentionally not a local devDependency.
+      ignoreBinaries: ['wrangler'],
     },
     'packages/core': {
       project: ['src/**/*.ts'],

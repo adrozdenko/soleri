@@ -13,11 +13,11 @@ import { platform } from 'node:os';
 import type { PlatformAdapter, ScheduledTask, CreateTaskInput, TaskListEntry } from './types.js';
 import { validateCron, estimateMinIntervalHours } from './cron-validator.js';
 
-export const MAX_TASKS = 10;
-export const MIN_INTERVAL_HOURS = 1;
+const MAX_TASKS = 10;
+const MIN_INTERVAL_HOURS = 1;
 
 /** Resolve the platform adapter for the current OS. Throws on unsupported OS. */
-export async function resolvePlatformAdapter(): Promise<PlatformAdapter> {
+async function resolvePlatformAdapter(): Promise<PlatformAdapter> {
   const os = platform();
   if (os === 'darwin') {
     const { MacOSAdapter } = await import('./platform-macos.js');
