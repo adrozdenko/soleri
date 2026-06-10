@@ -1,7 +1,6 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import react from '@astrojs/react';
-import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
@@ -9,9 +8,6 @@ export default defineConfig({
   output: 'static',
   build: {
     format: 'preserve',
-  },
-  legacy: {
-    collections: true,
   },
   integrations: [
     starlight({
@@ -108,9 +104,6 @@ export default defineConfig({
       customCss: ['./src/styles/docs-custom.css'],
     }),
     react(),
-    tailwind({
-      applyBaseStyles: false,
-    }),
     sitemap({
       i18n: {
         defaultLocale: 'en',

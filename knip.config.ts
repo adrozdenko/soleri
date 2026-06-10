@@ -3,7 +3,7 @@ import type { KnipConfig } from 'knip';
 const config: KnipConfig = {
   workspaces: {
     '.': {
-      entry: [],
+      entry: ['postcss.config.mjs'],
       project: ['*.ts'],
       ignoreDependencies: [
         '@secretlint/secretlint-rule-preset-recommend', // secretlint plugin loaded by config

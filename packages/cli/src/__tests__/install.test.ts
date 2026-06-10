@@ -86,6 +86,11 @@ describe('npx fallback warning', () => {
   });
 
   it('returns npx fallback when core resolution fails', async () => {
+    // Drop the module cached by the top-level static import so the
+    // vi.doMock below applies to the fresh dynamic import. Without this,
+    // the cached install.js (bound to the real core-resolver) is returned
+    // and the test only passes when real resolution happens to fail.
+    vi.resetModules();
     vi.doMock('../utils/core-resolver.js', async () => {
       const actual = await vi.importActual<typeof import('../utils/core-resolver.js')>(
         '../utils/core-resolver.js',
