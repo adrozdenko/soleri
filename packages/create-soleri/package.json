@@ -1,6 +1,6 @@
 {
   "name": "create-soleri",
-  "version": "9.22.2",
+  "version": "10.0.0",
   "description": "npm create soleri — scaffold AI agents that learn, remember, and grow with you.",
   "keywords": [
     "agent",
@@ -35,7 +35,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@soleri/cli": ">=9.12.1"
+    "@soleri/cli": ">=10.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

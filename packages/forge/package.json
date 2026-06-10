@@ -1,6 +1,6 @@
 {
   "name": "@soleri/forge",
-  "version": "9.22.2",
+  "version": "10.0.0",
   "description": "Scaffold AI agents that learn, remember, and grow with you.",
   "keywords": [
     "agent",
@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
-    "@soleri/core": "^9.0.0",
+    "@soleri/core": "^10.0.0",
     "yaml": "^2.8.2",
     "zod": "^4.3.6"
   },

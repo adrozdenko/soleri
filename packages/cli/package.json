@@ -1,6 +1,6 @@
 {
   "name": "@soleri/cli",
-  "version": "9.22.2",
+  "version": "10.0.0",
   "description": "Developer CLI for creating and managing Soleri AI agents.",
   "keywords": [
     "agent",
@@ -41,8 +41,8 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.0.0",
-    "@soleri/core": "^9.0.0",
-    "@soleri/forge": "^9.0.0",
+    "@soleri/core": "^10.0.0",
+    "@soleri/forge": "^10.0.0",
     "commander": "^13.0.0",
     "yaml": "^2.8.2"
   },
