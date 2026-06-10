@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { Vault } from '../../vault/vault.js';
 import { Planner } from '../../planning/planner.js';
@@ -178,7 +178,9 @@ describe('orchestrate-facade', () => {
 
     const result = await executeOp(rtOps, 'session_start', { projectPath: '/test/orphans' });
     expect(result.success).toBe(true);
-    await vi.waitFor(() => expect(worktreeReap).toHaveBeenCalledWith('/test/orphans'));
+    // session_start resolves projectPath before passing it on; resolve() here
+    // keeps the assertion correct on Windows (drive-prefixed absolute paths).
+    await vi.waitFor(() => expect(worktreeReap).toHaveBeenCalledWith(resolve('/test/orphans')));
   });
 
   it('session_start auto-closes stale plans and reports count', async () => {
