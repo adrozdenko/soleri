@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 // ─── Chain Definition (YAML schema) ──────────────────────────────────
 
-export const chainStepSchema = z.object({
+const chainStepSchema = z.object({
   id: z.string(),
   op: z.string().describe('Facade op to call'),
   params: z

@@ -117,12 +117,12 @@ export function linuxTaskExists(platformId: string): boolean {
   return existsSync(unitPath(name, 'timer'));
 }
 
-export function pauseLinuxTask(platformId: string): void {
+function pauseLinuxTask(platformId: string): void {
   execFileSync('systemctl', ['--user', 'disable', `${platformId}.timer`], { stdio: 'pipe' });
   execFileSync('systemctl', ['--user', 'stop', `${platformId}.timer`], { stdio: 'pipe' });
 }
 
-export function resumeLinuxTask(platformId: string): void {
+function resumeLinuxTask(platformId: string): void {
   execFileSync('systemctl', ['--user', 'enable', '--now', `${platformId}.timer`], {
     stdio: 'pipe',
   });

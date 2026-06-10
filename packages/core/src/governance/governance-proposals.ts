@@ -20,7 +20,7 @@ export interface RawProposal {
   source: string;
 }
 
-export function mapProposal(row: RawProposal): Proposal {
+function mapProposal(row: RawProposal): Proposal {
   return {
     id: row.id,
     projectPath: row.project_path,

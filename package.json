@@ -62,10 +62,12 @@
     "@astrojs/sitemap": "3.7.2",
     "@astrojs/tailwind": "^6.0.2",
     "@secretlint/secretlint-rule-preset-recommend": "^11.3.1",
+    "@soleri/core": "^9.0.0",
     "@soleri/domain-code-review": "^1.0.0",
     "@soleri/domain-component": "^1.0.0",
     "@soleri/domain-design": "^1.0.0",
     "@soleri/domain-design-qa": "^1.0.0",
+    "@soleri/forge": "^9.0.0",
     "@types/node": "^25.6.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -82,7 +84,9 @@
     "ts-prune": "^0.10.3",
     "tsx": "^4.19.2",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "yaml": "^2.8.2",
+    "zod": "^4.3.6"
   },
   "lint-staged": {
     "packages/*/src/**/*.ts": [

@@ -88,7 +88,7 @@ function parseDuration(duration: string): number | null {
   }
 }
 
-export function formatSize(bytes: number): string {
+function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -114,9 +114,7 @@ export interface StaleStagingInfo {
  * @param maxAgeMs - Maximum age in milliseconds (default: 7 days)
  * @returns Info about stale entries, or null if none found.
  */
-export function getStaleStagingInfo(
-  maxAgeMs: number = DEFAULT_MAX_AGE_MS,
-): StaleStagingInfo | null {
+function getStaleStagingInfo(maxAgeMs: number = DEFAULT_MAX_AGE_MS): StaleStagingInfo | null {
   const entries = listStaged();
   if (entries.length === 0) return null;
 
@@ -147,7 +145,7 @@ export function getStaleStagingInfo(
  * @param entries - Entries to purge (from getStaleStagingInfo().staleEntries)
  * @returns Number of entries successfully removed.
  */
-export function purgeStagingEntries(entries: StagedEntry[]): number {
+function purgeStagingEntries(entries: StagedEntry[]): number {
   let removed = 0;
   for (const entry of entries) {
     try {

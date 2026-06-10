@@ -10,13 +10,13 @@ import { z } from 'zod';
 // Gate types
 // ---------------------------------------------------------------------------
 
-export const gateActionSchema = z.object({
+const gateActionSchema = z.object({
   action: z.enum(['STOP', 'BRANCH', 'CONTINUE']),
   goto: z.string().optional(),
   message: z.string().optional(),
 });
 
-export const gateSchema = z.discriminatedUnion('type', [
+const gateSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('GATE'),
     condition: z.string(),
@@ -48,7 +48,7 @@ export const gateSchema = z.discriminatedUnion('type', [
 // Step
 // ---------------------------------------------------------------------------
 
-export const flowStepSchema = z.object({
+const flowStepSchema = z.object({
   id: z.string(),
   name: z.string().optional(),
   description: z.string().optional(),

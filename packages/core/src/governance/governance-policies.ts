@@ -21,7 +21,7 @@ interface PresetConfig {
   autoCapture: AutoCapturePolicy;
 }
 
-export const POLICY_PRESETS: Record<PolicyPreset, PresetConfig> = {
+const POLICY_PRESETS: Record<PolicyPreset, PresetConfig> = {
   strict: {
     quotas: {
       maxEntriesTotal: 200,
@@ -80,7 +80,7 @@ export const POLICY_PRESETS: Record<PolicyPreset, PresetConfig> = {
   },
 };
 
-export const DEFAULT_PRESET: PolicyPreset = 'moderate';
+const DEFAULT_PRESET: PolicyPreset = 'moderate';
 
 // ─── GovernancePolicies ─────────────────────────────────────────────
 

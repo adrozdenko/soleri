@@ -326,7 +326,7 @@ export function memoriesByProject(
 
 // ── Helper ──────────────────────────────────────────────────────────────
 
-export function rowToMemory(row: Record<string, unknown>): Memory {
+function rowToMemory(row: Record<string, unknown>): Memory {
   return {
     id: row.id as string,
     projectPath: row.project_path as string,
