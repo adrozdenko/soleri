@@ -6,9 +6,9 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
-import { createOrchestrateOps } from '../orchestrate-ops.js';
-import { createProjectOps } from '../project-ops.js';
-import { createPlaybookOps } from '../playbook-ops.js';
+import { createOrchestrateOps } from '../ops/orchestrate/orchestrate-ops.js';
+import { createProjectOps } from '../ops/orchestrate/project-ops.js';
+import { createPlaybookOps } from '../ops/orchestrate/playbook-ops.js';
 import { checkForUpdate } from '../../update-check.js';
 import { buildPreflightManifest } from '../preflight.js';
 import { ENGINE_MODULE_MANIFEST } from '../../engine/module-manifest.js';

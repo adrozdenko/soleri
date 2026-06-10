@@ -45,7 +45,7 @@ import { createBranchingFacadeOps } from '../runtime/facades/branching-facade.js
 import { createTierFacadeOps } from '../runtime/facades/tier-facade.js';
 import { createEmbeddingFacadeOps } from '../runtime/facades/embedding-facade.js';
 import { createDreamOps } from '../dream/dream-ops.js';
-import { createDomainFacade } from '../runtime/domain-ops.js';
+import { createDomainFacade } from '../runtime/ops/shared/domain-ops.js';
 import { OpsRegistry } from '../runtime/ops-registry.js';
 import { ENGINE_MODULE_MANIFEST } from './module-manifest.js';
 

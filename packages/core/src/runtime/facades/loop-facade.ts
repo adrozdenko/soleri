@@ -5,7 +5,7 @@
 
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
-import { createLoopOps } from '../loop-ops.js';
+import { createLoopOps } from '../ops/loop/loop-ops.js';
 
 export function createLoopFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   return createLoopOps(runtime);

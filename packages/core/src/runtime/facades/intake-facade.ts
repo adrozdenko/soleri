@@ -6,7 +6,7 @@
 
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
-import { createIntakeOps } from '../intake-ops.js';
+import { createIntakeOps } from '../ops/intake/intake-ops.js';
 import { SourceRegistry } from '../../intake/source-registry.js';
 import { OperationLogger } from '../../vault/operation-log.js';
 

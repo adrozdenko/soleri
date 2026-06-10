@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyWorkflowOverride } from '../runtime/orchestrate-ops.js';
+import { applyWorkflowOverride } from '../runtime/ops/orchestrate/orchestrate-ops.js';
 import type { OrchestrationPlan, PlanStep } from '../flows/types.js';
 import type { WorkflowOverride } from './workflow-loader.js';
 

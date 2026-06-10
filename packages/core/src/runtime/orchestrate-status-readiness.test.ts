@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createOrchestrateOps } from './orchestrate-ops.js';
+import { createOrchestrateOps } from './ops/orchestrate/orchestrate-ops.js';
 import { captureOps } from '../engine/test-helpers.js';
 import { createAgentRuntime } from './runtime.js';
 import type { AgentRuntime } from './types.js';

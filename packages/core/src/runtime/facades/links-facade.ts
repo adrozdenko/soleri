@@ -6,7 +6,7 @@
 
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
-import { createVaultLinkingOps } from '../vault-linking-ops.js';
+import { createVaultLinkingOps } from '../ops/shared/vault-linking-ops.js';
 
 export function createLinksFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   return createVaultLinkingOps(runtime);

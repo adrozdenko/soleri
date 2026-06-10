@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createSelfHealOps } from '../self-heal-ops.js';
+import { createSelfHealOps } from '../ops/curator/self-heal-ops.js';
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
 
