@@ -49,10 +49,7 @@ If specific entries need attention:
 
 ```
 YOUR_AGENT_curator op:curator_groom
-  params: {
-    entryIds: ["<id1>", "<id2>"],
-    tags: ["<suggested-tag>"]
-  }
+  params: { entryId: "<entry-id>" }
 ```
 
 Report how many entries were updated.

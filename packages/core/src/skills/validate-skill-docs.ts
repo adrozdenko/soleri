@@ -37,6 +37,8 @@ import { createLinksFacadeOps } from '../runtime/facades/links-facade.js';
 import { createBranchingFacadeOps } from '../runtime/facades/branching-facade.js';
 import { createTierFacadeOps } from '../runtime/facades/tier-facade.js';
 import { createEmbeddingFacadeOps } from '../runtime/facades/embedding-facade.js';
+import { createCoreOps, type AgentIdentityConfig } from '../engine/core-ops.js';
+import { createDreamOps } from '../dream/dream-ops.js';
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -83,10 +85,22 @@ function createNoopProxy(): AgentRuntime {
 
 // ── Schema registry ─────────────────────────────────────────────────────
 // Build a flat map of opName → ZodSchema from all facades.
+// Ops without a schema (no declared params) are registered with `null` so
+// the validator knows the op exists even though there is nothing to parse.
 
-function buildSchemaRegistry(): Map<string, OpSchema> {
+const MOCK_IDENTITY: AgentIdentityConfig = {
+  id: 'agent',
+  name: 'Agent',
+  role: 'assistant',
+  description: 'Mock identity for schema extraction',
+  domains: [],
+  principles: [],
+  tone: 'neutral',
+};
+
+function buildSchemaRegistry(): Map<string, OpSchema | null> {
   const runtime = createNoopProxy();
-  const registry = new Map<string, OpSchema>();
+  const registry = new Map<string, OpSchema | null>();
 
   const facadeFactories: Array<(rt: AgentRuntime) => OpDefinition[]> = [
     createVaultFacadeOps,
@@ -110,15 +124,16 @@ function buildSchemaRegistry(): Map<string, OpSchema> {
     createBranchingFacadeOps,
     createTierFacadeOps,
     createEmbeddingFacadeOps,
+    // Op factories that live outside runtime/facades but are exposed by agents
+    (rt: AgentRuntime) => createCoreOps(rt, MOCK_IDENTITY),
+    createDreamOps,
   ];
 
   for (const factory of facadeFactories) {
     try {
       const ops = factory(runtime);
       for (const op of ops) {
-        if (op.schema) {
-          registry.set(op.name, op.schema);
-        }
+        registry.set(op.name, op.schema ?? null);
       }
     } catch {
       // Some facades may fail with the mock runtime — skip them.
@@ -383,9 +398,10 @@ function isPlaceholderIssue(
   issue: { code: string; path: (string | number)[]; received?: unknown; message: string },
   params: Record<string, unknown>,
 ): boolean {
-  // "Invalid enum value" on a placeholder string
-  if (issue.code === 'invalid_enum_value') {
-    const received = issue.received ?? getNestedValue(params, issue.path);
+  // Enum mismatch on a placeholder string.
+  // Zod v3 uses code 'invalid_enum_value'; Zod v4 uses 'invalid_value'.
+  if (issue.code === 'invalid_enum_value' || issue.code === 'invalid_value') {
+    const received = issue.received ?? getExampleValue(params, issue.path);
     if (isPlaceholder(received)) return true;
   }
   return false;
@@ -401,9 +417,23 @@ function getNestedValue(obj: Record<string, unknown>, path: (string | number)[])
   return current;
 }
 
+/**
+ * Resolve the example value for a Zod issue path. Some schemas preprocess
+ * their input before validation (e.g. capture_knowledge auto-wraps flat
+ * params into { entries: [params] }), so issue paths may not map 1:1 onto
+ * the raw example params. Fall back to progressively shorter path suffixes.
+ */
+function getExampleValue(obj: Record<string, unknown>, path: (string | number)[]): unknown {
+  for (let i = 0; i < path.length; i++) {
+    const value = getNestedValue(obj, path.slice(i));
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
 function validateExamples(
   examples: OpExample[],
-  registry: Map<string, OpSchema>,
+  registry: Map<string, OpSchema | null>,
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 
@@ -417,8 +447,7 @@ function validateExamples(
 
     if (!ex.parsedParams) continue;
 
-    const schema = registry.get(ex.opName);
-    if (!schema) {
+    if (!registry.has(ex.opName)) {
       // Op not found in registry — may be from a facade that failed to load,
       // or a typo in the SKILL.md. Report it.
       errors.push({
@@ -427,6 +456,12 @@ function validateExamples(
         opName: ex.opName,
         message: `unknown op — not found in any facade schema registry`,
       });
+      continue;
+    }
+
+    const schema = registry.get(ex.opName);
+    if (!schema) {
+      // Op exists but declares no params schema — nothing to validate.
       continue;
     }
 

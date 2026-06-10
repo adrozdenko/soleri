@@ -31,7 +31,7 @@ YOUR_AGENT_core op:admin_vault_size
 
 ```
 YOUR_AGENT_core op:search
-  params: { severity: "critical" }
+  params: { query: "critical rules", severity: "critical" }
 ```
 
 ### 4. Key Decisions
@@ -51,7 +51,7 @@ YOUR_AGENT_core op:brain_strengths
 
 ```
 YOUR_AGENT_core op:search
-  params: { type: "anti-pattern" }
+  params: { query: "mistakes to avoid", type: "anti-pattern" }
 ```
 
 ### 7. Cross-Project Context
@@ -111,7 +111,7 @@ Show which domain packs and knowledge packs are installed. Mention `soleri pack 
 
 ```
 YOUR_AGENT_core op:capture_knowledge
-  params: { title: "Onboarding completed for <project>", description: "<key takeaways and knowledge gaps identified>", type: "workflow", tags: ["onboarding", "<project>"] }
+  params: { title: "Onboarding completed for <project>", description: "<key takeaways and knowledge gaps identified>", type: "workflow", domain: "onboarding", tags: ["onboarding", "<project>"] }
 ```
 
 Record what was covered and what gaps remain for future onboarding.

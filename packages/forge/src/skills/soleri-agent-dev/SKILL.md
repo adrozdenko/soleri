@@ -25,15 +25,15 @@ The vault is the authoritative source for how the agent works. Do not rely on ge
 Before reading any source file, before making any plan, before offering any advice:
 
 ```
-YOUR_AGENT_core op:search_vault_intelligent
-  params: { query: "<description of planned work>", options: { intent: "pattern" } }
+YOUR_AGENT_core op:search_intelligent
+  params: { query: "<description of planned work>", type: "pattern" }
 ```
 
 Search again with architecture-specific terms: the facade name, tool name, or subsystem being modified.
 
 ```
-YOUR_AGENT_core op:query_vault_knowledge
-  params: { type: "workflow", category: "<relevant category>" }
+YOUR_AGENT_core op:search_intelligent
+  params: { query: "<facade, tool, or subsystem name>", type: "workflow" }
 ```
 
 If initial results are sparse, search again with broader terms — synonyms, related subsystem names, parent concepts. Exhaust the vault before moving on.
@@ -43,13 +43,13 @@ Review all results. Extract file paths, module names, function references, conve
 ### Step 2: Check Brain for Proven Patterns
 
 ```
-YOUR_AGENT_core op:strengths
-  params: { days: 30, minStrength: 60 }
+YOUR_AGENT_core op:brain_strengths
+  params: { minStrength: 60, limit: 10 }
 ```
 
 ```
-YOUR_AGENT_core op:recommend
-  params: { projectPath: "." }
+YOUR_AGENT_core op:brain_recommend
+  params: { task: "<description of planned work>", limit: 5 }
 ```
 
 Check if the brain has learned anything relevant from recent sessions.
@@ -98,6 +98,7 @@ YOUR_AGENT_core op:capture_knowledge
     title: "<what was learned>",
     description: "<the pattern or anti-pattern>",
     type: "pattern",
+    domain: "<subsystem or topic>",
     tags: ["<relevant-tags>"]
   }
 ```

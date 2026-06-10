@@ -43,8 +43,8 @@ YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<topic> — discovery finding",
     description: "<question, options considered, recommendation, rationale>",
-    type: "decision",
-    category: "<domain>",
+    type: "principle",
+    domain: "<domain>",
     tags: ["discovery", "decision"]
   }
 ```

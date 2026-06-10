@@ -114,7 +114,7 @@ For each task in the current wave:
 2. Mark as in_progress:
 
    ```
-   YOUR_AGENT_core op:update_task params:{ planId: "<id>", taskIndex: <n>, status: "in_progress" }
+   YOUR_AGENT_core op:update_task params:{ planId: "<id>", taskId: "<taskId>", status: "in_progress" }
    ```
 
 3. Gather vault context for the task:
@@ -210,7 +210,7 @@ As subagents complete, collect their results. For each completed task:
 
 1. **Mark completed:**
    ```
-   YOUR_AGENT_core op:update_task params:{ planId: "<id>", taskIndex: <n>, status: "completed" }
+   YOUR_AGENT_core op:update_task params:{ planId: "<id>", taskId: "<taskId>", status: "completed" }
    ```
 
 ### Step 4: Advance to Next Wave
@@ -255,7 +255,7 @@ Same as executing-plans — reconcile, capture knowledge, archive:
 YOUR_AGENT_core op:plan_reconcile params:{
   planId: "<id>",
   actualOutcome: "<what happened>",
-  driftItems: [{ type: "...", description: "...", impact: "...", rationale: "..." }]
+  driftItems: [{ type: "modified", description: "<what differed>", impact: "low", rationale: "<why>" }]
 }
 
 YOUR_AGENT_core op:plan_complete_lifecycle params:{

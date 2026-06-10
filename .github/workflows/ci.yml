@@ -269,6 +269,9 @@ jobs:
       - name: Lint (oxlint)
         run: npm run lint
 
+      - name: Skill doc schema validation
+        run: npm run validate-skills
+
       - name: Format check (oxfmt)
         run: npm run format:check
 

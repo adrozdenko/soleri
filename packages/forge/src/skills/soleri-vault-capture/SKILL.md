@@ -107,7 +107,7 @@ YOUR_AGENT_core op:capture_knowledge
       description: "<description>",
       type: "<type>",
       domain: "<domain>",
-      severity: "<critical|warning|suggestion>",
+      severity: "<critical|warning|info>",
       tags: ["<tag1>", "<tag2>"],
       why: "<reasoning>"
     }]
@@ -130,7 +130,7 @@ After capture, check EVERY response. Auto-detection frequently assigns "agent" t
 
 ```
 YOUR_AGENT_core op:vault_set_scope
-  params: { id: "<entry-id>", tier: "<correct-tier>" }
+  params: { id: "<entry-id>", tier: "project" }
 ```
 
 ### 9. Governance (if enabled)

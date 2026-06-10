@@ -21,12 +21,12 @@ Import external content (URLs, books, text, batch files) into the vault with aut
 
 Determine what the user is providing:
 
-| Type             | Use Op         | When                             |
-| ---------------- | -------------- | -------------------------------- |
-| URL              | `ingest_url`   | User pastes a web link           |
-| Book / long doc  | `ingest_book`  | PDF, long markdown, or file path |
-| Raw text         | `ingest_text`  | User pastes text directly        |
-| Multiple sources | `ingest_batch` | List of URLs or file paths       |
+| Type             | Use Op         | When                                   |
+| ---------------- | -------------- | -------------------------------------- |
+| URL              | `ingest_url`   | User pastes a web link                 |
+| Book / long doc  | `ingest_text`  | Read the file, ingest content in parts |
+| Raw text         | `ingest_text`  | User pastes text directly              |
+| Multiple sources | `ingest_batch` | List of text items with metadata       |
 
 ### Step 2: Ingest
 
@@ -41,15 +41,16 @@ YOUR_AGENT_intake op:ingest_url
   }
 ```
 
-**Book / Long Document:**
+**Book / Long Document:** read the file first, then ingest the content
+(chapter by chapter for very long documents):
 
 ```
-YOUR_AGENT_intake op:ingest_book
+YOUR_AGENT_intake op:ingest_text
   params: {
-    path: "<file path or url>",
-    title: "<document title>",
-    domain: "<domain>",
-    chunkStrategy: "chapter"
+    text: "<chapter or section content>",
+    title: "<document title — chapter name>",
+    sourceType: "documentation",
+    domain: "<domain>"
   }
 ```
 
@@ -70,11 +71,10 @@ YOUR_AGENT_intake op:ingest_text
 ```
 YOUR_AGENT_intake op:ingest_batch
   params: {
-    sources: [
-      { type: "url", value: "<url1>" },
-      { type: "url", value: "<url2>" }
-    ],
-    domain: "<domain>"
+    items: [
+      { text: "<content 1>", title: "<title 1>", sourceType: "article", domain: "<domain>" },
+      { text: "<content 2>", title: "<title 2>", sourceType: "notes", domain: "<domain>" }
+    ]
   }
 ```
 

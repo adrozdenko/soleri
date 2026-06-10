@@ -169,8 +169,8 @@ YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<pattern name>",
     description: "<what was found, why it matters>",
-    type: "pattern" | "anti-pattern",
-    category: "architecture",
+    type: "pattern",
+    domain: "architecture",
     tags: ["code-review", "<specific-tag>"]
   }
 ```

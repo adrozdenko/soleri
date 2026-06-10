@@ -73,7 +73,7 @@ If tricky conflicts were resolved:
 
 ```
 YOUR_AGENT_core op:capture_knowledge
-  params: { title: "<conflict pattern>", description: "<resolution strategy>", type: "pattern", tags: ["git", "merge", "conflict-resolution"] }
+  params: { title: "<conflict pattern>", description: "<resolution strategy>", type: "pattern", domain: "git", tags: ["git", "merge", "conflict-resolution"] }
 ```
 
 ## Step 5: Branch Cleanup
