@@ -22,7 +22,7 @@ Identify the verb + object in the user's message:
 
 ```
 YOUR_AGENT_control op:route_intent
-  params: { input: "<user's phrase>", context: "<current task context>" }
+  params: { prompt: "<user's phrase>" }
 ```
 
 Use this when the phrase matches 2+ intents. Skip it for obvious, unambiguous commands.

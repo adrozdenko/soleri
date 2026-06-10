@@ -38,7 +38,7 @@ For true duplicates:
 
 ```
 YOUR_AGENT_core op:merge_patterns
-  params: { patternIds: ["<id1>", "<id2>"] }
+  params: { keepId: "<id-to-keep>", removeId: "<id-to-merge-away>" }
 ```
 
 Preserve the best content from each.
@@ -63,7 +63,7 @@ For targeted grooming of specific entries:
 
 ```
 YOUR_AGENT_core op:curator_groom
-  params: { entryIds: ["<id>"], tags: ["<tag>"] }
+  params: { entryId: "<id>" }
 ```
 
 ### Step 5: Full Consolidation

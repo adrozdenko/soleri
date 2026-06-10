@@ -106,8 +106,10 @@ Switch to scout branch, capture, switch back:
 ```
 YOUR_AGENT_branching op:vault_branch_add
   params: {
-    branch: "scout-findings",
-    entry: {
+    branchName: "scout-findings",
+    entryId: "<new-entry-id>",
+    action: "add",
+    entryData: {
       title: "{concise finding title}",
       type: "pattern",
       domain: "{relevant domain}",
@@ -182,7 +184,7 @@ After review, delete the branch and recreate fresh:
 
 ```
 YOUR_AGENT_branching op:vault_delete_branch
-  params: { name: "scout-findings" }
+  params: { branchName: "scout-findings" }
 YOUR_AGENT_branching op:vault_branch
   params: { name: "scout-findings" }
 ```

@@ -67,7 +67,7 @@ YOUR_AGENT_core op:capture_knowledge
     title: "<bug>",
     description: "<root cause, solution, what made it hard to find>",
     type: "anti-pattern",
-    category: "<domain>",
+    domain: "<domain>",
     tags: ["<relevant>"]
   }
 YOUR_AGENT_core op:session_capture

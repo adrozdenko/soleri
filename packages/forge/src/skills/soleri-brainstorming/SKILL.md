@@ -59,8 +59,8 @@ YOUR_AGENT_core op:capture_knowledge
   params: {
     title: "<feature> — design decision",
     description: "<chosen approach, rationale, rejected alternatives>",
-    type: "decision",
-    category: "<domain>",
+    type: "principle",
+    domain: "<domain>",
     tags: ["design-decision"]
   }
 ```

@@ -43,7 +43,7 @@ YOUR_AGENT_core op:curator_detect_duplicates
 ```
 YOUR_AGENT_core op:curator_contradictions
 YOUR_AGENT_core op:curator_resolve_contradiction
-  params: { contradictionId: "<id>" }
+  params: { id: 42, resolution: "resolved" }
 ```
 
 ### 6. Find Stale Entries

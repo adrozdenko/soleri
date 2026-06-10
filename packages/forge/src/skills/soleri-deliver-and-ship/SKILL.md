@@ -69,6 +69,7 @@ YOUR_AGENT_core op:capture_knowledge
     title: "<what was learned>",
     description: "<the pattern or anti-pattern>",
     type: "pattern",
+    domain: "<domain>",
     tags: ["<relevant-tags>"]
   }
 ```

@@ -161,7 +161,7 @@ If any non-obvious steps or workarounds were needed:
 
 ```
 YOUR_AGENT_core op:capture_knowledge
-  params: { title: "<gotcha>", description: "<what happened and the fix>", type: "anti-pattern", tags: ["env-setup", "<tech-stack>"] }
+  params: { title: "<gotcha>", description: "<what happened and the fix>", type: "anti-pattern", domain: "env-setup", tags: ["env-setup", "<tech-stack>"] }
 ```
 
 ## Agent Tools Reference
