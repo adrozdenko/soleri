@@ -68,7 +68,7 @@ export function autoLink(entryId: string, config: AutoLinkConfig): void {
  * Best-effort: never blocks vault writes, never throws.
  * Skips when pipeline is null, disabled, or batch >100 entries.
  */
-export function autoEmbed(
+function autoEmbed(
   entryList: Array<Pick<IntelligenceEntry, 'id' | 'title' | 'description' | 'context'>>,
   config: AutoEmbedConfig,
 ): void {

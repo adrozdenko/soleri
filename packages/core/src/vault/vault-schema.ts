@@ -257,7 +257,7 @@ function migrateTierColumn(provider: PersistenceProvider): void {
   );
 }
 
-export function migratePerformanceIndexes(provider: PersistenceProvider): void {
+function migratePerformanceIndexes(provider: PersistenceProvider): void {
   provider.execSql(`
     CREATE INDEX IF NOT EXISTS idx_memories_archived_at ON memories(archived_at);
     CREATE INDEX IF NOT EXISTS idx_entries_updated_at ON entries(updated_at);

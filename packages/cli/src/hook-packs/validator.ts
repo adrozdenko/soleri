@@ -118,7 +118,7 @@ export function generateFixtures(
 /**
  * Run a hook script against a single fixture in dry-run mode.
  */
-export function runSingleDryRun(scriptPath: string, fixture: TestFixture): DryRunResult {
+function runSingleDryRun(scriptPath: string, fixture: TestFixture): DryRunResult {
   const input = JSON.stringify(fixture.payload);
   try {
     const stdout = execSync(`printf '%s' '${input.replace(/'/g, "'\\''")}' | sh "${scriptPath}"`, {

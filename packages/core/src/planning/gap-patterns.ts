@@ -58,7 +58,7 @@ export function containsAny(text: string, patterns: string[]): boolean {
 
 // ─── Pattern Constants (Passes 1-4) ─────────────────────────────
 
-export const METRIC_PATTERNS = [
+const METRIC_PATTERNS = [
   /\d+/,
   /percent/i,
   /reduce/i,
@@ -71,7 +71,7 @@ export const METRIC_PATTERNS = [
   /benchmark/i,
 ];
 
-export const EXCLUSION_KEYWORDS = [
+const EXCLUSION_KEYWORDS = [
   'not',
   'exclude',
   'outside',
@@ -82,7 +82,7 @@ export const EXCLUSION_KEYWORDS = [
   'will not',
 ];
 
-export const OVERLY_BROAD_PATTERNS = [
+const OVERLY_BROAD_PATTERNS = [
   'everything',
   'all systems',
   'entire codebase',
@@ -92,7 +92,7 @@ export const OVERLY_BROAD_PATTERNS = [
   'rewrite everything',
 ];
 
-export const DEPENDENCY_KEYWORDS = [
+const DEPENDENCY_KEYWORDS = [
   'depends',
   'dependency',
   'prerequisite',
@@ -101,7 +101,7 @@ export const DEPENDENCY_KEYWORDS = [
   'before',
 ];
 
-export const BREAKING_CHANGE_KEYWORDS = [
+const BREAKING_CHANGE_KEYWORDS = [
   'breaking change',
   'breaking',
   'migration',
@@ -112,7 +112,7 @@ export const BREAKING_CHANGE_KEYWORDS = [
   'database migration',
 ];
 
-export const MITIGATION_KEYWORDS = [
+const MITIGATION_KEYWORDS = [
   'rollback',
   'backward compatible',
   'backwards compatible',
@@ -125,7 +125,7 @@ export const MITIGATION_KEYWORDS = [
   'blue-green',
 ];
 
-export const VERIFICATION_KEYWORDS = [
+const VERIFICATION_KEYWORDS = [
   'test',
   'verify',
   'validate',

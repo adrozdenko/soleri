@@ -35,7 +35,7 @@ export interface AgentConfig {
   capabilityMap?: Record<string, { facade: string; op: string }>;
 }
 
-export const DEFAULT_AUTO_OPS_CONFIG: Required<AgentAutoOpsConfig> = {
+const DEFAULT_AUTO_OPS_CONFIG: Required<AgentAutoOpsConfig> = {
   dream: false,
   selfHeal: false,
   orphanReaper: false,

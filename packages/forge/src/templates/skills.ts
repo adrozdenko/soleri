@@ -27,7 +27,7 @@ export interface SkillStepDef {
  * Extract optional `steps` array from YAML frontmatter.
  * Uses simple regex parsing — no YAML dependency needed.
  */
-export function extractStepsFromFrontmatter(content: string): SkillStepDef[] | null {
+function extractStepsFromFrontmatter(content: string): SkillStepDef[] | null {
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
   if (!fmMatch) return null;
 
@@ -84,24 +84,13 @@ export function extractStepsFromFrontmatter(content: string): SkillStepDef[] | n
 // ---------------------------------------------------------------------------
 
 /**
- * Extract the `name:` field from YAML frontmatter.
- * Returns the raw string value, or null if not found.
- */
-export function extractNameFromFrontmatter(content: string): string | null {
-  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!fmMatch) return null;
-  const nameMatch = fmMatch[1].match(/^name:\s*(.+)/m);
-  return nameMatch ? nameMatch[1].trim().replace(/^["']|["']$/g, '') : null;
-}
-
-/**
  * Inject announce and completion feedback instructions into a skill's content.
  *
  * Announce goes immediately after the frontmatter block.
  * Complete goes at the very end of the file.
  * Both are inside HTML comments so they don't clutter the rendered output.
  */
-export function injectSkillFeedback(content: string, skillName: string): string {
+function injectSkillFeedback(content: string, skillName: string): string {
   // Count ### headings as "steps"
   const stepMatches = content.match(/^### .+/gm) ?? [];
   const stepCount = stepMatches.length;
