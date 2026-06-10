@@ -40,7 +40,9 @@ export function generatePackageJson(config: AgentConfig): string {
       '@anthropic-ai/sdk': '^0.39.0',
     },
     devDependencies: {
-      '@soleri/cli': '^10.0.0',
+      // ||-range so scaffold installs keep working in the pre-publish window
+      // between the version bump landing on main and 10.x reaching the registry
+      '@soleri/cli': '^9.0.0 || ^10.0.0',
       '@types/node': '^22.13.4',
       '@vitest/coverage-v8': '^3.0.5',
       tsx: '^4.19.2',
