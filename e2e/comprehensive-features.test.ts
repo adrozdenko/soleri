@@ -504,17 +504,27 @@ describe('Design: data-serving ops', () => {
     'get_stack_guidelines',
   ];
 
-  for (const opName of dataOps) {
-    it(`${opName} returns data with correct source`, async () => {
+  it('every data-serving op returns populated intelligence data without errors', async () => {
+    for (const opName of dataOps) {
       const op = findOp('design', opName);
       const result = (await op.handler({ query: 'test', topic: 'general' })) as {
         source: string;
-        data: unknown;
+        data: Record<string, unknown>;
+        error?: unknown;
       };
-      expect(result.source).toBe(opName);
-      expect(result.data).toBeDefined();
-    });
-  }
+      // Each op echoes its own name as source and serves a non-empty JSON
+      // section loaded from the pack's bundled data files — an empty object
+      // means the data file is missing or corrupt.
+      expect(result.source, `${opName} source`).toBe(opName);
+      expect(result.error, `${opName} must not return an error`).toBeUndefined();
+      expect(result.data, `${opName} data must be a non-null object`).toBeTypeOf('object');
+      expect(result.data, `${opName} data must not be null`).not.toBeNull();
+      expect(
+        Object.keys(result.data).length,
+        `${opName} data must have at least one property`,
+      ).toBeGreaterThan(0);
+    }
+  });
 });
 
 // =========================================================================
@@ -540,17 +550,26 @@ describe('Design Rules: all 15 ops return data', () => {
     'get_error_handling_patterns',
   ];
 
-  for (const opName of ruleOps) {
-    it(`${opName} returns non-empty response`, async () => {
-      const facade = facades.find((f) => f.name.includes('design_rules'));
-      expect(facade).toBeDefined();
-      const op = facade!.ops.find((o) => o.name === opName);
-      expect(op).toBeDefined();
-      const result = (await op!.handler({ topic: 'all' })) as { source: string; data: unknown };
-      expect(result.source).toBe(opName);
-      expect(result.data).toBeDefined();
-    });
-  }
+  it('every rules op returns populated rules data without errors', async () => {
+    for (const opName of ruleOps) {
+      const op = findOp('design_rules', opName);
+      const result = (await op.handler({ topic: 'all' })) as {
+        source: string;
+        data: Record<string, unknown>;
+        error?: unknown;
+      };
+      // Each rules op serves a non-empty JSON section from the pack's bundled
+      // data files — an empty object means the data file is missing or corrupt.
+      expect(result.source, `${opName} source`).toBe(opName);
+      expect(result.error, `${opName} must not return an error`).toBeUndefined();
+      expect(result.data, `${opName} data must be a non-null object`).toBeTypeOf('object');
+      expect(result.data, `${opName} data must not be null`).not.toBeNull();
+      expect(
+        Object.keys(result.data).length,
+        `${opName} data must have at least one property`,
+      ).toBeGreaterThan(0);
+    }
+  });
 });
 
 // =========================================================================
