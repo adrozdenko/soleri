@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createDispatcher } from '../flows/dispatch-registry.js';
 import type { ActivePlanRef } from '../flows/dispatch-registry.js';
 import type { FacadeConfig } from '../facades/types.js';
-import { applyWorkflowOverride } from '../runtime/orchestrate-ops.js';
+import { applyWorkflowOverride } from '../runtime/ops/orchestrate/orchestrate-ops.js';
 import type { OrchestrationPlan } from '../flows/types.js';
 import type { WorkflowOverride } from '../workflows/workflow-loader.js';
 

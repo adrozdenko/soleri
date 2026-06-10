@@ -4,7 +4,7 @@
 
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
-import { createReviewOps } from '../review-ops.js';
+import { createReviewOps } from '../ops/shared/review-ops.js';
 
 export function createReviewFacadeOps(runtime: AgentRuntime): OpDefinition[] {
   return [...createReviewOps(runtime)];

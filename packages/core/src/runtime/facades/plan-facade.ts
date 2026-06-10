@@ -6,9 +6,9 @@
 import { z } from 'zod';
 import type { OpDefinition } from '../../facades/types.js';
 import type { AgentRuntime } from '../types.js';
-import { createPlanningExtraOps } from '../planning-extra-ops.js';
-import { createGradingOps } from '../grading-ops.js';
-import { createChainOps } from '../chain-ops.js';
+import { createPlanningExtraOps } from '../ops/plan/planning-extra-ops.js';
+import { createGradingOps } from '../ops/plan/grading-ops.js';
+import { createChainOps } from '../ops/plan/chain-ops.js';
 import { PlanGradeRejectionError } from '../../planning/planner.js';
 import { matchPlaybooks } from '../../playbooks/playbook-registry.js';
 import { logCreatePlanMetric, recordApprovalAttempt } from '../friction-metrics.js';
