@@ -79,7 +79,7 @@
     "markdownlint-cli2": "^0.22.1",
     "oxfmt": "^0.35.0",
     "oxlint": "~1.60.0",
-    "secretlint": "^11.3.1",
+    "secretlint": "^13.0.2",
     "tailwindcss": "^3.4.17",
     "ts-prune": "^0.10.3",
     "tsx": "^4.19.2",
