@@ -13,6 +13,7 @@ import {
   titleToSlug,
   buildFrontmatterLinks,
   buildRelatedSection,
+  escapeFieldBody,
   type ResolvedLinks,
 } from './obsidian-sync.js';
 import type { Vault } from './vault.js';
@@ -64,30 +65,31 @@ export function entryToMarkdown(entry: IntelligenceEntry, resolvedLinks?: Resolv
   lines.push('');
   lines.push(`# ${entry.title}`);
   lines.push('');
-  lines.push(entry.description);
+  // Field bodies are escaped so an embedded `## ` line can't break section parsing.
+  lines.push(escapeFieldBody(entry.description));
   if (entry.context) {
     lines.push('');
     lines.push('## Context');
     lines.push('');
-    lines.push(entry.context);
+    lines.push(escapeFieldBody(entry.context));
   }
   if (entry.example) {
     lines.push('');
     lines.push('## Example');
     lines.push('');
-    lines.push(entry.example);
+    lines.push(escapeFieldBody(entry.example));
   }
   if (entry.counterExample) {
     lines.push('');
     lines.push('## Counter-Example');
     lines.push('');
-    lines.push(entry.counterExample);
+    lines.push(escapeFieldBody(entry.counterExample));
   }
   if (entry.why) {
     lines.push('');
     lines.push('## Why');
     lines.push('');
-    lines.push(entry.why);
+    lines.push(escapeFieldBody(entry.why));
   }
   if (resolvedLinks) {
     const related = buildRelatedSection(resolvedLinks);
@@ -147,6 +149,12 @@ export interface SyncEntryOptions {
   disambiguate?: boolean;
   /** Resolved Zettelkasten links to embed in frontmatter + a Related section. */
   resolvedLinks?: ResolvedLinks;
+  /**
+   * Rewrite even when the on-disk content hash matches. Explicit mutations use
+   * this so a change to a non-hashed field (tier/origin/temporal window) still
+   * refreshes the file — the content-hash dedup skip is only a bulk-sync optimization.
+   */
+  force?: boolean;
 }
 
 /**
@@ -178,9 +186,9 @@ export function writeEntryFileSync(
     }
   }
 
-  // Content-hash dedup: skip rewrite when file content hasn't changed.
+  // Content-hash dedup: skip rewrite when file content hasn't changed (unless forced).
   const contentHash = computeContentHash(entry);
-  if (existsSync(filePath)) {
+  if (!opts.force && existsSync(filePath)) {
     const existing = readFileSync(filePath, 'utf-8');
     const hashMatch = existing.match(/^content_hash:\s*"([^"]+)"/m);
     if (hashMatch && hashMatch[1] === contentHash) {

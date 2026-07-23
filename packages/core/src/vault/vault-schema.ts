@@ -6,14 +6,21 @@ import type { PersistenceProvider } from '../persistence/types.js';
 import { computeContentHash } from './content-hash.js';
 
 /**
- * On-disk vault format version.
+ * Highest on-disk vault format version this engine understands.
  *
- * v1 → v2 (WS4 Vault Files-First): markdown files under `knowledge/vault/` become
- * the canonical store and SQLite is demoted to a rebuildable index. A v2 vault
- * opened by a pre-WS4 engine (which pins v1) hits the `current > VAULT_FORMAT_VERSION`
- * guard below and refuses to open — the intended forward-incompatibility.
+ * - **v1** — SQLite is the canonical store (index-first). This is what a FRESH
+ *   database is stamped with; nothing is files-first until it is migrated.
+ * - **v2** — WS4 files-first: markdown files under `knowledge/vault/` are the
+ *   canonical store and SQLite is a rebuildable index. Reached only by running
+ *   `runMigrationToFiles`, which stamps `user_version = 2`.
+ *
+ * A v2 vault opened by a pre-WS4 engine (which pins max v1) hits the
+ * `current > VAULT_FORMAT_VERSION` guard below and refuses to open.
  */
 export const VAULT_FORMAT_VERSION = 2;
+
+/** Version stamped onto a fresh database — index-first until explicitly migrated. */
+export const VAULT_INITIAL_FORMAT_VERSION = 1;
 
 /** Which store is authoritative for entry content. */
 export type VaultSourceOfTruth = 'index' | 'files';
@@ -22,7 +29,9 @@ export function checkFormatVersion(provider: PersistenceProvider): void {
   const row = provider.get<{ user_version: number }>('PRAGMA user_version');
   const current = row?.user_version ?? 0;
   if (current === 0) {
-    provider.run(`PRAGMA user_version = ${VAULT_FORMAT_VERSION}`);
+    // Fresh DB → stamp the INITIAL (index-first) version, not the max. Files-first
+    // (v2) is reached only by the migration, so a new vault is never silently v2.
+    provider.run(`PRAGMA user_version = ${VAULT_INITIAL_FORMAT_VERSION}`);
   } else if (current > VAULT_FORMAT_VERSION) {
     throw new Error(
       `Vault format version ${current} is newer than engine supports (${VAULT_FORMAT_VERSION}). ` +
@@ -63,6 +72,32 @@ export function setSourceOfTruth(provider: PersistenceProvider, value: VaultSour
     `INSERT INTO vault_meta (key, value) VALUES ('source_of_truth', @value)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
     { value },
+  );
+}
+
+/**
+ * Timestamp (ms since epoch) of the last full/incremental index build. Used as
+ * the cheap mtime pre-filter for incremental reindex: files with `mtimeMs` at or
+ * below this are assumed unchanged and are not re-parsed. Returns 0 when unset.
+ */
+export function getLastIndexBuild(provider: PersistenceProvider): number {
+  try {
+    const row = provider.get<{ value: string }>(
+      "SELECT value FROM vault_meta WHERE key = 'last_index_build'",
+    );
+    const n = row ? Number(row.value) : 0;
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Persist the last index-build timestamp (ms since epoch). */
+export function setLastIndexBuild(provider: PersistenceProvider, ms: number): void {
+  provider.run(
+    `INSERT INTO vault_meta (key, value) VALUES ('last_index_build', @value)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    { value: String(Math.trunc(ms)) },
   );
 }
 
@@ -279,12 +314,21 @@ function migrateContentHash(provider: PersistenceProvider): void {
     tags: string;
     example: string | null;
     counter_example: string | null;
+    severity: string | null;
+    context: string | null;
+    why: string | null;
+    applies_to: string | null;
   }>(
-    'SELECT id, type, domain, title, description, tags, example, counter_example FROM entries WHERE content_hash IS NULL',
+    // Only content columns (all present in createCoreTables) — the hash excludes
+    // provenance/temporal fields, so no need to read tier/origin/valid_* here.
+    `SELECT id, type, domain, title, description, tags, example, counter_example,
+            severity, context, why, applies_to
+     FROM entries WHERE content_hash IS NULL`,
   );
   if (unhashed.length > 0) {
     provider.transaction(() => {
       for (const row of unhashed) {
+        // Full content-field hash so backfilled rows match hashes from live entries.
         const hash = computeContentHash({
           type: row.type,
           domain: row.domain,
@@ -293,6 +337,10 @@ function migrateContentHash(provider: PersistenceProvider): void {
           tags: JSON.parse(row.tags),
           example: row.example ?? undefined,
           counterExample: row.counter_example ?? undefined,
+          severity: row.severity ?? undefined,
+          context: row.context ?? undefined,
+          why: row.why ?? undefined,
+          appliesTo: row.applies_to ? JSON.parse(row.applies_to) : undefined,
         });
         provider.run('UPDATE entries SET content_hash = @hash WHERE id = @id', {
           hash,

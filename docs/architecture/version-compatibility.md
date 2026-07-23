@@ -43,7 +43,10 @@ The vault database tracks its schema version via SQLite `PRAGMA user_version`. T
 - **Newer than engine** — throws error with upgrade guidance
 - **Older than engine** — future: run migration scripts
 
-Current format version: **2** (files-first vault, WS4). v1 was introduced in v8.0.0.
+Max supported format version: **2** (files-first vault, WS4). v1 was introduced in v8.0.0.
+
+**A fresh database is stamped v1 (index-first)** — nothing is files-first until it is explicitly
+migrated. v2 is reached only by running the migration.
 
 - **v1** — SQLite is the canonical store for vault entries.
 - **v2** — Markdown files under `knowledge/vault/<domain>/<slug>.md` (YAML frontmatter) are the
@@ -51,7 +54,9 @@ Current format version: **2** (files-first vault, WS4). v1 was introduced in v8.
   On any content conflict the file always wins; the index is rebuilt from files (`vault_reindex`,
   incremental or `--full`). Migrate an existing v1 vault with `vault_migrate_to_files` (backs up the
   DB, exports to markdown, verifies content-hash integrity, then flips `source_of_truth` to `files`
-  and bumps `user_version` to 2 so a pre-WS4 engine refuses the new layout).
+  and bumps `user_version` to 2 so a pre-WS4 engine refuses the new layout). Once migrated, the
+  runtime binds the file store at startup so every mutation is file-first — a files-first vault
+  refuses a DB-only write.
 
 ### Rule 4: Knowledge packs can declare engine requirement
 

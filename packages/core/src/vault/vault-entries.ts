@@ -400,6 +400,9 @@ export function setTemporal(
     params.validUntil = validUntil;
   }
   if (sets.length === 0) return false;
+  // Temporal fields are provenance, not content — the content hash is unchanged.
+  // The file is still refreshed by the vault's write-through (force-write) so the
+  // frontmatter valid_from/until stay canonical in files-first mode.
   sets.push('updated_at = unixepoch()');
   return provider.run(`UPDATE entries SET ${sets.join(', ')} WHERE id = @id`, params).changes > 0;
 }

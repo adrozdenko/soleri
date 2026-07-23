@@ -34,6 +34,8 @@ import {
   setSourceOfTruth,
   setVaultFormatVersion,
   getVaultFormatVersion,
+  getLastIndexBuild,
+  setLastIndexBuild,
   VAULT_FORMAT_VERSION,
   type VaultSourceOfTruth,
 } from './vault-schema.js';
@@ -95,10 +97,12 @@ export function parsedToEntry(parsed: ParsedMarkdownEntry, domainFallback = ''):
 /** Result of reading and validating a single canonical vault file. */
 export interface ReadEntryResult {
   entry: IntelligenceEntry;
-  /** content_hash recorded in frontmatter (may be undefined on legacy files). */
+  /** content_hash recorded in frontmatter (may be undefined or stale after a hand edit). */
   frontmatterHash?: string;
-  /** content_hash recomputed from the parsed entry — the integrity check value. */
+  /** content_hash recomputed from the parsed entry — the authoritative value. */
   computedHash: string;
+  /** Non-fatal issues (e.g. missing id, unknown/coerced type) — surfaced, never silent. */
+  warnings: string[];
 }
 
 /** Read a canonical vault markdown file into an entry + its integrity hashes. */
@@ -106,10 +110,17 @@ export function readEntryFile(filePath: string, domainFallback = ''): ReadEntryR
   const content = readFileSync(filePath, 'utf-8');
   const parsed = fromObsidianMarkdown(content);
   const entry = parsedToEntry(parsed, domainFallback);
+  const warnings: string[] = [];
+  if (!entry.id) warnings.push('missing-id');
+  if (parsed.type && !VALID_TYPES.has(parsed.type as IntelligenceEntry['type'])) {
+    warnings.push(`unknown-type:${parsed.type} (coerced to '${entry.type}')`);
+  }
+  if (!parsed.severity) warnings.push(`missing-severity (defaulted to '${entry.severity}')`);
   return {
     entry,
     frontmatterHash: parsed.contentHash,
     computedHash: computeContentHash(entry),
+    warnings,
   };
 }
 
@@ -165,9 +176,22 @@ export interface FileConflict {
   id: string;
   filePath: string;
   domain: string;
-  fileHash?: string;
+  /** content_hash RECOMPUTED from the file's parsed content (authoritative). */
+  fileHash: string;
   indexedHash: string | null;
   reason: 'missing-in-index' | 'hash-mismatch';
+  /** True when the file's own frontmatter hash was stale (a hand edit signature). */
+  handEdited: boolean;
+}
+
+/** Options controlling conflict detection / incremental reindex. */
+export interface ConflictScanOptions {
+  /**
+   * Only parse files with `mtimeMs` strictly greater than this (ms since epoch).
+   * The cheap pre-filter the ruling specifies — files untouched since the last
+   * index build are assumed unchanged. Pass 0 (default) to parse every file.
+   */
+  since?: number;
 }
 
 /** Map of indexed entry id → stored content_hash. */
@@ -179,35 +203,53 @@ function indexedHashes(vault: Vault): Map<string, string | null> {
 }
 
 /**
- * Detect files whose content_hash differs from the indexed row (or that have no
- * index row). These are the rows the index must rebuild from the file — the file
- * always wins. Pure detection; does not mutate the index.
+ * Detect files whose content has drifted from the index — the file always wins.
+ *
+ * Crucially, the comparison uses a hash RECOMPUTED from the file's parsed content,
+ * not the frontmatter-claimed hash. A human editing prose cannot recompute a
+ * SHA-256, so a stale frontmatter hash would otherwise make hand edits invisible.
+ * A frontmatter hash that disagrees with the recomputed hash is itself the
+ * "edited by hand" signal (`handEdited`); the index rebuilds and the frontmatter
+ * hash is refreshed on the next write-through.
+ *
+ * `since` is the cheap mtime pre-filter (only parse files newer than the last
+ * index build). Pure detection; does not mutate the index.
  */
-export function detectConflicts(vault: Vault, knowledgeDir: string): FileConflict[] {
+export function detectConflicts(
+  vault: Vault,
+  knowledgeDir: string,
+  opts: ConflictScanOptions = {},
+): FileConflict[] {
+  const since = opts.since ?? 0;
   const indexed = indexedHashes(vault);
   const conflicts: FileConflict[] = [];
   for (const file of scanVaultFiles(knowledgeDir)) {
-    if (!file.id) continue;
+    if (!file.id) continue; // reported as a failure when the reindex applies changes
+    if (since > 0 && file.mtimeMs <= since) continue; // unchanged since last build — cheap skip
+    const { computedHash } = readEntryFile(file.filePath, file.domain);
+    const handEdited = file.frontmatterHash !== computedHash;
     if (!indexed.has(file.id)) {
       conflicts.push({
         id: file.id,
         filePath: file.filePath,
         domain: file.domain,
-        fileHash: file.frontmatterHash,
+        fileHash: computedHash,
         indexedHash: null,
         reason: 'missing-in-index',
+        handEdited,
       });
       continue;
     }
     const idxHash = indexed.get(file.id) ?? null;
-    if (idxHash !== file.frontmatterHash) {
+    if (idxHash !== computedHash) {
       conflicts.push({
         id: file.id,
         filePath: file.filePath,
         domain: file.domain,
-        fileHash: file.frontmatterHash,
+        fileHash: computedHash,
         indexedHash: idxHash,
         reason: 'hash-mismatch',
+        handEdited,
       });
     }
   }
@@ -216,11 +258,21 @@ export function detectConflicts(vault: Vault, knowledgeDir: string): FileConflic
 
 // ─── Reindex ────────────────────────────────────────────────────────
 
+/** A file the reindex could not fully process (surfaced, never silently dropped). */
+export interface ReindexIssue {
+  filePath: string;
+  reason: string;
+}
+
 export interface ReindexResult {
   scanned: number;
   reindexed: number;
   skipped: number;
   pruned: number;
+  /** Files that could NOT be indexed (e.g. missing id) — skipped, but reported. */
+  failures: ReindexIssue[];
+  /** Files indexed with a coerced/defaulted field (e.g. unknown type) — reported. */
+  warnings: ReindexIssue[];
 }
 
 /** Upsert an entry into the index ONLY (no file write — avoids write-through recursion). */
@@ -229,42 +281,63 @@ function upsertIndexRow(vault: Vault, entry: IntelligenceEntry): void {
 }
 
 /**
- * Incremental reindex (startup / post-merge trigger): reindex only files whose
- * frontmatter content_hash differs from the index (or that are missing from it).
- * Cheap — the hash lives in frontmatter, so no-op files need no full parse.
- * The file always wins.
+ * Incremental reindex (startup / post-merge trigger): reindex only files that
+ * have drifted from the index, using the recomputed content hash (so hand edits
+ * are caught) and the `mtimeMs > lastIndexBuild` cheap pre-filter. The file
+ * always wins. Missing-id files are reported as failures, not silently dropped.
  */
 export function reindexIncremental(vault: Vault, knowledgeDir: string): ReindexResult {
-  const conflicts = detectConflicts(vault, knowledgeDir);
+  const provider = vault.getProvider();
+  const since = getLastIndexBuild(provider);
+  const buildStart = Date.now();
   const scanned = scanVaultFiles(knowledgeDir).length;
+  const conflicts = detectConflicts(vault, knowledgeDir, { since });
+  const failures: ReindexIssue[] = [];
+  const warnings: ReindexIssue[] = [];
   let reindexed = 0;
-  vault.getProvider().transaction(() => {
+
+  provider.transaction(() => {
     for (const conflict of conflicts) {
-      const { entry } = readEntryFile(conflict.filePath, conflict.domain);
-      upsertIndexRow(vault, entry);
+      const res = readEntryFile(conflict.filePath, conflict.domain);
+      if (!res.entry.id) {
+        failures.push({ filePath: conflict.filePath, reason: 'missing-id' });
+        continue;
+      }
+      for (const w of res.warnings) warnings.push({ filePath: conflict.filePath, reason: w });
+      upsertIndexRow(vault, res.entry);
       reindexed++;
     }
   });
-  return { scanned, reindexed, skipped: scanned - reindexed, pruned: 0 };
+
+  setLastIndexBuild(provider, buildStart);
+  return { scanned, reindexed, skipped: scanned - reindexed, pruned: 0, failures, warnings };
 }
 
 /**
- * Full reindex (`vault reindex --full`): re-read every file into the index and
- * prune index rows that no longer have a backing file. Idempotent; preserves the
- * Zettelkasten links table for surviving entries (only removed entries cascade).
+ * Full reindex (`vault reindex --full`): re-read every file into the index
+ * (ignoring the mtime pre-filter) and prune index rows that no longer have a
+ * backing file. Idempotent; preserves the Zettelkasten links table for surviving
+ * entries (only removed entries cascade). Missing-id files are reported.
  */
 export function reindexFull(vault: Vault, knowledgeDir: string): ReindexResult {
   const files = scanVaultFiles(knowledgeDir);
   const provider = vault.getProvider();
+  const buildStart = Date.now();
   const fileIds = new Set<string>();
+  const failures: ReindexIssue[] = [];
+  const warnings: ReindexIssue[] = [];
   let reindexed = 0;
 
   provider.transaction(() => {
     for (const file of files) {
-      const { entry } = readEntryFile(file.filePath, file.domain);
-      if (!entry.id) continue;
-      fileIds.add(entry.id);
-      upsertIndexRow(vault, entry);
+      const res = readEntryFile(file.filePath, file.domain);
+      if (!res.entry.id) {
+        failures.push({ filePath: file.filePath, reason: 'missing-id' });
+        continue;
+      }
+      for (const w of res.warnings) warnings.push({ filePath: file.filePath, reason: w });
+      fileIds.add(res.entry.id);
+      upsertIndexRow(vault, res.entry);
       reindexed++;
     }
   });
@@ -280,7 +353,8 @@ export function reindexFull(vault: Vault, knowledgeDir: string): ReindexResult {
   }
   vault.rebuildFtsIndex();
 
-  return { scanned: files.length, reindexed, skipped: 0, pruned };
+  setLastIndexBuild(provider, buildStart);
+  return { scanned: files.length, reindexed, skipped: 0, pruned, failures, warnings };
 }
 
 // ─── Migration ──────────────────────────────────────────────────────
@@ -301,14 +375,20 @@ export interface MigrationOptions {
 export interface MigrationReport {
   backupPath: string | null;
   totalEntries: number;
+  /** Entries expected to produce a file (total minus empty-slug entries). */
+  filesExpected: number;
   filesWritten: number;
   filesOnDisk: number;
+  /** Entries whose title slugifies to empty (no file produced) — surfaced, not lost. */
+  emptySlug: number;
   skipped: number;
   collisions: SlugCollision[];
   integrityOk: boolean;
   integrityMismatches: Array<{ filePath: string; frontmatterHash?: string; computedHash: string }>;
   hashParityOk: boolean;
   ftsParityOk: boolean;
+  reindexFailures: ReindexIssue[];
+  reindexWarnings: ReindexIssue[];
   sourceOfTruth: VaultSourceOfTruth;
   formatVersion: number;
   notes: string[];
@@ -365,6 +445,23 @@ export async function runMigrationToFiles(
   const preHashes = indexedHashes(vault);
   const totalEntries = preHashes.size;
 
+  // Pre-flight (MINOR 8): the export dir must not contain foreign vault files —
+  // any existing .md whose id is not one of this vault's entries would be adopted
+  // by the reindex and corrupt the migration. Fail loudly before touching disk.
+  const knownIds = new Set(preHashes.keys());
+  const foreign = scanVaultFiles(knowledgeDir).filter((f) => f.id && !knownIds.has(f.id));
+  if (foreign.length > 0) {
+    throw new Error(
+      `Migration pre-flight failed: ${foreign.length} foreign .md file(s) under ${knowledgeDir}/vault ` +
+        `do not belong to this vault. First: ${foreign[0].filePath}. Export into a clean directory.`,
+    );
+  }
+
+  // Entries that will not produce a file (empty slug) — surfaced so nothing is lost silently.
+  const allEntries = vault.list({ limit: 100000 });
+  const emptySlug = allEntries.filter((e) => !titleToSlug(e.title)).length;
+  const filesExpected = totalEntries - emptySlug;
+
   // Sample FTS queries from existing entry titles (parity spot-check corpus).
   const sampleSize = opts.paritySampleSize ?? 5;
   const sampleTitles = vault
@@ -403,6 +500,13 @@ export async function runMigrationToFiles(
         `!= total(${exportResult.total}).`,
     );
   }
+  // Every valid-slug entry must have produced exactly one file, and nothing foreign.
+  if (filesOnDisk !== filesExpected) {
+    throw new Error(
+      `Migration file-count mismatch: ${filesOnDisk} file(s) on disk != ${filesExpected} expected ` +
+        `(${totalEntries} entries − ${emptySlug} empty-slug). Export into a clean directory.`,
+    );
+  }
   if (integrityMismatches.length > 0) {
     throw new Error(
       `Migration integrity check failed: ${integrityMismatches.length} file(s) have a ` +
@@ -410,18 +514,23 @@ export async function runMigrationToFiles(
     );
   }
   const integrityOk = true;
+  if (emptySlug > 0) {
+    notes.push(`${emptySlug} entr(y/ies) have an empty slug and produced no file.`);
+  }
 
   // Step 4 — Slug-collision audit (already disambiguated during export).
   if (exportResult.collisions.length > 0) {
     notes.push(`Disambiguated ${exportResult.collisions.length} slug collision(s).`);
   }
 
-  // Step 5 — Flip canonicality.
+  // Step 5 — Flip canonicality, then IMMEDIATELY bind the file store so any later
+  // mutation on this vault is file-first (the guard is now armed against DB-only writes).
   setSourceOfTruth(provider, 'files');
   setVaultFormatVersion(provider, VAULT_FORMAT_VERSION);
+  vault.bindFileStore(knowledgeDir);
 
   // Step 6 — Rebuild index from files + parity spot-check.
-  reindexFull(vault, knowledgeDir);
+  const reindexResult = reindexFull(vault, knowledgeDir);
   const postHashes = indexedHashes(vault);
   let hashParityOk = preHashes.size === postHashes.size;
   if (hashParityOk) {
@@ -439,6 +548,7 @@ export async function runMigrationToFiles(
     );
   }
   let ftsParityOk = true;
+  const ftsDrift: string[] = [];
   for (const [title, beforeIds] of ftsBefore) {
     const afterIds = vault
       .search(title, { limit: 10 })
@@ -446,22 +556,35 @@ export async function runMigrationToFiles(
       .sort();
     if (JSON.stringify(beforeIds) !== JSON.stringify(afterIds)) {
       ftsParityOk = false;
-      notes.push(`FTS parity drift for query "${title}".`);
+      ftsDrift.push(title);
     }
+  }
+  // FTS parity is fatal like hash parity — the reindexed index must answer queries
+  // identically to the pre-migration index (same content ⇒ same result ids).
+  if (!ftsParityOk) {
+    throw new Error(
+      `Migration FTS parity check failed: post-reindex search results diverge from the ` +
+        `pre-migration index for ${ftsDrift.length} quer(y/ies) (e.g. "${ftsDrift[0]}"). ` +
+        'Restore from the DB backup.',
+    );
   }
 
   // Step 7 — Keep the DB backup (returned to caller).
   return {
     backupPath,
     totalEntries,
+    filesExpected,
     filesWritten: exportResult.synced,
     filesOnDisk,
+    emptySlug,
     skipped: exportResult.skipped,
     collisions: exportResult.collisions,
     integrityOk,
     integrityMismatches,
     hashParityOk,
     ftsParityOk,
+    reindexFailures: reindexResult.failures,
+    reindexWarnings: reindexResult.warnings,
     sourceOfTruth: 'files',
     formatVersion: getVaultFormatVersion(provider),
     notes,

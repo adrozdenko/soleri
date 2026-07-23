@@ -113,6 +113,44 @@ describe('WS4 canonical round-trip', () => {
     expect(roundTrip(entry)).toEqual(entry);
   });
 
+  it('round-trips hostile field content containing literal "## " headings byte-exact', () => {
+    // The reviewer's probes: embedded H2 lines must not collide with section markers.
+    const entry: IntelligenceEntry = {
+      id: 'rt-hostile',
+      type: 'rule',
+      domain: 'markdown',
+      title: 'Hostile Headings',
+      severity: 'critical',
+      description: 'Intro paragraph.\n\n## Example\n\nA literal H2 inside the description.',
+      context: 'Setup notes.\n\n## Note\n\nA subsection heading inside context.',
+      example: '```md\n## Heading in a fenced block\n```',
+      counterExample: '## Do not do this\n\nCounter body.',
+      why: '## Why heading\n\nReasoning under a literal heading.',
+      tags: ['edge'],
+    };
+    const parsed = roundTrip(entry);
+    // Every hostile field must survive byte-exact — no truncation, no lost sections.
+    expect(parsed.description).toBe(entry.description);
+    expect(parsed.context).toBe(entry.context);
+    expect(parsed.example).toBe(entry.example);
+    expect(parsed.counterExample).toBe(entry.counterExample);
+    expect(parsed.why).toBe(entry.why);
+    expect(parsed).toEqual(entry);
+  });
+
+  it('round-trips content whose lines already begin with escaped backslash-hash', () => {
+    const entry: IntelligenceEntry = {
+      id: 'rt-escaped',
+      type: 'pattern',
+      domain: 'markdown',
+      title: 'Pre-escaped',
+      severity: 'warning',
+      description: 'Body.\n\\## already escaped-looking line\n## real heading',
+      tags: [],
+    };
+    expect(roundTrip(entry)).toEqual(entry);
+  });
+
   it('does not re-infer type when frontmatter carries an explicit type', () => {
     // Description text that would trip the "avoid/never" anti-pattern heuristic.
     const entry: IntelligenceEntry = {

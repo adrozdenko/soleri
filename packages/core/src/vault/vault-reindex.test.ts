@@ -4,7 +4,7 @@
  * against filesystem fixtures (never a live vault DB).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -18,7 +18,7 @@ import {
   reindexFull,
   runMigrationToFiles,
 } from './vault-reindex.js';
-import { getSourceOfTruth, getVaultFormatVersion } from './vault-schema.js';
+import { getSourceOfTruth, setSourceOfTruth, getVaultFormatVersion } from './vault-schema.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
@@ -368,5 +368,249 @@ describe('WS4 files-first migration', () => {
     reopened.getProvider().run('PRAGMA user_version = 99');
     reopened.close();
     expect(() => new Vault(dbPath)).toThrow(/newer than engine supports/);
+  });
+
+  it('a fresh vault stays v1 / index-first until migration flips it (MINOR 6)', () => {
+    const fresh = new Vault(':memory:');
+    expect(getVaultFormatVersion(fresh.getProvider())).toBe(1);
+    expect(getSourceOfTruth(fresh.getProvider())).toBe('index');
+    fresh.close();
+  });
+
+  it('migration leaves the vault bound to the file store (BLOCKER)', async () => {
+    vault.seed([makeEntry({ id: 'b1', title: 'Bound After', domain: 'design' })]);
+    const knowledgeDir = join(tmpDir, 'knowledge');
+    await runMigrationToFiles(vault, knowledgeDir, { dbPath });
+    expect(vault.getFileStore()).toBe(knowledgeDir);
+    // A subsequent add is file-first (no throw from the guard) and writes the .md.
+    vault.add(makeEntry({ id: 'b2', title: 'Post Migration', domain: 'design' }));
+    expect(existsSync(join(knowledgeDir, 'vault', 'design', 'post-migration.md'))).toBe(true);
+  });
+
+  it('pre-flight fails loudly on a foreign .md file in the export dir (MINOR 8)', async () => {
+    vault.seed([makeEntry({ id: 'own', title: 'Owned Entry', domain: 'design' })]);
+    const knowledgeDir = join(tmpDir, 'knowledge');
+    const designDir = join(knowledgeDir, 'vault', 'design');
+    mkdirSync(designDir, { recursive: true });
+    // A file whose id belongs to no entry in this vault.
+    const foreign = makeEntry({ id: 'foreign-id', title: 'Foreign', domain: 'design' });
+    writeFileSync(join(designDir, 'foreign.md'), entryToMarkdown(foreign), 'utf-8');
+
+    await expect(runMigrationToFiles(vault, knowledgeDir, { dbPath })).rejects.toThrow(
+      /foreign .md file/,
+    );
+  });
+});
+
+// ── BLOCKER: files-first guard ──────────────────────────────────────
+
+describe('WS4 files-first hard guard', () => {
+  let tmpDir: string;
+  let vault: Vault;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `vault-guard-${randomUUID().slice(0, 8)}`);
+    mkdirSync(tmpDir, { recursive: true });
+    vault = new Vault(':memory:');
+    // Simulate a migrated vault whose binding was (wrongly) not restored.
+    setSourceOfTruth(vault.getProvider(), 'files');
+  });
+
+  afterEach(() => {
+    vault.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('every mutating op throws when files-first but no file store is bound', () => {
+    const entry = makeEntry({ id: 'ng', title: 'No Guard', domain: 'design' });
+    expect(() => vault.seed([entry])).toThrow(/no file store is bound/);
+    expect(() => vault.add(entry)).toThrow(/no file store is bound/);
+    expect(() => vault.seedDedup([entry])).toThrow(/no file store is bound/);
+    expect(() => vault.installPack([entry])).toThrow(/no file store is bound/);
+    expect(() => vault.update('ng', { title: 'x' })).toThrow(/no file store is bound/);
+    expect(() => vault.remove('ng')).toThrow(/no file store is bound/);
+    expect(() => vault.setTemporal('ng', 1, 2)).toThrow(/no file store is bound/);
+  });
+
+  it('binding the file store re-enables mutations (production-shaped)', () => {
+    // Mirrors the runtime: when source_of_truth is files, bind before mutating.
+    if (vault.getSourceOfTruth() === 'files') vault.bindFileStore(tmpDir);
+    vault.add(makeEntry({ id: 'ok', title: 'Now Allowed', domain: 'design' }));
+    expect(vault.get('ok')).not.toBeNull();
+    expect(existsSync(join(tmpDir, 'vault', 'design', 'now-allowed.md'))).toBe(true);
+  });
+});
+
+// ── MAJOR 3: hand edits ─────────────────────────────────────────────
+
+describe('WS4 hand-edit detection (recompute + mtime pre-filter)', () => {
+  let tmpDir: string;
+  let vault: Vault;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `vault-handedit-${randomUUID().slice(0, 8)}`);
+    mkdirSync(tmpDir, { recursive: true });
+    vault = new Vault(':memory:');
+  });
+
+  afterEach(() => {
+    vault.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('rebuilds the index from a hand-edited file whose frontmatter hash is stale', async () => {
+    const entry = makeEntry({
+      id: 'he1',
+      title: 'Hand Edited',
+      domain: 'design',
+      description: 'Original prose.',
+    });
+    vault.seed([entry]);
+    await syncAllToMarkdown(vault, tmpDir);
+    // Establish a baseline index build time.
+    reindexFull(vault, tmpDir);
+
+    const filePath = join(tmpDir, 'vault', 'design', 'hand-edited.md');
+    // A human edits the PROSE only — the frontmatter content_hash stays stale
+    // (a human cannot recompute a SHA-256). Write with plain fs, not the helper.
+    const edited = readFileSync(filePath, 'utf-8').replace(
+      'Original prose.',
+      'Human edited the prose by hand.',
+    );
+    writeFileSync(filePath, edited, 'utf-8');
+    // Advance mtime past the last index build so the cheap pre-filter parses it.
+    const future = Date.now() / 1000 + 5;
+    utimesSync(filePath, future, future);
+
+    // The frontmatter-claimed hash still matches the index, but the RECOMPUTED
+    // hash does not — the conflict must be detected and the index rebuilt.
+    const conflicts = detectConflicts(vault, tmpDir);
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0].handEdited).toBe(true);
+
+    const result = reindexIncremental(vault, tmpDir);
+    expect(result.reindexed).toBe(1);
+    expect(vault.get('he1')!.description).toBe('Human edited the prose by hand.');
+  });
+});
+
+// ── MAJOR 4: hash coverage ──────────────────────────────────────────
+
+describe('WS4 content-hash coverage', () => {
+  let tmpDir: string;
+  let vault: Vault;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `vault-hash-${randomUUID().slice(0, 8)}`);
+    mkdirSync(tmpDir, { recursive: true });
+    vault = new Vault(':memory:');
+  });
+
+  afterEach(() => {
+    vault.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('detects drift when a previously-unhashed content field changes', async () => {
+    const base = makeEntry({
+      id: 'h1',
+      title: 'Hash Coverage',
+      domain: 'design',
+      severity: 'suggestion',
+      context: 'ctx a',
+      why: 'why a',
+    });
+    vault.seed([base]);
+    await syncAllToMarkdown(vault, tmpDir);
+    reindexFull(vault, tmpDir);
+
+    const filePath = join(tmpDir, 'vault', 'design', 'hash-coverage.md');
+    // Change ONLY the `why` section (previously excluded from the hash).
+    const edited: IntelligenceEntry = { ...base, why: 'why B — materially different' };
+    writeEntryFileSync(edited, tmpDir, { force: true });
+    utimesSync(filePath, Date.now() / 1000 + 5, Date.now() / 1000 + 5);
+
+    const conflicts = detectConflicts(vault, tmpDir);
+    expect(conflicts).toHaveLength(1);
+    reindexIncremental(vault, tmpDir);
+    expect(vault.get('h1')!.why).toBe('why B — materially different');
+  });
+
+  it('dedup still ignores origin (identical content across origins de-duplicates)', () => {
+    const agentEntry = makeEntry({ id: 'o-agent', title: 'Shared Knowledge', origin: 'agent' });
+    vault.add(agentEntry);
+    // Same content, different origin — must be seen as a duplicate.
+    const packEntry = { ...agentEntry, id: 'o-pack', origin: 'pack' as const };
+    const results = vault.seedDedup([packEntry]);
+    expect(results[0].action).toBe('duplicate');
+    expect(results[0].existingId).toBe('o-agent');
+  });
+});
+
+// ── MINOR 5: reindex is loud ────────────────────────────────────────
+
+describe('WS4 reindex reports issues (never silent)', () => {
+  let tmpDir: string;
+  let vault: Vault;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `vault-loud-${randomUUID().slice(0, 8)}`);
+    mkdirSync(tmpDir, { recursive: true });
+    vault = new Vault(':memory:');
+  });
+
+  afterEach(() => {
+    vault.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('reports a file missing its id as a failure instead of silently dropping it', () => {
+    const dir = join(tmpDir, 'vault', 'design');
+    mkdirSync(dir, { recursive: true });
+    // A file with no `id` frontmatter.
+    writeFileSync(
+      join(dir, 'no-id.md'),
+      [
+        '---',
+        'type: "rule"',
+        'domain: "design"',
+        'severity: "warning"',
+        '---',
+        '',
+        '# No Id',
+        '',
+        'Body.',
+      ].join('\n'),
+      'utf-8',
+    );
+    const result = reindexFull(vault, tmpDir);
+    expect(result.reindexed).toBe(0);
+    expect(result.failures.some((f) => f.reason === 'missing-id')).toBe(true);
+  });
+
+  it('reports (but still indexes) a file with an unknown type as a warning', () => {
+    const dir = join(tmpDir, 'vault', 'design');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'weird.md'),
+      [
+        '---',
+        'id: "weird-1"',
+        'type: "concept"', // not a valid IntelligenceEntry type
+        'domain: "design"',
+        'severity: "warning"',
+        '---',
+        '',
+        '# Weird Type',
+        '',
+        'Body.',
+      ].join('\n'),
+      'utf-8',
+    );
+    const result = reindexFull(vault, tmpDir);
+    expect(result.reindexed).toBe(1);
+    expect(result.warnings.some((w) => w.reason.startsWith('unknown-type'))).toBe(true);
+    // Coerced to a valid type, not dropped.
+    expect(vault.get('weird-1')!.type).toBe('pattern');
   });
 });

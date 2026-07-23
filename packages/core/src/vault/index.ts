@@ -21,16 +21,21 @@ export type {
   ReadEntryResult,
   ScannedFile,
   FileConflict,
+  ConflictScanOptions,
   ReindexResult,
+  ReindexIssue,
   MigrationOptions,
   MigrationReport,
 } from './vault-reindex.js';
 export {
   VAULT_FORMAT_VERSION,
+  VAULT_INITIAL_FORMAT_VERSION,
   getSourceOfTruth,
   setSourceOfTruth,
   getVaultFormatVersion,
   setVaultFormatVersion,
+  getLastIndexBuild,
+  setLastIndexBuild,
 } from './vault-schema.js';
 export type { VaultSourceOfTruth } from './vault-schema.js';
 export { Vault } from './vault.js';

@@ -246,6 +246,34 @@ function unquote(value: string): string {
   return value.replace(/^["']|["']$/g, '');
 }
 
+// ─── Body heading escaping ──────────────────────────────────────────
+//
+// Field bodies (description / context / example / counter-example / why) are
+// embedded under `## Section` headers. A line inside a body that itself begins
+// with `## ` would collide with the section splitter and silently truncate or
+// abort parsing. We reversibly escape such lines by prepending a backslash; the
+// escape ladders (`## ` → `\## `, `\## ` → `\\## `) so ANY hostile content —
+// including literal backslash-hash lines — round-trips byte-exact.
+
+/** True when a line would be (mis)read as an H2 section boundary. */
+const H2_LINE_RE = /^\\*##(?:\s|$)/;
+
+/** Escape a field body so embedded `## ` heading lines cannot break section parsing. */
+export function escapeFieldBody(body: string): string {
+  return body
+    .split('\n')
+    .map((line) => (H2_LINE_RE.test(line) ? `\\${line}` : line))
+    .join('\n');
+}
+
+/** Reverse `escapeFieldBody`: strip one backslash from escaped heading lines. */
+export function unescapeFieldBody(body: string): string {
+  return body
+    .split('\n')
+    .map((line) => (/^\\+##(?:\s|$)/.test(line) ? line.slice(1) : line))
+    .join('\n');
+}
+
 /**
  * Parse the YAML frontmatter block of a canonical vault file.
  * Handles scalars, inline arrays (`tags`, `applies_to`), and the multi-line
@@ -328,13 +356,13 @@ function parseBodySections(
     'description' | 'context' | 'example' | 'counterExample' | 'why'
   > = {};
   const parts = text.split(/^##\s+/m);
-  const description = parts[0].trim();
+  const description = unescapeFieldBody(parts[0].trim());
   if (description) out.description = description;
   for (let i = 1; i < parts.length; i++) {
     const seg = parts[i];
     const nl = seg.indexOf('\n');
     const header = (nl === -1 ? seg : seg.slice(0, nl)).trim().toLowerCase();
-    const body = (nl === -1 ? '' : seg.slice(nl + 1)).trim();
+    const body = unescapeFieldBody((nl === -1 ? '' : seg.slice(nl + 1)).trim());
     switch (header) {
       case 'context':
         if (body) out.context = body;

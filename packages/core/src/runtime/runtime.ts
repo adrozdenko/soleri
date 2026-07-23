@@ -34,6 +34,7 @@ import { ProjectRegistry } from '../project/project-registry.js';
 import { TemplateManager } from '../prompts/template-manager.js';
 import { existsSync, mkdirSync } from 'node:fs';
 import { syncAllToMarkdown } from '../vault/vault-markdown-sync.js';
+import { reindexIncremental } from '../vault/vault-reindex.js';
 import { agentKnowledgeDir as getAgentKnowledgeDir } from '../paths.js';
 import { createLogger } from '../logging/logger.js';
 import { FeatureFlags } from './feature-flags.js';
@@ -90,6 +91,17 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
 
   // Vault — persistent SQLite knowledge store (agent tier)
   const vault = vaultManager.open('agent', vaultPath);
+
+  // Files-first binding (WS4): once a vault has been migrated to files-first,
+  // the markdown tree is canonical. Bind the file store BEFORE any mutation so
+  // every add/update/remove writes the .md first; without this, DB-only writes
+  // would be reverted (or pruned) by the next reindex. Binding also arms the
+  // hard guard in the Vault, so a files-first vault can never take a DB-only write.
+  const knowledgeDir = getAgentKnowledgeDir(agentId);
+  const filesFirst = vault.getSourceOfTruth() === 'files';
+  if (filesFirst) {
+    vault.bindFileStore(knowledgeDir);
+  }
 
   // Shared vault — cross-agent intelligence (lower priority than agent vault)
   try {
@@ -270,18 +282,34 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     // Integrity check itself failed — vault may still work
   }
 
-  // Boot-time markdown sync — catch up entries without .md files (fire-and-forget)
-  const knowledgeDir = getAgentKnowledgeDir(agentId);
-  syncAllToMarkdown(vault, knowledgeDir).then(
-    (result) => {
-      if (result.synced > 0) {
-        logger.info(`Markdown sync: ${result.synced} entries synced, ${result.skipped} skipped`);
+  // Boot-time markdown sync.
+  if (filesFirst) {
+    // Files-first: the file tree is canonical. Reindex files → DB (file wins) so
+    // external edits / git pulls since last run land in the index. Never export
+    // DB → files here (that would clobber hand edits).
+    try {
+      const r = reindexIncremental(vault, knowledgeDir);
+      if (r.reindexed > 0 || r.failures.length > 0) {
+        logger.info(
+          `Vault reindex: ${r.reindexed} rebuilt, ${r.skipped} unchanged, ${r.failures.length} failed`,
+        );
       }
-    },
-    () => {
+    } catch {
       /* best-effort — never block boot */
-    },
-  );
+    }
+  } else {
+    // Index-first: export DB → files to catch up entries without .md files.
+    syncAllToMarkdown(vault, knowledgeDir).then(
+      (result) => {
+        if (result.synced > 0) {
+          logger.info(`Markdown sync: ${result.synced} entries synced, ${result.skipped} skipped`);
+        }
+      },
+      () => {
+        /* best-effort — never block boot */
+      },
+    );
+  }
 
   // ─── Auto-signal pipeline wiring ───────────────────────────────────
   const learningRadar = new LearningRadar(vault, brain);
