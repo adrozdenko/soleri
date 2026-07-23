@@ -18,8 +18,13 @@ import type {
   IntelligenceBundleLink,
 } from '../../../intelligence/types.js';
 import { LinkManager } from '../../../vault/linking.js';
-import { ObsidianSync } from '../../../vault/obsidian-sync.js';
+import { ObsidianSync, type ResolvedLinks } from '../../../vault/obsidian-sync.js';
 import { OperationLogger } from '../../../vault/operation-log.js';
+import {
+  reindexIncremental,
+  reindexFull,
+  runMigrationToFiles,
+} from '../../../vault/vault-reindex.js';
 
 export function createSyncOps(runtime: AgentRuntime): OpDefinition[] {
   const { vault } = runtime;
@@ -164,6 +169,67 @@ export function createSyncOps(runtime: AgentRuntime): OpDefinition[] {
         return sync.sync(params.obsidianDir as string, {
           mode: params.mode as 'push' | 'pull' | 'bidirectional' | undefined,
           dryRun: params.dryRun as boolean | undefined,
+        });
+      },
+    },
+
+    // ─── Files-First Reindex + Migration (WS4) ─────────────────────
+    {
+      name: 'vault_reindex',
+      description:
+        'Rebuild the SQLite index from the canonical knowledge/vault markdown files (files-first). ' +
+        'Incremental by default (only files whose content_hash drifted); pass full:true to re-read ' +
+        'the whole tree and prune index rows with no backing file. The file always wins.',
+      auth: 'write' as const,
+      schema: z.object({
+        knowledgeDir: z
+          .string()
+          .describe('Path to the knowledge directory containing the vault/ folder'),
+        full: z
+          .boolean()
+          .optional()
+          .describe('Full rebuild from files + orphan prune (default: incremental)'),
+      }),
+      handler: async (params) => {
+        const knowledgeDir = params.knowledgeDir as string;
+        return params.full === true
+          ? reindexFull(vault, knowledgeDir)
+          : reindexIncremental(vault, knowledgeDir);
+      },
+    },
+    {
+      name: 'vault_migrate_to_files',
+      description:
+        'Migrate a vault to files-first: back up the DB, export all entries to markdown, verify ' +
+        'count + content_hash integrity (fails loudly), audit slug collisions, flip canonicality ' +
+        '(source_of_truth=files, format v2), full reindex from files, and confirm parity. ' +
+        'SAFETY: intended for fixtures/controlled runs — never point at a live vault DB blindly.',
+      auth: 'write' as const,
+      schema: z.object({
+        knowledgeDir: z
+          .string()
+          .describe('Path to the knowledge directory to write vault/ markdown into'),
+        dbPath: z
+          .string()
+          .optional()
+          .describe('Path to the vault SQLite file to back up before migrating'),
+      }),
+      handler: async (params) => {
+        // Build a title map + per-entry link resolver so Zettelkasten edges land in file frontmatter.
+        const all = vault.list({ limit: 100000 });
+        const titleMap = new Map<string, string>();
+        for (const e of all) titleMap.set(e.id, e.title);
+        const linkManager = runtime.linkManager;
+        const resolveLinks = (entry: { id: string }): ResolvedLinks | undefined => {
+          if (!linkManager) return undefined;
+          const outgoing = linkManager.getLinks(entry.id);
+          const incoming = linkManager.getBacklinks(entry.id);
+          if (outgoing.length === 0 && incoming.length === 0) return undefined;
+          return { outgoing, incoming, titleMap };
+        };
+        return runMigrationToFiles(vault, params.knowledgeDir as string, {
+          dbPath: params.dbPath as string | undefined,
+          resolveLinks,
         });
       },
     },

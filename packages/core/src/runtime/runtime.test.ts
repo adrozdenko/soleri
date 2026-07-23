@@ -42,6 +42,8 @@ vi.mock('../vault/vault-manager.js', () => ({
       get: vi.fn(),
       list: vi.fn().mockReturnValue([]),
       exportAll: vi.fn().mockReturnValue({ entries: [] }),
+      getSourceOfTruth: vi.fn().mockReturnValue('index'),
+      bindFileStore: vi.fn(),
     };
     this.open = vi.fn().mockReturnValue(vaultInstance);
     this.connect = vi.fn();

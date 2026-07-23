@@ -3,7 +3,20 @@ import { SQLitePersistenceProvider } from '../persistence/sqlite-provider.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { StoredVector } from '../embeddings/types.js';
 import type { LinkManager } from './linking.js';
-import { initializeSchema, checkFormatVersion, VAULT_FORMAT_VERSION } from './vault-schema.js';
+import {
+  initializeSchema,
+  checkFormatVersion,
+  VAULT_FORMAT_VERSION,
+  getSourceOfTruth,
+  setSourceOfTruth,
+  type VaultSourceOfTruth,
+} from './vault-schema.js';
+import {
+  writeEntryFileSync,
+  removeEntryFileSync,
+  archiveEntryFileSync,
+  restoreEntryFileSync,
+} from './vault-markdown-sync.js';
 import * as entries from './vault-entries.js';
 import * as memories from './vault-memories.js';
 import * as maintenance from './vault-maintenance.js';
@@ -31,6 +44,8 @@ export class Vault {
   private embeddingPipeline: EmbeddingPipeline | null = null;
   private autoEmbedEnabled = true;
   private _domainSummaries: DomainSummaryManager | null = null;
+  /** When set, mutating ops write the canonical `.md` file first (files-first write-through). */
+  private fileStore: string | null = null;
 
   constructor(providerOrPath: PersistenceProvider | string = ':memory:') {
     if (typeof providerOrPath === 'string') {
@@ -94,9 +109,81 @@ export class Vault {
     return new Vault(dbPath);
   }
 
+  // ── Files-first write-through (WS4) ───────────────────────────────────
+
+  /**
+   * Bind a knowledge directory so mutating ops write the canonical `.md` file
+   * FIRST, then upsert the derived index row (files-first write-through). Pass
+   * null to unbind. The file store is the source of truth; the DB is the index.
+   */
+  bindFileStore(knowledgeDir: string | null): void {
+    this.fileStore = knowledgeDir;
+  }
+
+  /** The bound knowledge directory, or null when write-through is disabled. */
+  getFileStore(): string | null {
+    return this.fileStore;
+  }
+
+  /** Read the persisted authoritative-store flag ('index' until migrated to 'files'). */
+  getSourceOfTruth(): VaultSourceOfTruth {
+    return getSourceOfTruth(this.provider);
+  }
+
+  /** Persist the authoritative-store flag. */
+  setSourceOfTruth(value: VaultSourceOfTruth): void {
+    setSourceOfTruth(this.provider, value);
+  }
+
+  /**
+   * Guard every mutating op: in files-first mode a DB-only write would be
+   * silently reverted by the next reindex (or pruned by a full reindex),
+   * destroying data. If canonicality is `files` but no file store is bound,
+   * FAIL LOUDLY rather than write the index alone.
+   */
+  private assertFilesModeBound(): void {
+    if (this.fileStore) return;
+    if (getSourceOfTruth(this.provider) === 'files') {
+      throw new Error(
+        'Vault is files-first (source_of_truth=files) but no file store is bound. ' +
+          'Refusing a DB-only write that would be reverted by reindex. ' +
+          'Call vault.bindFileStore(knowledgeDir) first.',
+      );
+    }
+  }
+
+  /** Write each entry's canonical file first (only when a file store is bound). */
+  private writeThroughFiles(entryList: IntelligenceEntry[], force = false): void {
+    if (!this.fileStore) return;
+    for (const entry of entryList) {
+      writeEntryFileSync(entry, this.fileStore, { force });
+    }
+  }
+
+  /** Delete an entry's canonical file (only when a file store is bound). */
+  private removeThroughFiles(entry: IntelligenceEntry): void {
+    if (!this.fileStore) return;
+    removeEntryFileSync(entry, this.fileStore);
+  }
+
+  /**
+   * Write files for the given ids by re-reading their DB rows (post-dedup /
+   * post-mutation write-through). Force-writes so a change to a non-hashed field
+   * (tier/origin/temporal) still refreshes the file.
+   */
+  private writeThroughPresent(ids: string[]): void {
+    if (!this.fileStore) return;
+    for (const id of ids) {
+      const row = entries.get(this.provider, id);
+      if (row) writeEntryFileSync(row, this.fileStore, { force: true });
+    }
+  }
+
   // ── Entry operations (vault-entries.ts) ───────────────────────────────
 
   seed(entryList: IntelligenceEntry[]): number {
+    this.assertFilesModeBound();
+    this.writeThroughFiles(entryList); // file-first: write .md before the index row
     const result = entries.seed(
       this.provider,
       entryList,
@@ -107,24 +194,30 @@ export class Vault {
     return result;
   }
   installPack(entryList: IntelligenceEntry[]): { installed: number; skipped: number } {
+    this.assertFilesModeBound();
     const result = entries.installPack(
       this.provider,
       entryList,
       this.getAutoLinkConfig(),
       this.getAutoEmbedConfig(),
     );
+    // Dedup needs the DB to decide inserts; write files for the rows that landed.
+    this.writeThroughPresent(entryList.map((e) => e.id));
     this.invalidateDomains(entryList);
     return result;
   }
   seedDedup(
     entryList: IntelligenceEntry[],
   ): Array<{ id: string; action: 'inserted' | 'duplicate'; existingId?: string }> {
+    this.assertFilesModeBound();
     const result = entries.seedDedup(
       this.provider,
       entryList,
       this.getAutoLinkConfig(),
       this.getAutoEmbedConfig(),
     );
+    // Write files only for entries that were actually inserted (not deduped).
+    this.writeThroughPresent(result.filter((r) => r.action === 'inserted').map((r) => r.id));
     this.invalidateDomains(entryList);
     return result;
   }
@@ -163,12 +256,16 @@ export class Vault {
     return entries.stats(this.provider);
   }
   add(entry: IntelligenceEntry): void {
+    this.assertFilesModeBound();
+    this.writeThroughFiles([entry]); // file-first: write .md before the index row
     entries.add(this.provider, entry, this.getAutoLinkConfig(), this.getAutoEmbedConfig());
     this.domainSummaries.markStale(entry.domain);
   }
   remove(id: string): boolean {
+    this.assertFilesModeBound();
     // Look up domain before removing so we can invalidate the right summary
     const existing = entries.get(this.provider, id);
+    if (existing) this.removeThroughFiles(existing); // file-first: delete .md before the index row
     const result = entries.remove(this.provider, id);
     if (result && existing) {
       this.domainSummaries.markStale(existing.domain);
@@ -176,6 +273,7 @@ export class Vault {
     return result;
   }
   update(id: string, fields: EntryUpdateFields): IntelligenceEntry | null {
+    this.assertFilesModeBound();
     // Invalidate both old and new domain if domain is changing
     const existing = entries.get(this.provider, id);
     const result = entries.update(
@@ -186,6 +284,12 @@ export class Vault {
       this.getAutoEmbedConfig(),
     );
     if (result) {
+      // File-first: rewrite the .md (rename when title/domain changed) before
+      // returning. Force so a non-hashed-field change (tier/origin) still rewrites.
+      if (this.fileStore) {
+        if (existing) this.removeThroughFiles(existing);
+        this.writeThroughFiles([result], true);
+      }
       this.domainSummaries.markStale(result.domain);
       if (existing && existing.domain !== result.domain) {
         this.domainSummaries.markStale(existing.domain);
@@ -194,7 +298,12 @@ export class Vault {
     return result;
   }
   setTemporal(id: string, validFrom?: number, validUntil?: number): boolean {
-    return entries.setTemporal(this.provider, id, validFrom, validUntil);
+    this.assertFilesModeBound();
+    const ok = entries.setTemporal(this.provider, id, validFrom, validUntil);
+    // Temporal fields participate in the content hash; refresh the .md so the file
+    // (frontmatter valid_from/until + content_hash) stays canonical in files mode.
+    if (ok && this.fileStore) this.writeThroughPresent([id]);
+    return ok;
   }
   findExpiring(withinDays: number): IntelligenceEntry[] {
     return entries.findExpiring(this.provider, withinDays);
@@ -203,8 +312,11 @@ export class Vault {
     return entries.findExpired(this.provider, limit);
   }
   bulkRemove(ids: string[]): number {
+    this.assertFilesModeBound();
     // Look up domains before removing
     const existing = ids.length > 0 ? entries.getByIds(this.provider, ids) : [];
+    // File-first: delete the .md files before the index rows.
+    for (const entry of existing) this.removeThroughFiles(entry);
     const result = entries.bulkRemove(this.provider, ids);
     if (result > 0) {
       this.invalidateDomains(existing);
@@ -250,10 +362,33 @@ export class Vault {
     return maintenance.getAgeReport(this.provider);
   }
   archive(options: { olderThanDays: number; reason?: string }): { archived: number } {
+    this.assertFilesModeBound();
+    // File-first: move the .md of every entry about to be archived into
+    // vault/_archive/<domain>/ (outside the scanned tree) BEFORE the DB rows move,
+    // so a later reindex cannot resurrect them.
+    if (this.fileStore) {
+      const cutoff = Math.floor(Date.now() / 1000) - options.olderThanDays * 86400;
+      const rows = this.provider.all<Record<string, unknown>>(
+        'SELECT * FROM entries WHERE updated_at < ?',
+        [cutoff],
+      );
+      for (const row of rows) archiveEntryFileSync(entries.rowToEntry(row), this.fileStore);
+    }
     return maintenance.archive(this.provider, options);
   }
   restore(id: string): boolean {
-    return maintenance.restore(this.provider, id);
+    this.assertFilesModeBound();
+    const result = maintenance.restore(this.provider, id);
+    // File-first: move the archived .md back into its live domain folder (or write
+    // a fresh one if the archived file is missing, e.g. archived pre-files-first).
+    if (result && this.fileStore) {
+      const restored = entries.get(this.provider, id);
+      if (restored) {
+        const moved = restoreEntryFileSync(restored, this.fileStore);
+        if (!moved) writeEntryFileSync(restored, this.fileStore, { force: true });
+      }
+    }
+    return result;
   }
   rebuildFtsIndex(): void {
     maintenance.rebuildFtsIndex(this.provider);

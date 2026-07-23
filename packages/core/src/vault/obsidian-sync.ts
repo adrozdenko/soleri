@@ -116,11 +116,62 @@ export function toObsidianMarkdown(
   return lines.join('\n');
 }
 
+/** A wikilink parsed from frontmatter or a Related section: `[[linktype::slug]]` or `[[slug]]`. */
+export interface ParsedWikilink {
+  linkType?: string;
+  slug: string;
+}
+
+/**
+ * Parse a wikilink string into its edge kind and slug.
+ * Accepts `[[linktype::slug]]` (edge kind preserved) and `[[slug]]` (untyped).
+ * The surrounding `[[ ]]` are optional.
+ */
+export function parseWikilink(raw: string): ParsedWikilink | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const inner = trimmed.replace(/^\[\[/, '').replace(/\]\]$/, '').trim();
+  if (!inner) return null;
+  const sep = inner.indexOf('::');
+  if (sep !== -1) {
+    const linkType = inner.slice(0, sep).trim();
+    const slug = inner.slice(sep + 2).trim();
+    if (!slug) return null;
+    return linkType ? { linkType, slug } : { slug };
+  }
+  return { slug: inner };
+}
+
+/**
+ * Serialize resolved links into a frontmatter `links:` block as `[[linktype::slug]]`
+ * wikilinks. The edge kind is promoted into the wikilink so it survives round-trips
+ * (WS4: edges live in file frontmatter, not only the SQLite links table).
+ * Returns the frontmatter lines (empty when there are no links).
+ */
+export function buildFrontmatterLinks(links: ResolvedLinks): string[] {
+  const wikilinks: string[] = [];
+  const seen = new Set<string>();
+  const push = (linkType: string, id: string) => {
+    const title = links.titleMap.get(id);
+    if (!title) return;
+    const slug = titleToSlug(title);
+    if (!slug) return;
+    const wl = `[[${linkType}::${slug}]]`;
+    if (seen.has(wl)) return;
+    seen.add(wl);
+    wikilinks.push(wl);
+  };
+  for (const link of links.outgoing) push(link.linkType, link.targetId);
+  for (const link of links.incoming) push(link.linkType, link.sourceId);
+  if (wikilinks.length === 0) return [];
+  return ['links:', ...wikilinks.map((wl) => `  - "${wl}"`)];
+}
+
 /**
  * Build a ## Related section grouping wikilinks by link type.
  * Returns null if the entry has no links.
  */
-function buildRelatedSection(links: ResolvedLinks): string | null {
+export function buildRelatedSection(links: ResolvedLinks): string | null {
   // Group by link type. For outgoing links, the related entry is the target.
   // For incoming links, the related entry is the source.
   const grouped = new Map<string, string[]>();
@@ -156,81 +207,224 @@ function buildRelatedSection(links: ResolvedLinks): string | null {
   return lines.join('\n');
 }
 
-/**
- * Parse Obsidian markdown with YAML frontmatter back to vault entry fields.
- */
-export function fromObsidianMarkdown(content: string): {
+/** Full canonical parse of a vault markdown file (WS4 files-first schema). */
+export interface ParsedMarkdownEntry {
   id?: string;
   type?: string;
   domain?: string;
   severity?: string;
   tags?: string[];
+  tier?: string;
+  origin?: string;
+  appliesTo?: string[];
+  links?: ParsedWikilink[];
   title?: string;
   description?: string;
-  updated?: number;
-} {
-  const result: Record<string, unknown> = {};
+  context?: string;
+  example?: string;
+  counterExample?: string;
+  why?: string;
+  created?: string;
+  updated?: number | string;
+  contentHash?: string;
+  validFrom?: number;
+  validUntil?: number;
+}
 
-  // Parse YAML frontmatter
-  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (fmMatch) {
-    const yaml = fmMatch[1];
-    for (const line of yaml.split('\n')) {
-      const kv = line.match(/^(\w+):\s*(.+)$/);
-      if (!kv) continue;
-      const [, key, value] = kv;
-      if (key === 'tags') {
-        const tagMatch = value.match(/\[([^\]]*)\]/);
-        if (tagMatch) {
-          result.tags = tagMatch[1]
-            .split(',')
-            .map((t) => t.trim().replace(/^"|"$/g, ''))
-            .filter(Boolean);
+/** Parse an inline YAML array like `["a", "b"]` into a string[]. */
+function parseInlineArray(value: string): string[] {
+  const arrMatch = value.match(/\[([^\]]*)\]/);
+  if (!arrMatch) return [];
+  return arrMatch[1]
+    .split(',')
+    .map((t) => t.trim().replace(/^["']|["']$/g, ''))
+    .filter(Boolean);
+}
+
+/** Strip a single layer of surrounding quotes. */
+function unquote(value: string): string {
+  return value.replace(/^["']|["']$/g, '');
+}
+
+// ─── Body heading escaping ──────────────────────────────────────────
+//
+// Field bodies (description / context / example / counter-example / why) are
+// embedded under `## Section` headers. A line inside a body that itself begins
+// with `## ` would collide with the section splitter and silently truncate or
+// abort parsing. We reversibly escape such lines by prepending a backslash; the
+// escape ladders (`## ` → `\## `, `\## ` → `\\## `) so ANY hostile content —
+// including literal backslash-hash lines — round-trips byte-exact.
+
+/** True when a line would be (mis)read as an H2 section boundary. */
+const H2_LINE_RE = /^\\*##(?:\s|$)/;
+
+/** Escape a field body so embedded `## ` heading lines cannot break section parsing. */
+export function escapeFieldBody(body: string): string {
+  return body
+    .split('\n')
+    .map((line) => (H2_LINE_RE.test(line) ? `\\${line}` : line))
+    .join('\n');
+}
+
+/** Reverse `escapeFieldBody`: strip one backslash from escaped heading lines. */
+export function unescapeFieldBody(body: string): string {
+  return body
+    .split('\n')
+    .map((line) => (/^\\+##(?:\s|$)/.test(line) ? line.slice(1) : line))
+    .join('\n');
+}
+
+/**
+ * Parse the YAML frontmatter block of a canonical vault file.
+ * Handles scalars, inline arrays (`tags`, `applies_to`), and the multi-line
+ * `links:` list of `[[linktype::slug]]` wikilinks. Keys are normalized to camelCase.
+ */
+function parseFrontmatter(yaml: string): ParsedMarkdownEntry {
+  const result: ParsedMarkdownEntry = {};
+  const lines = yaml.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const kv = lines[i].match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
+    if (!kv) continue;
+    const key = kv[1];
+    const value = kv[2];
+
+    if (key === 'links') {
+      const items: ParsedWikilink[] = [];
+      // Inline form `links: [[a::b]], [[c::d]]` is tolerated; list form is canonical.
+      if (value.trim()) {
+        for (const part of value.split(',')) {
+          const parsed = parseWikilink(unquote(part.trim()));
+          if (parsed) items.push(parsed);
         }
-      } else if (key === 'updated') {
-        result.updated = parseInt(value, 10);
-      } else {
-        result[key] = value.replace(/^"|"$/g, '');
       }
+      while (i + 1 < lines.length && /^\s*-\s+/.test(lines[i + 1])) {
+        const item = unquote(lines[i + 1].replace(/^\s*-\s+/, '').trim());
+        const parsed = parseWikilink(item);
+        if (parsed) items.push(parsed);
+        i++;
+      }
+      if (items.length > 0) result.links = items;
+      continue;
+    }
+    if (key === 'tags') {
+      result.tags = parseInlineArray(value);
+      continue;
+    }
+    if (key === 'applies_to') {
+      result.appliesTo = parseInlineArray(value);
+      continue;
+    }
+    if (key === 'updated') {
+      const raw = unquote(value.trim());
+      result.updated = /^\d+$/.test(raw) ? parseInt(raw, 10) : raw;
+      continue;
+    }
+    if (key === 'valid_from' || key === 'valid_until') {
+      const num = parseInt(value, 10);
+      if (Number.isFinite(num)) {
+        if (key === 'valid_from') result.validFrom = num;
+        else result.validUntil = num;
+      }
+      continue;
+    }
+    if (key === 'content_hash') {
+      result.contentHash = unquote(value);
+      continue;
+    }
+    if (key === 'created') {
+      result.created = unquote(value);
+      continue;
+    }
+    // Remaining scalars: id, type, domain, severity, tier, origin.
+    (result as Record<string, unknown>)[key] = unquote(value);
+  }
+  return result;
+}
+
+/**
+ * Split a markdown body (title removed) into its canonical sections.
+ * Text before the first `## ` header is the description; recognized headers
+ * (Context / Example / Counter-Example / Why) map to their fields. The
+ * `## Related` section is link metadata and is skipped here (links live in
+ * frontmatter for round-trips).
+ */
+function parseBodySections(
+  text: string,
+): Pick<ParsedMarkdownEntry, 'description' | 'context' | 'example' | 'counterExample' | 'why'> {
+  const out: Pick<
+    ParsedMarkdownEntry,
+    'description' | 'context' | 'example' | 'counterExample' | 'why'
+  > = {};
+  const parts = text.split(/^##\s+/m);
+  const description = unescapeFieldBody(parts[0].trim());
+  if (description) out.description = description;
+  for (let i = 1; i < parts.length; i++) {
+    const seg = parts[i];
+    const nl = seg.indexOf('\n');
+    const header = (nl === -1 ? seg : seg.slice(0, nl)).trim().toLowerCase();
+    const body = unescapeFieldBody((nl === -1 ? '' : seg.slice(nl + 1)).trim());
+    switch (header) {
+      case 'context':
+        if (body) out.context = body;
+        break;
+      case 'example':
+        if (body) out.example = body;
+        break;
+      case 'counter-example':
+        if (body) out.counterExample = body;
+        break;
+      case 'why':
+        if (body) out.why = body;
+        break;
+      // 'related' and any unknown headers are intentionally ignored.
     }
   }
+  return out;
+}
 
-  // Parse body
+/**
+ * Parse a canonical vault markdown file with YAML frontmatter into its fields.
+ *
+ * Hardened for WS4 files-first: round-trips id, type, domain, severity, tags,
+ * tier, origin, applies_to, links (as `[[linktype::slug]]`), created, updated,
+ * content_hash, valid_from/valid_until, and the body sections
+ * (description / Context / Example / Counter-Example / Why).
+ *
+ * Type inference is retained only as a fallback when frontmatter omits `type`
+ * (legacy Obsidian imports); canonical files always carry an explicit `type`.
+ */
+export function fromObsidianMarkdown(content: string): ParsedMarkdownEntry {
+  let result: ParsedMarkdownEntry = {};
+
+  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (fmMatch) {
+    result = parseFrontmatter(fmMatch[1]);
+  }
+
+  // Parse body: strip frontmatter, extract H1 title, split remaining sections.
   const body = content.replace(/^---\n[\s\S]*?\n---\n*/, '');
-  const titleMatch = body.match(/^# (.+)$/m);
+  const titleMatch = body.match(/^#\s+(.+)$/m);
   if (titleMatch) {
-    result.title = titleMatch[1];
+    result.title = titleMatch[1].trim();
   }
+  const afterTitle = body.replace(/^#\s+.+\n?/m, '');
+  Object.assign(result, parseBodySections(afterTitle));
 
-  const description = body.replace(/^# .+\n*/, '').trim();
-  if (description) {
-    result.description = description;
-  }
-
-  // Type inference when missing
-  if (!result.type && description) {
-    const lower = description.toLowerCase();
+  // Type inference when missing (legacy Obsidian imports only).
+  if (!result.type && result.description) {
+    const lower = result.description.toLowerCase();
     if (/\b(don't|avoid|never|anti-pattern)\b/.test(lower)) {
       result.type = 'anti-pattern';
     } else if (/\b(always|prefer|use|pattern)\b/.test(lower)) {
       result.type = 'pattern';
-    } else if (/^rule:/i.test(description)) {
+    } else if (/^rule:/i.test(result.description)) {
       result.type = 'rule';
     } else {
       result.type = 'concept';
     }
   }
 
-  return result as {
-    id?: string;
-    type?: string;
-    domain?: string;
-    severity?: string;
-    tags?: string[];
-    title?: string;
-    description?: string;
-    updated?: number;
-  };
+  return result;
 }
 
 /**

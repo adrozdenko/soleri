@@ -710,6 +710,7 @@ describe('Vault', () => {
         domain: 'test',
         title: 'Hash test',
         description: 'Desc',
+        severity: 'warning',
         tags: ['a'],
       });
       expect(vault.findByContentHash(hash)).toBe('ch-1');

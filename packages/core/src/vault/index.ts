@@ -1,4 +1,43 @@
-export { syncAllToMarkdown, syncEntryToMarkdown, entryToMarkdown } from './vault-markdown-sync.js';
+export {
+  syncAllToMarkdown,
+  syncEntryToMarkdown,
+  entryToMarkdown,
+  writeEntryFileSync,
+  removeEntryFileSync,
+  entryFilename,
+  detectSlugCollisions,
+} from './vault-markdown-sync.js';
+export type { SyncEntryOptions, SyncAllOptions, SlugCollision } from './vault-markdown-sync.js';
+export {
+  parsedToEntry,
+  readEntryFile,
+  scanVaultFiles,
+  detectConflicts,
+  reindexIncremental,
+  reindexFull,
+  runMigrationToFiles,
+} from './vault-reindex.js';
+export type {
+  ReadEntryResult,
+  ScannedFile,
+  FileConflict,
+  ConflictScanOptions,
+  ReindexResult,
+  ReindexIssue,
+  MigrationOptions,
+  MigrationReport,
+} from './vault-reindex.js';
+export {
+  VAULT_FORMAT_VERSION,
+  VAULT_INITIAL_FORMAT_VERSION,
+  getSourceOfTruth,
+  setSourceOfTruth,
+  getVaultFormatVersion,
+  setVaultFormatVersion,
+  getLastIndexBuild,
+  setLastIndexBuild,
+} from './vault-schema.js';
+export type { VaultSourceOfTruth } from './vault-schema.js';
 export { Vault } from './vault.js';
 export type { SearchResult, VaultStats, ProjectInfo, Memory, MemoryStats } from './vault.js';
 export { VaultManager, type ConnectedVault } from './vault-manager.js';
@@ -11,7 +50,11 @@ export {
   toObsidianMarkdown,
   fromObsidianMarkdown,
   titleToSlug,
+  parseWikilink,
+  buildFrontmatterLinks,
+  buildRelatedSection,
 } from './obsidian-sync.js';
+export type { ParsedMarkdownEntry, ParsedWikilink, ResolvedLinks } from './obsidian-sync.js';
 export type {
   ObsidianSyncConfig,
   ExportOptions as ObsidianExportOptions,
