@@ -100,9 +100,14 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           // package.json not readable — skip update check silently
         }
 
-        // Auto-dream: increment session counter and check gate
-        let dreamInfo: { status: unknown; gate: { eligible: boolean; reason: string } } | null =
-          null;
+        // Auto-dream: increment session counter and check gate. Consolidation
+        // is STAGED as a proposal (stage-then-adopt contract) — the vault is
+        // never mutated from session_start; adoption happens via dream_adopt.
+        let dreamInfo: {
+          status: unknown;
+          gate: { eligible: boolean; reason: string };
+          stagingInFlight?: boolean;
+        } | null = null;
         if (autoOps.dream) {
           try {
             const { ensureDreamSchema } = await import('../../dream/schema.js');
@@ -113,9 +118,11 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
             const gate = dreamEngine.checkGate();
             dreamInfo = { status: dreamEngine.getStatus(), gate };
             if (gate.eligible) {
-              // Fire-and-forget: don't block session_start
+              // Fire-and-forget: don't block session_start. The staged
+              // proposal surfaces in the next session's status.pendingProposal.
+              dreamInfo.stagingInFlight = true;
               Promise.resolve()
-                .then(() => dreamEngine.run())
+                .then(() => dreamEngine.propose())
                 .catch(() => {
                   /* best-effort */
                 });

@@ -14,4 +14,15 @@ export function ensureDreamSchema(provider: PersistenceProvider): void {
     )
   `);
   provider.run('INSERT OR IGNORE INTO dream_meta (id) VALUES (1)');
+
+  provider.execSql(`
+    CREATE TABLE IF NOT EXISTS dream_proposals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      evidence TEXT NOT NULL,
+      resolution_reason TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved_at TEXT
+    )
+  `);
 }

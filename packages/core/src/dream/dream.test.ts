@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Vault } from '../vault/vault.js';
 import { Curator } from '../curator/curator.js';
+import { Brain } from '../brain/brain.js';
 import { ensureDreamSchema } from './schema.js';
 import { DreamEngine } from './dream-engine.js';
 import { createDreamOps } from './dream-ops.js';
@@ -32,6 +33,14 @@ describe('dream schema', () => {
     expect(row.sessions_since_last_dream).toBe(0);
     expect(row.total_dreams).toBe(0);
     expect(row.last_dream_at).toBeNull();
+  });
+
+  it('creates dream_proposals table', () => {
+    ensureDreamSchema(vault.getProvider());
+    const info = vault
+      .getProvider()
+      .get("SELECT name FROM sqlite_master WHERE type='table' AND name='dream_proposals'");
+    expect(info).toBeTruthy();
   });
 });
 
@@ -112,10 +121,62 @@ describe('DreamEngine', () => {
       expect(report.totalDreams).toBe(1);
     });
   });
+
+  describe('proposal lifecycle (stage-then-adopt)', () => {
+    it('propose() stages a pending proposal without touching the vault', () => {
+      const proposal = engine.propose();
+      expect(proposal.status).toBe('pending');
+      expect(proposal.evidence).toHaveProperty('duplicatesFound');
+      expect(proposal.evidence).toHaveProperty('staleCandidates');
+      expect(proposal.evidence).toHaveProperty('contradictionsFound');
+      // No consolidation applied: dream_meta untouched
+      expect(engine.getStatus().totalDreams).toBe(0);
+      expect(engine.getStatus().pendingProposal?.id).toBe(proposal.id);
+    });
+
+    it('re-proposing supersedes the older pending proposal', () => {
+      const first = engine.propose();
+      const second = engine.propose();
+      expect(second.id).not.toBe(first.id);
+      const firstAfter = engine.getProposal(first.id);
+      expect(firstAfter?.status).toBe('discarded');
+      expect(firstAfter?.resolutionReason).toContain('superseded');
+      expect(engine.getPendingProposal()?.id).toBe(second.id);
+    });
+
+    it('adopt() applies consolidation and closes the proposal', () => {
+      const proposal = engine.propose();
+      const { report, proposal: adopted } = engine.adopt();
+      expect(report.totalDreams).toBe(1);
+      expect(adopted.id).toBe(proposal.id);
+      expect(adopted.status).toBe('adopted');
+      expect(engine.getPendingProposal()).toBeNull();
+    });
+
+    it('discard() closes the proposal with a reason and never mutates the vault', () => {
+      const proposal = engine.propose();
+      const discarded = engine.discard('too aggressive on stale entries', proposal.id);
+      expect(discarded.status).toBe('discarded');
+      expect(discarded.resolutionReason).toBe('too aggressive on stale entries');
+      expect(engine.getStatus().totalDreams).toBe(0);
+      expect(engine.getPendingProposal()).toBeNull();
+    });
+
+    it('adopt() without a pending proposal throws', () => {
+      expect(() => engine.adopt()).toThrow('No pending dream proposal');
+    });
+
+    it('resolving an already-resolved proposal throws', () => {
+      const proposal = engine.propose();
+      engine.discard('no', proposal.id);
+      expect(() => engine.discard('again', proposal.id)).toThrow('already discarded');
+    });
+  });
 });
 
 describe('dream ops', () => {
   let vault: Vault;
+  let brain: Brain;
   let ops: ReturnType<typeof createDreamOps>;
 
   function findOp(name: string) {
@@ -127,7 +188,8 @@ describe('dream ops', () => {
   beforeEach(() => {
     vault = new Vault(':memory:');
     const curator = new Curator(vault);
-    const runtime = { vault, curator } as unknown as AgentRuntime;
+    brain = new Brain(vault);
+    const runtime = { vault, curator, brain } as unknown as AgentRuntime;
     ops = createDreamOps(runtime);
   });
   afterEach(() => {
@@ -171,5 +233,44 @@ describe('dream ops', () => {
     const result = (await findOp('dream_run').handler({})) as Record<string, unknown>;
     expect(result.skipped).toBeUndefined();
     expect(result).toHaveProperty('totalDreams');
+  });
+
+  it('dream_propose stages a proposal and dream_status surfaces it', async () => {
+    const proposed = (await findOp('dream_propose').handler({})) as {
+      proposal: { id: number; status: string };
+    };
+    expect(proposed.proposal.status).toBe('pending');
+
+    const status = (await findOp('dream_status').handler({})) as {
+      pendingProposal: { id: number } | null;
+    };
+    expect(status.pendingProposal?.id).toBe(proposed.proposal.id);
+  });
+
+  it('dream_adopt applies the staged proposal', async () => {
+    await findOp('dream_propose').handler({});
+    const result = (await findOp('dream_adopt').handler({})) as {
+      report: { totalDreams: number };
+      proposal: { status: string };
+    };
+    expect(result.report.totalDreams).toBe(1);
+    expect(result.proposal.status).toBe('adopted');
+  });
+
+  it('dream_discard records a dismissed brain feedback row with the reason', async () => {
+    const proposed = (await findOp('dream_propose').handler({})) as {
+      proposal: { id: number };
+    };
+    const result = (await findOp('dream_discard').handler({
+      reason: 'stale threshold too aggressive',
+    })) as { proposal: { id: number; status: string; resolutionReason: string } };
+
+    expect(result.proposal.id).toBe(proposed.proposal.id);
+    expect(result.proposal.status).toBe('discarded');
+    expect(result.proposal.resolutionReason).toBe('stale threshold too aggressive');
+
+    const stats = brain.getFeedbackStats();
+    expect(stats.byAction['dismissed']).toBe(1);
+    expect(stats.bySource['explicit']).toBe(1);
   });
 });
