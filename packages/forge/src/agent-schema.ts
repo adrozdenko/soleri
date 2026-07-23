@@ -74,6 +74,7 @@ const AutoOpsConfigSchema = z
     orphanReaper: z.boolean().optional().default(false),
     staleClose: z.boolean().optional().default(false),
     captureSessions: z.boolean().optional().default(false),
+    editSourceLoop: z.boolean().optional().default(false),
   })
   .optional()
   .default({
@@ -82,6 +83,7 @@ const AutoOpsConfigSchema = z
     orphanReaper: false,
     staleClose: false,
     captureSessions: false,
+    editSourceLoop: false,
   });
 
 /** Engine configuration */
@@ -247,6 +249,7 @@ export const AgentYamlSchema = z.object({
       orphanReaper: false,
       staleClose: false,
       captureSessions: false,
+      editSourceLoop: false,
     },
   }),
 

@@ -91,6 +91,7 @@ describe('resolveAutoOpsConfig', () => {
       orphanReaper: false,
       staleClose: false,
       captureSessions: false,
+      editSourceLoop: false,
     });
   });
 
@@ -101,6 +102,7 @@ describe('resolveAutoOpsConfig', () => {
       orphanReaper: false,
       staleClose: false,
       captureSessions: false,
+      editSourceLoop: false,
     });
   });
 
@@ -111,6 +113,18 @@ describe('resolveAutoOpsConfig', () => {
       orphanReaper: false,
       staleClose: false,
       captureSessions: true,
+      editSourceLoop: false,
+    });
+  });
+
+  it('honors editSourceLoop opt-in and defaults it to false', () => {
+    expect(resolveAutoOpsConfig({ engine: { autoOps: { editSourceLoop: true } } })).toEqual({
+      dream: false,
+      selfHeal: false,
+      orphanReaper: false,
+      staleClose: false,
+      captureSessions: false,
+      editSourceLoop: true,
     });
   });
 });

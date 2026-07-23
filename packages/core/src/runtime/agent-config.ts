@@ -14,6 +14,13 @@ export interface AgentAutoOpsConfig {
   staleClose?: boolean;
   /** When true, transcript capture hook + red-level health warnings auto-write `type=session` memories. Default false. */
   captureSessions?: boolean;
+  /**
+   * When true, the curator's edit-source loop TRACKS diffs between agent output
+   * and human edits and surfaces recurring corrections as source-level proposals.
+   * Default false. Tracking is opt-in; applying a proposal is never automatic
+   * regardless of this flag — a human approve op is always required.
+   */
+  editSourceLoop?: boolean;
 }
 
 export interface AgentEngineConfig {
@@ -41,6 +48,7 @@ const DEFAULT_AUTO_OPS_CONFIG: Required<AgentAutoOpsConfig> = {
   orphanReaper: false,
   staleClose: false,
   captureSessions: false,
+  editSourceLoop: false,
 };
 
 export function resolveAutoOpsConfig(config: AgentConfig): Required<AgentAutoOpsConfig> {
