@@ -10,6 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { parse as parseYaml } from 'yaml';
 import { AgentYamlSchema } from '../agent-schema.js';
+import { CEREMONY_VALUES } from '../templates/shared-rules.js';
 
 const BASE_YAML = `id: test-agent
 name: Test Agent
@@ -54,5 +55,32 @@ describe('AgentYamlSchema — engine.ceremony', () => {
     expect(parsed.engine.ceremony).toBe('off');
     expect(parsed.engine.learning).toBe(true);
     expect(parsed.engine.autoOps?.dream).toBe(true);
+  });
+});
+
+describe('ceremony value set — lockstep guard', () => {
+  // The canonical set. Adding a 4th value anywhere must fail a test somewhere:
+  //  - forge shared-rules CEREMONY_VALUES  → asserted directly below
+  //  - forge Zod z.enum(CEREMONY_VALUES)   → asserted via accept/reject below
+  //  - forge `Ceremony` type               → derived from CEREMONY_VALUES (can't drift)
+  //  - core CEREMONY_VALUES                 → pinned in core agent-config.test.ts
+  //  - CLI readEngineCeremony union         → guarded by tsc (returns the schema type)
+  const CANONICAL = ['full', 'light', 'off'];
+
+  it('shared-rules CEREMONY_VALUES is exactly the canonical set', () => {
+    expect([...CEREMONY_VALUES]).toEqual(CANONICAL);
+  });
+
+  it('the Zod schema accepts exactly the shared-rules set — no more, no less', () => {
+    // Every declared value parses.
+    for (const value of CEREMONY_VALUES) {
+      const parsed = parse(`${BASE_YAML}engine:\n  ceremony: ${value}\n`);
+      expect(parsed.engine.ceremony).toBe(value);
+    }
+    // A value outside the set is rejected — proves the enum set == CEREMONY_VALUES.
+    const rejected = AgentYamlSchema.safeParse(
+      parseYaml(`${BASE_YAML}engine:\n  ceremony: strict\n`),
+    );
+    expect(rejected.success).toBe(false);
   });
 });

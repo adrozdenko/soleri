@@ -12,7 +12,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { getModularEngineRules } from '@soleri/forge/lib';
+import { getModularEngineRules, generateAgentsMd } from '@soleri/forge/lib';
+import type { AgentConfig } from '@soleri/forge/lib';
 import { readEngineCeremony } from '../commands/agent.js';
 
 describe('agent refresh — ceremony threading', () => {
@@ -76,5 +77,31 @@ ${engineBlock}`,
     const rules = getModularEngineRules(undefined, readEngineCeremony(dir));
     expect(rules).toContain('Two-gate approval (`ceremony: full`)');
     expect(rules).not.toContain('Single-gate approval');
+  });
+
+  it('refresh threads light ceremony into BOTH _engine.md and AGENTS.md', () => {
+    // Mirrors the two writes in the file-tree refresh handler: _engine.md via
+    // getModularEngineRules and AGENTS.md via generateAgentsMd, both keyed off
+    // the same readEngineCeremony source.
+    writeAgentYaml('engine:\n  ceremony: light\n');
+    const ceremony = readEngineCeremony(dir);
+
+    const engineMd = getModularEngineRules(undefined, ceremony);
+    const agentsMd = generateAgentsMd(
+      {
+        id: 'test-agent',
+        name: 'Test Agent',
+        role: 'Testing Advisor',
+        description: 'A test agent for ceremony threading through refresh.',
+        domains: ['testing'],
+        principles: ['Test everything'],
+      } as unknown as AgentConfig,
+      ceremony,
+    );
+
+    for (const doc of [engineMd, agentsMd]) {
+      expect(doc).toContain('Single-gate approval (`ceremony: light`)');
+      expect(doc).not.toContain('Two-gate approval');
+    }
   });
 });

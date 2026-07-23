@@ -151,7 +151,10 @@ describe('resolveCeremony', () => {
     }
   });
 
-  it('exposes the three valid values in declaration order', () => {
+  it('lockstep guard: CEREMONY_VALUES is exactly the canonical set (core side)', () => {
+    // Pins the core declaration. The forge side (shared-rules array + Zod enum)
+    // is pinned in packages/forge/src/__tests__/agent-schema.test.ts; the CLI
+    // union is guarded by tsc. Adding a 4th value in core fails here.
     expect(CEREMONY_VALUES).toEqual(['full', 'light', 'off']);
   });
 });

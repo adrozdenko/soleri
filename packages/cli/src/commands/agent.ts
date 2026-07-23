@@ -530,8 +530,9 @@ export function registerAgent(program: Command): void {
           `Regenerated ${claudeMdPath} (${result.sources.length} sources, ${result.content.length} bytes)`,
         );
 
-        // 4. Regenerate AGENTS.md for Codex/OpenCode
-        const agentsMd = generateAgentsMd(config);
+        // 4. Regenerate AGENTS.md for Codex/OpenCode — thread ceremony so the
+        //    embedded engine rules match _engine.md (and the agent's regime).
+        const agentsMd = generateAgentsMd(config, readEngineCeremony(ctx.agentPath));
         writeFileSync(agentsMdPath, agentsMd, 'utf-8');
         p.log.success(`Regenerated ${agentsMdPath} (${agentsMd.length} bytes)`);
         return;

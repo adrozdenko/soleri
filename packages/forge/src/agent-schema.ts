@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod';
-import { ENGINE_FEATURES } from './templates/shared-rules.js';
+import { ENGINE_FEATURES, CEREMONY_VALUES } from './templates/shared-rules.js';
 
 // ─── Constants ────────────────────────────────────────────────────────
 
@@ -105,8 +105,12 @@ const EngineConfigSchema = z.object({
    * object-default caveat noted on `AutoOpsConfigSchema` above is why we keep
    * defaults out of nested engine fields wherever the absent/explicit split
    * matters.
+   *
+   * Enum values come from the shared `CEREMONY_VALUES` array (same source as the
+   * `Ceremony` type and the rendered rules) so the Zod schema, the type union,
+   * and the docs stay locked together — see the lockstep guard test.
    */
-  ceremony: z.enum(['full', 'light', 'off']).optional(),
+  ceremony: z.enum(CEREMONY_VALUES).optional(),
   /** Session compaction policy — thresholds for automatic session rotation */
   compactionPolicy: CompactionPolicySchema.optional(),
   /** Opt in to session_start maintenance side effects. Defaults to all false. */

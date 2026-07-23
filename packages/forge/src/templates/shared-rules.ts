@@ -23,8 +23,13 @@ export function getEngineMarker(): string {
  * Plan-approval ceremony regime. Mirrors the core `Ceremony` type
  * (`packages/core/src/runtime/agent-config.ts`). Declared locally so this
  * template file stays free of cross-package imports.
+ *
+ * The type is derived from `CEREMONY_VALUES` so the runtime array and the type
+ * union can never drift — the array is the single forge-side source, consumed
+ * by the Zod schema (`agent-schema.ts`) and asserted by the lockstep guard test.
  */
-export type Ceremony = 'full' | 'light' | 'off';
+export const CEREMONY_VALUES = ['full', 'light', 'off'] as const;
+export type Ceremony = (typeof CEREMONY_VALUES)[number];
 
 /**
  * Placeholder embedded in the Planning section. Replaced at render time with

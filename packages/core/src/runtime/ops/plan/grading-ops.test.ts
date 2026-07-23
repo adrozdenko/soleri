@@ -1,11 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createGradingOps } from './grading-ops.js';
+import { PlanGradeRejectionError } from '../../../planning/planner.js';
 import type { AgentRuntime } from '../../types.js';
 import type { OpDefinition } from '../../../facades/types.js';
 
 function makeMockRuntime() {
   return {
     planner: {
+      // Default 'full' ceremony — plan_grade returns the raw check unchanged.
+      getCeremony: vi.fn().mockReturnValue('full'),
+      get: vi.fn(),
+      autoApprove: vi.fn(),
       grade: vi.fn().mockReturnValue({
         grade: 'B',
         score: 82,
@@ -59,6 +64,42 @@ describe('createGradingOps', () => {
       const result = await findOp('plan_grade').handler({ planId: 'p1' });
       expect(runtime.planner.grade).toHaveBeenCalledWith('p1', expect.any(Object));
       expect(result).toHaveProperty('grade', 'B');
+    });
+
+    it('under ceremony: light, auto-approves a passing draft plan', async () => {
+      runtime = makeMockRuntime();
+      (runtime.planner.getCeremony as ReturnType<typeof vi.fn>).mockReturnValue('light');
+      (runtime.planner.get as ReturnType<typeof vi.fn>).mockReturnValue({ status: 'draft' });
+      (runtime.planner.autoApprove as ReturnType<typeof vi.fn>).mockReturnValue({
+        autoApproved: true,
+        plan: { status: 'approved' },
+      });
+      ops = createGradingOps(runtime);
+      const result = (await findOp('plan_grade').handler({ planId: 'p1' })) as Record<
+        string,
+        unknown
+      >;
+      expect(runtime.planner.autoApprove).toHaveBeenCalledWith('p1');
+      expect(result.ceremony).toBe('light');
+      expect(result.autoApproved).toBe(true);
+      expect(result.planStatus).toBe('approved');
+    });
+
+    it('under ceremony: light, a failing grade stays draft with a needs-approval signal (no throw)', async () => {
+      runtime = makeMockRuntime();
+      (runtime.planner.getCeremony as ReturnType<typeof vi.fn>).mockReturnValue('light');
+      (runtime.planner.get as ReturnType<typeof vi.fn>).mockReturnValue({ status: 'draft' });
+      (runtime.planner.autoApprove as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new PlanGradeRejectionError('F', 40, 'A', []);
+      });
+      ops = createGradingOps(runtime);
+      const result = (await findOp('plan_grade').handler({ planId: 'p1' })) as Record<
+        string,
+        unknown
+      >;
+      expect(result.autoApproved).toBe(false);
+      expect(result.needsApproval).toBe(true);
+      expect(result.planStatus).toBe('draft');
     });
   });
 
