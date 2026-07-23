@@ -37,6 +37,7 @@ import { syncAllToMarkdown } from '../vault/vault-markdown-sync.js';
 import { agentKnowledgeDir as getAgentKnowledgeDir } from '../paths.js';
 import { createLogger } from '../logging/logger.js';
 import { FeatureFlags } from './feature-flags.js';
+import { loadAgentConfig, resolveCeremony } from './agent-config.js';
 import { HealthRegistry } from '../health/health-registry.js';
 import { checkVaultIntegrity } from '../health/vault-integrity.js';
 import { PlaybookExecutor } from '../playbooks/playbook-executor.js';
@@ -111,8 +112,12 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Feature Flags — file-based + env var + runtime toggles (created early so other modules can check)
   const flags = new FeatureFlags(getAgentFlagsPath(agentId));
 
-  // Planner — multi-step task tracking
-  const planner = new Planner(plansPath);
+  // Planner — multi-step task tracking. Resolve the plan-approval ceremony from
+  // agent.yaml (same config path as autoOps); absent resolves to 'full' so
+  // pre-ceremony agents keep two-gate behavior.
+  const planner = new Planner(plansPath, {
+    ceremony: resolveCeremony(loadAgentConfig(config.agentDir ?? '')),
+  });
 
   // ─── Embedding Provider (optional) ────────────────────────────────
   // Only initialized when both config.embedding is present AND the
