@@ -113,16 +113,27 @@ export function entryToMarkdown(entry: IntelligenceEntry, resolvedLinks?: Resolv
 // ─── Slug collision handling ────────────────────────────────────────
 
 /**
+ * Unique filename suffix for an entry id — the id's TAIL, which carries the
+ * random portion. A prefix slice collides for generator ids that share a long
+ * common prefix (e.g. `ingest-notes-<timestamp>-…`): every such id starts with
+ * the same six characters, so two colliding entries would disambiguate to the
+ * same filename and one would silently vanish from the export.
+ */
+function idSuffix(id: string): string {
+  return id.slice(-6);
+}
+
+/**
  * Compute the canonical filename for an entry within its domain folder.
  * When `disambiguate` is set (the entry's slug collides with another entry in
- * the same domain), a short id suffix is appended: `<slug>-<id[:6]>.md`.
+ * the same domain), a short id-tail suffix is appended: `<slug>-<id-tail>.md`.
  * `titleToSlug` truncates at 80 chars, so collisions are real at scale.
  * Returns an empty string when the title produces no slug.
  */
 export function entryFilename(entry: IntelligenceEntry, disambiguate = false): string {
   const slug = titleToSlug(entry.title);
   if (!slug) return '';
-  return disambiguate ? `${slug}-${entry.id.slice(0, 6)}.md` : `${slug}.md`;
+  return disambiguate ? `${slug}-${idSuffix(entry.id)}.md` : `${slug}.md`;
 }
 
 /**
@@ -184,13 +195,13 @@ export function writeEntryFileSync(
 
   let filePath = join(dir, `${slug}.md`);
   if (opts.disambiguate) {
-    filePath = join(dir, `${slug}-${entry.id.slice(0, 6)}.md`);
+    filePath = join(dir, `${slug}-${idSuffix(entry.id)}.md`);
   } else if (existsSync(filePath)) {
     // Auto-disambiguate when the base path already belongs to a different entry.
     const existing = readFileSync(filePath, 'utf-8');
     const idMatch = existing.match(/^id:\s*"([^"]+)"/m);
     if (idMatch && idMatch[1] !== entry.id) {
-      filePath = join(dir, `${slug}-${entry.id.slice(0, 6)}.md`);
+      filePath = join(dir, `${slug}-${idSuffix(entry.id)}.md`);
     }
   }
 
@@ -209,12 +220,12 @@ export function writeEntryFileSync(
 }
 
 /**
- * Locate an entry's `.md` within a directory: the disambiguated `<slug>-<id6>.md`
+ * Locate an entry's `.md` within a directory: the disambiguated `<slug>-<id-tail>.md`
  * first, then the base `<slug>.md` (only when its frontmatter id matches). Returns
  * the absolute path, or null when no matching file exists.
  */
 function locateEntryFile(dir: string, slug: string, id: string): string | null {
-  const disambiguated = join(dir, `${slug}-${id.slice(0, 6)}.md`);
+  const disambiguated = join(dir, `${slug}-${idSuffix(id)}.md`);
   if (existsSync(disambiguated)) return disambiguated;
   const base = join(dir, `${slug}.md`);
   if (existsSync(base)) {
@@ -227,15 +238,15 @@ function locateEntryFile(dir: string, slug: string, id: string): string | null {
 /**
  * Resolve the destination path for a move (archive/restore): the base
  * `<slug>.md` when it is free or already ours, else the disambiguated
- * `<slug>-<id6>.md`. Prevents a blind move from silently overwriting a different
- * entry that has taken the base slug in the meantime.
+ * `<slug>-<id-tail>.md`. Prevents a blind move from silently overwriting a
+ * different entry that has taken the base slug in the meantime.
  */
 function resolveDestPath(destDir: string, slug: string, id: string): string {
   const base = join(destDir, `${slug}.md`);
   if (!existsSync(base)) return base;
   const idMatch = readFileSync(base, 'utf-8').match(/^id:\s*"([^"]+)"/m);
   if (!idMatch || idMatch[1] === id) return base; // free or belongs to this entry
-  return join(destDir, `${slug}-${id.slice(0, 6)}.md`); // occupied by another id
+  return join(destDir, `${slug}-${idSuffix(id)}.md`); // occupied by another id
 }
 
 /**

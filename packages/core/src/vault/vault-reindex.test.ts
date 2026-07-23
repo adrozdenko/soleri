@@ -4,7 +4,15 @@
  * against filesystem fixtures (never a live vault DB).
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync, utimesSync } from 'node:fs';
+import {
+  mkdirSync,
+  rmSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+  utimesSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -227,8 +235,8 @@ describe('WS4 slug-collision handling', () => {
     expect(result.collisions).toHaveLength(2);
 
     const designDir = join(tmpDir, 'vault', 'design');
-    expect(existsSync(join(designDir, 'duplicate-title-aaaaaa.md'))).toBe(true);
-    expect(existsSync(join(designDir, 'duplicate-title-bbbbbb.md'))).toBe(true);
+    expect(existsSync(join(designDir, 'duplicate-title-aaaa11.md'))).toBe(true);
+    expect(existsSync(join(designDir, 'duplicate-title-bbbb22.md'))).toBe(true);
 
     // Both survive a full reindex with distinct ids.
     reindexFull(vault, tmpDir);
@@ -848,8 +856,8 @@ describe('WS4 archive / restore / bulkRemove are file-first', () => {
 
     expect(vault.restore('sqa11111')).toBe(true);
 
-    // A must land on a disambiguated path — B's file is untouched.
-    const aPath = join(tmpDir, 'vault', 'design', 'same-title-sqa111.md');
+    // A must land on a disambiguated path (id-tail suffix) — B's file is untouched.
+    const aPath = join(tmpDir, 'vault', 'design', 'same-title-a11111.md');
     expect(existsSync(aPath)).toBe(true);
     expect(existsSync(basePath)).toBe(true);
     expect(readFileSync(basePath, 'utf-8')).toContain('sqb22222');
@@ -861,6 +869,42 @@ describe('WS4 archive / restore / bulkRemove are file-first', () => {
     reindexFull(vault, tmpDir);
     expect(vault.get('sqa11111')).not.toBeNull();
     expect(vault.get('sqb22222')).not.toBeNull();
+  });
+
+  it('disambiguates colliding entries whose ids share a long common prefix', () => {
+    // Live-vault regression: ingest-generated ids share the `ingest-notes-<ts>`
+    // prefix, so a PREFIX slice produced the same suffix for both colliding
+    // entries — one file overwrote the other and the migration count gate fired.
+    const a = makeEntry({
+      id: 'ingest-notes-1774853459847-3-w8cs',
+      title: 'Separation of Concerns',
+      domain: 'methodology',
+      description: 'From the constraint toolkit notes.',
+    });
+    const b = makeEntry({
+      id: 'ingest-notes-1774853397196-7-xpwz',
+      title: 'Separation of Concerns',
+      domain: 'methodology',
+      description: 'From the full walkthrough notes.',
+    });
+    vault.add(a);
+    vault.add(b);
+
+    const dir = join(tmpDir, 'vault', 'methodology');
+    const files = readdirSync(dir).filter((f) => f.startsWith('separation-of-concerns'));
+    expect(files).toHaveLength(2);
+
+    const ids = files
+      .map((f) => readFileSync(join(dir, f), 'utf-8').match(/^id:\s*"([^"]+)"/m)?.[1])
+      .sort();
+    expect(ids).toEqual(
+      ['ingest-notes-1774853397196-7-xpwz', 'ingest-notes-1774853459847-3-w8cs'].sort(),
+    );
+
+    // Both survive a full reindex — nothing pruned, nothing merged.
+    reindexFull(vault, tmpDir);
+    expect(vault.get(a.id)).not.toBeNull();
+    expect(vault.get(b.id)).not.toBeNull();
   });
 });
 
