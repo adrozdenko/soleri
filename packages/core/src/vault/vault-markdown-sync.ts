@@ -14,7 +14,7 @@ import {
   rmSync,
   renameSync,
 } from 'node:fs';
-import { join, basename } from 'node:path';
+import { join } from 'node:path';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import { computeContentHash } from './content-hash.js';
 import {
@@ -225,6 +225,20 @@ function locateEntryFile(dir: string, slug: string, id: string): string | null {
 }
 
 /**
+ * Resolve the destination path for a move (archive/restore): the base
+ * `<slug>.md` when it is free or already ours, else the disambiguated
+ * `<slug>-<id6>.md`. Prevents a blind move from silently overwriting a different
+ * entry that has taken the base slug in the meantime.
+ */
+function resolveDestPath(destDir: string, slug: string, id: string): string {
+  const base = join(destDir, `${slug}.md`);
+  if (!existsSync(base)) return base;
+  const idMatch = readFileSync(base, 'utf-8').match(/^id:\s*"([^"]+)"/m);
+  if (!idMatch || idMatch[1] === id) return base; // free or belongs to this entry
+  return join(destDir, `${slug}-${id.slice(0, 6)}.md`); // occupied by another id
+}
+
+/**
  * Remove an entry's markdown file (file-first delete). Checks the disambiguated
  * name first, then the base `<slug>.md` (only when it belongs to this entry id).
  * Returns the removed path, or null when no matching file was found.
@@ -260,7 +274,7 @@ export function archiveEntryFileSync(
   if (!src) return null;
   const destDir = join(knowledgeDir, 'vault', '_archive', domain);
   mkdirSync(destDir, { recursive: true });
-  const dest = join(destDir, basename(src));
+  const dest = resolveDestPath(destDir, slug, entry.id);
   renameSync(src, dest);
   return dest;
 }
@@ -281,7 +295,9 @@ export function restoreEntryFileSync(
   if (!src) return null;
   const destDir = join(knowledgeDir, 'vault', domain);
   mkdirSync(destDir, { recursive: true });
-  const dest = join(destDir, basename(src));
+  // Occupancy check: a same-title entry may have taken the base slug while this
+  // one was archived — disambiguate instead of overwriting the squatter.
+  const dest = resolveDestPath(destDir, slug, entry.id);
   renameSync(src, dest);
   return dest;
 }

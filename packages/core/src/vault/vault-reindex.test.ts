@@ -822,4 +822,81 @@ describe('WS4 archive / restore / bulkRemove are file-first', () => {
     expect(() => guarded.bulkRemove(['x'])).toThrow(/no file store is bound/);
     guarded.close();
   });
+
+  it('restore does not overwrite a same-title squatter that took the base slug', () => {
+    // Probe: archive A (base slug) → add B same title (takes the slug) → restore A.
+    const a = makeEntry({
+      id: 'sqa11111',
+      title: 'Same Title',
+      domain: 'design',
+      description: 'Entry A body.',
+    });
+    vault.add(a);
+    vault.getProvider().run('UPDATE entries SET updated_at = 0');
+    vault.archive({ olderThanDays: 1 });
+    expect(vault.get('sqa11111')).toBeNull();
+
+    const b = makeEntry({
+      id: 'sqb22222',
+      title: 'Same Title',
+      domain: 'design',
+      description: 'Entry B body.',
+    });
+    vault.add(b); // B takes the now-free base slug
+    const basePath = join(tmpDir, 'vault', 'design', 'same-title.md');
+    expect(existsSync(basePath)).toBe(true);
+
+    expect(vault.restore('sqa11111')).toBe(true);
+
+    // A must land on a disambiguated path — B's file is untouched.
+    const aPath = join(tmpDir, 'vault', 'design', 'same-title-sqa111.md');
+    expect(existsSync(aPath)).toBe(true);
+    expect(existsSync(basePath)).toBe(true);
+    expect(readFileSync(basePath, 'utf-8')).toContain('sqb22222');
+    expect(readFileSync(aPath, 'utf-8')).toContain('sqa11111');
+    expect(vault.get('sqa11111')).not.toBeNull();
+    expect(vault.get('sqb22222')).not.toBeNull();
+
+    // A full reindex keeps BOTH entries — no silent prune.
+    reindexFull(vault, tmpDir);
+    expect(vault.get('sqa11111')).not.toBeNull();
+    expect(vault.get('sqb22222')).not.toBeNull();
+  });
+});
+
+// ── full-scan reindex performance smoke ─────────────────────────────
+
+describe('WS4 full-scan reindex performance', () => {
+  it('reindexes a 1k-entry fixture well under the CI bound', async () => {
+    const dir = join(tmpdir(), `vault-perf-${randomUUID().slice(0, 8)}`);
+    mkdirSync(dir, { recursive: true });
+    const vault = new Vault(':memory:');
+    const entries: IntelligenceEntry[] = [];
+    for (let i = 0; i < 1000; i++) {
+      entries.push(
+        makeEntry({
+          id: `perf-${i}`,
+          title: `Performance Entry Number ${i} With A Distinct Title`,
+          domain: ['ts', 'react', 'ops', 'design'][i % 4],
+          description: `Body paragraph for entry ${i}. `.repeat(6),
+          context: 'Context paragraph.',
+          why: 'Reasoning paragraph.',
+        }),
+      );
+    }
+    vault.seed(entries);
+    await syncAllToMarkdown(vault, dir);
+
+    const t0 = performance.now();
+    const result = reindexIncremental(vault, dir); // default full-scan, no-op
+    const elapsedMs = performance.now() - t0;
+
+    expect(result.scanned).toBe(1000);
+    expect(result.reindexed).toBe(0);
+    // Generous bound to avoid CI flakes; observed ~70ms locally.
+    expect(elapsedMs).toBeLessThan(2000);
+
+    vault.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
 });
