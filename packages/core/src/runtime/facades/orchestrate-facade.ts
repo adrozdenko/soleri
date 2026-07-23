@@ -282,6 +282,18 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           // Non-critical — don't fail session start over orphan cleanup
         }
 
+        // Feedback-health guardrail: warn when the recent accept rate signals a
+        // broken negative path. Surfaced only when triggered (WS1 diet).
+        let feedbackWarning: { acceptRate: number; message: string } | undefined;
+        try {
+          const health = runtime.brain.getFeedbackHealth();
+          if (health.warning && health.message) {
+            feedbackWarning = { acceptRate: health.acceptRate, message: health.message };
+          }
+        } catch {
+          // Best-effort — never block session start on feedback health
+        }
+
         return {
           project,
           is_new: isNew,
@@ -307,6 +319,7 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           stalePlansClosed,
           stalePlans,
           ...(stagingWarning ? { stagingWarning } : {}),
+          ...(feedbackWarning ? { feedbackWarning } : {}),
           ...(dreamInfo ? { dream: dreamInfo } : {}),
           ...(selfHealInfo ? { selfHeal: selfHealInfo } : {}),
         };

@@ -313,11 +313,11 @@ export class Brain {
     if (seedCount < 50 && limit < seedCount && ranked.length > limit) {
       const wouldKeep = limit;
       if (wouldKeep < seedCount / 2) {
-        return this.applyTokenBudget(ranked.slice(0, seedCount), options);
+        return this.logSearch(query, this.applyTokenBudget(ranked.slice(0, seedCount), options));
       }
     }
 
-    return this.applyTokenBudget(ranked.slice(0, limit), options);
+    return this.logSearch(query, this.applyTokenBudget(ranked.slice(0, limit), options));
   }
 
   /**
@@ -596,6 +596,59 @@ export class Brain {
     return result;
   }
 
+  /** Ring buffer of recent searches used to correlate implicit dismissals. */
+  private recentSearches: { query: string; entryIds: string[] }[] = [];
+
+  /** Max logged searches kept for implicit-dismissal correlation. */
+  private static readonly SEARCH_LOG_CAP = 50;
+  /** Max surfaced-but-unused siblings soft-dismissed per correlated search. */
+  private static readonly IMPLICIT_DISMISS_MAX = 3;
+  /** Confidence for implicit dismissals — soft signal that must not outweigh an accept. */
+  private static readonly IMPLICIT_DISMISS_CONFIDENCE = 0.3;
+
+  /** Log a search's surfaced entry IDs for later implicit-dismissal correlation. */
+  private logSearch(query: string, results: RankedResult[]): RankedResult[] {
+    if (results.length > 1) {
+      this.recentSearches.push({ query, entryIds: results.map((r) => r.entry.id) });
+      if (this.recentSearches.length > Brain.SEARCH_LOG_CAP) this.recentSearches.shift();
+    }
+    return results;
+  }
+
+  /**
+   * When a surfaced search result is explicitly accepted, soft-dismiss the
+   * highest-ranked siblings from the same search that were never used —
+   * otherwise unused results leave no signal and the accept rate inflates.
+   * One-shot per logged search; sibling writes use action 'dismissed' so
+   * they cannot re-trigger correlation.
+   */
+  private correlateImplicitDismissals(accepted: FeedbackInput): void {
+    for (let i = this.recentSearches.length - 1; i >= 0; i--) {
+      const logged = this.recentSearches[i];
+      if (!logged.entryIds.includes(accepted.entryId)) continue;
+
+      this.recentSearches.splice(i, 1);
+      const siblings = logged.entryIds
+        .filter((id) => id !== accepted.entryId)
+        .slice(0, Brain.IMPLICIT_DISMISS_MAX);
+      for (const entryId of siblings) {
+        try {
+          this.recordFeedback({
+            query: logged.query,
+            entryId,
+            action: 'dismissed',
+            source: 'search',
+            confidence: Brain.IMPLICIT_DISMISS_CONFIDENCE,
+            reason: 'surfaced alongside an accepted result but not used',
+          });
+        } catch {
+          // Implicit dismissal is best-effort
+        }
+      }
+      return;
+    }
+  }
+
   recordFeedback(query: string, entryId: string, action: 'accepted' | 'dismissed'): void;
   recordFeedback(input: FeedbackInput): FeedbackEntry;
   recordFeedback(
@@ -625,6 +678,13 @@ export class Brain {
       input.reason ?? null,
     );
     this.recomputeWeights();
+
+    // Implicit dismissals: an explicit accept from a search marks its unused
+    // siblings. Gated on source 'search' so plan-completion feedback
+    // ('evidence-quality') never mass-dismisses siblings awaiting their own rows.
+    if (input.action === 'accepted' && (input.source ?? 'search') === 'search') {
+      this.correlateImplicitDismissals(input);
+    }
 
     // Return FeedbackEntry only for the object overload
     if (typeof queryOrInput !== 'string') {
@@ -698,6 +758,54 @@ export class Brain {
       bySource,
       acceptanceRate,
       averageConfidence: avgConf,
+    };
+  }
+
+  /** Minimum sampled rows before the feedback-health guardrail may warn. */
+  private static readonly FEEDBACK_HEALTH_MIN_SAMPLE = 50;
+  /** Accept rate above this over the recent window signals a broken negative path. */
+  private static readonly FEEDBACK_HEALTH_WARN_RATE = 0.9;
+
+  /**
+   * Sliding-window feedback health. Extreme accept-rate skew over recent
+   * records signals a missing negative path (instrumentation defect), not
+   * high quality — all-time stats bury such regressions under history.
+   * Healthy distribution: accept 60-75%, dismiss 10-25%, modified 5-15%, failed 2-10%.
+   */
+  getFeedbackHealth(window = 200): {
+    window: number;
+    sampled: number;
+    acceptRate: number;
+    byAction: Record<string, number>;
+    warning: boolean;
+    message?: string;
+  } {
+    const db = this.vault.getDb();
+    const rows = db
+      .prepare('SELECT action FROM brain_feedback ORDER BY id DESC LIMIT ?')
+      .all(window) as Array<{ action: string }>;
+
+    const byAction: Record<string, number> = {};
+    for (const row of rows) {
+      byAction[row.action] = (byAction[row.action] ?? 0) + 1;
+    }
+
+    const sampled = rows.length;
+    const acceptRate = sampled > 0 ? (byAction['accepted'] ?? 0) / sampled : 0;
+    const warning =
+      sampled >= Brain.FEEDBACK_HEALTH_MIN_SAMPLE && acceptRate > Brain.FEEDBACK_HEALTH_WARN_RATE;
+
+    return {
+      window,
+      sampled,
+      acceptRate,
+      byAction,
+      warning,
+      ...(warning && {
+        message:
+          `Accept rate ${(acceptRate * 100).toFixed(1)}% over the last ${sampled} feedback ` +
+          `records — healthy is 60-75%. The negative feedback path may not be writing.`,
+      }),
     };
   }
 

@@ -846,4 +846,193 @@ describe('Brain', () => {
       }
     });
   });
+
+  // ─── Implicit Dismissals (search-log correlation) ─────────
+
+  describe('implicit dismissals', () => {
+    beforeEach(() => {
+      vault.seed([
+        makeEntry({ id: 'id-1', title: 'Retry pattern alpha', tags: ['retry', 'resilience'] }),
+        makeEntry({ id: 'id-2', title: 'Retry pattern beta', tags: ['retry', 'resilience'] }),
+        makeEntry({ id: 'id-3', title: 'Retry pattern gamma', tags: ['retry', 'resilience'] }),
+        makeEntry({ id: 'id-4', title: 'Retry pattern delta', tags: ['retry', 'resilience'] }),
+        makeEntry({ id: 'id-5', title: 'Retry pattern epsilon', tags: ['retry', 'resilience'] }),
+      ]);
+      brain = new Brain(vault);
+    });
+
+    it('accepting a surfaced result soft-dismisses up to 3 unused siblings', async () => {
+      const results = await brain.intelligentSearch('retry pattern', { limit: 5 });
+      expect(results.length).toBeGreaterThan(1);
+
+      brain.recordFeedback({
+        query: 'retry pattern',
+        entryId: results[0].entry.id,
+        action: 'accepted',
+        source: 'search',
+      });
+
+      const stats = brain.getFeedbackStats();
+      const expectedDismissals = Math.min(3, results.length - 1);
+      expect(stats.byAction['dismissed']).toBe(expectedDismissals);
+      expect(stats.byAction['accepted']).toBe(1);
+    });
+
+    it('is one-shot per search — a second accept records no further dismissals', async () => {
+      const results = await brain.intelligentSearch('retry pattern', { limit: 5 });
+
+      brain.recordFeedback('retry pattern', results[0].entry.id, 'accepted');
+      const afterFirst = brain.getFeedbackStats().byAction['dismissed'] ?? 0;
+
+      brain.recordFeedback('retry pattern', results[1].entry.id, 'accepted');
+      const afterSecond = brain.getFeedbackStats().byAction['dismissed'] ?? 0;
+
+      expect(afterSecond).toBe(afterFirst);
+    });
+
+    it('does not correlate for evidence-quality source', async () => {
+      const results = await brain.intelligentSearch('retry pattern', { limit: 5 });
+
+      brain.recordFeedback({
+        query: 'retry pattern',
+        entryId: results[0].entry.id,
+        action: 'accepted',
+        source: 'evidence-quality',
+      });
+
+      const stats = brain.getFeedbackStats();
+      expect(stats.byAction['dismissed']).toBeUndefined();
+    });
+
+    it('does not correlate for non-accepted actions', async () => {
+      const results = await brain.intelligentSearch('retry pattern', { limit: 5 });
+
+      brain.recordFeedback({
+        query: 'retry pattern',
+        entryId: results[0].entry.id,
+        action: 'failed',
+        source: 'search',
+      });
+
+      const stats = brain.getFeedbackStats();
+      expect(stats.byAction['dismissed']).toBeUndefined();
+      expect(stats.byAction['failed']).toBe(1);
+    });
+
+    it('records nothing when the accepted entry was never surfaced by a search', () => {
+      brain.recordFeedback('unrelated query', 'never-surfaced', 'accepted');
+
+      const stats = brain.getFeedbackStats();
+      expect(stats.byAction['dismissed']).toBeUndefined();
+      expect(stats.byAction['accepted']).toBe(1);
+    });
+
+    it('implicit dismissals carry low confidence and a reason', async () => {
+      const results = await brain.intelligentSearch('retry pattern', { limit: 5 });
+
+      brain.recordFeedback('retry pattern', results[0].entry.id, 'accepted');
+
+      const db = vault.getDb();
+      const row = db
+        .prepare("SELECT confidence, reason FROM brain_feedback WHERE action = 'dismissed' LIMIT 1")
+        .get() as { confidence: number; reason: string };
+      expect(row.confidence).toBeCloseTo(0.3, 5);
+      expect(row.reason).toContain('not used');
+    });
+  });
+
+  // ─── Feedback Health Guardrail ────────────────────────────
+
+  describe('getFeedbackHealth', () => {
+    beforeEach(() => {
+      vault.seed([makeEntry({ id: 'fh-1', tags: ['health'] })]);
+      brain = new Brain(vault);
+    });
+
+    it('returns no warning on empty feedback', () => {
+      const health = brain.getFeedbackHealth();
+      expect(health.sampled).toBe(0);
+      expect(health.acceptRate).toBe(0);
+      expect(health.warning).toBe(false);
+      expect(health.message).toBeUndefined();
+    });
+
+    it('warns when accept rate exceeds 90% over a sufficient sample', () => {
+      for (let i = 0; i < 60; i++) {
+        brain.recordFeedback({
+          query: `q${i}`,
+          entryId: 'fh-1',
+          action: 'accepted',
+          source: 'explicit',
+        });
+      }
+      const health = brain.getFeedbackHealth();
+      expect(health.sampled).toBe(60);
+      expect(health.acceptRate).toBe(1);
+      expect(health.warning).toBe(true);
+      expect(health.message).toContain('60-75%');
+    });
+
+    it('does not warn below the minimum sample size', () => {
+      for (let i = 0; i < 40; i++) {
+        brain.recordFeedback({
+          query: `q${i}`,
+          entryId: 'fh-1',
+          action: 'accepted',
+          source: 'explicit',
+        });
+      }
+      const health = brain.getFeedbackHealth();
+      expect(health.sampled).toBe(40);
+      expect(health.warning).toBe(false);
+    });
+
+    it('does not warn on a healthy distribution', () => {
+      for (let i = 0; i < 40; i++) {
+        brain.recordFeedback({
+          query: `q${i}`,
+          entryId: 'fh-1',
+          action: 'accepted',
+          source: 'explicit',
+        });
+      }
+      for (let i = 0; i < 20; i++) {
+        brain.recordFeedback({
+          query: `d${i}`,
+          entryId: 'fh-1',
+          action: 'dismissed',
+          source: 'explicit',
+        });
+      }
+      const health = brain.getFeedbackHealth();
+      expect(health.sampled).toBe(60);
+      expect(health.acceptRate).toBeCloseTo(40 / 60, 5);
+      expect(health.warning).toBe(false);
+    });
+
+    it('respects the window parameter', () => {
+      for (let i = 0; i < 30; i++) {
+        brain.recordFeedback({
+          query: `old${i}`,
+          entryId: 'fh-1',
+          action: 'dismissed',
+          source: 'explicit',
+        });
+      }
+      for (let i = 0; i < 10; i++) {
+        brain.recordFeedback({
+          query: `new${i}`,
+          entryId: 'fh-1',
+          action: 'accepted',
+          source: 'explicit',
+        });
+      }
+      // Window of 10 sees only the most recent 10 rows — all accepted
+      const health = brain.getFeedbackHealth(10);
+      expect(health.sampled).toBe(10);
+      expect(health.acceptRate).toBe(1);
+      // Below min sample, so still no warning despite 100% accept
+      expect(health.warning).toBe(false);
+    });
+  });
 });

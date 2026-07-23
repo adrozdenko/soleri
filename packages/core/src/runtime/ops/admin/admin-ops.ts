@@ -128,6 +128,15 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           // Defensive — admin_health is the place you go *because* something is wrong
         }
 
+        // Feedback-health guardrail: extreme accept-rate skew over recent records
+        // signals a broken negative path, not high quality. Best-effort.
+        let feedbackHealth: ReturnType<typeof brain.getFeedbackHealth> | undefined;
+        try {
+          feedbackHealth = brain.getFeedbackHealth();
+        } catch {
+          // Defensive — never let a feedback query block admin_health
+        }
+
         return {
           status: 'ok',
           vault: { entries: vaultStats.totalEntries, domains: Object.keys(vaultStats.byDomain) },
@@ -135,6 +144,7 @@ export function createAdminOps(runtime: AgentRuntime): OpDefinition[] {
           brain: {
             vocabularySize: brainStats.vocabularySize,
             feedbackCount: brainStats.feedbackCount,
+            ...(feedbackHealth && { feedbackHealth }),
           },
           curator: { initialized: curatorStatus.initialized },
           skills: {

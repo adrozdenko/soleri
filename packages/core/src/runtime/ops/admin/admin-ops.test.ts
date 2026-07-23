@@ -25,6 +25,13 @@ function mockRuntime(): AgentRuntime {
     },
     brain: {
       getStats: vi.fn().mockReturnValue({ vocabularySize: 500, feedbackCount: 20 }),
+      getFeedbackHealth: vi.fn().mockReturnValue({
+        window: 200,
+        sampled: 20,
+        acceptRate: 0.75,
+        byAction: { accepted: 15, dismissed: 5 },
+        warning: false,
+      }),
       rebuildVocabulary: vi.fn(),
     },
     brainIntelligence: {
@@ -89,6 +96,43 @@ describe('createAdminOps', () => {
       const result = (await op.handler({})) as Record<string, unknown>;
       const vault = result.vault as Record<string, unknown>;
       expect(vault.entries).toBe(42);
+    });
+
+    it('includes feedback health in the brain section', async () => {
+      const op = findOp(ops, 'admin_health');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      const brain = result.brain as Record<string, unknown>;
+      const feedbackHealth = brain.feedbackHealth as Record<string, unknown>;
+      expect(feedbackHealth.acceptRate).toBe(0.75);
+      expect(feedbackHealth.warning).toBe(false);
+    });
+
+    it('surfaces the feedback-health warning when accept rate is skewed', async () => {
+      (rt.brain.getFeedbackHealth as ReturnType<typeof vi.fn>).mockReturnValue({
+        window: 200,
+        sampled: 100,
+        acceptRate: 0.98,
+        byAction: { accepted: 98, dismissed: 2 },
+        warning: true,
+        message: 'Accept rate 98.0% over the last 100 feedback records — healthy is 60-75%.',
+      });
+      const op = findOp(ops, 'admin_health');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      const brain = result.brain as Record<string, unknown>;
+      const feedbackHealth = brain.feedbackHealth as Record<string, unknown>;
+      expect(feedbackHealth.warning).toBe(true);
+      expect(feedbackHealth.message).toContain('60-75%');
+    });
+
+    it('omits feedback health gracefully when the query fails', async () => {
+      (rt.brain.getFeedbackHealth as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new Error('db locked');
+      });
+      const op = findOp(ops, 'admin_health');
+      const result = (await op.handler({})) as Record<string, unknown>;
+      expect(result.status).toBe('ok');
+      const brain = result.brain as Record<string, unknown>;
+      expect(brain.feedbackHealth).toBeUndefined();
     });
 
     it('reports LLM availability', async () => {
