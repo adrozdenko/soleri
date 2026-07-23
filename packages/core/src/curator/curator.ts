@@ -15,6 +15,10 @@ import type {
   ConsolidationResult,
   ChangelogEntry,
   HealthAuditResult,
+  DiffKind,
+  EditDiffRow,
+  EditSourceProposal,
+  EditProposalStatus,
 } from './types.js';
 
 import {
@@ -40,6 +44,15 @@ import {
 import { initializeTables } from './schema.js';
 import { computeHealthAudit, type HealthDataProvider } from './health-audit.js';
 import { enrichEntryMetadata } from './metadata-enricher.js';
+import {
+  classifyDiff,
+  buildProposal,
+  crossesThreshold,
+  groupDiffs,
+  sourceRefForEntry,
+  trackedTextOf,
+  isHumanEdit,
+} from './edit-source-loop.js';
 import {
   computeEditDistance,
   normalizeTags as normalizeTagsCanonical,
@@ -119,6 +132,8 @@ export class Curator {
         tag_alias: tableCount('curator_tag_alias'),
         changelog: tableCount('curator_changelog'),
         contradictions: tableCount('curator_contradictions'),
+        edit_diffs: tableCount('curator_edit_diffs'),
+        edit_proposals: tableCount('curator_edit_proposals'),
       },
       lastGroomedAt: lastGroomed.ts,
     };
@@ -757,6 +772,265 @@ export class Curator {
       'Rule-based metadata enrichment',
     );
     return { enriched: true, changes };
+  }
+
+  // ─── Edit-Source Learning Loop (WS6) ──────────────────────────
+  //
+  // Tracks diffs between agent output and the human-edited version, detects
+  // recurring corrections, and PROPOSES source-level fixes. Proposals are
+  // NEVER auto-applied — an explicit human approve op is required. No
+  // confidence level, threshold, or flag creates an auto-apply path.
+
+  /**
+   * Record a human edit to a tracked output. Requires a provenance `sourceRef`
+   * and a `runId` — untraceable edits are out of scope for the loop (§6.2/§6.3).
+   * Classifies the edit into a `diffKind` when one is not supplied. Never
+   * touches the human's edit; only records the diff for future proposals.
+   */
+  recordEditDiff(input: {
+    outputId: string;
+    sourceRef: string;
+    runId: string;
+    beforeText: string;
+    afterText: string;
+    diffKind?: DiffKind;
+  }): { recorded: boolean; id: number; diffKind: DiffKind | null } {
+    const before = input.beforeText ?? '';
+    const after = input.afterText ?? '';
+    // No change → nothing to track.
+    if (before.trim() === after.trim()) return { recorded: false, id: -1, diffKind: null };
+
+    // Dedup identical diff within the same run.
+    const existing = this.provider.get<{ id: number; diff_kind: string }>(
+      'SELECT id, diff_kind FROM curator_edit_diffs WHERE output_id = ? AND run_id = ? AND before_text = ? AND after_text = ? LIMIT 1',
+      [input.outputId, input.runId, before, after],
+    );
+    if (existing) {
+      return { recorded: false, id: existing.id, diffKind: existing.diff_kind as DiffKind };
+    }
+
+    const diffKind = input.diffKind ?? classifyDiff(before, after);
+    const result = this.provider.run(
+      'INSERT INTO curator_edit_diffs (output_id, source_ref, run_id, before_text, after_text, diff_kind) VALUES (?, ?, ?, ?, ?, ?)',
+      [input.outputId, input.sourceRef, input.runId, before, after, diffKind],
+    );
+    return { recorded: true, id: Number(result.lastInsertRowid), diffKind };
+  }
+
+  /**
+   * Feed edit detection from the existing `curator_entry_history` snapshots —
+   * the day-one signal source for vault entries (no new capture point needed).
+   * Pairs each human-edited snapshot with its predecessor (the agent output),
+   * deriving `runId` from the snapshot's `change_reason`. Snapshots without a
+   * run id are untraceable and skipped.
+   */
+  ingestEntryHistoryDiffs(entryId?: string): { ingested: number } {
+    const where = entryId ? 'WHERE entry_id = ?' : '';
+    const params = entryId ? [entryId] : [];
+    const rows = this.provider.all<{
+      id: number;
+      entry_id: string;
+      snapshot: string;
+      changed_by: string | null;
+      change_reason: string | null;
+      created_at: number;
+    }>(
+      `SELECT id, entry_id, snapshot, changed_by, change_reason, created_at
+       FROM curator_entry_history ${where}
+       ORDER BY entry_id ASC, created_at ASC, id ASC`,
+      params,
+    );
+
+    const byEntry = new Map<string, typeof rows>();
+    for (const r of rows) {
+      const list = byEntry.get(r.entry_id) ?? [];
+      list.push(r);
+      byEntry.set(r.entry_id, list);
+    }
+
+    let ingested = 0;
+    for (const snaps of byEntry.values()) {
+      for (let i = 1; i < snaps.length; i++) {
+        const curr = snaps[i];
+        if (!isHumanEdit(curr.changed_by)) continue;
+        const runId = (curr.change_reason ?? '').trim();
+        if (!runId) continue; // untraceable — out of scope for the loop
+
+        const prev = snaps[i - 1];
+        let before: string;
+        let after: string;
+        let type = 'pattern';
+        try {
+          const prevEntry = JSON.parse(prev.snapshot) as IntelligenceEntry;
+          const currEntry = JSON.parse(curr.snapshot) as IntelligenceEntry;
+          before = trackedTextOf(prevEntry);
+          after = trackedTextOf(currEntry);
+          type = currEntry.type ?? 'pattern';
+        } catch {
+          continue; // malformed snapshot — skip
+        }
+
+        const res = this.recordEditDiff({
+          outputId: curr.entry_id,
+          sourceRef: sourceRefForEntry(type),
+          runId,
+          beforeText: before,
+          afterText: after,
+        });
+        if (res.recorded) ingested++;
+      }
+    }
+    return { ingested };
+  }
+
+  /**
+   * Detect recurring corrections and materialize proposals. A group fires only
+   * when ≥3 diffs share source_ref + diff_kind across ≥3 DISTINCT run_ids.
+   * Re-detection is idempotent (deterministic proposal id) and NEVER re-opens a
+   * proposal a human already approved/rejected.
+   */
+  detectEditSourceProposals(): { proposals: EditSourceProposal[] } {
+    const diffs = this.readEditDiffs();
+    const groups = groupDiffs(diffs).filter(crossesThreshold);
+    const proposals: EditSourceProposal[] = [];
+    for (const group of groups) {
+      proposals.push(this.upsertEditProposal(buildProposal(group)));
+    }
+    return { proposals };
+  }
+
+  /** List materialized edit-source proposals, optionally filtered by status. */
+  getEditSourceProposals(options?: { status?: EditProposalStatus }): EditSourceProposal[] {
+    const where = options?.status ? 'WHERE status = ?' : '';
+    const params = options?.status ? [options.status] : [];
+    return this.provider
+      .all<Record<string, unknown>>(
+        `SELECT * FROM curator_edit_proposals ${where} ORDER BY confidence DESC, created_at DESC`,
+        params,
+      )
+      .map((r) => this.rowToEditProposal(r));
+  }
+
+  /**
+   * Human approve gate. Records the human's ratification of a proposal.
+   * IMPORTANT: this does NOT edit any source file, vault entry, or contract —
+   * applying the change is a separate, deliberate human action. The loop only
+   * ever proposes; it never rewrites its own constraints.
+   */
+  approveEditSourceProposal(
+    id: string,
+    reason?: string,
+  ): {
+    updated: boolean;
+    status: EditProposalStatus;
+  } {
+    return this.reviewEditProposal(id, 'approved', reason);
+  }
+
+  /** Human reject gate — marks a proposal as a one-off, not a source defect. */
+  rejectEditSourceProposal(
+    id: string,
+    reason?: string,
+  ): {
+    updated: boolean;
+    status: EditProposalStatus;
+  } {
+    return this.reviewEditProposal(id, 'rejected', reason);
+  }
+
+  /**
+   * Gated entry point for the loop. TRACKING is opt-in via
+   * `engine.autoOps.editSourceLoop`; when disabled this is a no-op. Applying a
+   * proposal is never automatic regardless of the flag.
+   */
+  runEditSourceLoop(options: { enabled: boolean; entryId?: string }): {
+    enabled: boolean;
+    ingested: number;
+    proposals: EditSourceProposal[];
+  } {
+    if (!options.enabled) return { enabled: false, ingested: 0, proposals: [] };
+    const { ingested } = this.ingestEntryHistoryDiffs(options.entryId);
+    this.detectEditSourceProposals();
+    return {
+      enabled: true,
+      ingested,
+      proposals: this.getEditSourceProposals({ status: 'pending' }),
+    };
+  }
+
+  private readEditDiffs(): EditDiffRow[] {
+    return this.provider
+      .all<Record<string, unknown>>('SELECT * FROM curator_edit_diffs ORDER BY id ASC')
+      .map((r) => ({
+        id: r.id as number,
+        outputId: r.output_id as string,
+        sourceRef: r.source_ref as string,
+        runId: r.run_id as string,
+        beforeText: r.before_text as string,
+        afterText: r.after_text as string,
+        diffKind: r.diff_kind as DiffKind,
+        createdAt: r.created_at as number,
+      }));
+  }
+
+  private upsertEditProposal(p: EditSourceProposal): EditSourceProposal {
+    const existing = this.provider.get<{ status: string }>(
+      'SELECT status FROM curator_edit_proposals WHERE id = ?',
+      [p.id],
+    );
+    const evidenceRuns = JSON.stringify(p.evidenceRuns);
+    const evidenceDiffs = JSON.stringify(p.evidenceDiffIds);
+    const proposedChange = JSON.stringify(p.proposedChange);
+    if (existing) {
+      // Refresh evidence but NEVER re-open a human decision.
+      this.provider.run(
+        `UPDATE curator_edit_proposals
+         SET evidence_run_ids = ?, evidence_diff_ids = ?, proposed_change = ?, confidence = ?
+         WHERE id = ?`,
+        [evidenceRuns, evidenceDiffs, proposedChange, p.confidence, p.id],
+      );
+      return { ...p, status: existing.status as EditProposalStatus };
+    }
+    this.provider.run(
+      `INSERT INTO curator_edit_proposals
+         (id, source_ref, diff_kind, status, evidence_run_ids, evidence_diff_ids, proposed_change, confidence)
+       VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)`,
+      [p.id, p.sourceRef, p.diffKind, evidenceRuns, evidenceDiffs, proposedChange, p.confidence],
+    );
+    return { ...p, status: 'pending' };
+  }
+
+  private reviewEditProposal(
+    id: string,
+    status: EditProposalStatus,
+    reason?: string,
+  ): { updated: boolean; status: EditProposalStatus } {
+    const row = this.provider.get<{ id: string }>(
+      'SELECT id FROM curator_edit_proposals WHERE id = ?',
+      [id],
+    );
+    if (!row) return { updated: false, status };
+    this.provider.run(
+      'UPDATE curator_edit_proposals SET status = ?, reviewed_at = unixepoch(), reviewed_reason = ? WHERE id = ?',
+      [status, reason ?? null, id],
+    );
+    return { updated: true, status };
+  }
+
+  private rowToEditProposal(r: Record<string, unknown>): EditSourceProposal {
+    return {
+      id: r.id as string,
+      kind: 'edit_source',
+      sourceRef: r.source_ref as string,
+      diffKind: r.diff_kind as DiffKind,
+      evidenceRuns: JSON.parse((r.evidence_run_ids as string) ?? '[]') as string[],
+      evidenceDiffIds: JSON.parse((r.evidence_diff_ids as string) ?? '[]') as number[],
+      proposedChange: JSON.parse(
+        r.proposed_change as string,
+      ) as EditSourceProposal['proposedChange'],
+      confidence: r.confidence as number,
+      status: r.status as EditProposalStatus,
+    };
   }
 
   // ─── Private Helpers ──────────────────────────────────────────

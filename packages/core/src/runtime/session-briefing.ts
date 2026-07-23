@@ -12,6 +12,7 @@ import { z } from 'zod';
 import type { OpDefinition } from '../facades/types.js';
 import type { AgentRuntime } from './types.js';
 import type { OperatorProfile } from '../operator/operator-types.js';
+import { loadAgentConfig, resolveAutoOpsConfig } from './agent-config.js';
 
 export interface BriefingSection {
   label: string;
@@ -271,6 +272,39 @@ export function createSessionBriefingOps(runtime: AgentRuntime): OpDefinition[] 
         } catch {
           failedSections++;
           // Brain proposals unavailable — skip
+        }
+
+        // 5b. Pending edit-source proposals (WS6) — gated behind the opt-in
+        // engine.autoOps.editSourceLoop flag. Surfaced through the same
+        // "Pending proposals" channel; NEVER auto-applied.
+        try {
+          const enabled = resolveAutoOpsConfig(
+            loadAgentConfig(runtime.config.agentDir ?? ''),
+          ).editSourceLoop;
+          if (enabled) {
+            const { proposals } = curator.runEditSourceLoop({ enabled });
+            dataPoints += proposals.length;
+            if (proposals.length > 0) {
+              const top = proposals
+                .slice(0, 3)
+                .map(
+                  (p) =>
+                    `"${p.diffKind}" → ${p.proposedChange.type} on ${p.sourceRef} (confidence: ${p.confidence.toFixed(2)})`,
+                );
+              const lines = [
+                `${proposals.length} recurring source-edit ${proposals.length === 1 ? 'pattern' : 'patterns'} — review needed`,
+                ...top.map((t) => `  - ${t}`),
+                `  Use \`curator_approve_edit_source\` to ratify or \`curator_reject_edit_source\` to dismiss. Never auto-applied.`,
+              ];
+              sections.push({
+                label: 'Source-edit proposals',
+                content: lines.join('\n'),
+              });
+            }
+          }
+        } catch {
+          failedSections++;
+          // Edit-source loop unavailable — skip
         }
 
         // 6. Stale knowledge / health warnings

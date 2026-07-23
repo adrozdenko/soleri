@@ -1,16 +1,21 @@
 /**
- * Extra curator operations — 8 ops that extend the 8 base curator ops in core-ops.ts.
+ * Extra curator operations — 14 ops that extend the base curator ops in core-ops.ts.
  *
- * Groups: entry history (2), queue stats (1), metadata enrichment (1), hybrid detection (1),
- *         pipeline status (1), schedule start (1), schedule stop (1).
+ * Groups: entry history (2), edit-source loop (5), queue stats (1), metadata enrichment (1),
+ *         hybrid detection (1), pipeline status (1), schedule start (1), schedule stop (1).
  */
 
 import { z } from 'zod';
 import type { OpDefinition } from '../../../facades/types.js';
 import type { AgentRuntime } from '../../types.js';
+import { loadAgentConfig, resolveAutoOpsConfig } from '../../agent-config.js';
 
 export function createCuratorExtraOps(runtime: AgentRuntime): OpDefinition[] {
   const { curator, jobQueue, pipelineRunner, shutdownRegistry } = runtime;
+
+  // Edit-source loop TRACKING is opt-in via engine.autoOps.editSourceLoop.
+  const editSourceLoopEnabled = (): boolean =>
+    resolveAutoOpsConfig(loadAgentConfig(runtime.config.agentDir ?? '')).editSourceLoop;
   let consolidationInterval: ReturnType<typeof setInterval> | null = null;
 
   // Register cleanup for any consolidation interval started during this session
@@ -50,6 +55,127 @@ export function createCuratorExtraOps(runtime: AgentRuntime): OpDefinition[] {
           params.entryId as string,
           params.changedBy as string | undefined,
           params.changeReason as string | undefined,
+        );
+      },
+    },
+
+    // ─── Edit-Source Learning Loop (WS6) ────────────────────────────
+    {
+      name: 'curator_record_edit_diff',
+      description:
+        'Record a human edit to a tracked output (before = agent output, after = human-edited). ' +
+        'Requires a provenance sourceRef and a distinct runId. Classifies the edit when diffKind ' +
+        'is omitted. Gated behind engine.autoOps.editSourceLoop; never modifies the human edit.',
+      auth: 'write',
+      schema: z.object({
+        outputId: z
+          .string()
+          .describe('The tracked output id (e.g. vault entry id, planId#stepId).'),
+        sourceRef: z.string().describe('Provenance: which contract/reference/rule produced it.'),
+        runId: z.string().describe('Distinct run/session this edit belongs to.'),
+        beforeText: z.string().describe('Agent output.'),
+        afterText: z.string().describe('Human-edited version.'),
+        diffKind: z
+          .enum([
+            'tightened_opening',
+            'tone_shift',
+            'length_trim',
+            'terminology',
+            'structure_reorder',
+            'constraint_added',
+          ])
+          .optional()
+          .describe('Override classification. Omit to auto-classify.'),
+      }),
+      handler: async (params) => {
+        if (!editSourceLoopEnabled()) {
+          return { recorded: false, reason: 'editSourceLoop disabled (engine.autoOps)' };
+        }
+        return curator.recordEditDiff({
+          outputId: params.outputId as string,
+          sourceRef: params.sourceRef as string,
+          runId: params.runId as string,
+          beforeText: params.beforeText as string,
+          afterText: params.afterText as string,
+          diffKind: params.diffKind as
+            | 'tightened_opening'
+            | 'tone_shift'
+            | 'length_trim'
+            | 'terminology'
+            | 'structure_reorder'
+            | 'constraint_added'
+            | undefined,
+        });
+      },
+    },
+    {
+      name: 'curator_edit_source_scan',
+      description:
+        'Run the edit-source loop — ingest human edits from entry history, detect recurring ' +
+        'corrections (>=3 diffs sharing source_ref + diff_kind across >=3 distinct runs), and ' +
+        'materialize pending proposals. Gated behind engine.autoOps.editSourceLoop. Never applies changes.',
+      auth: 'write',
+      schema: z.object({
+        entryId: z.string().optional().describe('Scope ingestion to one entry. Omit to scan all.'),
+      }),
+      handler: async (params) => {
+        const enabled = editSourceLoopEnabled();
+        return curator.runEditSourceLoop({
+          enabled,
+          entryId: params.entryId as string | undefined,
+        });
+      },
+    },
+    {
+      name: 'curator_edit_source_proposals',
+      description:
+        'List edit-source proposals awaiting human review (or filter by status). Each proposes a ' +
+        'source-level change; none is ever auto-applied.',
+      auth: 'read',
+      schema: z.object({
+        status: z
+          .enum(['pending', 'approved', 'rejected'])
+          .optional()
+          .describe('Filter by review status. Default: all.'),
+      }),
+      handler: async (params) => {
+        const proposals = curator.getEditSourceProposals({
+          status: params.status as 'pending' | 'approved' | 'rejected' | undefined,
+        });
+        return { proposals, count: proposals.length };
+      },
+    },
+    {
+      name: 'curator_approve_edit_source',
+      description:
+        'Human approve gate — ratify an edit-source proposal. Records the decision ONLY; it does ' +
+        'NOT edit any source file, vault entry, or contract. Applying the change is a separate ' +
+        'deliberate human action. This is the sole path out of "pending" toward action.',
+      auth: 'write',
+      schema: z.object({
+        id: z.string().describe('Proposal id (esp-...).'),
+        reason: z.string().optional().describe('Why this recurring edit is a real source defect.'),
+      }),
+      handler: async (params) => {
+        return curator.approveEditSourceProposal(
+          params.id as string,
+          params.reason as string | undefined,
+        );
+      },
+    },
+    {
+      name: 'curator_reject_edit_source',
+      description:
+        'Human reject gate — dismiss an edit-source proposal as a one-off rather than a source defect.',
+      auth: 'write',
+      schema: z.object({
+        id: z.string().describe('Proposal id (esp-...).'),
+        reason: z.string().optional().describe('Why this is a one-off, not a source fix.'),
+      }),
+      handler: async (params) => {
+        return curator.rejectEditSourceProposal(
+          params.id as string,
+          params.reason as string | undefined,
         );
       },
     },
