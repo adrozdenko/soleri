@@ -15,6 +15,8 @@ import type { PreflightManifest } from './types.js';
 
 /** Max active-plan one-liners surfaced in the briefing. */
 const MAX_ACTIVE_PLANS = 3;
+/** Max chars of a plan objective in the briefing (the one unbounded human string). */
+const MAX_PLAN_TITLE_LEN = 40;
 /** Max representative intent signals per routing-index row. */
 const MAX_ROUTING_SIGNALS = 3;
 /** Max top domains surfaced by entry volume. */
@@ -65,7 +67,12 @@ export function buildPreflightManifest(input: PreflightInput): PreflightManifest
 
   const activePlans = input.executingPlans.slice(0, MAX_ACTIVE_PLANS).map((p) => ({
     planId: p.id,
-    title: p.objective,
+    // Truncate the one unbounded human-authored string to keep the briefing
+    // within the Layer 0/1 budget (ruling: `objective[:40]` one-liner spec).
+    title:
+      p.objective.length > MAX_PLAN_TITLE_LEN
+        ? p.objective.slice(0, MAX_PLAN_TITLE_LEN) + '…'
+        : p.objective,
     status: p.status,
   }));
 

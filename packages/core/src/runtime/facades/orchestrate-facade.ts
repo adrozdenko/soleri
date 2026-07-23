@@ -226,7 +226,9 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
         let stalePlans: { count: number; ids: string[] } = { count: 0, ids: [] };
         try {
           const ids = runtime.planner.findStale();
-          stalePlans = { count: ids.length, ids };
+          // Keep the full count but cap the id list so this array stays bounded
+          // inside the session_start payload (WS1 diet budget guardrail).
+          stalePlans = { count: ids.length, ids: ids.slice(0, 3) };
         } catch {
           // Best-effort — never block session_start on stale detection
         }
@@ -244,7 +246,9 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
         let topStrengths: Array<{ pattern: string; strength: number; domain: string }> = [];
         try {
           const rows = brainIntelligence.getStrengths({ limit: 5, minStrength: 50 });
-          topStrengths = rows.map((s) => ({
+          // Defensive cap at the serializer (not just the getStrengths limit) so
+          // this array stays bounded inside the session_start payload (WS1 diet).
+          topStrengths = rows.slice(0, 5).map((s) => ({
             pattern: s.pattern,
             strength: s.strength,
             domain: s.domain,

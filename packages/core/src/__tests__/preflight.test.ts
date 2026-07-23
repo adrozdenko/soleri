@@ -113,6 +113,26 @@ describe('buildPreflightManifest', () => {
     expect(manifest.activePlans[2].planId).toBe('plan-2');
   });
 
+  it('truncates over-long plan objectives to 40 chars + ellipsis', () => {
+    const longObjective = 'X'.repeat(120);
+    const manifest = buildPreflightManifest(
+      makeInput({
+        executingPlans: [{ id: 'plan-long', objective: longObjective, status: 'executing' }],
+      }),
+    );
+    expect(manifest.activePlans[0].title).toBe('X'.repeat(40) + '…');
+    expect(manifest.activePlans[0].title.length).toBe(41);
+  });
+
+  it('leaves short plan objectives untruncated (no ellipsis)', () => {
+    const manifest = buildPreflightManifest(
+      makeInput({
+        executingPlans: [{ id: 'plan-short', objective: 'Short objective', status: 'executing' }],
+      }),
+    );
+    expect(manifest.activePlans[0].title).toBe('Short objective');
+  });
+
   it('builds vault summary with domain total + top domains by entry volume', () => {
     const manifest = buildPreflightManifest(makeInput());
     expect(manifest.vaultSummary).toEqual({
@@ -159,14 +179,16 @@ describe('buildPreflightManifest', () => {
     });
   });
 
-  // ─── WS1 guardrail: 1,500-token payload ceiling ────────────────────────────
+  // ─── WS1 guardrail: 1,500-token session_start payload ceiling ──────────────
   // The briefing must stay within the Layer 0 + Layer 1 band (Fig 1: ~800 + ~300;
   // §3.2: Layers 0–2 combined ~1,300–1,600). We enforce a hard 1,500-token ceiling
-  // using the repo's chars/4 heuristic (packages/core/src/transcript/jsonl-parser.ts).
-  // Measured against the REAL ENGINE_MODULE_MANIFEST at a worst-case operating point.
-  it('keeps the default manifest under the 1,500-token ceiling at a worst-case operating point', () => {
+  // on the ENTIRE session_start payload using the repo's chars/4 heuristic
+  // (packages/core/src/transcript/jsonl-parser.ts), measured on the COMPACT wire
+  // form we actually ship (facade responses are no longer pretty-printed).
+  it('keeps the full session_start payload under the 1,500-token ceiling at a worst-case operating point', () => {
     // Worst case: full engine manifest (22 modules), 80 domains, max active plans
-    // with long objectives, a large skill count. Mirrors the WS0 operating point.
+    // with over-long objectives (exercise truncation), large skill count. Mirrors
+    // the WS0 operating point.
     const byDomain: Record<string, number> = {};
     for (let i = 0; i < 80; i++) byDomain[`domain-name-number-${i}`] = 80 - i;
 
@@ -175,23 +197,61 @@ describe('buildPreflightManifest', () => {
       agentId: 'my-agent',
       skillCount: 51,
       executingPlans: [
-        { id: 'plan-1775741365371-wmc9u3', objective: 'A'.repeat(60), status: 'executing' },
-        { id: 'plan-1775741365372-abcd12', objective: 'B'.repeat(60), status: 'executing' },
-        { id: 'plan-1775741365373-efgh34', objective: 'C'.repeat(60), status: 'executing' },
+        { id: 'plan-1775741365371-wmc9u3', objective: 'A'.repeat(120), status: 'executing' },
+        { id: 'plan-1775741365372-abcd12', objective: 'B'.repeat(120), status: 'executing' },
+        { id: 'plan-1775741365373-efgh34', objective: 'C'.repeat(120), status: 'executing' },
       ],
       vaultStats: { totalEntries: 1142, byDomain },
     });
 
-    // Serialize the way the MCP wire form does and estimate tokens (chars/4).
-    const pretty = JSON.stringify(manifest, null, 2);
-    const compact = JSON.stringify(manifest);
-    const prettyTokens = Math.ceil(pretty.length / 4);
-    const compactTokens = Math.ceil(compact.length / 4);
-
-    // Ceiling holds in the current pretty wire form AND the compact form.
-    expect(prettyTokens).toBeLessThanOrEqual(1500);
-    expect(compactTokens).toBeLessThanOrEqual(1500);
+    // Over-long objectives must be truncated so the diet stays bounded.
+    for (const p of manifest.activePlans) {
+      expect(p.title.length).toBeLessThanOrEqual(41); // 40 chars + ellipsis
+    }
     // The full facade×op catalog must NOT be riding along by default.
     expect(manifest.tools).toBeUndefined();
+
+    // Reconstruct the ENTIRE session_start return object (see orchestrate-facade.ts)
+    // with populated, bounded wrapper fields — this is what actually goes on the wire.
+    const payload = {
+      project: {
+        id: 'proj-1775741365371-xyz789',
+        name: 'my-agent',
+        path: '/Users/someone/projects/some-realistic-monorepo-path/soleri',
+        sessionCount: 137,
+        firstSeenAt: 1775741365371,
+        lastSeenAt: 1775741400000,
+      },
+      is_new: false,
+      message: 'Welcome back! Session #137 for my-agent.',
+      vault: { entries: 1142, domains: manifest.vaultSummary.domains },
+      governance: {
+        pendingProposals: 12,
+        quotaPercent: 87,
+        isQuotaWarning: true,
+        expiredThisSession: 4,
+      },
+      preflight: manifest,
+      topStrengths: Array.from({ length: 5 }, (_, i) => ({
+        pattern: `descriptive-pattern-name-example-number-${i}`,
+        strength: 95 - i * 4,
+        domain: `domain-name-number-${i}`,
+      })),
+      orphansClosed: 3,
+      autoReconciledCount: 2,
+      stalePlansClosed: 5,
+      stalePlans: {
+        count: 47,
+        ids: [
+          'plan-1775741300001-aaa111',
+          'plan-1775741300002-bbb222',
+          'plan-1775741300003-ccc333',
+        ],
+      },
+    };
+
+    // Compact form is the real wire form since facade responses dropped pretty-print.
+    const compactTokens = Math.ceil(JSON.stringify(payload).length / 4);
+    expect(compactTokens).toBeLessThanOrEqual(1500);
   });
 });
