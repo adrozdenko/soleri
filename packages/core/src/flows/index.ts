@@ -6,6 +6,11 @@
 export type {
   Flow,
   FlowStep,
+  FlowStepInputs,
+  StepInputFile,
+  StepInputVault,
+  OnMissingInput,
+  FlowEnforcement,
   ProbeName,
   ProbeResults,
   PlanStep,
@@ -19,7 +24,13 @@ export type {
 } from './types.js';
 
 // Loader
-export { loadFlowById, loadAllFlows, parseSimpleYaml } from './loader.js';
+export {
+  loadFlowById,
+  loadAllFlows,
+  parseSimpleYaml,
+  validateFlowInputs,
+  FlowLoadError,
+} from './loader.js';
 
 // Probes
 export { runProbes } from './probes.js';
@@ -48,6 +59,7 @@ export { evaluateGate, evaluateCondition, extractScore, resolvePath } from './ga
 
 // Executor
 export { FlowExecutor } from './executor.js';
+export type { FlowExecutorOptions, VaultInputResolver, VaultInputHit } from './executor.js';
 
 // Dispatch registry
 export { createDispatcher } from './dispatch-registry.js';

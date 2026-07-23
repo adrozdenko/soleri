@@ -301,6 +301,35 @@ describe('scaffoldFileTree', () => {
     expect(content).not.toContain('autoOps:');
   });
 
+  it('writes an EXPLICIT engine.ceremony: light for new scaffolds', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const content = readFileSync(join(result.agentDir, 'agent.yaml'), 'utf-8');
+    const parsed = parseYaml(content);
+    // Explicit, visible, editable — not a hidden default.
+    expect(parsed.engine.ceremony).toBe('light');
+    expect(content).toContain('ceremony: light');
+  });
+
+  it('honors an explicit engine.ceremony override in the scaffold input', () => {
+    const result = scaffoldFileTree({ ...MINIMAL_CONFIG, engine: { ceremony: 'full' } }, tempDir);
+    expect(result.success).toBe(true);
+
+    const parsed = parseYaml(readFileSync(join(result.agentDir, 'agent.yaml'), 'utf-8'));
+    expect(parsed.engine.ceremony).toBe('full');
+  });
+
+  it('renders _engine.md gate rules matching the scaffold ceremony (light)', () => {
+    const result = scaffoldFileTree(MINIMAL_CONFIG, tempDir);
+    expect(result.success).toBe(true);
+
+    const engineMd = readFileSync(join(result.agentDir, 'instructions', '_engine.md'), 'utf-8');
+    expect(engineMd).toContain('Single-gate approval (`ceremony: light`)');
+    expect(engineMd).not.toContain('Two-gate approval');
+    expect(engineMd).not.toContain('<!-- soleri:ceremony-rules -->');
+  });
+
   it('includes engine.autoOps opt-ins in agent.yaml', () => {
     const result = scaffoldFileTree(
       {

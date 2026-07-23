@@ -1,0 +1,287 @@
+// ─── Edit-Source Learning Loop (WS6) — pure logic ──────────────────
+//
+// §6.3 "Source Integrity and the Edit-Source Principle": when a human edits
+// the same kind of thing in the same source's output across three runs, the
+// system surfaces the pattern and PROPOSES a source-level fix. It never
+// applies the fix — proposals require an explicit human approve action.
+//
+// This module holds only pure, side-effect-free logic: classifying an edit
+// into a `diff_kind`, the recurrence threshold, confidence, and proposal
+// shape. Persistence + the review gate live on the Curator class.
+
+import { createHash } from 'node:crypto';
+import type { IntelligenceEntry } from '../intelligence/types.js';
+import { tokenize, calculateTf, cosineSimilarity } from '../text/similarity.js';
+import type {
+  DiffKind,
+  EditDiffRow,
+  EditSourceProposal,
+  ProposedChange,
+  ProposedChangeType,
+} from './types.js';
+
+/** Recurrence threshold — §6.3 "three runs in a row". All conditions required. */
+export const RECURRENCE_MIN_DIFFS = 3;
+export const RECURRENCE_MIN_DISTINCT_RUNS = 3;
+
+// Raw-text cues that signal a constraint was added. Many (must, only, no) are
+// stopwords stripped by `tokenize`, so they are matched against raw text.
+const CONSTRAINT_CUES: RegExp[] = [
+  /\bmust\b/,
+  /\bnever\b/,
+  /\balways\b/,
+  /\bavoid\b/,
+  /\bensure\b/,
+  /\brequire[sd]?\b/,
+  /\bmandatory\b/,
+  /\bforbidden\b/,
+  /\bkeep\b/,
+  /\bunder\b/,
+  /\bwithin\b/,
+  /\bat most\b/,
+  /\bat least\b/,
+  /\bno more than\b/,
+  /\bmax(imum)?\b/,
+  /\bmin(imum)?\b/,
+  /\blimit\b/,
+  /\bonly\b/,
+  /\bcannot\b/,
+  /\bdo not\b/,
+  /\bdon't\b/,
+  /\bshorter\b/,
+  /\bfewer\b/,
+  /\bexceed\b/,
+];
+
+function countConstraintCues(text: string): number {
+  const lower = text.toLowerCase();
+  let n = 0;
+  for (const re of CONSTRAINT_CUES) {
+    if (re.test(lower)) n++;
+  }
+  return n;
+}
+
+function firstSentence(text: string): string {
+  const parts = text.trim().split(/(?<=[.!?])\s+/);
+  return parts[0] ?? '';
+}
+
+function remainder(text: string): string {
+  const parts = text.trim().split(/(?<=[.!?])\s+/);
+  return parts.slice(1).join(' ');
+}
+
+function lenOf(text: string): number {
+  return text.trim().length;
+}
+
+/**
+ * Classify a human edit into a `diff_kind`.
+ *
+ * Uses the shared TF-IDF cosine + Jaccard utilities (not literal matching) so
+ * "the same kind of thing" clusters even when the exact wording differs.
+ * Deterministic first-match cascade — a given (before, after) always maps to
+ * exactly one kind, which is what lets recurring edits accumulate under one kind.
+ */
+export function classifyDiff(before: string, after: string): DiffKind {
+  const bTokens = tokenize(before);
+  const aTokens = tokenize(after);
+
+  const bChars = lenOf(before);
+  const aChars = lenOf(after);
+  const lenRatio = aChars / Math.max(bChars, 1);
+
+  const bSet = new Set(bTokens);
+  const aSet = new Set(aTokens);
+  const addedTokens = [...aSet].filter((t) => !bSet.has(t));
+  const removedTokens = [...bSet].filter((t) => !aSet.has(t));
+
+  const cos = cosineSimilarity(calculateTf(bTokens), calculateTf(aTokens));
+
+  // 1. structure_reorder — identical token multiset, different order.
+  const sameMultiset =
+    bTokens.length > 0 &&
+    bTokens.length === aTokens.length &&
+    [...bTokens].sort().join(' ') === [...aTokens].sort().join(' ');
+  if (sameMultiset && bTokens.join(' ') !== aTokens.join(' ')) {
+    return 'structure_reorder';
+  }
+
+  // 2. constraint_added — a new constraint cue appears and length is preserved
+  //    or grows (the human added a rule rather than trimming).
+  const addedConstraint = countConstraintCues(after) > countConstraintCues(before);
+  if (addedConstraint && lenRatio >= 0.9) {
+    return 'constraint_added';
+  }
+
+  // 3. tightened_opening — the lead sentence shrank while the body is preserved.
+  const openBefore = lenOf(firstSentence(before));
+  const openAfter = lenOf(firstSentence(after));
+  const openingRatio = openAfter / Math.max(openBefore, 1);
+  const remCos = cosineSimilarity(
+    calculateTf(tokenize(remainder(before))),
+    calculateTf(tokenize(remainder(after))),
+  );
+  if (lenOf(remainder(before)) > 0 && openingRatio <= 0.7 && remCos >= 0.7) {
+    return 'tightened_opening';
+  }
+
+  // 4. length_trim — meaningfully shorter, mostly a subset of the original.
+  if (lenRatio <= 0.85 && removedTokens.length > 0 && addedTokens.length <= 1) {
+    return 'length_trim';
+  }
+
+  // 5. terminology — localized word swaps, overall content preserved.
+  if (
+    cos >= 0.5 &&
+    lenRatio >= 0.75 &&
+    lenRatio <= 1.3 &&
+    addedTokens.length >= 1 &&
+    removedTokens.length >= 1 &&
+    addedTokens.length + removedTokens.length <= 6
+  ) {
+    return 'terminology';
+  }
+
+  // 6/default. tone_shift — register/wording change (catch-all).
+  return 'tone_shift';
+}
+
+/** Source-level remedy template per §6.3's three named remedies. */
+export function buildProposedChange(diffKind: DiffKind, sourceRef: string): ProposedChange {
+  const map: Record<DiffKind, { type: ProposedChangeType; suggestion: string }> = {
+    tightened_opening: {
+      type: 'contract_amendment',
+      suggestion: "Add to the contract: 'Keep the opening under three sentences.'",
+    },
+    length_trim: {
+      type: 'new_constraint',
+      suggestion:
+        "Add a length constraint to the contract (e.g. 'Keep the output under N sentences.').",
+    },
+    constraint_added: {
+      type: 'new_constraint',
+      suggestion:
+        'Codify the constraint humans keep adding into the source contract so it is applied from the start.',
+    },
+    terminology: {
+      type: 'reference_update',
+      suggestion:
+        'Update the reference/glossary so the preferred terminology is used on the first pass.',
+    },
+    structure_reorder: {
+      type: 'contract_amendment',
+      suggestion: 'Amend the contract to specify the expected section order.',
+    },
+    tone_shift: {
+      type: 'contract_amendment',
+      suggestion: 'Amend the voice/tone reference so the register matches on the first pass.',
+    },
+  };
+  const { type, suggestion } = map[diffKind];
+  return { type, target: sourceRef, suggestion };
+}
+
+/** Deterministic proposal id — stable across re-detections of the same group. */
+export function proposalIdFor(sourceRef: string, diffKind: DiffKind): string {
+  const hash = createHash('sha1').update(`${sourceRef}|${diffKind}`).digest('hex').slice(0, 10);
+  return `esp-${hash}`;
+}
+
+/**
+ * Advisory confidence from recurrence count + kind cohesion.
+ * NEVER gates application — every proposal still requires a human approve op.
+ */
+export function computeConfidence(distinctRuns: number, afterTexts: string[]): number {
+  const recurrenceScore = Math.min(1, distinctRuns / 5);
+  const cohesion = kindCohesion(afterTexts);
+  const value = 0.5 * recurrenceScore + 0.5 * cohesion;
+  return Math.max(0, Math.min(1, Math.round(value * 100) / 100));
+}
+
+/** Mean pairwise cosine of the human-edited texts — how consistent the fix is. */
+function kindCohesion(afterTexts: string[]): number {
+  if (afterTexts.length < 2) return 1;
+  const vectors = afterTexts.map((t) => calculateTf(tokenize(t)));
+  let sum = 0;
+  let pairs = 0;
+  for (let i = 0; i < vectors.length; i++) {
+    for (let j = i + 1; j < vectors.length; j++) {
+      sum += cosineSimilarity(vectors[i], vectors[j]);
+      pairs++;
+    }
+  }
+  return pairs === 0 ? 1 : sum / pairs;
+}
+
+/** A group of diffs sharing source_ref + diff_kind. */
+export interface DiffGroup {
+  sourceRef: string;
+  diffKind: DiffKind;
+  diffs: EditDiffRow[];
+}
+
+/** Group diffs by (source_ref, diff_kind). */
+export function groupDiffs(diffs: EditDiffRow[]): DiffGroup[] {
+  const groups = new Map<string, DiffGroup>();
+  for (const d of diffs) {
+    const key = `${d.sourceRef}\u0000${d.diffKind}`;
+    let g = groups.get(key);
+    if (!g) {
+      g = { sourceRef: d.sourceRef, diffKind: d.diffKind, diffs: [] };
+      groups.set(key, g);
+    }
+    g.diffs.push(d);
+  }
+  return [...groups.values()];
+}
+
+/**
+ * Does a group cross the recurrence threshold?
+ * ALL THREE required: ≥3 diffs, sharing source_ref + diff_kind, across ≥3
+ * DISTINCT run_ids. Three edits inside one run do NOT fire (§6.3).
+ */
+export function crossesThreshold(group: DiffGroup): boolean {
+  if (group.diffs.length < RECURRENCE_MIN_DIFFS) return false;
+  const distinctRuns = new Set(group.diffs.map((d) => d.runId));
+  return distinctRuns.size >= RECURRENCE_MIN_DISTINCT_RUNS;
+}
+
+/** Build the `EditSourceProposal` for a group that crossed the threshold. */
+export function buildProposal(group: DiffGroup): EditSourceProposal {
+  const distinctRuns = [...new Set(group.diffs.map((d) => d.runId))];
+  const afterTexts = group.diffs.map((d) => d.afterText);
+  return {
+    id: proposalIdFor(group.sourceRef, group.diffKind),
+    kind: 'edit_source',
+    sourceRef: group.sourceRef,
+    diffKind: group.diffKind,
+    evidenceRuns: distinctRuns,
+    evidenceDiffIds: group.diffs.map((d) => d.id),
+    proposedChange: buildProposedChange(group.diffKind, group.sourceRef),
+    confidence: computeConfidence(distinctRuns.length, afterTexts),
+    status: 'pending',
+  };
+}
+
+// ─── Vault-entry feed helpers (the day-one edit-detection source) ───
+
+/** Provenance source_ref for a vault entry — the capture contract by type. */
+export function sourceRefForEntry(type: string): string {
+  return `vault:capture-contract/${type}`;
+}
+
+/** The tracked text of a vault entry — its main content surface. */
+export function trackedTextOf(entry: IntelligenceEntry): string {
+  return entry.description ?? '';
+}
+
+/**
+ * Is this snapshot a human edit? Anything not produced by the engine itself.
+ * System/agent/seed/capture snapshots are the agent output (the "before").
+ */
+export function isHumanEdit(changedBy: string | null | undefined): boolean {
+  const who = (changedBy ?? '').toLowerCase();
+  return who !== '' && !['system', 'agent', 'seed', 'capture', 'curator'].includes(who);
+}

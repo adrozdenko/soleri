@@ -122,3 +122,61 @@ export interface CuratorStatus {
   tables: Record<string, number>;
   lastGroomedAt: number | null;
 }
+
+// ─── Edit-Source Learning Loop (WS6) ────────────────────────────────
+
+/**
+ * Classification of a human edit to an agent-produced output.
+ * Drawn from §6.3's own examples — normalizes an edit into "the same kind
+ * of thing" so recurrence is detectable without literal-identical matching.
+ */
+export type DiffKind =
+  | 'tightened_opening'
+  | 'tone_shift'
+  | 'length_trim'
+  | 'terminology'
+  | 'structure_reorder'
+  | 'constraint_added';
+
+/** The three named source-level remedies from §6.3. */
+export type ProposedChangeType = 'contract_amendment' | 'reference_update' | 'new_constraint';
+
+/** Human review status. NEVER transitions to applied automatically. */
+export type EditProposalStatus = 'pending' | 'approved' | 'rejected';
+
+/** A recorded diff between agent output (before) and human edit (after). */
+export interface EditDiffRow {
+  id: number;
+  outputId: string;
+  sourceRef: string;
+  runId: string;
+  beforeText: string;
+  afterText: string;
+  diffKind: DiffKind;
+  createdAt: number;
+}
+
+/** The source-level change the loop proposes (never auto-applied). */
+export interface ProposedChange {
+  type: ProposedChangeType;
+  target: string;
+  suggestion: string;
+}
+
+/**
+ * Emitted when a recurring correction crosses the threshold (≥3 diffs sharing
+ * source_ref + diff_kind across ≥3 distinct run_ids). Surfaced through the
+ * brain-proposals channel; requires an explicit human approve op to ratify.
+ */
+export interface EditSourceProposal {
+  id: string;
+  kind: 'edit_source';
+  sourceRef: string;
+  diffKind: DiffKind;
+  evidenceRuns: string[];
+  evidenceDiffIds: number[];
+  proposedChange: ProposedChange;
+  /** Advisory only — derived from recurrence count + kind cohesion. Never gates apply. */
+  confidence: number;
+  status: EditProposalStatus;
+}

@@ -11,6 +11,11 @@ on-missing-capability:
   default: skip-with-warning
   blocking: [vault.search]
 
+# WS5: strict input-scoping — each step receives only the context declared in
+# its inputs: block. `advisory` would record the scoped bundle but deliver the
+# full accumulated context; strict is the default and the point of the scoping.
+enforcement: strict
+
 triggers:
   modes:
     - PLAN
@@ -29,6 +34,13 @@ steps:
     chains:
       - vault-search
       - memory-search
+    # Entry step: declares its Layer 3 reference need so it is scoped (no
+    # unscoped-step warning). No from_steps — nothing has run yet.
+    inputs:
+      vault:
+        - query: 'patterns, anti-patterns, and previous plans for the feature'
+          limit: 5
+          mandatory: false
     output:
       - vault-patterns
       - memory-hits
@@ -40,6 +52,16 @@ steps:
     chains:
       - brain-recommend
       - architecture-search
+    # Scoped inputs (WS5 stage-contract Inputs table): this step sees the
+    # vault-patterns from search-vault plus a scoped vault query — nothing else.
+    inputs:
+      vault:
+        - query: 'design approaches and architecture patterns'
+          domain: architecture
+          limit: 3
+          mandatory: false
+      from_steps:
+        - search-vault.vault-patterns
     output:
       - brainstorm-options
       - architecture-guidance
@@ -50,6 +72,21 @@ steps:
     needs: [plan.create]
     chains:
       - plan-create
+    # Scoped inputs: Layer 3 reference file (internalize) + Layer 4 working file
+    # (process), plus the specific prior-step outputs this step depends on.
+    inputs:
+      files:
+        - path: _config/voice.md # Layer 3 reference — internalize as constraint
+          layer: 3
+        - path: output/plan-notes.md # Layer 4 working artifact — process as input
+          layer: 4
+      from_steps:
+        - search-vault.vault-patterns
+        - brainstorm.brainstorm-options
+        - brainstorm.architecture-guidance
+    # Reference/working files may be absent in a given project — degrade
+    # gracefully rather than halting the flow.
+    on-missing-input: skip-with-warning
     output:
       - plan-document
       - plan-grade

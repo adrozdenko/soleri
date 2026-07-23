@@ -26,7 +26,9 @@ export function registerFacade(
     facadeSchema,
     async ({ op, params }): Promise<{ content: Array<{ type: 'text'; text: string }> }> => {
       const response = await dispatchOp(facade, op, params, authPolicy?.());
-      return { content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }] };
+      // Compact serialization — pretty-printing every facade response inflates
+      // context ~28% for no machine-readability gain (WS1 briefing diet / WS0).
+      return { content: [{ type: 'text' as const, text: JSON.stringify(response) }] };
     },
   );
 }
@@ -131,7 +133,7 @@ function registerHotOp(
       const policy = authPolicy?.();
       const authResult = checkAuth(op.name, op.auth, facadeName, policy);
       if (authResult) {
-        return { content: [{ type: 'text' as const, text: JSON.stringify(authResult, null, 2) }] };
+        return { content: [{ type: 'text' as const, text: JSON.stringify(authResult) }] };
       }
 
       try {
@@ -146,7 +148,7 @@ function registerHotOp(
               facade: facadeName,
             };
             return {
-              content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }],
+              content: [{ type: 'text' as const, text: JSON.stringify(response) }],
             };
           }
           validatedParams = result.data as Record<string, unknown>;
@@ -154,7 +156,7 @@ function registerHotOp(
 
         const data = await op.handler(validatedParams);
         const response: FacadeResponse = { success: true, data, op: op.name, facade: facadeName };
-        return { content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }] };
+        return { content: [{ type: 'text' as const, text: JSON.stringify(response) }] };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const response: FacadeResponse = {
@@ -163,7 +165,7 @@ function registerHotOp(
           op: op.name,
           facade: facadeName,
         };
-        return { content: [{ type: 'text' as const, text: JSON.stringify(response, null, 2) }] };
+        return { content: [{ type: 'text' as const, text: JSON.stringify(response) }] };
       }
     },
   );

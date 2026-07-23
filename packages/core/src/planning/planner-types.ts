@@ -6,6 +6,7 @@
 import type { PlanStatus, PlanGrade } from './plan-lifecycle.js';
 import type { PlanGap } from './gap-types.js';
 import type { GapAnalysisOptions } from './gap-analysis.js';
+import type { Ceremony } from '../runtime/agent-config.js';
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed';
 
@@ -213,6 +214,13 @@ export interface Plan {
   goalId?: string;
   /** Audit trail of all constraint evaluations (grading + task execution). */
   constraintAudit?: ConstraintAuditEntry[];
+  /**
+   * Human-added `## ` sections found in the plan `.md` that the engine does not
+   * model. Preserved verbatim (passthrough) so a machine save never deletes
+   * human content. Populated only when such sections exist. Internal to the
+   * Markdown store — not set by planning logic.
+   */
+  extraSections?: Array<{ heading: string; content: string }>;
   createdAt: number;
   updatedAt: number;
 }
@@ -293,6 +301,13 @@ export interface CompositionRule {
 
 export interface PlannerOptions {
   gapOptions?: GapAnalysisOptions;
+  /**
+   * Directory for the canonical per-plan Markdown pair (`<id>.md` +
+   * `<id>.data.json`). The runtime resolves this to `<projectPath>/plans` so
+   * plans live at the project working-tree root (Git-versioned, diffable). When
+   * omitted, it defaults to the store filename stem beside the JSON cache path.
+   */
+  plansDir?: string;
   /** Minimum grade required for plan approval. Default: 'A'. Set to undefined to disable. */
   minGradeForApproval?: PlanGrade;
   /** TTL in ms for executing/validating/reconciling plans in closeStale(). Default: 24h (86400000). */
@@ -305,4 +320,10 @@ export interface PlannerOptions {
    * approve without round-tripping through grading. Default: 5.
    */
   gradeMinTaskCount?: number;
+  /**
+   * Plan-approval ceremony regime. Governs the gate behavior of `approve()`
+   * and `autoApprove()`. Default: 'full' (both gates explicit, grade gate
+   * enforced). See {@link Ceremony}.
+   */
+  ceremony?: Ceremony;
 }

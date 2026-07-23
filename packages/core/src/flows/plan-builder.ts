@@ -138,6 +138,15 @@ export function flowStepsToPlanSteps(
       status: 'pending',
     };
 
+    // Carry WS5 scoped-input declarations onto the plan step so the executor
+    // can assemble a per-step context bundle from `inputs` only.
+    if (step.inputs) {
+      planStep.inputs = step.inputs;
+    }
+    if (step['on-missing-input']) {
+      planStep.onMissingInput = step['on-missing-input'];
+    }
+
     // Attach capability metadata (non-breaking additions)
     if (capabilityIds.length > 0) {
       (planStep as PlanStep & { capabilities?: string[] }).capabilities = capabilityIds;
@@ -381,6 +390,8 @@ export async function buildPlan(
     warnings,
     summary: prompt ?? `${normalizedIntent} plan with ${steps.length} step(s)`,
     estimatedTools: steps.reduce((acc, s) => acc + s.tools.length, 0),
+    // WS5: strict input-scoping unless the flow explicitly opts into advisory.
+    enforcement: flow?.enforcement ?? 'strict',
     ...(recommendations.length > 0 ? { recommendations } : {}),
     context: {
       intent: normalizedIntent,

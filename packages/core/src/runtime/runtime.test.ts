@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createAgentRuntime } from './runtime.js';
 import type { AgentRuntime } from './types.js';
+import { Planner } from '../planning/planner.js';
+import { readFileSync } from 'node:fs';
 
 // ---------------------------------------------------------------------------
 // Heavy mocks — runtime.ts instantiates dozens of modules, we mock them all
@@ -40,6 +42,8 @@ vi.mock('../vault/vault-manager.js', () => ({
       get: vi.fn(),
       list: vi.fn().mockReturnValue([]),
       exportAll: vi.fn().mockReturnValue({ entries: [] }),
+      getSourceOfTruth: vi.fn().mockReturnValue('index'),
+      bindFileStore: vi.fn(),
     };
     this.open = vi.fn().mockReturnValue(vaultInstance);
     this.connect = vi.fn();
@@ -407,5 +411,50 @@ describe('createAgentRuntime', () => {
   it('close() calls shutdownRegistry.closeAllSync()', () => {
     runtime.close();
     expect(runtime.shutdownRegistry.closeAllSync).toHaveBeenCalled();
+  });
+});
+
+describe('createAgentRuntime — ceremony wiring', () => {
+  const mockedRead = vi.mocked(readFileSync);
+
+  afterEach(() => {
+    // Restore the default global fs mock (returns undefined) for other suites.
+    mockedRead.mockReset();
+  });
+
+  it('constructs the Planner with ceremony resolved from agent.yaml', () => {
+    // loadAgentConfig reads <agentDir>/agent.yaml via the mocked fs.
+    mockedRead.mockImplementation(((path: unknown) =>
+      String(path).endsWith('agent.yaml')
+        ? 'engine:\n  ceremony: light\n'
+        : undefined) as typeof readFileSync);
+
+    const runtime = createAgentRuntime({ agentId: 'ceremony-agent', agentDir: '/tmp/agent' });
+    const lastCall = vi.mocked(Planner).mock.calls.at(-1);
+    expect(lastCall?.[1]).toEqual({ ceremony: 'light' });
+    runtime.close();
+  });
+
+  it('honors ceremony: off from agent.yaml', () => {
+    mockedRead.mockImplementation(((path: unknown) =>
+      String(path).endsWith('agent.yaml')
+        ? 'engine:\n  ceremony: off\n'
+        : undefined) as typeof readFileSync);
+
+    const runtime = createAgentRuntime({ agentId: 'off-agent', agentDir: '/tmp/agent' });
+    const lastCall = vi.mocked(Planner).mock.calls.at(-1);
+    expect(lastCall?.[1]).toEqual({ ceremony: 'off' });
+    runtime.close();
+  });
+
+  it('defaults ceremony to full when agent.yaml is absent/unreadable', () => {
+    mockedRead.mockImplementation((() => {
+      throw new Error('ENOENT');
+    }) as typeof readFileSync);
+
+    const runtime = createAgentRuntime({ agentId: 'no-config-agent' });
+    const lastCall = vi.mocked(Planner).mock.calls.at(-1);
+    expect(lastCall?.[1]).toEqual({ ceremony: 'full' });
+    runtime.close();
   });
 });

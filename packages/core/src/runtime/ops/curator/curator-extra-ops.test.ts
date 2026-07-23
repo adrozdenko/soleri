@@ -9,6 +9,8 @@ import { captureOps } from '../../../engine/test-helpers.js';
 
 function mockRuntime() {
   return {
+    // agentDir '' → loadAgentConfig returns {} → editSourceLoop resolves false.
+    config: { agentDir: '' },
     curator: {
       getVersionHistory: vi.fn().mockReturnValue([]),
       recordSnapshot: vi.fn().mockReturnValue({ recorded: true, historyId: 42 }),
@@ -18,6 +20,11 @@ function mockRuntime() {
         .fn()
         .mockResolvedValue({ contradictions: [], method: 'tfidf-only' }),
       consolidate: vi.fn(),
+      recordEditDiff: vi.fn().mockReturnValue({ recorded: true, id: 1, diffKind: 'length_trim' }),
+      runEditSourceLoop: vi.fn().mockReturnValue({ enabled: false, ingested: 0, proposals: [] }),
+      getEditSourceProposals: vi.fn().mockReturnValue([]),
+      approveEditSourceProposal: vi.fn().mockReturnValue({ updated: true, status: 'approved' }),
+      rejectEditSourceProposal: vi.fn().mockReturnValue({ updated: true, status: 'rejected' }),
     },
     jobQueue: {
       enqueue: vi.fn().mockImplementation((type) => `job-${type}`),
@@ -43,12 +50,17 @@ describe('createCuratorExtraOps', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns 9 ops with correct names', () => {
+  it('returns 14 ops with correct names', () => {
     const ops = createCuratorExtraOps(mockRuntime());
-    expect(ops).toHaveLength(9);
+    expect(ops).toHaveLength(14);
     expect(ops.map((o) => o.name)).toEqual([
       'curator_entry_history',
       'curator_record_snapshot',
+      'curator_record_edit_diff',
+      'curator_edit_source_scan',
+      'curator_edit_source_proposals',
+      'curator_approve_edit_source',
+      'curator_reject_edit_source',
       'curator_queue_stats',
       'curator_enrich',
       'curator_hybrid_contradictions',
@@ -190,6 +202,64 @@ describe('createCuratorExtraOps', () => {
     });
   });
 
+  describe('edit-source loop ops', () => {
+    it('curator_record_edit_diff is gated off when the flag is disabled', async () => {
+      const rt = mockRuntime();
+      const ops = captureOps(createCuratorExtraOps(rt));
+      const result = (await ops.get('curator_record_edit_diff')!.handler({
+        outputId: 'e1',
+        sourceRef: 'vault:capture-contract/pattern',
+        runId: 'run-1',
+        beforeText: 'long original',
+        afterText: 'short',
+      })) as { recorded: boolean };
+      expect(result.recorded).toBe(false);
+      expect(rt.curator.recordEditDiff).not.toHaveBeenCalled();
+    });
+
+    it('curator_edit_source_scan passes the resolved flag (disabled) to the loop', async () => {
+      const rt = mockRuntime();
+      const ops = captureOps(createCuratorExtraOps(rt));
+      await ops.get('curator_edit_source_scan')!.handler({});
+      expect(rt.curator.runEditSourceLoop).toHaveBeenCalledWith({
+        enabled: false,
+        entryId: undefined,
+      });
+    });
+
+    it('curator_edit_source_proposals lists proposals with a count', async () => {
+      const rt = mockRuntime();
+      (rt.curator.getEditSourceProposals as ReturnType<typeof vi.fn>).mockReturnValue([
+        { id: 'esp-1' },
+        { id: 'esp-2' },
+      ]);
+      const ops = captureOps(createCuratorExtraOps(rt));
+      const result = (await ops.get('curator_edit_source_proposals')!.handler({
+        status: 'pending',
+      })) as { proposals: unknown[]; count: number };
+      expect(result.count).toBe(2);
+      expect(rt.curator.getEditSourceProposals).toHaveBeenCalledWith({ status: 'pending' });
+    });
+
+    it('curator_approve_edit_source delegates to the human approve gate', async () => {
+      const rt = mockRuntime();
+      const ops = captureOps(createCuratorExtraOps(rt));
+      const result = (await ops.get('curator_approve_edit_source')!.handler({
+        id: 'esp-1',
+        reason: 'real defect',
+      })) as { status: string };
+      expect(result.status).toBe('approved');
+      expect(rt.curator.approveEditSourceProposal).toHaveBeenCalledWith('esp-1', 'real defect');
+    });
+
+    it('curator_reject_edit_source delegates to the human reject gate', async () => {
+      const rt = mockRuntime();
+      const ops = captureOps(createCuratorExtraOps(rt));
+      await ops.get('curator_reject_edit_source')!.handler({ id: 'esp-1' });
+      expect(rt.curator.rejectEditSourceProposal).toHaveBeenCalledWith('esp-1', undefined);
+    });
+  });
+
   describe('auth levels', () => {
     it('read ops have read auth', () => {
       const ops = captureOps(createCuratorExtraOps(mockRuntime()));
@@ -197,6 +267,7 @@ describe('createCuratorExtraOps', () => {
       expect(ops.get('curator_queue_stats')!.auth).toBe('read');
       expect(ops.get('curator_hybrid_contradictions')!.auth).toBe('read');
       expect(ops.get('curator_pipeline_status')!.auth).toBe('read');
+      expect(ops.get('curator_edit_source_proposals')!.auth).toBe('read');
     });
 
     it('write ops have write auth', () => {
@@ -206,6 +277,10 @@ describe('createCuratorExtraOps', () => {
       expect(ops.get('curator_enqueue_pipeline')!.auth).toBe('write');
       expect(ops.get('curator_schedule_start')!.auth).toBe('write');
       expect(ops.get('curator_schedule_stop')!.auth).toBe('write');
+      expect(ops.get('curator_record_edit_diff')!.auth).toBe('write');
+      expect(ops.get('curator_edit_source_scan')!.auth).toBe('write');
+      expect(ops.get('curator_approve_edit_source')!.auth).toBe('write');
+      expect(ops.get('curator_reject_edit_source')!.auth).toBe('write');
     });
   });
 });

@@ -33,10 +33,13 @@ import { Telemetry } from '../telemetry/telemetry.js';
 import { ProjectRegistry } from '../project/project-registry.js';
 import { TemplateManager } from '../prompts/template-manager.js';
 import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { syncAllToMarkdown } from '../vault/vault-markdown-sync.js';
+import { reindexIncremental } from '../vault/vault-reindex.js';
 import { agentKnowledgeDir as getAgentKnowledgeDir } from '../paths.js';
 import { createLogger } from '../logging/logger.js';
 import { FeatureFlags } from './feature-flags.js';
+import { loadAgentConfig, resolveCeremony } from './agent-config.js';
 import { HealthRegistry } from '../health/health-registry.js';
 import { checkVaultIntegrity } from '../health/vault-integrity.js';
 import { PlaybookExecutor } from '../playbooks/playbook-executor.js';
@@ -91,6 +94,17 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Vault — persistent SQLite knowledge store (agent tier)
   const vault = vaultManager.open('agent', vaultPath);
 
+  // Files-first binding (WS4): once a vault has been migrated to files-first,
+  // the markdown tree is canonical. Bind the file store BEFORE any mutation so
+  // every add/update/remove writes the .md first; without this, DB-only writes
+  // would be reverted (or pruned) by the next reindex. Binding also arms the
+  // hard guard in the Vault, so a files-first vault can never take a DB-only write.
+  const knowledgeDir = getAgentKnowledgeDir(agentId);
+  const filesFirst = vault.getSourceOfTruth() === 'files';
+  if (filesFirst) {
+    vault.bindFileStore(knowledgeDir);
+  }
+
   // Shared vault — cross-agent intelligence (lower priority than agent vault)
   try {
     mkdirSync(SOLERI_HOME, { recursive: true });
@@ -111,8 +125,17 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Feature Flags — file-based + env var + runtime toggles (created early so other modules can check)
   const flags = new FeatureFlags(getAgentFlagsPath(agentId));
 
-  // Planner — multi-step task tracking
-  const planner = new Planner(plansPath);
+  // Planner — multi-step task tracking. Resolve the plan-approval ceremony from
+  // agent.yaml (same config path as autoOps); absent resolves to 'full' so
+  // pre-ceremony agents keep two-gate behavior. Canonical plan files (`<id>.md`
+  // + `<id>.data.json`) live at `<projectPath>/plans/` so they are Git-versioned
+  // and diffable in the project tree (ICM Addendum 2B); the JSON store stays a
+  // derived cache and the agent-home path is the fallback when no projectPath
+  // is resolvable.
+  const planner = new Planner(plansPath, {
+    ceremony: resolveCeremony(loadAgentConfig(config.agentDir ?? '')),
+    ...(config.projectPath ? { plansDir: join(config.projectPath, 'plans') } : {}),
+  });
 
   // ─── Embedding Provider (optional) ────────────────────────────────
   // Only initialized when both config.embedding is present AND the
@@ -270,18 +293,34 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
     // Integrity check itself failed — vault may still work
   }
 
-  // Boot-time markdown sync — catch up entries without .md files (fire-and-forget)
-  const knowledgeDir = getAgentKnowledgeDir(agentId);
-  syncAllToMarkdown(vault, knowledgeDir).then(
-    (result) => {
-      if (result.synced > 0) {
-        logger.info(`Markdown sync: ${result.synced} entries synced, ${result.skipped} skipped`);
+  // Boot-time markdown sync.
+  if (filesFirst) {
+    // Files-first: the file tree is canonical. Reindex files → DB (file wins) so
+    // external edits / git pulls since last run land in the index. Never export
+    // DB → files here (that would clobber hand edits).
+    try {
+      const r = reindexIncremental(vault, knowledgeDir);
+      if (r.reindexed > 0 || r.failures.length > 0) {
+        logger.info(
+          `Vault reindex: ${r.reindexed} rebuilt, ${r.skipped} unchanged, ${r.failures.length} failed`,
+        );
       }
-    },
-    () => {
+    } catch {
       /* best-effort — never block boot */
-    },
-  );
+    }
+  } else {
+    // Index-first: export DB → files to catch up entries without .md files.
+    syncAllToMarkdown(vault, knowledgeDir).then(
+      (result) => {
+        if (result.synced > 0) {
+          logger.info(`Markdown sync: ${result.synced} entries synced, ${result.skipped} skipped`);
+        }
+      },
+      () => {
+        /* best-effort — never block boot */
+      },
+    );
+  }
 
   // ─── Auto-signal pipeline wiring ───────────────────────────────────
   const learningRadar = new LearningRadar(vault, brain);
