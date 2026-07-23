@@ -267,7 +267,11 @@ export function createOrchestrateExecuteOp(ctx: OrchestrateExecutionContext): Op
         };
         const dispatch = buildDispatch(agentId, runtime, facades, activePlanRef);
         const projectPath = (params.projectPath as string) ?? '.';
-        const executor = new FlowExecutor(dispatch, projectPath);
+        // Wire the vault into WS5 scoped-input assembly so `inputs.vault[]`
+        // queries (and `mandatory` enforcement) resolve against real knowledge.
+        const executor = new FlowExecutor(dispatch, projectPath, {
+          vaultSearch: (query, opts) => vault.search(query, opts),
+        });
         const executionResult = await executor.execute(entry.plan);
 
         // Store result
