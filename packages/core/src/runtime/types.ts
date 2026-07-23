@@ -43,15 +43,36 @@ import type { EmbeddingConfig, EmbeddingProvider } from '../embeddings/types.js'
 import type { EmbeddingPipeline } from '../embeddings/pipeline.js';
 import type { OpsRegistry } from './ops-registry.js';
 
-/** Pre-flight manifest returned by session_start for agent self-awareness. */
+/**
+ * Pre-flight manifest returned by session_start for agent self-awareness.
+ *
+ * WS1 "Session Briefing Diet": this carries ONLY Layer 0 identity + Layer 1
+ * routing index. The full facade×op catalog is NOT shipped here — retrieve it
+ * on demand via `admin_tool_list`. Payload is held under a 1,500-token ceiling
+ * (see the guardrail test in `preflight.test.ts`).
+ */
 export interface PreflightManifest {
-  tools: Array<{ facade: string; op: string; description: string }>;
-  skills: string[];
+  /**
+   * Layer 1 routing index — one row per facade with up to 3 representative
+   * intent signals. Tells the agent WHICH module owns a need; it does NOT
+   * enumerate that module's ops.
+   */
+  routingIndex: Array<{ suffix: string; description: string; signals: string[] }>;
+  /**
+   * Full facade×op catalog. Empty/omitted by default — only populated when the
+   * caller passes `verbose: true` (never set during normal session_start). Use
+   * `admin_tool_list` for the on-demand catalog instead.
+   */
+  tools?: Array<{ facade: string; op: string; description: string }>;
+  /** Installed skill count. The full skill list is retrieved on demand. */
+  skillCount: number;
+  /** Active/executing plans as one-liners, capped at 3. */
   activePlans: Array<{ planId: string; title: string; status: string }>;
   vaultSummary: {
     entryCount: number;
     connected: boolean;
-    domains: string[];
+    /** Domain summary: total count + top domains by entry volume (not the full list). */
+    domains: { total: number; top: string[] };
   };
 }
 

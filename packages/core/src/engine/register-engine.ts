@@ -618,5 +618,7 @@ function checkAuth(
 function jsonResponse(data: Record<string, unknown>): {
   content: Array<{ type: 'text'; text: string }>;
 } {
-  return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  // Compact serialization — pretty-printing every engine op response inflates
+  // context ~28% for no machine-readability gain (WS1 briefing diet / WS0).
+  return { content: [{ type: 'text' as const, text: JSON.stringify(data) }] };
 }

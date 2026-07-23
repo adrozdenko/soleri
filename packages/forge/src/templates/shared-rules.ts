@@ -631,7 +631,7 @@ const ENGINE_RULES_LINES: string[] = [
   '',
   '### Pre-flight Manifest',
   '',
-  '`session_start` returns a `preflight` object (tools, skills, activePlans, vaultSummary). Read it before calling `op:admin_tool_list` — covers the same ground with zero extra round-trips.',
+  "`session_start` returns a lean `preflight` object: a `routingIndex` (one row per facade with its top intent signals — Layer 1 routing, not a full op catalog), `skillCount`, `activePlans`, and `vaultSummary` (`entryCount`, `connected`, `domains: { total, top }`). Use `routingIndex` to pick the facade your intent maps to, then call `op:admin_tool_list` on demand for that facade's full op list.",
   '',
   '### Context Compaction',
   '',
