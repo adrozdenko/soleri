@@ -23,8 +23,12 @@ type DispatchFn = (
   params: Record<string, unknown>,
 ) => Promise<{ tool: string; status: string; data?: unknown; error?: string }>;
 
-/** A vault hit returned by an injected input-vault resolver. */
-export type VaultInputHit = Record<string, unknown>;
+/**
+ * A vault hit returned by an injected input-vault resolver. Opaque to the
+ * executor — forwarded verbatim to the dispatched step — so any resolver
+ * return shape (e.g. the vault's `SearchResult[]`) is accepted.
+ */
+export type VaultInputHit = unknown;
 
 /** Resolver for `inputs.vault[]` queries — injected so the executor stays vault-agnostic. */
 export type VaultInputResolver = (
@@ -39,8 +43,10 @@ export interface FlowExecutorOptions {
    */
   workspaceRoot?: string;
   /**
-   * Resolver for `inputs.vault[]` queries. When absent, vault inputs are
-   * delivered as unresolved descriptors and never trigger on-missing-input.
+   * Resolver for `inputs.vault[]` queries. When absent, non-mandatory vault
+   * inputs are delivered as unresolved descriptors; a `mandatory: true` vault
+   * input, however, is treated as a missing input in strict mode (it cannot be
+   * satisfied without a resolver) so it can never silently vanish.
    */
   vaultSearch?: VaultInputResolver;
   /** Read declared file contents into the bundle. Default false (descriptors only). */
@@ -200,6 +206,10 @@ export class FlowExecutor {
     // --- Scoped step: build the declared bundle. ---
 
     // Files — resolve workspace-relative paths and check presence.
+    // NOTE (Phase 1 limitation): unless `readFiles` is enabled, files are
+    // delivered as descriptors (path/layer/present) WITHOUT their content — the
+    // executing agent reads the declared paths itself. Strict scoping still
+    // holds: undeclared prior outputs are withheld regardless of file content.
     const files: AssembledFile[] = (step.inputs.files ?? []).map((f) => {
       const abs = path.isAbsolute(f.path) ? f.path : path.join(this.workspaceRoot, f.path);
       const present = fs.existsSync(abs);
@@ -232,6 +242,11 @@ export class FlowExecutor {
         if (mandatory && (!hits || hits.length === 0)) {
           missing.push(`vault:${v.query}`);
         }
+      } else if (mandatory) {
+        // Safety net: a mandatory vault input cannot be satisfied without a
+        // resolver. Treat it as missing (on-missing-input applies) rather than
+        // silently dropping the requirement.
+        missing.push(`vault:${v.query}`);
       }
       vault.push(resolved);
     }

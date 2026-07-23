@@ -10,7 +10,7 @@
  *   never silently swallowing the error.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -210,10 +210,21 @@ steps:
     }
   });
 
-  it('loadAllFlows throws FlowLoadError when any flow has invalid from_steps', () => {
+  it('loadAllFlows skips an invalid flow (loudly) but still loads the rest', () => {
     writeFlow('ok.flow.yaml', validFlow);
     writeFlow('bad.flow.yaml', badFlow);
-    expect(() => loadAllFlows(tmpDir)).toThrow(FlowLoadError);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const flows = loadAllFlows(tmpDir);
+
+    // The valid flow still loads — one broken flow must not blast-radius the rest.
+    expect(flows.map((f) => f.id)).toContain('OK-flow');
+    expect(flows.map((f) => f.id)).not.toContain('BAD-flow');
+    // ...but the skip is surfaced loudly, never silent.
+    expect(errSpy).toHaveBeenCalled();
+    expect(errSpy.mock.calls.some((c) => String(c[0]).includes('BAD-flow'))).toBe(true);
+
+    errSpy.mockRestore();
   });
 
   it('loadAllFlows loads all flows when from_steps are valid', () => {

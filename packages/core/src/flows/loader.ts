@@ -101,8 +101,13 @@ export function loadFlowById(flowId: string, flowsDir: string): Flow | null {
 }
 
 /**
- * Load all valid flows from *.flow.yaml files in a directory. Malformed files
- * are skipped; a flow with invalid `inputs.from_steps` throws a FlowLoadError.
+ * Load all valid flows from *.flow.yaml files in a directory.
+ *
+ * Resilient by design: this is called on hot routing/planning/boot paths, so a
+ * single broken flow must NOT take down loading of every other flow. Malformed
+ * files are skipped; a flow with invalid `inputs.from_steps` is skipped too,
+ * but with a LOUD per-file error on stderr (never silent). Callers that need to
+ * hard-fail on a specific broken flow use `loadFlowById`, which throws.
  */
 export function loadAllFlows(flowsDir: string): Flow[] {
   if (!existsSync(flowsDir)) return [];
@@ -124,7 +129,13 @@ export function loadAllFlows(flowsDir: string): Flow[] {
     }
     if (!flow) continue;
     const errors = validateFlowInputs(flow);
-    if (errors.length > 0) throw new FlowLoadError(flow.id, errors);
+    if (errors.length > 0) {
+      // Skip the invalid flow but surface it loudly — the rest still load.
+      console.error(
+        `[soleri] Skipping flow "${flow.id}" (${file}) — invalid inputs.from_steps:\n  - ${errors.join('\n  - ')}`,
+      );
+      continue;
+    }
     flows.push(flow);
   }
   return flows;

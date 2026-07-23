@@ -34,6 +34,13 @@ steps:
     chains:
       - vault-search
       - memory-search
+    # Entry step: declares its Layer 3 reference need so it is scoped (no
+    # unscoped-step warning). No from_steps — nothing has run yet.
+    inputs:
+      vault:
+        - query: 'patterns, anti-patterns, and previous plans for the feature'
+          limit: 5
+          mandatory: false
     output:
       - vault-patterns
       - memory-hits

@@ -454,6 +454,44 @@ describe('FlowExecutor', () => {
       expect(result.warnings.some((w) => w.includes('vault:x'))).toBe(true);
     });
 
+    it('a mandatory vault input with NO resolver wired is treated as missing (never silently dropped)', async () => {
+      const dispatch = vi.fn(async (tool: string) => ({ tool, status: 'ok', data: {} }));
+      // No vaultSearch resolver — mirrors a production executor without vault wiring.
+      const executor = new FlowExecutor(dispatch);
+      const plan = makePlan([
+        step('s1', ['t1'], { inputs: { vault: [{ query: 'x', mandatory: true }] } }),
+        step('s2', ['t2']),
+      ]);
+
+      const result = await executor.execute(plan);
+
+      // Default on-missing-input=fail: the step fails, the tool never dispatches.
+      expect(result.status).toBe('partial');
+      expect(result.stepResults[0].status).toBe('failed');
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(result.warnings.some((w) => w.includes('vault:x'))).toBe(true);
+    });
+
+    it('a non-mandatory vault input with NO resolver is delivered as an unresolved descriptor', async () => {
+      const received: Array<Record<string, unknown>> = [];
+      const dispatch = vi.fn(async (tool: string, params: Record<string, unknown>) => {
+        received.push({ inputs: params.inputs });
+        return { tool, status: 'ok', data: {} };
+      });
+      const executor = new FlowExecutor(dispatch);
+      const plan = makePlan([
+        step('s1', ['t1'], { inputs: { vault: [{ query: 'x', mandatory: false }] } }),
+      ]);
+
+      const result = await executor.execute(plan);
+
+      // Non-mandatory + no resolver: not a failure, descriptor passed through unresolved.
+      expect(result.stepResults[0].status).toBe('passed');
+      const inputs = received[0].inputs as { vault: Array<{ query: string; hits?: unknown }> };
+      expect(inputs.vault[0]).toMatchObject({ query: 'x', mandatory: false });
+      expect(inputs.vault[0].hits).toBeUndefined();
+    });
+
     it('advisory mode: delivers full context despite scoped inputs, with a warning', async () => {
       const received: Array<Record<string, unknown>> = [];
       const dispatch = vi.fn(async (tool: string, params: Record<string, unknown>) => {
