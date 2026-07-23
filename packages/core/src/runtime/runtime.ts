@@ -33,6 +33,7 @@ import { Telemetry } from '../telemetry/telemetry.js';
 import { ProjectRegistry } from '../project/project-registry.js';
 import { TemplateManager } from '../prompts/template-manager.js';
 import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { syncAllToMarkdown } from '../vault/vault-markdown-sync.js';
 import { agentKnowledgeDir as getAgentKnowledgeDir } from '../paths.js';
 import { createLogger } from '../logging/logger.js';
@@ -111,8 +112,15 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
   // Feature Flags — file-based + env var + runtime toggles (created early so other modules can check)
   const flags = new FeatureFlags(getAgentFlagsPath(agentId));
 
-  // Planner — multi-step task tracking
-  const planner = new Planner(plansPath);
+  // Planner — multi-step task tracking. Canonical plan files (`<id>.md` +
+  // `<id>.data.json`) live at `<projectPath>/plans/` so they are Git-versioned
+  // and diffable in the project tree (ICM Addendum 2B); the store above stays a
+  // derived cache. Falls back beside the cache (agent-home) when no projectPath
+  // is resolvable.
+  const planner = new Planner(
+    plansPath,
+    config.projectPath ? { plansDir: join(config.projectPath, 'plans') } : undefined,
+  );
 
   // ─── Embedding Provider (optional) ────────────────────────────────
   // Only initialized when both config.embedding is present AND the

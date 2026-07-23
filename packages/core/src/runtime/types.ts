@@ -64,8 +64,15 @@ export interface AgentRuntimeConfig {
   agentId: string;
   /** Path to vault database. Default: ~/.soleri/{agentId}/vault.db */
   vaultPath?: string;
-  /** Path to plans JSON store. Default: ~/.soleri/{agentId}/plans.json */
+  /** Path to plans JSON store (derived cache). Default: ~/.soleri/{agentId}/plans.json */
   plansPath?: string;
+  /**
+   * Project working-tree root. When set, canonical plan files live at
+   * `<projectPath>/plans/` (Git-versioned, diffable — ICM Addendum 2B) while the
+   * JSON store above remains a derived cache. When unset, plans fall back beside
+   * the JSON store (agent-home). The engine binary passes the project cwd.
+   */
+  projectPath?: string;
   /** Intelligence data directory to seed vault from. Optional. */
   dataDir?: string;
   /** Path to prompt templates directory. Default: ~/.soleri/{agentId}/templates */

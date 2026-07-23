@@ -15,7 +15,13 @@ import {
 import { dirname, join, basename, extname } from 'node:path';
 import { runGapAnalysis } from './gap-analysis.js';
 import type { GapAnalysisOptions } from './gap-analysis.js';
-import { serializePlan, parsePlan, buildPlansIndex, PLAN_STORE_VERSION } from './plan-markdown.js';
+import {
+  serializePlan,
+  parsePlan,
+  buildPlansIndex,
+  PLAN_STORE_VERSION,
+  type PlanSidecar,
+} from './plan-markdown.js';
 export * from './plan-lifecycle.js';
 export * from './reconciliation-engine.js';
 export * from './task-verifier.js';
@@ -62,13 +68,15 @@ import {
 export class Planner {
   private filePath: string;
   /**
-   * Directory holding the canonical per-plan `.md` source files. Derived from
-   * the store filename stem so it stays in the store the planner already owns
-   * (the runtime passes only `filePath`) AND is isolated per store file — two
-   * planners sharing a parent directory but different store filenames get
-   * distinct `.md` folders. For the production `plans.json` path this resolves
-   * to the ruling's canonical `plans/<planId>.md`. The JSON blob at `filePath`
-   * is now a rebuildable cache derived from this `.md` set.
+   * Directory holding the canonical per-plan pair (`<id>.md` + `<id>.data.json`).
+   * Resolved from `options.plansDir` when provided — the runtime passes
+   * `<projectPath>/plans` so plans live at the project working-tree root,
+   * Git-versioned and diffable (ICM Addendum 2B). When absent it falls back to
+   * the store filename stem beside the JSON cache, which keeps it isolated per
+   * store file (two planners sharing a parent dir but different store filenames
+   * get distinct folders) and yields the canonical `plans/` for a `plans.json`
+   * store. The JSON blob at `filePath` is a rebuildable cache derived from the
+   * `.md`/`.data.json` set.
    */
   private plansDir: string;
   private store: PlanStore;
@@ -80,22 +88,25 @@ export class Planner {
 
   constructor(filePath: string, options?: GapAnalysisOptions | PlannerOptions) {
     this.filePath = filePath;
-    this.plansDir = join(dirname(filePath), basename(filePath, extname(filePath)));
+    const defaultPlansDir = join(dirname(filePath), basename(filePath, extname(filePath)));
     if (
       options &&
       ('minGradeForApproval' in options ||
         'executingTtlMs' in options ||
         'draftTtlMs' in options ||
         'gapOptions' in options ||
-        'gradeMinTaskCount' in options)
+        'gradeMinTaskCount' in options ||
+        'plansDir' in options)
     ) {
       const opts = options as PlannerOptions;
+      this.plansDir = opts.plansDir ?? defaultPlansDir;
       this.gapOptions = opts.gapOptions;
       this.minGradeForApproval = opts.minGradeForApproval ?? 'A';
       this.executingTtlMs = opts.executingTtlMs ?? 24 * 60 * 60 * 1000;
       this.draftTtlMs = opts.draftTtlMs ?? 30 * 60 * 1000;
       this.gradeMinTaskCount = opts.gradeMinTaskCount ?? 5;
     } else {
+      this.plansDir = defaultPlansDir;
       this.gapOptions = options as GapAnalysisOptions | undefined;
       this.minGradeForApproval = 'A';
       this.executingTtlMs = 24 * 60 * 60 * 1000;
@@ -151,20 +162,48 @@ export class Planner {
     }
   }
 
-  /** List canonical plan `.md` files with their mtimes (excludes README.md). */
+  /** Absolute path to a plan's Markdown edit surface. */
+  private mdPath(planId: string): string {
+    return join(this.plansDir, `${planId}.md`);
+  }
+
+  /** Absolute path to a plan's machine-state sidecar. */
+  private dataPath(planId: string): string {
+    return join(this.plansDir, `${planId}.data.json`);
+  }
+
+  /**
+   * List canonical plan `.md` files with the newest mtime of the pair
+   * (`.md` or its `.data.json` sidecar). Excludes README.md and the sidecars.
+   */
   private listMarkdownFiles(): Array<{ path: string; id: string; mtimeMs: number }> {
     if (!existsSync(this.plansDir)) return [];
     const files: Array<{ path: string; id: string; mtimeMs: number }> = [];
     for (const name of readdirSync(this.plansDir)) {
       if (!name.endsWith('.md') || name === 'README.md') continue;
       const path = join(this.plansDir, name);
+      const id = name.slice(0, -3);
       try {
-        files.push({ path, id: name.slice(0, -3), mtimeMs: statSync(path).mtimeMs });
+        let mtimeMs = statSync(path).mtimeMs;
+        const dataPath = this.dataPath(id);
+        if (existsSync(dataPath)) mtimeMs = Math.max(mtimeMs, statSync(dataPath).mtimeMs);
+        files.push({ path, id, mtimeMs });
       } catch {
         // Skip files that vanish between readdir and stat.
       }
     }
     return files;
+  }
+
+  /** Read and parse a plan's `.data.json` sidecar; null when absent/unreadable. */
+  private readSidecar(planId: string): PlanSidecar | null {
+    const dataPath = this.dataPath(planId);
+    if (!existsSync(dataPath)) return null;
+    try {
+      return JSON.parse(readFileSync(dataPath, 'utf-8')) as PlanSidecar;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -196,7 +235,7 @@ export class Planner {
     if (json) for (const plan of json.plans) merged.set(plan.id, plan);
     for (const file of mdFiles) {
       try {
-        const plan = parsePlan(readFileSync(file.path, 'utf-8'));
+        const plan = parsePlan(readFileSync(file.path, 'utf-8'), this.readSidecar(file.id));
         merged.set(plan.id, plan);
       } catch {
         // Skip an unparseable `.md`; the cache retains the plan if it has one.
@@ -246,37 +285,50 @@ export class Planner {
     };
   }
 
+  /** Write `content` to `path` only when it differs from what is on disk. */
+  private writeIfChanged(path: string, content: string): void {
+    if (existsSync(path)) {
+      try {
+        if (readFileSync(path, 'utf-8') === content) return;
+      } catch {
+        // Fall through and rewrite.
+      }
+    }
+    writeFileSync(path, content, 'utf-8');
+  }
+
+  /** Remove a file if it exists (best-effort). */
+  private removeIfPresent(path: string): void {
+    if (existsSync(path)) {
+      try {
+        unlinkSync(path);
+      } catch {
+        // Best-effort removal.
+      }
+    }
+  }
+
   /**
-   * Write the canonical `.md` source files first, then regenerate the derived
-   * JSON cache and the `plans/README.md` index from the same store. Per-plan
-   * content dedup preserves file mtimes (and Git blame) when a plan is unchanged.
+   * Write the canonical pair (`<id>.md` edit surface + `<id>.data.json` machine
+   * sidecar) for each plan, then regenerate the derived JSON cache and the
+   * `plans/README.md` index from the same store. Per-file content dedup preserves
+   * mtimes (and Git blame) when a plan is unchanged. A plan with no machine state
+   * writes no sidecar (and any stale sidecar is removed).
    */
   private persistStore(store: PlanStore, deletedPlanIds: string[] = []): void {
     mkdirSync(dirname(this.filePath), { recursive: true });
     mkdirSync(this.plansDir, { recursive: true });
 
     for (const plan of store.plans) {
-      const mdPath = join(this.plansDir, `${plan.id}.md`);
-      const content = serializePlan(plan);
-      if (existsSync(mdPath)) {
-        try {
-          if (readFileSync(mdPath, 'utf-8') === content) continue;
-        } catch {
-          // Fall through and rewrite.
-        }
-      }
-      writeFileSync(mdPath, content, 'utf-8');
+      const { markdown, data } = serializePlan(plan);
+      this.writeIfChanged(this.mdPath(plan.id), markdown);
+      if (data) this.writeIfChanged(this.dataPath(plan.id), JSON.stringify(data, null, 2));
+      else this.removeIfPresent(this.dataPath(plan.id));
     }
 
     for (const id of deletedPlanIds) {
-      const mdPath = join(this.plansDir, `${id}.md`);
-      if (existsSync(mdPath)) {
-        try {
-          unlinkSync(mdPath);
-        } catch {
-          // Best-effort removal.
-        }
-      }
+      this.removeIfPresent(this.mdPath(id));
+      this.removeIfPresent(this.dataPath(id));
     }
 
     // Regenerate the derived cache and index from the canonical `.md` set.

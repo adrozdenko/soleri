@@ -112,6 +112,10 @@ async function main(): Promise<void> {
     agentId,
     vaultPath,
     agentDir,
+    // Project working-tree root: the engine is launched from the project dir, so
+    // its cwd is the project. Plans are written to `<cwd>/plans/` so they are
+    // Git-versioned and diffable in the repo (ICM Addendum 2B).
+    projectPath: process.cwd(),
     persona: personaConfig as import('../../persona/types.js').PersonaConfig | undefined,
     embedding: embeddingConfig,
   });

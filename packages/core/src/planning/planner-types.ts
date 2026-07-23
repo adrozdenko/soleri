@@ -293,6 +293,13 @@ export interface CompositionRule {
 
 export interface PlannerOptions {
   gapOptions?: GapAnalysisOptions;
+  /**
+   * Directory for the canonical per-plan Markdown pair (`<id>.md` +
+   * `<id>.data.json`). The runtime resolves this to `<projectPath>/plans` so
+   * plans live at the project working-tree root (Git-versioned, diffable). When
+   * omitted, it defaults to the store filename stem beside the JSON cache path.
+   */
+  plansDir?: string;
   /** Minimum grade required for plan approval. Default: 'A'. Set to undefined to disable. */
   minGradeForApproval?: PlanGrade;
   /** TTL in ms for executing/validating/reconciling plans in closeStale(). Default: 24h (86400000). */
