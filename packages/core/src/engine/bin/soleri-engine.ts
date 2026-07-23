@@ -108,10 +108,17 @@ async function main(): Promise<void> {
   const embeddingConfig = config.embedding as
     | import('../../embeddings/types.js').EmbeddingConfig
     | undefined;
+  // Treat cwd as the project working-tree root only when it carries a project
+  // marker (.git or agent.yaml). Then plans live at `<cwd>/plans/`, Git-versioned
+  // and diffable (ICM Addendum 2B). Running from a non-project dir (e.g. ~) omits
+  // projectPath so the planner falls back to its agent-home default.
+  const engineCwd = process.cwd();
+  const isProjectCwd = existsSync(join(engineCwd, '.git')) || isAgentProjectDir(engineCwd);
   const runtime = createAgentRuntime({
     agentId,
     vaultPath,
     agentDir,
+    ...(isProjectCwd && { projectPath: engineCwd }),
     persona: personaConfig as import('../../persona/types.js').PersonaConfig | undefined,
     embedding: embeddingConfig,
   });

@@ -33,6 +33,7 @@ import { Telemetry } from '../telemetry/telemetry.js';
 import { ProjectRegistry } from '../project/project-registry.js';
 import { TemplateManager } from '../prompts/template-manager.js';
 import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { syncAllToMarkdown } from '../vault/vault-markdown-sync.js';
 import { agentKnowledgeDir as getAgentKnowledgeDir } from '../paths.js';
 import { createLogger } from '../logging/logger.js';
@@ -114,9 +115,14 @@ export function createAgentRuntime(config: AgentRuntimeConfig): AgentRuntime {
 
   // Planner — multi-step task tracking. Resolve the plan-approval ceremony from
   // agent.yaml (same config path as autoOps); absent resolves to 'full' so
-  // pre-ceremony agents keep two-gate behavior.
+  // pre-ceremony agents keep two-gate behavior. Canonical plan files (`<id>.md`
+  // + `<id>.data.json`) live at `<projectPath>/plans/` so they are Git-versioned
+  // and diffable in the project tree (ICM Addendum 2B); the JSON store stays a
+  // derived cache and the agent-home path is the fallback when no projectPath
+  // is resolvable.
   const planner = new Planner(plansPath, {
     ceremony: resolveCeremony(loadAgentConfig(config.agentDir ?? '')),
+    ...(config.projectPath ? { plansDir: join(config.projectPath, 'plans') } : {}),
   });
 
   // ─── Embedding Provider (optional) ────────────────────────────────
