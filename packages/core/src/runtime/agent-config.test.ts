@@ -6,7 +6,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { loadAgentConfig, DEFAULT_AGENT_CONFIG, resolveAutoOpsConfig } from './agent-config.js';
+import {
+  loadAgentConfig,
+  DEFAULT_AGENT_CONFIG,
+  resolveAutoOpsConfig,
+  resolveCeremony,
+  CEREMONY_VALUES,
+} from './agent-config.js';
 
 describe('loadAgentConfig', () => {
   let tempDir: string;
@@ -126,6 +132,44 @@ describe('resolveAutoOpsConfig', () => {
       captureSessions: false,
       editSourceLoop: true,
     });
+  });
+});
+
+describe('resolveCeremony', () => {
+  it('resolves an absent field to full (backward compat — no silent behavior change)', () => {
+    expect(resolveCeremony({})).toBe('full');
+    expect(resolveCeremony({ engine: {} })).toBe('full');
+    expect(resolveCeremony({ engine: { autoOps: { dream: true } } })).toBe('full');
+  });
+
+  it('preserves each explicit regime', () => {
+    expect(resolveCeremony({ engine: { ceremony: 'full' } })).toBe('full');
+    expect(resolveCeremony({ engine: { ceremony: 'light' } })).toBe('light');
+    expect(resolveCeremony({ engine: { ceremony: 'off' } })).toBe('off');
+  });
+
+  it('falls back to full for an unrecognized value', () => {
+    // A hand-edited agent.yaml could carry a typo — resolve defensively.
+    expect(resolveCeremony({ engine: { ceremony: 'lite' as never } })).toBe('full');
+  });
+
+  it('parses engine.ceremony from a loaded agent.yaml', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'soleri-ceremony-test-'));
+    try {
+      writeFileSync(join(tempDir, 'agent.yaml'), 'id: ernesto\nengine:\n  ceremony: light\n');
+      const config = loadAgentConfig(tempDir);
+      expect(config.engine?.ceremony).toBe('light');
+      expect(resolveCeremony(config)).toBe('light');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('lockstep guard: CEREMONY_VALUES is exactly the canonical set (core side)', () => {
+    // Pins the core declaration. The forge side (shared-rules array + Zod enum)
+    // is pinned in packages/forge/src/__tests__/agent-schema.test.ts; the CLI
+    // union is guarded by tsc. Adding a 4th value in core fails here.
+    expect(CEREMONY_VALUES).toEqual(['full', 'light', 'off']);
   });
 });
 

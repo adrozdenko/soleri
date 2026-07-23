@@ -1,5 +1,5 @@
 import type { AgentConfig } from '../types.js';
-import { getEngineRulesContent } from './shared-rules.js';
+import { getEngineRulesContent, type Ceremony } from './shared-rules.js';
 
 /**
  * Generate AGENTS.md content for OpenCode (primary host).
@@ -12,8 +12,13 @@ import { getEngineRulesContent } from './shared-rules.js';
  *   3. Engine rules (vault-first, planning, output formatting, etc.)
  *   4. Session start protocol
  *   5. Skills reference
+ *
+ * @param ceremony - Resolved plan-approval regime for this agent. Renders the
+ *                   matching gate rules in the embedded engine section so
+ *                   AGENTS.md (Codex/OpenCode's primary file) documents the same
+ *                   regime as _engine.md. Defaults to `full` (backward compatible).
  */
-export function generateAgentsMd(config: AgentConfig): string {
+export function generateAgentsMd(config: AgentConfig, ceremony: Ceremony = 'full'): string {
   const bt = '`';
   const tp = config.id; // tool prefix
   const principles = config.principles.map((p) => `- ${p}`).join('\n');
@@ -28,7 +33,7 @@ export function generateAgentsMd(config: AgentConfig): string {
     .join('\n');
 
   // ─── Engine rules (strip markers — AGENTS.md embeds them inline) ───
-  const engineRules = getEngineRulesContent()
+  const engineRules = getEngineRulesContent(ceremony)
     .replace(/<!-- soleri:engine-rules -->\n?/, '')
     .replace(/<!-- \/soleri:engine-rules -->\n?/, '')
     .trim();

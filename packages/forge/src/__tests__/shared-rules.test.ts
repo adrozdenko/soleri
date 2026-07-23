@@ -166,4 +166,65 @@ describe('shared-rules', () => {
       expect(vaultOnly.length).toBeLessThan(full.length * EXPECTED_MAX_RATIO);
     });
   });
+
+  describe('ceremony-conditional rendering', () => {
+    const SENTINEL = '<!-- soleri:ceremony-rules -->';
+
+    it('never leaks the ceremony sentinel into output, in any regime', () => {
+      expect(getEngineRulesContent()).not.toContain(SENTINEL);
+      expect(getEngineRulesContent('full')).not.toContain(SENTINEL);
+      expect(getEngineRulesContent('light')).not.toContain(SENTINEL);
+      expect(getEngineRulesContent('off')).not.toContain(SENTINEL);
+      expect(getModularEngineRules(['planning'], 'light')).not.toContain(SENTINEL);
+    });
+
+    it('defaults to full (two-gate) when ceremony is omitted', () => {
+      const rendered = getEngineRulesContent();
+      expect(rendered).toContain('Two-gate approval (`ceremony: full`)');
+      expect(rendered).toContain('Gate 1 (`op:approve_plan`), Gate 2 (`op:plan_split`)');
+    });
+
+    it('renders the two-gate rules for full', () => {
+      const rendered = getEngineRulesContent('full');
+      expect(rendered).toContain('Two-gate approval (`ceremony: full`)');
+      expect(rendered).not.toContain('Single-gate approval');
+      expect(rendered).not.toContain('No approval gates');
+    });
+
+    it('renders single-gate auto-approve rules for light', () => {
+      const rendered = getEngineRulesContent('light');
+      expect(rendered).toContain('Single-gate approval (`ceremony: light`)');
+      expect(rendered).toContain('auto-approves when the grade gate passes');
+      expect(rendered).toContain(
+        'Gate 2 (`op:plan_split`) remains the ONE explicit human touchpoint',
+      );
+      expect(rendered).not.toContain('Two-gate approval');
+      expect(rendered).not.toContain('No approval gates');
+    });
+
+    it('renders no-gate rules for off, but keeps capture explicit', () => {
+      const rendered = getEngineRulesContent('off');
+      expect(rendered).toContain('No approval gates (`ceremony: off`)');
+      expect(rendered).toContain('plans execute immediately');
+      expect(rendered).toContain('Ceremony governs gates, never capture');
+      expect(rendered).toContain('op:orchestrate_complete');
+      expect(rendered).not.toContain('Two-gate approval');
+      expect(rendered).not.toContain('Single-gate approval');
+    });
+
+    it('threads ceremony through getModularEngineRules when planning is included', () => {
+      const rendered = getModularEngineRules(['planning'], 'off');
+      expect(rendered).toContain('## Planning');
+      expect(rendered).toContain('No approval gates (`ceremony: off`)');
+    });
+
+    it('omits the ceremony block entirely when the planning module is filtered out', () => {
+      // The sentinel lives inside the Planning section, so a vault-only build
+      // carries no ceremony rules regardless of the requested regime.
+      const rendered = getModularEngineRules(['vault'], 'light');
+      expect(rendered).not.toContain('## Planning');
+      expect(rendered).not.toContain('Single-gate approval');
+      expect(rendered).not.toContain(SENTINEL);
+    });
+  });
 });

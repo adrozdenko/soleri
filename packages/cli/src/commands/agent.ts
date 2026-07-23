@@ -48,6 +48,23 @@ function readEngineFeatures(agentPath: string): EngineFeature[] | undefined {
   }
 }
 
+/**
+ * Read engine.ceremony from agent.yaml at the given agent path.
+ * Returns undefined if not specified — getModularEngineRules then falls back to
+ * `full`, so regenerated _engine.md matches the agent's actual gate regime
+ * (e.g. a scaffolded `ceremony: light` agent keeps its light gate rules).
+ */
+export function readEngineCeremony(agentPath: string): 'full' | 'light' | 'off' | undefined {
+  try {
+    const yamlPath = join(agentPath, 'agent.yaml');
+    if (!existsSync(yamlPath)) return undefined;
+    const parsed = AgentYamlSchema.parse(parseYaml(readFileSync(yamlPath, 'utf-8')));
+    return parsed.engine?.ceremony;
+  } catch {
+    return undefined;
+  }
+}
+
 function readFileTreeAgentConfig(agentPath: string): AgentConfig | null {
   try {
     const yamlPath = join(agentPath, 'agent.yaml');
@@ -321,7 +338,10 @@ export function registerAgent(program: Command): void {
         mkdirSync(join(ctx.agentPath, 'instructions'), { recursive: true });
         writeFileSync(
           enginePath,
-          getModularEngineRules(readEngineFeatures(ctx.agentPath)),
+          getModularEngineRules(
+            readEngineFeatures(ctx.agentPath),
+            readEngineCeremony(ctx.agentPath),
+          ),
           'utf-8',
         );
         p.log.success(`Regenerated ${enginePath}`);
@@ -495,7 +515,10 @@ export function registerAgent(program: Command): void {
         mkdirSync(join(ctx.agentPath, 'instructions'), { recursive: true });
         writeFileSync(
           enginePath,
-          getModularEngineRules(readEngineFeatures(ctx.agentPath)),
+          getModularEngineRules(
+            readEngineFeatures(ctx.agentPath),
+            readEngineCeremony(ctx.agentPath),
+          ),
           'utf-8',
         );
         p.log.success(`Regenerated ${enginePath}`);
@@ -507,8 +530,9 @@ export function registerAgent(program: Command): void {
           `Regenerated ${claudeMdPath} (${result.sources.length} sources, ${result.content.length} bytes)`,
         );
 
-        // 4. Regenerate AGENTS.md for Codex/OpenCode
-        const agentsMd = generateAgentsMd(config);
+        // 4. Regenerate AGENTS.md for Codex/OpenCode — thread ceremony so the
+        //    embedded engine rules match _engine.md (and the agent's regime).
+        const agentsMd = generateAgentsMd(config, readEngineCeremony(ctx.agentPath));
         writeFileSync(agentsMdPath, agentsMd, 'utf-8');
         p.log.success(`Regenerated ${agentsMdPath} (${agentsMd.length} bytes)`);
         return;

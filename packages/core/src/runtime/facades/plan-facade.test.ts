@@ -710,4 +710,123 @@ describe('plan-facade', () => {
     const result = planner.closeStale();
     expect(result.closedPlans).toHaveLength(0);
   });
+
+  // ─── plan_grade: ceremony: light auto-approval (Gate 1 collapse) ──
+
+  describe('plan_grade under ceremony: light', () => {
+    function makeLightOps(gradeMinTaskCount?: number): Map<string, CapturedOp> {
+      const brain = new Brain(vault);
+      const plansPath = join(
+        tmpdir(),
+        `plan-light-${Date.now()}-${Math.random().toString(36).slice(2)}.json`,
+      );
+      const planner = new Planner(
+        plansPath,
+        gradeMinTaskCount !== undefined
+          ? { ceremony: 'light', gradeMinTaskCount }
+          : { ceremony: 'light' },
+      );
+      const runtime = {
+        vault,
+        planner,
+        brain,
+        brainIntelligence: new BrainIntelligence(vault, brain),
+        curator: new Curator(vault, brain),
+        linkManager: null,
+        chainRunner: new ChainRunner(vault.getProvider()),
+      } as unknown as AgentRuntime;
+      return captureOps(createPlanFacadeOps(runtime));
+    }
+
+    it('auto-approves a passing plan (draft→approved) so split is the only human touchpoint', async () => {
+      const lightOps = makeLightOps();
+      const createRes = await executeOp(lightOps, 'create_plan', {
+        objective: 'Implement a Redis caching layer for the API to reduce DB load by 50%',
+        scope: 'Backend API services only. Does not include frontend caching or CDN.',
+        decisions: [
+          'Use Redis because it provides sub-millisecond latency and supports TTL natively',
+          'Set TTL to 5 minutes since average data freshness requirement is 10 minutes',
+        ],
+        tasks: [
+          {
+            title: 'Set up Redis client',
+            description: 'Install and configure Redis connection pool',
+          },
+          {
+            title: 'Add cache middleware',
+            description: 'Express middleware for transparent caching',
+          },
+          {
+            title: 'Add invalidation logic',
+            description: 'Purge cache on write to keep consistency',
+          },
+          {
+            title: 'Write integration tests',
+            description: 'Test cache hit/miss scenarios with Redis',
+          },
+          { title: 'Add monitoring', description: 'Track and verify cache hit rate metrics' },
+        ],
+        alternatives: [
+          {
+            approach: 'In-memory LRU',
+            pros: ['simple'],
+            cons: ['not shared'],
+            rejected_reason: 'no cross-instance sharing',
+          },
+          {
+            approach: 'CDN caching',
+            pros: ['edge'],
+            cons: ['stale'],
+            rejected_reason: 'wrong layer for API data',
+          },
+        ],
+      });
+      const planId = ((createRes.data as Record<string, unknown>).plan as Record<string, unknown>)
+        .id as string;
+
+      const gradeRes = await executeOp(lightOps, 'plan_grade', { planId });
+      expect(gradeRes.success).toBe(true);
+      const data = gradeRes.data as {
+        score: number;
+        autoApproved?: boolean;
+        planStatus?: string;
+        ceremony?: string;
+      };
+      expect(data.score).toBeGreaterThanOrEqual(90);
+      expect(data.ceremony).toBe('light');
+      expect(data.autoApproved).toBe(true);
+      expect(data.planStatus).toBe('approved');
+
+      const planRes = await executeOp(lightOps, 'get_plan', { planId });
+      expect((planRes.data as Record<string, unknown>).status).toBe('approved');
+    });
+
+    it('leaves a failing plan in draft with a needs-approval signal (never crashes grading)', async () => {
+      // gradeMinTaskCount: 0 keeps the grade gate live for a minimal plan.
+      const lightOps = makeLightOps(0);
+      const createRes = await executeOp(lightOps, 'create_plan', {
+        objective: 'Bad plan',
+        scope: 'x',
+      });
+      const planId = ((createRes.data as Record<string, unknown>).plan as Record<string, unknown>)
+        .id as string;
+
+      const gradeRes = await executeOp(lightOps, 'plan_grade', { planId });
+      // Must not crash plan creation/grading.
+      expect(gradeRes.success).toBe(true);
+      const data = gradeRes.data as {
+        score: number;
+        autoApproved?: boolean;
+        planStatus?: string;
+        needsApproval?: boolean;
+      };
+      expect(data.score).toBeLessThan(90);
+      expect(data.autoApproved).toBe(false);
+      expect(data.needsApproval).toBe(true);
+      expect(data.planStatus).toBe('draft');
+
+      const planRes = await executeOp(lightOps, 'get_plan', { planId });
+      expect((planRes.data as Record<string, unknown>).status).toBe('draft');
+    });
+  });
 });

@@ -17,9 +17,65 @@ export function getEngineMarker(): string {
   return ENGINE_MARKER;
 }
 
-/** Returns the full engine rules markdown content (with markers). */
-export function getEngineRulesContent(): string {
-  return ENGINE_RULES_LINES.join('\n');
+// ─── Ceremony (plan-approval regime) ─────────────────────────────────
+
+/**
+ * Plan-approval ceremony regime. Mirrors the core `Ceremony` type
+ * (`packages/core/src/runtime/agent-config.ts`). Declared locally so this
+ * template file stays free of cross-package imports.
+ *
+ * The type is derived from `CEREMONY_VALUES` so the runtime array and the type
+ * union can never drift — the array is the single forge-side source, consumed
+ * by the Zod schema (`agent-schema.ts`) and asserted by the lockstep guard test.
+ */
+export const CEREMONY_VALUES = ['full', 'light', 'off'] as const;
+export type Ceremony = (typeof CEREMONY_VALUES)[number];
+
+/**
+ * Placeholder embedded in the Planning section. Replaced at render time with
+ * the gate rules for the resolved ceremony so the generated CLAUDE.md documents
+ * the regime the engine actually enforces. Not a section marker — it is
+ * substituted before section parsing runs, so it never survives into output.
+ */
+const CEREMONY_RULES_SENTINEL = '<!-- soleri:ceremony-rules -->';
+
+/** Ceremony-specific Planning gate rules (bullet lines), by regime. */
+function getCeremonyRulesBlock(ceremony: Ceremony): string {
+  switch (ceremony) {
+    case 'light':
+      return [
+        '- Single-gate approval (`ceremony: light`): Gate 1 (`op:approve_plan`) auto-approves when the grade gate passes (or the plan is below the task-count threshold) — no explicit "yes" is required for it. Gate 2 (`op:plan_split`) remains the ONE explicit human touchpoint; wait for the user\'s "yes" before splitting.',
+        '- The grade gate is still enforced at/above the task-count threshold: a failing plan is never auto-approved — iterate (`op:plan_iterate`) and re-grade first.',
+      ].join('\n');
+    case 'off':
+      return [
+        '- No approval gates (`ceremony: off`): plans execute immediately after creation. No `op:approve_plan` / `op:plan_split` "yes" is required, and the grade gate is not enforced.',
+        '- Ceremony governs gates, never capture: `op:plan_reconcile` and `op:orchestrate_complete` (knowledge capture, reconciliation record-writing) STILL run. Always complete the plan.',
+      ].join('\n');
+    case 'full':
+    default:
+      return [
+        '- Two-gate approval (`ceremony: full`): Gate 1 (`op:approve_plan`), Gate 2 (`op:plan_split`). Never skip either — wait for an explicit "yes" / "approve" before proceeding past each gate.',
+        '- The grade gate is enforced: plans must grade A or higher before approval (subject to the task-count threshold).',
+      ].join('\n');
+  }
+}
+
+/** Replace the ceremony sentinel with the gate rules for the resolved regime. */
+function renderCeremony(content: string, ceremony: Ceremony): string {
+  return content.replace(CEREMONY_RULES_SENTINEL, getCeremonyRulesBlock(ceremony));
+}
+
+/**
+ * Returns the full engine rules markdown content (with markers).
+ *
+ * @param ceremony - Resolved plan-approval regime. Renders the matching gate
+ *                   rules in the Planning section. Defaults to `full` — the
+ *                   backward-compatible regime used for the shared global
+ *                   injection (per-agent `_engine.md` passes the agent's value).
+ */
+export function getEngineRulesContent(ceremony: Ceremony = 'full'): string {
+  return renderCeremony(ENGINE_RULES_LINES.join('\n'), ceremony);
 }
 
 // ─── Modular Engine Rules ────────────────────────────────────────────
@@ -83,10 +139,16 @@ const MODULE_SECTIONS: Record<'core' | EngineFeature, readonly string[]> = {
  * - `features` is specified → only listed modules + core
  *
  * @param features - Feature modules to include. Omit for all.
+ * @param ceremony - Resolved plan-approval regime for this agent. Renders the
+ *                   matching gate rules. Defaults to `full` (backward compatible)
+ *                   so callers that do not thread ceremony keep two-gate rules.
  */
-export function getModularEngineRules(features?: EngineFeature[]): string {
+export function getModularEngineRules(
+  features?: EngineFeature[],
+  ceremony: Ceremony = 'full',
+): string {
   if (!features || features.length === 0) {
-    return getEngineRulesContent();
+    return getEngineRulesContent(ceremony);
   }
 
   const allowedMarkers = new Set<string>(MODULE_SECTIONS.core);
@@ -95,7 +157,7 @@ export function getModularEngineRules(features?: EngineFeature[]): string {
     if (sections) for (const m of sections) allowedMarkers.add(m);
   }
 
-  const parsed = parseSections(getEngineRulesContent());
+  const parsed = parseSections(getEngineRulesContent(ceremony));
   return filterSections(parsed, allowedMarkers);
 }
 
@@ -218,8 +280,9 @@ const ENGINE_RULES_LINES: string[] = [
   '<!-- soleri:planning -->',
   '',
   '- For complex tasks, use `op:create_plan` before writing code. Simple tasks can execute directly — but always run `op:orchestrate_complete`.',
-  '- Two-gate approval: Gate 1 (`op:approve_plan`), Gate 2 (`op:plan_split`). Never skip either.',
-  '- Wait for explicit "yes" / "approve" before proceeding past each gate.',
+  // Replaced at render time with the gate rules for the agent's resolved
+  // `engine.ceremony` (full | light | off). See getCeremonyRulesBlock.
+  CEREMONY_RULES_SENTINEL,
   '- After execution: `op:plan_reconcile` (drift report) then `op:plan_complete_lifecycle` (knowledge capture, archive).',
   '- Never let a plan stay in `executing` or `reconciling` state without reminding the user.',
   '- On session start: check for plans in `executing`/`reconciling` state and remind.',
@@ -229,7 +292,7 @@ const ENGINE_RULES_LINES: string[] = [
   '',
   '### Grade Gate',
   '',
-  '**MANDATORY**: Plans must grade **A or higher** before approval. The engine enforces this programmatically.',
+  '**MANDATORY** (under `ceremony: full` or `light`): Plans must grade **A or higher** before approval. The engine enforces this programmatically. Under `ceremony: off` the grade gate is not enforced.',
   '',
   '- `op:approve_plan` will **reject** any plan with a latest grade below A (score < 90).',
   '- If rejected, iterate on the plan (`op:plan_iterate`) to address the gaps, then re-grade (`op:plan_grade`) before approving.',

@@ -348,6 +348,155 @@ describe('Planner', () => {
     });
   });
 
+  describe('ceremony', () => {
+    /** A well-formed, A+-graded plan (mirrors the "approve A+" fixture). */
+    function createGradedPlan(p: Planner): string {
+      const plan = p.create({
+        objective: 'Implement a Redis caching layer for the API to reduce DB load by 50%',
+        scope: 'Backend API services only. Does not include frontend caching or CDN.',
+        tasks: [
+          {
+            title: 'Set up Redis client',
+            description: 'Install and configure Redis connection pool',
+          },
+          {
+            title: 'Add cache middleware',
+            description: 'Express middleware for transparent caching',
+          },
+          {
+            title: 'Add invalidation logic',
+            description: 'Purge cache on write to keep consistency',
+          },
+          {
+            title: 'Write integration tests',
+            description: 'Test cache hit/miss scenarios with Redis',
+          },
+          { title: 'Add monitoring', description: 'Track and verify cache hit rate metrics' },
+        ],
+        decisions: [
+          'Use Redis because it provides sub-millisecond latency and supports TTL natively',
+          'Set TTL to 5 minutes since average data freshness requirement is 10 minutes',
+        ],
+        alternatives: TWO_ALTERNATIVES,
+      });
+      return plan.id;
+    }
+
+    it('defaults to full when no ceremony option is given', () => {
+      expect(planner.getCeremony()).toBe('full');
+      const withOpts = new Planner(join(tempDir, 'full-opts.json'), { gradeMinTaskCount: 0 });
+      expect(withOpts.getCeremony()).toBe('full');
+    });
+
+    it('reads the ceremony option (recognized even when it is the only option)', () => {
+      const light = new Planner(join(tempDir, 'light.json'), { ceremony: 'light' });
+      expect(light.getCeremony()).toBe('light');
+      const off = new Planner(join(tempDir, 'off.json'), { ceremony: 'off' });
+      expect(off.getCeremony()).toBe('off');
+    });
+
+    describe('full', () => {
+      it('autoApprove is a no-op — Gate 1 stays an explicit human touchpoint', () => {
+        const p = new Planner(join(tempDir, 'full-auto.json'), { ceremony: 'full' });
+        const id = createGradedPlan(p);
+        p.grade(id);
+        const result = p.autoApprove(id);
+        expect(result.autoApproved).toBe(false);
+        expect(result.plan.status).toBe('draft');
+        // Explicit approve still works as before.
+        expect(p.approve(id).status).toBe('approved');
+      });
+    });
+
+    describe('light', () => {
+      it('auto-approves on a passing grade (single human touchpoint at split)', () => {
+        const p = new Planner(join(tempDir, 'light-pass.json'), { ceremony: 'light' });
+        const id = createGradedPlan(p);
+        const check = p.grade(id);
+        expect(check.score).toBeGreaterThanOrEqual(90);
+        const result = p.autoApprove(id);
+        expect(result.autoApproved).toBe(true);
+        expect(result.plan.status).toBe('approved');
+      });
+
+      it('auto-approves sub-threshold plans without a passing grade', () => {
+        // Below gradeMinTaskCount the grade gate is skipped — light approves.
+        const p = new Planner(join(tempDir, 'light-trivial.json'), { ceremony: 'light' });
+        const plan = p.create({ objective: 'Trivial tweak', scope: 'test' });
+        const check = p.grade(plan.id);
+        expect(check.score).toBeLessThan(90);
+        const result = p.autoApprove(plan.id);
+        expect(result.autoApproved).toBe(true);
+        expect(result.plan.status).toBe('approved');
+      });
+
+      it('does NOT auto-approve a failing grade at/above the threshold — it throws', () => {
+        const p = new Planner(join(tempDir, 'light-fail.json'), {
+          ceremony: 'light',
+          gradeMinTaskCount: 0,
+        });
+        const plan = p.create({ objective: 'Bad plan', scope: 'test' });
+        const check = p.grade(plan.id);
+        expect(check.score).toBeLessThan(90);
+        expect(() => p.autoApprove(plan.id)).toThrow(PlanGradeRejectionError);
+        expect(p.get(plan.id)?.status).toBe('draft');
+      });
+    });
+
+    describe('off', () => {
+      it('skips the grade gate — approve never throws even on a failing grade', () => {
+        const p = new Planner(join(tempDir, 'off-approve.json'), {
+          ceremony: 'off',
+          gradeMinTaskCount: 0,
+        });
+        const plan = p.create({ objective: 'Bad plan', scope: 'test' });
+        const check = p.grade(plan.id);
+        expect(check.score).toBeLessThan(90);
+        // Under full/light this would throw PlanGradeRejectionError.
+        const approved = p.approve(plan.id);
+        expect(approved.status).toBe('approved');
+      });
+
+      it('autoApprove approves unconditionally', () => {
+        const p = new Planner(join(tempDir, 'off-auto.json'), {
+          ceremony: 'off',
+          gradeMinTaskCount: 0,
+        });
+        const plan = p.create({ objective: 'Bad plan', scope: 'test' });
+        p.grade(plan.id);
+        const result = p.autoApprove(plan.id);
+        expect(result.autoApproved).toBe(true);
+        expect(result.plan.status).toBe('approved');
+      });
+
+      it('still writes reconciliation + execution records — ceremony governs gates, never capture', () => {
+        const p = new Planner(join(tempDir, 'off-capture.json'), {
+          ceremony: 'off',
+          gradeMinTaskCount: 0,
+        });
+        const plan = p.create({
+          objective: 'Ship it now',
+          scope: 'test',
+          tasks: [{ title: 'Do the thing', description: 'the work' }],
+        });
+        p.grade(plan.id);
+        p.approve(plan.id);
+        p.startExecution(plan.id);
+        p.updateTask(plan.id, plan.tasks[0].id, 'completed');
+        const reconciled = p.reconcile(plan.id, {
+          actualOutcome: 'Completed as planned',
+          reconciledBy: 'auto',
+        });
+        // Reconciliation record is written despite ceremony: off.
+        expect(reconciled.reconciliation).toBeDefined();
+        expect(reconciled.reconciliation?.planId).toBe(plan.id);
+        const completed = p.complete(plan.id);
+        expect(completed.status).toBe('completed');
+        expect(completed.executionSummary).toBeDefined();
+      });
+    });
+  });
+
   describe('startExecution', () => {
     it('should transition approved to executing', () => {
       const plan = planner.create({ objective: 'Execute me', scope: 'test' });

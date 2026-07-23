@@ -11,6 +11,7 @@ import type { OpDefinition } from '../../../facades/types.js';
 import type { AgentRuntime } from '../../types.js';
 import type { GapAnalysisOptions } from '../../../planning/gap-analysis.js';
 import { loadVaultConstraints } from '../../../planning/vault-constraints.js';
+import { PlanGradeRejectionError } from '../../../planning/planner.js';
 
 const planGradeSchema = z.enum(['A+', 'A', 'B', 'C', 'D', 'F']);
 
@@ -40,7 +41,37 @@ export function createGradingOps(runtime: AgentRuntime): OpDefinition[] {
           if (compositionRules.length > 0) runtimeOptions.compositionRules = compositionRules;
         }
 
-        return planner.grade(planId, runtimeOptions);
+        const check = planner.grade(planId, runtimeOptions);
+
+        // Ceremony 'light' collapses Gate 1 into the grading step: a passing
+        // plan auto-approves (draft→approved) so the human's single remaining
+        // touchpoint is Gate 2 (plan_split). A failing grade leaves the plan in
+        // draft, surfaced as needing explicit approval — this never crashes the
+        // grade op. 'full'/'off' return the raw check unchanged.
+        if (planner.getCeremony() === 'light' && planner.get(planId)?.status === 'draft') {
+          try {
+            const { autoApproved, plan } = planner.autoApprove(planId);
+            if (autoApproved) {
+              return { ...check, ceremony: 'light', autoApproved: true, planStatus: plan.status };
+            }
+          } catch (err) {
+            if (err instanceof PlanGradeRejectionError) {
+              return {
+                ...check,
+                ceremony: 'light',
+                autoApproved: false,
+                planStatus: 'draft',
+                needsApproval: true,
+                message:
+                  `Grade ${err.grade} (${err.score}) is below the ${err.minGrade} gate — ` +
+                  'plan stays in draft. Iterate (`op:plan_iterate`) and re-grade, or approve explicitly.',
+              };
+            }
+            throw err;
+          }
+        }
+
+        return check;
       },
     },
 

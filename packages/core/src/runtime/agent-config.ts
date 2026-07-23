@@ -23,12 +23,44 @@ export interface AgentAutoOpsConfig {
   editSourceLoop?: boolean;
 }
 
+/**
+ * Plan-approval ceremony regime — the human review surface for planning.
+ *
+ * - `full`  — both gates explicit (Gate 1 `approve_plan`, Gate 2 `plan_split`);
+ *             grade gate enforced. The decision-making regime.
+ * - `light` — Gate 1 auto-approves when the grade gate passes (or the plan is
+ *             below the task-count threshold); Gate 2 (`plan_split`) stays the
+ *             single explicit human touchpoint. Grade gate still enforced.
+ * - `off`   — no gates; plans execute immediately. Grade gate not enforced.
+ *             Knowledge capture and reconciliation record-writing STILL run —
+ *             ceremony governs gates, never capture.
+ */
+export type Ceremony = 'full' | 'light' | 'off';
+
+/** All valid ceremony values, in declaration order. */
+export const CEREMONY_VALUES: readonly Ceremony[] = ['full', 'light', 'off'] as const;
+
+/**
+ * Resolved default when `engine.ceremony` is absent. `full` (not `light`) so
+ * existing agents scaffolded before this flag existed keep two-gate behavior —
+ * no silent behavior change on upgrade. New agents get an explicit `light`
+ * written into agent.yaml by forge (a visible, editable value — not a hidden
+ * default).
+ */
+const DEFAULT_CEREMONY: Ceremony = 'full';
+
 export interface AgentEngineConfig {
   /**
    * Opt-in session_start maintenance side effects.
    * Configure in agent.yaml as `engine.autoOps`; all flags default to false.
    */
   autoOps?: AgentAutoOpsConfig;
+  /**
+   * Plan-approval ceremony regime. Absent resolves to `full` via
+   * `resolveCeremony` (backward compat). Configure in agent.yaml as
+   * `engine.ceremony`.
+   */
+  ceremony?: Ceremony;
 }
 
 export interface AgentConfig {
@@ -56,6 +88,21 @@ export function resolveAutoOpsConfig(config: AgentConfig): Required<AgentAutoOps
     ...DEFAULT_AUTO_OPS_CONFIG,
     ...config.engine?.autoOps,
   };
+}
+
+/**
+ * Resolve the effective plan-approval ceremony for an agent.
+ *
+ * Returns the explicit `engine.ceremony` value when set to a valid regime,
+ * otherwise `full` — the backward-compatible default that preserves two-gate
+ * behavior for agents scaffolded before this flag existed. An absent field
+ * stays distinguishable from an explicit `full` at the config layer (the forge
+ * Zod schema uses `.optional()` with no `.default()`); this resolver supplies
+ * `full` only at the point of use.
+ */
+export function resolveCeremony(config: AgentConfig): Ceremony {
+  const value = config.engine?.ceremony;
+  return value === 'full' || value === 'light' || value === 'off' ? value : DEFAULT_CEREMONY;
 }
 
 /**
