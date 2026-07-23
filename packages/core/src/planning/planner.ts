@@ -3,10 +3,19 @@
  * Re-exports all public types for backward compatibility.
  */
 import { randomBytes } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+} from 'node:fs';
+import { dirname, join, basename, extname } from 'node:path';
 import { runGapAnalysis } from './gap-analysis.js';
 import type { GapAnalysisOptions } from './gap-analysis.js';
+import { serializePlan, parsePlan, buildPlansIndex, PLAN_STORE_VERSION } from './plan-markdown.js';
 export * from './plan-lifecycle.js';
 export * from './reconciliation-engine.js';
 export * from './task-verifier.js';
@@ -52,6 +61,16 @@ import {
 
 export class Planner {
   private filePath: string;
+  /**
+   * Directory holding the canonical per-plan `.md` source files. Derived from
+   * the store filename stem so it stays in the store the planner already owns
+   * (the runtime passes only `filePath`) AND is isolated per store file — two
+   * planners sharing a parent directory but different store filenames get
+   * distinct `.md` folders. For the production `plans.json` path this resolves
+   * to the ruling's canonical `plans/<planId>.md`. The JSON blob at `filePath`
+   * is now a rebuildable cache derived from this `.md` set.
+   */
+  private plansDir: string;
   private store: PlanStore;
   private gapOptions?: GapAnalysisOptions;
   private minGradeForApproval: PlanGrade;
@@ -61,6 +80,7 @@ export class Planner {
 
   constructor(filePath: string, options?: GapAnalysisOptions | PlannerOptions) {
     this.filePath = filePath;
+    this.plansDir = join(dirname(filePath), basename(filePath, extname(filePath)));
     if (
       options &&
       ('minGradeForApproval' in options ||
@@ -121,19 +141,80 @@ export class Planner {
     return repaired;
   }
 
-  private load(): PlanStore {
-    if (!existsSync(this.filePath)) return { version: '1.0', plans: [] };
+  /** Read the derived JSON cache, or null when absent/unreadable. */
+  private readJsonCache(): PlanStore | null {
+    if (!existsSync(this.filePath)) return null;
     try {
-      const data = readFileSync(this.filePath, 'utf-8');
-      const store = JSON.parse(data) as PlanStore;
-      if (this.repairTerminalPlans(store)) {
-        mkdirSync(dirname(this.filePath), { recursive: true });
-        writeFileSync(this.filePath, JSON.stringify(store, null, 2), 'utf-8');
-      }
-      return store;
+      return JSON.parse(readFileSync(this.filePath, 'utf-8')) as PlanStore;
     } catch {
-      return { version: '1.0', plans: [] };
+      return null;
     }
+  }
+
+  /** List canonical plan `.md` files with their mtimes (excludes README.md). */
+  private listMarkdownFiles(): Array<{ path: string; id: string; mtimeMs: number }> {
+    if (!existsSync(this.plansDir)) return [];
+    const files: Array<{ path: string; id: string; mtimeMs: number }> = [];
+    for (const name of readdirSync(this.plansDir)) {
+      if (!name.endsWith('.md') || name === 'README.md') continue;
+      const path = join(this.plansDir, name);
+      try {
+        files.push({ path, id: name.slice(0, -3), mtimeMs: statSync(path).mtimeMs });
+      } catch {
+        // Skip files that vanish between readdir and stat.
+      }
+    }
+    return files;
+  }
+
+  /**
+   * Resolve the store from disk. The `.md` set is canonical; the JSON blob is a
+   * rebuildable cache. Fast path: when no `.md` is newer than the cache and the
+   * cache covers every `.md`, trust the cache. Slow path (a `.md` drifted, the
+   * cache is missing, or a `.md` is uncached): reparse from the `.md` set, which
+   * wins per id. `needsPersist` is set when the cache must be rebuilt — either a
+   * one-time format migration (legacy version), or the `.md` set drifted.
+   */
+  private readStoreFromDisk(): { store: PlanStore; needsPersist: boolean } {
+    const json = this.readJsonCache();
+    const mdFiles = this.listMarkdownFiles();
+    const jsonMtime = existsSync(this.filePath) ? statSync(this.filePath).mtimeMs : -1;
+    const anyMdNewer = mdFiles.some((f) => f.mtimeMs > jsonMtime);
+    const jsonHasAllMd = !!json && mdFiles.every((f) => json.plans.some((p) => p.id === f.id));
+    const legacy = !!json && json.version !== PLAN_STORE_VERSION && json.plans.length > 0;
+
+    if (json && !anyMdNewer && jsonHasAllMd) {
+      // Fast path: JSON cache is fresh. `legacy` still forces a one-time
+      // migration (1.0 → 2.0) that emits the `.md` set.
+      return { store: { version: PLAN_STORE_VERSION, plans: json.plans }, needsPersist: legacy };
+    }
+
+    // Slow path: a `.md` is newer than the cache, or the cache is missing /
+    // incomplete. Reparse from the `.md` set (canonical), falling back to the
+    // cache for any plan not yet materialized as a file.
+    const merged = new Map<string, Plan>();
+    if (json) for (const plan of json.plans) merged.set(plan.id, plan);
+    for (const file of mdFiles) {
+      try {
+        const plan = parsePlan(readFileSync(file.path, 'utf-8'));
+        merged.set(plan.id, plan);
+      } catch {
+        // Skip an unparseable `.md`; the cache retains the plan if it has one.
+      }
+    }
+    return {
+      store: { version: PLAN_STORE_VERSION, plans: [...merged.values()] },
+      needsPersist: true,
+    };
+  }
+
+  private load(): PlanStore {
+    const { store, needsPersist } = this.readStoreFromDisk();
+    const repaired = this.repairTerminalPlans(store);
+    if ((repaired || needsPersist) && store.plans.length > 0) {
+      this.persistStore(store);
+    }
+    return store;
   }
 
   private refresh(): void {
@@ -142,7 +223,7 @@ export class Planner {
 
   private mergeLatestStore(deletedPlanIds: string[] = []): void {
     const deleted = new Set(deletedPlanIds);
-    const latest = this.load();
+    const latest = this.readStoreFromDisk().store;
     const merged = new Map<string, Plan>();
 
     for (const plan of latest.plans) {
@@ -160,15 +241,52 @@ export class Planner {
     }
 
     this.store = {
-      version: latest.version ?? this.store.version ?? '1.0',
+      version: PLAN_STORE_VERSION,
       plans: [...merged.values()],
     };
   }
 
-  private save(deletedPlanIds: string[] = []): void {
+  /**
+   * Write the canonical `.md` source files first, then regenerate the derived
+   * JSON cache and the `plans/README.md` index from the same store. Per-plan
+   * content dedup preserves file mtimes (and Git blame) when a plan is unchanged.
+   */
+  private persistStore(store: PlanStore, deletedPlanIds: string[] = []): void {
     mkdirSync(dirname(this.filePath), { recursive: true });
+    mkdirSync(this.plansDir, { recursive: true });
+
+    for (const plan of store.plans) {
+      const mdPath = join(this.plansDir, `${plan.id}.md`);
+      const content = serializePlan(plan);
+      if (existsSync(mdPath)) {
+        try {
+          if (readFileSync(mdPath, 'utf-8') === content) continue;
+        } catch {
+          // Fall through and rewrite.
+        }
+      }
+      writeFileSync(mdPath, content, 'utf-8');
+    }
+
+    for (const id of deletedPlanIds) {
+      const mdPath = join(this.plansDir, `${id}.md`);
+      if (existsSync(mdPath)) {
+        try {
+          unlinkSync(mdPath);
+        } catch {
+          // Best-effort removal.
+        }
+      }
+    }
+
+    // Regenerate the derived cache and index from the canonical `.md` set.
+    writeFileSync(this.filePath, JSON.stringify(store, null, 2), 'utf-8');
+    writeFileSync(join(this.plansDir, 'README.md'), buildPlansIndex(store.plans), 'utf-8');
+  }
+
+  private save(deletedPlanIds: string[] = []): void {
     this.mergeLatestStore(deletedPlanIds);
-    writeFileSync(this.filePath, JSON.stringify(this.store, null, 2), 'utf-8');
+    this.persistStore(this.store, deletedPlanIds);
   }
 
   private transition(plan: Plan, to: PlanStatus): void {
