@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { cleanupDirDetached } from './cleanup.js';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffold } from '@soleri/forge/lib';
@@ -32,7 +32,7 @@ describe('E2E: scaffold-edge-cases', () => {
   afterAll(() => {
     // Fire-and-forget: don't await cleanup to avoid blocking the event loop
     // during teardown, which triggers vitest birpc timeout on CI.
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should scaffold with many domains (10) and create all domain data files', () => {

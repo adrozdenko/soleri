@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { cleanupDirDetached } from './cleanup.js';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -67,7 +67,7 @@ describe('E2E: skills-and-domains', () => {
   }, 60_000);
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   // ─── Skills Validation ─────────────────────────────────────────────

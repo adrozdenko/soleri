@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { cleanupDirDetached } from './cleanup.js';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { scaffold } from '@soleri/forge/lib';
@@ -309,7 +309,7 @@ describe('E2E: skill-trigger-coverage', () => {
   }, 60_000);
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   // ─── Structural: Every skill has trigger phrases ─────────────────────

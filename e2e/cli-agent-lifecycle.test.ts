@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, rmSync, symlinkSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { cleanupDirDetached } from './cleanup.js';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
@@ -109,7 +109,7 @@ describe('Journey 1: Scaffold → Build → Generated tests pass', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should scaffold an agent with 2 domains', () => {
@@ -189,7 +189,7 @@ describe('Journey 2: Agent refresh', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should have initial CLAUDE.md content file', () => {
@@ -270,7 +270,7 @@ describe('Journey 3: Agent diff', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should detect when generated content matches latest templates (no drift)', () => {
@@ -344,7 +344,7 @@ describe('Journey 4: Generated entry-point structure', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should import createAgentRuntime', () => {
@@ -428,7 +428,7 @@ describe('Journey 4b: Entry-point with domain packs', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should import loadDomainPacksFromConfig', () => {
@@ -478,7 +478,7 @@ describe('Journey 5: Generated test file structure', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should exist at the expected path', () => {
@@ -552,7 +552,7 @@ describe('Journey 6: CLAUDE.md content generation', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should export getClaudeMdContent function', () => {
@@ -637,7 +637,7 @@ describe('Journey 7: Skills installation', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should have a skills/ directory', () => {
@@ -692,7 +692,7 @@ describe('Edge cases', () => {
   });
 
   afterAll(() => {
-    rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    cleanupDirDetached(tempDir);
   });
 
   it('should scaffold with no domains (core only)', () => {
