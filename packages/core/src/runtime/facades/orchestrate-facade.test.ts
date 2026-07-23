@@ -109,20 +109,43 @@ describe('orchestrate-facade', () => {
     expect(data.governance).toBeDefined();
   });
 
-  it('session_start includes preflight manifest', async () => {
+  it('session_start includes a lean Layer 0/1 preflight manifest', async () => {
     const result = await executeOp(ops, 'session_start', { projectPath: '/test/proj' });
     expect(result.success).toBe(true);
     const data = result.data as Record<string, unknown>;
     const preflight = data.preflight as Record<string, unknown>;
     expect(preflight).toBeDefined();
-    expect(Array.isArray(preflight.tools)).toBe(true);
-    expect(Array.isArray(preflight.skills)).toBe(true);
+    // Layer 1 routing index — one row per facade, NOT a flat op catalog.
+    expect(Array.isArray(preflight.routingIndex)).toBe(true);
+    const routingIndex = preflight.routingIndex as Array<Record<string, unknown>>;
+    expect(routingIndex.length).toBeGreaterThan(0);
+    expect(typeof routingIndex[0].suffix).toBe('string');
+    expect(typeof routingIndex[0].description).toBe('string');
+    expect(Array.isArray(routingIndex[0].signals)).toBe(true);
+    expect((routingIndex[0].signals as unknown[]).length).toBeLessThanOrEqual(3);
+    // The full facade×op catalog must NOT ride along by default.
+    expect(preflight.tools).toBeUndefined();
+    // Skills are a count, not a full list.
+    expect(typeof preflight.skillCount).toBe('number');
     expect(Array.isArray(preflight.activePlans)).toBe(true);
-    expect(preflight.vaultSummary).toBeDefined();
     const vaultSummary = preflight.vaultSummary as Record<string, unknown>;
     expect(typeof vaultSummary.entryCount).toBe('number');
     expect(typeof vaultSummary.connected).toBe('boolean');
-    expect(Array.isArray(vaultSummary.domains)).toBe(true);
+    // Domains: total + top, not the full list.
+    const domains = vaultSummary.domains as Record<string, unknown>;
+    expect(typeof domains.total).toBe('number');
+    expect(Array.isArray(domains.top)).toBe(true);
+    expect((domains.top as unknown[]).length).toBeLessThanOrEqual(4);
+  });
+
+  it('session_start payload stays under the 1,500-token ceiling (WS1 diet)', async () => {
+    const result = await executeOp(ops, 'session_start', { projectPath: '/test/proj' });
+    expect(result.success).toBe(true);
+    // Measure the on-the-wire payload the same way the WS0 report did:
+    // compact serialization (the current facade wire form) + chars/4 heuristic.
+    const wire = JSON.stringify(result.data);
+    const tokens = Math.ceil(wire.length / 4);
+    expect(tokens).toBeLessThanOrEqual(1500);
   });
 
   it('session_start increments session count on second call', async () => {

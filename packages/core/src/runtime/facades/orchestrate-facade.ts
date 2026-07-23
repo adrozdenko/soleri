@@ -178,10 +178,6 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
         }
 
         const agentId = runtime.config.agentId;
-        const facades = ENGINE_MODULE_MANIFEST.map((m) => ({
-          name: `${agentId}_${m.suffix}`,
-          ops: m.keyOps.map((op) => ({ name: op, description: m.description })),
-        }));
 
         // Auto-reconcile plans whose tasks are all terminal (completed/skipped)
         // but whose lifecycle was never closed. This captures knowledge to
@@ -236,8 +232,9 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
         }
 
         const preflight = buildPreflightManifest({
-          facades,
-          skills,
+          modules: ENGINE_MODULE_MANIFEST,
+          agentId: agentId ?? 'agent',
+          skillCount: skills.length,
           executingPlans,
           vaultStats: stats,
         });
@@ -287,7 +284,9 @@ export function createOrchestrateFacadeOps(runtime: AgentRuntime): OpDefinition[
           message: isNew
             ? 'Welcome! New project registered.'
             : 'Welcome back! Session #' + project.sessionCount + ' for ' + project.name + '.',
-          vault: { entries: stats.totalEntries, domains: Object.keys(stats.byDomain) },
+          // Reuse the deduped domain summary from the preflight manifest so the
+          // full domain list is not serialized a second time in one response (WS1).
+          vault: { entries: stats.totalEntries, domains: preflight.vaultSummary.domains },
           governance: {
             pendingProposals: proposalStats.pending,
             quotaPercent:
