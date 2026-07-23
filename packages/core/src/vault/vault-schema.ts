@@ -5,7 +5,18 @@
 import type { PersistenceProvider } from '../persistence/types.js';
 import { computeContentHash } from './content-hash.js';
 
-export const VAULT_FORMAT_VERSION = 1;
+/**
+ * On-disk vault format version.
+ *
+ * v1 → v2 (WS4 Vault Files-First): markdown files under `knowledge/vault/` become
+ * the canonical store and SQLite is demoted to a rebuildable index. A v2 vault
+ * opened by a pre-WS4 engine (which pins v1) hits the `current > VAULT_FORMAT_VERSION`
+ * guard below and refuses to open — the intended forward-incompatibility.
+ */
+export const VAULT_FORMAT_VERSION = 2;
+
+/** Which store is authoritative for entry content. */
+export type VaultSourceOfTruth = 'index' | 'files';
 
 export function checkFormatVersion(provider: PersistenceProvider): void {
   const row = provider.get<{ user_version: number }>('PRAGMA user_version');
@@ -20,8 +31,44 @@ export function checkFormatVersion(provider: PersistenceProvider): void {
   }
 }
 
+/** Read the persisted on-disk format version (PRAGMA user_version). */
+export function getVaultFormatVersion(provider: PersistenceProvider): number {
+  return provider.get<{ user_version: number }>('PRAGMA user_version')?.user_version ?? 0;
+}
+
+/** Set the persisted on-disk format version (used by the files-first migration). */
+export function setVaultFormatVersion(provider: PersistenceProvider, version: number): void {
+  // PRAGMA does not accept bound parameters — version is an internal integer constant.
+  provider.run(`PRAGMA user_version = ${Math.trunc(version)}`);
+}
+
+/**
+ * Read the authoritative-store flag. Defaults to `'index'` (backward compatible:
+ * a pre-migration vault is index-canonical) until the files-first migration flips it.
+ */
+export function getSourceOfTruth(provider: PersistenceProvider): VaultSourceOfTruth {
+  try {
+    const row = provider.get<{ value: string }>(
+      "SELECT value FROM vault_meta WHERE key = 'source_of_truth'",
+    );
+    return row?.value === 'files' ? 'files' : 'index';
+  } catch {
+    return 'index';
+  }
+}
+
+/** Persist the authoritative-store flag. */
+export function setSourceOfTruth(provider: PersistenceProvider, value: VaultSourceOfTruth): void {
+  provider.run(
+    `INSERT INTO vault_meta (key, value) VALUES ('source_of_truth', @value)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    { value },
+  );
+}
+
 export function initializeSchema(provider: PersistenceProvider): void {
   createCoreTables(provider);
+  migrateVaultMeta(provider);
   migrateBrainSchema(provider);
   migrateTemporalSchema(provider);
   migrateOriginColumn(provider);
@@ -32,6 +79,16 @@ export function initializeSchema(provider: PersistenceProvider): void {
   migrateTranscriptTables(provider);
   migrateDomainSummaries(provider);
   migrateFrictionMetrics(provider);
+}
+
+function migrateVaultMeta(provider: PersistenceProvider): void {
+  // Key/value store for vault-level flags (e.g. files-first source_of_truth).
+  provider.execSql(`
+    CREATE TABLE IF NOT EXISTS vault_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
 }
 
 function migrateFrictionMetrics(provider: PersistenceProvider): void {

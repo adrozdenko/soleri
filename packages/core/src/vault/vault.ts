@@ -3,7 +3,15 @@ import { SQLitePersistenceProvider } from '../persistence/sqlite-provider.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { StoredVector } from '../embeddings/types.js';
 import type { LinkManager } from './linking.js';
-import { initializeSchema, checkFormatVersion, VAULT_FORMAT_VERSION } from './vault-schema.js';
+import {
+  initializeSchema,
+  checkFormatVersion,
+  VAULT_FORMAT_VERSION,
+  getSourceOfTruth,
+  setSourceOfTruth,
+  type VaultSourceOfTruth,
+} from './vault-schema.js';
+import { writeEntryFileSync, removeEntryFileSync } from './vault-markdown-sync.js';
 import * as entries from './vault-entries.js';
 import * as memories from './vault-memories.js';
 import * as maintenance from './vault-maintenance.js';
@@ -31,6 +39,8 @@ export class Vault {
   private embeddingPipeline: EmbeddingPipeline | null = null;
   private autoEmbedEnabled = true;
   private _domainSummaries: DomainSummaryManager | null = null;
+  /** When set, mutating ops write the canonical `.md` file first (files-first write-through). */
+  private fileStore: string | null = null;
 
   constructor(providerOrPath: PersistenceProvider | string = ':memory:') {
     if (typeof providerOrPath === 'string') {
@@ -94,9 +104,50 @@ export class Vault {
     return new Vault(dbPath);
   }
 
+  // ── Files-first write-through (WS4) ───────────────────────────────────
+
+  /**
+   * Bind a knowledge directory so mutating ops write the canonical `.md` file
+   * FIRST, then upsert the derived index row (files-first write-through). Pass
+   * null to unbind. The file store is the source of truth; the DB is the index.
+   */
+  bindFileStore(knowledgeDir: string | null): void {
+    this.fileStore = knowledgeDir;
+  }
+
+  /** The bound knowledge directory, or null when write-through is disabled. */
+  getFileStore(): string | null {
+    return this.fileStore;
+  }
+
+  /** Read the persisted authoritative-store flag ('index' until migrated to 'files'). */
+  getSourceOfTruth(): VaultSourceOfTruth {
+    return getSourceOfTruth(this.provider);
+  }
+
+  /** Persist the authoritative-store flag. */
+  setSourceOfTruth(value: VaultSourceOfTruth): void {
+    setSourceOfTruth(this.provider, value);
+  }
+
+  /** Write each entry's canonical file first (best-effort; only when a file store is bound). */
+  private writeThroughFiles(entryList: IntelligenceEntry[]): void {
+    if (!this.fileStore) return;
+    for (const entry of entryList) {
+      writeEntryFileSync(entry, this.fileStore);
+    }
+  }
+
+  /** Delete an entry's canonical file (only when a file store is bound). */
+  private removeThroughFiles(entry: IntelligenceEntry): void {
+    if (!this.fileStore) return;
+    removeEntryFileSync(entry, this.fileStore);
+  }
+
   // ── Entry operations (vault-entries.ts) ───────────────────────────────
 
   seed(entryList: IntelligenceEntry[]): number {
+    this.writeThroughFiles(entryList); // file-first: write .md before the index row
     const result = entries.seed(
       this.provider,
       entryList,
@@ -163,12 +214,14 @@ export class Vault {
     return entries.stats(this.provider);
   }
   add(entry: IntelligenceEntry): void {
+    this.writeThroughFiles([entry]); // file-first: write .md before the index row
     entries.add(this.provider, entry, this.getAutoLinkConfig(), this.getAutoEmbedConfig());
     this.domainSummaries.markStale(entry.domain);
   }
   remove(id: string): boolean {
     // Look up domain before removing so we can invalidate the right summary
     const existing = entries.get(this.provider, id);
+    if (existing) this.removeThroughFiles(existing); // file-first: delete .md before the index row
     const result = entries.remove(this.provider, id);
     if (result && existing) {
       this.domainSummaries.markStale(existing.domain);
@@ -186,6 +239,11 @@ export class Vault {
       this.getAutoEmbedConfig(),
     );
     if (result) {
+      // File-first: rewrite the .md (rename when title/domain changed) before returning.
+      if (this.fileStore) {
+        if (existing) this.removeThroughFiles(existing);
+        this.writeThroughFiles([result]);
+      }
       this.domainSummaries.markStale(result.domain);
       if (existing && existing.domain !== result.domain) {
         this.domainSummaries.markStale(existing.domain);
