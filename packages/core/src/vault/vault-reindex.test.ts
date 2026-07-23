@@ -18,7 +18,14 @@ import {
   reindexFull,
   runMigrationToFiles,
 } from './vault-reindex.js';
-import { getSourceOfTruth, setSourceOfTruth, getVaultFormatVersion } from './vault-schema.js';
+import {
+  getSourceOfTruth,
+  setSourceOfTruth,
+  getVaultFormatVersion,
+  getHashFormulaVersion,
+  setHashFormulaVersion,
+} from './vault-schema.js';
+import { computeContentHash } from './content-hash.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 function makeEntry(overrides: Partial<IntelligenceEntry> = {}): IntelligenceEntry {
@@ -612,5 +619,207 @@ describe('WS4 reindex reports issues (never silent)', () => {
     expect(result.warnings.some((w) => w.reason.startsWith('unknown-type'))).toBe(true);
     // Coerced to a valid type, not dropped.
     expect(vault.get('weird-1')!.type).toBe('pattern');
+  });
+});
+
+// ── BLOCKER: hash-formula versioning ────────────────────────────────
+
+describe('WS4 hash-formula versioning', () => {
+  let tmpDir: string;
+  let dbPath: string;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `vault-formula-${randomUUID().slice(0, 8)}`);
+    mkdirSync(tmpDir, { recursive: true });
+    dbPath = join(tmpDir, 'vault.db');
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('re-hashes ALL rows on open when the stored formula version is older', () => {
+    const vault = new Vault(dbPath);
+    const entry = makeEntry({ id: 'fv1', title: 'Formula Row', domain: 'design' });
+    vault.seed([entry]);
+    const provider = vault.getProvider();
+    // Simulate a vault written by an older, narrower hash formula.
+    provider.run("UPDATE entries SET content_hash = '0000000000000000000000000000000000000000'");
+    setHashFormulaVersion(provider, 1);
+    vault.close();
+
+    // Reopen with the current engine → migrateHashFormula rehashes every row.
+    const reopened = new Vault(dbPath);
+    expect(getHashFormulaVersion(reopened.getProvider())).toBe(2);
+    const stored = reopened
+      .getProvider()
+      .get<{ content_hash: string }>('SELECT content_hash FROM entries WHERE id = ?', ['fv1']);
+    expect(stored!.content_hash).toBe(computeContentHash(entry));
+    reopened.close();
+  });
+
+  it('migration completes on rows whose stored hash was written by an old formula', async () => {
+    const vault = new Vault(dbPath);
+    vault.seed([
+      makeEntry({ id: 'og1', title: 'Old Formula One', domain: 'design' }),
+      makeEntry({ id: 'og2', title: 'Old Formula Two', domain: 'code' }),
+    ]);
+    // Stale/old-formula hashes in the column — the migration must not trust them.
+    vault
+      .getProvider()
+      .run("UPDATE entries SET content_hash = 'staleoldformulavalue00000000000000000000'");
+
+    const report = await runMigrationToFiles(vault, join(tmpDir, 'knowledge'), { dbPath });
+    expect(report.hashParityOk).toBe(true);
+    expect(report.integrityOk).toBe(true);
+    expect(report.totalEntries).toBe(2);
+    vault.close();
+  });
+});
+
+// ── MAJOR: mtime pre-filter is opt-in, not the default ──────────────
+
+describe('WS4 preserved-mtime edits (full-scan default vs fast mode)', () => {
+  let tmpDir: string;
+  let vault: Vault;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `vault-mtime-${randomUUID().slice(0, 8)}`);
+    mkdirSync(tmpDir, { recursive: true });
+    vault = new Vault(':memory:');
+  });
+
+  afterEach(() => {
+    vault.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('default full-scan catches an edit whose mtime was preserved; fast mode misses it', async () => {
+    const entry = makeEntry({
+      id: 'mt1',
+      title: 'Preserved Mtime',
+      domain: 'design',
+      description: 'Original.',
+    });
+    vault.seed([entry]);
+    await syncAllToMarkdown(vault, tmpDir);
+    reindexFull(vault, tmpDir); // stamps last_index_build
+
+    const filePath = join(tmpDir, 'vault', 'design', 'preserved-mtime.md');
+    const edited: IntelligenceEntry = { ...entry, description: 'Edited via rsync -a.' };
+    writeEntryFileSync(edited, tmpDir, { force: true });
+    // Simulate a backup/restore that PRESERVES the original mtime (in the past).
+    utimesSync(filePath, 1000, 1000);
+
+    // Default (full-scan) recomputes every file and catches it.
+    expect(detectConflicts(vault, tmpDir)).toHaveLength(1);
+    // Fast mode trusts mtime and misses it (documented tradeoff).
+    expect(detectConflicts(vault, tmpDir, { mode: 'fast' })).toHaveLength(0);
+
+    // The default reindex rebuilds the index from the file.
+    const result = reindexIncremental(vault, tmpDir);
+    expect(result.reindexed).toBe(1);
+    expect(vault.get('mt1')!.description).toBe('Edited via rsync -a.');
+  });
+
+  it('fidelity drift catches a valid_until-only hand edit (behaviorally load-bearing)', async () => {
+    const entry = makeEntry({
+      id: 'vu1',
+      title: 'Expiry Edit',
+      domain: 'design',
+      validFrom: 1_700_000_000,
+      validUntil: 1_800_000_000,
+    });
+    vault.seed([entry]);
+    await syncAllToMarkdown(vault, tmpDir);
+    reindexFull(vault, tmpDir);
+
+    const filePath = join(tmpDir, 'vault', 'design', 'expiry-edit.md');
+    // Human extends the expiry by editing ONLY valid_until in the frontmatter.
+    const edited = readFileSync(filePath, 'utf-8').replace(
+      'valid_until: 1800000000',
+      'valid_until: 1999999999',
+    );
+    writeFileSync(filePath, edited, 'utf-8');
+
+    // content_hash is unchanged (temporal is not content), but the FIDELITY hash
+    // differs — the drift must still be detected and the index updated.
+    expect(detectConflicts(vault, tmpDir)).toHaveLength(1);
+    reindexIncremental(vault, tmpDir);
+    expect(vault.get('vu1')!.validUntil).toBe(1999999999);
+  });
+});
+
+// ── MAJOR: archive / restore / bulkRemove are file-first ────────────
+
+describe('WS4 archive / restore / bulkRemove are file-first', () => {
+  let tmpDir: string;
+  let vault: Vault;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `vault-archive-${randomUUID().slice(0, 8)}`);
+    mkdirSync(tmpDir, { recursive: true });
+    vault = new Vault(':memory:');
+    vault.bindFileStore(tmpDir);
+  });
+
+  afterEach(() => {
+    vault.close();
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('archive moves the .md out of the scanned tree so reindex cannot resurrect it', () => {
+    vault.add(makeEntry({ id: 'ar1', title: 'To Archive', domain: 'design' }));
+    const livePath = join(tmpDir, 'vault', 'design', 'to-archive.md');
+    expect(existsSync(livePath)).toBe(true);
+
+    // Age the row so it is eligible, then archive.
+    vault.getProvider().run('UPDATE entries SET updated_at = 0');
+    const res = vault.archive({ olderThanDays: 1 });
+    expect(res.archived).toBe(1);
+
+    // File moved to _archive/, gone from the live tree, absent from the index.
+    expect(existsSync(livePath)).toBe(false);
+    expect(existsSync(join(tmpDir, 'vault', '_archive', 'design', 'to-archive.md'))).toBe(true);
+    expect(vault.get('ar1')).toBeNull();
+
+    // A full reindex must NOT resurrect the archived entry.
+    reindexFull(vault, tmpDir);
+    expect(vault.get('ar1')).toBeNull();
+  });
+
+  it('restore moves the .md back and reindex keeps it present', () => {
+    vault.add(makeEntry({ id: 'rs1', title: 'To Restore', domain: 'design' }));
+    vault.getProvider().run('UPDATE entries SET updated_at = 0');
+    vault.archive({ olderThanDays: 1 });
+    expect(vault.get('rs1')).toBeNull();
+
+    expect(vault.restore('rs1')).toBe(true);
+    expect(existsSync(join(tmpDir, 'vault', 'design', 'to-restore.md'))).toBe(true);
+    expect(existsSync(join(tmpDir, 'vault', '_archive', 'design', 'to-restore.md'))).toBe(false);
+    expect(vault.get('rs1')).not.toBeNull();
+
+    reindexFull(vault, tmpDir);
+    expect(vault.get('rs1')).not.toBeNull();
+  });
+
+  it('bulkRemove deletes the .md so reindex cannot resurrect it', () => {
+    vault.add(makeEntry({ id: 'br1', title: 'To Bulk Remove', domain: 'design' }));
+    const filePath = join(tmpDir, 'vault', 'design', 'to-bulk-remove.md');
+    expect(existsSync(filePath)).toBe(true);
+
+    expect(vault.bulkRemove(['br1'])).toBe(1);
+    expect(existsSync(filePath)).toBe(false);
+    reindexFull(vault, tmpDir);
+    expect(vault.get('br1')).toBeNull();
+  });
+
+  it('archive/restore/bulkRemove all honor the files-first guard when unbound', () => {
+    const guarded = new Vault(':memory:');
+    setSourceOfTruth(guarded.getProvider(), 'files');
+    expect(() => guarded.archive({ olderThanDays: 1 })).toThrow(/no file store is bound/);
+    expect(() => guarded.restore('x')).toThrow(/no file store is bound/);
+    expect(() => guarded.bulkRemove(['x'])).toThrow(/no file store is bound/);
+    guarded.close();
   });
 });

@@ -21,7 +21,7 @@ import { readdirSync, readFileSync, existsSync, copyFileSync, statSync } from 'n
 import { join } from 'node:path';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import type { Vault } from './vault.js';
-import { computeContentHash } from './content-hash.js';
+import { computeContentHash, computeFidelityHash } from './content-hash.js';
 import { fromObsidianMarkdown, type ParsedMarkdownEntry } from './obsidian-sync.js';
 import { seed as seedEntriesDb, bulkRemove as bulkRemoveEntries } from './vault-entries.js';
 import {
@@ -151,6 +151,7 @@ export function scanVaultFiles(knowledgeDir: string): ScannedFile[] {
 
   for (const dirent of readdirSync(vaultDir, { withFileTypes: true })) {
     if (!dirent.isDirectory()) continue;
+    if (dirent.name === '_archive') continue; // archived entries are not live index rows
     const domain = dirent.name === '_general' ? '' : dirent.name;
     const domainDir = join(vaultDir, dirent.name);
     for (const file of readdirSync(domainDir)) {
@@ -176,78 +177,91 @@ export interface FileConflict {
   id: string;
   filePath: string;
   domain: string;
-  /** content_hash RECOMPUTED from the file's parsed content (authoritative). */
+  /** FIDELITY hash recomputed from the file's parsed content (covers all fields). */
   fileHash: string;
+  /** FIDELITY hash of the indexed row, or null when the row is missing. */
   indexedHash: string | null;
   reason: 'missing-in-index' | 'hash-mismatch';
-  /** True when the file's own frontmatter hash was stale (a hand edit signature). */
+  /** True when the file's frontmatter content_hash was stale (a hand-edit signature). */
   handEdited: boolean;
 }
+
+/** Reindex scan mode. */
+export type ReindexScanMode = 'full-scan' | 'fast';
 
 /** Options controlling conflict detection / incremental reindex. */
 export interface ConflictScanOptions {
   /**
-   * Only parse files with `mtimeMs` strictly greater than this (ms since epoch).
-   * The cheap pre-filter the ruling specifies — files untouched since the last
-   * index build are assumed unchanged. Pass 0 (default) to parse every file.
+   * - `'full-scan'` (default): parse and hash-verify EVERY file. This is the only
+   *   correct default — the ruling's mtime signal is a SUFFICIENT trigger, not a
+   *   necessary one, so a preserved-mtime change (rsync -a, tar, backup/restore,
+   *   clock skew) must still be caught by recomputing the hash.
+   * - `'fast'`: skip files whose `mtimeMs <= last_index_build`. Faster, but may
+   *   silently miss preserved-mtime edits — opt-in only.
    */
+  mode?: ReindexScanMode;
+  /** Explicit build cutoff (ms) for `'fast'` mode; defaults to the stored last build. */
   since?: number;
 }
 
-/** Map of indexed entry id → stored content_hash. */
-function indexedHashes(vault: Vault): Map<string, string | null> {
-  const rows = vault
-    .getProvider()
-    .all<{ id: string; content_hash: string | null }>('SELECT id, content_hash FROM entries');
-  return new Map(rows.map((r) => [r.id, r.content_hash]));
+/** Map of indexed entry id → full entry (live rows, including expired). */
+function indexedEntries(vault: Vault): Map<string, IntelligenceEntry> {
+  const map = new Map<string, IntelligenceEntry>();
+  for (const e of vault.list({ includeExpired: true, limit: 1_000_000 })) map.set(e.id, e);
+  return map;
 }
 
 /**
  * Detect files whose content has drifted from the index — the file always wins.
  *
- * Crucially, the comparison uses a hash RECOMPUTED from the file's parsed content,
- * not the frontmatter-claimed hash. A human editing prose cannot recompute a
- * SHA-256, so a stale frontmatter hash would otherwise make hand edits invisible.
- * A frontmatter hash that disagrees with the recomputed hash is itself the
- * "edited by hand" signal (`handEdited`); the index rebuilds and the frontmatter
- * hash is refreshed on the next write-through.
- *
- * `since` is the cheap mtime pre-filter (only parse files newer than the last
- * index build). Pure detection; does not mutate the index.
+ * The drift decision compares a FIDELITY hash (all canonical fields, including
+ * tier/origin/valid_from/valid_until) recomputed from BOTH the file's parsed
+ * content and the indexed row. This catches every kind of edit — including a
+ * behaviorally load-bearing `valid_until` change — and, because it recomputes
+ * rather than trusting the frontmatter-claimed hash, catches hand edits a human
+ * could never re-hash. A stale frontmatter content_hash is surfaced as
+ * `handEdited`. Pure detection; does not mutate the index.
  */
 export function detectConflicts(
   vault: Vault,
   knowledgeDir: string,
   opts: ConflictScanOptions = {},
 ): FileConflict[] {
-  const since = opts.since ?? 0;
-  const indexed = indexedHashes(vault);
+  const mode = opts.mode ?? 'full-scan';
+  const since = mode === 'fast' ? (opts.since ?? getLastIndexBuild(vault.getProvider())) : 0;
+  const indexed = indexedEntries(vault);
   const conflicts: FileConflict[] = [];
   for (const file of scanVaultFiles(knowledgeDir)) {
     if (!file.id) continue; // reported as a failure when the reindex applies changes
-    if (since > 0 && file.mtimeMs <= since) continue; // unchanged since last build — cheap skip
-    const { computedHash } = readEntryFile(file.filePath, file.domain);
-    const handEdited = file.frontmatterHash !== computedHash;
-    if (!indexed.has(file.id)) {
+    if (since > 0 && file.mtimeMs <= since) continue; // fast mode only: unchanged mtime
+    const {
+      entry: fileEntry,
+      frontmatterHash,
+      computedHash,
+    } = readEntryFile(file.filePath, file.domain);
+    const handEdited = frontmatterHash !== computedHash;
+    const fileFidelity = computeFidelityHash(fileEntry);
+    const dbEntry = indexed.get(file.id);
+    if (!dbEntry) {
       conflicts.push({
         id: file.id,
         filePath: file.filePath,
         domain: file.domain,
-        fileHash: computedHash,
+        fileHash: fileFidelity,
         indexedHash: null,
         reason: 'missing-in-index',
         handEdited,
       });
       continue;
     }
-    const idxHash = indexed.get(file.id) ?? null;
-    if (idxHash !== computedHash) {
+    const dbFidelity = computeFidelityHash(dbEntry);
+    if (fileFidelity !== dbFidelity) {
       conflicts.push({
         id: file.id,
         filePath: file.filePath,
         domain: file.domain,
-        fileHash: computedHash,
-        indexedHash: idxHash,
+        fileHash: fileFidelity,
+        indexedHash: dbFidelity,
         reason: 'hash-mismatch',
         handEdited,
       });
@@ -280,18 +294,32 @@ function upsertIndexRow(vault: Vault, entry: IntelligenceEntry): void {
   seedEntriesDb(vault.getProvider(), [entry], { linkManager: null, enabled: false, maxLinks: 0 });
 }
 
+/** Options for an incremental reindex. */
+export interface ReindexOptions {
+  /**
+   * `'full-scan'` (default, correct) hash-verifies every file; `'fast'` uses the
+   * mtime pre-filter and may miss preserved-mtime edits. See `ConflictScanOptions`.
+   */
+  mode?: ReindexScanMode;
+}
+
 /**
  * Incremental reindex (startup / post-merge trigger): reindex only files that
- * have drifted from the index, using the recomputed content hash (so hand edits
- * are caught) and the `mtimeMs > lastIndexBuild` cheap pre-filter. The file
- * always wins. Missing-id files are reported as failures, not silently dropped.
+ * have drifted from the index. By DEFAULT it hash-verifies every scanned file
+ * (parse + fidelity recompute) so a preserved-mtime change is never missed; pass
+ * `mode: 'fast'` to opt into the mtime pre-filter. The file always wins.
+ * Missing-id files are reported as failures, not silently dropped.
  */
-export function reindexIncremental(vault: Vault, knowledgeDir: string): ReindexResult {
+export function reindexIncremental(
+  vault: Vault,
+  knowledgeDir: string,
+  opts: ReindexOptions = {},
+): ReindexResult {
   const provider = vault.getProvider();
-  const since = getLastIndexBuild(provider);
+  const mode = opts.mode ?? 'full-scan';
   const buildStart = Date.now();
   const scanned = scanVaultFiles(knowledgeDir).length;
-  const conflicts = detectConflicts(vault, knowledgeDir, { since });
+  const conflicts = detectConflicts(vault, knowledgeDir, { mode });
   const failures: ReindexIssue[] = [];
   const warnings: ReindexIssue[] = [];
   let reindexed = 0;
@@ -441,8 +469,13 @@ export async function runMigrationToFiles(
     );
   }
 
-  // Pre-migration index snapshot (id → content_hash) for step-6 parity.
-  const preHashes = indexedHashes(vault);
+  // Pre-migration snapshot for step-6 parity, computed from entry CONTENT — never
+  // from the stored content_hash column (which may have been written by an older
+  // hash formula, stranding real rows and aborting the migration). Include expired
+  // entries so nothing is dropped from the files-first store.
+  const allEntries = vault.list({ includeExpired: true, limit: 1_000_000 });
+  const preHashes = new Map<string, string>();
+  for (const e of allEntries) preHashes.set(e.id, computeContentHash(e));
   const totalEntries = preHashes.size;
 
   // Pre-flight (MINOR 8): the export dir must not contain foreign vault files —
@@ -458,7 +491,6 @@ export async function runMigrationToFiles(
   }
 
   // Entries that will not produce a file (empty slug) — surfaced so nothing is lost silently.
-  const allEntries = vault.list({ limit: 100000 });
   const emptySlug = allEntries.filter((e) => !titleToSlug(e.title)).length;
   const filesExpected = totalEntries - emptySlug;
 
@@ -529,9 +561,14 @@ export async function runMigrationToFiles(
   setVaultFormatVersion(provider, VAULT_FORMAT_VERSION);
   vault.bindFileStore(knowledgeDir);
 
-  // Step 6 — Rebuild index from files + parity spot-check.
+  // Step 6 — Rebuild index from files + parity spot-check. Recompute post-hashes
+  // from content too, so the gate verifies the round-trip through files reproduced
+  // identical content (independent of any stored-column formula).
   const reindexResult = reindexFull(vault, knowledgeDir);
-  const postHashes = indexedHashes(vault);
+  const postHashes = new Map<string, string>();
+  for (const e of vault.list({ includeExpired: true, limit: 1_000_000 })) {
+    postHashes.set(e.id, computeContentHash(e));
+  }
   let hashParityOk = preHashes.size === postHashes.size;
   if (hashParityOk) {
     for (const [id, hash] of preHashes) {

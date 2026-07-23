@@ -5,8 +5,16 @@
  * for offline browsability. Reuses patterns from obsidian-sync.ts.
  */
 
-import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import {
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+  readdirSync,
+  existsSync,
+  rmSync,
+  renameSync,
+} from 'node:fs';
+import { join, basename } from 'node:path';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 import { computeContentHash } from './content-hash.js';
 import {
@@ -201,6 +209,22 @@ export function writeEntryFileSync(
 }
 
 /**
+ * Locate an entry's `.md` within a directory: the disambiguated `<slug>-<id6>.md`
+ * first, then the base `<slug>.md` (only when its frontmatter id matches). Returns
+ * the absolute path, or null when no matching file exists.
+ */
+function locateEntryFile(dir: string, slug: string, id: string): string | null {
+  const disambiguated = join(dir, `${slug}-${id.slice(0, 6)}.md`);
+  if (existsSync(disambiguated)) return disambiguated;
+  const base = join(dir, `${slug}.md`);
+  if (existsSync(base)) {
+    const idMatch = readFileSync(base, 'utf-8').match(/^id:\s*"([^"]+)"/m);
+    if (!idMatch || idMatch[1] === id) return base;
+  }
+  return null;
+}
+
+/**
  * Remove an entry's markdown file (file-first delete). Checks the disambiguated
  * name first, then the base `<slug>.md` (only when it belongs to this entry id).
  * Returns the removed path, or null when no matching file was found.
@@ -211,24 +235,55 @@ export function removeEntryFileSync(
 ): string | null {
   const slug = titleToSlug(entry.title);
   if (!slug) return null;
-  const domain = entry.domain || '_general';
-  const dir = join(knowledgeDir, 'vault', domain);
-
-  const disambiguated = join(dir, `${slug}-${entry.id.slice(0, 6)}.md`);
-  if (existsSync(disambiguated)) {
-    rmSync(disambiguated, { force: true });
-    return disambiguated;
-  }
-  const base = join(dir, `${slug}.md`);
-  if (existsSync(base)) {
-    const existing = readFileSync(base, 'utf-8');
-    const idMatch = existing.match(/^id:\s*"([^"]+)"/m);
-    if (!idMatch || idMatch[1] === entry.id) {
-      rmSync(base, { force: true });
-      return base;
-    }
+  const dir = join(knowledgeDir, 'vault', entry.domain || '_general');
+  const path = locateEntryFile(dir, slug, entry.id);
+  if (path) {
+    rmSync(path, { force: true });
+    return path;
   }
   return null;
+}
+
+/**
+ * Move an entry's `.md` from its domain folder to `vault/_archive/<domain>/`
+ * (file-first archive). Archived files live outside the scanned tree, so a
+ * reindex will not resurrect them. Returns the new path, or null when no file.
+ */
+export function archiveEntryFileSync(
+  entry: Pick<IntelligenceEntry, 'id' | 'title' | 'domain'>,
+  knowledgeDir: string,
+): string | null {
+  const slug = titleToSlug(entry.title);
+  if (!slug) return null;
+  const domain = entry.domain || '_general';
+  const src = locateEntryFile(join(knowledgeDir, 'vault', domain), slug, entry.id);
+  if (!src) return null;
+  const destDir = join(knowledgeDir, 'vault', '_archive', domain);
+  mkdirSync(destDir, { recursive: true });
+  const dest = join(destDir, basename(src));
+  renameSync(src, dest);
+  return dest;
+}
+
+/**
+ * Move an entry's `.md` back from `vault/_archive/<domain>/` to its live domain
+ * folder (file-first restore). Returns the restored path, or null when the
+ * archived file is absent (the caller should then write a fresh file).
+ */
+export function restoreEntryFileSync(
+  entry: Pick<IntelligenceEntry, 'id' | 'title' | 'domain'>,
+  knowledgeDir: string,
+): string | null {
+  const slug = titleToSlug(entry.title);
+  if (!slug) return null;
+  const domain = entry.domain || '_general';
+  const src = locateEntryFile(join(knowledgeDir, 'vault', '_archive', domain), slug, entry.id);
+  if (!src) return null;
+  const destDir = join(knowledgeDir, 'vault', domain);
+  mkdirSync(destDir, { recursive: true });
+  const dest = join(destDir, basename(src));
+  renameSync(src, dest);
+  return dest;
 }
 
 /** Write a single entry as a markdown file to knowledge/vault/{domain}/{slug}.md.
@@ -261,7 +316,9 @@ export async function syncAllToMarkdown(
   knowledgeDir: string,
   opts: SyncAllOptions = {},
 ): Promise<{ synced: number; skipped: number; total: number; collisions: SlugCollision[] }> {
-  const entries = vault.list({ limit: 100000 });
+  // Include expired entries — expiry is a query-time filter, not deletion, so the
+  // files-first store must still carry them (else a reindex would drop them).
+  const entries = vault.list({ includeExpired: true, limit: 1_000_000 });
   const collidingIds = detectSlugCollisions(entries);
   let synced = 0;
   let skipped = 0;

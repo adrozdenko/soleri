@@ -11,7 +11,12 @@ import {
   setSourceOfTruth,
   type VaultSourceOfTruth,
 } from './vault-schema.js';
-import { writeEntryFileSync, removeEntryFileSync } from './vault-markdown-sync.js';
+import {
+  writeEntryFileSync,
+  removeEntryFileSync,
+  archiveEntryFileSync,
+  restoreEntryFileSync,
+} from './vault-markdown-sync.js';
 import * as entries from './vault-entries.js';
 import * as memories from './vault-memories.js';
 import * as maintenance from './vault-maintenance.js';
@@ -307,8 +312,11 @@ export class Vault {
     return entries.findExpired(this.provider, limit);
   }
   bulkRemove(ids: string[]): number {
+    this.assertFilesModeBound();
     // Look up domains before removing
     const existing = ids.length > 0 ? entries.getByIds(this.provider, ids) : [];
+    // File-first: delete the .md files before the index rows.
+    for (const entry of existing) this.removeThroughFiles(entry);
     const result = entries.bulkRemove(this.provider, ids);
     if (result > 0) {
       this.invalidateDomains(existing);
@@ -354,10 +362,33 @@ export class Vault {
     return maintenance.getAgeReport(this.provider);
   }
   archive(options: { olderThanDays: number; reason?: string }): { archived: number } {
+    this.assertFilesModeBound();
+    // File-first: move the .md of every entry about to be archived into
+    // vault/_archive/<domain>/ (outside the scanned tree) BEFORE the DB rows move,
+    // so a later reindex cannot resurrect them.
+    if (this.fileStore) {
+      const cutoff = Math.floor(Date.now() / 1000) - options.olderThanDays * 86400;
+      const rows = this.provider.all<Record<string, unknown>>(
+        'SELECT * FROM entries WHERE updated_at < ?',
+        [cutoff],
+      );
+      for (const row of rows) archiveEntryFileSync(entries.rowToEntry(row), this.fileStore);
+    }
     return maintenance.archive(this.provider, options);
   }
   restore(id: string): boolean {
-    return maintenance.restore(this.provider, id);
+    this.assertFilesModeBound();
+    const result = maintenance.restore(this.provider, id);
+    // File-first: move the archived .md back into its live domain folder (or write
+    // a fresh one if the archived file is missing, e.g. archived pre-files-first).
+    if (result && this.fileStore) {
+      const restored = entries.get(this.provider, id);
+      if (restored) {
+        const moved = restoreEntryFileSync(restored, this.fileStore);
+        if (!moved) writeEntryFileSync(restored, this.fileStore, { force: true });
+      }
+    }
+    return result;
   }
   rebuildFtsIndex(): void {
     maintenance.rebuildFtsIndex(this.provider);

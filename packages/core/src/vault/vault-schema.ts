@@ -3,7 +3,7 @@
  * Extracted from vault.ts as part of Wave 0C decomposition.
  */
 import type { PersistenceProvider } from '../persistence/types.js';
-import { computeContentHash } from './content-hash.js';
+import { computeContentHash, HASH_FORMULA_VERSION } from './content-hash.js';
 
 /**
  * Highest on-disk vault format version this engine understands.
@@ -101,6 +101,28 @@ export function setLastIndexBuild(provider: PersistenceProvider, ms: number): vo
   );
 }
 
+/** Read the content-hash formula version the stored hashes were computed with (0 if unset). */
+export function getHashFormulaVersion(provider: PersistenceProvider): number {
+  try {
+    const row = provider.get<{ value: string }>(
+      "SELECT value FROM vault_meta WHERE key = 'hash_formula_version'",
+    );
+    const n = row ? Number(row.value) : 0;
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Persist the content-hash formula version. */
+export function setHashFormulaVersion(provider: PersistenceProvider, version: number): void {
+  provider.run(
+    `INSERT INTO vault_meta (key, value) VALUES ('hash_formula_version', @value)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    { value: String(Math.trunc(version)) },
+  );
+}
+
 export function initializeSchema(provider: PersistenceProvider): void {
   createCoreTables(provider);
   migrateVaultMeta(provider);
@@ -109,6 +131,9 @@ export function initializeSchema(provider: PersistenceProvider): void {
   migrateOriginColumn(provider);
   migrateContentHash(provider);
   migrateTierColumn(provider);
+  // Re-hash existing rows if the content-hash FORMULA changed since they were
+  // written (must run after all content columns + content_hash exist).
+  migrateHashFormula(provider);
   migratePerformanceIndexes(provider);
   migrateVectorStorage(provider);
   migrateTranscriptTables(provider);
@@ -349,6 +374,62 @@ function migrateContentHash(provider: PersistenceProvider): void {
       }
     });
   }
+}
+
+/**
+ * Re-hash EVERY entry when the stored content-hash formula version is older than
+ * the code's. `migrateContentHash` only backfills rows whose hash is NULL, so a
+ * formula change (e.g. adding severity/context/why/appliesTo to the hash) would
+ * otherwise strand all pre-existing rows on the old formula — breaking dedup and
+ * the migration parity gate on any real vault. This recomputes them once and
+ * records the new formula version so it is a no-op thereafter.
+ */
+function migrateHashFormula(provider: PersistenceProvider): void {
+  const stored = getHashFormulaVersion(provider);
+  if (stored >= HASH_FORMULA_VERSION) return;
+
+  const rows = provider.all<{
+    id: string;
+    type: string;
+    domain: string;
+    title: string;
+    description: string;
+    tags: string;
+    example: string | null;
+    counter_example: string | null;
+    severity: string | null;
+    context: string | null;
+    why: string | null;
+    applies_to: string | null;
+  }>(
+    `SELECT id, type, domain, title, description, tags, example, counter_example,
+            severity, context, why, applies_to
+     FROM entries`,
+  );
+  if (rows.length > 0) {
+    provider.transaction(() => {
+      for (const row of rows) {
+        const hash = computeContentHash({
+          type: row.type,
+          domain: row.domain,
+          title: row.title,
+          description: row.description,
+          tags: JSON.parse(row.tags),
+          example: row.example ?? undefined,
+          counterExample: row.counter_example ?? undefined,
+          severity: row.severity ?? undefined,
+          context: row.context ?? undefined,
+          why: row.why ?? undefined,
+          appliesTo: row.applies_to ? JSON.parse(row.applies_to) : undefined,
+        });
+        provider.run('UPDATE entries SET content_hash = @hash WHERE id = @id', {
+          hash,
+          id: row.id,
+        });
+      }
+    });
+  }
+  setHashFormulaVersion(provider, HASH_FORMULA_VERSION);
 }
 
 function migrateTierColumn(provider: PersistenceProvider): void {
