@@ -14,6 +14,9 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { FlowExecutor } from './executor.js';
 import type { OrchestrationPlan, PlanStep } from './types.js';
 
@@ -303,6 +306,191 @@ describe('FlowExecutor', () => {
 
       // No output declared on s1 — context stays empty for s2
       expect(received[1].context).toEqual({});
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // WS5 — scoped flow context
+  // -------------------------------------------------------------------------
+
+  describe('WS5 scoped inputs', () => {
+    function mkTmp(): string {
+      return fs.mkdtempSync(path.join(os.tmpdir(), 'soleri-exec-ws5-'));
+    }
+
+    it('strict mode: a scoped step receives only its declared from_steps outputs', async () => {
+      const received: Array<Record<string, unknown>> = [];
+      const dispatch = vi.fn(async (tool: string, params: Record<string, unknown>) => {
+        received.push({ tool, context: params.context });
+        return { tool, status: 'ok', data: { foo: 'FOO', bar: 'BAR' } };
+      });
+
+      const executor = new FlowExecutor(dispatch);
+      const plan = makePlan([
+        step('a', ['t-a'], { output: ['foo', 'bar'] }),
+        step('b', ['t-b'], { inputs: { from_steps: ['a.foo'] } }),
+      ]);
+
+      await executor.execute(plan);
+
+      // Step a produced foo AND bar, but scoped step b declared only a.foo.
+      expect(received[1].context).toEqual({ foo: 'FOO' });
+      expect(received[1].context).not.toHaveProperty('bar');
+    });
+
+    it('delivers declared input descriptors (files + fromSteps) to the step', async () => {
+      const dir = mkTmp();
+      fs.writeFileSync(path.join(dir, 'present.md'), 'reference');
+      const received: Array<Record<string, unknown>> = [];
+      const dispatch = vi.fn(async (tool: string, params: Record<string, unknown>) => {
+        received.push({ inputs: params.inputs });
+        return { tool, status: 'ok', data: { foo: 'FOO' } };
+      });
+
+      const executor = new FlowExecutor(dispatch, undefined, { workspaceRoot: dir });
+      const plan = makePlan([
+        step('a', ['t-a'], { output: ['foo'] }),
+        step('b', ['t-b'], {
+          inputs: { files: [{ path: 'present.md', layer: 3 }], from_steps: ['a.foo'] },
+        }),
+      ]);
+
+      await executor.execute(plan);
+      fs.rmSync(dir, { recursive: true, force: true });
+
+      const inputs = received[1].inputs as {
+        files: Array<{ path: string; layer: number; present: boolean }>;
+        fromSteps: string[];
+      };
+      expect(inputs.files[0]).toMatchObject({ path: 'present.md', layer: 3, present: true });
+      expect(inputs.fromSteps).toEqual(['a.foo']);
+    });
+
+    it('warns that a step with no inputs block is unscoped (strict mode)', async () => {
+      const dispatch = vi.fn(async (tool: string) => ({ tool, status: 'ok', data: {} }));
+      const executor = new FlowExecutor(dispatch);
+      const plan = makePlan([step('s1', ['t1'])]);
+
+      const result = await executor.execute(plan);
+
+      expect(result.warnings.some((w) => w.includes('unscoped'))).toBe(true);
+    });
+
+    it('on-missing-input=fail (default): a missing file fails the step and stops', async () => {
+      const dir = mkTmp();
+      const dispatch = vi.fn(async (tool: string) => ({ tool, status: 'ok', data: {} }));
+      const executor = new FlowExecutor(dispatch, undefined, { workspaceRoot: dir });
+      const plan = makePlan([
+        step('s1', ['t1'], { inputs: { files: [{ path: 'absent.md', layer: 4 }] } }),
+        step('s2', ['t2']),
+      ]);
+
+      const result = await executor.execute(plan);
+      fs.rmSync(dir, { recursive: true, force: true });
+
+      expect(result.status).toBe('partial');
+      expect(result.stepResults[0].status).toBe('failed');
+      // The step's tools are never dispatched when a required input is missing.
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(result.warnings.some((w) => w.includes('missing required input'))).toBe(true);
+    });
+
+    it('on-missing-input=skip-with-warning: skips the step and continues', async () => {
+      const dir = mkTmp();
+      const calls: string[] = [];
+      const dispatch = vi.fn(async (tool: string) => {
+        calls.push(tool);
+        return { tool, status: 'ok', data: {} };
+      });
+      const executor = new FlowExecutor(dispatch, undefined, { workspaceRoot: dir });
+      const plan = makePlan([
+        step('s1', ['t1'], {
+          inputs: { files: [{ path: 'absent.md', layer: 4 }] },
+          onMissingInput: 'skip-with-warning',
+        }),
+        step('s2', ['t2']),
+      ]);
+
+      const result = await executor.execute(plan);
+      fs.rmSync(dir, { recursive: true, force: true });
+
+      expect(result.stepResults[0].status).toBe('skipped');
+      // s1 skipped, s2 still ran.
+      expect(calls).toEqual(['t2']);
+      expect(result.warnings.some((w) => w.includes('skipped'))).toBe(true);
+    });
+
+    it('on-missing-input=ask-user: pauses execution', async () => {
+      const dir = mkTmp();
+      const dispatch = vi.fn(async (tool: string) => ({ tool, status: 'ok', data: {} }));
+      const executor = new FlowExecutor(dispatch, undefined, { workspaceRoot: dir });
+      const plan = makePlan([
+        step('s1', ['t1'], {
+          inputs: { files: [{ path: 'absent.md', layer: 4 }] },
+          onMissingInput: 'ask-user',
+        }),
+        step('s2', ['t2']),
+      ]);
+
+      const result = await executor.execute(plan);
+      fs.rmSync(dir, { recursive: true, force: true });
+
+      expect(result.status).toBe('partial');
+      expect(result.stepResults[0].status).toBe('gate-paused');
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(result.warnings.some((w) => w.includes('paused'))).toBe(true);
+    });
+
+    it('a mandatory vault query with empty results is a missing input', async () => {
+      const dispatch = vi.fn(async (tool: string) => ({ tool, status: 'ok', data: {} }));
+      const executor = new FlowExecutor(dispatch, undefined, { vaultSearch: () => [] });
+      const plan = makePlan([
+        step('s1', ['t1'], { inputs: { vault: [{ query: 'x', mandatory: true }] } }),
+      ]);
+
+      const result = await executor.execute(plan);
+
+      expect(result.stepResults[0].status).toBe('failed');
+      expect(result.warnings.some((w) => w.includes('vault:x'))).toBe(true);
+    });
+
+    it('advisory mode: delivers full context despite scoped inputs, with a warning', async () => {
+      const received: Array<Record<string, unknown>> = [];
+      const dispatch = vi.fn(async (tool: string, params: Record<string, unknown>) => {
+        received.push({ context: params.context });
+        return { tool, status: 'ok', data: { foo: 'FOO', bar: 'BAR' } };
+      });
+
+      const executor = new FlowExecutor(dispatch);
+      const plan = makePlan(
+        [
+          step('a', ['t-a'], { output: ['foo', 'bar'] }),
+          step('b', ['t-b'], { inputs: { from_steps: ['a.foo'] } }),
+        ],
+        { enforcement: 'advisory' },
+      );
+
+      const result = await executor.execute(plan);
+
+      // Advisory: step b sees the FULL accumulated context (foo AND bar).
+      expect(received[1].context).toEqual({ foo: 'FOO', bar: 'BAR' });
+      expect(result.warnings.some((w) => w.includes('advisory'))).toBe(true);
+    });
+
+    it('advisory mode: a missing declared input does not fail the step', async () => {
+      const dir = mkTmp();
+      const dispatch = vi.fn(async (tool: string) => ({ tool, status: 'ok', data: {} }));
+      const executor = new FlowExecutor(dispatch, undefined, { workspaceRoot: dir });
+      const plan = makePlan(
+        [step('s1', ['t1'], { inputs: { files: [{ path: 'absent.md', layer: 4 }] } })],
+        { enforcement: 'advisory' },
+      );
+
+      const result = await executor.execute(plan);
+      fs.rmSync(dir, { recursive: true, force: true });
+
+      expect(result.stepResults[0].status).not.toBe('failed');
+      expect(dispatch).toHaveBeenCalled();
     });
   });
 });

@@ -5,7 +5,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import type { OrchestrationPlan, ExecutionResult, StepResult, PlanRunManifest } from './types.js';
+import type {
+  OrchestrationPlan,
+  ExecutionResult,
+  StepResult,
+  PlanRunManifest,
+  PlanStep,
+  FlowEnforcement,
+} from './types.js';
 import { evaluateGate } from './gate-evaluator.js';
 
 /** Maximum iterations for BRANCH loops to prevent infinite cycles. */
@@ -15,6 +22,67 @@ type DispatchFn = (
   toolName: string,
   params: Record<string, unknown>,
 ) => Promise<{ tool: string; status: string; data?: unknown; error?: string }>;
+
+/** A vault hit returned by an injected input-vault resolver. */
+export type VaultInputHit = Record<string, unknown>;
+
+/** Resolver for `inputs.vault[]` queries — injected so the executor stays vault-agnostic. */
+export type VaultInputResolver = (
+  query: string,
+  opts: { domain?: string; limit?: number },
+) => Promise<VaultInputHit[]> | VaultInputHit[];
+
+export interface FlowExecutorOptions {
+  /**
+   * Root for resolving workspace-relative `inputs.files[]` paths.
+   * Defaults to the persistDir, then process.cwd().
+   */
+  workspaceRoot?: string;
+  /**
+   * Resolver for `inputs.vault[]` queries. When absent, vault inputs are
+   * delivered as unresolved descriptors and never trigger on-missing-input.
+   */
+  vaultSearch?: VaultInputResolver;
+  /** Read declared file contents into the bundle. Default false (descriptors only). */
+  readFiles?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Context assembly (WS5 — scoped stage-contract inputs)
+// ---------------------------------------------------------------------------
+
+/** A resolved file input delivered to a step. */
+interface AssembledFile {
+  path: string;
+  layer: 3 | 4;
+  present: boolean;
+  content?: string;
+}
+
+/** A resolved vault input delivered to a step. */
+interface AssembledVault {
+  query: string;
+  domain?: string;
+  limit?: number;
+  mandatory: boolean;
+  hits?: VaultInputHit[];
+}
+
+/** The per-step context bundle produced by the assembly pass. */
+interface AssembledContext {
+  /** Flat prior-output map delivered to the step (scoped in strict mode, full otherwise). */
+  context: Record<string, unknown>;
+  /** Declared input descriptors delivered to a scoped step (undefined for unscoped steps). */
+  inputs?: {
+    files: AssembledFile[];
+    vault: AssembledVault[];
+    fromSteps: string[];
+  };
+  /** Missing declared inputs — drives on-missing-input handling. */
+  missing: string[];
+  /** Scoping warnings surfaced to the ExecutionResult. */
+  warnings: string[];
+}
 
 // ---------------------------------------------------------------------------
 // Step persistence helpers
@@ -87,10 +155,113 @@ export function persistStepOutput(
 export class FlowExecutor {
   private dispatch: DispatchFn;
   private persistDir: string | undefined;
+  private workspaceRoot: string;
+  private vaultSearch: VaultInputResolver | undefined;
+  private readFiles: boolean;
 
-  constructor(dispatch: DispatchFn, persistDir?: string) {
+  constructor(dispatch: DispatchFn, persistDir?: string, options?: FlowExecutorOptions) {
     this.dispatch = dispatch;
     this.persistDir = persistDir;
+    this.workspaceRoot = options?.workspaceRoot ?? persistDir ?? process.cwd();
+    this.vaultSearch = options?.vaultSearch;
+    this.readFiles = options?.readFiles ?? false;
+  }
+
+  /**
+   * Assemble the per-step context bundle from the step's declared `inputs` (WS5).
+   *
+   * - Unscoped step (no `inputs`): keeps today's behavior — receives the full
+   *   accumulated context — but warns in strict mode that it is unscoped.
+   * - Scoped step, strict mode: receives ONLY the declared inputs; `from_steps`
+   *   are resolved against `stepContext`, files are checked for presence, and
+   *   `vault` queries are run through the injected resolver. Undeclared context
+   *   is silently absent.
+   * - Scoped step, advisory mode: the scoped bundle is recorded for
+   *   observability, but the full accumulated context is still delivered.
+   */
+  private async assembleContext(
+    step: PlanStep,
+    stepContext: Record<string, unknown>,
+    enforcement: FlowEnforcement,
+  ): Promise<AssembledContext> {
+    const warnings: string[] = [];
+    const missing: string[] = [];
+
+    // Unscoped step — backward compatible full-context delivery.
+    if (!step.inputs) {
+      if (enforcement === 'strict') {
+        warnings.push(
+          `Step "${step.id}" is unscoped (no inputs: block) — receives full accumulated context.`,
+        );
+      }
+      return { context: { ...stepContext }, missing, warnings };
+    }
+
+    // --- Scoped step: build the declared bundle. ---
+
+    // Files — resolve workspace-relative paths and check presence.
+    const files: AssembledFile[] = (step.inputs.files ?? []).map((f) => {
+      const abs = path.isAbsolute(f.path) ? f.path : path.join(this.workspaceRoot, f.path);
+      const present = fs.existsSync(abs);
+      if (!present) missing.push(`file:${f.path}`);
+      const resolved: AssembledFile = { path: f.path, layer: f.layer, present };
+      if (present && this.readFiles) {
+        try {
+          resolved.content = fs.readFileSync(abs, 'utf-8');
+        } catch {
+          resolved.present = false;
+          missing.push(`file:${f.path}`);
+        }
+      }
+      return resolved;
+    });
+
+    // Vault — run scoped queries through the injected resolver when available.
+    const vault: AssembledVault[] = [];
+    for (const v of step.inputs.vault ?? []) {
+      const mandatory = v.mandatory ?? false;
+      const resolved: AssembledVault = {
+        query: v.query,
+        mandatory,
+        ...(v.domain !== undefined ? { domain: v.domain } : {}),
+        ...(v.limit !== undefined ? { limit: v.limit } : {}),
+      };
+      if (this.vaultSearch) {
+        const hits = await this.vaultSearch(v.query, { domain: v.domain, limit: v.limit });
+        resolved.hits = hits;
+        if (mandatory && (!hits || hits.length === 0)) {
+          missing.push(`vault:${v.query}`);
+        }
+      }
+      vault.push(resolved);
+    }
+
+    // from_steps — scope prior-step outputs to the declared keys only.
+    const scopedContext: Record<string, unknown> = {};
+    const fromSteps = step.inputs.from_steps ?? [];
+    for (const ref of fromSteps) {
+      const key = ref.slice(ref.indexOf('.') + 1);
+      if (key in stepContext) {
+        scopedContext[key] = stepContext[key];
+      } else {
+        // Declared but not produced in this execution (e.g. the source step was
+        // skipped or branched over) — a missing declared input.
+        missing.push(`from_steps:${ref}`);
+      }
+    }
+
+    // Advisory escape hatch: record the scoped bundle but deliver full context.
+    let context: Record<string, unknown>;
+    if (enforcement === 'advisory') {
+      context = { ...stepContext };
+      warnings.push(
+        `Step "${step.id}" advisory mode: scoped inputs recorded for observability but full context delivered.`,
+      );
+    } else {
+      context = scopedContext;
+    }
+
+    return { context, inputs: { files, vault, fromSteps }, missing, warnings };
   }
 
   /**
@@ -107,6 +278,10 @@ export class FlowExecutor {
     // Accumulated outputs from completed steps — passed as context to subsequent dispatches
     const stepContext: Record<string, unknown> = {};
 
+    // WS5: scoping mode + accumulated scoping warnings surfaced on the result.
+    const enforcement: FlowEnforcement = plan.enforcement ?? 'strict';
+    const warnings: string[] = [];
+
     // Set up persistence if configured
     let runDir: string | undefined;
     let manifest: PlanRunManifest | undefined;
@@ -121,7 +296,71 @@ export class FlowExecutor {
       step.status = 'running';
 
       const toolResults: StepResult['toolResults'] = {};
-      const dispatchParams = { stepId: step.id, planId: plan.planId, context: { ...stepContext } };
+
+      // WS5: assemble the per-step context bundle from declared inputs only.
+      const assembled = await this.assembleContext(step, stepContext, enforcement);
+      warnings.push(...assembled.warnings);
+
+      // Handle missing declared inputs per the step's on-missing-input policy
+      // (default: fail). Strict scoping only — advisory mode delivers full
+      // context, so a "missing" declared input is not a hard failure there.
+      if (assembled.missing.length > 0 && enforcement === 'strict') {
+        const policy = step.onMissingInput ?? 'fail';
+        const detail = assembled.missing.join(', ');
+
+        if (policy === 'fail') {
+          const message = `Step "${step.id}" missing required input(s): ${detail}`;
+          warnings.push(message);
+          const stepResult: StepResult = {
+            stepId: step.id,
+            status: 'failed',
+            toolResults,
+            durationMs: Date.now() - stepStart,
+            gateResult: { action: 'STOP', message },
+          };
+          stepResults.push(stepResult);
+          step.status = 'failed';
+          return buildResult(plan, stepResults, toolsCalled, startTime, 'partial', warnings);
+        }
+
+        if (policy === 'skip-with-warning') {
+          const message = `Step "${step.id}" skipped — missing input(s): ${detail}`;
+          warnings.push(message);
+          stepResults.push({
+            stepId: step.id,
+            status: 'skipped',
+            toolResults,
+            durationMs: Date.now() - stepStart,
+          });
+          step.status = 'skipped';
+          currentIndex++;
+          continue;
+        }
+
+        // ask-user: pause execution so the human can supply the missing input.
+        const message = `Step "${step.id}" paused — missing input(s): ${detail}. Provide them, then resume.`;
+        warnings.push(message);
+        stepResults.push({
+          stepId: step.id,
+          status: 'gate-paused',
+          toolResults,
+          durationMs: Date.now() - stepStart,
+          gateResult: { action: 'STOP', message },
+        });
+        step.status = 'gate-paused';
+        return buildResult(plan, stepResults, toolsCalled, startTime, 'partial', warnings);
+      }
+
+      const dispatchParams: Record<string, unknown> = {
+        stepId: step.id,
+        planId: plan.planId,
+        context: assembled.context,
+      };
+      if (assembled.inputs) {
+        // Deliver the declared input descriptors (files + vault) alongside the
+        // scoped prior-output context.
+        dispatchParams.inputs = assembled.inputs;
+      }
 
       try {
         if (step.parallel && step.tools.length > 1) {
@@ -227,13 +466,13 @@ export class FlowExecutor {
         case 'STOP':
           step.status = 'failed';
           // Stop execution
-          return buildResult(plan, stepResults, toolsCalled, startTime, 'partial');
+          return buildResult(plan, stepResults, toolsCalled, startTime, 'partial', warnings);
 
         case 'BRANCH': {
           step.status = verdict.passed ? 'passed' : 'gate-paused';
           branchIterations++;
           if (branchIterations >= MAX_BRANCH_ITERATIONS) {
-            return buildResult(plan, stepResults, toolsCalled, startTime, 'partial');
+            return buildResult(plan, stepResults, toolsCalled, startTime, 'partial', warnings);
           }
           if (verdict.goto) {
             const targetIdx = plan.steps.findIndex((s) => s.id === verdict.goto);
@@ -260,7 +499,7 @@ export class FlowExecutor {
     const anyFailed = stepResults.some((r) => r.status === 'failed');
     const status = allPassed ? 'completed' : anyFailed ? 'partial' : 'completed';
 
-    return buildResult(plan, stepResults, toolsCalled, startTime, status);
+    return buildResult(plan, stepResults, toolsCalled, startTime, status, warnings);
   }
 }
 
@@ -270,6 +509,7 @@ function buildResult(
   toolsCalled: string[],
   startTime: number,
   status: ExecutionResult['status'],
+  warnings: string[] = [],
 ): ExecutionResult {
   return {
     planId: plan.planId,
@@ -279,5 +519,6 @@ function buildResult(
     toolsCalled: [...new Set(toolsCalled)],
     durationMs: Date.now() - startTime,
     stepResults,
+    warnings,
   };
 }
