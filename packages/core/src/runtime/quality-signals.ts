@@ -2,14 +2,15 @@
  * Quality Signals — analyze evidence reports for rework patterns and clean execution.
  *
  * Extracts anti-patterns (high rework), clean tasks (first-pass success),
- * and scope creep signals from evidence reports. Captures findings to vault
- * and feeds brain feedback. Best-effort — never throws.
+ * and scope creep signals from evidence reports. Captures findings to vault.
+ * Brain feedback attribution happens in plan-feedback-helper (outcome-conditional
+ * per vault entry) — never here, where only the plan ID is known.
+ * Best-effort — never throws.
  */
 
 import type { EvidenceReport } from '../planning/evidence-collector.js';
 import type { Plan } from '../planning/planner.js';
 import type { Vault } from '../vault/vault.js';
-import type { Brain } from '../brain/brain.js';
 import type { IntelligenceEntry } from '../intelligence/types.js';
 
 // ---------------------------------------------------------------------------
@@ -36,10 +37,6 @@ export interface QualityAnalysis {
 
 /** Tasks with this many or more fix iterations are flagged as anti-patterns. */
 const REWORK_THRESHOLD = 2;
-/** Brain feedback confidence for clean first-try tasks. */
-const CLEAN_TASK_CONFIDENCE = 0.9;
-/** Brain feedback confidence for high-rework anti-pattern tasks. */
-const REWORK_TASK_CONFIDENCE = 0.7;
 
 // ---------------------------------------------------------------------------
 // Analysis
@@ -101,19 +98,17 @@ export function analyzeQualitySignals(
 // ---------------------------------------------------------------------------
 
 /**
- * Persist quality signals to vault (anti-patterns) and brain (feedback).
+ * Persist quality signals to vault (anti-patterns).
  * Deduplicates anti-patterns via vault search before adding.
  * Best-effort — swallows all errors.
  */
 export function captureQualitySignals(
   analysis: QualityAnalysis,
   vault: Vault,
-  brain: Brain,
   planId: string,
-): { captured: number; skipped: number; feedback: number } {
+): { captured: number; skipped: number } {
   let captured = 0;
   let skipped = 0;
-  let feedback = 0;
 
   // Capture anti-patterns to vault (dedup first)
   for (const ap of analysis.antiPatterns) {
@@ -149,46 +144,7 @@ export function captureQualitySignals(
     }
   }
 
-  // Record negative brain feedback for rework tasks
-  for (const ap of analysis.antiPatterns) {
-    try {
-      brain.recordFeedback({
-        query: ap.taskTitle,
-        entryId: planId,
-        action: 'dismissed',
-        confidence: REWORK_TASK_CONFIDENCE,
-        source: 'evidence-quality',
-        reason: `Task needed ${ap.fixIterations} fix iterations — high rework`,
-        context: JSON.stringify({
-          taskId: ap.taskId,
-          reworkCount: ap.fixIterations,
-          verdict: ap.verdict,
-        }),
-      });
-      feedback++;
-    } catch {
-      // Best-effort
-    }
-  }
-
-  // Record positive brain feedback for clean tasks
-  for (const ct of analysis.cleanTasks) {
-    try {
-      brain.recordFeedback({
-        query: ct.taskTitle,
-        entryId: planId,
-        action: 'accepted',
-        confidence: CLEAN_TASK_CONFIDENCE,
-        source: 'evidence-quality',
-        reason: 'Clean first-try completion — no rework needed',
-      });
-      feedback++;
-    } catch {
-      // Best-effort
-    }
-  }
-
-  return { captured, skipped, feedback };
+  return { captured, skipped };
 }
 
 // ---------------------------------------------------------------------------

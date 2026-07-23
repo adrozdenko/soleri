@@ -34,12 +34,6 @@ function makeVault() {
   > & { add: ReturnType<typeof vi.fn>; search: ReturnType<typeof vi.fn> };
 }
 
-function makeBrain() {
-  return {
-    recordFeedback: vi.fn(),
-  } as unknown as { recordFeedback: ReturnType<typeof vi.fn> };
-}
-
 // ---------------------------------------------------------------------------
 // analyzeQualitySignals
 // ---------------------------------------------------------------------------
@@ -191,14 +185,12 @@ describe('analyzeQualitySignals', () => {
 
 describe('captureQualitySignals', () => {
   let vault: ReturnType<typeof makeVault>;
-  let brain: ReturnType<typeof makeBrain>;
 
   beforeEach(() => {
     vault = makeVault();
-    brain = makeBrain();
   });
 
-  it('captures anti-pattern to vault and records negative brain feedback', () => {
+  it('captures anti-pattern to vault', () => {
     const analysis = {
       antiPatterns: [
         {
@@ -213,7 +205,7 @@ describe('captureQualitySignals', () => {
       scopeCreep: [],
     };
 
-    const result = captureQualitySignals(analysis, vault, brain, 'plan-1');
+    const result = captureQualitySignals(analysis, vault, 'plan-1');
 
     expect(vault.add).toHaveBeenCalledTimes(1);
     const entry = vault.add.mock.calls[0][0];
@@ -223,50 +215,8 @@ describe('captureQualitySignals', () => {
     expect(entry.tags).toContain('fix-trail');
     expect(entry.tags).toContain('auto-captured');
 
-    expect(brain.recordFeedback).toHaveBeenCalledWith(
-      expect.objectContaining({
-        query: 'Fix login',
-        entryId: 'plan-1',
-        action: 'dismissed',
-        confidence: 0.7,
-        source: 'evidence-quality',
-        reason: 'Task needed 3 fix iterations — high rework',
-      }),
-    );
-
     expect(result.captured).toBe(1);
-    expect(result.feedback).toBe(1);
-  });
-
-  it('records positive brain feedback for clean tasks', () => {
-    const analysis = {
-      antiPatterns: [],
-      cleanTasks: [
-        {
-          taskId: 't2',
-          taskTitle: 'Add feature',
-          kind: 'clean' as const,
-          fixIterations: 0,
-          verdict: 'DONE',
-        },
-      ],
-      scopeCreep: [],
-    };
-
-    const result = captureQualitySignals(analysis, vault, brain, 'plan-1');
-
-    expect(brain.recordFeedback).toHaveBeenCalledWith(
-      expect.objectContaining({
-        query: 'Add feature',
-        entryId: 'plan-1',
-        action: 'accepted',
-        confidence: 0.9,
-        source: 'evidence-quality',
-        reason: 'Clean first-try completion — no rework needed',
-      }),
-    );
-    expect(result.feedback).toBe(1);
-    expect(result.captured).toBe(0);
+    expect(result.skipped).toBe(0);
   });
 
   it('skips duplicate anti-patterns when vault search returns high-score match', () => {
@@ -286,13 +236,11 @@ describe('captureQualitySignals', () => {
       scopeCreep: [],
     };
 
-    const result = captureQualitySignals(analysis, vault, brain, 'plan-1');
+    const result = captureQualitySignals(analysis, vault, 'plan-1');
 
     expect(vault.add).not.toHaveBeenCalled();
     expect(result.skipped).toBe(1);
     expect(result.captured).toBe(0);
-    // Brain feedback still recorded even for deduplicated captures
-    expect(brain.recordFeedback).toHaveBeenCalledTimes(1);
   });
 
   it('assigns critical severity for fixIterations > 4', () => {
@@ -310,19 +258,19 @@ describe('captureQualitySignals', () => {
       scopeCreep: [],
     };
 
-    captureQualitySignals(analysis, vault, brain, 'plan-1');
+    captureQualitySignals(analysis, vault, 'plan-1');
 
     const entry = vault.add.mock.calls[0][0];
     expect(entry.severity).toBe('critical');
   });
 
-  it('records positive feedback with evidence-quality source for clean first-try tasks', () => {
+  it('captures nothing for clean tasks — brain attribution lives in plan-feedback-helper', () => {
     const analysis = {
       antiPatterns: [],
       cleanTasks: [
         {
-          taskId: 'clean-1',
-          taskTitle: 'Smooth task',
+          taskId: 't2',
+          taskTitle: 'Clean task',
           kind: 'clean' as const,
           fixIterations: 0,
           verdict: 'DONE',
@@ -331,66 +279,10 @@ describe('captureQualitySignals', () => {
       scopeCreep: [],
     };
 
-    captureQualitySignals(analysis, vault, brain, 'plan-99');
+    const result = captureQualitySignals(analysis, vault, 'plan-1');
 
-    expect(brain.recordFeedback).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'accepted',
-        confidence: 0.9,
-        source: 'evidence-quality',
-        entryId: 'plan-99',
-      }),
-    );
-  });
-
-  it('records negative feedback with evidence-quality source for high-rework tasks', () => {
-    const analysis = {
-      antiPatterns: [
-        {
-          taskId: 'rework-1',
-          taskTitle: 'Painful task',
-          kind: 'anti-pattern' as const,
-          fixIterations: 3,
-          verdict: 'DONE',
-        },
-      ],
-      cleanTasks: [],
-      scopeCreep: [],
-    };
-
-    captureQualitySignals(analysis, vault, brain, 'plan-99');
-
-    expect(brain.recordFeedback).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'dismissed',
-        confidence: 0.7,
-        source: 'evidence-quality',
-        reason: 'Task needed 3 fix iterations — high rework',
-        context: JSON.stringify({ taskId: 'rework-1', reworkCount: 3, verdict: 'DONE' }),
-      }),
-    );
-  });
-
-  it('does not record evidence-quality feedback for tasks with 1 fix iteration', () => {
-    // 1 fix iteration = neither clean (fixIterations !== 0) nor anti-pattern (< 2)
-    const analysis = analyzeQualitySignals(
-      makeReport({
-        taskEvidence: [
-          {
-            taskId: 't-mid',
-            taskTitle: 'Single retry',
-            plannedStatus: 'completed',
-            matchedFiles: [],
-            verdict: 'DONE',
-            fixIterations: 1,
-          },
-        ],
-      }),
-    );
-
-    captureQualitySignals(analysis, vault, brain, 'plan-99');
-
-    expect(brain.recordFeedback).not.toHaveBeenCalled();
+    expect(vault.add).not.toHaveBeenCalled();
+    expect(result).toEqual({ captured: 0, skipped: 0 });
   });
 
   it('handles mixed signals correctly', () => {
@@ -416,10 +308,10 @@ describe('captureQualitySignals', () => {
       scopeCreep: [],
     };
 
-    const result = captureQualitySignals(analysis, vault, brain, 'plan-1');
+    const result = captureQualitySignals(analysis, vault, 'plan-1');
 
     expect(result.captured).toBe(1);
-    expect(result.feedback).toBe(2); // 1 dismissed + 1 accepted
+    expect(result.skipped).toBe(0);
   });
 });
 

@@ -415,6 +415,41 @@ describe('createPlanningExtraOps', () => {
       expect(result.feedbackRecorded).toBe(1);
     });
 
+    it('records modified feedback when plan tasks needed rework', async () => {
+      vi.mocked(runtime.planner.get).mockReturnValue(
+        makePlan({
+          status: 'completed',
+          reconciliation: { accuracy: 90, driftItems: [] },
+          decisions: ['Used pattern [entryId:abc-123] for auth'],
+          tasks: [{ fixIterations: 3 }],
+        }) as unknown,
+      );
+      const result = (await findOp(ops, 'plan_complete_lifecycle').handler({
+        planId: 'plan-1',
+      })) as Record<string, unknown>;
+      expect(result.feedbackRecorded).toBe(1);
+      expect(runtime.brain.recordFeedback).toHaveBeenCalledWith(
+        expect.objectContaining({ entryId: 'abc-123', action: 'modified' }),
+      );
+    });
+
+    it('records failed feedback when reconciliation accuracy is below 50', async () => {
+      vi.mocked(runtime.planner.get).mockReturnValue(
+        makePlan({
+          status: 'completed',
+          reconciliation: { accuracy: 30, driftItems: [] },
+          decisions: ['Used pattern [entryId:abc-123] for auth'],
+        }) as unknown,
+      );
+      const result = (await findOp(ops, 'plan_complete_lifecycle').handler({
+        planId: 'plan-1',
+      })) as Record<string, unknown>;
+      expect(result.feedbackRecorded).toBe(1);
+      expect(runtime.brain.recordFeedback).toHaveBeenCalledWith(
+        expect.objectContaining({ entryId: 'abc-123', action: 'failed' }),
+      );
+    });
+
     it('closes GitHub issue when linked', async () => {
       vi.mocked(runtime.planner.get).mockReturnValue(
         makePlan({

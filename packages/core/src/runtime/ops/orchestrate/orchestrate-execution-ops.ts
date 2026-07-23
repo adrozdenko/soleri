@@ -552,26 +552,21 @@ export function createOrchestrateCompleteOp(ctx: OrchestrateExecutionContext): O
           })
         : null;
 
-      // Record brain feedback for vault entries referenced in plan decisions
+      // Record outcome-conditional brain feedback for vault entries referenced in plan decisions
       if (planObj && planObj.decisions) {
         try {
           recordPlanFeedback(
             { objective: planObj.objective, decisions: planObj.decisions },
             brain,
             brainIntelligence,
+            {
+              outcome,
+              accuracy: evidenceReport?.accuracy ?? planObj.reconciliation?.accuracy,
+              tasks: planObj.tasks,
+            },
           );
         } catch {
           // Brain feedback is best-effort
-        }
-      }
-
-      // Feed evidence accuracy into brain feedback — low accuracy signals poor pattern match
-      if (evidenceReport && planObj) {
-        try {
-          const evidenceAction = evidenceReport.accuracy < 50 ? 'dismissed' : 'accepted';
-          brain.recordFeedback(`plan-evidence:${planObj.objective}`, planObj.id, evidenceAction);
-        } catch {
-          // Evidence brain feedback is best-effort
         }
       }
 
@@ -580,7 +575,7 @@ export function createOrchestrateCompleteOp(ctx: OrchestrateExecutionContext): O
         try {
           const qualityAnalysis = analyzeQualitySignals(evidenceReport, planObj);
           if (qualityAnalysis.antiPatterns.length > 0 || qualityAnalysis.cleanTasks.length > 0) {
-            captureQualitySignals(qualityAnalysis, vault, brain, planId ?? `direct-${Date.now()}`);
+            captureQualitySignals(qualityAnalysis, vault, planId ?? `direct-${Date.now()}`);
           }
         } catch {
           // Quality signal capture is best-effort — never blocks completion

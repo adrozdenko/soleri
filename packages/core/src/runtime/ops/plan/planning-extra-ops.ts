@@ -49,6 +49,7 @@ async function runLifecycleEpilogue(
     id: string;
     objective: string;
     decisions: (string | { decision: string })[];
+    tasks?: { fixIterations?: number }[];
     reconciliation?: { accuracy?: number } | null;
     githubIssue?: { owner: string; repo: string; number: number } | null;
   },
@@ -105,8 +106,11 @@ async function runLifecycleEpilogue(
     }
   }
 
-  // Auto-record positive feedback for vault entries used as recommendations
-  const feedbackRecorded = recordPlanFeedback(plan, brain, brainIntelligence);
+  // Auto-record outcome-conditional feedback for vault entries used as recommendations
+  const feedbackRecorded = recordPlanFeedback(plan, brain, brainIntelligence, {
+    accuracy: plan.reconciliation?.accuracy,
+    tasks: plan.tasks,
+  });
 
   // Auto-close linked GitHub issue if plan has one
   let issueClosed = false;
