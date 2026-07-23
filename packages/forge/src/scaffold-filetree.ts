@@ -653,12 +653,15 @@ See [Hook Packs documentation](https://soleri.dev/docs/guides/pack-authoring/) f
     filesCreated,
   );
 
-  // ─── 5. Write engine rules (modular — respects engine.features) ─────
+  // ─── 5. Write engine rules (modular — respects engine.features + ceremony) ─────
   const engineFeatures = config.engine?.features as EngineFeature[] | undefined;
+  // Same resolution as buildAgentYaml so the documented gate rules match the
+  // ceremony written into agent.yaml (new scaffolds default to `light`).
+  const scaffoldCeremony = config.engine?.ceremony ?? 'light';
   writeFile(
     agentDir,
     'instructions/_engine.md',
-    getModularEngineRules(engineFeatures),
+    getModularEngineRules(engineFeatures, scaffoldCeremony),
     filesCreated,
   );
 
@@ -886,6 +889,11 @@ function buildAgentYaml(config: AgentYaml): Record<string, unknown> {
   const engine: Record<string, unknown> = {};
   engine.learning = config.engine?.learning !== false;
   engine.profile = config.engine?.profile ?? 'full';
+  // New agents get an EXPLICIT ceremony so the value is visible and editable —
+  // never a hidden default. Defaults to the lighter `light` regime (single
+  // human touchpoint) unless the input config specifies otherwise. Existing
+  // agents (absent field) resolve to `full` via core's resolveCeremony.
+  engine.ceremony = config.engine?.ceremony ?? 'light';
   if (config.engine?.vault) engine.vault = config.engine.vault;
   if (config.engine?.modules && config.engine.modules.length > 0)
     engine.modules = config.engine.modules;

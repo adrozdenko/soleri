@@ -20,6 +20,7 @@ import type {
   PlanCheck,
   PlannerOptions,
 } from './planner-types.js';
+import type { Ceremony } from '../runtime/agent-config.js';
 import {
   applyTransition,
   scoreToGrade,
@@ -58,6 +59,7 @@ export class Planner {
   private executingTtlMs: number;
   private draftTtlMs: number;
   private gradeMinTaskCount: number;
+  private ceremony: Ceremony;
 
   constructor(filePath: string, options?: GapAnalysisOptions | PlannerOptions) {
     this.filePath = filePath;
@@ -67,7 +69,8 @@ export class Planner {
         'executingTtlMs' in options ||
         'draftTtlMs' in options ||
         'gapOptions' in options ||
-        'gradeMinTaskCount' in options)
+        'gradeMinTaskCount' in options ||
+        'ceremony' in options)
     ) {
       const opts = options as PlannerOptions;
       this.gapOptions = opts.gapOptions;
@@ -75,14 +78,21 @@ export class Planner {
       this.executingTtlMs = opts.executingTtlMs ?? 24 * 60 * 60 * 1000;
       this.draftTtlMs = opts.draftTtlMs ?? 30 * 60 * 1000;
       this.gradeMinTaskCount = opts.gradeMinTaskCount ?? 5;
+      this.ceremony = opts.ceremony ?? 'full';
     } else {
       this.gapOptions = options as GapAnalysisOptions | undefined;
       this.minGradeForApproval = 'A';
       this.executingTtlMs = 24 * 60 * 60 * 1000;
       this.draftTtlMs = 30 * 60 * 1000;
       this.gradeMinTaskCount = 5;
+      this.ceremony = 'full';
     }
     this.store = this.load();
+  }
+
+  /** Resolved plan-approval ceremony regime for this planner. */
+  getCeremony(): Ceremony {
+    return this.ceremony;
   }
 
   private normalizeTerminalTaskStates(
@@ -241,22 +251,50 @@ export class Planner {
 
   approve(planId: string): Plan {
     const plan = this.requirePlan(planId);
-    const check = plan.latestCheck;
-    // Trivial plans skip the grade gate — 8-pass gap analysis is wrong-sized
-    // for work below `gradeMinTaskCount` tasks. The gate still fires for any
-    // plan at or above the threshold.
-    const meetsTaskThreshold = plan.tasks.length >= this.gradeMinTaskCount;
-    if (check && meetsTaskThreshold && check.score < gradeToMinScore(this.minGradeForApproval)) {
-      throw new PlanGradeRejectionError(
-        check.grade,
-        check.score,
-        this.minGradeForApproval,
-        check.gaps,
-      );
+    // Ceremony 'off' has no gates — the grade gate is not enforced, plans
+    // approve unconditionally. 'full' and 'light' both enforce the grade gate
+    // (for plans at/above `gradeMinTaskCount`); under 'light' the caller reaches
+    // this path via `autoApprove()` instead of an explicit human "approve".
+    if (this.ceremony !== 'off') {
+      const check = plan.latestCheck;
+      // Trivial plans skip the grade gate — 8-pass gap analysis is wrong-sized
+      // for work below `gradeMinTaskCount` tasks. The gate still fires for any
+      // plan at or above the threshold.
+      const meetsTaskThreshold = plan.tasks.length >= this.gradeMinTaskCount;
+      if (check && meetsTaskThreshold && check.score < gradeToMinScore(this.minGradeForApproval)) {
+        throw new PlanGradeRejectionError(
+          check.grade,
+          check.score,
+          this.minGradeForApproval,
+          check.gaps,
+        );
+      }
     }
     this.transition(plan, 'approved');
     this.save();
     return plan;
+  }
+
+  /**
+   * Ceremony-aware Gate 1. Collapses the explicit approval gate according to
+   * the resolved ceremony regime:
+   *
+   * - `full`  — Gate 1 stays an explicit human touchpoint. This is a no-op:
+   *             returns `{ autoApproved: false }` and leaves the plan in its
+   *             current status. The caller must still invoke `approve()` after
+   *             a human "approve".
+   * - `light` — auto-transitions `draft → approved` when the grade gate passes
+   *             (or the plan is below `gradeMinTaskCount`). Throws
+   *             `PlanGradeRejectionError` when the grade gate fails, so a failing
+   *             plan is never silently approved. Gate 2 (`splitTasks`) remains
+   *             the single explicit human touchpoint.
+   * - `off`   — approves unconditionally (grade gate not enforced).
+   */
+  autoApprove(planId: string): { plan: Plan; autoApproved: boolean } {
+    if (this.ceremony === 'full') {
+      return { plan: this.requirePlan(planId), autoApproved: false };
+    }
+    return { plan: this.approve(planId), autoApproved: true };
   }
 
   patchPlan(planId: string, fields: Partial<Plan>): Plan {

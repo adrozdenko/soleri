@@ -6,6 +6,7 @@
 import type { PlanStatus, PlanGrade } from './plan-lifecycle.js';
 import type { PlanGap } from './gap-types.js';
 import type { GapAnalysisOptions } from './gap-analysis.js';
+import type { Ceremony } from '../runtime/agent-config.js';
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed';
 
@@ -305,4 +306,10 @@ export interface PlannerOptions {
    * approve without round-tripping through grading. Default: 5.
    */
   gradeMinTaskCount?: number;
+  /**
+   * Plan-approval ceremony regime. Governs the gate behavior of `approve()`
+   * and `autoApprove()`. Default: 'full' (both gates explicit, grade gate
+   * enforced). See {@link Ceremony}.
+   */
+  ceremony?: Ceremony;
 }

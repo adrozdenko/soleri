@@ -90,6 +90,23 @@ const EngineConfigSchema = z.object({
   vault: z.string().optional(),
   /** Enable brain/learning loop. Default: true */
   learning: z.boolean().optional().default(true),
+  /**
+   * Plan-approval ceremony regime — controls the two-gate workflow.
+   * - `full`  — both gates explicit (approve + split); grade gate enforced.
+   * - `light` — Gate 1 auto-approves when the grade gate passes; split stays
+   *             the single explicit human touchpoint.
+   * - `off`   — no gates; plans execute immediately (knowledge capture and
+   *             reconciliation record-writing still run).
+   *
+   * `.optional()` with NO `.default()` on purpose: an absent field must stay
+   * distinguishable from an explicit `full` so `resolveCeremony` (core) can
+   * supply the backward-compatible `full` default only at the point of use.
+   * Adding a `.default()` here would strip that distinction — and the Zod v4
+   * object-default caveat noted on `AutoOpsConfigSchema` above is why we keep
+   * defaults out of nested engine fields wherever the absent/explicit split
+   * matters.
+   */
+  ceremony: z.enum(['full', 'light', 'off']).optional(),
   /** Session compaction policy — thresholds for automatic session rotation */
   compactionPolicy: CompactionPolicySchema.optional(),
   /** Opt in to session_start maintenance side effects. Defaults to all false. */
