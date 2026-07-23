@@ -213,6 +213,13 @@ export interface Plan {
   goalId?: string;
   /** Audit trail of all constraint evaluations (grading + task execution). */
   constraintAudit?: ConstraintAuditEntry[];
+  /**
+   * Human-added `## ` sections found in the plan `.md` that the engine does not
+   * model. Preserved verbatim (passthrough) so a machine save never deletes
+   * human content. Populated only when such sections exist. Internal to the
+   * Markdown store — not set by planning logic.
+   */
+  extraSections?: Array<{ heading: string; content: string }>;
   createdAt: number;
   updatedAt: number;
 }

@@ -97,6 +97,42 @@ function cell(value: string): string {
   return value.replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
+/** Known body section headings the parser models. Anything else is preserved
+ *  verbatim as a human-added passthrough (see `Plan.extraSections`). */
+const KNOWN_SECTIONS = new Set([
+  'Objective',
+  'Scope',
+  'Approach',
+  'Context',
+  'Alternatives',
+  'Steps',
+  'Decisions',
+  'Success Criteria',
+  'Tools',
+  'Reconciliation',
+]);
+
+/**
+ * Reversible line-level escape for prose section bodies. Any line beginning with
+ * `#` (would collide with the `## ` section delimiter) or `\` (the escape char
+ * itself) gets a leading backslash. `unescapeProse` reverses it byte-exactly, so
+ * a human writing a literal `## Phase 1` line inside a field survives round-trip.
+ */
+function escapeProse(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => (/^[#\\]/.test(line) ? `\\${line}` : line))
+    .join('\n');
+}
+
+/** Inverse of {@link escapeProse}. */
+function unescapeProse(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => (line.startsWith('\\') ? line.slice(1) : line))
+    .join('\n');
+}
+
 /** Build the YAML frontmatter (identity/routing strip + index mirrors). */
 function buildFrontmatter(plan: Plan): string {
   const fm: Record<string, unknown> = {
@@ -149,12 +185,18 @@ function renderStep(task: PlanTask, index: number): string[] {
     lines.push('- **Inputs:** _None declared._');
   }
 
-  lines.push(`- **Process:** ${task.description}`);
+  // Process is a block: the description's lines are indented two spaces so the
+  // full (possibly multi-line, possibly `## `-containing) value round-trips.
+  // Indentation keeps every structural marker anchored at column 0, so nothing
+  // inside a description can collide with a section/step/bullet delimiter.
+  lines.push('- **Process:**');
+  for (const descLine of task.description.split('\n')) lines.push(`  ${descLine}`);
 
   // Outputs is a read-only view of the machine-captured deliverables (sidecar
-  // authoritative). Rendered for stage-contract completeness, not parsed back.
+  // authoritative). Rendered for stage-contract completeness, not parsed back —
+  // labeled so the visible/authoritative divergence is disclosed on the surface.
   const outputs = (task.deliverables ?? []).map((d) => `\`${d.path}\` (${d.type})`);
-  if (outputs.length > 0) lines.push(`- **Outputs:** ${outputs.join(', ')}`);
+  if (outputs.length > 0) lines.push(`- **Outputs** _(engine-maintained)_: ${outputs.join(', ')}`);
 
   const criteria = task.acceptanceCriteria ?? [];
   if (criteria.length > 0) {
@@ -221,20 +263,20 @@ export function serializePlan(plan: Plan): { markdown: string; data: PlanSidecar
 
   out.push('## Objective');
   out.push('');
-  out.push(plan.objective);
+  out.push(escapeProse(plan.objective));
   out.push('');
 
   out.push('## Scope');
   out.push('');
-  out.push(plan.scope);
+  out.push(escapeProse(plan.scope));
   out.push('');
 
   if (plan.approach !== undefined) {
-    out.push('## Approach', '', plan.approach, '');
+    out.push('## Approach', '', escapeProse(plan.approach), '');
   }
 
   if (plan.context !== undefined) {
-    out.push('## Context', '', plan.context, '');
+    out.push('## Context', '', escapeProse(plan.context), '');
   }
 
   if (plan.alternatives && plan.alternatives.length > 0) {
@@ -274,6 +316,7 @@ export function serializePlan(plan: Plan): { markdown: string; data: PlanSidecar
   if (plan.reconciliation) {
     const r = plan.reconciliation;
     out.push('## Reconciliation', '');
+    out.push('*Engine-maintained view — edits here are not read back.*', '');
     out.push(`Accuracy: ${r.accuracy}/100 — ${r.summary}`, '');
     if (r.driftItems.length > 0) {
       out.push('| Type | Description | Impact | Rationale |');
@@ -284,6 +327,14 @@ export function serializePlan(plan: Plan): { markdown: string; data: PlanSidecar
         );
       }
       out.push('');
+    }
+  }
+
+  // Passthrough: re-emit human-added sections the engine does not model, in
+  // document order, so a machine save never deletes human content.
+  if (plan.extraSections) {
+    for (const section of plan.extraSections) {
+      out.push(`## ${section.heading}`, '', section.content, '');
     }
   }
 
@@ -333,7 +384,9 @@ function parseDecisions(section: string | undefined): (string | PlanDecision)[] 
       continue;
     }
     const flat = line.match(/^- (.+)$/);
-    if (flat) decisions.push(flat[1]);
+    // A human may strip the ` — **Rationale:**` separator, demoting a structured
+    // decision to a flat one; clean the leftover `**Decision:**` markup.
+    if (flat) decisions.push(flat[1].replace(/^\*\*Decision:\*\* /, ''));
   }
   return decisions;
 }
@@ -380,13 +433,19 @@ interface BodyTask {
   acceptanceCriteria?: string[];
 }
 
-/** Parse the Steps section into body-authored task fields (id from the heading). */
+/**
+ * Parse the Steps section into body-authored task fields (id from the heading).
+ * Walks each step block line by line. Every structural marker is at column 0;
+ * continuation content (the Process description, dependency and acceptance
+ * bullets) is two-space indented, so it is recovered by stripping exactly that
+ * indent — multi-line descriptions and `## `-containing lines survive intact.
+ */
 function parseSteps(section: string | undefined): BodyTask[] {
   if (!section || section.startsWith('_No steps')) return [];
   const tasks: BodyTask[] = [];
-  const blocks = section.split(/\n(?=### )/);
-  for (const block of blocks) {
-    const head = block.match(/^### \d+\. (.+?)  `\[id: (\S+) · status: (\w+)\]`/);
+  for (const block of section.split(/\n(?=### )/)) {
+    const lines = block.split('\n');
+    const head = lines[0].match(/^### \d+\. (.+?)  `\[id: (\S+) · status: (\w+)\]`/);
     if (!head) continue;
     const task: BodyTask = {
       id: head[2],
@@ -395,21 +454,42 @@ function parseSteps(section: string | undefined): BodyTask[] {
       status: head[3] as PlanTask['status'],
     };
 
-    const proc = block.match(/^- \*\*Process:\*\* (.*)$/m);
-    if (proc) task.description = proc[1];
-
-    const deps = [...block.matchAll(/output of `([^`]+)`/g)].map((m) => m[1]);
-    if (deps.length > 0) task.dependsOn = deps;
-
-    const accIdx = block.indexOf('- **Acceptance:**');
-    if (accIdx >= 0) {
-      const criteria: string[] = [];
-      for (const line of block.slice(accIdx).split('\n').slice(1)) {
-        const m = line.match(/^  - (.+)$/);
-        if (m) criteria.push(m[1]);
-        else if (line.trim() !== '') break;
+    let i = 1;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (line.startsWith('- **Inputs:**')) {
+        i++;
+        const deps: string[] = [];
+        while (i < lines.length && lines[i].startsWith('  ')) {
+          const dep = lines[i].match(/output of `([^`]+)`/);
+          if (dep) deps.push(dep[1]);
+          i++;
+        }
+        if (deps.length > 0) task.dependsOn = deps;
+        continue;
       }
-      if (criteria.length > 0) task.acceptanceCriteria = criteria;
+      if (line === '- **Process:**') {
+        i++;
+        const desc: string[] = [];
+        while (i < lines.length && lines[i].startsWith('  ')) {
+          desc.push(lines[i].slice(2));
+          i++;
+        }
+        task.description = desc.join('\n');
+        continue;
+      }
+      if (line === '- **Acceptance:**') {
+        i++;
+        const criteria: string[] = [];
+        while (i < lines.length && lines[i].startsWith('  - ')) {
+          criteria.push(lines[i].slice(4));
+          i++;
+        }
+        if (criteria.length > 0) task.acceptanceCriteria = criteria;
+        continue;
+      }
+      // Blank lines and the engine-maintained Outputs view are skipped.
+      i++;
     }
 
     tasks.push(task);
@@ -461,11 +541,13 @@ export function parsePlan(md: string, data?: PlanSidecar | null): Plan {
   const sections = splitSections(body);
   const sidecar = data ?? {};
 
+  const objectiveSection = sections.get('Objective');
   const plan: Plan = {
     id: String(fm.id ?? ''),
     // Body is authoritative for objective; frontmatter is a mirror/fallback.
-    objective: sections.get('Objective') ?? String(fm.objective ?? ''),
-    scope: sections.get('Scope') ?? '',
+    objective:
+      objectiveSection !== undefined ? unescapeProse(objectiveSection) : String(fm.objective ?? ''),
+    scope: unescapeProse(sections.get('Scope') ?? ''),
     status: fm.status as Plan['status'],
     decisions: parseDecisions(sections.get('Decisions')),
     tasks: mergeTasks(parseSteps(sections.get('Steps')), sidecar.tasks ?? {}),
@@ -476,15 +558,23 @@ export function parsePlan(md: string, data?: PlanSidecar | null): Plan {
 
   // Optional body-authored fields.
   const approach = sections.get('Approach');
-  if (approach !== undefined) plan.approach = approach;
+  if (approach !== undefined) plan.approach = unescapeProse(approach);
   const context = sections.get('Context');
-  if (context !== undefined) plan.context = context;
+  if (context !== undefined) plan.context = unescapeProse(context);
   const alternatives = parseAlternatives(sections.get('Alternatives'));
   if (alternatives) plan.alternatives = alternatives;
   const successCriteria = parseBulletList(sections.get('Success Criteria'));
   if (successCriteria) plan.success_criteria = successCriteria;
   const toolChain = parseBulletList(sections.get('Tools'));
   if (toolChain) plan.tool_chain = toolChain;
+
+  // Passthrough: capture human-added sections the engine does not model so a
+  // subsequent machine save re-emits them verbatim instead of deleting them.
+  const extraSections: Array<{ heading: string; content: string }> = [];
+  for (const [heading, content] of sections) {
+    if (!KNOWN_SECTIONS.has(heading)) extraSections.push({ heading, content });
+  }
+  if (extraSections.length > 0) plan.extraSections = extraSections;
 
   // Optional frontmatter-only routing fields.
   if (fm.flow !== undefined) plan.flow = String(fm.flow);
