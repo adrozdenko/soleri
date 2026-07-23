@@ -36,3 +36,6 @@ AGENTS.md
 .playwright-mcp/
 .cursorrules
 knowledge/
+
+# Engine plan store (agent-global working data, cross-project — not repo history)
+plans/
