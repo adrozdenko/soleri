@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@astrojs/react": "^5.0.4",
-    "@astrojs/sitemap": "3.7.2",
+    "@astrojs/sitemap": "3.7.3",
     "@secretlint/secretlint-rule-preset-recommend": "^11.3.1",
     "@soleri/core": "^9.0.0",
     "@soleri/domain-code-review": "^1.0.0",
