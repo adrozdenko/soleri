@@ -25,7 +25,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@soleri/core": "^10.0.0"
   },
   "engines": {

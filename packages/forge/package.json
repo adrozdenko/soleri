@@ -50,7 +50,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.28.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@soleri/core": "^10.0.0",
     "yaml": "^2.8.2",
     "zod": "^4.3.6"
